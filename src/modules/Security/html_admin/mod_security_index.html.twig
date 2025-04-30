@@ -15,18 +15,17 @@
                 <a class="btn btn-primary btn-3 api-link" href="{{ 'api/admin/security/run_checks'|link({ 'CSRFToken': CSRFToken }) }}" data-api-jsonp="setResults">{{ "Run all checks"|trans }}</a>
             </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table sortable">
-                  <thead>
+        <div class="table-responsive">
+            <table class="table sortable">
+                <thead>
                     <tr>
                         <th scope="col">{{ "Name"|trans }}</th>
                         <th scope="col">{{ "Description"|trans }}</th>
                         <th scope="col" class="no-sort">{{ "Run check"|trans }}</th>
                         <th scope="col">{{ "Result"|trans }}</th>
                     </tr>
-                  </thead>
-                  <tbody>
+                </thead>
+                <tbody>
                     {% for check in admin.security_list_checks() %}
                     <tr>
                         <th scope="row">{{ check.name }}</th>
@@ -37,14 +36,11 @@
                                 data-api-jsonp="setResult"
                                 >{{ 'Run check'|trans }}</a>
                         </th>
-                        <th id="{{ check.id }}" scope="row"><div class="alert alert-info">?</div></th>
+                        <th id="{{ check.id }}" scope="row"><div class="alert d-flex justify-content-center align-items-center"><span>?</span></div></th>
                     </tr>
                     {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            <div class="table">
-            </div>
+                </tbody>
+            </table>
         </div>
     </div>
 {% endblock %}
