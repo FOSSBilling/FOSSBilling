@@ -6,7 +6,7 @@ import $ from 'jquery';
 import './js/ui/modals';
 import { coloris, init } from '@melloware/coloris';
 import ClipboardJS from "clipboard";
-import '@tabler/core/src/js/tabler';
+import * as tabler from '@tabler/core/js/tabler.js';
 import './js/tomselect'
 import './js/datepicker'
 import ApexCharts from 'apexcharts';
@@ -16,6 +16,7 @@ import 'sortable-tablesort/dist/sortable.min.js';
 
 globalThis.ApexCharts = ApexCharts;
 globalThis.$ = globalThis.jQuery = $;
+globalThis.bootstrap = tabler.bootstrap;
 
 init();
 coloris({
