@@ -55,12 +55,26 @@ class dangerousFunctions implements \FOSSBilling\Interfaces\SecurityCheckInterfa
 
     public function performCheck(): SecurityCheckResult
     {
+        $functionsFound = [];
         $state = 'pass';
         $result = '';
+        
         foreach ($this->functions as $function => $properties) {
             if (function_exists($function)) {
-                $result .= __trans(':function: is enabled, potentially being a security concern.', [':function:' => $function]) . "\n";
-                $state = $properties['type']; // Since we only have pass / warn, no additional logic is needed.
+                $functionsFound[$function] = $properties;
+            }
+        }
+
+        if (count($functionsFound) === 1) {
+            $result = __trans(':function: is enabled, potentially being a security concern.', [':function:' => array_key_first($functionsFound)]) . "\n";
+            $state = $properties['type'];
+        } else {
+            $result = __trans("The following PHP functions are enabled, potentially being a security concern:\n");
+            foreach ($functionsFound as $function => $properties) {
+                if (function_exists($function)) {
+                    $result .= "- " . $function . "\n";
+                    $state = $properties['type']; // Since we only have pass / warn, no additional logic is needed.
+                }
             }
         }
 
