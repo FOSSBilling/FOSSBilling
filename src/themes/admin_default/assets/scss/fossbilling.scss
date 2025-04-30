@@ -10,10 +10,6 @@
   color: var(--tblr-body-color) !important;
 } /* Override to fix top nav bar text colour in dark mode. Can be removed if tabler fix issue */
 
-body {
-    font-family: Verdana, sans-serif;
-}
-
 .page {
     min-height: calc(100vh - 2px);
 }
