@@ -9,7 +9,10 @@
 {% block content %}
     <ul class="nav nav-tabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Hosting plans and servers'|trans }}</a>
+            <a class="nav-link active" href="#tab-servers" data-bs-toggle="tab">{{ 'Hosting servers'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-plans" data-bs-toggle="tab">{{ 'Hosting plans'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new-server" data-bs-toggle="tab">
@@ -24,31 +27,33 @@
                 <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
-                {{ 'New hosting plan'|trans }}
+                {{ 'New plan'|trans }}
             </a>
         </li>
     </ul>
 
 <div class="card">
     <div class="tab-content">
-        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            <div class="card-body">
-                <h5>{{ 'Servers'|trans }}</h5>
+        <div class="tab-pane fade show active" id="tab-servers" role="tabpanel">
+            <div class="card-header">
+                <h3 class="card-title">{{ 'Hosting servers'|trans }}</h3>
             </div>
             <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
                     <tr>
+                        <th>{{ '#'|trans }}</th>
                         <th>{{ 'Title'|trans }}</th>
                         <th>{{ 'IP'|trans }}</th>
                         <th>{{ 'Server manager'|trans }}</th>
                         <th>{{ 'Active'|trans }}</th>
-                        <th class="w-1"></th>
+                        <th class="w-1 no-sort"></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% set servers = admin.servicehosting_server_get_list({ 'per_page': 100 }) %}
                     {% for server in servers.list %}
                     <tr>
+                        <td>{{ server.id }}</td>
                         <td>
                             <a href="{{ '/servicehosting/server'|alink }}/{{ server.id }}">{{ server.name }}</a>
                         </td>
@@ -85,19 +90,22 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <hr>
+        </div>
 
-            <div class="card-body">
-                <h5>{{ 'Hosting plans'|trans }}</h5>
+        <div class="tab-pane fade show" id="tab-plans" role="tabpanel">
+            <div class="card-header">
+                <h3 class="card-title">{{ 'Hosting plans'|trans }}</h3>
             </div>
+
             <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
                     <tr>
-                        <td>{{ 'Title'|trans }}</td>
-                        <td>{{ 'Addon domains'|trans }}</td>
-                        <td>{{ 'Disk space'|trans }}</td>
-                        <td>{{ 'Bandwidth'|trans }}</td>
-                        <td class="w-1"></td>
+                        <th>{{ '#'|trans }}</th>
+                        <th>{{ 'Title'|trans }}</th>
+                        <th>{{ 'Addon domains'|trans }}</th>
+                        <th>{{ 'Disk space'|trans }}</th>
+                        <th>{{ 'Bandwidth'|trans }}</th>
+                        <th class="w-1 no-sort"></th>
                     </tr>
                 </thead>
 
@@ -105,6 +113,7 @@
                     {% set hps = admin.servicehosting_hp_get_list({ 'per_page': 100 }) %}
                     {% for hp in hps.list %}
                     <tr>
+                        <td>{{ hp.id }}</td>
                         <td>
                             <a href="{{ '/servicehosting/plan'|alink }}/{{ hp.id }}">{{ hp.name }}</a>
                         </td>
