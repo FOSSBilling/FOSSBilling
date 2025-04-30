@@ -11,6 +11,9 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">{{ 'Security dashboard'|trans }}</h3>
+            <div class="card-actions">
+                <a class="btn btn-primary btn-3 api-link" href="{{ 'api/admin/security/run_checks'|link({ 'CSRFToken': CSRFToken }) }}" data-api-jsonp="setResults">{{ "Run all checks"|trans }}</a>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -22,7 +25,6 @@
                         <th scope="col" class="no-sort">{{ "Run check"|trans }}</th>
                         <th scope="col">{{ "Result"|trans }}</th>
                     </tr>
-                    <a class="btn btn-primary api-link mb-3" href="{{ 'api/admin/security/run_checks'|link({ 'CSRFToken': CSRFToken }) }}" data-api-jsonp="setResults">{{ "Run all checks"|trans }}</a>
                   </thead>
                   <tbody>
                     {% for check in admin.security_list_checks() %}
