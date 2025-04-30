@@ -31,7 +31,27 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public static function onBeforeClientOpenTicket(\Box_Event $event)
+    {
+        self::performChecks($event);
+    }
+
+    public static function onBeforeClientCheckout(\Box_Event $event)
+    {
+        self::performChecks($event);
+    }
+
+    public static function onBeforeProductAddedToCart(\Box_Event $event)
+    {
+        self::performChecks($event);
+    }
+
     public static function onBeforeClientSignUp(\Box_Event $event)
+    {
+        self::performChecks($event);
+    }
+
+    public static function onBeforeClientLogin(\Box_Event $event)
     {
         self::performChecks($event);
     }
@@ -75,7 +95,7 @@ class Service implements InjectionAwareInterface
             'recaptcha_response_field' => $params['recaptcha_response_field'] ?? null,
         ];
 
-        $config = $this->di['mod_config']('Antispam');
+        $config = $this->di['mod_config']('antispam');
 
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
             if (isset($config['captcha_version']) && $config['captcha_version'] == 2) {
@@ -112,7 +132,7 @@ class Service implements InjectionAwareInterface
 
     public function isTemp(\Box_Event $event)
     {
-        $config = $this->di['mod_config']('Antispam');
+        $config = $this->di['mod_config']('antispam');
         $check = $config['check_temp_emails'] ?? false;
         if ($check) {
             $params = $event->getParameters();
