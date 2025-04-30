@@ -20,7 +20,7 @@ use FOSSBilling\InformationException;
 class Admin extends \Api_Abstract
 {
     /**
-     * Adds an IP address to the client block-list
+     * Adds an IP address to the client block-list.
      *
      * @return array
      */
