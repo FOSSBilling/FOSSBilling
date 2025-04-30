@@ -13,7 +13,7 @@
  * Spam checking module management.
  */
 
-namespace Box\Mod\Spamchecker\Api;
+namespace Box\Mod\Antispam\Api;
 
 class Guest extends \Api_Abstract
 {
@@ -22,7 +22,7 @@ class Guest extends \Api_Abstract
      */
     public function recaptcha($data): array
     {
-        $config = $this->di['mod_config']('Spamchecker');
+        $config = $this->di['mod_config']('Antispam');
 
         return [
             'publickey' => $config['captcha_recaptcha_publickey'] ?? null,

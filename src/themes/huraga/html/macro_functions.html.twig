@@ -67,8 +67,8 @@
 
 {% macro recaptcha() %}
 
-{% if guest.extension_is_on({"mod":"spamchecker"}) %}
-{% set rc = guest.spamchecker_recaptcha %}
+{% if guest.extension_is_on({"mod":"antispam"}) %}
+{% set rc = guest.antispam_recaptcha %}
     {% if rc.enabled %}
         {% if rc.version == 2 %}
             <script src='https://www.google.com/recaptcha/api.js' async defer></script>
