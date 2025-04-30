@@ -41,17 +41,18 @@ class Service implements InjectionAwareInterface
 
     public static function onBeforeClientSignUp(\Box_Event $event): void
     {
-        $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
-        $antispamService->isBlockedIp($event);
-        $antispamService->isSpam($event);
-        $antispamService->isTemp($event);
+        self::performChecks($event);
     }
 
     public static function onBeforeGuestPublicTicketOpen(\Box_Event $event): void
     {
+        self::performChecks($event);
+    }
+
+    private static function performChecks(\Box_Event $event)
+    {
         $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
+        $antispamService = $di['mod_service']('antispam');
         $antispamService->isBlockedIp($event);
         $antispamService->isSpam($event);
         $antispamService->isTemp($event);
@@ -62,20 +63,18 @@ class Service implements InjectionAwareInterface
      */
     public function isBlockedIp($event): void
     {
-        $di = $event->getDi();
-        $config = $di['mod_config']('Antispam');
+        $config = $this->di['mod_config']('antispam');
         if (isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
             $blocked_ips = array_map(trim(...), $blocked_ips);
-            if (in_array($di['request']->getClientIp(), $blocked_ips)) {
-                throw new \FOSSBilling\InformationException('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientIp()], 403);
+            if (in_array($this->di['request']->getClientIp(), $blocked_ips)) {
+                throw new \FOSSBilling\InformationException('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $this->di['request']->getClientIp()], 403);
             }
         }
     }
 
     public function isSpam(\Box_Event $event): void
     {
-        $di = $event->getDi();
         $params = $event->getParameters();
         $data = [
             'ip' => $params['ip'] ?? null,
@@ -84,7 +83,7 @@ class Service implements InjectionAwareInterface
             'recaptcha_response_field' => $params['recaptcha_response_field'] ?? null,
         ];
 
-        $config = $di['mod_config']('Antispam');
+        $config = $this->di['mod_config']('Antispam');
 
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
             if (isset($config['captcha_version']) && $config['captcha_version'] == 2) {
@@ -101,7 +100,7 @@ class Service implements InjectionAwareInterface
                     'body' => [
                         'secret' => $config['captcha_recaptcha_privatekey'],
                         'response' => $params['g-recaptcha-response'],
-                        'remoteip' => $di['request']->getClientIp(),
+                        'remoteip' => $this->di['request']->getClientIp(),
                     ],
                 ]);
                 $content = $response->toArray();
@@ -115,23 +114,18 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($config['sfs']) && $config['sfs']) {
-            $antispamService = $di['mod_service']('Antispam');
-            $antispamService->isInStopForumSpamDatabase($data);
+            $this->isInStopForumSpamDatabase($data);
         }
     }
 
     public function isTemp(\Box_Event $event): void
     {
-        $di = $event->getDi();
-        $config = $di['mod_config']('Antispam');
-
+        $config = $this->di['mod_config']('Antispam');
         $check = $config['check_temp_emails'] ?? false;
         if ($check) {
-            $antispamService = $di['mod_service']('Antispam');
             $params = $event->getParameters();
             $email = $params['email'] ?? '';
-
-            $antispamService->isATempEmail($email, true);
+            $this->isATempEmail($email, true);
         }
     }
 
