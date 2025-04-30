@@ -41,11 +41,11 @@ class generalCheck implements \FOSSBilling\Interfaces\SecurityCheckInterface
          * Security settings
          */
         if (!$config['security']['perform_session_fingerprinting']) {
-            $message .= __trans('Warning: Prevention against session hijacking is disabled.') . "\n";
+            $message .= "- " . __trans('Warning: Prevention against session hijacking is disabled.') . "\n";
             $status = $status <= $this->warn ? $this->warn : $status;
         }
         if (!$config['security']['force_https']) {
-            $message .= __trans('Fail: HTTPS is not enforced.') . "\n";
+            $message .= "- " . __trans('Fail: HTTPS is not enforced.') . "\n";
             $status = $status <= $this->fail ? $this->fail : $status;
         }
 
@@ -53,7 +53,7 @@ class generalCheck implements \FOSSBilling\Interfaces\SecurityCheckInterface
          * API settings
          */
         if (!$config['api']['CSRFPrevention']) {
-            $message .= __trans('Warning: CSRF prevention is not enabled for the API.') . "\n";
+            $message .= "- " . __trans('Warning: CSRF prevention is not enabled for the API.') . "\n";
             $status = $status <= $this->warn ? $this->warn : $status;
         }
 
@@ -61,11 +61,11 @@ class generalCheck implements \FOSSBilling\Interfaces\SecurityCheckInterface
          * Debug mode toggles
          */
         if ($config['twig']['debug']) {
-            $message .= __trans('Warning: Debug mode is enabled for the Twig templating engine.') . "\n";
+            $message .= "- " . __trans('Warning: Debug mode is enabled for the Twig templating engine.') . "\n";
             $status = $status <= $this->warn ? $this->warn : $status;
         }
         if ($config['debug_and_monitoring']['debug']) {
-            $message .= __trans('Warning: Debug mode is enabled for your FOSSBilling installation.') . "\n";
+            $message .= "- " . __trans('Warning: Debug mode is enabled for your FOSSBilling installation.') . "\n";
             $status = $status <= $this->warn ? $this->warn : $status;
         }
 
@@ -73,11 +73,11 @@ class generalCheck implements \FOSSBilling\Interfaces\SecurityCheckInterface
          * Misc checks
          */
         if ($config['update_branch'] !== 'release') {
-            $message .= __trans('Warning: FOSSBilling is configured to update to non-release versions of FOSSBilling.') . "\n";
+            $message .= "- " . __trans('Warning: FOSSBilling is configured to update to non-release versions of FOSSBilling.') . "\n";
             $status = $status <= $this->warn ? $this->warn : $status;
         }
         if (\FOSSBilling\Version::isPreviewVersion()) {
-            $message .= __trans('Warning: You appear to be using a non-release version of FOSSBilling.') . "\n";
+            $message .= "- " . __trans('Warning: You appear to be using a non-release version of FOSSBilling.') . "\n";
             $status = $status <= $this->warn ? $this->warn : $status;
         }
 
