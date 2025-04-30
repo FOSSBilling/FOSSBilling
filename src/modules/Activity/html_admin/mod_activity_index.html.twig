@@ -8,11 +8,13 @@
 
 {% block content %}
 <div class="card overflow-auto">
-    <div class="card-body">
-        <h5>{{ 'System activity'|trans }}</h5>
+    <div class="card-header">
+        <h3 class="card-title">{{ 'System activity'|trans }}</h3>
+        <div class="card-actions">
+            {% include 'partial_search_action.html.twig' %}
+        </div>
     </div>
 
-    {% include 'partial_search.html.twig' %}
     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
         <thead>
             <tr>
