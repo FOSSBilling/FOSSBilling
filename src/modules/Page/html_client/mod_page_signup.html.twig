@@ -155,6 +155,12 @@
                                 {% endif %}
                             {% endfor %}
 
+                            {% set params = admin.extension_config_get({ "ext": "mod_antispam" }) %}
+                            <div class="mb-3">
+                                <label class="form-label d-none" for="{{ params.honeypot_field|default('bio') }}">Bio</label>
+                                <input class="form-control d-none" id="{{ params.honeypot_field|default('bio') }} "type="text" name="{{ params.honeypot_field|default('bio') }}" value=""/>
+                            </div>
+
                             <div class="mb-3">
                                 <label class="form-label" for="reg-password">{{ 'Password'|trans }}</label>
                                 <input class="form-control" id="reg-password" type="password" name="password" value=""

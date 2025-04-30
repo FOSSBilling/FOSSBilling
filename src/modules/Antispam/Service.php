@@ -84,7 +84,8 @@ class Service implements InjectionAwareInterface
     public function isBlockedIp($event): void
     {
         $config = $this->di['mod_config']('antispam');
-        if (isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
+        $block = boolval($config['block_ips'] ?? true);
+        if ($block && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
             $blocked_ips = array_map(trim(...), $blocked_ips);
             if (in_array($this->di['request']->getClientIp(), $blocked_ips)) {
@@ -141,7 +142,7 @@ class Service implements InjectionAwareInterface
     public function isTemp(\Box_Event $event): void
     {
         $config = $this->di['mod_config']('antispam');
-        $check = $config['check_temp_emails'] ?? false;
+        $check = $config['check_temp_emails'] ?? true;
         if ($check) {
             $params = $event->getParameters();
             $email = $params['email'] ?? '';
