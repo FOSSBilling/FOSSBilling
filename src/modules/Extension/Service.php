@@ -607,7 +607,9 @@ class Service implements InjectionAwareInterface
 
     public function getConfig($ext): array
     {
-        return $this->di['cache']->get("config_{$ext}", function (ItemInterface $item) use ($ext) {
+        $ext = strtolower($ext);
+
+        return $this->di['cache']->get("config_$ext", function (ItemInterface $item) use ($ext) {
             $item->expiresAfter(60 * 60);
 
             $c = $this->di['db']->findOne('ExtensionMeta', 'extension = :ext AND meta_key = :key', [':ext' => $ext, ':key' => 'config']);
@@ -633,8 +635,8 @@ class Service implements InjectionAwareInterface
 
     public function setConfig($data): bool
     {
-        $this->hasManagePermission($data['ext']);
-        $ext = $data['ext'];
+        $ext = strtolower($data['ext']);
+        $this->hasManagePermission($ext);
         $this->getConfig($ext); // Creates new config if it does not exist in DB
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminExtensionConfigSave', 'params' => $data]);
