@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Spamchecker;
+namespace Box\Mod\Antispam;
 
 use EmailChecker\Adapter;
 use EmailChecker\Utilities;
@@ -34,19 +34,19 @@ class Service implements InjectionAwareInterface
     public static function onBeforeClientSignUp(\Box_Event $event)
     {
         $di = $event->getDi();
-        $spamCheckerService = $di['mod_service']('Spamchecker');
-        $spamCheckerService->isBlockedIp($event);
-        $spamCheckerService->isSpam($event);
-        $spamCheckerService->isTemp($event);
+        $antispamService = $di['mod_service']('Antispam');
+        $antispamService->isBlockedIp($event);
+        $antispamService->isSpam($event);
+        $antispamService->isTemp($event);
     }
 
     public static function onBeforeGuestPublicTicketOpen(\Box_Event $event)
     {
         $di = $event->getDi();
-        $spamCheckerService = $di['mod_service']('Spamchecker');
-        $spamCheckerService->isBlockedIp($event);
-        $spamCheckerService->isSpam($event);
-        $spamCheckerService->isTemp($event);
+        $antispamService = $di['mod_service']('Antispam');
+        $antispamService->isBlockedIp($event);
+        $antispamService->isSpam($event);
+        $antispamService->isTemp($event);
     }
 
     /**
@@ -55,7 +55,7 @@ class Service implements InjectionAwareInterface
     public function isBlockedIp($event)
     {
         $di = $event->getDi();
-        $config = $di['mod_config']('Spamchecker');
+        $config = $di['mod_config']('Antispam');
         if (isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
             $blocked_ips = array_map(trim(...), $blocked_ips);
@@ -76,7 +76,7 @@ class Service implements InjectionAwareInterface
             'recaptcha_response_field' => $params['recaptcha_response_field'] ?? null,
         ];
 
-        $config = $di['mod_config']('Spamchecker');
+        $config = $di['mod_config']('Antispam');
 
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
             if (isset($config['captcha_version']) && $config['captcha_version'] == 2) {
@@ -107,23 +107,23 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($config['sfs']) && $config['sfs']) {
-            $spamCheckerService = $di['mod_service']('Spamchecker');
-            $spamCheckerService->isInStopForumSpamDatabase($data);
+            $antispamService = $di['mod_service']('Antispam');
+            $antispamService->isInStopForumSpamDatabase($data);
         }
     }
 
     public function isTemp(\Box_Event $event)
     {
         $di = $event->getDi();
-        $config = $di['mod_config']('Spamchecker');
+        $config = $di['mod_config']('Antispam');
 
         $check = $config['check_temp_emails'] ?? false;
         if ($check) {
-            $spamCheckerService = $di['mod_service']('Spamchecker');
+            $antispamService = $di['mod_service']('Antispam');
             $params = $event->getParameters();
             $email = $params['email'] ?? '';
 
-            $spamCheckerService->isATempEmail($email, true);
+            $antispamService->isATempEmail($email, true);
         }
     }
 

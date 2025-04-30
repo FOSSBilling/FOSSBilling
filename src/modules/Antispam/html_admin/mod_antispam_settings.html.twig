@@ -2,7 +2,7 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% block meta_title %}{{ 'SpamChecker settings'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Antispam settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
@@ -18,22 +18,22 @@
         <li class="breadcrumb-item">
             <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ 'SpamChecker settings'|trans }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Antispam settings'|trans }}</li>
     </ul>
 {% endblock %}
 
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">{{ 'SpamChecker settings'|trans }}</h3>
+            <h3 class="card-title">{{ 'Antispam settings'|trans }}</h3>
         </div>
 
-        {% set params = admin.extension_config_get({ "ext": "mod_spamchecker" }) %}
+        {% set params = admin.extension_config_get({ "ext": "mod_antispam" }) %}
         <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form"
               data-api-msg="{{ 'Configuration updated'|trans }}">
             <div class="card-body">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
-                <input type="hidden" name="ext" value="mod_spamchecker">
+                <input type="hidden" name="ext" value="mod_antispam">
                 <div class="row">
                     <label class="col-md-3 col-form-label" for="block_ips_check">{{ 'Enable IP blocking'|trans }}</label>
                     <div class="row col-md-6 pt-2 ps-0">

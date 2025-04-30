@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SpamcheckerTests;
+namespace AntispamTests;
 
 use APIHelper\Request;
 use PHPUnit\Framework\TestCase;
@@ -11,10 +11,10 @@ final class GuestTest extends TestCase
 {
     public function testDisposableEmailCheck(): void
     {
-        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'spamchecker']);
+        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
-        $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_spamchecker', 'check_temp_emails' => true]);
+        $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_antispam', 'check_temp_emails' => true]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
         // Generate a new test user with by using a throwaway email address, which should fail
@@ -38,10 +38,10 @@ final class GuestTest extends TestCase
 
     public function testStopForumSpam(): void
     {
-        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'spamchecker']);
+        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
-        $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_spamchecker', 'sfs' => true]);
+        $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_antispam', 'sfs' => true]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
         /**
