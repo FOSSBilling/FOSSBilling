@@ -21,8 +21,6 @@ class Admin extends \Api_Abstract
 {
     /**
      * Adds an IP address to the client block-list.
-     *
-     * @return array
      */
     public function block_ip($data)
     {
@@ -70,6 +68,6 @@ class Admin extends \Api_Abstract
             }
         }
 
-        return $result;
+        return $result ?? '';
     }
 }

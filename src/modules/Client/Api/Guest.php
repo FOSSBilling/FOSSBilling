@@ -88,7 +88,7 @@ class Guest extends \Api_Abstract
 
         $honeypotName = $this->di['mod_config']('antispam')['honeypot_field'] ?? 'bio';
         if (!empty($honeypotName) && !empty($data[$honeypotName])) {
-            throw new InformationException('An error has occured.');
+            throw new InformationException('An error has occurred.');
         }
 
         $client = $service->guestCreateClient($data);
