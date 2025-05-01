@@ -73,7 +73,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['request'] = Request::createFromGlobals();
         $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
-            if ($modName == 'Antispam') {
+            if ($modName == 'antispam') {
                 return $modConfig;
             }
         });
@@ -95,7 +95,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
-            if ($modName == 'Antispam') {
+            if ($modName == 'antispam') {
                 return $modConfig;
             }
         });
