@@ -115,8 +115,31 @@
 
 					<div class="card-body">
 						{% if staff.role == 'admin' %}
-							<div class="alert alert-info" role="alert" id="external-ip">
-								{{ 'This administrator is allowed to do everything'|trans }}
+							<div class="alert alert-success d-flex align-items-center" role="alert">
+								<svg class="icon" style="width:24px;height:24px;"><use xlink:href="#check"/></svg>
+								<div>
+									<strong>{{ 'Full Access Granted'|trans }}</strong><br>
+									{{ 'This administrator has unrestricted access to all system modules and actions.'|trans }}
+								</div>
+							</div>
+
+							<ul class="list-group mt-3">
+								<li class="list-group-item d-flex align-items-center">
+									<svg class="icon text-success me-2" style="width:20px;height:20px;"><use xlink:href="#check"/></svg>
+									{{ 'Can manage staff and assign permissions'|trans }}
+								</li>
+								<li class="list-group-item d-flex align-items-center">
+									<svg class="icon text-success me-2" style="width:20px;height:20px;"><use xlink:href="#check"/></svg>
+									{{ 'Can access all client and billing records'|trans }}
+								</li>
+								<li class="list-group-item d-flex align-items-center">
+									<svg class="icon text-success me-2" style="width:20px;height:20px;"><use xlink:href="#check"/></svg>
+									{{ 'Can configure system settings and modules'|trans }}
+								</li>
+							</ul>
+
+							<div class="mt-3 text-muted">
+								<small>{{ 'Administrators cannot have permissions restricted.'|trans }}</small>
 							</div>
 						{% else %}
 
@@ -160,61 +183,59 @@
 																	<select class="form-control mt-2 permission-select" name="permissions[{{ modName }}][{{ permissionName }}]" style="margin-right: 5px;">
 																		<option value="">{{ 'None'|trans }}</option>
 																		{% for optionName, option in permission.options %}
-																			<option value="{{ optionName }}" {% if prms[modName][permissionName] == optionName %} selected {% endif %}></option>
-																			{{ option }}
-																		</option>
-																	{% endfor %}
-																</select>
-																<svg class="icon mt-2" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right" style="width: 32px; height: 32px;"><use xlink:href="#info"/></svg>
-															</div>
+																			<option value="{{ optionName }}" {% if prms[modName][permissionName] == optionName %} selected {% endif %}>
+																		{{ option }}
+																	</option>
+																{% endfor %}
+															</select>
+															<svg class="icon mt-2" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right" style="width: 32px; height: 32px;"><use xlink:href="#info"/></svg>
 														</div>
 													</div>
-												{% endif %}
-											</div>
-										{% endfor %}
-										<hr class="mt-4 mb-4"/>
-									</div>
+												</div>
+											{% endif %}
+										</div>
+									{% endfor %}
+									<hr class="mt-4 mb-4"/>
 								</div>
-							{% endfor %}
-
-							<input type="hidden" name="id" value="{{ staff.id }}">
-
-							<div class="card-footer">
-								<input type="submit" value="{{ 'Save'|trans }}" class="btn btn-primary w-100">
 							</div>
-						</form>
-
-					</div>
-				{% endif %}
-
-			</div>
-			<div class="tab-pane fade" id="tab-password" role="tabpanel">
-				<div class="card-header">
-					<h3 class="card-title">{{ 'Change staff member password'|trans }}</h3>
-				</div>
-				<form method="post" action="admin/staff/change_password" class="api-form" data-api-msg="{{ 'Staff member password changed'|trans }}">
-					<input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                    <div class="card-body">
-						<div class="mb-3 row">
-							<label class="form-label col-3 col-form-label" for="inputPassword">{{ 'Password'|trans }}</label>
-							<div class="col">
-								<input class="form-control" id="inputPassword" type="password" name="password" required>
-							</div>
-						</div>
-						<div class="mb-3 row">
-							<label class="form-label col-3 col-form-label" for="inputPasswordConfirm">{{ 'Password confirmation'|trans }}</label>
-							<div class="col">
-								<input class="form-control" id="inputPasswordConfirm" type="password" name="password_confirm" required>
-							</div>
-						</div>
+						{% endfor %}
 
 						<input type="hidden" name="id" value="{{ staff.id }}">
-					</div>
-                    <div class="card-footer text-end">
-						<input type="submit" value="{{ 'Submit'|trans }}" class="btn btn-primary">
-                    </div>
-				</form>
+
+						<div class="card-footer">
+							<input type="submit" value="{{ 'Save'|trans }}" class="btn btn-primary w-100">
+						</div>
+					</form>
+				{% endif %}
 			</div>
+		</div>
+
+		<div class="tab-pane fade" id="tab-password" role="tabpanel">
+			<div class="card-header">
+				<h3 class="card-title">{{ 'Change staff member password'|trans }}</h3>
+			</div>
+			<form method="post" action="admin/staff/change_password" class="api-form" data-api-msg="{{ 'Staff member password changed'|trans }}">
+				<input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+				<div class="card-body">
+					<div class="mb-3 row">
+						<label class="form-label col-3 col-form-label" for="inputPassword">{{ 'Password'|trans }}</label>
+						<div class="col">
+							<input class="form-control" id="inputPassword" type="password" name="password" required>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="form-label col-3 col-form-label" for="inputPasswordConfirm">{{ 'Password confirmation'|trans }}</label>
+						<div class="col">
+							<input class="form-control" id="inputPasswordConfirm" type="password" name="password_confirm" required>
+						</div>
+					</div>
+
+					<input type="hidden" name="id" value="{{ staff.id }}">
+				</div>
+				<div class="card-footer text-end">
+					<input type="submit" value="{{ 'Submit'|trans }}" class="btn btn-primary">
+				</div>
+			</form>
 		</div>
 	</div>
 </div>
@@ -223,14 +244,14 @@
 {% block js%}
 <script>
 	function toggleAll(check) {
-        const elements = document.getElementsByClassName('permission-box');
-        Array.from(elements).forEach((element) => {
-            if (element.dataset.alwaysGiven) {
-                element.checked = true;
-            } else {
-                element.checked = check;
-            }
-        });
-    };
+		const elements = document.getElementsByClassName('permission-box');
+		Array.from(elements).forEach((element) => {
+			if (element.dataset.alwaysGiven) {
+				element.checked = true;
+			} else {
+				element.checked = check;
+			};
+		});
+	};
 </script>
 {% endblock %}
