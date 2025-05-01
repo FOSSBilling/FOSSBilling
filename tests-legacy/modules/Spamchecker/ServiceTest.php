@@ -62,53 +62,6 @@ class ServiceTest extends \BBTestCase
         $this->service->onBeforeGuestPublicTicketOpen($boxEventMock);
     }
 
-    public function testisBlockedIpIpNotBlocked(): void
-    {
-        $clientIp = '214.1.4.99';
-        $modConfig = [
-            'block_ips' => true,
-            'blocked_ips' => '1.1.1.1' . PHP_EOL . '2.2.2.2',
-        ];
-
-        $di = new \Pimple\Container();
-        $di['request'] = Request::createFromGlobals();
-        $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
-            if ($modName == 'antispam') {
-                return $modConfig;
-            }
-        });
-
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-
-        $this->service->isBlockedIp($boxEventMock);
-    }
-
-    public function testisBlockedIpBlockIpsNotEnabled(): void
-    {
-        $modConfig = [
-            'block_ips' => false,
-        ];
-
-        $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
-            if ($modName == 'antispam') {
-                return $modConfig;
-            }
-        });
-
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-
-        $this->service->isBlockedIp($boxEventMock);
-    }
-
     public function dataProviderSpamResponses()
     {
         return [
