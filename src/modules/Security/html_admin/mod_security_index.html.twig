@@ -12,7 +12,7 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Security dashboard'|trans }}</h3>
             <div class="card-actions">
-                <a class="btn btn-primary btn-3 api-link" href="{{ 'api/admin/security/run_checks'|link({ 'CSRFToken': CSRFToken }) }}" data-api-jsonp="setResults">{{ "Run all checks"|trans }}</a>
+                <a class="btn btn-primary btn-3 api-link" href="{{ 'api/admin/security/run_checks'|link }}" data-api-jsonp="setResults">{{ "Run all checks"|trans }}</a>
             </div>
         </div>
         <div class="table-responsive">
