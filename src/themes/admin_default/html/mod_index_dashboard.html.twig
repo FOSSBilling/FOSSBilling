@@ -387,43 +387,29 @@
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
     <div class="col-12">
         <div class="card">
-            <div class="card-body">
-                <h5>{{ 'Define date interval for graphs'|trans }}</h5>
-                <form method="get" action="">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                    <input type="hidden" name="_url" value="{{ request._url }}">
-                    <div class="input-group">
-                        <div class="input-icon">
-                            <input class="form-control datepicker"
-                                   style="width: 16rem"
-                                   id="graph_interval"
-                                   value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                   data-name-from="date_from"
-                                   data-name-to="date_to"
-                            >
-                            <span class="input-icon-addon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                    <path d="M16 3l0 4"></path>
-                                    <path d="M8 3l0 4"></path>
-                                    <path d="M4 11l16 0"></path>
-                                    <path d="M11 15l1 0"></path>
-                                    <path d="M12 15l0 3"></path>
-                                </svg>
-                            </span>
-                        </div>
-                        <input type="submit" value="{{ 'Update graphs'|trans }}" class="btn btn-primary">
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12">
-        <div class="card">
             <div class="card-header">
                 <h3 class="card-title">{{ 'Income'|trans }}</h3>
+                <div class="card-actions">
+                    <form method="get" action="">
+                        <input type="hidden" name="_url" value="{{ request._url }}">
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="mb-0 text-nowrap">{{ 'Define date interval for graphs'|trans }}</h5>
+                            <div class="input-group">
+                                <div class="input-icon">
+                                    <input class="form-control datepicker" style="width: 16rem" id="graph_interval"
+                                        value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                        data-name-from="date_from" data-name-to="date_to">
+                                    <span class="input-icon-addon">
+                                        <svg class="icon">
+                                            <use xlink:href="#calendar" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <input type="submit" value="{{ 'Update graphs'|trans }}" class="btn btn-primary">
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
             <div id="chart-income" style="width: 100%; height: 200px;"></div>
         </div>
@@ -470,7 +456,7 @@
     <div class="col-12 d-block">
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" role="tab" data-bs-toggle="tab">{{ 'Recent clients activity'|trans }}</a>
+                <a class="nav-link active" href="#tab-index" role="tab" data-bs-toggle="tab">{{ 'Recent client activity'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-staff" role="tab" data-bs-toggle="tab">{{ 'Recent staff activity'|trans }}</a>

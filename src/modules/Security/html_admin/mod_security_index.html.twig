@@ -11,55 +11,53 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">{{ 'Security dashboard'|trans }}</h3>
+            <div class="card-actions">
+                <a class="btn btn-primary btn-3 api-link" href="{{ 'api/admin/security/run_checks'|link }}" data-api-jsonp="setResults">{{ "Run all checks"|trans }}</a>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table sortable">
-                  <thead>
+        <div class="table-responsive">
+            <table class="table sortable">
+                <thead>
                     <tr>
+                        <th scope="col" class="no-sort"></th>
                         <th scope="col">{{ "Name"|trans }}</th>
                         <th scope="col">{{ "Description"|trans }}</th>
-                        <th scope="col" class="no-sort">{{ "Run check"|trans }}</th>
                         <th scope="col">{{ "Result"|trans }}</th>
                     </tr>
-                    <a class="btn btn-primary api-link mb-3" href="{{ 'api/admin/security/run_checks'|link({ 'CSRFToken': CSRFToken }) }}" data-api-jsonp="setResults">{{ "Run all checks"|trans }}</a>
-                  </thead>
-                  <tbody>
+                </thead>
+                <tbody>
                     {% for check in admin.security_list_checks() %}
                     <tr>
-                        <th scope="row">{{ check.name }}</th>
-                        <th scope="row">{{ check.description }}</th>
-                        <th scope="row">
+                        <td scope="row">
                             <a class="btn btn-small btn-primary api-link"
                                 href="{{ 'api/admin/security/run_check'|link({ 'id': check.id, 'throw': true, 'CSRFToken': CSRFToken }) }}"
                                 data-api-jsonp="setResult"
                                 >{{ 'Run check'|trans }}</a>
-                        </th>
-                        <th id="{{ check.id }}" scope="row"><div class="alert alert-info">?</div></th>
+                        </td>
+                        <td scope="row">{{ check.name }}</td>
+                        <td scope="row">{{ check.description }}</td>
+                        <td id="{{ check.id }}" scope="row"><div class="alert d-flex justify-content-center align-items-center"><span>?</span></div></td>
                     </tr>
                     {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            <div class="table">
-            </div>
+                </tbody>
+            </table>
         </div>
     </div>
 {% endblock %}
 
 {% block js %}
 <script>
-    function setResults(results){
+    function setResults(results) {
         Object.entries(results).forEach(([id, result]) => {
             setResult(result)
         });
     }
-    function setResult(result){
+    function setResult(result) {
         const alertDiv = document.createElement('div');
 
-        if(result.result == "passed"){
+        if (result.result === "passed") {
             alertDiv.classList.add('alert', 'alert-success');
-        } else if (result.result == "warning") {
+        } else if (result.result === "warning") {
             alertDiv.classList.add('alert', 'alert-warning');
         } else {
             alertDiv.classList.add('alert', 'alert-danger');

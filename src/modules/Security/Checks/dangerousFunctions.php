@@ -18,28 +18,28 @@ class dangerousFunctions implements \FOSSBilling\Interfaces\SecurityCheckInterfa
 {
     private array $functions = [
         'exec' => [
-            'type' => 'warn',
+            'type' => SecurityCheckResultEnum::WARN,
         ],
         'passthru' => [
-            'type' => 'warn',
+            'type' => SecurityCheckResultEnum::WARN,
         ],
         'system' => [
-            'type' => 'warn',
+            'type' => SecurityCheckResultEnum::WARN,
         ],
         'shell_exec' => [
-            'type' => 'warn',
+            'type' => SecurityCheckResultEnum::WARN,
         ],
         '``' => [
-            'type' => 'warn',
+            'type' => SecurityCheckResultEnum::WARN,
         ],
         'popen' => [
-            'type' => 'warn',
+            'type' => SecurityCheckResultEnum::WARN,
         ],
         'proc_open' => [
-            'type' => 'warn',
+            'type' => SecurityCheckResultEnum::WARN,
         ],
         'pcntl_exec' => [
-            'type' => 'warn',
+            'type' => SecurityCheckResultEnum::WARN,
         ],
     ];
 
@@ -55,12 +55,26 @@ class dangerousFunctions implements \FOSSBilling\Interfaces\SecurityCheckInterfa
 
     public function performCheck(): SecurityCheckResult
     {
-        $state = 'pass';
+        $functionsFound = [];
+        $state = SecurityCheckResultEnum::PASS;
         $result = '';
+        
         foreach ($this->functions as $function => $properties) {
             if (function_exists($function)) {
-                $result .= __trans(':function: is enabled, potentially being a security concern.', [':function:' => $function]) . "\n";
-                $state = $properties['type']; // Since we only have pass / warn, no additional logic is needed.
+                $functionsFound[$function] = $properties;
+            }
+        }
+
+        if (count($functionsFound) === 1) {
+            $result = __trans(':function: is enabled, potentially being a security concern.', [':function:' => key($functionsFound)]) . "\n";
+            $state = reset($functionsFound)['type'];
+        } else {
+            $result = __trans("The following PHP functions are enabled, potentially being a security concern:\n");
+            foreach ($functionsFound as $function => $properties) {
+                if (function_exists($function)) {
+                    $result .= "- " . $function . "\n";
+                    $state = $properties['type']; // Since we only have pass / warn, no additional logic is needed.
+                }
             }
         }
 

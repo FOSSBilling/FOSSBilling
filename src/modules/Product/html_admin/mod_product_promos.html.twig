@@ -40,7 +40,12 @@
     <div class="card">
         <div class="tab-content">
             <div class="tab-pane fade show active" id="tab-promos" role="tabpanel">
-                {% include 'partial_search.html.twig' %}
+                <div class="card-header">
+                    <h3 class="card-title">{{ 'Promo codes'|trans }}</h3>
+                    <div class="card-actions">
+                        {% include 'partial_search_action.html.twig' %}
+                    </div>
+                </div>
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>

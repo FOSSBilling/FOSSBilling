@@ -35,25 +35,32 @@
 <div class="card">
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
-            {% include 'partial_search.html.twig' %}
+            <div class="card-header">
+                <h3 class="card-title">{{ 'Products'|trans }}</h3>
+                <div class="card-actions">
+                    {% include 'partial_search_action.html.twig' %}
+                </div>
+            </div>
             <div class="table-responsive">
                 <form method="post" action="{{ 'api/admin/product/update_priority'|link }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                         <thead>
                             <tr>
+                                <th>{{ '#'|trans }}</th>
                                 <th>{{ 'Type'|trans }}</th>
                                 <th>{{ 'Category'|trans }}</th>
                                 <th>{{ 'Title'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
                                 <th class="w-1 text-center">{{ 'Priority'|trans }}</th>
-                                <th class="w-1"></th>
+                                <th class="w-1 no-sort"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {% set products = admin.product_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
                             {% for product in products.list %}
                             <tr>
+                                <td>{{ product.id }}</td>
                                 <td>{{ mf.status_name(product.type) }}</td>
                                 <td>
                                     <a href="{{ '/product/category'|alink }}/{{ product.category.id }}">{{ product.category.title }}</a>

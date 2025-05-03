@@ -1,0 +1,17 @@
+<form method="get">
+	<div class="input-group input-group-flat">
+		<input class="form-control" type="search" name="search" value="{{ request.search }}" placeholder="{{ 'Enter search text...'|trans }}" aria-label="{{ 'Search'|trans }}">
+		<span class="input-group-text">
+			<a class="link-secondary" href="{{ request._url|link({ 'show_filter': 1 }) }}" data-bs-toggle="tooltip" data-bs-original-title="{{ 'Search settings'|trans }}">
+				<svg class="icon">
+					<use xlink:href="#settings"/>
+				</svg>
+			</a>
+		</span>
+		<button class="btn btn-icon">
+			<svg class="icon">
+				<use xlink:href="#search"/>
+			</svg>
+		</button>
+	</div>
+</form>
