@@ -34,7 +34,16 @@ class ServiceTax implements InjectionAwareInterface
             return 0;
         }
 
-        $tax = $this->di['db']->findOne('Tax', 'state = ? and country = ?', [$model->state, $model->country]);
+        $tax = $this->di['db']->findOne('Tax', 'municipal = ? and state = ? and country = ?', [$model->city, $model->state, $model->country]);
+        // find rate which matches clients country and state and municipal
+
+        if ($tax instanceof \Model_Tax) {
+            $title = $tax->name;
+
+            return $tax->taxrate;
+        }
+
+       $tax = $this->di['db']->findOne('Tax', 'state = ? and country = ?', [$model->state, $model->country]);
         // find rate which matches clients country and state
 
         if ($tax instanceof \Model_Tax) {
@@ -96,7 +105,8 @@ class ServiceTax implements InjectionAwareInterface
         $model->name = $data['name'];
         $model->country = (!isset($data['country']) || empty($data['country'])) ? null : $data['country'];
         $model->state = (!isset($data['state']) || empty($data['state'])) ? null : $data['state'];
-        $model->taxrate = $data['taxrate'];
+        $model->municipal = (!isset($data['municipal']) || empty($data['municipal'])) ? null : $data['municipal'];
+       $model->taxrate = $data['taxrate'];
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($model);
@@ -110,7 +120,8 @@ class ServiceTax implements InjectionAwareInterface
     {
         $model->name = $data['name'];
         $model->country = (!isset($data['country']) || empty($data['country'])) ? null : $data['country'];
-        $model->state = (!isset($data['state']) || empty($data['state'])) ? null : $data['state'];
+       $model->state = (!isset($data['state']) || empty($data['state'])) ? null : $data['state'];
+       $model->municipal = (!isset($data['municipal']) || empty($data['municipal'])) ? null : $data['municipal'];
         $model->taxrate = $data['taxrate'];
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
