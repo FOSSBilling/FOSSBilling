@@ -1,7 +1,6 @@
 <?php
-
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2024 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -249,7 +248,7 @@ class Admin extends \Api_Abstract
      * @return bool
      *
      * @throws \FOSSBilling\Exception
-     * =     */
+     */
     public function template_update($data)
     {
         $required = [
@@ -429,5 +428,32 @@ class Admin extends \Api_Abstract
         }
 
         return $pager;
+    }
+
+    public function google_oauth2_auth()
+    {
+        $mod = $this->di['mod']('email');
+        $config = $mod->getConfig();
+        
+        if (empty($config['google_oauth2_client_id'])) {
+            throw new \FOSSBilling\Exception('Google OAuth2 Client ID is not configured. Please go to Email settings, select Google OAuth2 as mailer, and enter your Client ID and Secret.');
+        }
+
+        $siteUrl = rtrim($this->di['config']['url'], '/');
+        $redirectUri = $siteUrl . '/api/guest/email/google_oauth2_callback';
+        
+        $params = [
+            'client_id' => $config['google_oauth2_client_id'],
+            'redirect_uri' => $redirectUri,
+            'response_type' => 'code',
+            'scope' => 'https://www.googleapis.com/auth/gmail.send',
+            'access_type' => 'offline',
+            'prompt' => 'consent',
+            'include_granted_scopes' => 'true'
+        ];
+
+        return [
+            'auth_url' => 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query($params)
+        ];
     }
 }
