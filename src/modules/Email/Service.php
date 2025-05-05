@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2024 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -681,5 +681,74 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         return true;
+    }
+
+    public function google_oauth2_auth()
+    {
+        $config = $this->di['mod_config']('email');
+        
+        if (empty($config['google_oauth2_client_id']) || empty($config['google_oauth2_client_secret'])) {
+            throw new \Box_Exception('Google OAuth2 credentials are not configured');
+        }
+
+        $params = [
+            'client_id' => $config['google_oauth2_client_id'],
+            'redirect_uri' => $this->di['url']->link('api/guest/email/google_oauth2_callback'),
+            'response_type' => 'code',
+            'scope' => 'https://www.googleapis.com/auth/gmail.send',
+            'access_type' => 'offline',
+            'prompt' => 'consent'
+        ];
+
+        $authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query($params);
+        return ['auth_url' => $authUrl];
+    }
+
+    public function google_oauth2_callback()
+    {
+        $config = $this->di['mod_config']('email');
+        
+        if (empty($config['google_oauth2_client_id']) || empty($config['google_oauth2_client_secret'])) {
+            throw new \Box_Exception('Google OAuth2 credentials are not configured');
+        }
+
+        if (!isset($_GET['code'])) {
+            throw new \Box_Exception('Authorization code not received');
+        }
+
+        try {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'https://oauth2.googleapis.com/token');
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+                'client_id' => $config['google_oauth2_client_id'],
+                'client_secret' => $config['google_oauth2_client_secret'],
+                'code' => $_GET['code'],
+                'redirect_uri' => $this->di['url']->link('api/guest/email/google_oauth2_callback'),
+                'grant_type' => 'authorization_code'
+            ]));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode !== 200) {
+                throw new \Box_Exception('Error fetching access token: ' . $response);
+            }
+
+            $token = json_decode($response, true);
+            if (!isset($token['refresh_token'])) {
+                throw new \Box_Exception('No refresh token received from Google');
+            }
+
+            // Save the refresh token
+            $config['google_oauth2_refresh_token'] = $token['refresh_token'];
+            $this->di['mod_config']->set(['ext' => 'mod_email', 'config' => $config]);
+
+            return ['success' => true, 'message' => 'Successfully authorized with Google'];
+        } catch (\Exception $e) {
+            throw new \Box_Exception('Error during authorization: ' . $e->getMessage());
+        }
     }
 }
