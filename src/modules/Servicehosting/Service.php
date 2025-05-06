@@ -688,7 +688,9 @@ class Service implements InjectionAwareInterface
         $model->ip = $ip;
 
         $model->hostname = $data['hostname'] ?? null;
-        $model->assigned_ips = $data['assigned_ips'] ?? null;
+        $assigned_ips = $data['assigned_ips'] ?? '';
+        if (!empty($assigned_ips)) $model->assigned_ips = self::processAssignedIPs($assigned_ips);
+
         $model->active = $data['active'] ?? 1;
         $model->status_url = $data['status_url'] ?? null;
         $model->max_accounts = $data['max_accounts'] ?? null;
@@ -731,12 +733,7 @@ class Service implements InjectionAwareInterface
         $model->hostname = $data['hostname'] ?? $model->hostname;
 
         $assigned_ips = $data['assigned_ips'] ?? '';
-        if (!empty($assigned_ips)) {
-            $array = explode(PHP_EOL, $data['assigned_ips']);
-            $array = array_map(trim(...), $array);
-            $array = array_diff($array, ['']);
-            $model->assigned_ips = json_encode($array);
-        }
+        if (!empty($assigned_ips)) $model->assigned_ips = self::processAssignedIPs($assigned_ips);
 
         $model->active = $data['active'] ?? $model->active;
         $model->status_url = $data['status_url'] ?? $model->status_url;
@@ -1087,5 +1084,34 @@ class Service implements InjectionAwareInterface
         }
 
         return $result;
+    }
+
+    /**
+     * Post-processing for the assigned IPs. 
+     * The data from the server management form (/admin/servicehosting/server/{id}) sends the data like this:
+     * assigned_ips: "10.0.0.1\n10.0.0.2\n"
+     * As you see, it isn't really an array, it also doesn't filter out empty lines and blankspaces at all.
+     * 
+     * We can't rely on it as-is. So we need to make sure only the valid IP addresses are going inside the array.
+     * We'll split on any type of line break (\n, \r\n, or \r) and make sure each IP address is valid.
+     * 
+     * @param string $assigned_ips Raw string from the form data (example form: /admin/servicehosting/server/{ip})
+     * @return string JSON encoded array of filtered valid IPs
+     */
+    public static function processAssignedIPs(string $assigned_ips): string
+    {
+        // Split the input by any type of line break (\n, \r\n, or \r)
+        $array = preg_split('/\r\n|\r|\n/', $assigned_ips);
+
+        // Trim each entry and remove any empty strings
+        $array = array_map('trim', $array);
+        $array = array_filter($array, fn($ip) => $ip !== '');
+
+        // Validate that each entry is a valid IP address (works both with IPv4 and IPv6)
+        $array = array_filter($array, function($ip) {
+            return filter_var($ip, FILTER_VALIDATE_IP);
+        });
+
+        return json_encode(array_values($array));
     }
 }
