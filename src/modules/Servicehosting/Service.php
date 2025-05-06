@@ -1090,7 +1090,7 @@ class Service implements InjectionAwareInterface
      * Post-processing for the assigned IPs. 
      * The data from the server management form (/admin/servicehosting/server/{id}) sends the data like this:
      * assigned_ips: "10.0.0.1\n10.0.0.2\n"
-     * As you see, it isn't really an array, it also doesn't filter out empty lines and blankspaces at all.
+     * As you see, it isn't really an array, it also doesn't filter out empty lines and whitespaces at all.
      * 
      * We can't rely on it as-is. So we need to make sure only the valid IP addresses are going inside the array.
      * We'll split on any type of line break (\n, \r\n, or \r) and make sure each IP address is valid.
