@@ -69,9 +69,9 @@
                         <td>
                             <a href="{{ 'servicedomain/id'|alink }}/{{ tld.id }}">{{ tld.tld }}</a>
                         </td>
-                        <td>{{ mf.currency_format(tld.price_registration) }}</td>
-                        <td>{{ mf.currency_format(tld.price_renew) }}</td>
-                        <td>{{ mf.currency_format(tld.price_transfer) }}</td>
+                        <td>{{ tld.price_registration | money }}</td>
+                        <td>{{ tld.price_renew | money }}</td>
+                        <td>{{ tld.price_transfer | money }}</td>
                         <td>
                         {{ 'Allow register:'|trans }} {% if tld.allow_register %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}<br/>
                         {{ 'Allow transfer:'|trans }} {% if tld.allow_transfer %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}<br/>

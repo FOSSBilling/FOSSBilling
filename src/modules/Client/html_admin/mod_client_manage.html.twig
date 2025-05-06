@@ -100,7 +100,7 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Fund balance'|trans }}:</td>
-                            <td class="text-danger fw-bold">{{ mf.currency_format(client.balance, client.currency) }}</td>
+                            <td class="text-danger fw-bold">{{ client.balance | money(client.currency) }}</td>
                         </tr>
                         {% if client.notes %}
                         <tr>
@@ -465,7 +465,7 @@
                             <td>
                                 <a href="{{ '/order/manage'|alink }}/{{ order.id }}">{{ order.title }}</a>
                             </td>
-                            <td>{{ mf.currency_format(order.total, order.currency) }}</td>
+                            <td>{{ order.total | money(order.currency) }}</td>
                             <td>{{ mf.period_name(order.period) }}</td>
                             <td>
                                 {% if order.status == 'pending_setup' %}
@@ -533,7 +533,7 @@
                             <td>
                                 <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
                             </td>
-                            <td>{{ mf.currency_format( invoice.total, invoice.currency) }}</td>
+                            <td>{{ invoice.total | money(invoice.currency) }}</td>
                             <td>{{ invoice.created_at|format_date }}</td>
                             <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                             <td>
@@ -663,7 +663,7 @@
                         {% set payments = admin.client_balance_get_list({ 'per_page': 20, 'client_id': client.id }) %}
                         {% for i, tx in payments.list %}
                         <tr>
-                            <td>{{ mf.currency_format(tx.amount, tx.currency) }}</td>
+                            <td>{{ tx.amount | money(tx.currency) }}</td>
                             <td>{{ tx.description }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
@@ -822,7 +822,7 @@
                             <td>{{ tx.txn_id }}</td>
                             <td>{{ tx.type }}</td>
                             <td>{{ tx.gateway }}</td>
-                            <td>{{ mf.currency_format(tx.amount, tx.currency) }}</td>
+                            <td>{{ tx.amount | money(tx.currency) }}</td>
                             <td>{{ mf.status_name(tx.status) }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
