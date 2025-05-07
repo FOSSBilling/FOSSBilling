@@ -424,6 +424,7 @@ class Tools
     public static function ipInSubnet(string $ip, string $subnet)
     {
         list($subnetAddr, $prefix) = explode('/', $subnet);
+        $prefix = (int) $prefix;
         
         $ip = ip2long($ip);
         $subnetAddr = ip2long($subnetAddr);
