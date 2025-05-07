@@ -22,7 +22,6 @@ class Config
 
     public static function getConfig(): array
     {
-        // @phpstan-ignore include.fileNotFound (False positive)
         return include PATH_CONFIG;
     }
 
