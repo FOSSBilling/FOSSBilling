@@ -51,7 +51,8 @@
             </table>
             <hr>
             <div class="row">
-                <button class="btn btn-primary btn-small ms-2 w-25" href="{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash, 'CSRFToken': CSRFToken })}}" id="new-ticket-button" data-api-reload="1"> {{ 'Close ticket'|trans }}</button>
+                <button class="btn btn-primary btn-small ms-2 w-25" href="{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash, 'CSRFToken': CSRFToken })}}" id="new-ticket-button"
+                    data-fb-api='{ "reload": true }'> {{ 'Close ticket'|trans }}</button>
                 <a class="btn btn-info btn-small ms-2 w-25" href="#reply-to">{{ 'Reply'|trans }}</a>
             </div>
         </div>
@@ -83,7 +84,7 @@
         </div>
         <div class="card-footer" id="reply-to">
             {% if ticket.status != 'closed' %}
-                <form method="post" action="" class="api_form" data-api-url="guest/support/ticket_reply" data-api-reload="1">
+                <form method="post" action="api/guest/support/ticket_reply" data-fb-api='{ "reload": true }'>
                     <input type="hidden" name="hash" value="{{ ticket.hash }}" />
 
                     <textarea name="message" cols="5" rows="10" class="editor-textarea form-control" required="required" id="ticket-reply-text"></textarea>

@@ -74,7 +74,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id }) }}"
-                                data-fb-api='{ "confirm": { "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
+                                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -97,7 +97,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/invoice/subscription_create'|link }}" class="save api-form" data-api-reload="1">
+                <form method="post" action="{{ 'api/admin/invoice/subscription_create'|link }}" data-fb-api='{ "reload": true }'>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
                         <div class="col">

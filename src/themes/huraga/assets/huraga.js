@@ -3,8 +3,10 @@ import './scss/huraga.scss';
 import * as bootstrap from 'bootstrap';
 import '../../admin_default/assets/js/tomselect';
 import '../../admin_default/assets/js/fossbilling';
+import Ajv from "ajv/dist/jtd"
 
 globalThis.bootstrap = bootstrap;
+globalThis.Ajv = Ajv;
 
 document.addEventListener('DOMContentLoaded', () => {
   /**

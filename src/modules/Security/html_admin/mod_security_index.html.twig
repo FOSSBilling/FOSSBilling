@@ -12,7 +12,7 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Security dashboard'|trans }}</h3>
             <div class="card-actions">
-                <a class="btn btn-primary btn-3 api-link" href="{{ 'api/admin/security/run_checks'|link }}" data-api-jsonp="setResults">{{ "Run all checks"|trans }}</a>
+                <a class="btn btn-primary btn-3" href="{{ 'api/admin/security/run_checks'|link }}" data-fb-api='{ "callback": "setResults" }'>{{ "Run All Checks"|trans }}</a>
             </div>
         </div>
         <div class="table-responsive">
@@ -29,10 +29,7 @@
                     {% for check in admin.security_list_checks() %}
                     <tr>
                         <td scope="row">
-                            <a class="btn btn-small btn-primary api-link"
-                                href="{{ 'api/admin/security/run_check'|link({ 'id': check.id, 'throw': true }) }}"
-                                data-api-jsonp="setResult"
-                                >{{ 'Run check'|trans }}</a>
+                            <a class="btn btn-small btn-primary" href="{{ 'api/admin/security/run_check'|link({ 'id': check.id, 'throw': true }) }}" data-fb-api='{ "callback": "setResult" }'>{{ 'Run Check'|trans }}</a>
                         </td>
                         <td scope="row">{{ check.name }}</td>
                         <td scope="row">{{ check.description }}</td>

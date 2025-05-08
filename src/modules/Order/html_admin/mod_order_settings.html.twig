@@ -28,7 +28,7 @@
         <h3>{{ 'Orders settings'|trans }}</h3>
 
         {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Settings updated'|trans }}">
+        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" data-fb-api='{ "message": "{{ 'Settings Updated'|trans }}" }'>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Expiration date'|trans }}</label>
                 <div class="col">

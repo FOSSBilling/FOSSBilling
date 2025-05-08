@@ -203,12 +203,13 @@
                             <use xlink:href="#edit" />
                         </svg>
                     </a>
-                    <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': tx.id }) }}" data-api-msg="Processed" title="Process again">
+                    <a class="btn btn-icon" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': tx.id }) }}" title="Process again" data-fb-api='{ "message": "{{ 'Processed'|trans }}" }'>
                         <svg class="icon">
                             <use xlink:href="#refresh" />
                         </svg>
                     </a>
-                    <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': tx.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                    <a class="btn btn-icon" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': tx.id }) }}"
+                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                         <svg class="icon">
                             <use xlink:href="#delete" />
                         </svg>

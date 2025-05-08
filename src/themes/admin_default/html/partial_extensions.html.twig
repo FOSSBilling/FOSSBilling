@@ -54,13 +54,11 @@
                     </a>
                 </td>
                 <td>
-                    <a class="btn btn-icon api-link"
-                       data-api-confirm="Are you sure?"
-                       data-api-confirm-btn="Install"
-                       data-api-confirm-content='By installing "{{ extension.name }}", you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong.'
-                       data-api-reload="1"
-                       href="{{ 'api/admin/extension/install'|link ({ 'type': extension.type, 'id': extension.id }) }}"
-                       data-bs-toggle="tooltip" data-bs-title="{{ 'Install extension'|trans }}">
+                    <a class="btn btn-icon" href="{{ 'api/admin/extension/install'|link ({ 'type': extension.type, 'id': extension.id }) }}"
+                        data-bs-toggle="tooltip" data-bs-title="{{ 'Install extension'|trans }}"
+                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}",
+                            "content": "{{ 'By installing "{{ extension.name }}", you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong.'|trans }}",
+                            "button": "{{ 'Install'|trans }}", } "reload": true }'>
                         <svg class="icon">
                             <use xlink:href="#download" />
                         </svg>

@@ -54,7 +54,8 @@
                         <a class="btn btn14" href="{{ '/staff/manage'|alink }}/{{ member.id }}">
                             <img src="assets/icons/edit.svg" alt="">
                         </a>
-                        <a class="btn btn14 bb-rm-tr api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'staff'|alink }}" href="{{ 'api/admin/staff/delete'|link({ 'id': member.id }) }}">
+                        <a class="btn btn14" href="{{ 'api/admin/staff/delete'|link({ 'id': member.id }) }}"
+                            data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'staff'|alink }}" }'>
                             <img src="assets/icons/delete.svg" alt="">
                         </a>
                     </td>
@@ -73,7 +74,7 @@
 
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-new">
-            <form method="post" action="{{ 'api/admin/staff/create'|link }}" class="mainForm api-form" data-api-jsonp="onAfterStaffCreate">
+            <form method="post" action="{{ 'api/admin/staff/create'|link }}" data-fb-api='{ "callback": "onAfterStaffCreate" }'>
                 <fieldset>
                     <div class="rowElem noborder">
                         <label>{{ 'Group'|trans }}</label>
@@ -146,7 +147,10 @@
                         <a class="btn btn14" href="{{ '/staff/group'|alink }}/{{ group.id }}">
                             <img src="assets/icons/edit.svg" alt="">
                         </a>
-                        <a class="btn btn14 bb-rm-tr api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'staff'|alink }}" href="{{ 'api/admin/staff/group_delete'|link({'id' : group.id }) }}"><img src="assets/icons/delete.svg" alt=""></a>
+                        <a class="btn btn14" href="{{ 'api/admin/staff/group_delete'|link({'id' : group.id }) }}"
+                            data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'staff'|alink }}" }'>
+                            <img src="assets/icons/delete.svg"
+                        </a>
                     </td>
                 </tr>
                 </tbody>
@@ -162,7 +166,7 @@
 
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-new-group">
-            <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'staff'|alink }}">
+            <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" data-fb-api='{ "redirect": "{{ 'staff'|alink }}" }'>
                 <div class="rowElem noborder">
                     <label>{{ 'Name'|trans }}</label>
                     <div class="formRight">

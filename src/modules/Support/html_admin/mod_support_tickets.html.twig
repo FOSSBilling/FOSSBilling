@@ -262,10 +262,8 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
-                                data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                data-api-redirect="{{ 'support'|alink }}">
+                            <a class="btn btn-icon" href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
+                                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'support'|alink }}" }'>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -289,7 +287,7 @@
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
             <div class="card-body">
                 <h5>{{ 'Open Ticket for Existing Client'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" class="api-form" data-api-redirect="{{ 'support'|alink }}">
+                <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" data-fb-api='{ "redirect": "{{ 'support'|alink }}" }'>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
                         <div class="col">
@@ -333,7 +331,7 @@
         <div class="tab-pane fade" id="tab-email" role="tabpanel" aria-labelledby="email-tab">
             <div class="card-body">
                 <h5>{{ 'Open Public Ticket for Non-client'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="api-form" data-api-jsonp="onAfterPublicTicketCreate">
+                <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" data-fb-api='{ "callback": "onAfterPublicTicketCreate" }'>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Receiver Name'|trans }}</label>
                         <div class="col">

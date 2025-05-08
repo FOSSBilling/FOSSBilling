@@ -86,19 +86,15 @@
 
             <div class="card-footer text-center">
                 {% if ticket.status != 'closed' %}
-                <a class="btn btn-primary api-link"
-                    href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id }) }}"
-                    data-api-redirect="{{ 'support/public-tickets'|alink }}">
+                <a class="btn btn-primary" href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id }) }}" data-fb-api='{ "redirect": "{{ 'support/public-tickets'|alink }}" }'>
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#close" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Close'|trans }}</span>
                 </a>
                 {% endif %}
-                <a class="btn btn-primary api-link"
-                    href="{{ 'api/admin/support/public_ticket_delete'|link({ 'id' : ticket.id  }) }}"
-                    data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{ 'support/public-tickets'|alink }}">
+                <a class="btn btn-primary" href="{{ 'api/admin/support/public_ticket_delete'|link({ 'id' : ticket.id  }) }}"
+                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }} }", "redirect": "{{ 'support/public-tickets'|alink }}" }'>
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
@@ -117,7 +113,7 @@
 
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/public_ticket_update'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'api/admin/support/public_ticket_update'|link }}" data-fb-api='{ "reload": true }'>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
                         <div class="col">
@@ -166,7 +162,8 @@
 </div>
 
 <div class="card" id="reply-box">
-    <form method="post" action="{{ 'api/admin/support/public_ticket_reply'|link }}" class="api-form" data-api-redirect="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">
+    <form method="post" action="{{ 'api/admin/support/public_ticket_reply'|link }}"
+        data-fb-api='{ "redirect": "{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}" }'>
         <div class="card-body">
             <div class="d-flex">
                 <h5>{{ 'Reply as'|trans }} {{ profile.name }}</h5>
@@ -192,10 +189,8 @@
             <input type="submit" value="{{ 'Post'|trans }}" class="btn btn-primary w-100">
 
             {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
-            <a class="btn btn-danger w-25 api-link"
-                href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id }) }}"
-                data-api-confirm="{{ 'Are you sure?'|trans }}"
-                data-api-redirect="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">
+            <a class="btn btn-danger w-25" href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id }) }}"
+                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}" }'>
                 <svg class="icon">
                     <use xlink:href="#check" />
                 </svg>

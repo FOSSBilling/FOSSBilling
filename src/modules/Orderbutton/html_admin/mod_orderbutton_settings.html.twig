@@ -36,8 +36,7 @@
             </li>
         </ul>
 
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form"
-              data-api-reload="Settings updated">
+        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" data-fb-api='{ "reload": true }'>
             <input type="hidden" name="ext" value="mod_orderbutton">
             <div class="card">
                 <div class="tab-content">

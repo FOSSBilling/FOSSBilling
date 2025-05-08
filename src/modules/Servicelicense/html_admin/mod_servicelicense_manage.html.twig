@@ -31,7 +31,7 @@
 <div class="card-body">
     <h3>{{ 'License configuration'|trans }}</h3>
 
-    <form action="{{ 'api/admin/servicelicense/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'License updated'|trans }}">
+    <form method="post" action="{{ 'api/admin/servicelicense/update'|link }}" data-fb-api='{ "message": "{{ 'License Updated'|trans }}" }'>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'License key'|trans }}:</label>
             <div class="col">

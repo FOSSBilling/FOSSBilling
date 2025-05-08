@@ -27,7 +27,7 @@
 <div class="card">
     <div class="card-body">
         <h5>{{ 'Edit product addon'|trans }}</h5>
-        <form method="post" action="{{ 'api/admin/product/addon_update'|link }}" class="api-form save" data-api-msg="{{ 'Addon updated'|trans }}">
+        <form method="post" action="{{ 'api/admin/product/addon_update'|link }}" data-fb-api='{ "message": "{{ 'Addon Updated'|trans }}" }'>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                 <div class="col">

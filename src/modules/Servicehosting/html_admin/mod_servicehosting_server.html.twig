@@ -25,7 +25,7 @@
     <div class="card-body">
         <h3>{{ 'Server management'|trans }}</h3>
 
-        <form method="post" action="{{ 'api/admin/servicehosting/server_update'|link }}" id="server-update" class="api-form" data-api-msg="{{ 'Server updated'|trans }}">
+        <form method="post" action="{{ 'api/admin/servicehosting/server_update'|link }}" id="server-update" data-fb-api='{ "message": "{{ 'Server Updated'|trans }}" }'>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
                 <div class="col">
@@ -160,15 +160,15 @@
             const formData = new FormData(formElement);
 
             if(formElement.getAttribute('method').toLowerCase() != 'get') {
-                data = formData.serializeJSON();
+                data = Tools.serializeFormDataToJSON(formData);
             }
             else {
-                data =  formData.serialize();
+                data = Tools.serializeFormData(formData);
             }
 
             API.makeRequest(formElement.getAttribute('method'), Tools.getBaseURL(formElement.getAttribute('action')), data,
                 (result) =>{
-                    return bb._afterComplete(formElement, result);
+                    return API._afterComplete(formElement, result);
                 },
                 (error) => {
                     FOSSBilling.message(`${error.message} (${error.code})`, 'error');

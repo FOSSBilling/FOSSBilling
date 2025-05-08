@@ -29,8 +29,7 @@
         </div>
 
         {% set params = admin.extension_config_get({ "ext": "mod_spamchecker" }) %}
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form"
-              data-api-msg="{{ 'Configuration updated'|trans }}">
+        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" data-fb-api='{ "message": "{{ 'Configuration Updated'|trans }}" }'>
             <div class="card-body">
                 <input type="hidden" name="ext" value="mod_spamchecker">
                 <div class="row">

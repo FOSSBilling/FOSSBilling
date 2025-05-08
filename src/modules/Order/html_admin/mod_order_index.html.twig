@@ -237,7 +237,8 @@
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }} " href="{{ 'api/admin/order/delete'|link({ 'id': order.id }) }}" data-api-redirect="{{ 'order'|alink }}">
+                                    <a class="btn btn-icon" href="{{ 'api/admin/order/delete'|link({ 'id': order.id }) }}"
+                                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'order'|alink }}" }'>
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>

@@ -27,8 +27,7 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Invoice settings'|trans }}</h3>
         </div>
-        <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form"
-              data-api-msg="Settings updated">
+        <form method="post" action="{{ 'api/admin/system/update_params'|link }}" data-fb-api='{ "message": "{{ 'Settings Updated'|trans }}" }'>
             <div class="card-body">
                 {% set params = admin.system_get_params %}
                 <div class="mt-3 mb-3 row">

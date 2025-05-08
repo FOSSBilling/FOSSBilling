@@ -114,7 +114,7 @@
             let submitTicket = document.getElementById('ticket-submit');
             submitTicket.addEventListener('submit', (event) => {
                 event.preventDefault();
-                API.client.post('support/ticket_create', new FormData(submitTicket).serializeObject(),
+                API.client.post('support/ticket_create', Tools.serializeFormDataToObject(new FormData(submitTicket)),
                     (res) => {
                         window.location = "{{ 'support/ticket'|link }}" + '/' + res
                     },

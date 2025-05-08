@@ -24,7 +24,7 @@
 
 {% block content %}
     <div class="card">
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" data-fb-api='{ "message": "{{ 'Configuration Updated'|trans }}" }'>
             <input type="hidden" name="ext" value="mod_wysiwyg">
             <div class="card-body">
                 <h3 class="card-title">{{ 'WYSIWYG settings'|trans }}</h3>

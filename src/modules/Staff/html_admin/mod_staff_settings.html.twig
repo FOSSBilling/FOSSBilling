@@ -100,10 +100,9 @@
                                                 <use xlink:href="#edit"/>
                                             </svg>
                                         </a>
-                                        <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                           data-api-redirect="{{ 'extension/settings/staff'|alink }}"
-                                           href="{{ 'api/admin/staff/delete'|link({ 'id': member.id }) }}"
-                                           data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
+                                        <a class="btn btn-icon" href="{{ 'api/admin/staff/delete'|link({ 'id': member.id }) }}"
+                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                            data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'extension/settings/staff'|alink }}" }'>
                                             <svg class="icon">
                                                 <use xlink:href="#delete"/>
                                             </svg>
@@ -121,8 +120,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-settings" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form"
-                          data-api-msg="{{ 'Configuration updated'|trans }}">
+                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" data-fb-api='{ "message": "{{ 'Configuration Updated'|trans }}" }'>
 
                         <input type="hidden" name="ext" value="mod_staff">
                         <div class="card-body">
@@ -175,8 +173,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/staff/create'|link }}" class="api-form" data-api-jsonp="onAfterStaffCreate">
-
+                    <form method="post" action="{{ 'api/admin/staff/create'|link }}" data-fb-api='{ "callback": "onAfterStaffCreate" }'>
                         <div class="card-body">
                             <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Group'|trans }}</label>
@@ -251,10 +248,9 @@
                                             <use xlink:href="#edit"/>
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                       data-api-redirect="{{ 'extension/settings/staff'|alink }}"
-                                       href="{{ 'api/admin/staff/group_delete'|link({ 'id': group.id }) }}"
-                                       data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
+                                    <a class="btn btn-icon" href="{{ 'api/admin/staff/group_delete'|link({ 'id': group.id }) }}"
+                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'extension/settings/staff'|alink }}" }'>
                                         <svg class="icon">
                                             <use xlink:href="#delete"/>
                                         </svg>
@@ -271,8 +267,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-new-group" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" class="api-form"
-                          data-api-redirect="{{ 'extension/settings/staff'|alink }}">
+                    <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" data-fb-api='{ "redirect": "{{ 'extension/settings/staff'|alink }}" }'>
                         <div class="card-body">
                             <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Name'|trans }}</label>
