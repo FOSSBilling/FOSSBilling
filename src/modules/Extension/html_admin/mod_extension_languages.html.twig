@@ -56,9 +56,7 @@
                                 </td>
                                 <td class="w-1">{{ lang.locale }}</td>
                                 <td class="w-1">
-                                    <a class="btn btn-icon api-link"
-                                        href="{{ 'api/admin/extension/toggle_language'|link({ 'locale_id': lang.locale }) }}"
-                                        data-api-reload="1">
+                                    <a class="btn btn-icon" href="{{ 'api/admin/extension/toggle_language'|link({ 'locale_id': lang.locale }) }}" data-fb-api='{ "reload": true }'>
                                         <svg class="icon">
                                             <use xlink:href="#close" />
                                         </svg>
@@ -115,9 +113,7 @@
                                     </td>
                                     <td class="w-1">{{ lang.locale }}</td>
                                     <td class="w-1">
-                                        <a class="btn btn-icon api-link"
-                                            href="{{ 'api/admin/extension/toggle_language'|link({ 'locale_id': lang.locale }) }}"
-                                            data-api-reload="1">
+                                        <a class="btn btn-icon" href="{{ 'api/admin/extension/toggle_language'|link({ 'locale_id': lang.locale }) }}" data-fb-api='{ "reload": true }'>
                                             <svg class="icon">
                                                 <use xlink:href="#check" />
                                             </svg>

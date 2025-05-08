@@ -1,7 +1,7 @@
 {% import 'macro_functions.html.twig' as mf %}
 <div class="card-body">
     <h5>{{ 'License settings'|trans }}</h5>
-    <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="api-form save" data-api-msg="{{ 'License settings updated'|trans }}">
+    <form method="post" action="{{ 'api/admin/product/update_config'|link }}" data-fb-api='{ "message": "{{ 'License Settings Updated'|trans }}" }'>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Prefix'|trans }}:</label>
             <div class="col">

@@ -12,9 +12,9 @@
     <div id="order" class="accordion-collapse collapse {% if product %}show{%endif%}" data-bs-parent="#orderManager">
         <div class="accordion-body">
             <div class="accordion-inner">
-                <form method="post" style="background:none;" class="api-form form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}"
-                    action="{{ 'api/guest/cart/add_item'|link }}" data-api-msg="{{ 'Product was added to shopping cart'|trans }}"
-                    data-api-redirect="{{ 'order'|link({ 'checkout' : 1 }) }}" + "{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}">
+                <form method="post" action="{{ 'api/guest/cart/add_item'|link }}" style="background:none;" class="form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}"
+                    data-fb-api='{ "message": "{{ 'Product Added to Shopping Cart'|trans }}",
+                        "redirect": "{{ 'order'|link({ 'checkout' : 1 }) }}" + "{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}" }'>
                     {% set product_details %}
                         <div class="well">
                             <h3>{{ product.title }}</h3>

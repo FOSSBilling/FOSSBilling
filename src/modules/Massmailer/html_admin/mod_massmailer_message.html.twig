@@ -20,8 +20,7 @@
         </div>
     </div>
 
-    <form method="post" action="admin/massmailer/update" class="api-form" data-api-jsonp="onAfterMessageUpdate"
-          id="msg-form">
+    <form method="post" action="admin/massmailer/update" id="msg-form" data-fb-api='{ "callback": "onAfterMessageUpdate" }'>
         <div class="card-body">
             <div class="row mb-3">
                 <label class="col-md-3 col-form-label">{{ 'From'|trans }}</label>

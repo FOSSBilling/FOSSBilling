@@ -2,7 +2,7 @@
     <h5>{{ 'Stock control settings'|trans }}</h5>
 
     <h5>{{ 'Plugin'|trans }}</h5>
-    <form method="post" action="{{ 'api/admin/product/update'|link }}" class="api-form save" data-api-msg="{{ 'Settings updated'|trans }}">
+    <form method="post" action="{{ 'api/admin/product/update'|link }}" data-fb-api='{ "message": "{{ 'Settings Updated'|trans }}" }'>
         <div class="form-group mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Plugin name'|trans }}:</label>
             <div class="col">
@@ -14,7 +14,7 @@
     </form>
     <hr>
 
-    <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm save api-form" data-api-reload="1">
+    <form method="post" action="{{ 'api/admin/product/update_config'|link }}" data-fb-api='{ "reload": true }'>
         <h6>Custom parameters</h6>
         {% for k, v in product.config %}
         <div class="form-group mb-3 row">

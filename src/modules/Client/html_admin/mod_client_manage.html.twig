@@ -143,10 +143,8 @@
                     </svg>
                     <span>{{ 'Login to client area'|trans }}</span>
                 </a>
-                <a class="btn btn-danger api-link"
-                    href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}"
-                    data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{ 'client'|alink }}">
+                <a class="btn btn-danger" href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}"
+                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'client'|alink }}" }'>
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
@@ -158,7 +156,7 @@
         <div class="tab-pane fade" id="tab-profile" role="tabpanel">
             <div class="card-body">
                 <h5>{{ 'Client profile details'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/client/update'|link }}" class="api-form save" data-api-msg="{{ 'Client Profile updated'|trans }}">
+                <form method="post" action="{{ 'api/admin/client/update'|link }}" data-fb-api='{ "message": "{{ 'Client Profile Updated'|trans }}" }'>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                         <div class="col">
@@ -398,7 +396,7 @@
                 <hr>
 
                 <h5>{{ 'Change password'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/client/change_password'|link }}" class="api-form" data-api-msg="{{ 'Password changed'|trans }}">
+                <form method="post" action="{{ 'api/admin/client/change_password'|link }}" data-fb-api='{ "message": "{{ 'Password Changed'|trans }}" }'>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}</label>
                         <div class="col">
@@ -420,7 +418,7 @@
 
                 <h5>{{ 'Custom fields'|trans }}</h5>
                 <p class="text-muted">{{ 'Use these fields to define custom client details'|trans }}</p>
-                <form method="post" action="{{ 'api/admin/client/update'|link }}" class="api-form save" data-api-msg="{{ 'Client Profile custom fields updated'|trans }}">
+                <form method="post" action="{{ 'api/admin/client/update'|link }}" data-fb-api='{ "message": "{{ 'Client Profile Custom Fields Updated'|trans }}" }'>
                     {% for i in 1..10 %}
                     {% set fn = 'custom_' ~ i %}
                     <div class="form-group mb-3 row">
@@ -565,9 +563,7 @@
                 </table>
 
                 <div class="card-body">
-                    <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/invoice/prepare'|link({ 'client_id': client.id }) }}"
-                        data-api-jsonp="onAfterInvoicePrepared">
+                    <a class="btn btn-primary" href="{{ 'api/admin/invoice/prepare'|link({ 'client_id': client.id }) }}" data-fb-api='{ "callback": "onAfterInvoicePrepared" }'>
                         <svg class="icon">
                             <use xlink:href="#plus" />
                         </svg>
@@ -664,9 +660,8 @@
                             <td>{{ tx.description }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
-                                <a class="btn btn-icon api-link"
-                                    href="{{ 'api/admin/client/balance_delete'|link({ 'id': tx.id }) }}"
-                                    data-api-confirm="{{ 'Are you sure?'|trans }}">
+                                <a class="btn btn-icon" href="{{ 'api/admin/client/balance_delete'|link({ 'id': tx.id }) }}"
+                                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" } }'>
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
@@ -685,10 +680,7 @@
 
             <div class="card-body">
                 <h5>{{ 'Add funds for client'|trans }}</h5>
-                <form class="api-form"
-                    method="post"
-                    action="{{ 'api/admin/client/balance_add_funds'|link }}"
-                    data-api-msg="{{ 'Funds added'|trans }}">
+                <form method="post" action="{{ 'api/admin/client/balance_add_funds'|link }}" data-fb-api='{ "message": "{{ 'Funds Added'|trans }}" }'>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label" for="inputAmount">{{ 'Amount'|trans }}:</label>
                         <div class="col input-group">

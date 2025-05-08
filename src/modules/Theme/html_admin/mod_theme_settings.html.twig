@@ -59,16 +59,15 @@
                 </td>
                 <td>
                     {% if guest.extension_theme(true).code != theme.code %}
-                        <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                           href="{{ 'api/admin/theme/select'|link({ 'code': theme.code }) }}">
+                        <a class="btn btn-primary" href="{{ 'api/admin/theme/select'|link({ 'code': theme.code }) }}" data-fb-api='{ "redirect": "{{ 'extension/settings/theme'|alink }}" }'>
                             <svg class="icon">
                                 <use xlink:href="#check"/>
                             </svg>
                             {{ 'Set as default'|trans }}
                         </a>
                     {% else %}
-                        <a class="btn btn-primary api-link disabled" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                            href="{{ 'api/admin/theme/select'|link({ 'code': theme.code }) }}" aria-disabled="true">
+                        <a class="btn btn-primary disabled" href="{{ 'api/admin/theme/select'|link({ 'code': theme.code }) }}" aria-disabled="true"
+                            data-fb-api='{ "redirect": "{{ 'extension/settings/theme'|alink }}" }'>
                             <svg class="icon">
                             <use xlink:href="#check"/>
                         </svg>
@@ -126,16 +125,16 @@
                 </td>
                 <td>
                     {% if guest.extension_theme(false).code != theme.code %}
-                        <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                            href="{{ 'api/admin/theme/select'|link({'code' : theme.code }}">
+                        <a class="btn btn-primary" href="{{ 'api/admin/theme/select'|link({'code' : theme.code }) }}" data-fb-api='{ "redirect": "{{ 'extension/settings/theme'|alink }}" }'>
+                            data-fb-api='{ "redirect": "{{ 'extension/settings/theme'|alink }}" }'>
                             <svg class="icon">
                                 <use xlink:href="#check"/>
                             </svg>
                             {{ 'Set as default'|trans }}
                         </a>
                     {% else %}
-                        <a class="btn btn-primary api-link disabled" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                            href="{{ 'api/admin/theme/select'|link({'code' : theme.code }}" aria-disabled="true">
+                        <a class="btn btn-primary disabled" href="{{ 'api/admin/theme/select'|link({'code' : theme.code }) }}" aria-disabled="true"
+                            data-fb-api='{ "redirect": "{{ 'extension/settings/theme'|alink }}" }'>
                             <svg class="icon">
                                 <use xlink:href="#check"/>
                             </svg>

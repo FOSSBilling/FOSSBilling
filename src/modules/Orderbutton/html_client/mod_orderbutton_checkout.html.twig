@@ -113,14 +113,15 @@
                             <a href="#" id="show-promo-field">{{ 'Have a coupon code?'|trans }}</a>
                         {% endif %}
 
-                        <form action="{{ 'api/guest/cart/apply_promo'|link }}" method="post" class="api-form well" data-api-msg="{{ 'Promo code was applied for your order'|trans }}"
-                            data-api-reload="1" {% if not cart.promocode %}style="display:none"{% endif %} id="apply-promo">
+                        <form method="post" action="{{ 'api/guest/cart/apply_promo'|link }}"
+                            data-fb-api='{ "reload": true }' data-fb-api='{ "message": "{{ 'Promo Code Applied to Order'|trans }}" }'
+                            {% if not cart.promocode %}style="display:none"{% endif %} id="apply-promo">
                             <div class="control-group">
                                 <div class="form-controls">
                                     <div class="input-append">
                                         <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo.required %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
                                         {% if cart.promocode %}
-                                            <a class="btn btn-warning btn-sm mb-1 api-link" href="{{ 'api/guest/cart/remove_promo'|link }}" type="button" data-api-reload="1">{{ 'Remove'|trans }}</a>
+                                            <a class="btn btn-warning btn-sm mb-1" href="{{ 'api/guest/cart/remove_promo'|link }}" type="button" data-fb-api='{ "reload": true }'>{{ 'Remove'|trans }}</a>
                                         {% else %}
                                             <button class="btn btn-primary btn-sm mb-1" type="submit">{{ 'Apply'|trans }}</button>
                                         {% endif %}
@@ -160,7 +161,7 @@
 
                         </table>
 
-                        <form class="api-form" method="post" action="{{ 'api/client/cart/checkout'|link }}" data-api-jsonp="onOrderCheckout">
+                        <form method="post" action="{{ 'api/client/cart/checkout'|link }}" data-fb-api='{ "callback": "onOrderCheckout" }'>
                             <fieldset>
                                 {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
                                 {% if cart.total and not enough_in_balance %}

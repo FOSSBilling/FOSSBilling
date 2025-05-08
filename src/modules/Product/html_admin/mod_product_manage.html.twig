@@ -48,7 +48,7 @@
                 <h1>{{ product.title|title }} {{ 'General Settings'|trans }}</h1>
             </div>
             <div class="card-body">
-                <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}" name="form">
+                <form method="post" action="admin/product/update" name="form" data-fb-api='{ "message": "{{ 'Product Configuration Updated'|trans }}" }'>
                     <h2>{{'General Settings'|trans }}</h1>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
@@ -218,7 +218,7 @@
         </div>
 
         <div class="tab-pane fade" id="tab-addons" role="tabpanel" aria-labelledby="addons-tab">
-            <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}">
+            <form method="post" action="admin/product/update" data-fb-api='{ "message": "{{ 'Product Configuration Updated'|trans }}" }'>
                 <div class="card-body">
                     <h5>{{ 'Choose which addons you would like to offer with'|trans }} {{ product.title }}</h5>
                 </div><input type="hidden" name="addons[]" value="">
@@ -265,7 +265,7 @@
         <div class="tab-pane fade" id="tab-upgrades" role="tabpanel">
             <div class="card-body">
                 <h5>{{ 'Choose which products can client upgrade to'|trans }}</h5>
-                <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}">
+                <form method="post" action="admin/product/update" data-fb-api='{ "message": "{{ 'Product Configuration Updated'|trans }}" }'>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Product Upgrades'|trans }}</label>
                         <div class="col">

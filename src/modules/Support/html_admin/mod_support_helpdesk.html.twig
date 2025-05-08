@@ -34,7 +34,7 @@
             <p class="card-subtitle">{{ 'Helpdesk name will be visible for clients when submitting a new ticket.'|trans }}</p>
         </div>
     </div>
-    <form method="post" action="{{ 'api/admin/support/helpdesk_update'|link }}" class="api-form" data-api-msg="{{ 'Helpdesk Updated'|trans }}">
+    <form method="post" action="{{ 'api/admin/support/helpdesk_update'|link }}" data-fb-api='{ "message": "{{ 'Helpdesk Updated'|trans }}" }'>
         <div class="card-body">
             <div class="mb-3 row">
                 <label class="col-md-3 col-form-label">{{ 'Title'|trans }}</label>
@@ -86,12 +86,8 @@
                     </svg>
                     {{ 'Go Back'|trans }}
                 </a>
-                <a class="btn btn-icon btn-danger api-link"
-                   href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}"
-                   data-api-type="danger"
-                   data-api-confirm-btn="{{ 'Delete'|trans }}"
-                   data-api-confirm="{{ 'Are you sure?'|trans }}"
-                   data-api-redirect="{{ 'extension/settings/support'|alink }}">
+                <a class="btn btn-icon btn-danger" href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}"
+                    data-fb-api='{ "modal": { "type": "danger", "title": "{{ 'Are you sure?'|trans }}", "button": "{{ 'Delete'|trans }}", }, "redirect": "{{ 'extension/settings/support'|alink }}" }'>
                     <svg class="icon">
                         <use xlink:href="#delete" />
                     </svg>

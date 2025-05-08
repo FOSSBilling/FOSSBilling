@@ -30,7 +30,7 @@
 
 {% block content %}
 <div class="card">
-    <form method="post" action="{{ 'api/admin/support/kb_article_update'|link }}" class="api-form" data-api-msg="{{ 'Article Updated'|trans }}">
+    <form method="post" action="{{ 'api/admin/support/kb_article_update'|link }}" data-fb-api='{ "message": "{{ 'Article Updated'|trans }}" }'>
         <div class="card-body">
             <h3>{{ post.title }}</h3>
 
