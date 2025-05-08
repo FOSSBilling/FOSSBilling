@@ -33,7 +33,6 @@
         <p class="text-muted">{{ registrar.label }}</p>
 
         <form method="post" action="{{ 'api/admin/servicedomain/registrar_update'|link }}" class="api-form" data-api-msg="{{ 'Registrar updated'|trans }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Enable test mode'|trans }}:</label>
                 <div class="col">

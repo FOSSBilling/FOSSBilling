@@ -60,7 +60,7 @@
                 <td>
                     {% if guest.extension_theme(true).code != theme.code %}
                         <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                           href="{{ 'api/admin/theme/select'|link({ 'code': theme.code, 'CSRFToken': CSRFToken }) }}">
+                           href="{{ 'api/admin/theme/select'|link({ 'code': theme.code }) }}">
                             <svg class="icon">
                                 <use xlink:href="#check"/>
                             </svg>
@@ -68,7 +68,7 @@
                         </a>
                     {% else %}
                         <a class="btn btn-primary api-link disabled" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                            href="{{ 'api/admin/theme/select'|link({ 'code': theme.code, 'CSRFToken': CSRFToken }) }}" aria-disabled="true">
+                            href="{{ 'api/admin/theme/select'|link({ 'code': theme.code }) }}" aria-disabled="true">
                             <svg class="icon">
                             <use xlink:href="#check"/>
                         </svg>
@@ -127,7 +127,7 @@
                 <td>
                     {% if guest.extension_theme(false).code != theme.code %}
                         <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                            href="{{ 'api/admin/theme/select'|link({'code' : theme.code, 'CSRFToken': CSRFToken}) }}">
+                            href="{{ 'api/admin/theme/select'|link({'code' : theme.code }}">
                             <svg class="icon">
                                 <use xlink:href="#check"/>
                             </svg>
@@ -135,7 +135,7 @@
                         </a>
                     {% else %}
                         <a class="btn btn-primary api-link disabled" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                            href="{{ 'api/admin/theme/select'|link({'code' : theme.code, 'CSRFToken': CSRFToken}) }}" aria-disabled="true">
+                            href="{{ 'api/admin/theme/select'|link({'code' : theme.code }}" aria-disabled="true">
                             <svg class="icon">
                                 <use xlink:href="#check"/>
                             </svg>

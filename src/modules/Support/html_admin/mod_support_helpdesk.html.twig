@@ -35,7 +35,6 @@
         </div>
     </div>
     <form method="post" action="{{ 'api/admin/support/helpdesk_update'|link }}" class="api-form" data-api-msg="{{ 'Helpdesk Updated'|trans }}">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <div class="mb-3 row">
                 <label class="col-md-3 col-form-label">{{ 'Title'|trans }}</label>
@@ -88,7 +87,7 @@
                     {{ 'Go Back'|trans }}
                 </a>
                 <a class="btn btn-icon btn-danger api-link"
-                   href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id, 'CSRFToken': CSRFToken }) }}"
+                   href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}"
                    data-api-type="danger"
                    data-api-confirm-btn="{{ 'Delete'|trans }}"
                    data-api-confirm="{{ 'Are you sure?'|trans }}"

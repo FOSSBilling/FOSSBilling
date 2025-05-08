@@ -144,8 +144,8 @@
 
         <div class="tab-pane fade" id="tab-new-server" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/servicehosting/server_create'|link}}"  class="api-form" data-api-redirect="{{ 'servicehosting'|alink }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/servicehosting/server_create'|link }}"  class="api-form" data-api-redirect="{{ 'servicehosting'|alink }}">
+
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
                         <div class="col">
@@ -257,8 +257,7 @@
                 <h5>{{ 'Adding new hosting plan'|trans }}</h5>
                 <p class="text-muted">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters in next step. In this step provide basic hosting plan information.'|trans }}</p>
 
-                <form method="post" action="{{ 'api/admin/servicehosting/hp_create'|link}}" class="api-form" data-api-jsonp="onAfterHostingPlanCreate">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/servicehosting/hp_create'|link }}" class="api-form" data-api-jsonp="onAfterHostingPlanCreate">
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
                         <div class="col">

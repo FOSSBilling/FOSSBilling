@@ -50,7 +50,6 @@
             <div class="card-body">
                 <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}" name="form">
                     <h2>{{'General Settings'|trans }}</h1>
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
                         <div class="col">
@@ -220,7 +219,6 @@
 
         <div class="tab-pane fade" id="tab-addons" role="tabpanel" aria-labelledby="addons-tab">
             <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="card-body">
                     <h5>{{ 'Choose which addons you would like to offer with'|trans }} {{ product.title }}</h5>
                 </div><input type="hidden" name="addons[]" value="">
@@ -268,7 +266,6 @@
             <div class="card-body">
                 <h5>{{ 'Choose which products can client upgrade to'|trans }}</h5>
                 <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Product Upgrades'|trans }}</label>
                         <div class="col">

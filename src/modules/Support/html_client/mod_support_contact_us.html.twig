@@ -28,7 +28,6 @@
                 </div>
                 <div class="card-body">
                     <form method="post" action="{{ 'api/guest/support/ticket_create'|link}} " id="public-ticket-create" class="api-form" data-api-jsonp="onTicketCreate">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="mb-3">
                             <label class="form-label" for="name">{{ 'Name'|trans }}</label>
                             <input class="form-control" type="text" name="name" value="{{ request.name }}" required="required" id="name">

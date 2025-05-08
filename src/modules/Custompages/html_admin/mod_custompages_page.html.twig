@@ -28,7 +28,6 @@
 <div class="card">
     <form method="post" action="{{ 'api/admin/custompages/update'|link }}" class="save api-form" data-api-msg="{{ 'Custom page updated'|trans }}">
         <div class="card-body mt-2">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
             <input type="hidden" name="id" value="{{ page.id }}">
             <div class="mb-3 row">
                 <label class="col-md-3 col-form-label">{{ 'Title'|trans }}</label>

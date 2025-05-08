@@ -19,7 +19,6 @@
                             <span class="small text-muted">{{ 'Here you can manage and track your account balance.'|trans }}</span>
                         </div>
                         <form method="post" class="form-inline api-form d-flex gap-2 justify-content-end" action="{{ 'api/client/invoice/funds_invoice'|link }}" data-api-jsonp="onAfterInvoiceCreated">
-                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <input id="appendedPrependedInput" class="form-control w-50" type="text" name="amount" placeholder="0" required="required">
                             <button class="btn btn-primary" type="submit">{{ 'Add fund'|trans }}</button>
                         </form>

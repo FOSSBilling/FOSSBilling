@@ -111,13 +111,13 @@
             </div>
 
             <div class="card-footer text-center">
-                <a class="btn btn-primary api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': transaction.id, 'CSRFToken': CSRFToken }) }}" data-api-reload="1">
+                <a class="btn btn-primary api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': transaction.id }) }}" data-api-reload="1">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#refresh" />
                     </svg>
                     <span>{{ 'Process'|trans }}</span>
                 </a>
-                <a class="btn btn-primary api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': transaction.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice/transactions'|alink }}">
+                <a class="btn btn-primary api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': transaction.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice/transactions'|alink }}">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
@@ -129,7 +129,6 @@
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/invoice/transaction_update'|link }}" class="api-form" data-api-reload="{{ 'Transaction updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <h5>{{ 'Transaction payment information'|trans }}</h5>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Invoice ID'|trans }}:</label>
@@ -202,7 +201,6 @@
                 <h3>{{ 'Note about this transaction'|trans }}</h3>
 
                 <form method="post" action="{{ 'api/admin/invoice/transaction_update'|link }}" class="api-form" data-api-msg="{{ 'Transaction note updated.'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}:</label>
                         <div class="col">

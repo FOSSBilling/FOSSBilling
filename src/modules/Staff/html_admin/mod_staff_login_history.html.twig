@@ -50,7 +50,7 @@
             <td>{{ event.created_at|format_datetime }}</td>
             <td>
                 <a class="btn btn-icon api-link"
-                    href="{{ 'api/admin/staff/login_history_delete'|link({ 'id': event.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'api/admin/staff/login_history_delete'|link({ 'id': event.id }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{'staff/logins'|alink }}">
                     <svg class="icon">

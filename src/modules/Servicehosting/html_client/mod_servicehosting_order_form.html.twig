@@ -81,7 +81,7 @@
             var sld = document.querySelector('input[name="domain[register_sld]"]').value;
             var tld = document.querySelector('select[name="domain[register_tld]"]').value;
 
-            API.guest.post('servicedomain/check', { sld: sld, tld: tld, CSRFToken: "{{ CSRFToken }}" },
+            API.guest.post('servicedomain/check', { sld: sld, tld: tld },
                 (result) => {
                     setRegistrationPricing(tld);
                     document.getElementById('domain-config').style.display = 'block';
@@ -89,7 +89,7 @@
         });
 
         function setRegistrationPricing(tld) {
-            API.guest.post('servicedomain/pricing', { tld: tld, CSRFToken: "{{ CSRFToken }}" },
+            API.guest.post('servicedomain/pricing', { tld: tld },
                 (result) => {
                     const s = document.querySelector("select[name='domain[register_years]']");
                     s.find('option').remove();

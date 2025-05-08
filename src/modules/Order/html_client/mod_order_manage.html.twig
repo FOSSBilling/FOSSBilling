@@ -331,7 +331,7 @@
                 event.preventDefault();
 
                 if (confirm("This will generate new invoice. Are you sure you want to continue?")) {
-                    API.client.post('invoice/renewal_invoice', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                    API.client.post('invoice/renewal_invoice', { order_id: {{ order.id }} },
                         (result) => {
                             window.location = "{{ 'invoice'|link }}" + '/' + result;
                         });

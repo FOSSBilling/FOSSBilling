@@ -26,7 +26,6 @@
         <h3>{{ 'Server management'|trans }}</h3>
 
         <form method="post" action="{{ 'api/admin/servicehosting/server_update'|link }}" id="server-update" class="api-form" data-api-msg="{{ 'Server updated'|trans }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
                 <div class="col">
@@ -175,7 +174,7 @@
                     FOSSBilling.message(`${error.message} (${error.code})`, 'error');
                 });
 
-            API.makeRequest(formElement.getAttribute('method'), Tools.getBaseURL('admin/servicehosting/server_test_connection'), { id: {{ server.id }}, CSRFToken: "{{ CSRFToken }}" },
+            API.makeRequest(formElement.getAttribute('method'), Tools.getBaseURL('admin/servicehosting/server_test_connection'), { id: {{ server.id }} },
                 () => {
                     FOSSBilling.message(`{{ 'Server connected'|trans }}`, 'message');
                 },

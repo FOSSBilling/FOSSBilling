@@ -144,7 +144,7 @@
                     <span>{{ 'Login to client area'|trans }}</span>
                 </a>
                 <a class="btn btn-danger api-link"
-                    href="{{ 'api/admin/client/delete'|link({ 'id': client.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'client'|alink }}">
                     <svg class="icon" width="24" height="24">
@@ -159,7 +159,6 @@
             <div class="card-body">
                 <h5>{{ 'Client profile details'|trans }}</h5>
                 <form method="post" action="{{ 'api/admin/client/update'|link }}" class="api-form save" data-api-msg="{{ 'Client Profile updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                         <div class="col">
@@ -400,7 +399,6 @@
 
                 <h5>{{ 'Change password'|trans }}</h5>
                 <form method="post" action="{{ 'api/admin/client/change_password'|link }}" class="api-form" data-api-msg="{{ 'Password changed'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}</label>
                         <div class="col">
@@ -423,7 +421,6 @@
                 <h5>{{ 'Custom fields'|trans }}</h5>
                 <p class="text-muted">{{ 'Use these fields to define custom client details'|trans }}</p>
                 <form method="post" action="{{ 'api/admin/client/update'|link }}" class="api-form save" data-api-msg="{{ 'Client Profile custom fields updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     {% for i in 1..10 %}
                     {% set fn = 'custom_' ~ i %}
                     <div class="form-group mb-3 row">
@@ -569,7 +566,7 @@
 
                 <div class="card-body">
                     <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/invoice/prepare'|link({ 'client_id': client.id, 'CSRFToken': CSRFToken }) }}"
+                        href="{{ 'api/admin/invoice/prepare'|link({ 'client_id': client.id }) }}"
                         data-api-jsonp="onAfterInvoicePrepared">
                         <svg class="icon">
                             <use xlink:href="#plus" />
@@ -668,7 +665,7 @@
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
                                 <a class="btn btn-icon api-link"
-                                    href="{{ 'api/admin/client/balance_delete'|link({ 'id': tx.id, 'CSRFToken': CSRFToken }) }}"
+                                    href="{{ 'api/admin/client/balance_delete'|link({ 'id': tx.id }) }}"
                                     data-api-confirm="{{ 'Are you sure?'|trans }}">
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
@@ -692,7 +689,6 @@
                     method="post"
                     action="{{ 'api/admin/client/balance_add_funds'|link }}"
                     data-api-msg="{{ 'Funds added'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label" for="inputAmount">{{ 'Amount'|trans }}:</label>
                         <div class="col input-group">
