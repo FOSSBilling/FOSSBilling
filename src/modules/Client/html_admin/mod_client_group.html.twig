@@ -26,7 +26,6 @@
         <h4>{{ 'Edit client group'|trans }} - {{ group.title }}</h4>
     </div>
     <form method="post" action="{{ 'api/admin/client/group_update'|link }}" class="api-form" data-api-redirect="{{ 'client'|alink }}">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
@@ -47,7 +46,7 @@
             </a>
             <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
             <a class="btn btn-danger w-25 api-link"
-                href="{{ 'api/admin/client/group_delete'|link({ 'id': group.id, 'CSRFToken': CSRFToken }) }}"
+                href="{{ 'api/admin/client/group_delete'|link({ 'id': group.id }) }}"
                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                 data-api-redirect="{{ 'client'|alink }}">
                 <svg class="icon">

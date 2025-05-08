@@ -3,7 +3,6 @@
 <div class="card-body">
     <h5>{{ 'Hosting settings'|trans }}</h5>
     <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="api-form save" data-api-msg="{{ 'Hosting settings updated'|trans }}">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Server'|trans }}:</label>
             <div class="col">

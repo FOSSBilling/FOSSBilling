@@ -66,7 +66,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/news/delete'|link({ 'id': post.id, 'CSRFToken': CSRFToken }) }}"
+                                href="{{ 'api/admin/news/delete'|link({ 'id': post.id }) }}"
                                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                                 data-api-redirect="{{ 'news'|alink }}">
                                 <svg class="icon">
@@ -92,7 +92,6 @@
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/news/create'|link }}" class="api-form" data-api-redirect="{{ 'news'|alink }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                         <div class="col">

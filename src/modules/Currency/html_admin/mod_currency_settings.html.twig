@@ -88,7 +88,7 @@
                                             </svg>
                                         </a>
                                         <a class="btn btn-icon api-link"
-                                           href="{{ 'api/admin/currency/delete'|link({ 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
+                                           href="{{ 'api/admin/currency/delete'|link({ 'code': currency.code }) }}"
                                            data-api-redirect="{{ 'extension/settings/currency'|alink }}"
                                            data-api-type="danger"
                                            data-api-confirm="{{ 'Are you sure you want to delete?'|trans }}"
@@ -101,7 +101,7 @@
                                         {% if not currency.default %}
                                             <a class="btn btn-icon api-link"
                                                data-api-redirect="{{ 'extension/settings/currency'|alink }}"
-                                               href="{{'api/admin/currency/set_default'|link({ 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
+                                               href="{{'api/admin/currency/set_default'|link({ 'code': currency.code }) }}"
                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Set as default'|trans }}">
                                                 <svg class="icon">
                                                     <use xlink:href="#check" />
@@ -120,7 +120,7 @@
                     </div>
 
                     <div class="card-footer text-center">
-                        <a class="btn btn-primary api-link" href="{{ 'api/admin/currency/update_rates'|link({ 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'extension/settings/currency'|alink }}">
+                        <a class="btn btn-primary api-link" href="{{ 'api/admin/currency/update_rates'|link }}" data-api-redirect="{{ 'extension/settings/currency'|alink }}">
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#refresh" />
                             </svg>
@@ -134,7 +134,7 @@
 
                 <div class="tab-pane fade" id="tab-new-currency" role="tabpanel">
                     <form method="post" action="{{ 'api/admin/currency/create'|link }}" class="api-form" data-api-redirect="{{ 'extension/settings/currency'|alink }}">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+
                         <div class="card-body">
                             <div class="form-group mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Code'|trans }}</label>
@@ -169,7 +169,6 @@
 
                 <div class="tab-pane fade" id="tab-api-settings" role="tabpanel">
                     <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Successfully updated settings'|trans }}">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <input type="hidden" name="ext" value="mod_currency">
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Available exchange rate data providers'|trans }}</h3>
@@ -285,7 +284,7 @@
         var price = document.querySelector('input[name="amount"]').value;
         var code = document.querySelector('select[name="to"]').value;
 
-        API.guest.post('currency/format', { price: price, code: code, CSRFToken: "{{ CSRFToken }}" },
+        API.guest.post('currency/format', { price: price, code: code },
             (result) => {
                 document.getElementById('converted_result').value = result;
             });

@@ -109,7 +109,6 @@
 <div class="card-body">
     <h3>{{ 'Nameservers'|trans }}</h3>
     <form method="post" action="{{ 'api/admin/servicedomain/update_nameservers'|link }}" class="api-form" data-api-msg="{{ 'Nameservers updated'|trans }}">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
             <div class="col">
@@ -142,7 +141,6 @@
 
     <h3>{{ 'Domain data'|trans }}</h3>
     <form method="post" action="{{ 'api/admin/servicedomain/update'|link }}" class="api-form" data-api-msg="{{ 'Domain data updated'|trans }}">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Transfer code (EPP)'|trans }}: </label>
             <div class="col">
@@ -163,7 +161,6 @@
 
     <h3>{{ 'Update domain contact details'|trans }}</h3>
     <form method="post" action="{{ 'api/admin/servicedomain/update_contacts'|link }}" class="api-form" data-api-msg="{{ 'Domain contact details updated'|trans }}">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'First Name'|trans }}: </label>
             <div class="col">
@@ -256,7 +253,7 @@
         {% endif %}
 
         document.getElementById('domain-lock').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/lock', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+            API.admin.post('servicedomain/lock', { order_id: {{ order.id }} },
                 (result) => {
                     FOSSBilling.message("{{ 'Domain locked'|trans }}");
 
@@ -269,7 +266,7 @@
         });
 
         document.getElementById('domain-unlock').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/unlock', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+            API.admin.post('servicedomain/unlock', { order_id: {{ order.id }} },
                 (result) => {
                     FOSSBilling.message("{{ 'Domain unlocked'|trans }}");
 
@@ -294,7 +291,7 @@
         {% endif %}
 
         document.getElementById('domain-enable-pp').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/enable_privacy_protection',{ order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+            API.admin.post('servicedomain/enable_privacy_protection',{ order_id: {{ order.id }} },
                 (result) => {
                     FOSSBilling.message("{{ 'Privacy protection enabled'|trans }}");
 
@@ -307,7 +304,7 @@
         });
 
         document.getElementById('domain-disable-pp').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/disable_privacy_protection', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+            API.admin.post('servicedomain/disable_privacy_protection', { order_id: {{ order.id }} },
                 (result) => {
                     FOSSBilling.message("{{ 'Privacy protection disabled'|trans }}");
 
@@ -320,7 +317,7 @@
         });
 
         document.getElementById('get-epp').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/get_transfer_code', { order_id: {{ order.id}}, CSRFToken: "{{ CSRFToken }}" },
+            API.admin.post('servicedomain/get_transfer_code', { order_id: {{ order.id}} },
                 (result) => {
                     FOSSBilling.message("{{ 'Domain transfer code is: '|trans }}" + result);
                 });
