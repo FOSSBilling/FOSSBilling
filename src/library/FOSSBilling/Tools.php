@@ -414,33 +414,12 @@ class Tools
     }
 
     /**
-     * Checks if the given IP address is in the given subnet.
-     * Only supports IPv4 addresses for now.
-     * 
-     * @param string $ip
-     * @param string $subnet
-     * @return bool
-     */
-    public static function ipInSubnet(string $ip, string $subnet)
-    {
-        list($subnetAddr, $prefix) = explode('/', $subnet);
-        $prefix = (int) $prefix;
-        
-        $ip = ip2long($ip);
-        $subnetAddr = ip2long($subnetAddr);
-        
-        $mask = -1 << (32 - $prefix);
-        
-        return ($ip & $mask) === ($subnetAddr & $mask);
-    }
-
-    /**
      * Converts bytes to a human-readable format (B, KB, MB, GB and TB).
      *
      * @param int $bytes
      * @return string
      */
-    public static function humanReadableBytes(int $bytes)
+    public static function humanReadableBytes(int $bytes): string
     {
         if ($bytes < 1024) return $bytes . ' B';
         if ($bytes < 1048576) return round($bytes / 1024, 2) . ' KB';
