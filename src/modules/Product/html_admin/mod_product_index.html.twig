@@ -42,7 +42,7 @@
                 </div>
             </div>
             <div class="table-responsive">
-                <form method="post" action="{{ 'api/admin/product/update_priority'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'api/admin/product/update_priority'|link }}" data-fb-api='{ "reload": true }'>
                     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                         <thead>
                             <tr>
@@ -82,7 +82,8 @@
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/delete'|link({'id' : product.id }) }}" data-api-redirect="{{ 'product'|alink }}">
+                                    <a class="btn btn-icon" href="{{ 'api/admin/product/delete'|link({'id' : product.id }) }}"
+                                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'product'|alink }}" }'>
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -104,7 +105,7 @@
                             <svg class="icon">
                                 <use xlink:href="#refresh" />
                             </svg>
-                            {{ 'Update priority'|trans }}
+                            {{ 'Update Priority'|trans }}
                         </button>
                     </div>
                 </form>
@@ -113,7 +114,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/prepare'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'api/admin/product/prepare'|link }}" data-fb-api='{ "reload": true }'>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
                         <div class="col">
@@ -160,7 +161,8 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/category_delete'|link({ 'id': cat_id }) }}" data-api-redirect="{{ 'product'|alink }}">
+                            <a class="btn btn-icon" href="{{ 'api/admin/product/category_delete'|link({ 'id': cat_id }) }}"
+                                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'product'|alink }}" }'>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -178,7 +180,7 @@
 
         <div class="tab-pane fade" id="tab-new-category" role="tabpanel" aria-labelledby="new-category-tab">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/category_create'|link }}" class="save api-form" data-api-redirect="{{ 'product'|alink }}">
+                <form method="post" action="{{ 'api/admin/product/category_create'|link }}" data-fb-api='{ "redirect": "{{ 'product'|alink }}" }'>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                         <div class="col">

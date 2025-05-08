@@ -66,7 +66,7 @@
                                     <use xlink:href="#settings" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicehosting/server_test_connection'|link({ 'id': server.id }) }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Test connection'|trans }}" data-api-msg="{{ 'Server connected'|trans }}">
+                            <a class="btn btn-icon" href="{{ 'api/admin/servicehosting/server_test_connection'|link({ 'id': server.id }) }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Test Connection'|trans }}" data-fb-api='{ "message": "{{ 'Server Connected'|trans }}" }'>
                                 <svg class="icon">
                                     <use xlink:href="#wifi" />
                                 </svg>
@@ -76,7 +76,9 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'servicehosting'|alink }}" href="{{ 'api/admin/servicehosting/server_delete'|link({ 'id': server.id }) }}"  data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the server'|trans }}">
+                            <a class="btn btn-icon" href="{{ 'api/admin/servicehosting/server_delete'|link({ 'id': server.id }) }}"
+                                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the server'|trans }}"
+                                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'servicehosting'|alink }}" }'>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -126,7 +128,9 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'servicehosting'|alink }}" href="{{ 'api/admin/servicehosting/hp_delete'|link({ 'id': hp.id }) }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the server'|trans }}">
+                            <a class="btn btn-icon" href="{{ 'api/admin/servicehosting/hp_delete'|link({ 'id': hp.id }) }}"
+                                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the server'|trans }}"
+                                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'servicehosting'|alink }}" }'>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -144,8 +148,7 @@
 
         <div class="tab-pane fade" id="tab-new-server" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/servicehosting/server_create'|link }}"  class="api-form" data-api-redirect="{{ 'servicehosting'|alink }}">
-
+                <form method="post" action="{{ 'api/admin/servicehosting/server_create'|link }}" data-fb-api='{ "redirect": "{{ 'servicehosting'|alink }}" }'>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
                         <div class="col">
@@ -257,7 +260,7 @@
                 <h5>{{ 'Adding new hosting plan'|trans }}</h5>
                 <p class="text-muted">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters in next step. In this step provide basic hosting plan information.'|trans }}</p>
 
-                <form method="post" action="{{ 'api/admin/servicehosting/hp_create'|link }}" class="api-form" data-api-jsonp="onAfterHostingPlanCreate">
+                <form method="post" action="{{ 'api/admin/servicehosting/hp_create'|link }}" data-fb-api='{ "callback": "onAfterHostingPlanCreate" }'>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
                         <div class="col">

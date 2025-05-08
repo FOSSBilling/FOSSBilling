@@ -63,7 +63,8 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'product/addons'|alink }}" href="{{ 'api/admin/product/delete'|link({ 'id': addon_id }) }}">
+                            <a class="btn btn-icon" href="{{ 'api/admin/product/delete'|link({ 'id': addon_id }) }}"
+                                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'product/addons'|alink }}" }'>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -81,7 +82,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/addon_create'|link }}" class="api-form" data-api-jsonp="onAfterAddonCreate">
+                <form method="post" action="{{ 'api/admin/product/addon_create'|link }}" data-fb-api='{ "callback": "onAfterAddonCreate" }'>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                         <div class="col">

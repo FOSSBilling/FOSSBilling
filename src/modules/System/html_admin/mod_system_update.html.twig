@@ -38,12 +38,10 @@
         </div>
         <div class="card-footer">
             {% if admin.system_update_available or update_info['branch'] == 'preview' %}
-                <a href="{{ 'api/admin/system/update_core'|link }}"
-                    class="btn btn-primary api-link"
-                    data-api-reload="1"
-                    data-api-confirm="Proceed with automatic update?"
-                    data-api-confirm-btn="Update"
-                    data-api-confirm-content="Make sure that you have made database and files backups before proceeding with automatic update. You will automatically be redirected once the update is complete.">
+                <a class="btn btn-primary" href="{{ 'api/admin/system/update_core'|link }}"
+                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}",
+                        "content": "{{ 'Make sure that you have made database and files backups before proceeding with automatic update. You will automatically be redirected once the update is complete.'|trans }}",
+                        "button": "{{ 'Update'|trans }}" }, "reload": true }'>
                     <svg class="icon">
                         <use xlink:href="#download" />
                     </svg>
@@ -59,15 +57,15 @@
                     {{ 'Update FOSSBilling'|trans }}
                 </a>
             {% endif %}
-            <a href="{{ 'api/admin/system/recheck_update'|link }}"
-                class="btn btn-primary api-link"
-                data-api-reload="1">
+            <a class="btn btn-primary" href="{{ 'api/admin/system/recheck_update'|link }}" data-fb-api='{ "reload": true }'>
                 <svg class="icon">
                     <use xlink:href="#refresh" />
                 </svg>
                 {{ 'Check for Updates'|trans }}
             </a>
-            <a href="{{ 'api/admin/system/manual_update'|link }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.old.php." data-api-msg="Patches applied and configuration updated.">
+            <a class="btn btn-primary" href="{{ 'api/admin/system/manual_update'|link }}"
+                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'If you run into any issues, you can revert to the old config which will be saved as config.old.php.'|trans }}" },
+                    "message": "{{ 'Patches Applied and Configuration Updated'|trans }}" }'>
                 <svg class="icon">
                     <use xlink:href="#cog-play" />
                 </svg>

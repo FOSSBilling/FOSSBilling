@@ -1,7 +1,7 @@
 {% import 'macro_functions.html.twig' as mf %}
     <div class="card-body">
         <h1>{{ 'API Key settings'|trans }}</h1>
-        <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="api-form save" data-api-msg="{{ 'API key settings updated'|trans }}">
+        <form method="post" action="{{ 'api/admin/product/update_config'|link }}" data-fb-api='{ "message": "{{ 'API Key Settings Updated'|trans }}" }'>
             <div class="mb-3 row">
                 <P>{{ 'Here you can configure the length of the API keys that will be generated. We recommend making this no less than 16 at a minimum. When in doubt, leave this at 32.'|trans }}</p>
                 <label class="form-label col-3 col-form-label">{{ 'Length'|trans }}:</label>

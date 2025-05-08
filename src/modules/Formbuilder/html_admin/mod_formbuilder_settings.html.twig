@@ -69,7 +69,7 @@
                                 <td>{{ form.order_count }}</td>
                                 <td>{{ form.product_count }}</td>
                                 <td>
-                                    <a class="btn btn-icon copy-form" href="#" data-api-reload="1" title="Copy"
+                                    <a class="btn btn-icon copy-form" href="#" title="Copy" data-fb-api='{ "reload": true }'
                                        data-form-id="{{ form.id }}">
                                         <svg class="icon">
                                             <use xlink:href="#copy" />
@@ -95,8 +95,7 @@
         </div>
 
 {#        <div class="tab-pane fade" id="tab-import" role="tabpanel">#}
-{#            <form method="post" action="{{ 'api/admin/formbuilder/import'|link }}" class="mainForm api-form save"#}
-{#                data-api-reload="1">#}
+{#            <form method="post" action="{{ 'api/admin/formbuilder/import'|link }}" data-fb-api='{ "reload": true }'> #}
 {#                <fieldset>#}
 {#                    <div class="formBottom">#}
 {#                        <textarea name="form" cols="5" rows="5"#}
@@ -114,8 +113,7 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Form options'|trans }}</h3>
         </div>
-        <form method="POST" action="{{ 'api/admin/formbuilder/update_form_settings'|link }}" class="api-form"
-              data-api-msg="{{ 'Form options were updated'|trans }}">
+        <form method="post" action="{{ 'api/admin/formbuilder/update_form_settings'|link }}" data-fb-api='{ "message": "{{ 'Form Options Updated'|trans }}" }'>
             <div class="row row-cards">
                 <div class="card-body col-12">
                     <input type="hidden" name="form_id" value="{{ form.id }}">
@@ -165,36 +163,31 @@
             <div class="card-body col-12">
                 <div class="mb-3 row">
                     <div class="d-flex gap-2 flex-wrap mb-3" id="fields">
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text' }) }}"
-                           class="btn btn-outline-primary api-link" data-api-reload="1">
+                        <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text' }) }}" data-fb-api='{ "reload": true }'>
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
                             <span>{{ 'Text'|trans }}</span>
                         </a>
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select' }) }}"
-                           class="btn btn-outline-primary api-link" data-api-reload="1">
+                        <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select' }) }}" data-fb-api='{ "reload": true }'>
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
                             <span>{{ 'Dropdown'|trans }}</span>
                         </a>
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio' }) }}"
-                           class="btn btn-outline-primary api-link" data-api-reload="1">
+                        <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio' }) }}" data-fb-api='{ "reload": true }'>
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
                             <span>{{ 'Radio'|trans }}</span>
                         </a>
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox' }) }}"
-                           class="btn btn-outline-primary api-link" data-api-reload="1">
+                        <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox' }) }}" data-fb-api='{ "reload": true }'>
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
                             <span>{{ 'Checkbox'|trans }}</span>
                         </a>
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea' }) }}"
-                           class="btn btn-outline-primary api-link" data-api-reload="1">
+                        <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea' }) }}" data-fb-api='{ "reload": true }'>
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>

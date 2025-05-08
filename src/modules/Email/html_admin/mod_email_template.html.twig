@@ -46,7 +46,7 @@
         <div class="card">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-template" role="tabpanel">
-                    <form method="post" action="admin/email/template_update" class="api-form" data-api-msg="{{ 'Template updated'|trans }}">
+                    <form method="post" action="admin/email/template_update" data-fb-api='{ "message": "{{ 'Template Updated'|trans }}" }'>
                         <input type="hidden" name="id" value="{{ template.id }}">
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Manage email template'|trans }}</h3>
@@ -71,12 +71,8 @@
                             </div>
                         </div>
                         <div class="card-footer d-flex justify-content-between">
-                            <a class="btn btn-danger api-link"
-                               href="{{ 'api/admin/email/template_reset'|link({'code' : template.action_code })}}"
-                               data-api-confirm="{{ 'Are you sure?'|trans }}"
-                               data-api-confirm-btn="{{ 'Reset'|trans }}"
-                               data-api-type="danger"
-                               data-api-reload="1">
+                            <a class="btn btn-danger" href="{{ 'api/admin/email/template_reset'|link({'code' : template.action_code }) }}"
+                                data-fb-api='{ "modal": { "type": "danger", "title": "{{ 'Are you sure?'|trans }}", "button": "{{ 'Reset'|trans }}" }, "reload": true }'>
                                 {{ 'Reset'|trans }}
                             </a>
                             <div class="text-end">
@@ -96,7 +92,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-manage" role="tabpanel">
-                    <form method="post" action="admin/email/template_update" class="api-form" data-api-msg="{{ 'Template updated'|trans }}">
+                    <form method="post" action="admin/email/template_update" data-fb-api='{ "message": "{{ 'Template Updated'|trans }}" }'>
                         <input type="hidden" name="id" value="{{ template.id }}">
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Template settings'|trans }}</h3>

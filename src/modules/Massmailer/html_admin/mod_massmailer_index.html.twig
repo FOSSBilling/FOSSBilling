@@ -53,9 +53,8 @@
                                     <td>{{ msg.from_name }} <br/>{{ msg.from_email }}</td>
                                     <td>{{ mf.status_name(msg.status) }}</td>
                                     <td class="text-end">
-                                        <a class="btn btn-icon api-link"
-                                           href="{{ 'api/admin/massmailer/copy'|link({'id' : msg.id }) }}"
-                                           data-api-redirect="{{ 'massmailer'|alink }}">
+                                        <a class="btn btn-icon" href="{{ 'api/admin/massmailer/copy'|link({'id' : msg.id }) }}"
+                                           data-fb-api='{ "redirect": "{{ 'massmailer'|alink }}" }'>
                                             <svg class="icon">
                                                 <use xlink:href="#copy"/>
                                             </svg>
@@ -65,9 +64,8 @@
                                                 <use xlink:href="#edit"/>
                                             </svg>
                                         </a>
-                                        <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                           href="{{ 'api/admin/massmailer/delete'|link({'id' : msg.id }) }}"
-                                           data-api-redirect="{{ 'massmailer'|alink }}">
+                                        <a class="btn btn-icon" href="{{ 'api/admin/massmailer/delete'|link({'id' : msg.id }) }}"
+                                            data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'massmailer'|alink }}" }'>
                                             <svg class="icon">
                                                 <use xlink:href="#delete"/>
                                             </svg>
@@ -88,8 +86,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="new" role="tabpanel">
-                    <form method="post" action="admin/massmailer/create" class="api-form"
-                          data-api-jsonp="onAfterCreateMM">
+                    <form method="post" action="admin/massmailer/create" data-fb-api='{ "callback": "onAfterCreateMM" }'>
                         <div class="card-body mt-2">
                             <div class="mb-3 row">
                                 <label class="col-md-2 col-form-label">{{ 'Subject'|trans }}</label>
@@ -112,8 +109,7 @@
                         </div>
                     </div>
                     {% set params = admin.extension_config_get({"ext":"mod_massmailer"}) %}
-                    <form method="post" action="admin/extension/config_save" class="api-form"
-                          data-api-reload="1">
+                    <form method="post" action="admin/extension/config_save" data-fb-api='{ "reload": true }'>
                         <input type="hidden" name="ext" value="mod_massmailer">
                         <div class="card-body">
                             <div class="mb-3 row">

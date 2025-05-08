@@ -1,202 +1,4 @@
-/*eslint no-unused-vars: ["error", { "varsIgnorePattern": "boxbilling" }]*/
-
 import backToTop from "./ui/backToTop";
-
-globalThis.bb = {
-  _afterComplete: function (obj, result) {
-    var jsonp = obj.getAttribute("data-api-jsonp");
-
-    if (jsonp !== null && window.hasOwnProperty(jsonp)) {
-      return window[jsonp](result);
-    }
-
-    if (obj.classList.contains("bb-rm-tr")) {
-      obj.closest("tr").classList.add("highlight");
-      return;
-    }
-
-    if (obj.hasAttribute("data-api-redirect")) {
-      window.location = obj.getAttribute("data-api-redirect");
-      return;
-    }
-
-    if (obj.hasAttribute("data-api-reload")) {
-      window.location.reload();
-      return;
-    }
-
-    if (obj.hasAttribute("data-api-msg")) {
-      FOSSBilling.message(obj.getAttribute("data-api-msg"), "success");
-      return;
-    }
-
-    if (result) {
-      FOSSBilling.message("Form updated", "success");
-      return;
-    }
-  },
-
-  apiForm: function () {
-    const formElements = document.getElementsByClassName("api-form");
-
-    if (formElements.length > 0) {
-      for (let i = 0; i < formElements.length; i++) {
-        const formElement = formElements[i];
-
-        formElement.addEventListener("submit", function (event) {
-          // Prevent the default form submit action. We will handle it ourselves.
-          event.preventDefault();
-          const formData = new FormData(formElement);
-
-          // Get all CKEditor instances and replace the original textarea values with the updated content.
-          if (
-            typeof editors !== "undefined" &&
-            Array.isArray(editors) &&
-            editors.length > 0
-          ) {
-            let editorContentOnRequiredAttr = false;
-            Object.keys(editors).forEach(function (name) {
-              editorContentOnRequiredAttr = editors[name].required
-                ? editors[name].editor.getData() !== ""
-                : true;
-              formData.set(name, editors[name].editor.getData());
-            });
-            if (!editorContentOnRequiredAttr) {
-              return FOSSBilling.message(
-                "At least one of the required fields are empty",
-                "error"
-              );
-            }
-          }
-
-          let data;
-          if (formElement.getAttribute("method").toLowerCase() !== "get") {
-            data = formData.serializeJSON();
-          } else {
-            data = formData.serialize();
-          }
-
-          let buttons = document.querySelectorAll("button:not([disabled])");
-
-          buttons.forEach(function (button) {
-            button.setAttribute("disabled", "true");
-          });
-
-          API.makeRequest(formElement.getAttribute("method"), Tools.getBaseURL(formElement.getAttribute("action")), data,
-            (result) => {
-              buttons.forEach(function (button) {
-                button.removeAttribute("disabled");
-              });
-              return bb._afterComplete(formElement, result);
-            },
-            (error) => {
-              buttons.forEach(function (button) {
-                button.removeAttribute("disabled");
-              });
-              FOSSBilling.message(`${error.message} (${error.code})`, "error");
-            }
-          );
-        });
-      }
-    }
-  },
-
-  apiLink: function () {
-    const linkElements = document.getElementsByClassName("api-link");
-
-    if (linkElements.length > 0) {
-      for (let i = 0; i < linkElements.length; i++) {
-        const linkElement = linkElements[i];
-
-        linkElement.addEventListener("click", function (event) {
-          // Prevent the default form click action. We will handle it ourselves.
-          event.preventDefault();
-
-          if (linkElement.dataset.apiConfirm) {
-            Modals.create({
-              type: linkElement.dataset.apiType
-                ? linkElement.dataset.apiType
-                : "small-confirm",
-              confirmButton: linkElement.dataset.apiConfirmBtn
-                ? linkElement.dataset.apiConfirmBtn
-                : "Confirm",
-              content: linkElement.dataset.apiConfirmContent
-                ? linkElement.dataset.apiConfirmContent
-                : "",
-              confirmButtonColor: linkElement.dataset.apiConfirmBtnColor
-                ? linkElement.dataset.apiConfirmBtnColor
-                : "primary",
-              title: linkElement.dataset.apiConfirm,
-              confirmCallback: () => {
-                API.makeRequest("GET", Tools.getBaseURL(linkElement.getAttribute("href")), {},
-                  (result) => {
-                    return bb._afterComplete(linkElement, result);
-                  },
-                  (error) => {
-                    FOSSBilling.message(`${error.message} (${error.code})`, "error");
-                  });
-              },
-            });
-          } else if (linkElement.dataset.apiPrompt) {
-            Modals.create({
-              type: "prompt",
-              title: linkElement.dataset.apiPromptTitle,
-              label: linkElement.dataset.apiPromptText
-                ? linkElement.dataset.apiPromptText
-                : "Label",
-              value: linkElement.dataset.apiPromptDefault
-                ? linkElement.dataset.apiPromptDefault
-                : "",
-              promptConfirmCallback: (value) => {
-                if (value) {
-                  const p = {};
-                  const name = linkElement.dataset.apiPromptKey;
-                  p[name] = value;
-                  API.makeRequest("GET", Tools.getBaseURL(linkElement.getAttribute("href")), p,
-                    (result) => {
-                      return bb._afterComplete(linkElement, result);
-                    },
-                    (error) => {
-                      FOSSBilling.message(`${error.message} (${error.code})`, "error");
-                    });
-                }
-              },
-            });
-          } else {
-            API.makeRequest("GET", Tools.getBaseURL(linkElement.getAttribute("href")), {},
-              (result) => {
-                return bb._afterComplete(linkElement, result);
-              },
-              (error) => {
-                FOSSBilling.message(`${error.message} (${error.code})`, "error");
-              });
-          }
-          return false;
-        });
-      }
-    }
-  },
-
-  cookieCreate: function (name, value, days) {
-    if (days) {
-      var date = new Date();
-      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-      var expires = "; expires=" + date.toGMTString();
-    } else var expires = "";
-    document.cookie = name + "=" + value + expires + "; path=/";
-  },
-
-  cookieRead: function (name) {
-    var nameEQ = name + "=";
-    var ca = document.cookie.split(";");
-    for (var i = 0; i < ca.length; i++) {
-      var c = ca[i];
-      while (c.charAt(0) == " ") c = c.substring(1, c.length);
-      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
-  }
-};
 
 globalThis.FOSSBilling = {
   message: (message, type = "info") => {
@@ -257,6 +59,26 @@ globalThis.FOSSBilling = {
     const toast = new bootstrap.Toast(element);
     toast.show();
   },
+
+  cookieCreate: function (name, value, days) {
+    if (days) {
+      var date = new Date();
+      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+      var expires = "; expires=" + date.toGMTString();
+    } else var expires = "";
+    document.cookie = name + "=" + value + expires + "; path=/";
+  },
+
+  cookieRead: function (name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(";");
+    for (var i = 0; i < ca.length; i++) {
+      var c = ca[i];
+      while (c.charAt(0) == " ") c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+  }
 };
 
   //===== Global ajax methods =====//
@@ -298,12 +120,12 @@ globalThis.FOSSBilling = {
       };
     })();
 
-    //===== Api forms and links =====//
-    if (document.querySelector("form.api-form")) {
-      bb.apiForm();
-    }
-    if (document.querySelector("a.api-link")) {
-      bb.apiLink();
+    // Attach event listeners to all forms and links with data-fb-api attribute.
+    if (document.querySelector("form[data-fb-api]")) {
+      API._apiForm();
+    };
+    if (document.querySelector("a[data-fb-api]")) {
+      API._apiLink();
     }
 
     // Initialize backToTop
