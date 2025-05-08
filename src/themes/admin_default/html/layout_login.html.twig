@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <title>{% block meta_title %}{% endblock %}</title>
     <meta charset="UTF-8">
@@ -16,12 +16,12 @@
     {{ encore_entry_script_tags('fossbilling') }}
 </head>
 
-<body class="border-top-wide border-primary d-flex flex-column" data-bs-theme="dark">
+<body class="border-top-wide border-primary d-flex flex-column">
     <script>
         if (localStorage.getItem('theme') === 'dark') {
-            document.body.setAttribute("data-bs-theme", localStorage.getItem('theme'));
+            document.documentElement.setAttribute("data-bs-theme", localStorage.getItem('theme'));
         } else {
-            document.body.removeAttribute("data-bs-theme");
+            document.documentElement.removeAttribute("data-bs-theme");
         }
     </script>
 
