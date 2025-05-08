@@ -4,7 +4,7 @@
 {% set company = guest.system_company %}
 
 <!DOCTYPE html>
-<html lang="">
+<html lang="" data-bs-theme="dark">
 
 <head>
     <title>{% block meta_title %}{% endblock %} - {{ company.name }}</title>
@@ -25,12 +25,12 @@
     {% block head %}{% endblock %}
 </head>
 
-<body data-bs-theme="dark">
+<body>
     <script>
         if (localStorage.getItem('theme') === 'dark') {
-            document.body.setAttribute("data-bs-theme", localStorage.getItem('theme'));
+            document.documentElement.setAttribute("data-bs-theme", localStorage.getItem('theme'));
         } else {
-            document.body.removeAttribute("data-bs-theme");
+            document.documentElement.removeAttribute("data-bs-theme");
         }
 
         {% if not admin %}
