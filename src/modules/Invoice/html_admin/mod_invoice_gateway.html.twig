@@ -30,7 +30,6 @@
         {{ gateway.description|raw }}
 
         <form method="post" action="{{ 'api/admin/invoice/gateway_update'|link }}" class="api-form" data-api-msg="{{ 'Gateway updated'|trans }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Payment gateway title'|trans }}:</label>
                 <div class="col">

@@ -69,7 +69,7 @@
                                         {% if ext.type == 'mod' %}
                                             {% if ext.status == 'installed' %}
                                                 <a class="btn btn-icon api-link"
-                                                   href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}"
+                                                   href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id }) }}"
                                                    data-api-type="danger"
                                                    data-api-confirm-btn="Deactivate"
                                                    data-api-confirm="{{ 'Are you sure?'|trans }}"
@@ -81,7 +81,7 @@
                                                 </a>
                                             {% else %}
                                                 <a class="btn btn-icon api-link"
-                                                   href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}"
+                                                   href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id }) }}"
                                                    data-api-confirm="{{ 'Are you sure?'|trans }}"
                                                    data-api-confirm-btn="Activate"
                                                    data-api-jsonp="onAfterModuleActivated"

@@ -10,7 +10,6 @@
 {# include plugin #}
 
 <form method="post" action="{{ 'api/admin/servicecustom/update'|link }}" class="save api-form" data-api-msg="Service updated">
-    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
     <fieldset>
 
         {% for name, value in service %}

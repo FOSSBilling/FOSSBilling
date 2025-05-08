@@ -55,7 +55,6 @@
 					<form method="post" action="admin/staff/update" class="api-form" data-api-msg="{{ 'Staff member details updated.'|trans }}">
 						<input type="hidden" name="id" value="{{ staff.id }}">
 						<div class="card-body">
-							<input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
 							<div class="mb-3 row">
 								<label class="form-label col-3 col-form-label">{{ 'Group'|trans }}</label>
 								<div class="col">
@@ -145,7 +144,6 @@
 
 							{% set prms = admin.staff_permissions_get({ 'id': staff.id }) %}
 							<form method="post" action="admin/staff/permissions_update" class="api-form" data-api-msg="{{ 'Permissions updated'|trans }}">
-								<input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
 								<input type="hidden" name="permissions[default]" value="">
 
 								{% for modName, mod in mods|filter(mod => mod.permissions.hide_permissions is not true) %}
@@ -214,7 +212,6 @@
 				<h3 class="card-title">{{ 'Change staff member password'|trans }}</h3>
 			</div>
 			<form method="post" action="admin/staff/change_password" class="api-form" data-api-msg="{{ 'Staff member password changed'|trans }}">
-				<input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
 				<div class="card-body">
 					<div class="mb-3 row">
 						<label class="form-label col-3 col-form-label" for="inputPassword">{{ 'Password'|trans }}</label>

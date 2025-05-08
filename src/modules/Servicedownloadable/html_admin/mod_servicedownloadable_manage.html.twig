@@ -23,7 +23,6 @@
     <p class="text-muted">{{ 'Use this function to update existing order file. Client will be able to download new file from client area'|trans }}</p>
 
     <form method="post" action="{{ 'api/admin/servicedownloadable/update'|link }}" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Upload new file'|trans }}:</label>
             <div class="col">

@@ -17,7 +17,7 @@
 <div class="card-footer text-center">
     {{ order_actions }}
     <a class="btn btn-primary api-link"
-        href="{{ 'api/admin/serviceapikey/reset'|link({ 'order_id': order.id, 'CSRFToken': CSRFToken }) }}"
+        href="{{ 'api/admin/serviceapikey/reset'|link({ 'order_id': order.id }) }}"
         data-api-confirm="{{ 'Are you sure?'|trans }}"
         data-api-reload="1">
         <svg class="icon" width="24" height="24">
@@ -32,7 +32,6 @@
     <P>{{ 'Changing the API key generation options will not automatically regenerate the API key. You must do so manually.'|trans }}</p>
 
     <form action="{{ 'api/admin/serviceapikey/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'API key updated'|trans }}">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Length'|trans }}:</label>
             <div class="col">
@@ -92,7 +91,7 @@
                             </div>
                         </div>
                     {% endif %}
-                  {% endfor %}                  
+                  {% endfor %}
             </div>
         </div>
 
@@ -101,7 +100,7 @@
     </form>
 </div>
 
-<script> 
+<script>
     function addNewField() {
         Modals.create({
             type: 'prompt',
@@ -113,62 +112,62 @@
                 // We use camel case to ensure it'll be programming-friendly & append 'custom_' to the start of it so they are easily identifiable as custom parameters.
                 name = 'custom_' + toCamelCase(name);
                 var container = document.getElementById('customParameters');
-    
+
                 // Create the container div
                 var fieldContainer = document.createElement('div');
                 fieldContainer.classList.add('field-container', 'row');
                 fieldContainer.setAttribute('id', name);
-    
+
                 // Create the label element
                 var label = document.createElement('label');
                 label.classList.add('form-label', 'col-3', 'col-form-label');
                 label.textContent = name + ':';
-    
+
                 // Create the div container for the input and button
                 var div = document.createElement('div');
                 div.classList.add('col', 'd-flex', 'align-items-center');
-    
+
                 // Create the input element
                 var input = document.createElement('input');
                 input.setAttribute('type', 'text');
                 input.classList.add('form-control');
                 input.classList.add('me-2');
                 input.setAttribute('name', 'config[' + name + ']');
-    
+
                 // Create the button element
                 var button = document.createElement('span');
                 button.classList.add('btn', 'btn-primary', 'ml-2');
                 button.textContent = 'Delete';
                 button.setAttribute('onclick', 'deleteField("' + name + '")');
-    
+
                 // Append elements
                 div.appendChild(input);
                 div.appendChild(button);
-    
+
                 // Append the label and div to the container div
                 fieldContainer.appendChild(label);
                 fieldContainer.appendChild(div);
-    
+
                 // Append the container div to the main container
                 container.appendChild(fieldContainer);
             }
         });
     }
-    
+
     function deleteField(id){
         const element = document.getElementById(id);
         element.remove();
     }
-    
+
     function toCamelCase(str) {
         str = str.replace(/[^a-zA-Z0-9]/g, ' ');
         var words = str.split(' ');
-        
+
         // Capitalize the first letter of each word except the first word
         for (var i = 1; i < words.length; i++) {
             words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
         }
-    
+
         return words.join('');
     }
 </script>

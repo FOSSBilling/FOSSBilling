@@ -13,7 +13,7 @@
             <div class="row">
                 <span>{{ 'You must verify your email address before you may access our services.'|trans }}</span>
             </div>
-            <a href="{{ 'api/client/client/resend_email_verification'|link({ 'CSRFToken': CSRFToken }) }}"
+            <a href="{{ 'api/client/client/resend_email_verification'|link }}"
                class="btn btn-primary api-link"
                data-api-msg="{{ 'Verification email has been resent'|trans }}">{{ 'Resend verification email'|trans }}</a>
         </div>
@@ -40,7 +40,6 @@
                         <p class="card-text fs-7 text-muted">{{ 'Keep your personal data up to date.'|trans }}</p>
                         <form method="post" action="client/profile/update" id="profile-update" class="api-form"
                               data-api-msg="Profile updated">
-                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                             <div class="row mb-4 d-flex justify-content-center">
                                 <div class="col-md-2">
                                     <img class="img-fluid img-thumbnail" src="{{ profile.email|gravatar(100) }}"
@@ -174,7 +173,6 @@
                         <h5 class="card-title mb-1">{{ 'Change Password'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'Enter your new password twice to avoid mistakes. '|trans }}</p>
                         <form method="post" action="{{ 'api/client/profile/change_password'|link }}" class="api-form">
-                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                             <div class="mb-3">
                                 <label class="form-label" for="current_password">{{ 'Current Password'|trans }}</label>
                                 <input class="form-control" type="password" name="current_password"
@@ -198,7 +196,6 @@
                         <p class="card-text fs-7 text-muted">{{ 'API key allows integration with external applications. You will need this key for authentication.'|trans }}</p>
                         <form class="api-form" method="post" action="client/profile/api_key_reset" id="change-api-key"
                               data-api-msg="API key was changed.">
-                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             {% if client.profile_api_key_get %}
                                 <div class="alert alert-warning" role="alert">
                                     <strong>{{ 'Warning!'|trans }}</strong>&nbsp;{{ 'Resetting the key will break existing applications using it!'|trans }}

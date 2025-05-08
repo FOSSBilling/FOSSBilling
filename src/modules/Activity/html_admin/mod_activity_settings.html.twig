@@ -31,7 +31,6 @@
 
 		<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
 			<div class="card-body">
-				<input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
 				<input type="hidden" name="ext" value="mod_activity">
 				<div class="mb-3">
 					<label class="form-label">{{ 'Activity log retention'|trans }}</label>

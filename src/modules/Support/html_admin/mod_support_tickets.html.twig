@@ -263,7 +263,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
+                                href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
                                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                                 data-api-redirect="{{ 'support'|alink }}">
                                 <svg class="icon">
@@ -290,13 +290,12 @@
             <div class="card-body">
                 <h5>{{ 'Open Ticket for Existing Client'|trans }}</h5>
                 <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" class="api-form" data-api-redirect="{{ 'support'|alink }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
                         <div class="col">
                             {% if not request.client_id %}
                                 <select class="form-control autocomplete-selector"
-                                        placeholder="{{ 'Start typing the client name or ID'|trans }}"
+                                        placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                         id="client_id"
                                         name="client_id"
                                         data-resturl="admin/client/get_pairs">
@@ -335,7 +334,6 @@
             <div class="card-body">
                 <h5>{{ 'Open Public Ticket for Non-client'|trans }}</h5>
                 <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="api-form" data-api-jsonp="onAfterPublicTicketCreate">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Receiver Name'|trans }}</label>
                         <div class="col">

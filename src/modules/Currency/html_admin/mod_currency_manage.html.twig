@@ -30,7 +30,6 @@
     <form method="post" action="{{ 'api/admin/currency/update'|link }}" class="api-form" data-api-msg="{{ 'Currency updated'|trans }}">
         <div class="card-body">
             <h3 class="card-title">{{ 'Edit currency information'|trans }} {{ currency.code }}</h3>
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
             <input type="hidden" name="code" value="{{ currency.code }}">
             <div class="mb-3 row">
                 <label class="col-md-3 col-form-label">{{ 'Title'|trans }}</label>

@@ -54,7 +54,7 @@
                                     <td>{{ mf.status_name(msg.status) }}</td>
                                     <td class="text-end">
                                         <a class="btn btn-icon api-link"
-                                           href="{{ 'api/admin/massmailer/copy'|link({'id' : msg.id, 'CSRFToken': CSRFToken}) }}"
+                                           href="{{ 'api/admin/massmailer/copy'|link({'id' : msg.id }) }}"
                                            data-api-redirect="{{ 'massmailer'|alink }}">
                                             <svg class="icon">
                                                 <use xlink:href="#copy"/>
@@ -66,7 +66,7 @@
                                             </svg>
                                         </a>
                                         <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                           href="{{ 'api/admin/massmailer/delete'|link({'id' : msg.id, 'CSRFToken': CSRFToken}) }}"
+                                           href="{{ 'api/admin/massmailer/delete'|link({'id' : msg.id }) }}"
                                            data-api-redirect="{{ 'massmailer'|alink }}">
                                             <svg class="icon">
                                                 <use xlink:href="#delete"/>
@@ -90,7 +90,6 @@
                 <div class="tab-pane fade" id="new" role="tabpanel">
                     <form method="post" action="admin/massmailer/create" class="api-form"
                           data-api-jsonp="onAfterCreateMM">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <div class="card-body mt-2">
                             <div class="mb-3 row">
                                 <label class="col-md-2 col-form-label">{{ 'Subject'|trans }}</label>
@@ -115,7 +114,6 @@
                     {% set params = admin.extension_config_get({"ext":"mod_massmailer"}) %}
                     <form method="post" action="admin/extension/config_save" class="api-form"
                           data-api-reload="1">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <input type="hidden" name="ext" value="mod_massmailer">
                         <div class="card-body">
                             <div class="mb-3 row">
@@ -123,7 +121,7 @@
                                 <div class="col-md-6">
                                     {% if not request.test_client_id %}
                                         <select class="form-control autocomplete-selector"
-                                                placeholder="{{ 'Start typing the client name or ID'|trans }}"
+                                                placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                                 id="test_client_id"
                                                 name="test_client_id"
                                                 data-resturl="admin/client/get_pairs">

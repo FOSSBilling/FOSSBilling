@@ -29,7 +29,6 @@
             <div class="card-body">
                 <h3 class="card-title">{{ 'WYSIWYG settings'|trans }}</h3>
                 {% set params = admin.extension_config_get({ 'ext': 'mod_wysiwyg' }) %}
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="row">
                     <label class="form-label col-3 form-label">{{ 'Default editor'|trans }}</label>
                     <div class="col">

@@ -39,7 +39,6 @@
         {% set params = admin.extension_config_get({ "ext": "mod_paidsupport" }) %}
         <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="Settings updated">
             <div class="card-body">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <input type="hidden" name="ext" value="mod_paidsupport" />
                 <div class="row mb-3">
                     <label class="col-md-3 col-form-label">{{ 'Ticket price'|trans }}</label>

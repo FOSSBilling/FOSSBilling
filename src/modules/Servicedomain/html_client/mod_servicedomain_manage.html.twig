@@ -76,7 +76,6 @@
                 <form class="api-form" action="{{ 'api/client/servicedomain/update_nameservers'|link }}" data-api-msg="{{ 'Nameservers updated'|trans }}" method="post">
                     <div class="row">
                         <div class="col-md-12">
-                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <div class="mb-3 row">
                                 <div class="col-md-5">
                                     <label for="ns1" class="form-label">{{ 'Nameserver 1'|trans }}</label>
@@ -115,7 +114,6 @@
                     <span class="small text-secondary">{{ 'Domain contact details will be displayed once someone will check WHOIS output (which is public) of your service. This will update Technical, Billing and Admin contacts for this service. You can enable domain privacy protection if you want to hide your public WHOIS information.'|trans }}</span>
                 </div>
                 <form class="api-form" method="post" action="{{ 'api/client/servicedomain/update_contacts'|link }}" data-api-msg="{{ 'Contact details updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <div class="col-md-5">
                             <label for="whois_first_name" class="form-label">{{ 'First Name'|trans }}</label>
@@ -216,7 +214,7 @@
                 document.getElementById('domain-lock').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    API.client.post('servicedomain/lock', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                    API.client.post('servicedomain/lock', { order_id: {{ order.id }} },
                         () => {
                             FOSSBilling.message('Domain locked');
 
@@ -230,7 +228,7 @@
                 document.getElementById('domain-unlock').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    API.client.post('servicedomain/unlock', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                    API.client.post('servicedomain/unlock', { order_id: {{ order.id }} },
                         () => {
                             FOSSBilling.message('Domain unlocked');
 
@@ -244,7 +242,7 @@
                 document.getElementById('domain-enable-pp').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    API.client.post('servicedomain/enable_privacy_protection', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                    API.client.post('servicedomain/enable_privacy_protection', { order_id: {{ order.id }} },
                         (result) =>{
                             FOSSBilling.message('Privacy Protection enabled');
 
@@ -259,7 +257,7 @@
                 document.getElementById('domain-disable-pp').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    API.post.client('servicedomain/disable_privacy_protection', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                    API.post.client('servicedomain/disable_privacy_protection', { order_id: {{ order.id }} },
                         (result) => {
                             FOSSBilling.message('Privacy Protection disabled');
 
@@ -275,7 +273,7 @@
                 document.getElementById('get-epp').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    API.client.post('servicedomain/get_transfer_code', { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
+                    API.client.post('servicedomain/get_transfer_code', { order_id: {{ order.id }} },
                         (result) => {
                             FOSSBilling.message('Domain transfer code is: ' + result);
                         });

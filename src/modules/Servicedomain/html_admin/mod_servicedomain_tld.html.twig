@@ -28,7 +28,6 @@
         <h3>{{ tld.tld }} {{ 'Top level domain management'|trans }}</h3>
 
         <form method="post" action="{{ 'api/admin/servicedomain/tld_update'|link }}" class="api-form" data-api-msg="{{ 'Top level domain settings updated.'|trans }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Registrar'|trans }}:</label>
                 <div class="col">

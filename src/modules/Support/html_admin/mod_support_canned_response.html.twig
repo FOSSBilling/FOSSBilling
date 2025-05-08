@@ -32,7 +32,6 @@
         <p class="text-muted">{{ response.title }}</p>
 
         <form method="post" action="{{ 'api/admin/support/canned_update'|link }}" class="api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
                 <div class="col">

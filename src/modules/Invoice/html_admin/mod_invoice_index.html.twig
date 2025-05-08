@@ -10,7 +10,7 @@
     {% if request.show_filter %}
     <section class="card mb-3">
         <div class="card-body">
-            <h5>{{ 'Filter invoices'|trans }}</h5>
+            <h5>{{ 'Filter Invoices'|trans }}</h5>
             <form method="get">
                 <div class="mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
@@ -28,7 +28,7 @@
                     <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
                     <div class="col">
                         <select class="form-control autocomplete-selector"
-                                placeholder="{{ 'Start typing the client name or ID'|trans }}"
+                                placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                 id="client_id"
                                 name="client_id"
                                 data-resturl="admin/client/get_pairs">
@@ -79,7 +79,7 @@
                         </div>
                 </div> #}
                 <div class="mb-3 row">
-                    <label class="form-label col-3 col-form-label" for="issue_date">{{ 'Issue date'|trans }}</label>
+                    <label class="form-label col-3 col-form-label" for="issue_date">{{ 'Date Issued'|trans }}</label>
                     <div class="col">
                         <div class="input-group">
                             <div class="input-icon w-100">
@@ -296,7 +296,7 @@
                             <div class="col">
                                 {% if not request.client_id %}
                                     <select class="form-control autocomplete-selector"
-                                            placeholder="{{ 'Start typing the client name or ID'|trans }}"
+                                            placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                             id="client_id"
                                             name="client_id"
                                             data-resturl="admin/client/get_pairs">

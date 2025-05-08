@@ -84,7 +84,6 @@
         <div class="card-footer" id="reply-to">
             {% if ticket.status != 'closed' %}
                 <form method="post" action="" class="api_form" data-api-url="guest/support/ticket_reply" data-api-reload="1">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <input type="hidden" name="hash" value="{{ ticket.hash }}" />
 
                     <textarea name="message" cols="5" rows="10" class="editor-textarea form-control" required="required" id="ticket-reply-text"></textarea>
@@ -117,7 +116,7 @@
         document.getElementById('new-ticket-button').addEventListener('click', function(event) {
             event.preventDefault();
 
-            API.guest.post("support/ticket_close", { hash: '{{ ticket.hash }}', CSRFToken: "{{ CSRFToken }}" },
+            API.guest.post("support/ticket_close", { hash: '{{ ticket.hash }}' },
                 () => {
                     FOSSBilling.message("Ticket was closed");
                     window.location.reload();

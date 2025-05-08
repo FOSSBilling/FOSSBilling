@@ -39,7 +39,7 @@
                         const ids = Array.from(checkedBoxes).map(function(checkbox) {
                             return checkbox.getAttribute("data-item-id");
                         });
-                        API.admin.post('{{ action }}', { ids: ids, CSRFToken: "{{ CSRFToken }}" },
+                        API.admin.post('{{ action }}', { ids: ids },
                             (result) => {
                                 window.location.reload();
                             });

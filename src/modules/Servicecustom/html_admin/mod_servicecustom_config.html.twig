@@ -3,7 +3,6 @@
 
     <h5>{{ 'Plugin'|trans }}</h5>
     <form method="post" action="{{ 'api/admin/product/update'|link }}" class="api-form save" data-api-msg="{{ 'Settings updated'|trans }}">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="form-group mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Plugin name'|trans }}:</label>
             <div class="col">
@@ -16,7 +15,6 @@
     <hr>
 
     <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm save api-form" data-api-reload="1">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <h6>Custom parameters</h6>
         {% for k, v in product.config %}
         <div class="form-group mb-3 row">

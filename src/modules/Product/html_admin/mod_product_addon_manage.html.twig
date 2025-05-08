@@ -28,7 +28,6 @@
     <div class="card-body">
         <h5>{{ 'Edit product addon'|trans }}</h5>
         <form method="post" action="{{ 'api/admin/product/addon_update'|link }}" class="api-form save" data-api-msg="{{ 'Addon updated'|trans }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                 <div class="col">

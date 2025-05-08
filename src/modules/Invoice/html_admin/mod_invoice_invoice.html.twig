@@ -128,14 +128,14 @@
                     </svg>
                     <span>{{ 'View as Client'|trans }}</span>
                 </a>
-                <a href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
+                <a href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}" class="btn btn-primary api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
                     <span>{{ 'Delete'|trans }}</span>
                 </a>
                 {% if invoice.status == 'unpaid' %}
-                <a href="{{ 'api/admin/invoice/send_reminder'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken}) }}" class="btn btn-primary api-link" data-api-msg="Payment reminder was sent">
+                <a href="{{ 'api/admin/invoice/send_reminder'|link({ 'id': invoice.id }) }}" class="btn btn-primary api-link" data-api-msg="Payment reminder was sent">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#mail" />
                     </svg>
@@ -149,13 +149,12 @@
                 </a>
                 <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
-                    <form class="modal-content api-form" method="post" action="{{ 'api/admin/invoice/mark_as_paid'|link({ 'id': invoice.id, 'execute': 1, 'CSRFToken': CSRFToken }) }}" name="transactionForm" data-api-reload="1">
+                    <form class="modal-content api-form" method="post" action="{{ 'api/admin/invoice/mark_as_paid'|link({ 'id': invoice.id, 'execute': 1 }) }}" name="transactionForm" data-api-reload="1">
                     <div class="modal-header">
                         <h5 class="modal-title" id="transactionModalLabel">{{ 'Enter Custom Transaction ID'|trans }}:</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                     </div>
                     <div class="modal-body">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <input type="hidden" name="id" value="{{ invoice.id }}">
                         <div class="mb-3 row">
                             <label class="col-md-3 col-form-label" for="transaction-id">{{ 'Transaction ID'|trans }}:</label>
@@ -182,7 +181,7 @@
                 {% endif %}
 
                 {% if invoice.status == 'paid' %}
-                <a href="{{ 'api/admin/invoice/refund'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
+                <a href="{{ 'api/admin/invoice/refund'|link({ 'id': invoice.id }) }}" class="btn btn-primary api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#receipt-refund" />
                     </svg>
@@ -201,7 +200,6 @@
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-reload="{{ 'Invoice updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                         <div class="col">
@@ -352,7 +350,6 @@
         <div class="tab-pane fade" id="tab-texts" role="tabpanel">
             <div class="card-body">
                 <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'Invoice updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Text Before Invoice Item Table'|trans }}:</label>
                         <div class="col">
@@ -378,7 +375,6 @@
 
                 {% set seller = invoice.seller %}
                 <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'Invoice updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Company Name'|trans }}:</label>
                         <div class="col">
@@ -428,7 +424,6 @@
 
                 {% set buyer = invoice.buyer %}
                 <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'Invoice updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'First Name'|trans }}:</label>
                         <div class="col">
@@ -517,7 +512,6 @@
     </div>
     {% if not invoice.approved %}
     <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-reload="1">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <table class="table card-table table-vcenter table-striped text-nowrap">
             <thead>
                 <tr>
@@ -547,7 +541,7 @@
                     </td>
                     <td>
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/invoice/item_delete'|link({ 'id': item.id, 'CSRFToken': CSRFToken }) }}"
+                            href="{{ 'api/admin/invoice/item_delete'|link({ 'id': item.id }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-reload="1">
                             <svg class="icon">
@@ -597,7 +591,7 @@
         <div class="card-footer d-flex gap-2">
             {% if not invoice.approved %}
             <a class="btn btn-success w-100 api-link"
-                href="{{ 'api/admin/invoice/approve'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}"
+                href="{{ 'api/admin/invoice/approve'|link({ 'id': invoice.id }) }}"
                 data-api-reload="{{ 'invoices'|alink }}">
                 <svg class="icon">
                     <use xlink:href="#check" />
@@ -708,7 +702,7 @@
         <button class="btn btn-primary" type="button" onclick="window.print()">
             <span class="dark-icon i-print"></span> {{ 'Print'|trans }}</button>
         {% if invoice.status == 'unpaid' %}
-        <a class="btn btn-primary api-link" href="{{ 'api/client/invoice/delete'|link({ 'hash': invoice.hash, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
+        <a class="btn btn-primary api-link" href="{{ 'api/client/invoice/delete'|link({ 'hash': invoice.hash }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
             <span class="dark-icon i-bin"></span> {{ 'Delete'|trans }}</a>
         {% endif %}
     </div>

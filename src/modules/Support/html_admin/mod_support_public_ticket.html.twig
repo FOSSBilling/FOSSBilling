@@ -87,7 +87,7 @@
             <div class="card-footer text-center">
                 {% if ticket.status != 'closed' %}
                 <a class="btn btn-primary api-link"
-                    href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id }) }}"
                     data-api-redirect="{{ 'support/public-tickets'|alink }}">
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#close" />
@@ -96,7 +96,7 @@
                 </a>
                 {% endif %}
                 <a class="btn btn-primary api-link"
-                    href="{{ 'api/admin/support/public_ticket_delete'|link({ 'id' : ticket.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'api/admin/support/public_ticket_delete'|link({ 'id' : ticket.id  }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'support/public-tickets'|alink }}">
                     <svg class="icon icon-tabler" width="24" height="24">
@@ -118,7 +118,6 @@
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/support/public_ticket_update'|link }}" class="api-form" data-api-reload="1">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
                         <div class="col">
@@ -168,7 +167,6 @@
 
 <div class="card" id="reply-box">
     <form method="post" action="{{ 'api/admin/support/public_ticket_reply'|link }}" class="api-form" data-api-redirect="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <div class="d-flex">
                 <h5>{{ 'Reply as'|trans }} {{ profile.name }}</h5>
@@ -195,7 +193,7 @@
 
             {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
             <a class="btn btn-danger w-25 api-link"
-                href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
+                href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id }) }}"
                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                 data-api-redirect="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">
                 <svg class="icon">

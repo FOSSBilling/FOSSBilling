@@ -59,7 +59,7 @@
                        data-api-confirm-btn="Install"
                        data-api-confirm-content='By installing "{{ extension.name }}", you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong.'
                        data-api-reload="1"
-                       href="{{ 'api/admin/extension/install'|link ({ 'type': extension.type, 'id': extension.id, 'CSRFToken': CSRFToken }) }}"
+                       href="{{ 'api/admin/extension/install'|link ({ 'type': extension.type, 'id': extension.id }) }}"
                        data-bs-toggle="tooltip" data-bs-title="{{ 'Install extension'|trans }}">
                         <svg class="icon">
                             <use xlink:href="#download" />
@@ -85,7 +85,7 @@
             readme = document.getElementById("extension-readme");
             readme.innerText = "{{ 'Fetching extension details.'|trans }}";
 
-            API.admin.post('extension/get_extension_readme', { extension_id: extensionID, CSRFToken: "{{ CSRFToken }}" },
+            API.admin.post('extension/get_extension_readme', { extension_id: extensionID },
                 (result) => {
                     readme.innerHTML = result;
                 });

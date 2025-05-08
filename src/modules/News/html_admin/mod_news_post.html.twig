@@ -25,7 +25,6 @@
 {% block content %}
 <div class="card">
     <form method="post" action="{{ 'api/admin/news/update'|link }}" class="api-form" data-api-msg="{{ 'Post updated'|trans }}">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <h3>{{ 'Edit post'|trans }}</h3>
             <p class="text-muted">{{ post.title }}</p>

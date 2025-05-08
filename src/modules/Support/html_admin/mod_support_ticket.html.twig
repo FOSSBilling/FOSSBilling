@@ -102,7 +102,7 @@
             <div class="card-footer text-center">
                 {% if ticket.status != 'closed' %}
                 <a class="btn btn-primary api-link"
-                    href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'support'|alink({ 'status': 'open' }) }}">
                     <svg class="icon icon-tabler" width="24" height="24">
@@ -112,7 +112,7 @@
                 </a>
                 {% endif %}
                 <a class="btn btn-primary api-link"
-                    href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'support'|alink }}">
                     <svg class="icon icon-tabler" width="24" height="24">
@@ -122,7 +122,7 @@
                 </a>
 
                 {% if task.status == 'pending' %}
-                <a href="{{ 'api/admin/support/task_complete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="1">
+                <a href="{{ 'api/admin/support/task_complete'|link({ 'id': ticket.id }) }}" class="btn btn-primary api-link" data-api-reload="1">
                     <img src="images/icons/middlenav/check.png" alt="" data-api-reload="1">
                     <span>{{ 'Set Task Complete'|trans }}</span>
                 </a>
@@ -133,7 +133,7 @@
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/support/ticket_update'|link }}" class="api-form" data-api-reload="1">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
                         <div class="col">
@@ -175,7 +175,7 @@
                     <td>{{ note.note }}</td>
                     <td class="w-1">
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/support/note_delete'|link({ 'id': note.id, 'CSRFToken': CSRFToken }) }}"
+                            href="{{ 'api/admin/support/note_delete'|link({ 'id': note.id }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-reload="1">
                             <svg class="icon">
@@ -190,7 +190,6 @@
 
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/support/note_create'|link }}" class="api-form" data-api-reload="1">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label" for="textareaNote">{{ 'Note'|trans }}</label>
                         <div class="col">
@@ -291,7 +290,6 @@
 
 <div class="card" id="reply-box">
     <form method="post" action="{{ 'api/admin/support/ticket_reply'|link }}" class="api-form" data-api-reload="1">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <div class="d-flex">
                 <h5>{{ 'Reply as'|trans }} {{ profile.name }}</h5>
@@ -317,7 +315,7 @@
 
             {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
             <a class="btn btn-danger w-25 api-link"
-                href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
+                href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id }) }}"
                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                 data-api-redirect="{{ 'support'|alink({ 'status': 'open' }) }}">
                 <svg class="icon">
@@ -357,13 +355,13 @@
 
         document.querySelectorAll('.shd select').forEach(function(select) {
             select.addEventListener('change', function() {
-                API.admin.get('support/ticket_update', { id: {{ ticket.id }}, support_helpdesk_id: this.value, CSRFToken: "{{CSRFToken}}" });
+                API.admin.get('support/ticket_update', { id: {{ ticket.id }}, support_helpdesk_id: this.value });
             });
         });
 
         document.querySelectorAll('input.tst').forEach(function(element) {
             element.addEventListener('click', function() {
-                API.admin.get('support/ticket_update', {id: {{ ticket.id }}, status: this.value, CSRFToken: "{{CSRFToken}}" });
+                API.admin.get('support/ticket_update', {id: {{ ticket.id }}, status: this.value });
             });
         });
 

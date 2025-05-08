@@ -105,7 +105,7 @@
                     resendBtn.addEventListener('click', (e) => {
                         e.preventDefault();
                         toggleLoader();
-                        API.client.post('email/resend', { id: resendBtn.dataset.id, CSRFToken: "{{ CSRFToken }}" },
+                        API.client.post('email/resend', { id: resendBtn.dataset.id },
                             () => {
                                 flashMessage({
                                     message: 'Email resent',
@@ -125,7 +125,7 @@
                         e.preventDefault();
                         if (confirm('Are you sure?')) {
                             toggleLoader();
-                            API.client.post('email/delete', { id: deleteBtn.dataset.id, CSRFToken: "{{ CSRFToken }}" },
+                            API.client.post('email/delete', { id: deleteBtn.dataset.id },
                                 () => {
                                     flashMessage({
                                         message: 'Email #'+ deleteBtn.dataset.id +' deleted',

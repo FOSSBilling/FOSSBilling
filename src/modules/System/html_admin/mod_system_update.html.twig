@@ -23,13 +23,13 @@
                         <span>{{ 'This update is considered to be a major update, you should check the release notes for any breaking changes.'|trans }}</span>
                     </div>
                 {% endif %}
-                
+
                 {% if update_info['update_type'] == 1 %}
                     <div class="alert alert-warning" role="alert">
                         <span>{{ 'This update is considered to be a minor update, there are low chances of incompatibilities.'|trans }}</span>
                     </div>
                 {% endif %}
-                    
+
                 {{ update_info['release_notes']|markdown }}
             {% else %}
                 <h2 class="card-title">{{ 'There is no update available'|trans }}</h2>
@@ -38,7 +38,7 @@
         </div>
         <div class="card-footer">
             {% if admin.system_update_available or update_info['branch'] == 'preview' %}
-                <a href="{{ 'api/admin/system/update_core'|link({ 'CSRFToken': CSRFToken }) }}"
+                <a href="{{ 'api/admin/system/update_core'|link }}"
                     class="btn btn-primary api-link"
                     data-api-reload="1"
                     data-api-confirm="Proceed with automatic update?"
@@ -59,7 +59,7 @@
                     {{ 'Update FOSSBilling'|trans }}
                 </a>
             {% endif %}
-            <a href="{{ 'api/admin/system/recheck_update'|link({ 'CSRFToken': CSRFToken }) }}"
+            <a href="{{ 'api/admin/system/recheck_update'|link }}"
                 class="btn btn-primary api-link"
                 data-api-reload="1">
                 <svg class="icon">
@@ -67,7 +67,7 @@
                 </svg>
                 {{ 'Check for Updates'|trans }}
             </a>
-            <a href="{{ 'api/admin/system/manual_update'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.old.php." data-api-msg="Patches applied and configuration updated.">
+            <a href="{{ 'api/admin/system/manual_update'|link }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.old.php." data-api-msg="Patches applied and configuration updated.">
                 <svg class="icon">
                     <use xlink:href="#cog-play" />
                 </svg>

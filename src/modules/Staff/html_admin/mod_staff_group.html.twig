@@ -32,7 +32,6 @@
         <h5>{{ 'Manage staff member details'|trans }}</h5>
 
         <form method="post" action="{{ 'api/admin/staff/group_update'|link }}" class="api-form" data-api-msg="{{ 'Staff group updated'|trans }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label" for="inputName">{{ 'Name'|trans }}</label>
                 <div class="col">
