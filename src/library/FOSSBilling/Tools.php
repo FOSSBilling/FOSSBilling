@@ -435,7 +435,7 @@ class Tools
     }
 
     /**
-     * Converts bytes to a human-readable format (KB, MB, GB).
+     * Converts bytes to a human-readable format (B, KB, MB, GB and TB).
      *
      * @param int $bytes
      * @return string
@@ -445,7 +445,8 @@ class Tools
         if ($bytes < 1024) return $bytes . ' B';
         if ($bytes < 1048576) return round($bytes / 1024, 2) . ' KB';
         if ($bytes < 1073741824) return round($bytes / 1048576, 2) . ' MB';
-        
-        return round($bytes / 1073741824, 2) . ' GB';
+        if ($bytes < 1099511627776) return round($bytes / 1073741824, 2) . ' GB';
+    
+        return round($bytes / 1099511627776, 2) . ' TB';
     }
 }
