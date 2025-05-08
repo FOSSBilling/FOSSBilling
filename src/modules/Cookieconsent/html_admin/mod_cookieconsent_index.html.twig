@@ -11,13 +11,12 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Edit cookie consent message text'|trans }}</h3>
         </div>
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form"
-              data-api-msg="{{ 'Configuration updated'|trans }}">
+        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" data-fb-api='{ "message": "{{ 'Configuration Updated'|trans }}" }'>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-10">
 
-                        <p>{{ 'Specify a message which will be shown to the user. The message will be shown until dismissed with the <strong>Close &times;</strong> button. An undismissed message does not effect functionality or prevent uers from performing any actions.'|trans|raw }}</p>
+                        <p>{{ 'Specify a message which will be shown to the user. The message will be shown until dismissed with the <strong>Close &times;</strong> button. An undismissed message does not effect functionality or prevent users from performing any actions.'|trans|raw }}</p>
                         <div class="alert alert-info" role="alert">
                             {{ 'If there is a need to change the way notification looks or is being displayed, you can do it by editing'|trans }}
                             <b>{{ constant('PATH_ROOT') }}/modules/Cookieconsent/html_client/mod_cookieconsent_index.html.twig</b>

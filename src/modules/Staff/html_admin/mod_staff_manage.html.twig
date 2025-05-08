@@ -52,7 +52,7 @@
 						<h3 class="card-title">{{ 'Manage staff member details'|trans }}</h3>
 					</div>
 
-					<form method="post" action="admin/staff/update" class="api-form" data-api-msg="{{ 'Staff member details updated.'|trans }}">
+					<form method="post" action="admin/staff/update" data-fb-api='{ "message": "{{ 'Staff Member Details Updated'|trans }}" }'>
 						<input type="hidden" name="id" value="{{ staff.id }}">
 						<div class="card-body">
 							<div class="mb-3 row">
@@ -143,7 +143,7 @@
 						{% else %}
 
 							{% set prms = admin.staff_permissions_get({ 'id': staff.id }) %}
-							<form method="post" action="admin/staff/permissions_update" class="api-form" data-api-msg="{{ 'Permissions updated'|trans }}">
+							<form method="post" action="admin/staff/permissions_update" data-fb-api='{ "message": "{{ 'Permissions Updated'|trans }}" }'>
 								<input type="hidden" name="permissions[default]" value="">
 
                 {% for modName, mod in mods %}
@@ -211,7 +211,7 @@
 			<div class="card-header">
 				<h3 class="card-title">{{ 'Change staff member password'|trans }}</h3>
 			</div>
-			<form method="post" action="admin/staff/change_password" class="api-form" data-api-msg="{{ 'Staff member password changed'|trans }}">
+			<form method="post" action="admin/staff/change_password" data-fb-api='{ "message": "{{ 'Staff Member Password Changed'|trans }}" }'>
 				<div class="card-body">
 					<div class="mb-3 row">
 						<label class="form-label col-3 col-form-label" for="inputPassword">{{ 'Password'|trans }}</label>

@@ -86,7 +86,8 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1" href="{{ 'api/admin/servicedomain/tld_delete'|link({ 'tld': tld.tld }) }}">
+                            <a class="btn btn-icon" href="{{ 'api/admin/servicedomain/tld_delete'|link({ 'tld': tld.tld }) }}"
+                                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -103,7 +104,7 @@
                 <h5>{{ 'Add new top level domain'|trans }}</h5>
                 <p class="text-muted">{{ 'Setup new TLD prices and properties'|trans }}</p>
 
-                <form method="post" action="{{ 'api/admin/servicedomain/tld_create'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'api/admin/servicedomain/tld_create'|link }}" data-fb-api='{ "reload": true }'>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Tld'|trans }}:</label>
                         <div class="col">
@@ -209,7 +210,7 @@
                             <a href="{{ 'servicedomain/registrar/'|alink }}/{{ registrar.id }}">{{ registrar.title }}</a>
                         </td>
                         <td>
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_copy'|link({ 'id': registrar.id }) }}" data-api-reload="1" title="Install">
+                            <a class="btn btn-icon" href="{{ 'api/admin/servicedomain/registrar_copy'|link({ 'id': registrar.id }) }}" title="Install" data-fb-api='{ "reload": true }'>
                                 <svg class="icon">
                                     <use xlink:href="#copy" />
                                 </svg>
@@ -219,7 +220,8 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_delete'|link({ 'id': registrar.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                            <a class="btn btn-icon" href="{{ 'api/admin/servicedomain/registrar_delete'|link({ 'id': registrar.id }) }}"
+                                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -260,7 +262,7 @@
                 <tr>
                     <td>{{ code }}</td>
                     <td>
-                        <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_install'|link({ 'code': code }) }}" data-api-msg="{{ 'Domain registrar installed'|trans }}" title="Install">
+                        <a class="btn btn-icon" href="{{ 'api/admin/servicedomain/registrar_install'|link({ 'code': code }) }}" title="Install" data-fb-api='{ "message": "{{ 'Domain Registrar Installed'|trans }}" }'>
                             <svg  class="icon">
                                 <use xlink:href="#cog" />
                             </svg>
@@ -288,7 +290,7 @@
                 <h5>{{ 'Nameservers'|trans }}</h5>
                 <p class="text-muted">{{ 'Set default nameservers that will be used for new domain registrations if a client has not provided their own nameservers while ordering a domain'|trans }}</p>
 
-                <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Nameservers updated'|trans }}">
+                <form method="post" action="{{ 'api/admin/system/update_params'|link }}" data-fb-api='{ "message": "{{ 'Nameservers Updated'|trans }}" }'>
                     {% set params = admin.system_get_params %}
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>

@@ -48,19 +48,19 @@
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
 
                     <div class="card-footer text-center">
-                        <a href="{{ 'api/admin/email/batch_template_generate'|link }}" class="btn btn-primary api-link" data-api-reload="1">
+                        <a class="btn btn-primary" href="{{ 'api/admin/email/batch_template_generate'|link }}" data-fb-api='{ "reload": true }'>
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#mail" />
                             </svg>
                             <span>Regenerate templates</span>
                         </a>
-                        <a href="{{ 'api/admin/email/batch_template_enable'|link }}" class="btn btn-primary api-link" data-api-msg="All email templates enabled">
+                        <a class="btn btn-primary" href="{{ 'api/admin/email/batch_template_enable'|link }}" data-fb-api='{ "message": "{{ 'All Email Templates Enabled'|trans }}" }'>
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#play" />
                             </svg>
                             <span>Enable all</span>
                         </a>
-                        <a href="{{ 'api/admin/email/batch_template_disable'|link }}" class="btn btn-primary api-link" data-api-msg="All email templates disabled">
+                        <a class="btn btn-primary" href="{{ 'api/admin/email/batch_template_disable'|link }}" data-fb-api='{ "message": "{{ 'All Email Templates Disabled'|trans }}" }'>
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#close" />
                             </svg>
@@ -105,14 +105,9 @@
                                                 <use xlink:href="#edit" />
                                             </svg>
                                         </a>
-                                        <a class="btn btn-icon api-link"
-                                           href="{{ 'api/admin/email/template_delete'|link({ 'id': template.id }) }}"
-                                           data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                           data-api-confirm-content="{{ 'Are you sure you want to delete this template?'|trans }}"
-                                           data-api-type="danger"
-                                           data-api-confirm-btn="{{ 'Delete'|trans }}"
-                                           data-api-reload="1"
-                                           data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
+                                        <a class="btn btn-icon" href="{{ 'api/admin/email/template_delete'|link({ 'id': template.id }) }}"
+                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                            data-fb-api='{ "modal": { "type": "danger", "title": "{{ 'Are you sure?'|trans }}", "content": "{{ 'This action will delete the email template'|trans }}", "button": "{{ 'Delete'|trans }}" }, "reload": true }'>
                                             <svg class="icon">
                                                 <use xlink:href="#delete" />
                                             </svg>
@@ -130,7 +125,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/email/template_create'|link }}" class="api-form" data-api-reload="1">
+                    <form method="post" action="{{ 'api/admin/email/template_create'|link }}" data-fb-api='{ "reload": true }'>
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Where I can use new email template?'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Newly created email templates can be used in custom event hooks.'|trans }}</p>
@@ -240,7 +235,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-email" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Email settings updated'|trans }}">
+                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" data-fb-api='{ "message": "{{ 'Email Settings Updated'|trans }}" }'>
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Configure email options'|trans }}</h3>
                             <p class="card-subtitle">{{ 'FOSSBilling sends emails using <em>sendmail</em> by default or you can configure your own SMTP server'|trans|raw }}</p>

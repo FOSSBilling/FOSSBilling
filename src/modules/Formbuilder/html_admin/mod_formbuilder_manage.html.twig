@@ -1,6 +1,6 @@
 {% set form = guest.formbuilder_get({ "id": order.form_id }) %}
 {% set config = order.config %}
-<form class="api-form" method="post" action="{{ 'api/admin/order/update_config'|link }}" data-api-msg="Order was updated">
+<form method="post" action="{{ 'api/admin/order/update_config'|link }}" data-fb-api='{ "message": "{{ 'Order Updated'|trans }}" }'>
     <input type="hidden" name="config[form_id]" value="{{ config.form_id }}"/>
     <input type="hidden" name="config[id]" value="{{ config.id }}"/>
     <input type="hidden" name="config[product_id]" value="{{ form.product_id }}"/>

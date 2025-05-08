@@ -111,13 +111,14 @@
             </div>
 
             <div class="card-footer text-center">
-                <a class="btn btn-primary api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': transaction.id }) }}" data-api-reload="1">
+                <a class="btn btn-primary" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': transaction.id }) }}" data-fb-api='{ "reload": true }'>
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#refresh" />
                     </svg>
                     <span>{{ 'Process'|trans }}</span>
                 </a>
-                <a class="btn btn-primary api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': transaction.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice/transactions'|alink }}">
+                <a class="btn btn-primary" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': transaction.id }) }}"
+                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'invoice/transactions'|alink }}" }'>
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
@@ -128,7 +129,7 @@
 
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/invoice/transaction_update'|link }}" class="api-form" data-api-reload="{{ 'Transaction updated'|trans }}">
+                <form method="post" action="{{ 'api/admin/invoice/transaction_update'|link }}" data-fb-api='{ "reload": true }'>
                     <h5>{{ 'Transaction payment information'|trans }}</h5>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Invoice ID'|trans }}:</label>
@@ -200,7 +201,7 @@
             <div class="card-body">
                 <h3>{{ 'Note about this transaction'|trans }}</h3>
 
-                <form method="post" action="{{ 'api/admin/invoice/transaction_update'|link }}" class="api-form" data-api-msg="{{ 'Transaction note updated.'|trans }}">
+                <form method="post" action="{{ 'api/admin/invoice/transaction_update'|link }}" data-fb-api='{ "message": "{{ 'Transaction Note Updated'|trans }}" }'>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}:</label>
                         <div class="col">

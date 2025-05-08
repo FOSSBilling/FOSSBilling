@@ -43,7 +43,8 @@
                             <td>{{ admin.system_string_render({ "_tpl": event.meta_value, "_try": true })|raw }}</td>
                             <td>{{ event.created_at|date('Y-m-d H:i') }}</td>
                             <td>
-                                <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'notification'|alink }}" href="{{ 'api/admin/notification/delete'|link({ 'id': event.id }) }}">
+                                <a class="btn btn-icon" href="{{ 'api/admin/notification/delete'|link({ 'id': event.id }) }}"
+                                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'notification'|alink }}" }'>
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
@@ -60,7 +61,8 @@
                 {% include "partial_pagination.html.twig" with {'list': events, 'url':'notification'} %}
 
                 <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="btn btn-danger api-link" href="{{ 'api/admin/notification/delete_all'|link }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                    <a class="btn btn-danger" href="{{ 'api/admin/notification/delete_all'|link }}"
+                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                         <svg class="icon">
                             <use xlink:href="#delete"></use>
                         </svg>
@@ -72,7 +74,7 @@
 
         <div class="tab-pane fade" id="tab-new-note" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/notification/add'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'api/admin/notification/add'|link }}" data-fb-api='{ "reload": true }'>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Note'|trans }}:</label>
                         <div class="col">

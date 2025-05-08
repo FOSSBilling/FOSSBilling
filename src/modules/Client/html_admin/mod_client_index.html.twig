@@ -11,7 +11,6 @@
     <section class="card mb-3">
         <div class="card-body">
             <h5>{{ 'Filter clients'|trans }}</h5>
-
             <form method="get">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="form-group mb-3 row">
@@ -259,7 +258,8 @@
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                                    <a class="btn btn-icon" href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}"
+                                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -293,7 +293,7 @@
 
             <div class="tab-pane fade" id="tab-new" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/admin/client/create'|link }}" class="api-form save" data-api-redirect="{{ 'client'|alink }}">
+                    <form method="post" action="{{ 'api/admin/client/create'|link }}" data-fb-api='{ "redirect": "{{ 'client'|alink }}" }'>
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                             <div class="col">
@@ -424,7 +424,8 @@
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
-                                <a class="btn btn-icon api-link" href="{{ 'api/admin/client/group_delete'|link({ 'id': id }) }}" data-api-reload="1" data-api-confirm="{{ 'Are you sure?'|trans }}">
+                                <a class="btn btn-icon" href="{{ 'api/admin/client/group_delete'|link({ 'id': id }) }}"
+                                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
@@ -442,14 +443,13 @@
 
             <div class="tab-pane fade" id="tab-new-group" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/admin/client/group_create'|link }}" class="api-form" data-api-redirect="{{ 'client'|alink }}">
+                    <form method="post" action="{{ 'api/admin/client/group_create'|link }}" data-fb-api='{ "redirect": "{{ 'client'|alink }}" }'>
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                             <div class="col">
                                 <input class="form-control" type="text" name="title" value="{{ request.title }}" required>
                             </div>
                         </div>
-
                         <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
                     </form>
                 </div>

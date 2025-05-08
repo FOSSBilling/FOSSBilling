@@ -26,7 +26,7 @@
     {% if page.id > 0 %}
 
 <div class="card">
-    <form method="post" action="{{ 'api/admin/custompages/update'|link }}" class="save api-form" data-api-msg="{{ 'Custom page updated'|trans }}">
+    <form method="post" action="{{ 'api/admin/custompages/update'|link }}" data-fb-api='{ "message": "{{ 'Custom Page Updated'|trans }}" }'>
         <div class="card-body mt-2">
             <input type="hidden" name="id" value="{{ page.id }}">
             <div class="mb-3 row">

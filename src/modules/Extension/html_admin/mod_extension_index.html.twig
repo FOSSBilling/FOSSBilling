@@ -67,24 +67,17 @@
                                     <td>
                                         {% if ext.type == 'mod' %}
                                             {% if ext.status == 'installed' %}
-                                                <a class="btn btn-icon api-link"
-                                                   href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id }) }}"
-                                                   data-api-type="danger"
-                                                   data-api-confirm-btn="Deactivate"
-                                                   data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                                   data-api-reload="Module was deactivated"
-                                                   data-bs-toggle="tooltip" data-bs-title="{{ 'Deactivate'|trans }}">
+                                                <a class="btn btn-icon" href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id }) }}"
+                                                    data-bs-toggle="tooltip" data-bs-title="{{ 'Deactivate'|trans }}"
+                                                    data-fb-api='{ "modal": { "type": "danger", "{{ 'Are you sure?'|trans }}", "button": "{{ 'Deactivate'|trans }}" }, "reload": true }'>
                                                     <svg class="icon">
                                                         <use xlink:href="#close" />
                                                     </svg>
                                                 </a>
                                             {% else %}
-                                                <a class="btn btn-icon api-link"
-                                                   href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id }) }}"
-                                                   data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                                   data-api-confirm-btn="Activate"
-                                                   data-api-jsonp="onAfterModuleActivated"
-                                                   data-bs-toggle="tooltip" data-bs-title="{{ 'Activate'|trans }}">
+                                                <a class="btn btn-icon" href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id }) }}"
+                                                    data-bs-toggle="tooltip" data-bs-title="{{ 'Activate'|trans }}"
+                                                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}", "button": "{{ 'Activate'|trans }}" }, "callback": "onAfterModuleActivated" }'>
                                                     <svg class="icon">
                                                         <use xlink:href="#play" />
                                                     </svg>
@@ -95,8 +88,7 @@
                                         {% endif %}
 
                                         {% if ext.has_settings %}
-                                            <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}"
-                                               data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">
+                                            <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">
                                                 <svg class="icon">
                                                     <use xlink:href="#cog" />
                                                 </svg>

@@ -24,7 +24,8 @@
                 <div class="card-body">
                     <h5 class="mb-1">{{ 'Payment methods'|trans }}</h5>
                     <p class="small text-muted">{{ 'Please choose a payment type and pay for your chosen products.'|trans }}</p>
-                    <form method="post" action="{{ 'api/guest/invoice/payment'|link }}" class="api-form" data-api-redirect="{{ ('invoice/'~invoice.hash)|link({ 'auto_redirect': 1 }) }}">
+                    <form method="post" action="{{ 'api/guest/invoice/payment'|link }}"
+                        data-fb-api='{ "redirect": "{{ ('invoice/'~invoice.hash)|link({ 'auto_redirect': 1 }) }}" }'>
                         <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
                         <div class="d-flex gap-3">
                             {% for gtw in guest.invoice_gateways %}

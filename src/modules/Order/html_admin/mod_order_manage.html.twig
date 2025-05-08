@@ -168,10 +168,8 @@
             <div class="card-footer text-center">
                 {% set order_actions %}
                     {% if order.status == 'pending_setup' or order.status == 'failed_setup' %}
-                    <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/order/activate'|link({ 'id': order.id }) }}"
-                        data-api-confirm="{{ 'Are you sure?'|trans }}"
-                        data-api-reload="{{ 'Order activated'|trans }}">
+                    <a class="btn btn-primary" href="{{ 'api/admin/order/activate'|link({ 'id': order.id }) }}"
+                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
@@ -181,10 +179,8 @@
 
                     {% if order.status == 'active' or order.status == 'failed_renew' %}
                     {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
-                    <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/order/renew'|link({ 'id': order.id }) }}"
-                        data-api-confirm="{{ 'Are you sure?'|trans }}"
-                        data-api-reload="{{ 'Order renewed'|trans }}">
+                    <a class="btn btn-primary" href="{{ 'api/admin/order/renew'|link({ 'id': order.id }) }}"
+                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#refresh" />
                         </svg>
@@ -192,13 +188,8 @@
                     </a>
 
                     {% if params.suspend_reason_list|trim == null %}
-                    <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/order/suspend'|link({ 'id': order.id }) }}"
-                        data-api-prompt-key="reason"
-                        data-api-prompt="1"
-                        data-api-prompt-text="{{ 'Reason of suspension'|trans }}"
-                        data-api-prompt-title="{{ 'Suspension reason'|trans }}"
-                        data-api-reload="{{ 'Order suspended'|trans }}">
+                    <a class="btn btn-primary" href="{{ 'api/admin/order/suspend'|link({ 'id': order.id }) }}"
+                        data-fb-api='{ "modal": { "type": "prompt", "title": "{{ 'Suspension Reason'|trans }}", "label": "{{ 'Reason for Suspension'|trans }}", "key": "reason" }, "reload": true }'>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#pause" />
                         </svg>
@@ -209,7 +200,7 @@
                         <h5 id="suspend_popup_title">{{ 'Suspension reason'|trans }}</h5>
                         <div id="suspend_popup_content" class="confirm">
                             <div id="suspend_popup_message">
-                                <div>{{ 'Reason of suspension'|trans }}
+                                <div>{{ 'Reason for Suspension'|trans }}
                                     {% for reason in params.suspend_reason_list|trim|split("\r\n") %}
                                     <div class="item">
                                         <input type="radio" value="{{ reason }}" name="reason">
@@ -224,24 +215,15 @@
                             </div>
                         </div>
                     </div>
-                    <a class="btn btn-primary"
-                        id="suspend_button"
-                        href="#"
-                        onclick="return susp.showSuspendPopup()"
-                        data-api-reload="{{ 'Order suspended'|trans }}">
+                    <a class="btn btn-primary" id="suspend_button"href="#" onclick="return susp.showSuspendPopup()" data-fb-api='{ "reload": true }'>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#close" />
                         </svg>
                         <span>{{ 'Suspend'|trans }}</span>
                     </a>
                     {% endif %}
-                    <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/order/cancel'|link({ 'id': order.id }) }}"
-                        data-api-prompt-key="reason"
-                        data-api-prompt="1"
-                        data-api-prompt-text="{{ 'Reason of cancelation'|trans }}"
-                        data-api-prompt-title="{{ 'Cancelation reason'|trans }}"
-                        data-api-reload="{{ 'Order canceled'|trans }}">
+                    <a class="btn btn-primary" href="{{ 'api/admin/order/cancel'|link({ 'id': order.id }) }}"
+                        data-fb-api='{ "modal": { "type": "prompt", "title": "{{ 'Cancelation Reason'|trans }}", "label": "{{ 'Reason for Cancelation'|trans }}", "key": "reason" }, "reload": true }'>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#close" />
                         </svg>
@@ -250,10 +232,8 @@
                     {% endif %}
 
                     {% if order.status == 'suspended' %}
-                    <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/order/unsuspend'|link({ 'id': order.id }) }}"
-                        data-api-confirm="{{ 'Are you sure?'|trans }}"
-                        data-api-reload="{{ 'Order activated'|trans }}">
+                    <a class="btn btn-primary" href="{{ 'api/admin/order/unsuspend'|link({ 'id': order.id }) }}"
+                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
@@ -262,7 +242,8 @@
                     {% endif %}
 
                     {% if order.status == 'canceled' %}
-                    <a class="btn btn-primary api-link" href="{{ 'api/admin/order/uncancel'|link({ 'id': order.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" class="btn btn-primary api-link" data-api-reload="Order activated">
+                    <a class="btn btn-primary" href="{{ 'api/admin/order/uncancel'|link({ 'id': order.id }) }}"
+                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
@@ -278,10 +259,8 @@
                     </button>
 
                     {% if not order.unpaid_invoice_id %}
-                    <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/invoice/renewal_invoice'|link({ 'id': order.id }) }}"
-                        data-api-confirm="{{ 'Are you sure?'|trans }}"
-                        data-api-reload="1">
+                    <a class="btn btn-primary" href="{{ 'api/admin/invoice/renewal_invoice'|link({ 'id': order.id }) }}"
+                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#plus" />
                         </svg>
@@ -297,7 +276,7 @@
         <div class="modal modal-blur fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-sm">
                 <div class="modal-content">
-                    <form method="post" action="{{ 'api/admin/order/delete'|link }}" class="api-form" data-api-redirect="{{ 'order'|alink }}">
+                    <form method="post" action="{{ 'api/admin/order/delete'|link }}" data-fb-api='{ "redirect": "{{ 'order'|alink }}" }'>
                         <div class="modal-status bg-danger"></div>
                         <div class="modal-body">
                             <div class="modal-title">{{ 'Are you sure?'|trans }}</div>
@@ -321,7 +300,7 @@
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <h3>{{ 'Order Management'|trans }}</h2>
-                <form method="post" action="{{ 'api/admin/order/update'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'api/admin/order/update'|link }}" data-fb-api='{ "reload": true }'>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
                         <div class="col">
@@ -395,7 +374,7 @@
                 </form>
             </div>
 
-            {# <form method="post" action="{{ 'api/admin/order/update'|link }}" class="api-form" data-api-reload="1">
+            {# <form method="post" action="{{ 'api/admin/order/update'|link }}" data-fb-api='{ "reload": true }'>
                 <fieldset>
                     <legend>Order promotion code</legend>
 
@@ -418,7 +397,7 @@
                 <h2>Order parameters</h2>
             </div>
 
-            <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="api-form" data-api-msg="Order config updated">
+            <form method="post" action="{{ 'api/admin/order/update_config'|link }}" data-fb-api='{ "message": "{{ 'Order Config Updated'|trans }}" }'>
                 {% for name, value in order.config %}
                 <div class="mb-3 row">
                     <label class="topLabel">{{ name }}</label>
@@ -440,7 +419,7 @@
                 <h5>{{ 'Order config management'|trans }}</h5>
                 <p class="text-muted">{{ 'Please be cautious and make sure you know what you are doing when editing order config! FOSSBilling relies on these parameters and you might get unexpected results if you change some of them.'|trans }}</p>
 
-                <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'api/admin/order/update_config'|link }}" data-fb-api='{ "reload": true }'>
                     {% for key, config in order.config %}
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ key }}</label>
@@ -618,7 +597,8 @@
                         </td>
                         <td class="text-wrap">{{ sh.notes }}</td>
                         <td>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'support'|alink }}" href="{{ 'api/admin/order/status_history_delete'|link({ 'id': sh.id }) }}">
+                            <a class="btn btn-icon" href="{{ 'api/admin/order/status_history_delete'|link({ 'id': sh.id }) }}"
+                                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'order'|alink }}" }'>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -713,7 +693,7 @@
             p[name] = value;
             API.makeRequest('GET', Tools.getBaseURL(url), p,
                 (result) => {
-                    return bb._afterComplete(document.getElementById('suspend_button'), result);
+                    return API._afterComplete(document.getElementById('suspend_button'), result);
                 });
 
             document.getElementById('suspend_popup').style.display = 'none';

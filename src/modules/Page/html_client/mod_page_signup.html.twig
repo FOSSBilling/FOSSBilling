@@ -27,7 +27,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="text-center m-4">{{ 'Create a new account'|trans }}</h5>
-                        <form class="api-form auth" action="{{ 'api/guest/client/create'|link }}" method="post" data-api-redirect="{{ '/'|link }}">
+                        <form method="post" action="{{ 'api/guest/client/create'|link }}" class="auth" data-fb-api='{ "redirect": "{{ '/'|link }}" }'>
                             {% set r = guest.client_required %}
 
                             <div class="mb-3">

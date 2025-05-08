@@ -99,7 +99,8 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/promo_delete'|link({ 'id': promo.id }) }}" data-api-redirect="{{ 'product/promos'|alink }}">
+                            <a class="btn btn-icon" href="{{ 'api/admin/product/promo_delete'|link({ 'id': promo.id }) }}"
+                            data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'product/promos'|alink }}" }'>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -121,7 +122,7 @@
                 <div class="card-body">
                     <h3>{{ 'Create New Promotional Code'|trans }}</h3>
                     <p class="text-muted">{{ 'Create special offers for your clients by creating promo codes.'|trans }}</p>
-                    <form method="post" action="{{ 'api/admin/product/promo_create'|link }}" class="api-form" data-api-redirect="{{ 'product/promos'|alink }}">
+                    <form method="post" action="{{ 'api/admin/product/promo_create'|link }}" data-fb-api='{ "redirect": "{{ 'product/promos'|alink }}" }'>
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Promo Code'|trans }}</label>
                             <div class="col">

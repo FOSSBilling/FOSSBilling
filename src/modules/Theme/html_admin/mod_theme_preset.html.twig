@@ -51,10 +51,8 @@
                                 {% endfor %}
                             </select>
                             {% if presets|length > 1 and current_preset != 'Default' %}
-                                <a href="{{ 'api/admin/theme/preset_delete'|link({ 'code': theme_code, 'preset': current_preset }) }}" class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                   data-api-confirm-btn="Delete"
-                                   data-api-type="danger"
-                                   data-api-reload="1">
+                                <a class="btn btn-icon" href="{{ 'api/admin/theme/preset_delete'|link({ 'code': theme_code, 'preset': current_preset }) }}"
+                                    data-fb-api='{ "modal": { "type": "danger", "title": "{{ 'Are you sure?'|trans }}", "button": "{{ 'Delete'|trans }}", } "reload": true }'>
                                     <svg class="icon">
                                         <use xlink:href="#delete"/>
                                     </svg>

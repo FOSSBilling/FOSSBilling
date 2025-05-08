@@ -1,7 +1,7 @@
 <div class="modal modal-blur fade" id="formbuilder_field{{ field.id }}" aria-hidden="true" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
 
-            <form class="modal-content api-form" method="post" action="admin/formbuilder/update_field" name="field_form{{ field.id }}" data-api-reload="1">
+            <form class="modal-content" method="post" action="admin/formbuilder/update_field" name="field_form{{ field.id }}" data-fb-api='{ "reload": true }'>
                 <div class="modal-header">
                     <h5 class="modal-title">{{ 'Edit field'|trans }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

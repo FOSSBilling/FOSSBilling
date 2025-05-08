@@ -49,10 +49,8 @@
             <td>{{ event.ip|ipcountryname|default('Unknown') }}</td>
             <td>{{ event.created_at|format_datetime }}</td>
             <td>
-                <a class="btn btn-icon api-link"
-                    href="{{ 'api/admin/staff/login_history_delete'|link({ 'id': event.id }) }}"
-                    data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{'staff/logins'|alink }}">
+                <a class="btn btn-icon" href="{{ 'api/admin/staff/login_history_delete'|link({ 'id': event.id }) }}"
+                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'staff/logins'|alink }}" }'>
                     <svg class="icon">
                         <use xlink:href="#delete" />
                     </svg>

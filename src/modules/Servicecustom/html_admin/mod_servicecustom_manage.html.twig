@@ -9,9 +9,8 @@
 
 {# include plugin #}
 
-<form method="post" action="{{ 'api/admin/servicecustom/update'|link }}" class="save api-form" data-api-msg="Service updated">
+<form method="post" action="{{ 'api/admin/servicecustom/update'|link }}" data-fb-api='{ "message": "{{ 'Service Updated'|trans }}" }'>
     <fieldset>
-
         {% for name, value in service %}
         <div class="rowElem">
             <label class="topLabel">{{ name }}:</label>

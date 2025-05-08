@@ -14,13 +14,13 @@
             <form method="get">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
+                    <label class="form-label col-3 col-form-label">{{ 'Invoice ID'|trans }}</label>
                     <div class="col">
                         <input class="form-control" type="text" name="id" value="{{ request.id }}">
                     </div>
                 </div>
                 <div class="mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Number'|trans }}</label>
+                    <label class="form-label col-3 col-form-label">{{ 'Invoice Number'|trans }}</label>
                     <div class="col">
                         <input class="form-control" type="text" name="nr" value="{{ request.nr }}">
                     </div>
@@ -52,7 +52,7 @@
                     <div class="col">
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" id="radioStatusAll" type="radio" name="status" value="0"{% if not request.status %} checked{% endif %}>
-                            <label class="form-check-label" for="radioStatusAll">{{ 'All statuses'|trans }}</label>
+                            <label class="form-check-label" for="radioStatusAll">{{ 'All'|trans }}</label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" id="radioStatusPaid" type="radio" name="status" value="paid"{% if request.status == 'paid' %} checked{% endif %}>
@@ -256,10 +256,8 @@
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
-                                <a class="btn btn-icon api-link"
-                                    href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}"
-                                    data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                    data-api-reload="1">
+                                <a class="btn btn-icon" href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}"
+                                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
@@ -292,7 +290,7 @@
 
             <div class="tab-pane show" id="tab-new" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/admin/invoice/prepare'|link }}" class="api-form" data-api-jsonp="onAfterInvoicePrepared">
+                    <form method="post" action="{{ 'api/admin/invoice/prepare'|link }}" data-fb-api='{ "callback": "onAfterInvoicePrepared" }'>
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
                             <div class="col">

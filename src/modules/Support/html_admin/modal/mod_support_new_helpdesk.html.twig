@@ -1,7 +1,8 @@
 <div class="modal modal-blur fade" id="mod-support-new-helpdesk" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form method="post" action="{{ 'api/admin/support/helpdesk_create'|link }}" class="api-form" data-api-redirect="{{ 'extension/settings/support'|alink }}">
+            <form method="post" action="{{ 'api/admin/support/helpdesk_create'|link }}"
+                data-fb-api='{ "redirect": "{{ 'extension/settings/support'|alink }}" }'>
                 <div class="modal-header">
                     <h5 class="modal-title">{{ 'Create New Helpdesk'|trans }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

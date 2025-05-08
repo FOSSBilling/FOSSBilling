@@ -17,8 +17,7 @@
         <span class="card-subtitle">{{ 'Lookup & discover info about IP addresses.'|trans }}</span>
     </div>
     <div class="card-body container">
-        <form method="post" action="{{'api/admin/security/ip_lookup'|link }}"
-            class="api-form" data-api-jsonp="appendResult">
+        <form method="post" action="{{'api/admin/security/ip_lookup'|link }}" data-fb-api='{ "callback": "appendResult" }'>
             <div class="d-flex">
                 <input type="text" name="ip" class="form-control me-2" placeholder="IP address to lookup" {% if request.ip %}value="{{ request.ip }}"{% endif %}>
                 <button class="btn btn-primary" type="submit">{{ 'Submit'|trans }}</button>

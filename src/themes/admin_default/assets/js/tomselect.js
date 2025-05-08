@@ -3,7 +3,6 @@ import TomSelect from 'tom-select';
 globalThis.TomSelect = TomSelect;
 
 document.addEventListener('DOMContentLoaded', () => {
-
   /**
    * Locale Selector
    */
@@ -21,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
       dropdownClass: "dropdown-menu ts-dropdown",
       optionClass: "dropdown-item",
       controlInput: false,
-      items: [bb.cookieRead("BBLANG")],
+      items: [FOSSBilling.cookieRead("BBLANG")],
       render: {
         item: (data, escape) => {
           return localeSelectorTemplate(data, escape);
@@ -32,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
     });
     localeSelector.on("change", (value) => {
-      bb.cookieCreate("BBLANG", value, 365);
+      FOSSBilling.cookieCreate("BBLANG", value, 365);
       window.location.reload();
     });
   }
