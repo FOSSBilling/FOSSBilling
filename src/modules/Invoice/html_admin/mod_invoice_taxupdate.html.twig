@@ -41,6 +41,13 @@
                         <input class="form-control" type="text" name="state" value="{{ tax.state }}" placeholder="{{ 'Leave empty to apply to all states'|trans }}">
                     </div>
                 </div>
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Municipality'|trans }}:</label>
+                    <div class="col">
+                        {# mf.selectbox('state', guest.system_states, tax.municipal, 0, 'Apply to all states') #}
+                        <input class="form-control" type="text" name="municipal" value="{{ tax.municipal }}" placeholder="{{ 'Leave empty to apply to all municipals'|trans }}">
+                    </div>
+                </div>
 
                 <input type="hidden" name="id" value="{{ tax.id }}">
                 <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>

@@ -38,6 +38,7 @@
                         <th>{{ 'Title'|trans }}</th>
                         <th>{{ 'Country'|trans }}</th>
                         <th>{{ 'State/Region'|trans }}</th>
+                        <th>{{ 'Municipal'|trans }}</th>
                         <th>{{ 'Tax rate'|trans }}</th>
                         <th class="w-1"></th>
                     </tr>
@@ -63,6 +64,13 @@
                                 {{ tax.state }}
                             {% else %}
                                 {{ 'Applies to any state'|trans }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if tax.municipal %}
+                                {{ tax.municipal }}
+                            {% else %}
+                                {{ 'Applies to any municipal'|trans }}
                             {% endif %}
                         </td>
                         <td>{{ tax.taxrate }}%</td>
@@ -127,6 +135,13 @@
                         <div class="col">
                             {# mf.selectbox('state', guest.system_states, request.state, 0, 'Apply to all states') #}
                             <input class="form-control" type="text" name="state" value="{{ request.state }}" placeholder="{{ 'Leave empty to apply to all states'|trans }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Municipal'|trans }}:</label>
+                        <div class="col">
+                            {# mf.selectbox('municipal', guest.system_municipals, request.municipal, 0, 'Apply to all municipals') #}
+                            <input class="form-control" type="text" name="municipal" value="{{ request.municipal }}" placeholder="{{ 'Leave empty to apply to all municipals'|trans }}">
                         </div>
                     </div>
 
