@@ -1,9 +1,9 @@
 <?php
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_Mod_Spamchecker_ServiceTest extends BBDbApiTestCase
+class Box_Mod_Antispam_ServiceTest extends BBDbApiTestCase
 {
-    protected $_initialSeedFile = 'mod_spamchecker.xml';
+    protected $_initialSeedFile = 'mod_antispam.xml';
 
     public function testOnAfterClientSignUp(): void
     {
@@ -13,7 +13,7 @@ class Box_Mod_Spamchecker_ServiceTest extends BBDbApiTestCase
         $event = new Box_Event(null, 'any', $parameters, $this->api_admin);
         $event->setDi($this->di);
 
-        $object = new Box\Mod\Spamchecker\Service();
+        $object = new Box\Mod\Antispam\Service();
         $object->onBeforeClientSignUp($event);
     }
 }
