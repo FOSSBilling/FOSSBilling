@@ -339,7 +339,7 @@
                                 <div class="mb-3 row">
                                     <label class="col-md-3 col-form-label" for="custom_dsn">{{ 'Custom DSN'|trans }}</label>
                                     <div class="col-md-6">
-                                        <p>{{"If one of the available options don't quite meet your needs, you can define a custom DSN. Please keep in mind that usernames, passwords, and hostnames with special characters need to be URL-encoded."|trans}}</p>
+                                        <p>{{"If none of the available options exactly meet your needs, you can define a custom DSN. Please keep in mind that usernames, passwords, and hostnames with special characters need to be URL-encoded."|trans}}</p>
                                         <p>{{"More information"|trans}}: <a href="https://symfony.com/doc/current/mailer.html#using-built-in-transports">{{"Symfony Documentation"}}</a></p>
                                         <p class="fw-light">{{"Example"|trans}}: smtp://user:pass@smtp.example.com?verify_peer=0</p>
                                         <input class="form-control" type="text" name="custom_dsn" value="{{ params.custom_dsn }}">

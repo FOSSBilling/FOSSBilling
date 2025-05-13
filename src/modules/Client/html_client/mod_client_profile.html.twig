@@ -172,7 +172,7 @@
                     </div>
                     <div class="card-body tab-pane" id="pass-tab-pane" role="tabpanel" tabindex="0">
                         <h5 class="card-title mb-1">{{ 'Change Password'|trans }}</h5>
-                        <p class="card-text fs-7 text-muted">{{ 'Please enter new password two times in order avoid mistypes'|trans }}</p>
+                        <p class="card-text fs-7 text-muted">{{ 'Enter your new password twice to avoid mistakes. '|trans }}</p>
                         <form method="post" action="{{ 'api/client/profile/change_password'|link }}" class="api-form">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                             <div class="mb-3">
@@ -217,7 +217,7 @@
                         <p class="card-text fs-7 text-muted">{{ 'Your profile currency is defined after your first order. Once your currency is set, all your profile accounting will be managed in that currency and cannot be changed.'|trans }}</p>
                         {% if profile.currency %}
                             <p>{{ 'Your profile currency is'|trans }} <strong>{{ profile.currency }}</strong></p>
-                            <p>{{ 'Create new client profile if you want to manage your money in other currency.'|trans }}</p>
+                            <p>{{ 'You will need to create a new client profile to use an alternative currency.'|trans }}</p>
                         {% else %}
                             <div class="alert alert-info" role="alert">
                                 {{ 'You do not yet have a currency associated with your profile. You can select the correct one when making your first order.'|trans }}

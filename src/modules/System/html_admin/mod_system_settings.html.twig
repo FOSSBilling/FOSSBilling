@@ -548,7 +548,7 @@ ZW=Zimbabwe
                         {% if admin.system_error_reporting_enabled %}
                             <div class="alert alert-success" role="alert">
                                 <p>{{ 'Error reporting is enabled.'|trans}}</p>
-                                <p>{{ 'This FOSSBilling instance is automatically sending errors which allows us to more easily improve the software and keep it stable. Thanks!'|trans }}</p>
+                                <p>{{ 'This FOSSBilling instance is automatically sending error reports which allows us to more easily improve the software and keep it stable. Thanks!'|trans }}</p>
                                 <a class="btn btn-danger api-link" href="{{ 'api/admin/system/toggle_error_reporting'|link({ 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Error reporting is now disabled.'|trans }}">{{'Disable error reporting'|trans}}</a>
                             </div>
                         {% else %}

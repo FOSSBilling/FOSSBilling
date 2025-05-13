@@ -117,7 +117,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!method_exists($plugin, 'generate')) {
-            throw new \FOSSBilling\Exception('License plugin do not have generate method');
+            throw new \FOSSBilling\Exception('License plugin does not have generate method');
         }
 
         if (method_exists($plugin, 'setDi')) {

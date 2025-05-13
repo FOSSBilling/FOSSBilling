@@ -661,7 +661,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         // check that payment currency is correct
         if ($invoice->currency != $tx->currency) {
-            throw new \FOSSBilling\Exception('Transaction currency :code do not match required currency :required', [':code' => $tx->currency, ':required' => $invoice->currency], 709);
+            throw new \FOSSBilling\Exception('Transaction currency :code does not match required currency :required', [':code' => $tx->currency, ':required' => $invoice->currency], 709);
         }
 
         // check that payment status is completed if
@@ -676,7 +676,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $client = $this->di['db']->load('Client', $proforma->client_id);
 
         if ($client->currency != $proforma->currency) {
-            throw new \FOSSBilling\Exception('Client currency do not match invoice currency');
+            throw new \FOSSBilling\Exception('Client currency does not match invoice currency');
         }
 
         // do not debit negative or zero amount

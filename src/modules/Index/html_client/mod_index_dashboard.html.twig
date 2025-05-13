@@ -34,7 +34,7 @@
                 <div class="col-md-12">
                     {% for i, ticket in tickets.list %}
                         <div class="alert alert-info d-flex justify-content-between" role="alert">
-                            <span>Ticket <strong>#{{ ticket.id }}</strong> was responded {{ ticket.updated_at|timeago }} {{ 'ago'|trans }}.</span><a
+                            <span>Ticket <strong>#{{ ticket.id }}</strong> was replied to {{ ticket.updated_at|timeago }} {{ 'ago'|trans }}.</span><a
                                 href="{{ 'support/ticket'|link }}/{{ ticket.id }}"
                                 class="alert-link">{{ 'Reply'|trans }}</a>
                         </div>
