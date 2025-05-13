@@ -110,11 +110,11 @@ class Guest extends \Api_Abstract
 
         $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$data['code']]);
         if (!$reset instanceof \Model_AdminPasswordReset) {
-            throw new \FOSSBilling\InformationException('The link have expired or you have already confirmed password reset.');
+            throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
         }
 
         if (strtotime($reset->created_at) - time() + 900 < 0) {
-            throw new \FOSSBilling\InformationException('The link have expired or you have already confirmed password reset.');
+            throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
         }
 
         $c = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');

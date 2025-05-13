@@ -287,7 +287,7 @@
         <div class="tab-pane fade" id="tab-nameservers" role="tabpanel">
             <div class="card-body">
                 <h5>{{ 'Nameservers'|trans }}</h5>
-                <p class="text-muted">{{ 'Setup default nameservers that will be used for new domain registrations if client have not provided his own nameservers in order form'|trans }}</p>
+                <p class="text-muted">{{ 'Set default nameservers that will be used for new domain registrations if a client have has provided their own nameservers while ordering a domain'|trans }}</p>
 
                 <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Nameservers updated'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
