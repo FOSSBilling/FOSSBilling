@@ -689,7 +689,9 @@ class Service implements InjectionAwareInterface
 
         $model->hostname = $data['hostname'] ?? null;
         $assigned_ips = $data['assigned_ips'] ?? '';
-        if (!empty($assigned_ips)) $model->assigned_ips = self::processAssignedIPs($assigned_ips);
+        if (!empty($assigned_ips)) {
+            $model->assigned_ips = self::processAssignedIPs($assigned_ips);
+        }
 
         $model->active = $data['active'] ?? 1;
         $model->status_url = $data['status_url'] ?? null;
@@ -733,7 +735,9 @@ class Service implements InjectionAwareInterface
         $model->hostname = $data['hostname'] ?? $model->hostname;
 
         $assigned_ips = $data['assigned_ips'] ?? '';
-        if (!empty($assigned_ips)) $model->assigned_ips = self::processAssignedIPs($assigned_ips);
+        if (!empty($assigned_ips)) {
+            $model->assigned_ips = self::processAssignedIPs($assigned_ips);
+        }
 
         $model->active = $data['active'] ?? $model->active;
         $model->status_url = $data['status_url'] ?? $model->status_url;
@@ -1087,15 +1091,16 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Post-processing for the assigned IPs. 
+     * Post-processing for the assigned IPs.
      * The data from the server management form (/admin/servicehosting/server/{id}) sends the data like this:
      * assigned_ips: "10.0.0.1\n10.0.0.2\n"
      * As you see, it isn't really an array, it also doesn't filter out empty lines and whitespaces at all.
-     * 
+     *
      * We can't rely on it as-is. So we need to make sure only the valid IP addresses are going inside the array.
      * We'll split on any type of line break (\n, \r\n, or \r) and make sure each IP address is valid.
-     * 
+     *
      * @param string $assigned_ips Raw string from the form data (example form: /admin/servicehosting/server/{ip})
+     *
      * @return string JSON encoded array of filtered valid IPs
      */
     public static function processAssignedIPs(string $assigned_ips): string
@@ -1105,12 +1110,10 @@ class Service implements InjectionAwareInterface
 
         // Trim each entry and remove any empty strings
         $array = array_map('trim', $array);
-        $array = array_filter($array, fn($ip) => $ip !== '');
+        $array = array_filter($array, fn ($ip): bool => $ip !== '');
 
         // Validate that each entry is a valid IP address (works both with IPv4 and IPv6)
-        $array = array_filter($array, function($ip) {
-            return filter_var($ip, FILTER_VALIDATE_IP);
-        });
+        $array = array_filter($array, fn ($ip) => filter_var($ip, FILTER_VALIDATE_IP));
 
         return json_encode(array_values($array));
     }
