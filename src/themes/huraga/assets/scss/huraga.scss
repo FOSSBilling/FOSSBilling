@@ -40,6 +40,10 @@ body {
     }
 }
 
+.card-header h1 {
+    font-size: 1.25rem;
+}
+
 .card-body {
     @at-root table {
         >thead {
