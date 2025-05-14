@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Servicehosting\Api;
 
+use RedBeanPHP\R;
+
 /**
  * Hosting service management.
  */
@@ -138,23 +140,47 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get paginated list of servers.
+     * Get a paginated list of servers.
      *
      * @return array
      */
     public function server_get_list($data)
     {
-        $servers = $this->di['db']->find('ServiceHostingServer', 'ORDER BY id ASC');
-        $serversArr = [];
-        foreach ($servers as $server) {
-            $serversArr[] = $this->getService()->toHostingServerApiArray($server, false, $this->getIdentity());
-        }
-
         [$sql, $params] = $this->getService()->getServersSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $result = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
-        $result['list'] = $serversArr;
+        foreach ($result['list'] as $key => $server) {
+            $bean = R::dispense('ServiceHostingServer');
+            $bean->import($server);
+            $model = new \Model_ServiceHostingServer();
+            $model->loadBean($bean);
+
+            $result['list'][$key] = $this->getService()->toHostingServerApiArray($model, false, $this->getIdentity());
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get a paginated list of servers.
+     *
+     * @return array
+     */
+    public function account_get_list($data)
+    {
+        [$sql, $params] = $this->getService()->getAccountsSearchQuery($data);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $result = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+
+        foreach ($result['list'] as $key => $server) {
+            $bean = R::dispense('ServiceHosting');
+            $bean->import($server);
+            $model = new \Model_ServiceHosting();
+            $model->loadBean($bean);
+
+            $result['list'][$key] = $this->getService()->toHostingAccountApiArray($model, false, $this->getIdentity());
+        }
 
         return $result;
     }
