@@ -163,8 +163,9 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get a paginated list of servers.
+     * Get a paginated list of hosting accounts.
      *
+     * @param $data array Accepts the optional "server_id" property
      * @return array
      */
     public function account_get_list($data)
