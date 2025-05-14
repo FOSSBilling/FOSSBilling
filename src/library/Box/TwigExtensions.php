@@ -275,7 +275,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_size_filter($value): string
     {
-        return \FOSSBilling\Tools::humanReadableBytes($value);
+        return FOSSBilling\Tools::humanReadableBytes($value);
     }
 
     public function twig_markdown_filter(Twig\Environment $env, $value)
