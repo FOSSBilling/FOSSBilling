@@ -243,11 +243,6 @@ class AdminTest extends \BBTestCase
             ->method('getSimpleResultSet')
             ->willReturn(['list' => []]);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn([]);
-
         $di = new \Pimple\Container();
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
