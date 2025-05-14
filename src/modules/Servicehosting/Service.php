@@ -567,7 +567,7 @@ class Service implements InjectionAwareInterface
         if ($identity instanceof \Model_Admin) {
             $result['ip'] = $model->ip;
             $result['username'] = $model->username;
-            $result['password'] = $model->password;
+            $result['password'] = $model->pass;
             $result['created_at'] = $model->created_at;
             $result['updated_at'] = $model->updated_at;
         }
@@ -702,6 +702,23 @@ class Service implements InjectionAwareInterface
                 order by id ASC';
 
         return [$sql, []];
+    }
+
+    public function getAccountsSearchQuery($data): array
+    {
+        $sql = 'SELECT * FROM service_hosting';
+        $params = [];
+
+        $serverID = $data['server_id'] ?? null;
+
+        if (!empty($serverID)) {
+            $sql = $sql . " WHERE service_hosting_server_id = :server_id";
+            $params['server_id'] = $serverID;
+        }
+
+        $sql = $sql . " ORDER BY id ASC";
+
+        return [$sql, $params];
     }
 
     public function createServer($name, $ip, $manager, $data)
