@@ -389,14 +389,23 @@ LOCK TABLES `support_pr` WRITE;
 
 INSERT INTO `support_pr` (`id`, `support_pr_category_id`, `title`, `content`, `created_at`, `updated_at`)
 VALUES
-	(1,1,'Hello #1','Hello,\n\n\n\nThank you for using our services.','2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(2,1,'Hello #2','Greetings,\n\n\n\nThank you.','2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(3,2,'It was fixed','\nIt was fixed for your account. If you have any more questions or requests, please let us to know.','2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(4,2,'It was done as requested','\nIt''s done as you have requested. Please let us to know if you have any further requests or questions.','2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(5,2,'Your website works fine','\nI have just checked your website and it works fine. Please check it from your end and let us to know if you still experience any problems.','2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(6,3,'Do you get any errors?','\nDo you get any errors and maybe you can copy/paste full error messages?','2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(7,3,'Domain is not pointing to our server','\nYour domain is not pointing to our server. Please set our nameservers for your domain and give 24 hours until changes will apply worldwide.','2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(8,3,'What is your domain and username?','\nWhat is your domain name and username?','2022-12-01 12:00:00','2022-12-01 12:00:00');
+	(1, 1, 'Welcome Message', 'Hi,\n\nThank you for choosing our hosting services.\n\nIf you need any assistance just create a support ticket anytime, we are here to help.', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
+	(2, 1, 'Mesage Acknowledgement', 'Hi there,\n\nThank you for reaching out. We will take a look at your issue and get back to you as soon as possible.', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
+	(3, 2, 'Issue Resolved', 'The reported issue has been resolved on your account.\n\nIf you are still experiencing problems, have any further questions or need additional support, feel free to contact us.', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
+	(4, 2, 'Request Completed', 'Your request has been completed.\n\nLet us know if there is anything else we can help you with.', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
+	(5, 2, 'Website Check', 'We have checked your website and everything appears to be working correctly on our end.\n\nPlease check from your side and let us know if you still encounter any issues.', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
+	(6, 2, 'Request for Error Details', 'Are you seeing any specific error messages?\n\nIf so, please copy and paste the full message here and it will make it much quicker for us to help you quickly find the cause of the issue and get it resolved', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
+	(7, 3, 'Invoice Paid Confirmation', 'Hello,\n\nWe have received your payment successfully and your invoice has been marked as paid.\n\nThank you!', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
+	(8, 3, 'Invoice Reminder', 'Hello,\n\nThis is a friendly reminder that you have an unpaid invoice.\n\nPlease log in to your client area to complete the payment to avoid futher actions.', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
+	(9, 3, 'Account Suspension Warning', 'Hello,\n\nYour account is at risk of suspension due to an outstanding issue. Please take action as soon as possible to avoid service interruption.', '2025-05-15 00:00:00', '2025-05-15 00:00:00'),
+	(10, 4, 'Plan Upgrade Complete', 'Hello,\n\nYour hosting plan has been successfully upgraded. The new resources are now active on your account.', '2025-05-15 00:00:00', '2025-05-15 00:00:00'),
+	(11, 4, 'Password Reset Instructions', 'Hello,\n\nTo reset your password, please click the "Forgot Password" link on the login page and follow the instructions provided.', '2025-05-15 00:00:00', '2025-05-15 00:00:00'),
+	(12, 4, 'Request for Product Info', 'Could you please let us know which domain name or hosting plan you are having the issue with.\n\nThis will help us to find the issue and get it solved for you much more easily.', '2025-05-15 00:00:00', '2025-05-15 00:00:00'),
+	(13, 5, 'DNS Not Pointing', 'Your domain is currently not pointing to our servers.\n\nPlease update the nameservers at your domain registrar. Note that it may take up to 24 hours for the changes to fully take effect.', '2025-05-15 00:00:00', '2025-05-15 00:00:00'),
+	(14, 5, 'Backup Restored', 'Hello,\n\nYour requested backup has been successfully restored. Please verify that everything is working as expected.', '2025-05-15 00:00:00', '2025-05-15 00:00:00'),
+	(15, 5, 'Ticket Escalated', 'Hello,\n\nWe have escalated your request to our senior support team. You will receive a response shortly. Thank you for your patience.', '2025-05-15 00:00:00', '2025-05-15 00:00:00'),
+	(16, 6, 'Scheduled Maintenance Notice', 'Hello,\n\nWe will be performing scheduled maintenance soon that may affect your sites. Temporary service interruptions could possibly occur. Thank you for your understanding.', '2025-05-15 00:00:00', '2025-05-15 00:00:00'),
+	(17, 7, 'Domain Renewal Reminder', 'Hello,\n\nOne of your domains is expiring soon, this is just a reminder to renew your domain to avoid any service interruption.', '2025-05-15 00:00:00', '2025-05-15 00:00:00');
 
 /*!40000 ALTER TABLE `support_pr` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -410,9 +419,13 @@ LOCK TABLES `support_pr_category` WRITE;
 
 INSERT INTO `support_pr_category` (`id`, `title`, `created_at`, `updated_at`)
 VALUES
-	(1,'Greetings','2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(2,'General','2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(3,'Accounting','2022-12-01 12:00:00','2022-12-01 12:00:00');
+	(1, 'Greetings', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
+	(2, 'General Support', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
+	(3, 'Billing & Payments', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
+	(4, 'Account Management', '2025-05-15 00:00:00', '2025-05-15 00:00:00'),
+	(5, 'Technical Issues', '2025-05-15 00:00:00', '2025-05-15 00:00:00'),
+	(6, 'Notices & Maintenance', '2025-05-15 00:00:00', '2025-05-15 00:00:00'),
+	(7, 'Domain & SSL', '2025-05-15 00:00:00', '2025-05-15 00:00:00');
 
 /*!40000 ALTER TABLE `support_pr_category` ENABLE KEYS */;
 UNLOCK TABLES;
