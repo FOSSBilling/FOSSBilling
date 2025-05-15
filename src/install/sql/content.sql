@@ -390,7 +390,7 @@ LOCK TABLES `support_pr` WRITE;
 INSERT INTO `support_pr` (`id`, `support_pr_category_id`, `title`, `content`, `created_at`, `updated_at`)
 VALUES
 	(1, 1, 'Welcome Message', 'Hi,\n\nThank you for choosing our hosting services.\n\nIf you need any assistance just create a support ticket anytime, we are here to help.', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
-	(2, 1, 'Mesage Acknowledgement', 'Hi there,\n\nThank you for reaching out. We will take a look at your issue and get back to you as soon as possible.', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
+	(2, 1, 'Message Acknowledgement', 'Hi there,\n\nThank you for reaching out. We will take a look at your issue and get back to you as soon as possible.', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
 	(3, 2, 'Issue Resolved', 'The reported issue has been resolved on your account.\n\nIf you are still experiencing problems, have any further questions or need additional support, feel free to contact us.', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
 	(4, 2, 'Request Completed', 'Your request has been completed.\n\nLet us know if there is anything else we can help you with.', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
 	(5, 2, 'Website Check', 'We have checked your website and everything appears to be working correctly on our end.\n\nPlease check from your side and let us know if you still encounter any issues.', '2022-12-01 12:00:00', '2025-05-15 00:00:00'),
