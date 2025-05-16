@@ -244,6 +244,7 @@ class AdminTest extends \BBTestCase
             ->willReturn(['list' => []]);
 
         $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
 
