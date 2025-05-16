@@ -11,8 +11,6 @@
 
 namespace Box\Mod\Servicehosting\Api;
 
-use RedBeanPHP\R;
-
 /**
  * Hosting service management.
  */
@@ -151,7 +149,7 @@ class Admin extends \Api_Abstract
         $result = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
         foreach ($result['list'] as $key => $server) {
-            $bean = R::dispense('ServiceHostingServer');
+            $bean = \RedBeanPHP\R::dispense('ServiceHostingServer');
             $bean->import($server);
             $model = new \Model_ServiceHostingServer();
             $model->loadBean($bean);
@@ -163,7 +161,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get a paginated list of hosting accounts.
+     * Get a paginated list of hosting accounts, along with the "order" and "client" information.
      *
      * @param $data array Accepts the optional "server_id" property
      * @return array
@@ -173,14 +171,26 @@ class Admin extends \Api_Abstract
         [$sql, $params] = $this->getService()->getAccountsSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
         $result = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        $orderService = $this->di['mod_service']('order');
 
-        foreach ($result['list'] as $key => $server) {
-            $bean = R::dispense('ServiceHosting');
-            $bean->import($server);
+        foreach ($result['list'] as $key => $account) {
+            $bean = \RedBeanPHP\R::dispense('ServiceHosting');
+            $bean->import($account);
             $model = new \Model_ServiceHosting();
             $model->loadBean($bean);
 
-            $result['list'][$key] = $this->getService()->toHostingAccountApiArray($model, false, $this->getIdentity());
+            $order = $this->di['db']->findOne('ClientOrder', 'service_id = :service_id', [':service_id' => $model->id]);
+
+            $result['list'][$key] = $this->getService()->toHostingAccountApiArray($model, true, $this->getIdentity());
+
+            if ($order) {
+                $result['list'][$key]['order'] = $orderService->toApiArray($order);
+                $result['list'][$key]['client'] = $result['list'][$key]['order']['client'];
+
+                unset($result['list'][$key]['order']['client']);
+            } else {
+                $result['list'][$key]['order'] = null;
+            }
         }
 
         return $result;
