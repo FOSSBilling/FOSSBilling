@@ -66,7 +66,7 @@
                         <td>
                             <a href="{{ '/product/promo'|alink }}/{{ promo.id }}">{{ promo.code }}</a>
                         </td>
-                        <td>{% if promo.type == 'percentage' %}{{ promo.value }}%{% endif %}{% if promo.type == 'absolute' %}{{ mf.currency_format(promo.value) }}{% endif %}</td>
+                        <td>{% if promo.type == 'percentage' %}{{ promo.value }}%{% endif %}{% if promo.type == 'absolute' %}{{ promo.value | money }}{% endif %}</td>
                         <td>{% for pid,product in promo.applies_to %}
                             <a href="{{ 'product/manage'|alink }}/{{ pid }}">{{ product|truncate(15) }}</a><br/>
                             {% else %}

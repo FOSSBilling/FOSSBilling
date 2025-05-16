@@ -219,31 +219,6 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetTax(): void
-    {
-        $rate = 0.21;
-        $price = 12;
-        $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \DummyBean());
-        $invoiceItemModel->invoice_id = 2;
-        $invoiceItemModel->taxed = true;
-        $invoiceItemModel->price = $price;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn($rate);
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-        $this->service->setDi($di);
-
-        $result = $this->service->getTax($invoiceItemModel);
-        $expected = round($price * $rate / 100, 2);
-        $this->assertIsFloat($result);
-        $this->assertEquals($expected, $result);
-    }
-
     public function testupdate(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
@@ -314,10 +289,10 @@ class ServiceInvoiceItemTest extends \BBTestCase
     public function testcreditInvoiceItem(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)
-            ->onlyMethods(['getTotalWithTax'])
+            ->onlyMethods(['getTotal'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
-            ->method('getTotalWithTax')
+            ->method('getTotal')
             ->willReturn(11.2);
 
         $invoiceItemModel = new \Model_InvoiceItem();
@@ -349,31 +324,6 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
         $serviceMock->setDi($di);
         $serviceMock->creditInvoiceItem($invoiceItemModel);
-    }
-
-    public function testgetTotalWithTax(): void
-    {
-        $total = 5;
-        $tax = 0.5;
-        $quantity = 3;
-        $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \DummyBean());
-        $invoiceItemModel->quantity = $quantity;
-
-        $serviceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)
-            ->onlyMethods(['getTotal', 'getTax'])
-            ->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getTotal')
-            ->willReturn($total);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getTax')
-            ->willReturn($tax);
-
-        $result = $serviceMock->getTotalWithTax($invoiceItemModel);
-        $this->assertIsFloat($result);
-        $expected = $total + $tax * $quantity;
-        $this->assertEquals($expected, $result);
     }
 
     public function testgetOrderId(): void

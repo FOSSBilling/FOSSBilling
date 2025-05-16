@@ -137,15 +137,12 @@ class Service implements InjectionAwareInterface
         $items = $this->di['db']->find('InvoiceItem', 'invoice_id = :iid', ['iid' => $row['id']]);
 
         $lines = [];
-        $total = $tax_total = 0;
-        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+        $total = 0;
         foreach ($items as $item) {
             $order_id = ($item->type == \Model_InvoiceItem::TYPE_ORDER) ? $item->rel_id : null;
 
             $line_total = $item->price * $item->quantity;
             $total += $line_total;
-            $line_tax = $invoiceItemService->getTax($item) * $item->quantity;
-            $tax_total += $line_tax;
             $line = [
                 'id' => $item->id,
                 'title' => $item->title,
@@ -153,7 +150,6 @@ class Service implements InjectionAwareInterface
                 'quantity' => $item->quantity,
                 'unit' => $item->unit,
                 'price' => $item->price,
-                'tax' => $line_tax,
                 'taxed' => $item->taxed,
                 'charged' => $item->charged,
                 'total' => $line_total,
@@ -165,7 +161,7 @@ class Service implements InjectionAwareInterface
             ];
             $lines[] = $line;
         }
-        $tax = $tax_total;
+        $tax = $total * $invoice->taxrate / 100;
 
         $invoice_number_padding = $this->di['mod_service']('system')->getParamValue('invoice_number_padding');
         $invoice_number_padding = $invoice_number_padding !== null && $invoice_number_padding !== '' ? $invoice_number_padding : 5;
@@ -603,14 +599,10 @@ class Service implements InjectionAwareInterface
             return 0;
         }
 
-        $iiService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $items = $this->di['db']->find('InvoiceItem', 'invoice_id = ? ', [$invoice->id]);
-        $tax = 0;
-        foreach ($items as $item) {
-            $tax += $iiService->getTax($item) * $item->quantity;
-        }
+        // Calculate tax on the total amount, rather than per line item.
+        $tax =  $this->getTotal($invoice) * $invoice->taxrate / 100;
 
-        return $tax;
+        return round($tax, 2);
     }
 
     public function getTotal(\Model_Invoice $invoice)
