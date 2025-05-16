@@ -79,8 +79,9 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
                         window.location.href = '$invoiceUrl';
                     }).catch((error) => {
                         console.error('Error during fetch:', error);
-                        alert('An error occurred while processing your request. Please try again.');
-                        window.location.href = '$invoiceUrl';
+                        if (window.confirm('An error occurred while processing your request. Would you like to return to the invoice page?')) {
+                            window.location.href = '$invoiceUrl';
+                        }
                     });
                 });
                 </script>";
