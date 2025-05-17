@@ -20,6 +20,7 @@ class Box_Mod
 
     private array $core = [
         'api',
+        'antispam',
         'activity',
         'cart',
         'client',
