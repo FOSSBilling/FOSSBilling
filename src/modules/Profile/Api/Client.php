@@ -78,7 +78,7 @@ class Client extends \Api_Abstract
     /**
      * Retrieve current API key.
      */
-    public function api_key_get($data)
+    public function api_key_get()
     {
         $client = $this->getIdentity();
 

@@ -12,10 +12,9 @@
     <div id="order" class="accordion-collapse collapse {% if product %}show{%endif%}" data-bs-parent="#orderManager">
         <div class="accordion-body">
             <div class="accordion-inner">
-                <form method="post" style="background:none;" class="api-form form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}"
-                    action="{{ 'api/guest/cart/add_item'|link }}" data-api-msg="{{ 'Product was added to shopping cart'|trans }}"
-                    data-api-redirect="{{ 'order'|link({ 'checkout' : 1 }) }}" + "{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/guest/cart/add_item'|link }}" style="background:none;" class="form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}"
+                    data-fb-api='{ "message": "{{ 'Product Added to Shopping Cart'|trans }}",
+                        "redirect": "{{ 'order'|link({ 'checkout' : 1 }) }}" + "{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}" }'>
                     {% set product_details %}
                         <div class="well">
                             <h3>{{ product.title }}</h3>
@@ -54,15 +53,15 @@
                             </div>
                             {# TODO: This does not seem to be implemented on the back-end
                             {% if product.allow_quantity_select %}
-                            <div class="row mt-3"> 
-                                <div class="col-12 col-md-4 col-xl-3"> 
-                                    <span>{{ 'Quantity'|trans }}</span> 
-                                </div> 
-                                <div class="col"> 
-                                    <input type="number" name="quantity" value="1" min="1" class="form-control w-50" style="max-width: 120px; text-align: center;"> 
-                                </div> 
-                            </div> 
-                            {% endif %} 
+                            <div class="row mt-3">
+                                <div class="col-12 col-md-4 col-xl-3">
+                                    <span>{{ 'Quantity'|trans }}</span>
+                                </div>
+                                <div class="col">
+                                    <input type="number" name="quantity" value="1" min="1" class="form-control w-50" style="max-width: 120px; text-align: center;">
+                                </div>
+                            </div>
+                            {% endif %}
                             #}
                         </div>
                     {% endset %}

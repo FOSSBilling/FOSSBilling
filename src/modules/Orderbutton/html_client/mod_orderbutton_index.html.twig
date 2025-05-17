@@ -59,47 +59,50 @@
 {% endblock %}
 {% block js %}
 <script>
-    $(function () {
-        $('.accordion-body').on('shown', function () {
-            $('#popup-iframe').height($('body').height());
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.accordion-body').forEach(accordionBody => {
+            accordionBody.addEventListener('shown.bs.collapse', function() {
+                document.getElementById('popup-iframe').height = document.body.clientHeight;
+            });
         });
 
-        $('#show-promo-field').on('click', function (event) {
-            $('#apply-promo').show();
-            $(this).hide();
-            $('#promocode').focus();
+        document.getElementById('show-promo-field')?.addEventListener('click', function() {
+            document.getElementById('apply-promo').style.display = 'block';
+            this.style.display = 'none';
+            document.getElementById('promocode')?.focus();
         });
 
-        $('.register-login a').on('click', function (e) {
-            e.preventDefault();
-            $(this).tab('show');
+        document.querySelectorAll('.register-login a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tabId = this.getAttribute('href');
+                const tabElement = document.querySelector(tabId);
+                const bsTab = new bootstrap.Tab(this);
+                bsTab.show();
+            });
         });
-
     });
 
     function onOrderCheckout(result){
         if (result.invoice_hash) {
-            bb.post('guest/invoice/payment', {
-            hash: result.invoice_hash,
-            gateway_id: result.gateway_id,
-            auto_redirect: true
-            }, function (r) {
-                let checkoutEl = document.getElementById('checkout');
-                let paymentHtmlEl = document.getElementById('payment-html');
-                if (r.iframe) {
-                    $('#payment-html-inner').html(r.result);
-                    bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
-                    $('#checkout').remove();
-                    bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
-                } else {
-                    var link = '{{ "invoice/banklink"|link }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
-                    $('#payment-html-inner').html('<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to payment gateway</a>');
-                    bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
-                    $('#checkout-inner').remove();
-                    bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
-                    $('#redirect-to-gateway')[0].click();
-                }
-            });
+            API.guest.post('invoice/payment', { hash: result.invoice_hash, gateway_id: result.gateway_id, auto_redirect: true },
+                (r) => {
+                    let checkoutEl = document.getElementById('checkout');
+                    let paymentHtmlEl = document.getElementById('payment-html');
+                    if (r.iframe) {
+                        document.getElementById('payment-html-inner').innerHTML = r.result;
+                        bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
+                        document.getElementById('checkout').remove();
+                        bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
+                    } else {
+                        const link = '{{ "invoice/banklink"|link }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
+                        document.getElementById('payment-html-inner').innerHTML = '<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to payment gateway</a>';
+                        bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
+                        document.getElementById('checkout-inner').remove();
+                        bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
+                        document.getElementById('redirect-to-gateway').click();
+                    }
+                });
         } else {
             window.top.location.href = ('{{ "order/service/manage"|link }}' + '/' + result.order_id);
         }
@@ -116,15 +119,12 @@
     }
 
     function onAccountCreate(result){
-        //login after registration
-        var login_details = {
-            email: $('#reg-email').val(),
-            password: $('#reg-password').val()
+        const login_details = {
+            email: document.getElementById('reg-email').value,
+            password: document.getElementById('reg-password').value
         };
-        bb.post(
-            'guest/client/login',
-            login_details,
-            function (result) {
+        API.guest.post('client/login', login_details,
+            () => {
                 FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
                 let registerEl = document.getElementById('register');
                 new bootstrap.Collapse('#register').hide();
@@ -132,8 +132,7 @@
                     registerEl.parentElement.remove();
                     new bootstrap.Collapse('#checkout').show();
                     }, 500);
-            }
-        );
+            });
     }
 </script>
 {% endblock %}
