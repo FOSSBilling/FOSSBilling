@@ -470,8 +470,8 @@ const API = {
             ? Tools.serializeFormDataToJSON(formData)
             : Tools.serializeFormData(formData);
 
+          const buttons = formElement.querySelectorAll('button:not([disabled])');
           const toggleButtons = (disable) => {
-            const buttons = formElement.querySelectorAll('button:not([disabled])');
             buttons.forEach(button => button.disabled = disable);
           };
           toggleButtons(true);
