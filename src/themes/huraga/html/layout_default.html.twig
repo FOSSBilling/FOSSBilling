@@ -23,7 +23,7 @@
     {{ "Api/API.js" | library_url | script_tag }}
     {{ encore_entry_script_tags('huraga') }}
 
-    {{ DebugBar_renderHead() }}
+    {{ debug_bar_render_head() }}
 
     {% block head %}{% endblock %}
     {% block js %}{% endblock %}
@@ -260,6 +260,6 @@
         {% include 'mod_cookieconsent_index.html.twig' ignore missing %}
     {% endif %}
 </div>
-{{ DebugBar_render() }}
+{{ debug_bar_render() }}
 </body>
 </html>
