@@ -72,6 +72,7 @@
                             </tr>
                             </thead>
                             <tbody>
+                            {% set default_currency = guest.currency_get %}
                             {% for currency in admin.currency_get_list.list %}
                                 <tr>
                                     <td>{% if currency.default %}<strong>{{ currency.code }}</strong>{% else %}{{ currency.code }}{% endif %}</td>
@@ -79,7 +80,7 @@
                                         <a href="{{ '/currency/manage'|alink }}/{{ currency.code }}">{{ currency.title }}</a>
                                     </td>
                                     <td>{{ currency.conversion_rate }}</td>
-                                    <td>{{ mf.currency_format(1) }} = {{ mf.currency(1, currency.code) }}</td>
+                                    <td>{{ 1|format_currency(default_currency.code) }} = {{ (1 * currency.conversion_rate)|format_currency(currency.code) }}</td>
                                     <td>
                                         <a class="btn btn-icon" href="{{ '/currency/manage'|alink }}/{{ currency.code }}"
                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">

@@ -42,7 +42,7 @@
                                     <td>
                                         <span>{{ order.title }}</span>
                                     </td>
-                                    <td>{{ order.total | money(order.currency) }} {% if order.period %}{{ order.period | period_title }}{% endif %}</td>
+                                    <td>{{ order.total|format_currency(order.currency) }} {% if order.period %}{{ order.period|period_title }}{% endif %}</td>
                                     <td>{% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}-{% endif %}</td>
                                     <td>
                                     <span

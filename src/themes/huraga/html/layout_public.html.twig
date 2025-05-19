@@ -17,12 +17,11 @@
 
     {% block opengraph %}{% endblock %}
 
-    <link rel='stylesheet' type='text/css' href="{{ 'css/font-awesome.css' | asset_url }}">
     {{ encore_entry_link_tags('huraga') }}
 
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
-    {{ "Api/API.js" | library_url | script_tag }}
+    <script src="{{ constant('SYSTEM_URL') ~ 'library/Api/API.js?' ~ FOSSBillingVersion }}"></script>
     {{ encore_entry_script_tags('huraga') }}
     {% block head %}{% endblock %}
     {% block js %}{% endblock %}

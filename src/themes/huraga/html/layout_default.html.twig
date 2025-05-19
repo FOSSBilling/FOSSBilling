@@ -16,11 +16,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     {% block opengraph %}{% endblock %}
-    <link rel='stylesheet' type='text/css' href="{{ 'css/font-awesome.css' | asset_url }}">
     {{ encore_entry_link_tags('huraga') }}
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
-    {{ "Api/API.js" | library_url | script_tag }}
+    <script src="{{ constant('SYSTEM_URL') ~ 'library/Api/API.js?' ~ FOSSBillingVersion }}"></script>
     {{ encore_entry_script_tags('huraga') }}
 
     {{ DebugBar_renderHead() }}
@@ -254,7 +253,8 @@
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
     {% if settings.footer_to_top_enabled %}
         <a href="#top" class="position-fixed btn btn-primary bottom-0 end-0 m-3">
-            <span class="awe-arrow-up"></span> {{ 'Top'|trans }}</a>
+            <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" height="16" width="12" style="vertical-align: -0.125em;"><path d="M214.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 141.2 160 448c0 17.7 14.3 32 32 32s32-14.3 32-32l0-306.7L329.4 246.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160z" fill="currentColor"/></svg></span> {{ 'Top'|trans }}
+        </a>
     {% endif %}
     <div class="wait" style="display:none" onclick="$(this).hide();">
         <div class="spinner-border"

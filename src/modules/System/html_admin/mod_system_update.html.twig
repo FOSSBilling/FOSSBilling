@@ -23,14 +23,12 @@
                         <span>{{ 'This update is considered to be a major update, you should check the release notes for any breaking changes.'|trans }}</span>
                     </div>
                 {% endif %}
-                
                 {% if update_info['update_type'] == 1 %}
                     <div class="alert alert-warning" role="alert">
                         <span>{{ 'This update is considered to be a minor update, there are low chances of incompatibilities.'|trans }}</span>
                     </div>
                 {% endif %}
-                    
-                {{ update_info['release_notes']|markdown }}
+                {{ update_info['release_notes']|markdown_to_html }}
             {% else %}
                 <h2 class="card-title">{{ 'There is no update available'|trans }}</h2>
                 <p>{{ 'You appear to be running the latest version of FOSSBilling, so no action is needed at the moment. If you think this is a mistake, you may use the button below to check again.'|trans }}</p>

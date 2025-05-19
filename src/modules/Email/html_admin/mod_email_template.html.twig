@@ -189,7 +189,7 @@
                         <p class="card-subtitle">{{ 'Email template playground. Use this tool to try rendering email templates.'|trans }}</p>
 
                         <div class="mb-3">
-                    <textarea class="form-control" rows="20">{% autoescape false %}{% apply markdown %}
+                    <textarea class="form-control" rows="20">{% autoescape false %}{% apply markdown_to_html %}
                             This is an example of markdown syntax in email template
 
                             *Italic text*

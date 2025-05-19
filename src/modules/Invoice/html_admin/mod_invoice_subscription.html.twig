@@ -48,7 +48,7 @@
                             </tr>
                             <tr>
                                 <td class="text-end">{{ 'Amount'|trans }}:</td>
-                                <td>{{ mf.currency_format( subscription.amount, subscription.currency) }} {{ mf.period_name(subscription.period) }}</td>
+                                <td>{{ subscription.amount|format_currency(subscription.currency) }} {{ subscription.period|period_title }}</td>
                             </tr>
                             <tr>
                                 <td class="text-end">{{ 'Payment gateway'|trans }}:</td>

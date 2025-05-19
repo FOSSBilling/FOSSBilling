@@ -100,7 +100,7 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Fund balance'|trans }}:</td>
-                            <td class="text-danger fw-bold">{{ mf.currency_format(client.balance, client.currency) }}</td>
+                            <td class="text-danger fw-bold">{{ client.balance|format_currency(client.currency) }}</td>
                         </tr>
                         {% if client.notes %}
                         <tr>
@@ -115,7 +115,7 @@
                         {% endif %}
                         <tr>
                             <td class="text-end">IP:</td>
-                            <td>{%if client.ip %}{{ client.ip|iplookup }}{% else %}{{ 'Unknown'|trans }}{% endif %}</td>
+                            <td>{%if client.ip %}{{ client.ip|mf.ip_lookup_link }}{% else %}{{ 'Unknown'|trans }}{% endif %}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'API Key'|trans }}:</td>
@@ -465,8 +465,8 @@
                             <td>
                                 <a href="{{ '/order/manage'|alink }}/{{ order.id }}">{{ order.title }}</a>
                             </td>
-                            <td>{{ mf.currency_format(order.total, order.currency) }}</td>
-                            <td>{{ mf.period_name(order.period) }}</td>
+                            <td>{{ order.total|format_currency(order.currency) }}</td>
+                            <td>{{ order.period|period_title }}</td>
                             <td>
                                 {% if order.status == 'pending_setup' %}
                                     <span class="badge bg-warning me-1"></span>
@@ -533,7 +533,7 @@
                             <td>
                                 <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
                             </td>
-                            <td>{{ mf.currency_format( invoice.total, invoice.currency) }}</td>
+                            <td>{{ invoice.total|format_currency(invoice.currency) }}</td>
                             <td>{{ invoice.created_at|format_date }}</td>
                             <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                             <td>
@@ -663,7 +663,7 @@
                         {% set payments = admin.client_balance_get_list({ 'per_page': 20, 'client_id': client.id }) %}
                         {% for i, tx in payments.list %}
                         <tr>
-                            <td>{{ mf.currency_format(tx.amount, tx.currency) }}</td>
+                            <td>{{ tx.amount|format_currency(tx.currency) }}</td>
                             <td>{{ tx.description }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
@@ -741,8 +741,8 @@
                         {% set logins = admin.client_login_history_get_list({ 'per_page': 10, 'page': request.page, 'client_id': client.id }) %}
                         {% for i, login in logins.list %}
                         <tr>
-                            <td>{{ login.ip|iplookup }}</td>
-                            <td>{{ login.ip|ipcountryname|default('Unknown'|trans) }}</td>
+                            <td>{{ mf.ip_lookup_link(login.ip) }}</td>
+                            <td>{{ login.ip|ip_country_name|default('Unknown'|trans) }}</td>
                             <td>{{ login.created_at|format_datetime }}</td>
                         </tr>
                         {% else %}
@@ -822,7 +822,7 @@
                             <td>{{ tx.txn_id }}</td>
                             <td>{{ tx.type }}</td>
                             <td>{{ tx.gateway }}</td>
-                            <td>{{ mf.currency_format(tx.amount, tx.currency) }}</td>
+                            <td>{{ tx.amount|format_currency(tx.currency) }}</td>
                             <td>{{ mf.status_name(tx.status) }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>

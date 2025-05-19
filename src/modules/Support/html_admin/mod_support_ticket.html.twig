@@ -283,7 +283,7 @@
             <span class="ms-auto text-muted">{{ message.created_at|format_datetime }}</span>
         </div>
         <div class="card-body" style="display:{{ loop.last or loop.index + 1 == ticket.messages|length ? 'block' : 'none' }};">
-            {{ message.content|markdown }}
+            {{ message.content|markdown_to_html }}
         </div>
     </div>
     {% endfor %}
@@ -298,7 +298,7 @@
                 <div class="ms-auto">{{ include('mod_support_canned_selector.html.twig') }}</div>
             </div>
 
-            <textarea class="bb-textarea" id="rt" name="content" rows="10" required>{{ 'Hello'|trans }} {{ ticket.client.first_name }},
+            <textarea class="editor-textarea" id="rt" name="content" rows="10" required>{{ 'Hello'|trans }} {{ ticket.client.first_name }},
 {{ canned_delay_message }}
 
 {{ profile.signature }}
@@ -398,4 +398,4 @@
 </script>
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}

@@ -47,7 +47,7 @@
 
                         <tr>
                             <td><label>{{ 'Payment amount'|trans }}</label></td>
-                            <td>{{ order.total|money(order.currency) }}</td>
+                            <td>{{ order.total|format_currency(order.currency) }}</td>
                         </tr>
 
                         {% if order.period %}
@@ -84,7 +84,7 @@
                         {% if order.notes %}
                             <tr>
                                 <td><label>{{ 'Order notes'|trans }}</label></td>
-                                <td>{{ order.notes|markdown }}</td>
+                                <td>{{ order.notes|markdown_to_html }}</td>
                             </tr>
                         {% endif %}
 
@@ -148,7 +148,7 @@
                             {% for i, addon in addons %}
                                 <tr>
                                     <td>{{ addon.title }}</td>
-                                    <td>{{ addon.total|money(addon.currency) }}</td>
+                                    <td>{{ addon.total|format_currency(addon.currency) }}</td>
                                     <td>{{ addon.period|period_title }}</td>
                                     <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
                                     <td>

@@ -35,8 +35,8 @@
             <div class="card-body">
                 <div class="pt-3 px-2">
                     {% if post.image %}<img src="{{ post.image }}" alt="{{ post.title }}">{% endif %}
-                    {{ post.content|markdown }}
-                    {% if guest.extension_is_on({ "mod": "comment" }) %}{{ include('mod_comment_block.html.twig') }}{% endif %}
+                    {{ post.content|markdown_to_html }}
+                    {% if guest.extension_is_on({ "mod": "comment" }) %}{% include "mod_comment_block.html.twig" %}{% endif %}
                 </div>
             </div>
             <div class="card-footer">

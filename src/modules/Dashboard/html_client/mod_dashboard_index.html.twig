@@ -19,7 +19,7 @@
 {% block content %}
     {% if settings.showcase_enabled %}
     <div class="hero-unit">
-        <p>{{ settings.showcase_text |markdown }}</p>
+        <p>{{ settings.showcase_text|markdown_to_html }}</p>
         {% if (settings.showcase_button_url) and (settings.showcase_button_title) %}
         <p><a class="btn btn-primary btn-large" href="{{ settings.showcase_button_url }}">{{ settings.showcase_button_title }}</a></p>
         {% endif %}
@@ -89,7 +89,7 @@
                 <dt>{{ 'Email'|trans }}</dt>
                 <dd>{{ profile.email }}</dd>
                 <dt>{{ 'Balance'|trans }}</dt>
-                <dd>{{ profile.balance | money(profile.currency) }}</dd>
+                <dd>{{ profile.balance|format_currency(profile.currency) }}</dd>
             </dl>
         </section>
     </div>

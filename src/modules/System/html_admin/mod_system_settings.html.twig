@@ -219,15 +219,15 @@
                         <div class="card-body">
                             <div class="mb-3">
                                 <h3>{{ 'Company terms of service, legal regulation'|trans }}</h3>
-                                <textarea class="form-control bb-textarea" name="company_tos" rows="5">{{ params.company_tos }}</textarea>
+                                <textarea class="form-control editor-textarea" name="company_tos" rows="5">{{ params.company_tos }}</textarea>
                             </div>
                             <div class="mb-3">
                                 <h3>{{ 'Company privacy policy'|trans }}</h3>
-                                <textarea class="form-control bb-textarea" name="company_privacy_policy" rows="5">{{ params.company_privacy_policy }}</textarea>
+                                <textarea class="form-control editor-textarea" name="company_privacy_policy" rows="5">{{ params.company_privacy_policy }}</textarea>
                             </div>
                             <div class="mb-3">
                                 <h3>{{ 'Notes'|trans }}</h3>
-                                <textarea class="form-control bb-textarea" name="company_note" rows="5">{{ params.company_note }}</textarea>
+                                <textarea class="form-control editor-textarea" name="company_note" rows="5">{{ params.company_note }}</textarea>
                             </div>
                         </div>
                         <div class="card-footer text-end">
@@ -625,7 +625,7 @@ ZW=Zimbabwe
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
                             {% set interface_ips = admin.system_get_interface_ips %}
-                            
+
                             <div class="col-12 col-lg-3">
                                 <label for="interface">{{"Select the default network interface:"|trans }}</label>
                                 <select class="form-select" aria-label="{{ 'Available network interfaces'|trans }}" name="interface" id="interface">
@@ -678,4 +678,4 @@ ZW=Zimbabwe
 </script>
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}
