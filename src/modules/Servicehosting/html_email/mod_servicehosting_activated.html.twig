@@ -51,7 +51,7 @@
     <ul>
         <li><strong>Activated:</strong> {{ order.activated_at|format_date }}</li>
         {% if order.expires_at %}<li><strong>Expires:</strong> {{ order.expires_at|format_date }}</li>{% endif %}
-        {% if order.period %}<li><strong>Billing period:</strong> {{ order.total | money(order.currency) }} every {{ order.period | period_title }}</li>{% endif %}
+        {% if order.period %}<li><strong>Billing period:</strong> {{ order.total|format_currency(order.currency) }} every {{ order.period|period_title }}</li>{% endif %}
     </ul>
 
     <p>Account information:<p>

@@ -64,14 +64,15 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% set currency = guest.currency_get %}
                     {% for tld in admin.servicedomain_tld_get_list({ 'per_page': 99 }).list %}
                     <tr>
                         <td>
                             <a href="{{ 'servicedomain/id'|alink }}/{{ tld.id }}">{{ tld.tld }}</a>
                         </td>
-                        <td>{{ mf.currency_format(tld.price_registration) }}</td>
-                        <td>{{ mf.currency_format(tld.price_renew) }}</td>
-                        <td>{{ mf.currency_format(tld.price_transfer) }}</td>
+                        <td>{{ tld.price_registration|format_currency(currency.code) }}</td>
+                        <td>{{ tld.price_renew|format_currency(currency.code) }}</td>
+                        <td>{{ tld.price_transfer|format_currency(currency.code) }}</td>
                         <td>
                         {{ 'Allow register:'|trans }} {% if tld.allow_register %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}<br/>
                         {{ 'Allow transfer:'|trans }} {% if tld.allow_transfer %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}<br/>

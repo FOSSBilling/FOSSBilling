@@ -75,7 +75,7 @@
                             {% endif %}
                         </header>
                         <section>
-                            <div class="well" id="message-{{message.id}}">{{ message.content|markdown }}</div>
+                            <div class="well" id="message-{{message.id}}">{{ message.content|markdown_to_html }}</div>
                         </section>
                     </div>
                 </div>

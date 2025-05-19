@@ -195,7 +195,7 @@
                     {% endif %}
                 </td>
                 <td>{{ tx.gateway }}</td>
-                <td>{{ mf.currency_format( tx.amount, tx.currency) }}</td>
+                <td>{{ tx.amount|format_currency(tx.currency) }}</td>
                 <td>{{ tx.created_at|format_datetime }}</td>
                 <td>
                     <a class="btn btn-icon" href="{{ 'invoice/transaction'|alink }}/{{ tx.id }}">

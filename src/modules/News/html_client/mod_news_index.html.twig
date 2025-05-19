@@ -27,9 +27,9 @@
                                 <span class="text-muted">{{ post.updated_at|format_datetime }}</span>
                                 <p>
                                     {% if post.excerpt %}
-                                        {{ post.excerpt|truncate(200)|markdown }}
+                                        {{ post.excerpt|truncate(200)|markdown_to_html }}
                                     {% else %}
-                                        {{ post.content|truncate(200)|markdown }}
+                                        {{ post.content|truncate(200)|markdown_to_html }}
                                     {% endif %}
                                 </p>
                                 <a class="link-offset-2 link-underline"

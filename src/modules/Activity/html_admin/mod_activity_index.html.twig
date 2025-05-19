@@ -256,18 +256,9 @@
                 {% endif %}
             </td>
             <td>{{ event.message }}</td>
-            <td>
-                {{ event.ip|iplookup }}
-                {% if event.ip %}
-                    <a href="{{ request._url|link(request|merge({ 'ip': event.ip, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
-                        <svg class="icon icon-sm text-muted">
-                            <use xlink:href="#filter" />
-                        </svg>
-                    </a>
-                {% endif %}
-            </td>
-            <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
-            <td title="{{ event.created_at|timeago }} ago">{{ event.created_at|format_datetime }}</td>
+            <td>{{ mf.ip_lookup_link(event.ip) }}</td>
+            <td>{{ event.ip|ip_country_name|default('Unknown'|trans) }}</td>
+            <td>{{ event.created_at|format_datetime }}</td>
         </tr>
         {% else %}
         <tr>
