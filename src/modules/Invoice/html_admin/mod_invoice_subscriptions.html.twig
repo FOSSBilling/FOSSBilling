@@ -56,7 +56,7 @@
                             <a href="{{ 'client/manage'|alink }}/{{ subscription.client.id }}">{{ subscription.client.first_name }} {{ subscription.client.last_name }}</a>
                         </td>
                         <td>{{ subscription.sid }}</td>
-                        <td>{{ mf.currency_format( subscription.amount, subscription.currency) }} {{ mf.period_name(subscription.period) }}</td>
+                        <td>{{ subscription.amount|format_currency(subscription.currency) }} {{ subscription.period|period_title }}</td>
                         <td>{{ subscription.gateway.title }}</td>
                         <td>
                             {% if subscription.status == 'active' %}

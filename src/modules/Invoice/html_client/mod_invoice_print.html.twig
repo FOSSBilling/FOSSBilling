@@ -139,7 +139,7 @@
             {% if invoice.text_1 %}
                 <div class="card mt-3">
                     <div class="card-body">
-                        {{ invoice.text_1 | markdown }}
+                        {{ invoice.text_1|markdown_to_html }}
                     </div>
                 </div>
             {% endif %}
@@ -159,12 +159,12 @@
                         <td>{{ i+1 }}.</td>
                         <td>{{ item.title }}</td>
                         <td>
-                            {{ item.price | money(invoice.currency) }}
+                            {{ item.price|format_currency(invoice.currency) }}
                             {% if item.quantity > 1 %}
                                 x {{ item.quantity }} {# item.unit #}
                             {% endif %}
                         </td>
-                        <td class="text-end">{{ item.total | money(invoice.currency) }}</td>
+                        <td class="text-end">{{ item.total|format_currency(invoice.currency) }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -176,18 +176,18 @@
                         {% if invoice.tax > 0 %}
                             <tr class="text-end">
                                 <td>{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
-                                <td>{{ invoice.tax | money(invoice.currency) }}</td>
+                                <td>{{ invoice.tax|format_currency(invoice.currency) }}</td>
                             </tr>
                         {% endif %}
                         {% if invoice.discount > 0 %}
                             <tr class="text-end">
                                 <td>{{ 'Discount'|trans }}</td>
-                                <td>{{ invoice.discount | money(invoice.currency) }}</td>
+                                <td>{{ invoice.discount|format_currency(invoice.currency) }}</td>
                             </tr>
                         {% endif %}
                         <tr class="text-end">
                             <td><strong>{{ 'Total'|trans }}</strong></td>
-                            <td><strong>{{ invoice.total | money(invoice.currency) }}</strong></td>
+                            <td><strong>{{ invoice.total|format_currency(invoice.currency) }}</strong></td>
                         </tr>
                     </table>
                 </div>
@@ -196,7 +196,7 @@
             {% if invoice.text_2 %}
                 <div class="card mt-3">
                     <div class="card-body">
-                        {{ invoice.text_2 | markdown }}
+                        {{ invoice.text_2|markdown_to_html }}
                     </div>
                 </div>
             {% endif %}

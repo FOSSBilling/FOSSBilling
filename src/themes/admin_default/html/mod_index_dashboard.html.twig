@@ -48,6 +48,7 @@
         {% set order_statuses = admin.order_get_statuses %}
         {% set invoice_statuses = admin.invoice_get_statuses %}
         {% set support_statuses = admin.support_ticket_get_statuses %}
+        {% set currency = guest.currency_get %}
 
         <div class="col-sm-6 col-lg-3">
             <a href="{{ 'client'|alink }}" class="card card-sm">
@@ -159,19 +160,19 @@
                         <tr>
                             <td>{{ 'Income'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink({ 'paid_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ mf.currency_format(income.today) }}</a>
+                                <a href="{{ 'invoice'|url(query: { 'paid_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ income.today|format_currency(currency.code) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink({ 'paid_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ mf.currency_format(income.yesterday) }}</a>
+                                <a href="{{ 'invoice'|url(query: { 'paid_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ income.yesterday|format_currency(currency.code) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink }}" class="text-danger">{{ mf.currency_format(income.this_month) }}</a>
+                                <a href="{{ 'invoice'|url }}" class="text-danger">{{ income.this_month|format_currency(currency.code) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink }}" class="text-danger">{{ mf.currency_format(income.last_month) }}</a>
+                                <a href="{{ 'invoice'|url }}" class="text-danger">{{ income.last_month|format_currency(currency.code) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink }}" class="text-danger">{{ mf.currency_format(income.total) }}</a>
+                                <a href="{{ 'invoice'|url }}" class="text-danger">{{ income.total|format_currency(currency.code) }}</a>
                             </td>
                         </tr>
                         <tr>
@@ -284,7 +285,7 @@
                             <td>
                                 <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
                             </td>
-                            <td class="text-center">{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
+                            <td class="text-center">{{ invoice.total|format_currency(invoice.currency) }}</td>
                             <td class="text-center">{{ invoice.created_at|format_date }}</td>
                             <td>
                                 {% if invoice.status == 'paid' %}
