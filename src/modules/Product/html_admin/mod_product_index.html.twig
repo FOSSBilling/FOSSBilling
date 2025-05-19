@@ -42,7 +42,7 @@
                 </div>
             </div>
             <div class="table-responsive">
-                <form method="post" action="{{ 'api/admin/product/update_priority'|link }}" {{ fb_api_form({reload: true}) }}>
+                <form method="post" action="{{ 'product/update_priority'|api_url }}" {{ fb_api_form({reload: true}) }}>
                     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                         <thead>
                             <tr>
@@ -62,9 +62,9 @@
                                 <td>{{ product.id }}</td>
                                 <td>{{ mf.status_name(product.type) }}</td>
                                 <td>
-                                    <a href="{{ '/product/category'|alink }}/{{ product.category.id }}">{{ product.category.title }}</a>
+                                    <a href='{{ "product/category/#{product.category.id}"|url }}'>{{ product.category.title }}</a>
                                 </td>
-                                <td><a href="{{ '/product/manage'|alink }}/{{ product.id }}">{{ product.title }}</a></td>
+                                <td><a href='{{ "product/manage/#{product.id}"|url }}'>{{ product.title }}</a></td>
                                 <td>
                                     {% if product.status == 'enabled' %}
                                         <span class="badge bg-success me-1"></span>
@@ -77,13 +77,13 @@
                                     <input type="text" class="form-control form-control-sm" name="priority[{{ product.id }}]" value="{{ product.priority }}" size="2">
                                 </td>
                                 <td>
-                                    <a class="btn btn-icon" href="{{ '/product/manage'|alink }}/{{ product.id }}">
+                                    <a class="btn btn-icon" href='{{ "product/manage/#{product.id}"|url }}'>
                                         <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon" href="{{ 'api/admin/product/delete'|link({'id' : product.id }) }}"
-                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|alink}) }}>
+                                    <a class="btn btn-icon" href="{{ 'product/delete'|api_url({'id' : product.id }) }}"
+                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|url}) }}>
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -114,7 +114,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/prepare'|link }}" {{ fb_api_form({reload: true}) }}>
+                <form method="post" action="{{ 'product/prepare'|api_url }}" {{ fb_api_form({reload: true}) }}>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
                         <div class="col">
@@ -153,16 +153,16 @@
                     <tr>
                         <td>{{ loop.index }}</td>
                         <td>
-                            <a href="{{ '/product/category'|alink }}/{{ cat_id }}">{{ cat_title }}</a>
+                            <a href='{{ "product/category/#{cat_id}"|url }}'>{{ cat_title }}</a>
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/product/category'|alink }}/{{ cat_id }}">
+                            <a class="btn btn-icon" href='{{ "product/category/#{cat_id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'api/admin/product/category_delete'|link({ 'id': cat_id }) }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|alink}) }}>
+                            <a class="btn btn-icon" href="{{ 'product/category_delete'|api_url(query: { 'id': cat_id }) }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|url}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -180,7 +180,7 @@
 
         <div class="tab-pane fade" id="tab-new-category" role="tabpanel" aria-labelledby="new-category-tab">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/category_create'|link }}" {{ fb_api_form({redirect: 'product'|alink}) }}>
+                <form method="post" action="{{ 'product/category_create'|api_url }}" {{ fb_api_form({redirect: 'product'|url}) }}>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                         <div class="col">

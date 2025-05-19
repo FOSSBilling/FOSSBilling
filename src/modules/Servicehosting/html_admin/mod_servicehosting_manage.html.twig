@@ -20,11 +20,11 @@
         </tr>
         <tr>
             <td class="text-end">{{ 'Server Name'|trans }}:</td>
-            <td><a href="{{ 'servicehosting/server'|alink }}/{{ server.id }}">{{ server.name }}</a></td>
+            <td><a href='{{ "servicehosting/server/#{server.id}"|url }}'>{{ server.name }}</a></td>
         </tr>
         <tr>
             <td class="text-end">{{ 'Hosting plan'|trans }}:</td>
-            <td><a href="{{ 'servicehosting/plan'|alink }}/{{ hp.id }}">{{ hp.name }}</a></td>
+            <td><a href='{{ "servicehosting/plan/#{hp.id}"|url }}'>{{ hp.name }}</a></td>
         </tr>
         <tr>
             <td class="text-end">{{ 'Server IP'|trans }}:</td>
@@ -86,7 +86,7 @@
     </a>
     {% endif %}
 
-    <a class="btn btn-primary" href="{{ 'api/admin/servicehosting/sync'|link({ 'order_id': order.id }) }}"
+    <a class="btn btn-primary" href="{{ 'servicehosting/sync'|api_url(query: { 'order_id': order.id }) }}"
         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, message: 'Account Synced'|trans}) }}>
         <svg class="icon" width="24" height="24">
             <use xlink:href="#refresh" />
@@ -98,7 +98,7 @@
 <div class="card-body">
     <h3>{{ 'Change hosting plan'|trans }}</h3>
 
-    <form method="post" action="{{ 'api/admin/servicehosting/change_plan'|link }}" {{ fb_api_form({message: 'Hosting Plan Changed'|trans}) }}>
+    <form method="post" action="{{ 'servicehosting/change_plan'|api_url }}" {{ fb_api_form({message: 'Hosting Plan Changed'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'New hosting plan'|trans }}:</label>
             <div class="col">
@@ -112,7 +112,7 @@
     <hr>
 
     <h3>{{ 'Change account password'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicehosting/change_password'|link }}" {{ fb_api_form({message: 'Account Password Changed'|trans}) }}>
+    <form method="post" action="{{ 'servicehosting/change_password'|api_url }}" {{ fb_api_form({message: 'Account Password Changed'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}:</label>
             <div class="col">
@@ -132,7 +132,7 @@
     <hr>
 
     <h3>{{ 'Change IP'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicehosting/change_ip'|link }}" {{ fb_api_form({message: 'Account IP Changed'|trans}) }}>
+    <form method="post" action="{{ 'servicehosting/change_ip'|api_url }}" {{ fb_api_form({message: 'Account IP Changed'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'IP'|trans }}:</label>
             <div class="col">
@@ -146,7 +146,7 @@
     <hr>
 
     <h3>{{ 'Change username'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicehosting/change_username'|link }}" {{ fb_api_form({message: 'Account Username Changed'|trans}) }}>
+    <form method="post" action="{{ 'servicehosting/change_username'|api_url }}" {{ fb_api_form({message: 'Account Username Changed'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Username'|trans }}:</label>
             <div class="col">
@@ -160,7 +160,7 @@
     <hr>
 
     <h3>{{ 'Change domain'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicehosting/change_domain'|link }}" {{ fb_api_form({message: 'Account Domain Changed'|trans}) }}>
+    <form method="post" action="{{ 'servicehosting/change_domain'|api_url }}" {{ fb_api_form({message: 'Account Domain Changed'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Domain'|trans }}:</label>
             <div class="col">

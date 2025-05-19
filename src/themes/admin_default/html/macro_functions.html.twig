@@ -71,7 +71,7 @@
 
 {% macro ip_lookup_link(ip) %}
     {% if ip is not empty %}
-        <a href="{{ 'security/iplookup'|url({'ip': ip }) }}" target="_blank" class='iplookuplink'>{{ ip }}</a>
+        <a href="{{ 'security/iplookup'|url({'ip': ip }) }}" target="_blank" class='ip_lookup_link'>{{ ip }}</a>
     {% else %}
         {{ ip }}
     {% endif %}

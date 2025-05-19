@@ -1,7 +1,7 @@
 <div class="card-body">
     <h5>{{ 'File'|trans }}</h5>
         <div class="row mb-3">
-            <form method="post" action="{{ '/api/admin/servicedownloadable/config_save'|link }}" {{ fb_api_form({ message: 'Settings Updated'|trans}) }}>
+            <form method="post" action="{{ 'servicedownloadable/config_save'|api_url }}" {{ fb_api_form({ message: 'Settings Updated'|trans}) }}>
             <label class="col-md-3 form-label">
                 {{ 'Keep Orders Updated'|trans }}
             </label>
@@ -20,13 +20,13 @@
         </form>
         </div>
     <div class="row mb-3">
-        <form method="post" action="{{ 'api/admin/servicedownloadable/upload'|link }}" enctype="multipart/form-data" id="upload-form">
+        <form method="post" action="{{ 'servicedownloadable/upload'|api_url }}" enctype="multipart/form-data" id="upload-form">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             {% if product.config.filename  %}
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Currently uploaded file'|trans }}:</label>
                 <div class="col align-content-center">
-                    <a href="{{ 'servicedownloadable/get-file'|alink }}/{{ product.id }}" target="_blank">{{ product.config.filename }}</a>
+                    <a href="{{ 'servicedownloadable/get-file'|url }}/{{ product.id }}" target="_blank">{{ product.config.filename }}</a>
                 </div>
             </div>
             {% endif %}

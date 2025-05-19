@@ -50,7 +50,6 @@
     "ignoreWords": [
         "thead",
         "tbody",
-        "alink",
         "xlink",
         "stylesheet",
         "endfor",
@@ -72,7 +71,6 @@
         "punnycode",
         "timeago",
         "daysleft",
-        "ipcountryname",
         "bbmd",
         "lngh",
         "loggedin",

@@ -5,7 +5,7 @@
 
 {% block body_class %}news-post{% endblock %}
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{{ 'news' | link}}">{{ 'News'|trans }}</a></li>
+<li class="breadcrumb-item"><a href="{{ 'news'|url }}">{{ 'News'|trans }}</a></li>
 <li class="breadcrumb-item active" aria-current="page">{{post.title}}</li>
 {% endblock %}
 
@@ -40,7 +40,7 @@
                 </div>
             </div>
             <div class="card-footer">
-                <a href="{{ '/news/'|link }}" class="btn btn-primary">{{ 'Back to the list'|trans }}</a>
+                <a href="{{ 'news'|url }}" class="btn btn-primary">{{ 'Back to the list'|trans }}</a>
             </div>
         </div>
     </div>

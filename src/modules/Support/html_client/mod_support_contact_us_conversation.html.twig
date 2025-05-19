@@ -6,7 +6,7 @@
 
 {% block body_class %}support-contact-us-conversation{% endblock %}
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{{ 'support/contact-us' | link}}">{{ 'Contact us'|trans }}</a></li>
+<li class="breadcrumb-item"><a href="{{ 'support/contact-us'|url }}">{{ 'Contact us'|trans }}</a></li>
 <li class="breadcrumb-item active" aria-current="page">{{ ticket.subject }}</li>
 {% endblock %}
 
@@ -52,7 +52,7 @@
             <hr>
             <div class="row">
                 <button type="button" class="btn btn-primary btn-small ms-2 w-25" id="new-ticket-button"
-                    {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/contact-us'|alink }) }}> {{ 'Close ticket'|trans }}</button>
+                    {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/contact-us'|url }) }}> {{ 'Close Ticket'|trans }}</button>
                 <a class="btn btn-info btn-small ms-2 w-25" href="#reply-to">{{ 'Reply'|trans }}</a>
             </div>
         </div>
@@ -84,7 +84,7 @@
         </div>
         <div class="card-footer" id="reply-to">
             {% if ticket.status != 'closed' %}
-                <form method="post" action="{{ 'api/guest/support/ticket_reply'|link }}" {{ fb_api_form({ reload: true }) }}>
+                <form method="post" action="{{ 'support/ticket_reply'|api_url }}" {{ fb_api_form({ reload: true }) }}>
                     <input type="hidden" name="hash" value="{{ ticket.hash }}" />
 
                     <textarea name="message" cols="5" rows="10" class="editor-textarea form-control" required="required" id="ticket-reply-text"></textarea>

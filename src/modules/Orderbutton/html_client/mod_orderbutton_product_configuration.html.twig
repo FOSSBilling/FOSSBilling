@@ -12,8 +12,8 @@
     <div id="order" class="accordion-collapse collapse {% if product %}show{%endif%}" data-bs-parent="#orderManager">
         <div class="accordion-body">
             <div class="accordion-inner">
-                <form method="post" action="{{ 'api/guest/cart/add_item'|link }}" style="background:none;" class="form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}"
-                    {{ fb_api_form({message: 'Product Added to Shopping Cart'|trans, redirect: ('order'|link({ 'checkout' : 1 }) ~ (request.show_custom_form_values ? '&show_custom_form_values=1' : ''))}) }}>
+                <form method="post" action="{{ 'cart/add_item'|api_url(role: 'guest') }}" style="background:none;" class="form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}"
+                    {{ fb_api_form({message: 'Product Added to Shopping Cart'|trans, redirect: ('order'|url(query: { 'checkout' : 1 }) ~ (request.show_custom_form_values ? '&show_custom_form_values=1' : ''))}) }}>
                     {% set product_details %}
                         <div class="well">
                             <h3>{{ product.title }}</h3>

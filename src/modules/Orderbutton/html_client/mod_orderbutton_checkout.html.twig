@@ -112,14 +112,14 @@
                             <a href="#" id="show-promo-field">{{ 'Have a coupon code?'|trans }}</a>
                         {% endif %}
 
-                        <form method="post" action="{{ 'api/guest/cart/apply_promo'|link }}" {{ fb_api_form({message: 'Promo Code Applied to Order'|trans, reload: true}) }}
+                        <form method="post" action="{{ 'cart/apply_promo'|api_url(role: 'guest') }}" {{ fb_api_form({message: 'Promo Code Applied to Order'|trans, reload: true}) }}
                             {% if not cart.promocode %}style="display:none"{% endif %} id="apply-promo">
                             <div class="control-group">
                                 <div class="form-controls">
                                     <div class="input-append">
                                         <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo.required %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
                                         {% if cart.promocode %}
-                                            <a class="btn btn-warning btn-sm mb-1" href="{{ 'api/guest/cart/remove_promo'|link }}" type="button" {{ fb_api_link({reload: true}) }}>{{ 'Remove'|trans }}</a>
+                                            <a class="btn btn-warning btn-sm mb-1" href="{{ 'cart/remove_promo'|api_url(role: 'guest') }}" type="button" {{ fb_api_link({reload: true}) }}>{{ 'Remove'|trans }}</a>
                                         {% else %}
                                             <button class="btn btn-primary btn-sm mb-1" type="submit">{{ 'Apply'|trans }}</button>
                                         {% endif %}
@@ -158,7 +158,7 @@
 
                         </table>
 
-                        <form method="post" action="{{ 'api/client/cart/checkout'|link }}" {{ fb_api_form({callback: 'onOrderCheckout'}) }}>
+                        <form method="post" action="{{ 'cart/checkout'|api_url }}" {{ fb_api_form({callback: 'onOrderCheckout'}) }}>
                             <fieldset>
                                 {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
                                 {% if cart.total and not enough_in_balance %}
@@ -183,7 +183,7 @@
                                                 <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
                                                 <label class="form-check-label" for="flexCheckDefault">
                                                     {# TODO: Make this translatable once support for placeholders is implemented #}
-                                                    <span>I agree to the <a href="{{ '/tos'|link }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ '/privacy-policy'|link }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
+                                                    <span>I agree to the <a href="{{ 'tos'|url }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
                                                 </label>
                                             </div>
                                         {% endif %}
@@ -194,7 +194,7 @@
                             </fieldset>
                             {% if settings.checkout_tos == 'implicit' %}
                                 {# TODO: Make this translatable once support for placeholders is implemented #}
-                                <span class="text-muted">By completing your order, you agree to our <a href="{{ '/tos'|link }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ '/privacy-policy'|link }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
+                                <span class="text-muted">By completing your order, you agree to our <a href="{{ 'tos'|url }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
                             {% endif %}
                         </form>
                     </div>

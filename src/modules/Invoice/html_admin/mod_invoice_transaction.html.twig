@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'invoice/transactions'|alink }}">{{ 'Transactions'|trans }}</a>
+            <a href="{{ 'invoice/transactions'|url }}">{{ 'Transactions'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">#{{transaction.id}}</li>
     </ol>
@@ -58,7 +58,7 @@
                         <tr>
                             <td class="text-end">{{ 'Invoice ID'|trans }}</td>
                             <td>
-                                <a href="{{ 'invoice/manage'|alink }}/{{ transaction.invoice_id }}">{{ transaction.invoice_id|default('-') }}</a>
+                                <a href='{{ "invoice/manage/#{transaction.invoice_id}"|url }}'>{{ transaction.invoice_id|default('-') }}</a>
                             </td>
                         </tr>
                         <tr>
@@ -83,7 +83,7 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'IP'|trans }}</td>
-                            <td>{{ transaction.ip }} {{ transaction.ip|ipcountryname|default('Unknown'|trans) }}</td>
+                            <td>{{ transaction.ip }} {{ transaction.ip|ip_country_name|default('Unknown') }}</td>
                         </tr>
                         {% if transaction.note %}
                         <tr>
@@ -111,14 +111,14 @@
             </div>
 
             <div class="card-footer text-center">
-                <a class="btn btn-primary" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': transaction.id }) }}" {{ fb_api_link({reload: true}) }}>
+                <a class="btn btn-primary" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': transaction.id }) }}" {{ fb_api_link({reload: true}) }}>
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#refresh" />
                     </svg>
                     <span>{{ 'Process'|trans }}</span>
                 </a>
-                <a class="btn btn-primary" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': transaction.id }) }}"
-                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/transactions'|alink}) }}>
+                <a class="btn btn-primary" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': transaction.id }) }}"
+                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/transactions'|url}) }}>
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
@@ -129,7 +129,7 @@
 
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/invoice/transaction_update'|link }}" {{ fb_api_form({reload: true}) }}>
+                <form method="post" action="{{ 'invoice/transaction_update'|api_url }}" {{ fb_api_form({reload: true}) }}>
                     <h5>{{ 'Transaction payment information'|trans }}</h5>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Invoice ID'|trans }}:</label>
@@ -201,7 +201,7 @@
             <div class="card-body">
                 <h3>{{ 'Note about this transaction'|trans }}</h3>
 
-                <form method="post" action="{{ 'api/admin/invoice/transaction_update'|link }}" {{ fb_api_form({message: 'Transaction Note Updated'|trans}) }}>
+                <form method="post" action="{{ 'invoice/transaction_update'|api_url }}" {{ fb_api_form({message: 'Transaction Note Updated'|trans}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}:</label>
                         <div class="col">
