@@ -1,28 +1,3 @@
-{% macro q(bool) %}
-    {% if bool %}
-        {{ 'Yes'|trans }}
-    {% else %}
-        {{ 'No'|trans }}
-    {% endif %}
-{% endmacro %}
-
-{% macro selectbox(name, options, selected, required, nullOption) %}
-    <select class="form-select" name="{{ name }}" id="{{ name }}"{% if required %} required{% endif%}>
-        {% if nullOption %}<option value="">-- {{ nullOption }} --</option>{% endif %}
-        {% for val, label in options %}
-        <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
-        {% endfor %}
-    </select>
-{% endmacro %}
-
-{% macro selectboxtld(name, options, selected, required) %}
-    <select class="form-select" name="{{ name }}"{% if required %} required{% endif %}>
-        {% for data in options %}
-        <option value="{{ data.tld }}" label="{{ data.tld }}"{% if selected == data.tld %} selected{% endif %}>{{ data.tld }}</option>
-        {% endfor %}
-    </select>
-{% endmacro %}
-
 {% macro build_form(elements, values) %}
     {% for name, element in elements %}
     <div class="mb-3 row">
@@ -49,7 +24,7 @@
         <div class="col">
             {% for k, v in element[1].multiOptions %}
                 <div class="form-check form-check-inline">
-                    <input class="form-check-input" id="el-{{ name ~ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == values[name] %} checked{% endif %}>
+                    <input class="form-check-input" id="el-{{ name ~ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == values[name] %}checked{% endif %}>
                     <label class="form-check-label" for="el-{{ name ~ k }}">{{ v }}</label>
                 </div>
             {% endfor %}
@@ -62,53 +37,12 @@
         {% else %}
         <label class="form-label col-3 col-form-label" for="el-{{ name }}">{{ element[1].label }}{% if element[1].description %} - {{ element[1].description }}{% endif %}</label>
         <div class="col">
-            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"{% if not element[1].required is defined and not element[1].required == 'false' %} required{% endif %}>
+            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"{% if not element[1].required is defined and not element[1].required == 'false' %}required{% endif %}>
         </div>
         {% endif %}
     </div>
     {% endfor %}
-{% endmacro %}
-
-{% macro currency_format(price, currency) %}
-    {% set c = guest.currency_get({"code":currency}) %}
-    {% set p = (price)|number %}
-    {% if c.price_format == 1 %}
-        {% set p = p|number('2', '.', '') %}
-    {% elseif c.price_format == 2 %}
-        {% set p = p|number('2', '.', ',') %}
-    {% elseif c.price_format == 3 %}
-        {% set p = p|number('2', ',', '.') %}
-    {% elseif c.price_format == 4 %}
-        {% set p = p|number('0', '', ',') %}
-    {% elseif c.price_format == 5 %}
-        {% set p = p|number(0, '', '') %}
-    {% endif %}
-    {{ c.format|replace({'{{price}}': p }) }}
-{% endmacro %}
-
-{% macro currency(price, currency) %}
-    {% if currency == NULL %}
-        {% set c = guest.cart_get_currency %}
-    {% else %}
-        {% set c = guest.currency_get({"code":currency}) %}
-    {% endif %}
-
-    {% set p = (price * c.conversion_rate) %}
-
-    {% if c.price_format == 1 %}
-        {% set p = p|number('2', '.', '') %}
-    {% elseif c.price_format == 2 %}
-        {% set p = p|number('2', '.', ',') %}
-    {% elseif c.price_format == 3 %}
-        {% set p = p|number('2', ',', '.') %}
-    {% elseif c.price_format == 4 %}
-        {% set p = p|number('0', '', ',') %}
-    {% elseif c.price_format == 5 %}
-        {% set p = p|number(0, '', '') %}
-    {% endif %}
-
-    {{ c.format|replace({'{{price}}': p }) }}
-{% endmacro %}
+{% endmacro build_form %}
 
 {% macro status_name(status) %}
     {% set status = status|replace({'_': " "})|title|trim %}
@@ -133,35 +67,45 @@
     {% else %}
         {{ status|trans }}
     {% endif %}
-{% endmacro %}
+{% endmacro status_name %}
 
-{% macro period_name(period) %}
-    {{ guest.system_period_title({"code":period}) }}
-{% endmacro %}
+{% macro ip_lookup_link(ip) %}
+    {% if ip is not empty %}
+        <a href="{{ 'security/iplookup'|url({'ip': ip }) }}" target="_blank" class='iplookuplink'>{{ ip }}</a>
+    {% else %}
+        {{ ip }}
+    {% endif %}
+{% endmacro ip_lookup_link %}
 
-{% macro markdown_quote(text) %}
+{% macro q(bool) %}
+    {% if bool %}
+        {{ 'Yes'|trans }}
+    {% else %}
+        {{ 'No'|trans }}
+    {% endif %}
+{% endmacro q %}
 
-{% for line in text|split('\n') %}
-> {{ line }}
-{% endfor %}
-{% endmacro %}
+{% macro selectbox(name, options, selected, required, nullOption) %}
+    <select class="form-select" name="{{ name }}" id="{{ name }}"{% if required %}required{% endif%}>
+        {% if nullOption %}<option value="">-- {{ nullOption }} --</option>{% endif %}
+        {% for val, label in options %}
+            <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+        {% endfor %}
+    </select>
+{% endmacro selectbox %}
 
-{% macro bb_editor(selector) %}
-{% if guest.extension_is_on({"mod":"wysiwyg"}) %}
-{{ include('mod_wysiwyg_js.html.twig', { 'class': selector|trim('.#') }) }}
-{% else %}
-<!-- No WYSIWYG, no fancy stuff. Enable the WYSIWYG extension for a better management experience. -->
-{% endif %}
-{% endmacro %}
+{% macro selectboxtld(name, options, selected, required) %}
+    <select class="form-select" name="{{ name }}"{% if required %}required{% endif %}>
+        {% for data in options %}
+            <option value="{{ data.tld }}" label="{{ data.tld }}"{% if selected == data.tld %}selected{% endif %}>{{ data.tld }}</option>
+        {% endfor %}
+    </select>
+{% endmacro selectboxtld %}
 
-{% macro table_search() %}
-<div style="position: relative;">
-    <div class="dataTables_filter">
-        <form method="get" action="">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-            <input type="hidden" name="_url" value="{{request._url}}"/>
-            <label>{{ 'Search:'|trans }} <input type="text" name="search" placeholder="{{ 'Enter search text...'|trans }}" value="{{ request.search }}"><div class="srch"></div></label>
-        </form>
-    </div>
-</div>
+{% macro wysiwyg(selector) %}
+    {% if guest.extension_is_on({"mod":"wysiwyg"}) %}
+        {% include "mod_wysiwyg_js.html.twig" with {"class":selector|trim('.#')} %}
+    {% else %}
+        <!-- No WYSIWYG, no fancy stuff. Enable the WYSIWYG extension for a better management experience. -->
+    {% endif %}
 {% endmacro %}

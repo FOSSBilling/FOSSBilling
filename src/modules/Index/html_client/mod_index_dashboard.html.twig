@@ -18,7 +18,7 @@
 {% block content %}
     {% if settings.showcase_enabled %}
         <div class="alert alert-info" role="alert">
-            <p>{{ settings.showcase_text |markdown }}</p>
+            <p>{{ settings.showcase_text|markdown_to_html }}</p>
 
             {% if (settings.showcase_button_url) and (settings.showcase_button_title) %}
                 <a class="btn btn-primary btn-large"
@@ -61,7 +61,7 @@
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Email'|trans }}</dt>
                                 <dd class="col-sm-8">{{ profile.email }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Balance'|trans }}</dt>
-                                <dd class="col-sm-8">{{ profile.balance | money(profile.currency) }}</dd>
+                                <dd class="col-sm-8">{{ profile.balance|format_currency(profile.currency) }}</dd>
                             </div>
                         </div>
                     </div>

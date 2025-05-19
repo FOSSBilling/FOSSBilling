@@ -13,11 +13,11 @@
                                 element.dataset.editorRequired = 'true';
                                 element.removeAttribute('required');
                             }
-                            
+
                             // Register editor for canned response functionality
                             registerEditor(element, editor);
                         })
-                        .catch(error => { 
+                        .catch(error => {
                             console.error('CKEditor initialization error:', error);
                         });
                 });
@@ -31,7 +31,7 @@
                     }, 1000);
                 }
             };
-            
+
             // Check if DOM is already loaded
             if (document.readyState === 'loading') {
                 // Still loading, wait for DOMContentLoaded

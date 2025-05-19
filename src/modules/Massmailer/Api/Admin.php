@@ -99,7 +99,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['subject' => 'Message subject was not passed'])]
     public function create($data)
     {
-        $default_content = '{% apply markdown %}
+        $default_content = '{% apply markdown_to_html %}
 Hi {{ c.first_name }} {{ c.last_name }},
 
 Your email is: {{ c.email }}
