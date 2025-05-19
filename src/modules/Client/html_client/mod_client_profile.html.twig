@@ -13,7 +13,7 @@
             <div class="row">
                 <span>{{ 'You must verify your email address before you may access our services.'|trans }}</span>
             </div>
-            <a class="btn btn-primary" href="{{ 'api/client/client/resend_email_verification'|link }}"
+            <a class="btn btn-primary" href="{{ 'client/resend_email_verification'|api_url }}"
                {{ fb_api_link({message: 'Verification Email Re-sent'|trans}) }}>{{ 'Resend Verification Email'|trans }}</a>
         </div>
     {% endif %}
@@ -169,7 +169,7 @@
                     <div class="card-body tab-pane" id="pass-tab-pane" role="tabpanel" tabindex="0">
                         <h5 class="card-title mb-1">{{ 'Change Password'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'Enter your new password twice to avoid mistakes. '|trans }}</p>
-                        <form method="post" action="{{ 'api/client/profile/change_password'|link }}" {{ fb_api_form() }}>
+                        <form method="post" action="{{ 'profile/change_password'|api_url }}" {{ fb_api_form() }}>
                             <div class="mb-3">
                                 <label class="form-label" for="current_password">{{ 'Current Password'|trans }}</label>
                                 <input class="form-control" type="password" name="current_password"

@@ -7,7 +7,7 @@
 {% block breadcrumbs %}
     {% if not settings.hide_dashboard_breadcrumb %}
         <ul class="breadcrumb">
-            <li><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a> <span class="dropdown-divider">/</span></li>
+            <li><a href="{{ '/'|url }}">{{ 'Home'|trans }}</a> <span class="dropdown-divider">/</span></li>
             <li class="active">{{ 'Dashboard'|trans }}</li>
         </ul>
     {% endif %}
@@ -35,7 +35,7 @@
                     {% for i, ticket in tickets.list %}
                         <div class="alert alert-info d-flex justify-content-between" role="alert">
                             <span>Ticket <strong>#{{ ticket.id }}</strong> was replied to {{ ticket.updated_at|timeago }} {{ 'ago'|trans }}.</span><a
-                                href="{{ 'support/ticket'|link }}/{{ ticket.id }}"
+                                href='{{ "support/ticket/#{ticket.id}"|url }}'
                                 class="alert-link">{{ 'Reply'|trans }}</a>
                         </div>
                     {% endfor %}
@@ -51,7 +51,7 @@
                             <span class="h6 m-0 pt-1">{{ 'Profile'|trans }}</span>
                             <div class="py-2">
                                 <a class="btn btn-sm btn-dark"
-                                   href="{{ 'client/profile'|link }}">{{ 'Update'|trans }}</a>
+                                   href="{{ 'client/profile'|url }}">{{ 'Update'|trans }}</a>
                             </div>
                         </div>
                         <div class="card-body">
@@ -73,7 +73,7 @@
                             <span class="h6 m-0 pt-1">{{ 'Invoices'|trans }}</span>
                             <div class="py-2">
                                 <a class="btn btn-sm btn-dark"
-                                   href="{{ 'invoice'|link }}">{{ 'All Invoices'|trans }}</a>
+                                   href="{{ 'invoice'|url }}">{{ 'All Invoices'|trans }}</a>
                             </div>
                         </div>
                         <div class="card-body">
@@ -97,9 +97,9 @@
                             <span class="h6 m-0 pt-1">{{ 'Orders'|trans }}</span>
                             <div class="py-2">
                                 <a class="btn btn-sm btn-primary order-button"
-                                   href="{{ 'order'|link }}">{{ 'New order'|trans }}</a>
+                                   href="{{ 'order'|url }}">{{ 'New order'|trans }}</a>
                                 <a class="btn btn-sm btn-dark"
-                                   href="{{ 'order/service'|link }}">{{ 'All orders'|trans }}</a>
+                                   href="{{ 'order/service'|url }}">{{ 'All orders'|trans }}</a>
                             </div>
                         </div>
                         <div class="card-body">
@@ -121,8 +121,8 @@
                             <span class="h6 m-0 pt-1">{{ 'Tickets'|trans }}</span>
                             <div class="py-2">
                                 <a class="btn btn-sm btn-primary"
-                                   href="{{ 'support'|link({ 'ticket': 1 }) }}">{{ 'New ticket'|trans }}</a>
-                                <a class="btn btn-sm btn-dark" href="{{ 'support'|link }}">{{ 'All tickets'|trans }}</a>
+                                   href="{{ 'support'|url(query: { 'ticket': 1 }) }}">{{ 'New ticket'|trans }}</a>
+                                <a class="btn btn-sm btn-dark" href="{{ 'support'|url }}">{{ 'All tickets'|trans }}</a>
                             </div>
                         </div>
                         <div class="card-body">
@@ -147,7 +147,7 @@
                             {% if client.order_get_list({ "per_page": 5, "page": request.page, "hide_addons": 1 }).list %}
                                 <div class="list-group list-group-flush">
                                     {% for i, order in client.order_get_list({ "per_page": 5, "page": request.page, "hide_addons": 1 }).list %}
-                                        <a href="{{ 'order/service/manage'|link }}/{{ order.id }}"
+                                        <a href='{{ "order/service/manage/#{order.id}"|url }}'
                                            class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
                                             <div>
                                                 <div>
@@ -179,7 +179,7 @@
                             {% if client.support_ticket_get_list({ "per_page": 5 }).list %}
                                 <div class="list-group list-group-flush">
                                     {% for i, ticket in client.support_ticket_get_list({ "per_page": 5 }).list %}
-                                        <a href="{{ 'support/ticket'|link }}/{{ ticket.id }}"
+                                        <a href='{{ "support/ticket/#{ticket.id}"|url }}'
                                            class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
                                             <div>
                                                 <div>
@@ -211,8 +211,8 @@
                     <div class="card-body">
                         <p>{{ 'You are currently logged out'|trans }}</p>
                         <div class="d-flex gap-2">
-                            <a class="btn btn-sm  btn-primary" href="{{ '/login'|link }}">{{ 'Login'|trans }}</a>
-                            <a class="btn btn-sm btn-dark" href="{{ '/signup'|link }}">{{ 'Register'|trans }}</a>
+                            <a class="btn btn-sm  btn-primary" href="{{ 'login'|url }}">{{ 'Login'|trans }}</a>
+                            <a class="btn btn-sm btn-dark" href="{{ 'signup'|url }}">{{ 'Register'|trans }}</a>
                         </div>
                     </div>
                 </div>
@@ -224,7 +224,7 @@
                     <div class="card-body">
                         <p>{{ 'Order new products and services'|trans }}</p>
                         <div class="d-flex gap-2">
-                            <a class="btn btn-sm btn-dark" href="{{ '/order'|link }}">{{ 'Order'|trans }}</a>
+                            <a class="btn btn-sm btn-dark" href="{{ 'order'|url }}">{{ 'Order'|trans }}</a>
                         </div>
                     </div>
                 </div>
@@ -235,9 +235,9 @@
                     <div class="card mb-4">
                         <div class="card-header h6 py-3">{{ 'News'|trans }}</div>
                         <div class="card-body">
-                            <p>{{ 'Latest news and announcements' | trans }}</p>
+                            <p>{{ 'Latest news and announcements'|trans }}</p>
                             <div class="d-flex gap-2">
-                                <a class="btn btn-sm btn-dark" href="{{ '/news'|link }}">{{ 'Announcements'|trans }}</a>
+                                <a class="btn btn-sm btn-dark" href="{{ 'news'|url }}">{{ 'Announcements'|trans }}</a>
                             </div>
                         </div>
                     </div>
@@ -249,9 +249,9 @@
                     <div class="card mb-4">
                         <div class="card-header h6 py-3">{{ 'Knowledge Base'|trans }}</div>
                         <div class="card-body">
-                            <p>{{ 'Find answers to frequent questions' | trans }}</p>
+                            <p>{{ 'Find answers to frequent questions'|trans }}</p>
                             <div class="d-flex gap-2">
-                                <a class="btn btn-sm btn-dark" href="{{ '/support/kb'|link }}">{{ 'Knowledge Base'|trans }}</a>
+                                <a class="btn btn-sm btn-dark" href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
                             </div>
                         </div>
                     </div>

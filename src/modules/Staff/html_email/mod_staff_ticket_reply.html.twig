@@ -39,7 +39,7 @@
 	<p>Hello {{ c.name }},</p>
 
     <p><strong>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</strong> replied to support ticket #{{ ticket.id }}</p>
-	<a href="{{'support/ticket'|alink }}/{{ ticket.id }}" target="_blank">Review the ticket</a>
+	<a href='{{ "support/ticket/#{ticket.id}"|url(detect_app_area: false) }}' target="_blank">Review the ticket</a>
 
     <p>Ticket info</p>
     <ul>
@@ -48,9 +48,9 @@
         <li><strong>Status:</strong> {{ticket.status|title}}</li>
     </ul>
 
-    <a href="{{'support/ticket'|alink }}/{{ ticket.id }}" target="_blank">Reply<a>
+    <a href='{{ "support/ticket/#{ticket.id}"|url(detect_app_area: false) }}' target="_blank">Reply<a>
 
-    <p>You may <a href="{{'admin/staff/login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{'admin/staff/profile'|link}}" target="_blank">edit your profile.</a>
+    <p>You may <a href="{{ 'staff/login'|url(query: { 'email': c.email }, detect_app_area: false) }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(detect_app_area: false) }}" target="_blank">edit your profile.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

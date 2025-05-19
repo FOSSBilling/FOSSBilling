@@ -128,7 +128,7 @@
                 if(json.error) {
                     alert(json.error.message);
                 } else {
-                    parent.window.location = "{{ 'support/contact-us/conversation'|link }}" + '/' + json.result;
+                    parent.window.location = "{{ 'support/contact-us/conversation'|url }}" + '/' + json.result;
                 }
             })
             .catch(error => console.error('Error:', error));

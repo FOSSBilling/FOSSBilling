@@ -9,7 +9,7 @@
 
 {# include plugin #}
 
-<form method="post" action="{{ 'api/admin/servicecustom/update'|link }}" {{ fb_api_form({message: 'Service Updated'|trans}) }}>
+<form method="post" action="{{ 'servicecustom/update'|api_url }}" {{ fb_api_form({message: 'Service Updated'|trans}) }}>
     <fieldset>
         {% for name, value in service %}
         <div class="rowElem">

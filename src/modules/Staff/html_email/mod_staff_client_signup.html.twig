@@ -39,7 +39,7 @@
 	<p>Hello {{ staff.name }},</p>
 	<p><strong>{{ c.first_name }} {{ c.last_name }}</strong> has just signed up with {{ guest.system_company.name }}</p>
 
-    <p><a href="{{'client/manage'|alink}}/{{c.id}}" target="_blank">Manage client.</a>
+    <p><a href='{{ "client/manage/#{c.id}"|url(detect_app_area: false) }}' target="_blank">Manage client.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

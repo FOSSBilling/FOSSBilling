@@ -47,11 +47,11 @@
         <li><strong>Status:</strong> {{ticket.status|title}}</li>
     </ul>
 
-    <a href="{{'support/ticket'|link}}/{{ ticket.id }}" target="_blank">Reply<a>
-    
+    <a href='{{ "support/ticket/#{ticket.id}"|url(detect_app_area: false) }}' target="_blank">Reply<a>
+
     <p>Please do not reply to this email directly. Use the link provided above.</p>
 
-    <p>You may <a href="{{'admin/staff/login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{'admin/staff/profile'|link}}" target="_blank">edit your profile.</a>
+    <p>You may <a href="{{ 'staff/login'|url(query: { 'email': c.email }, detect_app_area: false) }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(detect_app_area: false) }}" target="_blank">edit your profile.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

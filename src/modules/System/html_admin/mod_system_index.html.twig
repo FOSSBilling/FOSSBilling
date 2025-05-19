@@ -17,7 +17,7 @@
                 {% for ext in admin.extension_get_list({ 'active': 1, 'has_settings': 1 }|merge(request)) %}
                     <div class="datagrid-item">
                         <div class="datagrid-title">
-                            <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
+                            <a href='{{ "extension/settings/#{ext.id}"|url }}'>
                                 {% set icon_filename = ext.icon_url|split('/')|last %}
                                 {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg' and ext.icon_path) %}
                                     <div class="d-flex align-items-center gap-2">

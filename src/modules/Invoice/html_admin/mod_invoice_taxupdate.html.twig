@@ -11,7 +11,7 @@
         <div class="card-body">
             <h3>{{ 'Update tax rule'|trans }}</h3>
 
-            <form method="post" action="{{ 'api/admin/invoice/tax_update'|link }}" {{ fb_api_form({redirect: 'invoice/tax'|alink}) }}>
+            <form method="post" action="{{ 'invoice/tax_update'|api_url }}" {{ fb_api_form({redirect: 'invoice/tax'|url}) }}>
                 <div class="mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Tax title'|trans }}:</label>
                     <div class="col">

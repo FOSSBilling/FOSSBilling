@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home"/>
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'SpamChecker settings'|trans }}</li>
     </ul>
@@ -29,7 +29,8 @@
         </div>
 
         {% set params = admin.extension_config_get({ "ext": "mod_spamchecker" }) %}
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
+        <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
+
             <div class="card-body">
                 <input type="hidden" name="ext" value="mod_spamchecker">
                 <div class="row">
@@ -74,7 +75,7 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div id="recaptcha_v2_settings">
                     <div class="mb-3 row">
                         <label class="col-md-3 col-form-label" for="captcha_recaptcha_publickey">{{ 'reCAPTCHA Public key'|trans }}</label>
@@ -164,7 +165,7 @@
     document.addEventListener("DOMContentLoaded", function() {
         function toggleProviderSettings() {
             var selectedProvider = document.getElementById("provider-select").value;
-            
+
             if (selectedProvider === 'recaptcha_v2') {
                 document.getElementById("recaptcha_v2_settings").style.display = "block";
                 document.getElementById("turnstile_settings").style.display = "none";

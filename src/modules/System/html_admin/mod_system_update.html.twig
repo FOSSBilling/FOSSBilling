@@ -36,7 +36,7 @@
         </div>
         <div class="card-footer">
             {% if admin.system_update_available or update_info['branch'] == 'preview' %}
-                <a class="btn btn-primary" href="{{ 'api/admin/system/update_core'|link }}"
+                <a class="btn btn-primary" href="{{ 'system/update_core'|api_url }}"
                     {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
                     <svg class="icon">
                         <use xlink:href="#download" />
@@ -53,13 +53,13 @@
                     {{ 'Update FOSSBilling'|trans }}
                 </a>
             {% endif %}
-            <a class="btn btn-primary" href="{{ 'api/admin/system/recheck_update'|link }}" {{ fb_api_link({ reload: true }) }}>
+            <a class="btn btn-primary" href="{{ 'system/recheck_update'|api_url }}" {{ fb_api_link({ reload: true }) }}>
                 <svg class="icon">
                     <use xlink:href="#refresh" />
                 </svg>
                 {{ 'Check for Updates'|trans }}
             </a>
-            <a class="btn btn-primary" href="{{ 'api/admin/system/manual_update'|link }}"
+            <a class="btn btn-primary" href="{{ 'system/manual_update'|api_url }}"
                 {{ fb_api_link({ message: 'Patches Applied and Configuration Updated'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
                 <svg class="icon">
                     <use xlink:href="#cog-play" />

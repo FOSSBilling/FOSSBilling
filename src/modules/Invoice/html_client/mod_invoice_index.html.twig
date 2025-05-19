@@ -56,8 +56,7 @@
                                         <td>{{ invoice.created_at|format_date }}</td>
                                         <td>{{ invoice.due_at|format_date }}</td>
                                         <td>{{ invoice.total|format_currency(invoice.currency) }}</td>
-                                        <td><a class="btn btn-sm btn-success"
-                                            href="{{ 'invoice'|link }}/{{ invoice.hash }}">{{ 'Pay'|trans }}</a>
+                                        <td><a class="btn btn-sm btn-success" href='{{ "invoice/#{invoice.hash}"|url }}'>{{ 'Pay'|trans }}</a>
                                         </td>
                                     </tr>
                                 {% else %}
@@ -89,8 +88,7 @@
                                         <td>{{ invoice.created_at|format_date }}</td>
                                         <td>{{ invoice.paid_at|format_date }}</td>
                                         <td>{{ invoice.total|format_currency(invoice.currency) }}</td>
-                                        <td><a href="{{ 'invoice'|link }}/{{ invoice.hash }}"
-                                            class="btn btn-outline-secondary btn-sm">{{ 'View'|trans }}</a></td>
+                                        <td><a href='{{ "invoice/#{invoice.hash}"|url }}' class="btn btn-outline-secondary btn-sm">{{ 'View'|trans }}</a></td>
                                     </tr>
                                 {% else %}
                                     <tr>

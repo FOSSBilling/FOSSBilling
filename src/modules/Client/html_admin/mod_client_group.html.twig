@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'client'|alink }}#tab-groups">{{ 'Client groups'|trans }}</a>
+            <a href="{{ 'client'|url }}#tab-groups">{{ 'Client groups'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ group.title}}</li>
     </ol>
@@ -25,7 +25,7 @@
     <div class="card-header">
         <h4>{{ 'Edit client group'|trans }} - {{ group.title }}</h4>
     </div>
-    <form method="post" action="{{ 'api/admin/client/group_update'|link }}" {{ fb_api_form({redirect: 'client'|alink}) }}>
+    <form method="post" action="{{ 'client/group_update'|api_url }}" {{ fb_api_form({redirect: 'client'|alink}) }}>
         <div class="card-body">
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
@@ -38,15 +38,15 @@
         <input type="hidden" name="id" value="{{ group.id }}">
 
         <div class="card-footer d-flex gap-2">
-            <a href="{{ 'client'|alink }}" class="btn btn-secondary w-25">
+            <a href="{{ 'client'|url }}" class="btn btn-secondary w-25">
                 <svg class="icon">
                     <use xlink:href="#arrow-sm-left" />
                 </svg>
                 {{ 'Go back'|trans }}
             </a>
             <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
-            <a class="btn btn-danger w-25" href="{{ 'api/admin/client/group_delete'|link({ 'id': group.id }) }}"
-                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|alink}) }}>
+            <a class="btn btn-danger w-25" href="{{ 'client/group_delete'|api_url(query: { 'id': group.id }) }}"
+                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url}) }}>
                 <svg class="icon">
                     <use xlink:href="#delete" />
                 </svg>
