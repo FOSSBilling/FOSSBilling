@@ -16,7 +16,7 @@
 
 <div class="card-footer text-center">
     {{ order_actions }}
-    <a class="btn btn-primary" href="{{ 'api/admin/serviceapikey/reset'|link({ 'order_id': order.id }) }}"
+    <a class="btn btn-primary" href="{{ 'serviceapikey/reset'|api_url(query: { 'order_id': order.id }) }}"
         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
         <svg class="icon" width="24" height="24">
             <use xlink:href="#refresh" />
@@ -29,7 +29,7 @@
     <h2>{{ 'API key configuration'|trans }}</h2>
     <P>{{ 'Changing the API key generation options will not automatically regenerate the API key. You must do so manually.'|trans }}</p>
 
-    <form method="post" action="{{ 'api/admin/serviceapikey/update'|link }}" {{ fb_api_form({message: 'API Key Updated'|trans}) }}>
+    <form method="post" action="{{ 'serviceapikey/update'|api_url }}" {{ fb_api_form({message: 'API Key Updated'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Length'|trans }}:</label>
             <div class="col">

@@ -40,22 +40,22 @@
                 {% for i, member in members.list %}
                 <tr>
                     <td>
-                        <a href="{{ 'staff/manage'|alink }}/{{ member.id }}">
+                        <a href='{{ "staff/manage/#{member.id}"|url }}'>
                             <div class="db-avatar" data-avatar-seed="{{ member.email|hash('xxh128') }}" data-avatar-size="25" style="width: 25px; height: 25px;"></div>
                         </a>
                     </td>
                     <td>{{ member.name }}</td>
                     <td>{{ member.email }}</td>
                     <td>
-                        <a href="{{ '/staff/group'|alink }}/{{ member.group.id }}">{{ member.group.name }}</a>
+                        <a href='{{ "staff/group/#{member.group.id}"|url }}'>{{ member.group.name }}</a>
                     </td>
                     <td>{{ mf.status_name(member.status) }}</td>
                     <td style="width: 13%" class="actions">
-                        <a class="btn btn14" href="{{ '/staff/manage'|alink }}/{{ member.id }}">
+                        <a class="btn btn14" href='{{ "staff/manage/#{member.id}"|url }}'>
                             <img src="assets/icons/edit.svg" alt="">
                         </a>
-                        <a class="btn btn14" href="{{ 'api/admin/staff/delete'|link({ 'id': member.id }) }}"
-                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'staff'|alink}) }}
+                        <a class="btn btn14" href="{{ 'staff/delete'|api_url(query: { 'id': member.id }) }}"
+                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'staff'|url}) }}
                             <img src="assets/icons/delete.svg" alt="">
                         </a>
                     </td>
@@ -74,7 +74,7 @@
 
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-new">
-            <form method="post" action="{{ 'api/admin/staff/create'|link }}" {{ fb_api_form({callback: 'onAfterStaffCreate'}) }}>
+            <form method="post" action="{{ 'staff/create'|api_url }}" {{ fb_api_form({callback: 'onAfterStaffCreate'}) }}>
                 <fieldset>
                     <div class="rowElem noborder">
                         <label>{{ 'Group'|trans }}</label>
@@ -144,12 +144,12 @@
                 <tr>
                     <td>{{ group.name }}</td>
                     <td class="actions">
-                        <a class="btn btn14" href="{{ '/staff/group'|alink }}/{{ group.id }}">
+                        <a class="btn btn14" href='{{ "staff/group/#{group.id}"|url }}'>
                             <img src="assets/icons/edit.svg" alt="">
                         </a>
-                        <a class="btn btn14" href="{{ 'api/admin/staff/group_delete'|link({'id' : group.id }) }}"
-                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'staff'|alink}) }}
-                            <img src="assets/icons/delete.svg"
+                        <a class="btn btn14" href="{{ 'staff/group_delete'|api_url(query: {'id' : group.id }) }}"
+                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'staff'|url}) }}
+                            <img src="assets/icons/delete.svg" alt="">
                         </a>
                     </td>
                 </tr>
@@ -166,7 +166,8 @@
 
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-new-group">
-            <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" {{ fb_api_form({redirect: 'staff'|alink}) }}>
+=
+            <form method="post" action="{{ 'staff/group_create'|api_url }}" {{ fb_api_form({redirect: 'staff'|url}) }}>
                 <div class="rowElem noborder">
                     <label>{{ 'Name'|trans }}</label>
                     <div class="formRight">
@@ -184,7 +185,7 @@
 {% block js %}
 <script>
     function onAfterStaffCreate(id) {
-        window.location = "{{ 'staff/manage/'|alink }}/" + id + '#tab-permissions';
+        window.location = "{{ 'staff/manage/'|url }}/" + id + '#tab-permissions';
     }
 </script>
 {% endblock %}

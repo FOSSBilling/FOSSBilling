@@ -11,7 +11,7 @@
 
 {% block body_class %}support-ticket{% endblock %}
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{{ 'support' | link }}">{{ 'Support tickets'|trans }}</a></li>
+    <li class="breadcrumb-item"><a href="{{ 'support'|url }}">{{ 'Support tickets'|trans }}</a></li>
     <li class="breadcrumb-item active" aria-current="page">{{ ticket.subject }}</li>
 {% endblock %}
 
@@ -60,7 +60,7 @@
                             <tr>
                                 <td>{{ 'Related to'|trans }}</td>
                                 <td>
-                                    <a href="{{ 'order/service/manage'|link }}/{{ ticket.rel_id }}">{{ 'Service #'|trans }} {{ ticket.rel_id }}</a>
+                                    <a href='{{ "order/service/manage/#{ticket.rel_id}"|url }}'>{{ 'Service #'|trans }} {{ ticket.rel_id }}</a>
                                 </td>
                             </tr>
                         {% endif %}

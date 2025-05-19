@@ -3,7 +3,7 @@
 {% block meta_title %}{{ 'Email'|trans }}{% endblock %}
 
 {% block breadcrumb %}
-<li class="breadcrumb-item" aria-current="page"><a href="{{ 'email'|link }}">{{ 'Emails'|trans }}</a></li>
+<li class="breadcrumb-item" aria-current="page"><a href="{{ 'email'|url }}">{{ 'Emails'|trans }}</a></li>
 <li class="breadcrumb-item active" aria-current="page">{{ email.subject }}</li>
 {% endblock %}
 {% block body_class %}email-email{% endblock %}
@@ -61,7 +61,7 @@
                     () => {
                         flashMessage({
                             message: 'Email resent',
-                            reload: '{{ 'email'|link }}'
+                            reload: '{{ 'email'|url }}'
                         });
                     },
                     (res) => {
@@ -82,7 +82,7 @@
                         () => {
                             flashMessage({
                                 message: 'Email #'+ deleteBtn.dataset.id +' deleted',
-                                reload: '{{ 'email'|link }}'
+                                reload: '{{ 'email'|url }}'
                             });
                         },
                         (res) => {

@@ -4,7 +4,7 @@
 
 {% block body_class %}kb-category{% endblock %}
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{{ 'support/kb'|link }}">{{ 'Knowledge Base'|trans }}</a>
+<li class="breadcrumb-item"><a href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
 <li class="breadcrumb-item active" aria-current="page">{{ category.title }}</li>
 {% endblock %}
 
@@ -23,7 +23,7 @@
             <div class="card-body">
                 <div class="list-group ms-2">
                     {% for i, article in category.articles %}
-                        <a class="list-group-item list-group-item-action" href="{{ 'support/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{ article.title }}</a>
+                        <a class="list-group-item list-group-item-action" href='{{ "support/kb/#{article.category.slug}/#{article.slug}"|url }}'>{{ article.title }}</a>
                     {% endfor %}
                 </div>
             </div>

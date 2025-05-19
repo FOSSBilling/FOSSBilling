@@ -39,7 +39,7 @@
 	<p>Hello {{ c.first_name }} {{ c.last_name }},</p>
 	<p>Your <strong>{{ order.title }}</strong> is now unsuspended.</p>
 
-    <p>You may <a href="{{'login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{ 'order/service/manage'|link }}/{{ order.id }}" target="_blank">manage your order.</a>
+    <p>You may <a href="{{ 'login'|url(query: { 'email': c.email }, detect_app_area: false) }}" target="_blank">login</a> or <a href='{{ "order/service/manage/#{order.id}"|url(detect_app_area: false) }}' target="_blank">manage your order.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

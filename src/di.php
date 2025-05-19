@@ -15,19 +15,10 @@ use FOSSBilling\Config;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
-use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
 use League\Csv\Writer;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\HttpFoundation\Request;
-use Twig\Extension\CoreExtension;
-use Twig\Extension\DebugExtension;
-use Twig\Extension\StringLoaderExtension;
-use Twig\Extra\Intl\IntlExtension;
-use Twig\Extra\Markdown\MarkdownExtension;
-use Twig\Extra\Markdown\DefaultMarkdown;
-use Twig\Extra\Markdown\MarkdownRuntime;
-use Twig\RuntimeLoader\RuntimeLoaderInterface;
 
 $di = new Pimple\Container();
 
@@ -293,19 +284,36 @@ $di['twig'] = $di->factory(function () use ($di) {
     $twig->addExtension(new DebugExtension());
     $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
     $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
+
+    $twig->addExtension(new StringLoaderExtension());
+    $twig->addExtension(new DebugExtension());
     $twig->addExtension(new MarkdownExtension());
+    $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
+    $twig->addExtension(new AttributeExtension(LegacyExtension::class));
 
     $dateFormatter = new IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
-
     $twig->addExtension(new IntlExtension($dateFormatter));
 
-    $twig->addRuntimeLoader(new class implements RuntimeLoaderInterface {
+    class RuntimeLoader implements RuntimeLoaderInterface {
+        private $di = null;
+
+        public function __construct($di) {
+            $this->di = $di;
+        }
+
         public function load($class) {
             if (MarkdownRuntime::class === $class) {
                 return new MarkdownRuntime(new DefaultMarkdown());
             }
+            if (FOSSBillingExtension::class === $class) {
+                return new FOSSBillingExtension($this->di);
+            }
+            if (LegacyExtension::class === $class) {
+                return new LegacyExtension($this->di);
+            }
         }
-    });
+    }
+    $twig->addRuntimeLoader(new RuntimeLoader($di));
 
     // add globals
     if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {

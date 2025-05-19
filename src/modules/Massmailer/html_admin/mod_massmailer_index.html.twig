@@ -11,14 +11,14 @@
         <ul class="nav nav-tabs" data-bs-toggle="tabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <a href="#index" class="nav-link active" data-bs-toggle="tab" aria-selected="true"
-                   role="tab">{{ 'Messages' |trans }}</a>
+                   role="tab">{{ 'Messages'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a href="#new" class="nav-link" data-bs-toggle="tab" aria-selected="true" role="tab">
                     <svg class="icon me-2">
                         <use xlink:href="#plus"/>
                     </svg>
-                    {{ 'New message' |trans }}
+                    {{ 'New message'|trans }}
                 </a>
             </li>
             <li class="nav-item" role="presentation">
@@ -26,7 +26,7 @@
                     <svg class="icon me-2">
                         <use xlink:href="#cog"/>
                     </svg>
-                    {{ 'Settings' |trans }}
+                    {{ 'Settings'|trans }}
                 </a>
             </li>
         </ul>
@@ -53,19 +53,19 @@
                                     <td>{{ msg.from_name }} <br/>{{ msg.from_email }}</td>
                                     <td>{{ mf.status_name(msg.status) }}</td>
                                     <td class="text-end">
-                                        <a class="btn btn-icon" href="{{ 'api/admin/massmailer/copy'|link({'id' : msg.id }) }}"
-                                           {{ fb_api_link({redirect: 'massmailer'|alink}) }}>
+                                        <a class="btn btn-icon" href="{{ 'massmailer/copy'|api_url(query: {'id' : msg.id }) }}"
+                                           {{ fb_api_link({redirect: 'massmailer'|url}) }}>
                                             <svg class="icon">
                                                 <use xlink:href="#copy"/>
                                             </svg>
                                         </a>
-                                        <a class="btn btn-icon" href="{{ '/massmailer/message'|alink }}/{{ msg.id }}">
+                                        <a class="btn btn-icon" href='{{ "massmailer/message/#{msg.id}"|url }}'>
                                             <svg class="icon">
                                                 <use xlink:href="#edit"/>
                                             </svg>
                                         </a>
-                                        <a class="btn btn-icon" href="{{ 'api/admin/massmailer/delete'|link({'id' : msg.id }) }}"
-                                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'massmailer'|alink}) }}>
+                                        <a class="btn btn-icon" href="{{ 'massmailer/delete'|api_url(query: {'id' : msg.id }) }}"
+                                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'massmailer'|url}) }}>
                                             <svg class="icon">
                                                 <use xlink:href="#delete"/>
                                             </svg>
@@ -143,7 +143,7 @@
 {% block js %}
     <script>
         function onAfterCreateMM(mid) {
-            window.location = "{{ 'massmailer/message'|alink }}/" + mid;
+            window.location = "{{ 'massmailer/message'|url }}/" + mid;
         }
     </script>
 {% endblock %}

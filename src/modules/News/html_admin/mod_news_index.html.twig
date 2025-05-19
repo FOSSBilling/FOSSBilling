@@ -47,7 +47,7 @@
                         </td>
                         <td>{{ post.id }}</td>
                         <td>
-                            <a href="{{ '/news/post'|alink }}/{{ post.id }}">{{ post.title }}</a>
+                            <a href='{{ "news/post/#{post.id}"|url }}'>{{ post.title }}</a>
                         </td>
                         <td>
                             {% if post.status == 'active' %}
@@ -60,13 +60,13 @@
                         </td>
                         <td>{{ post.created_at|format_datetime }}</td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/news/post'|alink }}/{{ post.id }}">
+                            <a class="btn btn-icon" href='{{ "news/post/#{post.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'api/admin/news/delete'|link({ 'id': post.id }) }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'news'|alink}) }}>
+                            <a class="btn btn-icon" href="{{ 'news/delete'|api_url(query: { 'id': post.id }) }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'news'|url}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -89,7 +89,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/news/create'|link }}" {{ fb_api_form({redirect: 'news'|alink}) }}>
+                <form method="post" action="{{ 'news/create'|api_url }}" {{ fb_api_form({redirect: 'news'|url}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                         <div class="col">

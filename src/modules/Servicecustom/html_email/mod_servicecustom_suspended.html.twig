@@ -44,7 +44,7 @@
 
     <p>If you have any questions regarding this, please login to the members area and submit a support ticket.</p>
 
-    <p>You may <a href="{{'login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{ 'support'|link({'ticket' : 1}) }}" target="_blank">submit a ticket.</a>
+    <p>You may <a href="{{ 'login'|url(query: { 'email' : c.email }, detect_app_area: false) }}" target="_blank">login</a> or <a href="{{ 'support'|url(query: { 'ticket' : 1 }, detect_app_area: false) }}" target="_blank">submit a ticket.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

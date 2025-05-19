@@ -55,7 +55,7 @@
                     <tr>
                         <td>{{ server.id }}</td>
                         <td>
-                            <a href="{{ '/servicehosting/server'|alink }}/{{ server.id }}">{{ server.name }}</a>
+                            <a href='{{ "servicehosting/server/#{server.id }"|url }}'>{{ server.name }}</a>
                         </td>
                         <td>{{ server.ip }}</td>
                         <td>{{ mf.status_name(server.manager) }}</td>
@@ -66,19 +66,19 @@
                                     <use xlink:href="#settings" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'api/admin/servicehosting/server_test_connection'|link({ 'id': server.id }) }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Test Connection'|trans }}" {{ fb_api_link({message: 'Server Connected'|trans}) }}>
+                            <a class="btn btn-icon" href="{{ 'servicehosting/server_test_connection'|api_url(query: { 'id': server.id }) }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Test Connection'|trans }}" {{ fb_api_link({message: 'Server Connected'|trans}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#wifi" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ '/servicehosting/server'|alink }}/{{ server.id }}"  data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit server details'|trans }}">
+                            <a class="btn btn-icon" href='{{ "servicehosting/server/#{server.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit server details'|trans }}">
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'api/admin/servicehosting/server_delete'|link({ 'id': server.id }) }}"
-                                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the server'|trans }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicehosting'|alink}) }}>
+                            <a class="btn btn-icon" href="{{ 'servicehosting/server_delete'|api_url(query: { 'id': server.id }) }}"
+                                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the Server'|trans }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicehosting'|url}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -117,20 +117,20 @@
                     <tr>
                         <td>{{ hp.id }}</td>
                         <td>
-                            <a href="{{ '/servicehosting/plan'|alink }}/{{ hp.id }}">{{ hp.name }}</a>
+                            <a href='{{ "servicehosting/plan/#{hp.id}"|url }}'>{{ hp.name }}</a>
                         </td>
                         <td>{{ hp.max_addon }}</td>
                         <td>{{ hp.quota }} <span class="text-body-secondary">MB</span></td>
                         <td>{{ hp.bandwidth }} <span class="text-body-secondary">MB</span></td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/servicehosting/plan'|alink }}/{{ hp.id }}"  data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit plan details'|trans }}">
+                            <a class="btn btn-icon" href='{{ "servicehosting/plan/#{hp.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit plan details'|trans }}">
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'api/admin/servicehosting/hp_delete'|link({ 'id': hp.id }) }}"
-                                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the plan'|trans }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicehosting'|alink}) }}>
+                            <a class="btn btn-icon" href="{{ 'servicehosting/hp_delete'|api_url(query: { 'id': hp.id }) }}"
+                                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the Plan'|trans }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicehosting'|url}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -148,7 +148,7 @@
 
         <div class="tab-pane fade" id="tab-new-server" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/servicehosting/server_create'|link }}" {{ fb_api_form({redirect: 'servicehosting'|alink}) }}>
+                <form method="post" action="{{ 'servicehosting/server_create'|api_url }}" {{ fb_api_form({redirect: 'servicehosting'|url}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
                         <div class="col">
@@ -261,7 +261,7 @@
             </div>
             <div class="card-body">
                 <p class="text-body-secondary">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters in next step. In this step provide basic hosting plan information.'|trans }}</p>
-                <form method="post" action="{{ 'api/admin/servicehosting/hp_create'|link }}" {{ fb_api_form({callback: 'onAfterHostingPlanCreate'}) }}>
+                <form method="post" action="{{ 'servicehosting/hp_create'|api_url }}" {{ fb_api_form({callback: 'onAfterHostingPlanCreate'}) }}>
                     <div class="mb-3">
                         <label class="form-label" for="new-plan-name">{{ 'Name'|trans }}:</label>
                         <input class="form-control" id="new-plan-name" type="text" name="name" value="" required placeholder="{{ 'Unique name to identify this hosting plan'|trans }}">
@@ -291,7 +291,7 @@
 {% block js %}
 <script>
     function onAfterHostingPlanCreate(id) {
-        window.location = "{{ 'servicehosting/plan'|alink }}/" + id;
+        window.location = "{{ 'servicehosting/plan'|url }}/" + id;
     }
 
     function handleManagerChange (select) {

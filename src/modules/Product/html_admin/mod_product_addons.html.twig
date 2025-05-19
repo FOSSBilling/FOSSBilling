@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+            <a href="{{ 'product'|url }}">{{ 'Products'|trans }}</a>
         </li>
         <li class="breadcrumb-item active">{{ 'Addons'|trans }}</li>
     </ol>
@@ -53,18 +53,18 @@
                     <tr>
                         <td>{{ loop.index }}</td>
                         <td>
-                            <a href="{{ '/product/addon'|alink }}/{{ addon_id }}">{{ addon_title }}</a>
+                            <a href='{{ "product/addon/#{addon_id}"|url }}'>{{ addon_title }}</a>
                         </td>
                         <td><!-- TODO: show addon description --></td>
                         <td><!-- TODO: show addon status --></td>
                         <td class="w-1">
-                            <a class="btn btn-icon" href="{{ '/product/addon'|alink }}/{{ addon_id }}">
+                            <a class="btn btn-icon" href='{{ "product/addon/#{addon_id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'api/admin/product/delete'|link({ 'id': addon_id }) }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product/addons'|alink}) }}>
+                            <a class="btn btn-icon" href="{{ 'product/delete'|api_url(query: { 'id': addon_id }) }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product/addons'|url}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -82,7 +82,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/addon_create'|link }}" {{ fb_api_form({callback: 'onAfterAddonCreate'}) }}>
+                <form method="post" action="{{ 'product/addon_create'|api_url }}" {{ fb_api_form({callback: 'onAfterAddonCreate'}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                         <div class="col">
@@ -143,7 +143,7 @@
 {% block js %}
 <script>
     function onAfterAddonCreate(result) {
-        window.location = "{{ 'product/addon/'|alink }}/" + result;
+        window.location = "{{ 'product/addon/'|url }}/" + result;
     }
 </script>
 {% endblock %}
