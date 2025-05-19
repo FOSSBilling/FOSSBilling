@@ -14,7 +14,7 @@
             <div class="accordion-inner">
                 <form method="post" action="{{ 'api/guest/cart/add_item'|link }}" style="background:none;" class="form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}"
                     data-fb-api='{ "message": "{{ 'Product Added to Shopping Cart'|trans }}",
-                        "redirect": "{{ 'order'|link({ 'checkout' : 1 }) }}" + "{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}" }'>
+                        "redirect": "{{ 'order'|link({ 'checkout' : 1 }) }}{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}" }'>
                     {% set product_details %}
                         <div class="well">
                             <h3>{{ product.title }}</h3>

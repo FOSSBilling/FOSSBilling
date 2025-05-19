@@ -120,36 +120,5 @@
                 return false;
             });
         }
-
-        document.getElementById('period-selector').addEventListener('change', function() {
-            let periodValue = this.value;
-            document.querySelectorAll('.period').forEach(function(element) {
-                element.style.display = 'none';
-            });
-            document.querySelectorAll('.period.' + periodValue).forEach(function(element) {
-                element.style.display = '';
-            });
-        });
-
-        document.getElementById('period-selector').dispatchEvent(new Event('change'));
-
-        document.querySelectorAll('.addon-period-selector').forEach(function(selector) {
-            function updateDisplay() {
-                const rel = selector.getAttribute('rel');
-                const value = selector.value;
-                const container = document.getElementById(rel);
-                if (container) {
-                    container.querySelectorAll('span').forEach(span => {
-                        span.style.display = 'none';
-                    });
-                    container.querySelectorAll('span.' + value).forEach(span => {
-                        span.style.display = '';
-                    });
-                }
-            }
-
-            selector.addEventListener('change', updateDisplay);
-            updateDisplay();
-        });
     });
 </script>
