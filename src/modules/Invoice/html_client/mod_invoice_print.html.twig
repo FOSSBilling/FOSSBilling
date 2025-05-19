@@ -46,8 +46,14 @@
                                 </dd>
                                 <dt class="col-sm-6">{{ 'Invoice Status'|trans }}:</dt>
                                 <dd class="col-sm-6">
-                                    <span class="badge {% if invoice.status == 'paid' %}badge-success{% elseif invoice.status == 'unpaid' %}badge-warning{% endif %}">
-                                        <span class="{% if invoice.status == 'paid' %}awe-ok-sign{% elseif invoice.status == 'unpaid' %}awe-exclamation-sign{% endif %}"></span>
+                                    <span class="badge {% if invoice.status == 'paid' %}bg-success{% elseif invoice.status == 'unpaid' %}bg-warning{% endif %}">
+                                        <span>
+                                            {% if invoice.status == 'paid' %}
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" height="16" width="12" style="vertical-align: -0.275em;"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z" fill="currentColor"/></svg>
+                                            {% elseif invoice.status == 'unpaid' %}
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 512" height="16" width="12" style="vertical-align: -0.275em;"><path d="M96 64c0-17.7-14.3-32-32-32S32 46.3 32 64l0 256c0 17.7 14.3 32 32 32s32-14.3 32-32L96 64zM64 480a40 40 0 1 0 0-80 40 40 0 1 0 0 80z" fill="currentColor"/></svg>
+                                            {% endif %}
+                                        </span>
                                         {{ invoice.status | capitalize }}
                                     </span>
                                 </dd>
@@ -140,7 +146,7 @@
             {% if invoice.text_1 %}
                 <div class="card mt-3">
                     <div class="card-body">
-                        {{ invoice.text_1 | markdown }}
+                        {{ invoice.text_1|markdown_to_html }}
                     </div>
                 </div>
             {% endif %}
@@ -160,12 +166,12 @@
                         <td>{{ i+1 }}.</td>
                         <td>{{ item.title }}</td>
                         <td>
-                            {{ item.price | money(invoice.currency) }}
+                            {{ item.price|format_currency(invoice.currency) }}
                             {% if item.quantity > 1 %}
                                 x {{ item.quantity }} {# item.unit #}
                             {% endif %}
                         </td>
-                        <td class="text-end">{{ item.total | money(invoice.currency) }}</td>
+                        <td class="text-end">{{ item.total|format_currency(invoice.currency) }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -177,18 +183,18 @@
                         {% if invoice.tax > 0 %}
                             <tr class="text-end">
                                 <td>{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
-                                <td>{{ invoice.tax | money(invoice.currency) }}</td>
+                                <td>{{ invoice.tax|format_currency(invoice.currency) }}</td>
                             </tr>
                         {% endif %}
                         {% if invoice.discount > 0 %}
                             <tr class="text-end">
                                 <td>{{ 'Discount'|trans }}</td>
-                                <td>{{ invoice.discount | money(invoice.currency) }}</td>
+                                <td>{{ invoice.discount|format_currency(invoice.currency) }}</td>
                             </tr>
                         {% endif %}
                         <tr class="text-end">
                             <td><strong>{{ 'Total'|trans }}</strong></td>
-                            <td><strong>{{ invoice.total | money(invoice.currency) }}</strong></td>
+                            <td><strong>{{ invoice.total|format_currency(invoice.currency) }}</strong></td>
                         </tr>
                     </table>
                 </div>
@@ -197,7 +203,7 @@
             {% if invoice.text_2 %}
                 <div class="card mt-3">
                     <div class="card-body">
-                        {{ invoice.text_2 | markdown }}
+                        {{ invoice.text_2|markdown_to_html }}
                     </div>
                 </div>
             {% endif %}

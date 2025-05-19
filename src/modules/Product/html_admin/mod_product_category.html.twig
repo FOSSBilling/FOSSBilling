@@ -47,7 +47,7 @@
                 </div>
             </div>
             <div class="mb-3">
-                <textarea class="bb-textarea" name="description" rows="5">{{ category.description }}</textarea>
+                <textarea class="editor-textarea" name="description" rows="5">{{ category.description }}</textarea>
             </div>
         </div>
 
@@ -66,4 +66,4 @@
 </div>
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}

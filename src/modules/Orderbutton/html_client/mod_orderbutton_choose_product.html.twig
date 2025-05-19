@@ -10,7 +10,7 @@
         <div class="accordion-body">
             {% for i, category in guest.product_category_get_list.list %}
                 <h5 {% if i > 0 %} class="mt-3" {% endif %}>{{ category.title }}</h5>
-                <span>{{ category.description|markdown }}</span>
+                <span>{{ category.description|markdown_to_html }}</span>
                 <div class="list-group">
                     {% for i, product in category.products|sort((a, b) => a.priority <=> b.priority) %}
                         <a class="list-group-item" href="{{ 'order'|link({ 'product': product.id, 'show_custom_form_values': request.show_custom_form_values }) }}">

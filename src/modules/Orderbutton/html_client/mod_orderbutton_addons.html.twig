@@ -12,29 +12,30 @@
         <label>
           <h6><strong>{{ addon.title }}</strong></h6>
         </label>
-        {{ addon.description|markdown }}
+        {{ addon.description|markdown_to_html }}
       </td>
 
       <td>
         <label class="currency">
+          {% set cart_currency = guest.cart_get_currency %}
           {% if addon.pricing.type is same as('recurrent') %}
           {% set periods = guest.system_periods %}
           <select class="form-select" name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
             {% for code, prices in addon.pricing.recurrent %}
             {% if prices.enabled %}
-            <option value="{{ code }}">{{ prices.price | money_convert }} {% if prices.setup !=
-              '0.00' %}{{ 'Setup:'|trans }} {{ prices.setup | money_convert }}{% endif %} ({{ periods[code] }})</option>
+            <option value="{{ code }}">{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} {% if prices.setup !=
+              '0.00' %}{{ 'Setup:'|trans }} {{ (prices.setup * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}{% endif %} ({{ periods[code] }})</option>
             {% endif %}
             {% endfor %}
           </select>
           {% endif %}
 
           {% if addon.pricing.type is same as('once') %}
-          <span class="badge bg-success">{{ (addon.pricing.once.price + addon.pricing.once.setup) | money_convert }}</span>
+          <span class="badge bg-success">{{ ((addon.pricing.once.price + addon.pricing.once.setup) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span>
           {% endif %}
 
           {% if addon.pricing.type is same as('free') %}
-          <span class="badge bg-success">{{ 0 | money_convert }}</span>
+          <span class="badge bg-success">{{ 0|format_currency(cart_currency.code) }}</span>
           {% endif %}
         </label>
 

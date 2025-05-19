@@ -130,7 +130,7 @@
                         <div class="mb-3 row">
                             <label class="col-md-3 col-form-label">{{ 'Content'|trans }}</label>
                             <div class="col">
-                                <textarea class="bb-textarea" name="content" cols="5" rows="5" required="required" placeholder="{{ 'Add page content'|trans }}"></textarea>
+                                <textarea class="editor-textarea" name="content" cols="5" rows="5" required="required" placeholder="{{ 'Add page content'|trans }}"></textarea>
                             </div>
                         </div>
                     </div>
@@ -146,4 +146,4 @@
 
 {% block js %}{% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}

@@ -39,7 +39,7 @@
 	<p>Hello {{ c.first_name }} {{ c.last_name }},</p>
 	<p>This is a payment receipt for invoice <strong>{{ invoice.serie_nr }}</strong> issued on {{ invoice.created_at|format_date }}</p>
     <ul>
-        <li><strong>Total Paid:</strong> {{ invoice.total|money(invoice.currency) }}</li>
+        <li><strong>Total Paid:</strong> {{ invoice.total|format_currency(invoice.currency) }}</li>
         <li><strong>Date Paid:</strong>  {{ invoice.paid_at|format_date }}</li>
     </ul>
 

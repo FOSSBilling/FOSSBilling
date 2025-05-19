@@ -197,7 +197,7 @@
                     <h2>{{'Description'|trans }}</h2>
                     <div class="form-group mb-3 row">
                         <div class="col">
-                            <textarea class="bb-textarea" name="description" rows="5">{{ product.description }}</textarea>
+                            <textarea class="editor-textarea" name="description" rows="5">{{ product.description }}</textarea>
                         </div>
                     </div>
 
@@ -330,7 +330,7 @@
 </div>
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}
 
 {% block js %}
 <script>

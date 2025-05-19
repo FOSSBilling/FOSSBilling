@@ -103,7 +103,7 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $default_content = '{% apply markdown %}
+        $default_content = '{% apply markdown_to_html %}
 Hi {{ c.first_name }} {{ c.last_name }},
 
 Your email is: {{ c.email }}

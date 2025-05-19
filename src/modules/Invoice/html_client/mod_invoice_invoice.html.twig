@@ -186,7 +186,7 @@
 
                         {% if invoice.text_1 %}
                             <div class="well mt-3">
-                                {{ invoice.text_1|markdown }}
+                                {{ invoice.text_1|markdown_to_html }}
                             </div>
                         {% endif %}
 
@@ -213,8 +213,8 @@
                                             x {{ item.quantity }} {{ item.unit }}
                                         {% endif %}
                                     </td>
-                                    <td>{{ item.price|money(invoice.currency) }}</td>
-                                    <td class="text-end">{{ item.total|money(invoice.currency) }}</td>
+                                    <td>{{ item.price|format_currency(invoice.currency) }}</td>
+                                    <td class="text-end">{{ item.total|format_currency(invoice.currency) }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -226,18 +226,18 @@
                                     {% if invoice.tax > 0 %}
                                         <tr class="text-end">
                                             <td>{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
-                                            <td>{{ invoice.tax | money(invoice.currency) }}</td>
+                                            <td>{{ invoice.tax|format_currency(invoice.currency) }}</td>
                                         </tr>
                                     {% endif %}
                                     {% if invoice.discount > 0 %}
                                         <tr class="text-end">
                                             <td>{{ 'Discount'|trans }}</td>
-                                            <td>{{ invoice.discount | money(invoice.currency) }}</td>
+                                            <td>{{ invoice.discount|format_currency(invoice.currency) }}</td>
                                         </tr>
                                     {% endif %}
                                     <tr class="text-end">
                                         <td><strong>{{ 'Total'|trans }}</strong></td>
-                                        <td><strong>{{ invoice.total | money(invoice.currency) }}</strong></td>
+                                        <td><strong>{{ invoice.total|format_currency(invoice.currency) }}</strong></td>
                                     </tr>
                                 </table>
                             </div>
@@ -245,7 +245,7 @@
 
                         {% if invoice.text_2 %}
                             <div class="well mt-3">
-                                {{ invoice.text_2|markdown }}
+                                {{ invoice.text_2|markdown_to_html }}
                             </div>
                         {% endif %}
                     </div>
@@ -321,7 +321,7 @@
         document.getElementById('paymentPromptLabel').textContent = `{{ 'Pay with'|trans }}`.concat(` `, title);
         document.getElementById('subscription').href = paymentLink;
         document.getElementById('pay-nondescript').href = paymentLink;
-        paymentLink.searchParams.append('allow_subscription', 0); 
+        paymentLink.searchParams.append('allow_subscription', 0);
         document.getElementById('single').href = paymentLink;
 
         modal = new bootstrap.Modal('#paymentPrompt');

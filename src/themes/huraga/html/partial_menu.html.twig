@@ -85,7 +85,7 @@
             {% if settings.sidebar_balance_enabled and client %}
                 <li class="pt-3 ps-3">
                     <h5 class="text-secondary d-block pb-1">{{ 'Account balance'|trans }}</h5>
-                    <h4><strong>{{ profile.balance | money(profile.currency) }}</strong></h4>
+                    <h4><strong>{{ profile.balance|format_currency(profile.currency) }}</strong></h4>
                 </li>
             {% endif %}
 

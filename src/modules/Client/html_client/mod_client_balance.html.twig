@@ -40,7 +40,7 @@
                             <tr>
                                 <td>{{ tx.description }}</td>
                                 <td>{{ tx.created_at|format_date }}</td>
-                                <td>{{ tx.amount|money(tx.currency) }}</td>
+                                <td>{{ tx.amount|format_currency(tx.currency) }}</td>
                             </tr>
                         {% else %}
                             <tr>
@@ -51,7 +51,7 @@
                         <tfoot>
                         <tr>
                             <td colspan="2">{{ 'Total'|trans }}</td>
-                            <td><strong>{{ profile.balance | money(profile.currency) }}</strong></td>
+                            <td><strong>{{ profile.balance|format_currency(profile.currency) }}</strong></td>
                         </tr>
                         </tfoot>
                     </table>

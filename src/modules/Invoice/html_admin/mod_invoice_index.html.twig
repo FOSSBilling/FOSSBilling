@@ -233,7 +233,7 @@
                             <td>
                                 <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
                             </td>
-                            <td class="text-center">{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
+                            <td class="text-center">{{ invoice.total|format_currency(invoice.currency) }}</td>
                             <td class="text-center">{{ invoice.created_at|date('Y-m-d') }}</td>
                             <td class="text-center">{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
                             <td>

@@ -74,11 +74,11 @@
                             {% endif %}
                         </header>
                         <section>
-                            <div class="well" id="message-{{message.id}}">{{ message.content|markdown }}</div>
+                            <div class="well" id="message-{{message.id}}">{{ message.content|markdown_to_html }}</div>
                         </section>
                     </div>
                 </div>
-                <hr>                
+                <hr>
             {% endfor %}
         </div>
         <div class="card-footer" id="reply-to">
@@ -86,7 +86,7 @@
                 <form method="post" action="" class="api_form" data-api-url="guest/support/ticket_reply" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <input type="hidden" name="hash" value="{{ ticket.hash }}" />
-                    
+
                     <textarea name="message" cols="5" rows="10" class="editor-textarea form-control" required="required" id="ticket-reply-text"></textarea>
                     <button class="btn btn-primary btn-large mt-1" type="submit" id="submit-support-message" value="{{ 'Post'|trans }}" onclick="">{{ 'Post'|trans }}</button>
                 </form>

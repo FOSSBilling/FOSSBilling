@@ -50,7 +50,7 @@
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}:</label>
                 <div class="col">
-                    <textarea name="content" rows="10" class="bb-textarea">{{ post.content }}</textarea>
+                    <textarea name="content" rows="10" class="editor-textarea">{{ post.content }}</textarea>
                 </div>
             </div>
             <div class="mb-3 row">
@@ -95,4 +95,4 @@
 </div>
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}

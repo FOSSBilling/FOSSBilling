@@ -85,12 +85,12 @@
                     {% if invoice.tax %}
                     <tr>
                         <td class="text-end">{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
-                        <td>{{ mf.currency_format(invoice.tax, invoice.currency) }}</td>
+                        <td>{{ invoice.tax|format_currency(invoice.currency) }}</td>
                     </tr>
                     {% endif %}
                     <tr>
                         <td class="text-end">{{ 'Total'|trans }}:</td>
-                        <td>{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
+                        <td>{{ invoice.total|format_currency(invoice.currency) }}</td>
                     </tr>
                     <tr>
                         <td class="text-end">{{ 'Currency'|trans }}:</td>
@@ -115,7 +115,7 @@
                     {% if invoice.notes %}
                     <tr>
                         <td class="text-end">{{ 'Notes'|trans }}:</td>
-                        <td>{{ invoice.notes|markdown }}</td>
+                        <td>{{ invoice.notes|markdown_to_html }}</td>
                     </tr>
                     {% endif %}
                 </tbody>
@@ -356,13 +356,13 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Text before invoice items table'|trans }}</label>
                         <div class="col">
-                            <textarea class="form-control bb-textarea" name="text_1" rows="6">{{ invoice.text_1 }}</textarea>
+                            <textarea class="form-control editor-textarea" name="text_1" rows="6">{{ invoice.text_1 }}</textarea>
                         </div>
                     </div>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Text after invoice items table'|trans }}</label>
                         <div class="col">
-                            <textarea class="form-control bb-textarea" name="text_2" rows="6">{{ invoice.text_2 }}</textarea>
+                            <textarea class="form-control editor-textarea" name="text_2" rows="6">{{ invoice.text_2 }}</textarea>
                         </div>
                     </div>
 
@@ -580,17 +580,17 @@
             <tfoot>
                 <tr>
                     <td colspan="5" class="currency">
-                        {{ 'Subtotal'|trans }}: {{ mf.currency_format(invoice.subtotal, invoice.currency) }}
+                        {{ 'Subtotal'|trans }}: {{ invoice.subtotal|format_currency(invoice.currency) }}
                     </td>
                 </tr>
                 <tr>
                     <td colspan="5" class="currency">
-                        {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ mf.currency_format(invoice.tax, invoice.currency) }}
+                        {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ invoice.tax|format_currency(invoice.currency) }}
                     </td>
                 </tr>
                 <tr>
                     <td colspan="5" class="currency">
-                        {{ 'Total'|trans }}: {{ mf.currency_format(invoice.total, invoice.currency) }}
+                        {{ 'Total'|trans }}: {{ invoice.total|format_currency(invoice.currency) }}
                     </td>
                 </tr>
             </tfoot>
@@ -637,25 +637,25 @@
                 {{ item.title }} {% if item.quantity > 1 %} x {{ item.quantity }} {# item.unit #}{% endif %}
                 {% endif %}
                 </td>
-                <td class="text-center">{{ mf.currency_format(item.tax, invoice.currency) }}</td>
-                <td class="fw-bold">{{ mf.currency_format( item.total, invoice.currency) }}</td>
+                <td class="text-center">{{ item.tax|format_currency(invoice.currency) }}</td>
+                <td class="fw-bold">{{  item.total|format_currency(invoice.currency) }}</td>
             </tr>
             {% endfor %}
         </tbody>
         <tfoot>
             <tr>
                 <td colspan="5" class="text-end fw-bold">
-                    Subtotal: {{ mf.currency_format(invoice.subtotal, invoice.currency) }}
+                    Subtotal: {{ invoice.subtotal|format_currency(invoice.currency) }}
                 </td>
             </tr>
             <tr>
                 <td colspan="5" class="text-end fw-bold">
-                    {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ mf.currency_format(invoice.tax, invoice.currency) }}
+                    {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ invoice.tax|format_currency(invoice.currency) }}
                 </td>
             </tr>
             <tr>
                 <td colspan="5" class="text-end fw-bold">
-                    Total: {{ mf.currency_format(invoice.total, invoice.currency) }}
+                    Total: {{ invoice.total|format_currency(invoice.currency) }}
                 </td>
             </tr>
         </tfoot>
@@ -689,7 +689,7 @@
                     <td>{{ tx.txn_id }}</td>
                     <td>{{ tx.type }}</td>
                     <td>{{ tx.gateway }}</td>
-                    <td>{{ mf.currency_format( tx.amount, tx.currency) }}</td>
+                    <td>{{ tx.amount|format_currency(tx.currency) }}</td>
                     <td>{{ mf.status_name(tx.status) }}</td>
                     <td>{{ tx.created_at|format_datetime }}</td>
                     <td>
@@ -723,7 +723,7 @@
 </div>
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}
 
 {% block js %}
 {% autoescape "js" %}

@@ -85,16 +85,16 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Payment amount'|trans }}</td>
-                            <td>{{ mf.currency_format( order.total, order.currency) }} {% if order.period %}{{mf.period_name(order.period)}}{% endif %} {% if order.quantity > 1 %}({{ order.quantity }} x {{ mf.currency_format( order.price, order.currency) }}){% endif %}</td>
+                            <td>{{ order.total|format_currency(order.currency) }}{% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currenc) }}){% endif %}</td>
                         </tr>
                         {% if order.discount and order.discount > 0%}
                         <tr>
                             <td class="text-end">{{ 'Order discount'|trans }}</td>
-                            <td>-{{ mf.currency_format( order.discount, order.currency) }} </td>
+                            <td>-{{ order.discount|format_currency(order.currency) }} </td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Payment amount after discount'|trans }}</td>
-                            <td>{{ mf.currency_format( order.total - order.discount, order.currency) }} </td>
+                            <td>{{ (order.total - order.discount)|format_currency(order.currency)}} </td>
                         </tr>
                         {% endif %}
                         <tr>
@@ -485,8 +485,8 @@
                     {% for i, addon in addons %}
                     <tr>
                         <td>{{ addon.title }}</td>
-                        <td>{{ mf.period_name(addon.period) }}</td>
-                        <td>{{ mf.currency_format( addon.total, addon.currency) }}</td>
+                        <td>{{ addon.period|period_title }}</td>
+                        <td>{{ addon.total|format_currency(addon.currency) }}</td>
                         <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
                         <td>
                             {% if addon.status == 'pending_setup' or addon.status == 'failed_setup' or addon.status == 'failed_renew' %}
@@ -546,8 +546,8 @@
                     {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id }) %}
                     {% for invoice in invoices.list %}
                     <tr>
-                        <td><a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">#{{ invoice.id }}</a></td>
-                        <td>{{ mf.currency_format( invoice.total, invoice.currency, 1) }}</td>
+                        <td><a href='{{ "invoice/manage/#{invoice.id}"|url }}'>#{{ invoice.id }}</a></td>
+                        <td>{{ invoice.total|format_currency(invoice.currency) }}</td>
                         <td>{{ invoice.created_at|format_date }}</td>
                         <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                         <td>
