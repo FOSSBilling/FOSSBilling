@@ -80,16 +80,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         ];
     }
 
-    /**
-     * Returns the name of the extension.
-     *
-     * @return string The extension name
-     */
-    public function getName()
-    {
-        return 'bb';
-    }
-
     public function twig_ipcountryname_filter($value)
     {
         if (empty($value)) {

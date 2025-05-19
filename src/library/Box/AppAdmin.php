@@ -11,9 +11,11 @@
 
 use DebugBar\Bridge\NamespacedTwigProfileCollector;
 use FOSSBilling\Environment;
-use FOSSBilling\TwigExtensions\DebugBar;
+use FOSSBilling\Twig\DebugBarExtension;
+use Twig\Extension\AttributeExtension;
 use Twig\Extension\ProfilerExtension;
 use Twig\Profiler\Profile;
+use Twig\RuntimeLoader\FactoryRuntimeLoader;
 
 class Box_AppAdmin extends Box_App
 {
@@ -78,7 +80,12 @@ class Box_AppAdmin extends Box_App
             }
         }
 
-        $twig->addExtension(new DebugBar($this->getDebugBar()));
+        $twig->addExtension(new AttributeExtension(DebugBarExtension::class));
+        $twig->addRuntimeLoader(new FactoryRuntimeLoader([
+            DebugBarExtension::class => function () {
+                return new DebugBarExtension($this->getDebugBar());
+            },
+        ]));
 
         if ($this->di['auth']->isAdminLoggedIn()) {
             $twig->addGlobal('admin', $this->di['api_admin']);

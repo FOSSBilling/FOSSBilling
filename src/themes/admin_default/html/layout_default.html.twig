@@ -20,7 +20,7 @@
     {{ encore_entry_link_tags('fossbilling') }}
     {{ "Api/API.js" | library_url | script_tag }}
     {{ encore_entry_script_tags('fossbilling') }}
-    {{ DebugBar_renderHead() }}
+    {{ debug_bar_render_head() }}
 
     {% block head %}{% endblock %}
 </head>
@@ -242,7 +242,7 @@
     </noscript>
     {% endif %}
 
-    {{ DebugBar_render() }}
+    {{ debug_bar_render() }}
 
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;">
     </div>
