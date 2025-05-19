@@ -48,7 +48,7 @@
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Message'|trans }}:</label>
                 <div class="col">
-                    <textarea class="bb-textarea" name="content" rows="10">{{ response.content }}</textarea>
+                    <textarea class="editor-textarea" name="content" rows="10">{{ response.content }}</textarea>
                 </div>
             </div>
 
@@ -59,4 +59,4 @@
 </div>
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}

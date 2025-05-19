@@ -39,8 +39,8 @@
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}</label>
                 <div class="col">
-                    <textarea class="bb-textarea" name="content" rows="10">{{ post.content }}</textarea>
-                    <small class="my-2 form-hint">{{ 'If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.'|trans|raw }}</small>
+                    <textarea class="editor-textarea" name="content" rows="10">{{ post.content }}</textarea>
+                    <small class="my-2 form-hint">If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.</small>
                 </div>
             </div>
             <div class="mb-3 row">
@@ -143,4 +143,4 @@
 </div>
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textareaa') }}{% endblock %}

@@ -45,8 +45,8 @@
                     {{ event.staff.name }}
                 </a>
             </td>
-            <td>{{ event.ip|iplookup }}</td>
-            <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
+            <td>{{ event.ip|mf.ip_lookup_link }}</td>
+            <td>{{ event.ip|ipcountryname|default('Unknown') }}</td>
             <td>{{ event.created_at|format_datetime }}</td>
             <td>
                 <a class="btn btn-icon api-link"

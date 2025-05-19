@@ -1,4 +1,4 @@
-{% set cart = guest.cart_get%}
+{% set cart = guest.cart_get %}
 <div class="accordion-item">
     <h2 class="accordion-header">
         <button class="accordion-button {% if not request.checkout %}collapsed{%endif%}" type="button" data-bs-toggle="collapse" data-bs-target="#checkout" aria-expanded="false" aria-controls="checkout">
@@ -7,6 +7,7 @@
         </button>
     </h2>
     {% if cart.items %}
+    {% set cart_currency = guest.cart_get_currency %}
     <div id="checkout" class="accordion-collapse collapse {% if request.checkout and client %}show{%endif%}" data-bs-parent="#orderManager">
         <div class="accordion-body">
             <div class="accordion-inner" id="checkout-inner">
@@ -28,20 +29,20 @@
                                 {% endif %}
 
                                 {% if item.period %}
-                                    ({{ item.period | period_title }})
+                                    ({{ item.period|period_title }})
                                 {% endif %}
                             </td>
                             <td>
                                 {% if item.discount_price %}
-                                    <del>{{ item.total | money_convert }}</del>
-                                    <strong class="text-success">{{ (item.total-item.discount_price) | money_convert }}</strong>
-
-
+                                    <del>{{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</del>
+                                    <strong class="text-success">{{ (item.total-item.discount_price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong>
                                 {% else %}
-                                    {{ (item.total) | money_convert }}
+                                    {{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
                                 {% endif %}
                             </td>
-                            <td><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-sm remove-cart-item" title="{{ 'Remove item'|trans }}"><strong><i class="awe-remove"></i></strong></button></td>
+                            <td><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-sm remove-cart-item" title="{{ 'Remove item'|trans }}"><strong>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" height="16" width="12" style="vertical-align: -0.125em;"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" fill="currentColor"/></svg>
+                            </strong></button></td>
                         </tr>
 
                         {% if request.show_custom_form_values %}
@@ -95,10 +96,10 @@
                                 <td>{{ item.title }} {{ 'setup'|trans }}</td>
                                 <td>
                                     {% if item.discount_setup %}
-                                    <del>{{ item.setup_price | money_convert }}</del>
-                                    {{ (item.setup_price - item.discount_setup) | money_convert }}
+                                    <del>{{ (item.setup_price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</del>
+                                    {{ ((item.setup_price - item.discount_setup) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
                                     {% else %}
-                                    {{ item.setup_price | money_convert }}</td>
+                                    {{ (item.setup_price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</td>
                                 {% endif %}
                             </tr>
                         {% endif %}
@@ -133,15 +134,14 @@
 
                     <div class="span6">
                         <table class="table table-bordered table-striped">
-
                             {% if cart.discount >0 %}
                                 <tr>
                                     <td><strong>{{ 'Subtotal:'|trans }}</strong></td>
-                                    <td><strong>{{ (cart.subtotal)| money_convert }}</strong></td>
+                                    <td><strong>{{ (cart.subtotal * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
                                 </tr>
                                 <tr>
                                     <td><strong>{{ 'Discount:'|trans }}</strong></td>
-                                    <td><strong>- {{ cart.discount | money_convert }}</strong></td>
+                                    <td><strong>- {{ (cart.discount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
                                 </tr>
                             {% endif %}
 
@@ -151,12 +151,12 @@
                                 {% set tax_amount = cart.total * tax_rate / 100 %}
                                 <tr>
                                     <td><strong>{{ 'VAT'|trans }} ({{ tax_rate }}%) :</strong></td>
-                                    <td><strong>{{ tax_amount | money_convert }}</strong></td>
+                                    <td><strong>{{ (tax_amount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
                                 </tr>
                             {% endif %}
                             <tr>
                                 <td><strong>{{ 'Total:'|trans }}</strong></td>
-                                <td><strong>{{ (cart.total + tax_amount) | money_convert }}</strong></td>
+                                <td><strong>{{ ((cart.total + tax_amount) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
                             </tr>
 
                         </table>

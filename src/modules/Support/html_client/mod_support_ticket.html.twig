@@ -112,7 +112,7 @@
                                 <div class="row">
                                     <div class="col-md-12">
                                         <article class="markdown-body bg-transparent text-reset" id="message-{{ message.id }}">
-                                            {{ message.content|markdown }}
+                                            {{ message.content|markdown_to_html }}
                                         </article>
                                     </div>
                                 </div>

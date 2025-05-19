@@ -137,7 +137,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}:</label>
                         <div class="col">
-                            <textarea class="form-control bb-textarea" name="content" rows="10">{{ request.content }}</textarea>
+                            <textarea class="form-control editor-textarea" name="content" rows="10">{{ request.content }}</textarea>
                         </div>
                     </div>
 
@@ -202,5 +202,5 @@
         </div>
     </div>
 </div>
-{{ mf.bb_editor('bb-textarea') }}
+{{ mf.wysiwyg('editor-textarea') }}
 {% endblock %}
