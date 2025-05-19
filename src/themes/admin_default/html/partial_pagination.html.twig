@@ -60,7 +60,17 @@
                     </svg>
                 </a>
             </li>
-            {% endif %}
-        </ul>
-    </nav>
+        {% endif %}
+
+        {% if paginator.currentpage != paginator.numpages %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url({}|merge(request)|slice(1,request|length)|merge({ 'page': currentPage + 1 })) }}">
+                <svg class="icon">
+                    <use xlink:href="#chevron-right" />
+                </svg>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+{# </div> #}
 {% endif %}
