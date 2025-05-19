@@ -34,7 +34,7 @@
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}</label>
                 <div class="col">
-                    {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All currencies') }}
+                    {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All Currencies') }}
                 </div>
             </div>
             <div class="mb-3 row">
@@ -203,12 +203,13 @@
                             <use xlink:href="#edit" />
                         </svg>
                     </a>
-                    <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': tx.id, 'CSRFToken': CSRFToken }) }}" data-api-msg="Processed" title="Process again">
+                    <a class="btn btn-icon" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': tx.id }) }}" title="Process again" data-fb-api='{ "message": "{{ 'Processed'|trans }}" }'>
                         <svg class="icon">
                             <use xlink:href="#refresh" />
                         </svg>
                     </a>
-                    <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': tx.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                    <a class="btn btn-icon" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': tx.id }) }}"
+                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
                         <svg class="icon">
                             <use xlink:href="#delete" />
                         </svg>
@@ -224,7 +225,7 @@
     </table>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
-        {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/invoice/batch_delete_transaction '} %}
+        {% include 'partial_batch_delete.html.twig' with { 'action': 'invoice/batch_delete_transaction '} %}
         {% include 'partial_pagination.html.twig' with { 'list': transactions, 'url': 'invoice/transactions' } %}
     </div>
 </div>

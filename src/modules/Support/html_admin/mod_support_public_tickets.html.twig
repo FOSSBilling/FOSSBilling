@@ -144,7 +144,7 @@
     </div>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
-        {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/support/batch_delete_public' } %}
+        {% include 'partial_batch_delete.html.twig' with { 'action': 'support/batch_delete_public' } %}
         {% include 'partial_pagination.html.twig' with { 'list': tickets, 'url': 'support/public-tickets' } %}
     </div>
 {% endblock %}

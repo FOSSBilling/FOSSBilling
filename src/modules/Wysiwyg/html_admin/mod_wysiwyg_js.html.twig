@@ -1,5 +1,5 @@
 {{ 'ckeditor/ckeditor.js' | mod_asset_url('wysiwyg') | script_tag }}
-<script type="text/javascript">
+<script>
     const editors = [];
     document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll('.{{ class }}').forEach(function (element) {

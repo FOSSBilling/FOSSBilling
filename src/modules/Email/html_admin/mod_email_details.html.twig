@@ -46,18 +46,14 @@
     </table>
 
     <div class="card-footer text-center">
-        <a class="btn btn-primary api-link"
-            href="{{'api/admin/email/email_resend'|link({ 'id': email.id }) }}"
-            data-api-msg="{{ 'Email resent'|trans }}">
+        <a class="btn btn-primary" href="{{'api/admin/email/email_resend'|link({ 'id': email.id }) }}" data-fb-api='{ "message": "{{ 'Email Re-sent'|trans }}" }'>
             <svg class="icon icon-tabler" width="24" height="24">
                 <use xlink:href="#refresh" />
             </svg>
             <span class="d-block text-secondary">{{ 'Resend'|trans }}</span>
         </a>
-        <a class="btn btn btn-primary api-link"
-            href="{{'api/admin/email/email_delete'|link({ 'id': email.id }) }}"
-            data-api-confirm="{{ 'Are you sure?'|trans }}"
-            data-api-redirect="{{ 'email/history'|alink }}">
+        <a class="btn btn btn-primary" href="{{'api/admin/email/email_delete'|link({ 'id': email.id }) }}"
+            data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'email/history'|alink }}" }'>
             <svg class="icon icon-tabler" width="24" height="24">
                 <use xlink:href="#delete" />
             </svg>

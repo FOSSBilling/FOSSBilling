@@ -237,7 +237,8 @@
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }} " href="{{ 'api/admin/order/delete'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'order'|alink }}">
+                                    <a class="btn btn-icon" href="{{ 'api/admin/order/delete'|link({ 'id': order.id }) }}"
+                                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'order'|alink }}" }'>
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -255,7 +256,7 @@
 
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <div>
-                        {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/order/batch_delete' } %}
+                        {% include 'partial_batch_delete.html.twig' with { 'action': '/order/batch_delete' } %}
                         {% include 'partial_pagination.html.twig' with { 'list': orders, 'url': 'order' } %}
                     </div>
                     <div>
@@ -278,11 +279,10 @@
                             <div class="col">
                                 {% if not request.client_id %}
                                     <select class="form-control autocomplete-selector"
-                                            placeholder="{{ 'Start typing the client name or ID'|trans }}"
+                                            placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                             id="client_id"
                                             name="client_id"
-                                            data-resturl="admin/client/get_pairs"
-                                            data-csrf="{{ CSRFToken }}">
+                                            data-resturl="admin/client/get_pairs">
                                     </select>
                                 {% else %}
                                     {% set client = admin.client_get({ 'id': request.client_id }) %}

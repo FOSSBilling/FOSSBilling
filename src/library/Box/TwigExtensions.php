@@ -193,7 +193,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_script_tag($path)
     {
-        return sprintf('<script type="text/javascript" src="%s?%s"></script>', $path, FOSSBilling\Version::VERSION);
+        return sprintf('<script src="%s?%s"></script>', $path, FOSSBilling\Version::VERSION);
     }
 
     public function twig_stylesheet_tag($path, $media = 'screen')

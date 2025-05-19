@@ -25,7 +25,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="text-center m-4">{{ 'Login to your account'|trans }}</h5>
-                    <form class="api-form auth" action="{{ 'api/guest/client/login'|link }}" method="post" data-api-redirect="{{ redirect_uri|default('/')|link }}">
+                    <form method="post" action="{{ 'api/guest/client/login'|link }}" class="auth" data-fb-api='{ "redirect": "{{ redirect_uri|default('/')|link }}" }'>
                         <div class="mb-3">
                             <label class="form-label" for="email">{{ 'Email'|trans }}</label>
                             <input class="form-control" id="email" type="text" placeholder="{{ 'Enter your email address'|trans }}" name="email" value="{{ request.email }}" required="required" autofocus>

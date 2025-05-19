@@ -2,10 +2,8 @@
 <html lang="en" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
-   <title>{{ settings.meta_title_prefix }} {% block meta_title %}{% endblock %} {{ settings.meta_title_suffix }}</title>
+    <title>{{ settings.meta_title_prefix }} {% block meta_title %}{% endblock %} {{ settings.meta_title_suffix }}</title>
 
-    <meta property="bb:url" content="{{ constant('SYSTEM_URL') }}">
-    <meta property="bb:client_area" content="{{ '/'|link }}">
     <meta name="csrf-token" content="{{ CSRFToken }}">
 
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
@@ -34,8 +32,8 @@
 {% block body %}
 {% if not client and settings.require_login %}
     <script>
-        $(function () {
-            bb.redirect('{{ "login"|link }}');
+        document.addEventListener("DOMContentLoaded", function() {
+            window.location = '{{ "login"|link }}';
         });
     </script>
 {% endif %}
@@ -72,8 +70,6 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <div class="navbar-nav me-auto mb-2 mb-lg-0 w-100 d-flex justify-content-end">
-
-
                         {% set languages = guest.extension_languages(true) %}
                         {% if languages|length > 1 %}
                             <li class="nav-item">
