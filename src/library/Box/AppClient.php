@@ -12,10 +12,12 @@ declare(strict_types=1);
 
 use DebugBar\Bridge\NamespacedTwigProfileCollector;
 use FOSSBilling\Environment;
-use FOSSBilling\TwigExtensions\DebugBar;
+use FOSSBilling\Twig\DebugBarExtension;
+use Twig\Extension\AttributeExtension;
 use Symfony\Component\Filesystem\Path;
 use Twig\Extension\ProfilerExtension;
 use Twig\Profiler\Profile;
+use Twig\RuntimeLoader\FactoryRuntimeLoader;
 
 class Box_AppClient extends Box_App
 {
@@ -118,6 +120,7 @@ class Box_AppClient extends Box_App
 
         $twig->addGlobal('current_theme', $code);
         $twig->addGlobal('settings', $settings);
+        $twig->addGlobal('app_area', 'client');
 
         if (Environment::isDevelopment()) {
             $profile = new Profile();
@@ -128,7 +131,12 @@ class Box_AppClient extends Box_App
             }
         }
 
-        $twig->addExtension(new DebugBar($this->getDebugBar()));
+        $twig->addExtension(new AttributeExtension(DebugBarExtension::class));
+        $twig->addRuntimeLoader(new FactoryRuntimeLoader([
+            DebugBarExtension::class => function () {
+                return new DebugBarExtension($this->getDebugBar());
+            },
+        ]));
 
         if ($this->di['auth']->isClientLoggedIn()) {
             $twig->addGlobal('client', $this->di['api_client']);

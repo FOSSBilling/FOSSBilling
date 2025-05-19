@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon" width="24">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+            <a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Knowledge Base'|trans }}</li>
     </ol>
@@ -67,10 +67,10 @@
                     {% for i, post in posts.list %}
                     <tr>
                         <td>
-                            <a href="{{ 'support/kb/article'|alink }}/{{ post.id }}">{{ post.title }}</a>
+                            <a href='{{ "support/kb/article/#{post.id}"|url }}'>{{ post.title }}</a>
                         </td>
                         <td>
-                            <a href="{{ 'support/kb/category'|alink }}/{{ post.category.id }}">{{ post.category.title }}</a>
+                            <a href='{{ "support/kb/category/#{post.category.id}"|url }}'>{{ post.category.title }}</a>
                         </td>
                         <td>
                             {% if post.status == 'active' %}
@@ -82,12 +82,12 @@
                             {{ mf.status_name(post.status) }}</td>
                         <td class="text-center">{{ post.views }}</td>
                         <td>
-                            <a class="btn btn-icon" href="{{ 'support/kb/article'|alink }}/{{ post.id }}">
+                            <a class="btn btn-icon" href='{{ "support/kb/article/#{post.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{'support/kb'|alink}}" href="{{ 'api/admin/support/kb_article_delete'|link({ 'id': post.id, 'CSRFToken': CSRFToken }) }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'support/kb'|url }}" href="{{ 'support/kb_article_delete'|api_url(query: { 'id': post.id, 'CSRFToken': CSRFToken }) }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -107,7 +107,7 @@
 
         <div class="tab-pane fade" id="tab-new-article" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/kb_article_create'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'support/kb_article_create'|api_url }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
@@ -152,18 +152,18 @@
                     {% for cat_id, cat_title in admin.support_kb_category_get_pairs %}
                     <tr>
                         <td>
-                            <a href="{{ 'support/kb/category'|alink }}/{{ cat_id }}">{{ cat_title }}</a>
+                            <a href='{{ "support/kb/category/#{cat_id}"|url }}'>{{ cat_title }}</a>
                         </td>
                         <td class="w-1">
-                            <a class="btn btn-icon" href="{{ 'support/kb/category'|alink }}/{{ cat_id }}">
+                            <a class="btn btn-icon" href='{{ "support/kb/category/#{cat_id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/support/kb_category_delete'|link({ 'id': cat_id, 'CSRFToken': CSRFToken }) }}"
+                                href="{{ 'support/kb_category_delete'|api_url(query: { 'id': cat_id, 'CSRFToken': CSRFToken }) }}"
                                 data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                data-api-redirect="{{ 'support/kb'|alink }}">
+                                data-api-redirect="{{ 'support/kb'|url }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -181,7 +181,7 @@
 
         <div class="tab-pane fade" id="tab-new-category" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/kb_category_create'|link }}" class="api-form" data-api-reload="{{ 'Category created'|trans }}">
+                <form method="post" action="{{ 'support/kb_category_create'|api_url }}" class="api-form" data-api-reload="{{ 'Category created'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>

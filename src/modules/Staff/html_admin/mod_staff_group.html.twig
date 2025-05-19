@@ -7,20 +7,20 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'extension/settings/staff'|alink }}">{{ 'Staff'|trans }}</a>
+            <a href="{{ 'extension/settings/staff'|url }}">{{ 'Staff'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'extension/settings/staff'|alink }}#tab-groups">{{ 'Groups'|trans }}</a>
+            <a href="{{ 'extension/settings/staff'|url }}#tab-groups">{{ 'Groups'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ group.name }}</li>
     </ol>
@@ -31,7 +31,7 @@
     <div class="card-body">
         <h5>{{ 'Manage staff member details'|trans }}</h5>
 
-        <form method="post" action="{{ 'api/admin/staff/group_update'|link }}" class="api-form" data-api-msg="{{ 'Staff group updated'|trans }}">
+        <form method="post" action="{{ 'staff/group_update'|api_url }}" class="api-form" data-api-msg="{{ 'Staff group updated'|trans }}">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label" for="inputName">{{ 'Name'|trans }}</label>

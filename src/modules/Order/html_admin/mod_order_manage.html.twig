@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'order'|alink }}">{{ 'Orders'|trans }}</a>
+            <a href="{{ 'order'|url }}">{{ 'Orders'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ order.title }}</li>
     </ul>
@@ -77,15 +77,15 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Client'|trans }}</td>
-                            <td><a href="{{ 'client/manage'|alink }}/{{order.client.id}}">{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
+                            <td><a href='{{ "client/manage/#{order.client.id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Title'|trans }}</td>
-                            <td><a href="{{ 'product/manage'|alink }}/{{ order.product_id }}"><strong>{{ order.title }}</strong></a></td>
+                            <td><a href='{{ "product/manage/#{order.product_id}"|url }}'><strong>{{ order.title }}</strong></a></td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Payment amount'|trans }}</td>
-                            <td>{{ order.total|format_currency(order.currency) }}{% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currenc) }}){% endif %}</td>
+                            <td>{{ order.total|format_currency(order.currency) }}{% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currency) }}){% endif %}</td>
                         </tr>
                         {% if order.discount and order.discount > 0%}
                         <tr>
@@ -156,7 +156,7 @@
                             <td class="text-end">{{ 'Active support tickets'|trans }}</td>
                             <td>
                                 <div class="num">
-                                    <a href="{{ 'support'|alink({ 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
+                                    <a href="{{ 'support'|url(query: { 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
                                 </div>
                             </td>
                         </tr>
@@ -169,7 +169,7 @@
                 {% set order_actions %}
                     {% if order.status == 'pending_setup' or order.status == 'failed_setup' %}
                     <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/order/activate'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
+                        href="{{ 'order/activate'|api_url(query: { 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="{{ 'Order activated'|trans }}">
                         <svg class="icon" width="24" height="24">
@@ -182,7 +182,7 @@
                     {% if order.status == 'active' or order.status == 'failed_renew' %}
                     {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
                     <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/order/renew'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
+                        href="{{ 'order/renew'|api_url(query: { 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="{{ 'Order renewed'|trans }}">
                         <svg class="icon" width="24" height="24">
@@ -193,7 +193,7 @@
 
                     {% if params.suspend_reason_list|trim == null %}
                     <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/order/suspend'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
+                        href="{{ 'order/suspend'|api_url(query: { 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-prompt-key="reason"
                         data-api-prompt="1"
                         data-api-prompt-text="{{ 'Reason of suspension'|trans }}"
@@ -219,7 +219,7 @@
                                 </div>
                             </div>
                             <div id="suspend_popup_panel">
-                                <input type="button" class="btn btn-primary w-100" value="&nbsp;{{ 'Suspend'|trans }}&nbsp;" id="popup_ok" onclick="return susp.suspendOrder('/api/admin/order/suspend?id={{ order.id }}', 'reason');">
+                                <input type="button" class="btn btn-primary w-100" value="&nbsp;{{ 'Suspend'|trans }}&nbsp;" id="popup_ok" onclick=`"return susp.suspendOrder('{{ 'order/suspend'|api_url(query: { 'id': order.id }) }}', 'reason');"`>
                                 <input type="button" class="btn btn-primary" value="&nbsp;Cancel&nbsp;" id="popup_cancel" onclick="return susp.suspenderHide();">
                             </div>
                         </div>
@@ -236,7 +236,7 @@
                     </a>
                     {% endif %}
                     <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/order/cancel'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
+                        href="{{ 'order/cancel'|api_url(query: { 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-prompt-key="reason"
                         data-api-prompt="1"
                         data-api-prompt-text="{{ 'Reason of cancellation'|trans }}"
@@ -251,7 +251,7 @@
 
                     {% if order.status == 'suspended' %}
                     <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/order/unsuspend'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
+                        href="{{ 'order/unsuspend'|api_url(query: { 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="{{ 'Order activated'|trans }}">
                         <svg class="icon" width="24" height="24">
@@ -262,7 +262,7 @@
                     {% endif %}
 
                     {% if order.status == 'canceled' %}
-                    <a class="btn btn-primary api-link" href="{{ 'api/admin/order/uncancel'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" class="btn btn-primary api-link" data-api-reload="Order activated">
+                    <a class="btn btn-primary api-link" href="{{ 'order/uncancel'|api_url(query: { 'id': order.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" class="btn btn-primary api-link" data-api-reload="Order activated">
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
@@ -279,7 +279,7 @@
 
                     {% if not order.unpaid_invoice_id %}
                     <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/invoice/renewal_invoice'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
+                        href="{{ 'invoice/renewal_invoice'|api_url(query: { 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="1">
                         <svg class="icon" width="24" height="24">
@@ -297,7 +297,7 @@
         <div class="modal modal-blur fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-sm">
                 <div class="modal-content">
-                    <form method="post" action="{{ 'api/admin/order/delete'|link }}" class="api-form" data-api-redirect="{{ 'order'|alink }}">
+                    <form method="post" action="{{ 'order/delete'|api_url }}" class="api-form" data-api-redirect="{{ 'order'|url }}">
                         <div class="modal-status bg-danger"></div>
                         <div class="modal-body">
                             <div class="modal-title">{{ 'Are you sure?'|trans }}</div>
@@ -321,7 +321,7 @@
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <h3>{{ 'Order Management'|trans }}</h2>
-                <form method="post" action="{{ 'api/admin/order/update'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'order/update'|api_url }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
@@ -396,7 +396,7 @@
                 </form>
             </div>
 
-            {# <form method="post" action="{{ 'api/admin/order/update'|link }}" class="api-form" data-api-reload="1">
+            {# <form method="post" action="{{ 'order/update'|api_url }}" class="api-form" data-api-reload="1">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <fieldset>
                     <legend>Order promotion code</legend>
@@ -420,7 +420,7 @@
                 <h2>Order parameters</h2>
             </div>
 
-            <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="api-form" data-api-msg="Order config updated">
+            <form method="post" action="{{ 'order/update_config'|api_url }}" class="api-form" data-api-msg="Order config updated">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 {% for name, value in order.config %}
                 <div class="mb-3 row">
@@ -443,7 +443,7 @@
                 <h5>{{ 'Order config management'|trans }}</h5>
                 <p class="text-muted">{{ 'Please be cautious and make sure you know what you are doing when editing order config! FOSSBilling relies on these parameters and you might get unexpected results if you change some of them.'|trans }}</p>
 
-                <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'order/update_config'|api_url }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     {% for key, config in order.config %}
                     <div class="mb-3 row">
@@ -504,7 +504,7 @@
                             {{ mf.status_name(addon.status) }}
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/order/manage'|alink }}/{{ addon.id }}">
+                            <a class="btn btn-icon" href='{{ "order/manage/#{addon.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
@@ -566,7 +566,7 @@
                             {{ mf.status_name(invoice.status) }}
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
+                            <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
@@ -622,7 +622,7 @@
                         </td>
                         <td class="text-wrap">{{ sh.notes }}</td>
                         <td>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'support'|alink }}" href="{{ 'api/admin/order/status_history_delete'|link({ 'id': sh.id, 'CSRFToken': CSRFToken }) }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'support'|url }}" href="{{ 'order/status_history_delete'|api_url(query: { 'id': sh.id, 'CSRFToken': CSRFToken }) }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -659,7 +659,7 @@
                         <td>{{ ticket.id }}</td>
                         <td>{{ ticket.helpdesk.name }}</td>
                         <td>
-                            <a href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">{{ ticket.subject|truncate(30) }}</a>
+                            <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
                         </td>
                         <td>
                             {% if order.status == 'pending_setup' %}
@@ -677,7 +677,7 @@
                             {{ mf.status_name(ticket.status) }}
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">
+                            <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>

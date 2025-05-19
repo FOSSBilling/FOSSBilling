@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home"/>
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Invoice settings'|trans }}</li>
     </ol>
@@ -27,7 +27,7 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Invoice settings'|trans }}</h3>
         </div>
-        <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form"
+        <form method="post" action="{{ 'system/update_params'|api_url }}" class="api-form"
               data-api-msg="Settings updated">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
             <div class="card-body">

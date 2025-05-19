@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home"/>
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'SpamChecker settings'|trans }}</li>
     </ul>
@@ -29,7 +29,7 @@
         </div>
 
         {% set params = admin.extension_config_get({ "ext": "mod_spamchecker" }) %}
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form"
+        <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form"
               data-api-msg="{{ 'Configuration updated'|trans }}">
             <div class="card-body">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">

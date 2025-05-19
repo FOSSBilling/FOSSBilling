@@ -14,7 +14,7 @@
         </svg>
     </li>
     <li class="breadcrumb-item">
-        <a href="{{ 'client'|alink }}">{{ 'Clients'|trans }}</a>
+        <a href="{{ 'client'|url }}">{{ 'Clients'|trans }}</a>
     </li>
     <li class="breadcrumb-item active" aria-current="page">{{ client.first_name }} {{ client.last_name }}</li>
 </ul>
@@ -55,7 +55,7 @@
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel" aria-labelledby="index-tab">
             <div class="card-body position-relative">
-                <span class="avatar avatar-xl mb-3 avatar-rounded shadow position-absolute top-0 end-0 m-3" style="background-image: url({{ client.email|gravatar }}&size=112)"></span>
+                <span class="avatar avatar-xl mb-3 avatar-rounded shadow position-absolute top-0 end-0 m-3" style="background-image: url({{ client.email|gravatar(size: 112) }})"></span>
 
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <tbody>
@@ -115,7 +115,7 @@
                         {% endif %}
                         <tr>
                             <td class="text-end">IP:</td>
-                            <td>{%if client.ip %}{{ client.ip|mf.ip_lookup_link }}{% else %}{{ 'Unknown'|trans }}{% endif %}</td>
+                            <td>{%if client.ip %}{{ mf.ip_lookup_link(client.ip) }}{% else %}{{ 'Unknown'|trans }}{% endif %}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'API Key'|trans }}:</td>
@@ -137,16 +137,16 @@
             </div>
 
             <div class="card-footer text-center">
-                <a href="{{ 'client/login'|alink }}/{{ client.id }}" class="btn btn-primary" target="_blank">
+                <a href='{{ "client/login/#{client.id}"|url }}' class="btn btn-primary" target="_blank">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#login" />
                     </svg>
                     <span>{{ 'Login to client area'|trans }}</span>
                 </a>
                 <a class="btn btn-danger api-link"
-                    href="{{ 'api/admin/client/delete'|link({ 'id': client.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'client/delete'|api_url(query: { 'id': client.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{ 'client'|alink }}">
+                    data-api-redirect="{{ 'client'|url }}">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
@@ -158,7 +158,7 @@
         <div class="tab-pane fade" id="tab-profile" role="tabpanel">
             <div class="card-body">
                 <h5>{{ 'Client profile details'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/client/update'|link }}" class="api-form save" data-api-msg="{{ 'Client Profile updated'|trans }}">
+                <form method="post" action="{{ 'client/update'|api_url }}" class="api-form save" data-api-msg="{{ 'Client Profile updated'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
@@ -399,7 +399,7 @@
                 <hr>
 
                 <h5>{{ 'Change password'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/client/change_password'|link }}" class="api-form" data-api-msg="{{ 'Password changed'|trans }}">
+                <form method="post" action="{{ 'client/change_password'|api_url }}" class="api-form" data-api-msg="{{ 'Password changed'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}</label>
@@ -422,7 +422,7 @@
 
                 <h5>{{ 'Custom fields'|trans }}</h5>
                 <p class="text-muted">{{ 'Use these fields to define custom client details'|trans }}</p>
-                <form method="post" action="{{ 'api/admin/client/update'|link }}" class="api-form save" data-api-msg="{{ 'Client Profile custom fields updated'|trans }}">
+                <form method="post" action="{{ 'client/update'|api_url }}" class="api-form save" data-api-msg="{{ 'Client Profile custom fields updated'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     {% for i in 1..10 %}
                     {% set fn = 'custom_' ~ i %}
@@ -463,7 +463,7 @@
                         <tr>
                             <td>{{ order.id }}</td>
                             <td>
-                                <a href="{{ '/order/manage'|alink }}/{{ order.id }}">{{ order.title }}</a>
+                                <a href='{{ "order/manage/#{order.id}"|url }}'>{{ order.title }}</a>
                             </td>
                             <td>{{ order.total|format_currency(order.currency) }}</td>
                             <td>{{ order.period|period_title }}</td>
@@ -483,7 +483,7 @@
                                 {{ mf.status_name(order.status) }}
                             </td>
                             <td>
-                                <a class="btn btn-icon" href="{{ '/order/manage'|alink }}/{{ order.id }}">
+                                <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#settings" />
                                     </svg>
@@ -500,7 +500,7 @@
             </div>
 
             <div class="card-body">
-                <a href="{{ 'order'|alink({ 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                <a href="{{ 'order'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
                     <svg class="icon">
                         <use xlink:href="#plus" />
                     </svg>
@@ -531,7 +531,7 @@
                         {% for invoice in invoices.list %}
                         <tr>
                             <td>
-                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
+                                <a href='{{ "invoice/manage/#{invoice.id}"|url }}'>{{ invoice.serie_nr }}</a>
                             </td>
                             <td>{{ invoice.total|format_currency(invoice.currency) }}</td>
                             <td>{{ invoice.created_at|format_date }}</td>
@@ -552,7 +552,7 @@
                                 {{ mf.status_name(invoice.status) }}
                             </td>
                             <td>
-                                <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
+                                <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
@@ -569,7 +569,7 @@
 
                 <div class="card-body">
                     <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/invoice/prepare'|link({ 'client_id': client.id, 'CSRFToken': CSRFToken }) }}"
+                        href="{{ 'invoice/prepare'|api_url(query: { 'client_id': client.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-jsonp="onAfterInvoicePrepared">
                         <svg class="icon">
                             <use xlink:href="#plus" />
@@ -603,7 +603,7 @@
                             <td>{{ ticket.id }}</td>
                             <td>{{ ticket.helpdesk.name }}</td>
                             <td>
-                                <a href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">{{ ticket.subject|truncate(30) }}</a>
+                                <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
                             </td>
                             <td>
                                 {% if ticket.status == 'open' %}
@@ -618,7 +618,7 @@
                                 {{ mf.status_name(ticket.status) }}
                             </td>
                             <td>
-                                <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">
+                                <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
@@ -635,7 +635,7 @@
             </div>
 
             <div class="card-body">
-                <a href="{{ 'support'|alink({ 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                <a href="{{ 'support'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
                     <svg class="icon">
                         <use xlink:href="#plus" />
                     </svg>
@@ -668,7 +668,7 @@
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
                                 <a class="btn btn-icon api-link"
-                                    href="{{ 'api/admin/client/balance_delete'|link({ 'id': tx.id, 'CSRFToken': CSRFToken }) }}"
+                                    href="{{ 'client/balance_delete'|api_url(query: { 'id': tx.id, 'CSRFToken': CSRFToken }) }}"
                                     data-api-confirm="{{ 'Are you sure?'|trans }}">
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
@@ -690,7 +690,7 @@
                 <h5>{{ 'Add funds for client'|trans }}</h5>
                 <form class="api-form"
                     method="post"
-                    action="{{ 'api/admin/client/balance_add_funds'|link }}"
+                    action="{{ 'client/balance_add_funds'|api_url }}"
                     data-api-msg="{{ 'Funds added'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
@@ -779,7 +779,7 @@
                             <td>{{ email.recipients }}</td>
                             <td>{{ email.created_at|format_datetime }}</td>
                             <td>
-                                <a class="btn btn-icon" href="{{ 'email'|alink }}/{{ email.id }}">
+                                <a class="btn btn-icon" href='{{ "email/#{email.id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#edit"></use>
                                     </svg>
@@ -822,11 +822,15 @@
                             <td>{{ tx.txn_id }}</td>
                             <td>{{ tx.type }}</td>
                             <td>{{ tx.gateway }}</td>
-                            <td>{{ tx.amount|format_currency(tx.currency) }}</td>
+                            <td>{% if tx.amount %}
+                                    {{ tx.amount|format_currency(tx.currency) }}
+                                {% else %}
+                                    -
+                                {% endif %}</td>
                             <td>{{ mf.status_name(tx.status) }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
-                                <a class="btn btn-icon" href="{{ '/invoice/transaction'|alink }}/{{ tx.id }}">
+                                <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
@@ -849,7 +853,7 @@
 {% block js%}
 <script>
     function onAfterInvoicePrepared(id) {
-        bb.redirect("{{ 'invoice/manage/'|alink }}/" + id);
+        bb.redirect("{{ 'invoice/manage'|url }}/" + id);
     }
 </script>
 {% endblock %}

@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home"/>
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Staff'|trans }}</li>
     </ol>
@@ -74,15 +74,15 @@
                                 <tr>
                                     <td>{{ loop.index }}</td>
                                     <td>
-                                        <a href="{{ 'staff/manage'|alink }}/{{ member.id }}">
+                                        <a href='{{ "staff/manage/#{member.id}"|url }}'>
                                         <span class="avatar avatar-xs me-2"
-                                              style="background-image: url({{ member.email|gravatar }}&size=25)"></span>
+                                              style="background-image: url({{ member.email|gravatar(size: 25) }})"></span>
                                         </a>
-                                        <a href="{{ '/staff/manage'|alink }}/{{ member.id }}">{{ member.name }}</a>
+                                        <a href='{{ "staff/manage/#{member.id}"|url }}'>{{ member.name }}</a>
                                     </td>
                                     <td>{{ member.email }}</td>
                                     <td>
-                                        <a href="{{ '/staff/group'|alink }}/{{ member.group.id }}">{{ member.group.name }}</a>
+                                        <a href='{{ 'staff/group/#{member.group.id}'|url }}'>{{ member.group.name }}</a>
                                     </td>
                                     <td>
                                         {% if member.status == 'active' %}
@@ -94,15 +94,15 @@
                                         {{ mf.status_name(member.status) }}
                                     </td>
                                     <td>
-                                        <a class="btn btn-icon" href="{{ '/staff/manage'|alink }}/{{ member.id }}"
+                                        <a class="btn btn-icon" href='{{ "staff/manage/#{member.id}"|url }}'
                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                             <svg class="icon">
                                                 <use xlink:href="#edit"/>
                                             </svg>
                                         </a>
                                         <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                           data-api-redirect="{{ 'extension/settings/staff'|alink }}"
-                                           href="{{ 'api/admin/staff/delete'|link({ 'id': member.id, 'CSRFToken': CSRFToken }) }}"
+                                           data-api-redirect="{{ 'extension/settings/staff'|url }}"
+                                           href="{{ 'staff/delete'|api_url(query: { 'id': member.id, 'CSRFToken': CSRFToken }) }}"
                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
                                             <svg class="icon">
                                                 <use xlink:href="#delete"/>
@@ -121,7 +121,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-settings" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form"
+                    <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form"
                           data-api-msg="{{ 'Configuration updated'|trans }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <input type="hidden" name="ext" value="mod_staff">
@@ -175,7 +175,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/staff/create'|link }}" class="api-form" data-api-jsonp="onAfterStaffCreate">
+                    <form method="post" action="{{ 'staff/create'|api_url }}" class="api-form" data-api-jsonp="onAfterStaffCreate">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <div class="card-body">
                             <div class="mb-3 row">
@@ -242,18 +242,18 @@
                         {% for i, group in groups.list %}
                             <tr>
                                 <td>
-                                    <a href="{{ '/staff/group'|alink }}/{{ group.id }}">{{ group.name }}</a>
+                                    <a href='{{ "staff/group/#{group.id}"|url }}'>{{ group.name }}</a>
                                 </td>
                                 <td>
-                                    <a class="btn btn-icon" href="{{ '/staff/group'|alink }}/{{ group.id }}"
+                                    <a class="btn btn-icon" href='{{ "staff/group/#{group.id}"|url }}'
                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                         <svg class="icon">
                                             <use xlink:href="#edit"/>
                                         </svg>
                                     </a>
                                     <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                       data-api-redirect="{{ 'extension/settings/staff'|alink }}"
-                                       href="{{ 'api/admin/staff/group_delete'|link({ 'id': group.id, 'CSRFToken': CSRFToken }) }}"
+                                       data-api-redirect="{{ 'extension/settings/staff'|url }}"
+                                       href="{{ 'staff/group_delete'|api_url(query: { 'id': group.id, 'CSRFToken': CSRFToken }) }}"
                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
                                         <svg class="icon">
                                             <use xlink:href="#delete"/>
@@ -271,8 +271,8 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-new-group" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" class="api-form"
-                          data-api-redirect="{{ 'extension/settings/staff'|alink }}">
+                    <form method="post" action="{{ 'staff/group_create'|api_url }}" class="api-form"
+                          data-api-redirect="{{ 'extension/settings/staff'|url }}">
                         <div class="card-body">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <div class="mb-3 row">
@@ -295,7 +295,7 @@
 {% block js %}
     <script>
         function onAfterStaffCreate(id) {
-            bb.redirect("{{ 'staff/manage'|alink }}/" + id + '#tab-permissions');
+            bb.redirect("{{ 'staff/manage'|url }}/" + id + '#tab-permissions');
         }
 
         $(function () {

@@ -92,9 +92,9 @@
                             <tr>
                                 <td><label>{{ 'Active support tickets'|trans }}</label></td>
                                 <td>
-                                    <div class="num"><a href="{{ 'support'|link }}" class="redNum">{{ order.active_tickets }}</a></div>
-                                    {# <div class="num"><a href="{{ 'support'|link }}" class="greenNum">{{ order.active_tickets }}</a></div> #}
-                                    {# <div class="num"><a href="{{ 'support'|link }}" class="bludNum">{{ order.active_tickets }}</a></div> #}
+                                    <div class="num"><a href="{{ 'support'|url }}" class="redNum">{{ order.active_tickets }}</a></div>
+                                    {# <div class="num"><a href="{{ 'support'|url }}" class="greenNum">{{ order.active_tickets }}</a></div> #}
+                                    {# <div class="num"><a href="{{ 'support'|url }}" class="bludNum">{{ order.active_tickets }}</a></div> #}
                                 </td>
                             </tr>
                         {% endif %}
@@ -155,7 +155,7 @@
                                         <span class="badge {% if addon.status == 'active' %}bg-success{% elseif addon.status == 'pending_setup' %}bg-warning{% endif %}">{{ mf.status_name(addon.status) }}</span>
                                     </td>
                                     <td class="actions">
-                                        <a class="btn btn-outline-primary btn-sm" href="{{ '/order/service/manage'|link }}/{{ addon.id }}">{{ 'Manage'|trans }}</a>
+                                        <a class="btn btn-outline-primary btn-sm" href='{{ "order/service/manage/#{addon.id}"|url }}'>{{ 'Manage'|trans }}</a>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -333,7 +333,7 @@
                         'client/invoice/renewal_invoice',
                         {order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}"},
                         function (result) {
-                            bb.redirect("{{ 'invoice'|link }}" + '/' + result);
+                            bb.redirect("{{ 'invoice'|url }}/" + result);
                         }
                     );
                 }

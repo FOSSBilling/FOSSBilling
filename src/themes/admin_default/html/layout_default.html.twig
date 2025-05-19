@@ -20,7 +20,7 @@
     {{ encore_entry_link_tags('fossbilling') }}
     <script src="{{ constant('SYSTEM_URL') ~ 'library/Api/API.js?' ~ FOSSBillingVersion }}"></script>
     {{ encore_entry_script_tags('fossbilling') }}
-    {{ DebugBar_renderHead() }}
+    {{ debug_bar_render_head() }}
 
     {% block head %}{% endblock %}
 </head>
@@ -35,7 +35,7 @@
 
         {% if not admin %}
             $(function () {
-                bb.redirect("{{ 'staff/login'|alink }}");
+                bb.redirect("{{ 'staff/login'|url }}");
             });
         {% else %}
     </script>
@@ -53,7 +53,7 @@
                            <span class="navbar-toggler-icon"></span>
                        </button>
                        <h1 class="d-none d-sm-flex navbar-brand d-none-navbar-horizontal pe-0 pe-md-3 a">
-                           <a href="{{ '/'|alink }}">
+                           <a href="{{ '/'|url }}">
                                <img class="navbar-brand-image hide-theme-light" src="{{ company.logo_url_dark }}" alt="{{ company.name }}">
                                <img class="navbar-brand-image hide-theme-dark" src="{{ company.logo_url }}" alt="{{ company.name }}">
                            </a>
@@ -108,25 +108,22 @@
                      </div>
                      <div class="nav-item dropdown">
                         <a class="nav-link d-flex lh-1 text-reset p-0"
-                           href="{{ 'staff/profile'|alink }}"
+                           href="{{ 'staff/profile'|url }}"
                            data-bs-toggle="dropdown"
                            aria-label="{{ 'Open user menu'|trans }}"
                            aria-expanded="false">
-                           <span class="avatar avatar-sm" style="background-image: url({{ profile.email|gravatar }}&size=32)"></span>
+                           <span class="avatar avatar-sm" style="background-image: url({{ profile.email|gravatar(size: 32) }})"></span>
                            <div class="d-none d-xl-block ps-2">
                               <div>{{ profile.name }}</div>
                               <div class="mt-1 small text-muted">{{ profile.role }}</div>
                            </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                           <a class="dropdown-item"
-                              href="{{ 'staff/profile'|alink }}">{{ 'Profile'|trans }}</a>
-                           <a class="dropdown-item"
-                              href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+                           <a class="dropdown-item" href="{{ 'staff/profile'|url }}">{{ 'Profile'|trans }}</a>
+                           <a class="dropdown-item"href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
                            <div class="dropdown-divider"></div>
-                           <a class="dropdown-item api-link"
-                              href="{{ 'api/admin/profile/logout'|link({ 'CSRFToken': CSRFToken }) }}"
-                              data-api-redirect="{{ 'staff/login'|alink }}">{{ 'Logout'|trans }}</a>
+                           <a class="dropdown-item api-link" href="{{ 'profile/logout'|api_url(query: { 'CSRFToken': CSRFToken }) }}"
+                              data-api-redirect="{{ 'staff/login'|url }}">{{ 'Logout'|trans }}</a>
                         </div>
                      </div>
                   </div>
@@ -139,13 +136,13 @@
                              {% set navigation = admin.extension_get_navigation({ 'url': guest.system_current_url }) %}
                              <ul class="navbar-nav">
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ '/'|alink }}">
+                                    <a class="nav-link" href="{{ '/'|url }}">
                                         <span class="d-none d-xxl-block me-1">
                                             <svg class="icon">
                                                 <use xlink:href="#home" />
                                             </svg>
                                         </span>
-                                        <span>{{ 'Dashboard' |trans }}</span>
+                                        <span>{{ 'Dashboard'|trans }}</span>
                                     </a>
                                   </li>
                              {% for location, group in navigation %}
@@ -197,7 +194,7 @@
                         {% block breadcrumbs %}
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item">
-                                <a href="{{ '/'|alink }}">
+                                <a href="{{ '/'|url }}">
                                     <svg class="icon">
                                         <use xlink:href="#home" />
                                     </svg>
@@ -242,7 +239,7 @@
     </noscript>
     {% endif %}
 
-    {{ DebugBar_render() }}
+    {{ debug_bar_render() }}
 
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;">
     </div>

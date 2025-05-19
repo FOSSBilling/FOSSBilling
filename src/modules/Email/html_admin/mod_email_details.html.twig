@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'email/history'|alink }}">{{ 'Email history'|trans }}</a>
+            <a href="{{ 'email/history'|url }}">{{ 'Email history'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ email.subject }}</li>
     </ol>
@@ -47,7 +47,7 @@
 
     <div class="card-footer text-center">
         <a class="btn btn-primary api-link"
-            href="{{'api/admin/email/email_resend'|link({ 'id': email.id }) }}"
+            href="{{ 'email/email_resend'|api_url(query: { 'id': email.id }) }}"
             data-api-msg="{{ 'Email resent'|trans }}">
             <svg class="icon icon-tabler" width="24" height="24">
                 <use xlink:href="#refresh" />
@@ -55,9 +55,9 @@
             <span class="d-block text-secondary">{{ 'Resend'|trans }}</span>
         </a>
         <a class="btn btn btn-primary api-link"
-            href="{{'api/admin/email/email_delete'|link({ 'id': email.id }) }}"
+            href="{{ 'email/email_delete'|api_url(query: { 'id': email.id }) }}"
             data-api-confirm="{{ 'Are you sure?'|trans }}"
-            data-api-redirect="{{ 'email/history'|alink }}">
+            data-api-redirect="{{ 'email/history'|url }}">
             <svg class="icon icon-tabler" width="24" height="24">
                 <use xlink:href="#delete" />
             </svg>

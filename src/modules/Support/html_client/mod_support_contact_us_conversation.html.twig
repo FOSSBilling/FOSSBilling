@@ -6,7 +6,7 @@
 
 {% block body_class %}support-contact-us-conversation{% endblock %}
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{{ 'support/contact-us' | link}}">{{ 'Contact us'|trans }}</a></li>
+<li class="breadcrumb-item"><a href="{{ 'support/contact-us'|url }}">{{ 'Contact us'|trans }}</a></li>
 <li class="breadcrumb-item active" aria-current="page">{{ ticket.subject }}</li>
 {% endblock %}
 
@@ -51,7 +51,7 @@
             </table>
             <hr>
             <div class="row">
-                <button class="btn btn-primary btn-small ms-2 w-25" href="{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash, 'CSRFToken': CSRFToken })}}" id="new-ticket-button" data-api-reload="1"> {{ 'Close ticket'|trans }}</button>
+                <button class="btn btn-primary btn-small ms-2 w-25" href="{{ 'support/ticket_close'|api_url(role: 'guest', query: { 'hash': ticket.hash, 'CSRFToken': CSRFToken })}}" id="new-ticket-button" data-api-reload="1"> {{ 'Close ticket'|trans }}</button>
                 <a class="btn btn-info btn-small ms-2 w-25" href="#reply-to">{{ 'Reply'|trans }}</a>
             </div>
         </div>
@@ -63,7 +63,7 @@
                             {{ message.author.name }}
                         </span>
                         <br/>
-                        <img src="{{ message.author.email|gravatar(60) }}" alt="{{ message.author.name }}" class="img-fluid img-thumbnail d-none d-md-block">
+                        <img src="{{ message.author.email|gravatar(size: 60) }}" alt="{{ message.author.name }}" class="img-fluid img-thumbnail d-none d-md-block">
                     </div>
                     <div class="col-10">
                         <header>#{{ i+1 }} | {{ message.created_at|format_date }}

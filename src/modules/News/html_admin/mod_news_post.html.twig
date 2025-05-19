@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'news'|alink }}">{{ 'News'|trans }}</a>
+            <a href="{{ 'news'|url }}">{{ 'News'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ post.title }}</li>
     </ol>
@@ -24,7 +24,7 @@
 
 {% block content %}
 <div class="card">
-    <form method="post" action="{{ 'api/admin/news/update'|link }}" class="api-form" data-api-msg="{{ 'Post updated'|trans }}">
+    <form method="post" action="{{ 'news/update'|api_url }}" class="api-form" data-api-msg="{{ 'Post updated'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <h3>{{ 'Edit post'|trans }}</h3>
@@ -131,7 +131,7 @@
         <input type="hidden" name="id" value="{{ post.id }}">
 
         <div class="card-footer d-flex gap-2">
-            <a href="{{ 'news'|alink }}" class="btn btn-secondary">
+            <a href="{{ 'news'|url }}" class="btn btn-secondary">
                 <svg class="icon">
                     <use xlink:href="#arrow-sm-left" />
                 </svg>
@@ -143,4 +143,4 @@
 </div>
 {% endblock %}
 
-{% block head %}{{ mf.wysiwyg('.editor-textareaa') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}

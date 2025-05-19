@@ -36,21 +36,21 @@
                 <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ event.id }}">
             </td>
             <td>
-                <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
-                    <span class="avatar avatar-xs d-none d-md-inline-block" style="background-image: url({{ event.client.email|gravatar }}&size=24)"></span>
+                <a href='{{ "client/manage/#{event.client.id}"|url }}'>
+                    <span class="avatar avatar-xs d-none d-md-inline-block" style="background-image: url({{ event.client.email|gravatar(size: 24) }})"></span>
                 </a>
             </td>
             <td>
-                <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.first_name }} {{ event.client.last_name }}</a>
+                <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.first_name }} {{ event.client.last_name }}</a>
             </td>
             <td>{{ mf.ip_lookup_link(event.ip) }}</td>
             <td>{{ event.ip|ip_country_name|default('Unknown'|trans) }}</td>
             <td>{{ event.created_at|format_datetime }}</td>
             <td>
                 <a class="btn btn-icon api-link"
-                    href="{{ 'api/admin/client/login_history_delete'|link({ 'id': event.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'client/login_history_delete'|api_url(query: { 'id': event.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{ 'client/logins'|alink }}">
+                    data-api-redirect="{{ 'client/logins'|url }}">
                     <svg class="icon">
                         <use xlink:href="#delete" />
                     </svg>

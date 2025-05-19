@@ -116,7 +116,7 @@ Urna parturient, ultricies nascetur? Et a. Elementum in dapibus ut vel ut
 magna tempor, dapibus lacus sed? Ut velit dignissim placerat, tristique pid
 vut amet et nunc! Elementum dolor, dictumst porta ultrices. Rhoncus, amet.
 
-Order our services at {{ "order"|link }}
+Order our services at {{ "order"|url }}
 
 {{ guest.system_company.name }} - {{ guest.system_company.signature }}
 {% endapply %}

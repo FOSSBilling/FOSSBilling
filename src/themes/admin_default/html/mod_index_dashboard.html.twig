@@ -51,7 +51,7 @@
         {% set currency = guest.currency_get %}
 
         <div class="col-sm-6 col-lg-3">
-            <a href="{{ 'client'|alink }}" class="card card-sm">
+            <a href="{{ 'client'|url }}" class="card card-sm">
                 <div class="card-body">
                     {% if client_statuses.suspended > 0 %}
                     <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ client_statuses.suspended }}</span>
@@ -73,7 +73,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a href="{{ 'order'|alink }}" class="card card-sm">
+            <a href="{{ 'order'|url }}" class="card card-sm">
                 <div class="card-body">
                     {% if order_statuses.suspended > 0 %}
                     <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ order_statuses.suspended }}</span>
@@ -95,7 +95,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a href="{{ 'invoice'|alink }}" class="card card-sm">
+            <a href="{{ 'invoice'|url }}" class="card card-sm">
                 <div class="card-body">
                     {% if invoice_statuses.unpaid > 0 %}
                     <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ invoice_statuses.unpaid }}</span>
@@ -117,7 +117,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a href="{{ 'support'|alink }}" class="card card-sm">
+            <a href="{{ 'support'|url }}" class="card card-sm">
                 <div class="card-body">
                     {% if support_statuses.open > 0 %}
                     <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ support_statuses.open }}</span>
@@ -178,73 +178,73 @@
                         <tr>
                             <td>{{ 'Clients'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'client'|alink({ 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.clients_today }}</a>
+                                <a href="{{ 'client'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.clients_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|alink({ 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.clients_yesterday }}</a>
+                                <a href="{{ 'client'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.clients_yesterday }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|alink }}" class="text-danger">{{ stats.clients_this_month }}</a>
+                                <a href="{{ 'client'|url }}" class="text-danger">{{ stats.clients_this_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|alink }}" class="text-danger">{{ stats.clients_last_month }}</a>
+                                <a href="{{ 'client'|url }}" class="text-danger">{{ stats.clients_last_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|alink }}" class="text-danger">{{ stats.clients_total }}</a>
+                                <a href="{{ 'client'|url }}" class="text-danger">{{ stats.clients_total }}</a>
                             </td>
                         </tr>
                         <tr>
                             <td>{{ 'Orders'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'order'|alink({ 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.orders_today }}</a>
+                                <a href="{{ 'order'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.orders_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|alink({ 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.orders_yesterday }}</a>
+                                <a href="{{ 'order'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.orders_yesterday }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|alink }}" class="text-danger">{{ stats.orders_this_month }}</a>
+                                <a href="{{ 'order'|url }}" class="text-danger">{{ stats.orders_this_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|alink }}" class="text-danger">{{ stats.orders_last_month }}</a>
+                                <a href="{{ 'order'|url }}" class="text-danger">{{ stats.orders_last_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|alink }}" class="text-danger">{{ stats.orders_total }}</a>
+                                <a href="{{ 'order'|url }}" class="text-danger">{{ stats.orders_total }}</a>
                             </td>
                         </tr>
                         <tr>
                             <td>{{ 'Invoices'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink({ 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.invoices_today }}</a>
+                                <a href="{{ 'invoice'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.invoices_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink({ 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.invoices_yesterday }}</a>
+                                <a href="{{ 'invoice'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.invoices_yesterday }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink }}" class="text-danger">{{ stats.invoices_this_month }}</a>
+                                <a href="{{ 'invoice'|url }}" class="text-danger">{{ stats.invoices_this_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink }}" class="text-danger">{{ stats.invoices_last_month }}</a>
+                                <a href="{{ 'invoice'|url }}" class="text-danger">{{ stats.invoices_last_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink }}" class="text-danger">{{ stats.invoices_total }}</a>
+                                <a href="{{ 'invoice'|url }}" class="text-danger">{{ stats.invoices_total }}</a>
                             </td>
                         </tr>
                         <tr>
                             <td>{{ 'Tickets'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'support'|alink({ 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.tickets_today }}</a>
+                                <a href="{{ 'support'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.tickets_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|alink({ 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.tickets_yesterday }}</a>
+                                <a href="{{ 'support'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.tickets_yesterday }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|alink }}" class="text-danger">{{ stats.tickets_this_month }}</a>
+                                <a href="{{ 'support'|url }}" class="text-danger">{{ stats.tickets_this_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|alink }}" class="text-danger">{{ stats.tickets_last_month }}</a>
+                                <a href="{{ 'support'|url }}" class="text-danger">{{ stats.tickets_last_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|alink }}" class="text-danger">{{ stats.tickets_total }}</a>
+                                <a href="{{ 'support'|url }}" class="text-danger">{{ stats.tickets_total }}</a>
                             </td>
                         </tr>
                     </tbody>
@@ -261,7 +261,7 @@
             <div class="card-header">
                 <h3 class="card-title">{{ 'Invoices'|trans }}</h3>
                 <div class="card-actions">
-                    <a href="{{ '/invoice'|alink }}" class="btn-action">
+                    <a href="{{ 'invoice'|url }}" class="btn-action">
                         <svg class="icon">
                             <use xlink:href="#dots-vertical" />
                         </svg>
@@ -275,15 +275,15 @@
                         {% for invoice in invoicesUnpaid.list %}
                         <tr>
                             <td class="w-1">
-                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
+                                <a href='{{ "invoice/manage/#{invoice.id}"|url }}'>{{ invoice.serie_nr }}</a>
                             </td>
                             <td class="w-1">
-                                <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">
-                                    <span class="avatar avatar-xs" style="background-image: url({{ invoice.buyer.email|gravatar }}&size=24"></span>
+                                <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>
+                                    <span class="avatar avatar-xs" style="background-image: url({{ invoice.buyer.email|gravatar(size: 24) }})"></span>
                                 </a>
                             </td>
                             <td>
-                                <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
+                                <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
                             </td>
                             <td class="text-center">{{ invoice.total|format_currency(invoice.currency) }}</td>
                             <td class="text-center">{{ invoice.created_at|format_date }}</td>
@@ -318,10 +318,10 @@
                 <div class="card-header">
                     <h3 class="card-title">{{ 'Latest orders'|trans }}</h3>
                     <span class="ms-2 badge bg-success">
-                        <a href="{{ 'order'|alink }}" class="text-white">+{{ orders.total }}</a>
+                        <a href="{{ 'order'|url }}" class="text-white">+{{ orders.total }}</a>
                     </span>
                     <div class="card-actions">
-                        <a href="{{ '/order'|alink }}" class="btn-action">
+                        <a href="{{ 'order'|url }}" class="btn-action">
                             <svg class="icon">
                                 <use xlink:href="#dots-vertical" />
                             </svg>
@@ -335,10 +335,10 @@
                         {% for order in orders.list %}
                             <tr title="{{ order.created_at|timeago }} {{ 'ago'|trans }}">
                                 <td>
-                                    <a href="{{ 'client/manage'|alink }}/{{ order.client_id }}">{{ order.client.first_name }} {{ order.client.last_name }}</a>
+                                    <a href='{{ "client/manage/#{order.client_id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a>
                                 </td>
                                 <td>
-                                    <a href="{{ 'order/manage'|alink }}/{{ order.id }}">{{ order.title|truncate(35) }}</a>
+                                    <a href='{{ "order/manage/#{order.id}"|url }}'>{{ order.title|truncate(35) }}</a>
                                 </td>
                             </tr>
                         {% else %}
@@ -368,9 +368,9 @@
                         <tbody>
                         {% for p in admin.stats_get_product_summary %}
                             <tr>
-                                <td><a href="{{ 'product/manage'|alink }}/{{ p.id }}" title="{{ p.title }}">{{ p.title|truncate(35) }}</a></td>
+                                <td><a href='{{ "product/manage/#{p.id}"|url }}' title="{{ p.title }}">{{ p.title|truncate(35) }}</a></td>
                                 <td align="center">
-                                    <a href="{{ 'order'|alink({ 'product_id': p.id }) }}" class="webStatsLink">{{ p.orders }}</a>
+                                    <a href='{{ 'order'|url(query: { 'product_id': p.id }) }}' class="webStatsLink">{{ p.orders }}</a>
                                 </td>
                             </tr>
                         {% else %}
@@ -473,12 +473,12 @@
                             {% for i, event in events.list %}
                             <tr>
                                 <td class="w-1">
-                                    <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
-                                        <span class="avatar avatar-xs" style="background-image: url({{ event.client.email|gravatar }}&size=24"></span>
+                                    <a href='{{ "client/manage/#{event.client.id}"|url }}'>
+                                        <span class="avatar avatar-xs" style="background-image: url({{ event.client.email|gravatar(size: 24) }})"></span>
                                     </a>
                                 </td>
                                 <td>
-                                    <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.name|truncate(40) }}</a>
+                                    <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.name|truncate(40) }}</a>
                                 </td>
                                 <td>{{ event.message|truncate(50) }}</td>
                                 <td>{{ event.created_at|format_datetime }}</td>
@@ -500,12 +500,12 @@
                             {% for i, event in events.list %}
                             <tr>
                                 <td class="w-1">
-                                    <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
-                                        <span class="avatar avatar-xs" style="background-image: url({{ event.staff.email|gravatar }}&size=24"></span>
+                                    <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
+                                        <span class="avatar avatar-xs" style="background-image: url({{ event.staff.email|gravatar(size: 24) }})"></span>
                                     </a>
                                 </td>
                                 <td>
-                                    <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">{{ event.staff.name }}</a>
+                                    <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>{{ event.staff.name }}</a>
                                 </td>
                                 <td>{{ event.message|truncate(50) }}</td>
                                 <td>{{ event.created_at|format_datetime }}</td>

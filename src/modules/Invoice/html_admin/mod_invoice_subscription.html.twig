@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'invoice/subscriptions'|alink }}">{{ 'Subscriptions'|trans }}</a>
+            <a href="{{ 'invoice/subscriptions'|url }}">{{ 'Subscriptions'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Subscription'|trans }} #{{ subscription.id }}</li>
     </ol>
@@ -43,7 +43,7 @@
                             <tr>
                                 <td class="text-end">{{ 'Client'|trans }}:</td>
                                 <td>
-                                    <a href="{{ 'client/manage'|alink }}/{{ subscription.client.id }}">{{ subscription.client.first_name }} {{ subscription.client.last_name }}</a>
+                                    <a href='{{ "client/manage/#{subscription.client.id}"|url }}'>{{ subscription.client.first_name }} {{ subscription.client.last_name }}</a>
                                 </td>
                             </tr>
                             <tr>
@@ -87,9 +87,9 @@
 
                 <div class="body footer text-center">
                     <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id }) }}"
+                        href="{{ 'invoice/subscription_delete'|api_url(query: { 'id': subscription.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
-                        data-api-redirect="{{ 'invoice/subscriptions'|alink }}">
+                        data-api-redirect="{{ 'invoice/subscriptions'|url }}">
                         <svg class="icon icon-tabler" width="24" height="24">
                             <use xlink:href="#delete" />
                         </svg>
@@ -100,7 +100,7 @@
 
             <div class="tab-pane fade" id="tab-manage" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/admin/invoice/subscription_update'|link }}" class="api-form" data-api-reload="1">
+                    <form method="post" action="{{ 'invoice/subscription_update'|api_url }}" class="api-form" data-api-reload="1">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>

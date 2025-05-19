@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'System settings'|trans }}</li>
     </ol>
@@ -55,7 +55,7 @@
         <div class="card">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Company updated'|trans }}">
+                    <form method="post" action="{{ 'system/update_params'|api_url }}" class="api-form" data-api-msg="{{ 'Company updated'|trans }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <div class="card-body">
                             <div class="mb-3 row">
@@ -121,7 +121,7 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'BIC / SWIFT Code' |trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'BIC / SWIFT Code'|trans }}</label>
                                 <div class="col-md-6">
                                     <input class="form-control" type="text" name="company_bic" value="{{ params.company_bic }}">
                                 </div>
@@ -160,42 +160,42 @@
                             </div>
                             <div class="mb-3 row">
                                 <label class="form-label col-3 col-form-label">
-                                    {{ 'Disallow guest API to fetch FOSSBilling version' | trans }}
+                                    {{ 'Disallow guest API to fetch FOSSBilling version'|trans }}
                                     <br/>
-                                    <small class="text-muted">{{'Enabling this functionality may affect modules that depend on it.' | trans }}</small>
+                                    <small class="text-muted">{{'Enabling this functionality may affect modules that depend on it.'|trans }}</small>
                                 </label>
                                 <div class="col">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radio_showPublicYes" type="radio" name="hide_version_public" value="1" {% if params.hide_version_public == "1" %}checked{% endif %}>
                                         <label class="form-check-label" for="radio_showPublicYes">
-                                            {{ 'Yes' | trans }}
+                                            {{ 'Yes'|trans }}
                                         </label>
                                     </div>
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radio_showPublicNo" type="radio" name="hide_version_public" value="0" {% if params.hide_version_public == "0" %}checked{% endif %}>
                                         <label class="form-check-label" for="radio_showPublicNo">
-                                            {{ 'No' | trans }}
+                                            {{ 'No'|trans }}
                                         </label>
                                     </div>
                                 </div>
                             </div>
                             <div class="mb-3 row">
                                 <label class="form-label col-3 col-form-label">
-                                    {{ 'Hide some company information in the guest API' | trans }}
+                                    {{ 'Hide some company information in the guest API'|trans }}
                                     <br/>
-                                    <small class="text-muted">{{'Enabling this will hide some information from the "company" guest API endpoint such as the address, phone number, email, VAT number, and more.' | trans }}</small>
+                                    <small class="text-muted">{{'Enabling this will hide some information from the "company" guest API endpoint such as the address, phone number, email, VAT number, and more.'|trans }}</small>
                                 </label>
                                 <div class="col">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radio_showCompanyPublicYes" type="radio" name="hide_company_public" value="1" {% if params.hide_company_public == "1" %}checked{% endif %}>
                                         <label class="form-check-label" for="radio_showCompanyublicYes">
-                                            {{ 'Yes' | trans }}
+                                            {{ 'Yes'|trans }}
                                         </label>
                                     </div>
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radio_showCompanyPublicNo" type="radio" name="hide_company_public" value="0" {% if params.hide_company_public == "0" %}checked{% endif %}>
                                         <label class="form-check-label" for="radio_showCompanyPublicNo">
-                                            {{ 'No' | trans }}
+                                            {{ 'No'|trans }}
                                         </label>
                                     </div>
                                 </div>
@@ -214,7 +214,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="company-legal" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Company updated'|trans }}">
+                    <form method="post" action="{{ 'system/update_params'|api_url }}" class="api-form" data-api-msg="{{ 'Company updated'|trans }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <div class="card-body">
                             <div class="mb-3">
@@ -237,7 +237,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-countries" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Countries updated'|trans }}">
+                    <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form" data-api-msg="{{ 'Countries updated'|trans }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <input type="hidden" name="ext" value="mod_system">
                         <div class="card-body">
@@ -505,7 +505,7 @@ ZW=Zimbabwe
                     <div class="card-header">
                         <h3 class="card-title">{{ 'Cache control'|trans }}</h3>
                         <div class="card-actions">
-                            <form method="post" action="{{ 'api/admin/system/clear_cache'|link }}" class="api-form" data-api-msg="{{ 'Cache directory is cleared'|trans }}">
+                            <form method="post" action="{{ 'system/clear_cache'|api_url }}" class="api-form" data-api-msg="{{ 'Cache directory is cleared'|trans }}">
                                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                                 <button class="btn btn-danger" type="submit">{{ 'Invalidate cache'|trans }}</button>
                             </form>
@@ -587,13 +587,13 @@ ZW=Zimbabwe
                             <div class="alert alert-success" role="alert">
                                 <p>{{ 'Error reporting is enabled.'|trans}}</p>
                                 <p>{{ 'This FOSSBilling instance is automatically sending error reports which allows us to more easily improve the software and keep it stable. Thanks!'|trans }}</p>
-                                <a class="btn btn-danger api-link" href="{{ 'api/admin/system/toggle_error_reporting'|link({ 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Error reporting is now disabled.'|trans }}">{{'Disable error reporting'|trans}}</a>
+                                <a class="btn btn-danger api-link" href="{{ 'system/toggle_error_reporting'|api_url(query: { 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Error reporting is now disabled.'|trans }}">{{'Disable error reporting'|trans}}</a>
                             </div>
                         {% else %}
                             <div class="alert alert-danger" role="alert">
                                 <p>{{ 'Error reporting is disabled.'|trans}}</p>
                                 <p>{{ 'Please consider enabling error reporting. Doing so allows us to provide you with better technical support and helps us to proactively improve FOSSBilling.'|trans }}</p>
-                                <a class="btn btn-success api-link" href="{{ 'api/admin/system/toggle_error_reporting'|link({ 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Error reporting is now enabled.'|trans }}">{{'Enable error reporting'|trans}}</a>
+                                <a class="btn btn-success api-link" href="{{ 'system/toggle_error_reporting'|api_url(query: { 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Error reporting is now enabled.'|trans }}">{{'Enable error reporting'|trans}}</a>
                             </div>
                         {% endif %}
                         <p>{{ "FOSSBilling optionally includes automated error reporting to help aid the project's development and stability. To find the most up-to-date information about it, you should review the links and information below."|trans }}</p>
@@ -621,7 +621,7 @@ ZW=Zimbabwe
                             {% endif %}
                         </div>
 
-                        <form class="api-form" method="post" action="{{ 'api/admin/system/set_interface_ip'|link }}" data-api-jsonp="onAfterInterfaceSet">
+                        <form class="api-form" method="post" action="{{ 'system/set_interface_ip'|api_url }}" data-api-jsonp="onAfterInterfaceSet">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
                             {% set interface_ips = admin.system_get_interface_ips %}

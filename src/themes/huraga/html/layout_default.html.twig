@@ -5,7 +5,7 @@
    <title>{{ settings.meta_title_prefix }} {% block meta_title %}{% endblock %} {{ settings.meta_title_suffix }}</title>
 
     <meta property="bb:url" content="{{ constant('SYSTEM_URL') }}">
-    <meta property="bb:client_area" content="{{ '/'|link }}">
+    <meta property="bb:client_area" content="{{ '/'|url }}">
     <meta name="csrf-token" content="{{ CSRFToken }}">
 
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
@@ -22,7 +22,7 @@
     <script src="{{ constant('SYSTEM_URL') ~ 'library/Api/API.js?' ~ FOSSBillingVersion }}"></script>
     {{ encore_entry_script_tags('huraga') }}
 
-    {{ DebugBar_renderHead() }}
+    {{ debug_bar_render_head() }}
 
     {% block head %}{% endblock %}
     {% block js %}{% endblock %}
@@ -43,7 +43,7 @@
 
             const isAllowed = publicPaths.some(path => currentPath.startsWith(path));
             if (!isAllowed) {
-                window.location.href = '{{ "login"|link }}';
+                window.location.href = '{{ "login"|url }}';
             }
         });
     </script>
@@ -64,13 +64,13 @@
         <nav class="navbar navbar-expand-md py-4">
             <div class="container-fluid">
                 {% if logo_url and settings.show_company_logo %}
-                    <a class="navbar-brand" href="{{ '/'|link }}">
+                    <a class="navbar-brand" href="{{ '/'|url }}">
                         <img class="d-none d-sm-block" src="{{ logo_url }}" alt="{{ company.name }}" height="45px"
                              title="{{ company.name }}">
                         <span class="d-sm-none">{{ company.name }}</span>
                     </a>
                 {% else %}
-                    <a class="navbar-brand" href="{{ '/'|link }}">
+                    <a class="navbar-brand" href="{{ '/'|url }}">
                         <span>{{ company.name }}</span>
                     </a>
                 {% endif %}
@@ -96,20 +96,20 @@
 
                         {% if settings.top_menu_dashboard %}
                             <li class="nav-item d-none d-md-block">
-                                <a class="nav-link" href="{{ ''|link }}">{{ 'Dashboard'|trans }}</a>
+                                <a class="nav-link" href="{{ ''|url }}">{{ 'Dashboard'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_order %}
                             <li class="nav-item d-none d-md-block">
-                                <a class="nav-link" href="{{ '/order'|link }}">{{ 'Order'|trans }}</a>
+                                <a class="nav-link" href="{{ 'order'|url }}">{{ 'Order'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_profile %}
                             <li class="nav-item d-none d-md-block">
                                 {% if not client %}
-                                    <a class="nav-link" href="{{ 'login'|link }}">{{ 'Login'|trans }}</a>
+                                    <a class="nav-link" href="{{ 'login'|url }}">{{ 'Login'|trans }}</a>
                                 {% endif %}
                             </li>
                         {% endif %}
@@ -119,7 +119,7 @@
                                 {% if client %}
                                     <div class="dropdown">
                                         <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            <img class="img-fluid rounded-circle" alt="{{ profile.first_name }} {{ profile.last_name }} gravatar" src="{{ profile.email|gravatar(60) }}" height="25px" width="25px">
+                                            <img class="img-fluid rounded-circle" alt="{{ profile.first_name }} {{ profile.last_name }} gravatar" src="{{ profile.email|gravatar(size: 60) }}" height="25px" width="25px">
                                             {% if profile.company %}
                                                 <span>{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }})</span>
                                             {% else %}
@@ -128,14 +128,14 @@
                                         </button>
                                         <ul class="dropdown-menu">
                                             <li><a class="dropdown-item"
-                                                   href="{{ 'client/profile'|link }}">{{ 'Profile'|trans }}</a></li>
+                                                   href="{{ 'client/profile'|url }}">{{ 'Profile'|trans }}</a></li>
                                             <li><a class="dropdown-item"
-                                                   href="{{ 'client/logout'|link }}">{{ 'Sign out'|trans }}</a></li>
+                                                   href="{{ 'client/logout'|url }}">{{ 'Sign out'|trans }}</a></li>
                                         </ul>
                                     </div>
                                 {% else %}
                                     <a class="ms-2 btn btn-outline-primary d-none d-md-block"
-                                       href="{{ 'signup'|link }}">{{ 'Register'|trans }}</a>
+                                       href="{{ 'signup'|url }}">{{ 'Register'|trans }}</a>
                                 {% endif %}
                             </li>
                         {% endif %}
@@ -164,7 +164,7 @@
                                 {% block breadcrumbs %}
                                     <nav aria-label="{{ 'breadcrumb'|trans }}">
                                         <ol class="breadcrumb d-none d-md-flex">
-                                            <li class="breadcrumb-item"><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a>
+                                            <li class="breadcrumb-item"><a href="{{ '/'|url }}">{{ 'Home'|trans }}</a>
                                             </li>
                                             {% block breadcrumb %}
                                                 <li class="active breadcrumb-item">{{ 'Dashboard'|trans }}</li>
@@ -188,7 +188,7 @@
                     <footer id="footer" class="small text-muted mt-2 mb-3">
                         <div class="d-flex flex-column">
                             <div class="d-flex justify-content-center">
-                                <span>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature | default(company.signature) }}
+                                <span>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature|default(company.signature) }}
                                     {% if company.bank_info_pagebottom == 1 %}
                                         <br/>
                                         <b>{{'Payment Information'|trans}}</b> - {{'Bank Name'|trans}}: {{ company.bank_name }} | {{'BIC / SWIFT Code'|trans}}: {{ company.bic }} | {{'Account Number'|trans}}: {{ company.account_number }}
@@ -202,7 +202,7 @@
                                            href="{{ settings.footer_link_1_page }}">{{ settings.footer_link_1_title }}</a>
                                     {% else %}
                                         <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
-                                           href="{{ settings.footer_link_1_page | link }}">{{ settings.footer_link_1_title }}</a>
+                                           href="{{ settings.footer_link_1_page|url }}">{{ settings.footer_link_1_title }}</a>
                                     {% endif %}
                                 {% endif %}
                                 {% if settings.footer_link_2_enabled %}
@@ -212,7 +212,7 @@
                                            href="{{ settings.footer_link_2_page }}">{{ settings.footer_link_2_title }}</a>
                                     {% else %}
                                         <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
-                                           href="{{ settings.footer_link_2_page | link }}">{{ settings.footer_link_2_title }}</a>
+                                           href="{{ settings.footer_link_2_page|url }}">{{ settings.footer_link_2_title }}</a>
                                     {% endif %}
                                 {% endif %}
                                 {% if settings.footer_link_3_enabled %}
@@ -222,7 +222,7 @@
                                            href="{{ settings.footer_link_3_page }}">{{ settings.footer_link_3_title }}</a>
                                     {% else %}
                                         <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
-                                           href="{{ settings.footer_link_3_page | link }}">{{ settings.footer_link_3_title }}</a>
+                                           href="{{ settings.footer_link_3_page|url }}">{{ settings.footer_link_3_title }}</a>
                                     {% endif %}
                                 {% endif %}
                                 {% if settings.footer_link_4_enabled %}
@@ -232,7 +232,7 @@
                                            href="{{ settings.footer_link_4_page }}">{{ settings.footer_link_4_title }}</a>
                                     {% else %}
                                         <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
-                                           href="{{ settings.footer_link_4_page | link }}">{{ settings.footer_link_4_title }}</a>
+                                           href="{{ settings.footer_link_4_page|url }}">{{ settings.footer_link_4_title }}</a>
                                     {% endif %}
                                 {% endif %}
                             </div>
@@ -265,13 +265,13 @@
     {% endblock %}
 
     {% if settings.inject_javascript %}
-        {{ settings.inject_javascript | raw }}
+        {{ settings.inject_javascript|raw }}
     {% endif %}
     {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
     {% if guest.extension_is_on({ "mod": "cookieconsent" }) %}
         {{ include('mod_cookieconsent_index.html.twig', ignore_missing: true) }}
     {% endif %}
 </div>
-{{ DebugBar_render() }}
+{{ debug_bar_render() }}
 </body>
 </html>
