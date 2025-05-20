@@ -40,6 +40,10 @@ body {
     }
 }
 
+.card-header h1, .page-password-reset .card h1, .page-login .card h1, .page-signup .card h1 {
+    font-size: 1.25rem;
+}
+
 .card-body {
     @at-root table {
         >thead {

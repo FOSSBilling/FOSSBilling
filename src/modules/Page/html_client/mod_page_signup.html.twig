@@ -26,7 +26,7 @@
                 {% endif %}
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="text-center m-4">{{ 'Create a new account'|trans }}</h5>
+                        <h1 class="text-center m-4">{{ 'Create a new account'|trans }}</h1>
                         <form class="api-form auth" action="{{ 'api/guest/client/create'|link }}" method="post" data-api-redirect="{{ '/'|link }}">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             {% set r = guest.client_required %}

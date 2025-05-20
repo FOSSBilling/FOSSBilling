@@ -2,8 +2,6 @@ name: Perform Live Tests
 
 on:
   push:
-  pull_request:
-    branches: main
 
 env:
     DB_HOST: 127.0.0.1
@@ -50,7 +48,7 @@ jobs:
           key: huraga-${{ hashFiles('./package-lock.json', './src/themes/huraga/assets/huraga.js', './src/themes/huraga/assets/scss/*.scss') }}
 
       - name: 'Install Node.js and Enable Caching'
-        if: steps.cache-admin_default.outputs.cache-hit != 'true' && steps.cache-huraga.outputs.cache-hit != 'true'
+        if: steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
         uses: actions/setup-node@v4
         with:
           cache: 'npm'
@@ -58,11 +56,11 @@ jobs:
           node-version: 20
 
       - name: 'Install Node.js Dependencies'
-        if: steps.cache-admin_default.outputs.cache-hit != 'true' && steps.cache-huraga.outputs.cache-hit != 'true'
+        if: steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: 'Build Frontend Assets'
-        if: steps.cache-admin_default.outputs.cache-hit != 'true' && steps.cache-huraga.outputs.cache-hit != 'true'
+        if: steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
         run: npm run build
 
       - name: 'Download Latest Translations'
@@ -89,7 +87,10 @@ jobs:
       - name: Setup Apache
         run: |
           sudo apt-get update
-          sudo apt-get install libapache2-mod-php8.3
+          sudo apt-get install --no-install-recommends \
+            libapache2-mod-php8.3 php8.3 php8.3-common php8.3-intl \
+            php8.3-mysql php8.3-xml php8.3-curl php8.3-fpm php8.3-mbstring \
+            php8.3-opcache php8.3-gd
           sudo a2enmod php8.3
           sudo systemctl start apache2
           sudo a2enmod rewrite
