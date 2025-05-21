@@ -552,6 +552,28 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
+    public function toHostingAccountApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null): array
+    {
+        $result = [
+            'id' => $model->id,
+            'sld' => $model->sld,
+            'tld' => $model->tld,
+            'client_id' => $model->client_id,
+            'server_id' => $model->service_hosting_server_id,
+            'plan_id' => $model->service_hosting_hp_id,
+            'reseller' => $model->reseller,
+        ];
+
+        if ($identity instanceof \Model_Admin) {
+            $result['ip'] = $model->ip;
+            $result['username'] = $model->username;
+            $result['created_at'] = $model->created_at;
+            $result['updated_at'] = $model->updated_at;
+        }
+
+        return $result;
+    }
+
     private function _getDomainTuple($data): array
     {
         $required = [
@@ -679,6 +701,23 @@ class Service implements InjectionAwareInterface
                 order by id ASC';
 
         return [$sql, []];
+    }
+
+    public function getAccountsSearchQuery($data): array
+    {
+        $sql = 'SELECT * FROM service_hosting';
+        $params = [];
+
+        $serverID = $data['server_id'] ?? null;
+
+        if (!empty($serverID)) {
+            $sql = $sql . " WHERE service_hosting_server_id = :server_id";
+            $params['server_id'] = $serverID;
+        }
+
+        $sql = $sql . " ORDER BY id ASC";
+
+        return [$sql, $params];
     }
 
     public function createServer($name, $ip, $manager, $data)

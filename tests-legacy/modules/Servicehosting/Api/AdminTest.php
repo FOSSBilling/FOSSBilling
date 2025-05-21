@@ -231,6 +231,30 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
+    public function testaccountGetList(): void
+    {
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getAccountsSearchQuery')
+            ->willReturn(['SQLstring', []]);
+
+        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
+        $pagerMock->expects($this->atLeastOnce())
+            ->method('getSimpleResultSet')
+            ->willReturn(['list' => []]);
+
+        $di = new \Pimple\Container();
+        $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
+        $di['pager'] = $pagerMock;
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $result = $this->api->account_get_list([]);
+        $this->assertIsArray($result);
+    }
+    
     public function testserverGetList(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
@@ -242,11 +266,6 @@ class AdminTest extends \BBTestCase
         $pagerMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn(['list' => []]);
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['pager'] = $pagerMock;
