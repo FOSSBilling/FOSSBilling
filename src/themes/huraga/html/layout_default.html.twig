@@ -34,7 +34,7 @@
 {% block body %}
 {% if not client and settings.require_login %}
     <script>
-        (function () {
+        document.addEventListener("DOMContentLoaded", function () {
             const publicPaths = [
                 '/news',
                 '/tos',
