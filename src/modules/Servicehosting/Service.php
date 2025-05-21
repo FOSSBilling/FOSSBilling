@@ -567,7 +567,6 @@ class Service implements InjectionAwareInterface
         if ($identity instanceof \Model_Admin) {
             $result['ip'] = $model->ip;
             $result['username'] = $model->username;
-            $result['password'] = $model->pass;
             $result['created_at'] = $model->created_at;
             $result['updated_at'] = $model->updated_at;
         }
