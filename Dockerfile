@@ -20,4 +20,4 @@ RUN apt-get update \
 # Copy files and set required permissions.
 COPY --chown=www-data:www-data ./src/. /var/www/html
 
-RUN (crontab -l ; echo "*/5 * * * * php /var/www/html/cron.php") | crontab
+RUN { crontab -l -u www-data 2>/dev/null; echo "*/5 * * * * /usr/local/bin/php /var/www/html/cron.php"; } | crontab -u www-data -
