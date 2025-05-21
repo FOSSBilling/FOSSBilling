@@ -8,7 +8,8 @@
     <div class="container-tight py-4">
         <div class="text-center mb-4">
             <a href="{{ '/'|link }}" class="navbar-brand">
-                <img src="{{ guest.system_company.logo_url }}" height="75" alt="{{ company.name }}">
+                <img class="navbar-brand-image hide-theme-light" src="{{ guest.system_company.logo_url_dark }}" style="height: 50px; width: auto;" alt="{{ guest.system_company.name }} logo">
+                <img class="navbar-brand-image hide-theme-dark" src="{{ guest.system_company.logo_url }}" style="height: 50px; width: auto;" alt="{{ guest.system_company.name }} logo">
             </a>
         </div>
         <div class="card card-md">
