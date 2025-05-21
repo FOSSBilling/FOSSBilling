@@ -149,10 +149,9 @@ class Admin extends \Api_Abstract
         $result = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
         foreach ($result['list'] as $key => $server) {
-            $bean = \RedBeanPHP\R::dispense('ServiceHostingServer');
+            $bean = $this->di['db']->dispense('ServiceHostingServer')->unbox();
             $bean->import($server);
-            $model = new \Model_ServiceHostingServer();
-            $model->loadBean($bean);
+            $model = $bean->box();
 
             $result['list'][$key] = $this->getService()->toHostingServerApiArray($model, false, $this->getIdentity());
         }
@@ -174,10 +173,9 @@ class Admin extends \Api_Abstract
         $orderService = $this->di['mod_service']('order');
 
         foreach ($result['list'] as $key => $account) {
-            $bean = \RedBeanPHP\R::dispense('ServiceHosting');
+            $bean = $this->di['db']->dispense('ServiceHosting')->unbox();
             $bean->import($account);
-            $model = new \Model_ServiceHosting();
-            $model->loadBean($bean);
+            $model = $bean->box();
 
             $order = $this->di['db']->findOne('ClientOrder', 'service_id = :service_id', [':service_id' => $model->id]);
 
