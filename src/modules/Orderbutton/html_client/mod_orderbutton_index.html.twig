@@ -1,5 +1,5 @@
 {% extends "layout_public.html.twig" %}
-{% set loader_nr = request.loader | default("8") %}
+{% set loader_nr = request.loader|default("8") %}
 {% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
 {% block meta_title %}{{ 'Order'|trans }}{% endblock %}
 
@@ -53,7 +53,7 @@
 </div>
 <div class="loading"
      style="display: none; background: rgba(0,0,0,.5) no-repeat; width:100%; height:100%; position:fixed; top:0; left:0; z-index:999;">
-    <img src="{{ loader_url | mod_asset_url('orderbutton') }}"
+    <img src="{{ loader_url|mod_asset_url('orderbutton') }}"
          style="display: block; margin-left: auto; margin-right: auto;position: relative; top : 50%">
 </div>
 {% endblock %}
@@ -92,7 +92,7 @@
                     $('#checkout').remove();
                     bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
                 } else {
-                    var link = '{{ "invoice/banklink"|link }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
+                    var link = '{{ "invoice/banklink"|url }}/' + result.invoice_hash + '/' + result.gateway_id;
                     $('#payment-html-inner').html('<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to payment gateway</a>');
                     bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
                     $('#checkout-inner').remove();
@@ -101,7 +101,7 @@
                 }
             });
         } else {
-            window.top.location.href = ('{{ "order/service/manage"|link }}' + '/' + result.order_id);
+            window.top.location.href = ('{{ "order/service/manage"|url }}/' + result.order_id);
         }
     }
 

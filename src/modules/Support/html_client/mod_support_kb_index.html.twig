@@ -5,7 +5,7 @@
 {% block body_class %}kb-index{% endblock %}
 {% block breadcrumb %}
   <li class="breadcrumb-item">
-    <a href="{{ 'support/kb'|link }}">{{ 'Knowledge Base'|trans }}</a>
+    <a href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
   </li>
   {% if request.q %}
   	<li class="breadcrumb-item active" aria-current="page">{{ request.q }}</li>
@@ -49,13 +49,13 @@
                     <div class="row mb-2">
                         {% for i, category in row %}
                             <div class="col">
-                                <a href="{{ 'support/kb'|link }}/{{ category.slug }}" class="card link-underline link-underline-opacity-0" style="min-height: 6rem;">
+                                <a href='{{ "support/kb/#{category.slug}"|url }}' class="card link-underline link-underline-opacity-0" style="min-height: 6rem;">
                                     <div class="card-body">
                                         <h5 class="card-title">{{ category.title }}</h5>
                                         <p class="card-subtitle mb-2 text-muted">{{ category.description }}</p>
                                     </div>
                                 </a>
-                            </div>                              
+                            </div>
                         {% endfor %}
                     </div>
                 {% else %}

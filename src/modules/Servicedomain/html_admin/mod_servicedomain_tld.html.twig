@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li>
-            <a href="{{ 'servicedomain'|alink }}">{{ 'Domain management'|trans }}</a>
+            <a href="{{ 'servicedomain'|url }}">{{ 'Domain management'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ tld.tld }}</li>
     </ol>
@@ -27,7 +27,7 @@
     <div class="card-body">
         <h3>{{ tld.tld }} {{ 'Top level domain management'|trans }}</h3>
 
-        <form method="post" action="{{ 'api/admin/servicedomain/tld_update'|link }}" class="api-form" data-api-msg="{{ 'Top level domain settings updated.'|trans }}">
+        <form method="post" action="{{ 'servicedomain/tld_update'|api_url }}" class="api-form" data-api-msg="{{ 'Top level domain settings updated.'|trans }}">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Registrar'|trans }}:</label>

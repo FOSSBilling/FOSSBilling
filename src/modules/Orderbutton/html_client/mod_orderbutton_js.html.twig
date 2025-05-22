@@ -1,14 +1,14 @@
-{% set background_opacity = request.background_opacity | default("50")%}
-{% set popup_top = request.top | default("200") %}
-{% set popup_left = request.left | default("200") %}
-{% set width = request.width | default("600")%}
-{% set height = request.height | default("700")%}
-{% set background_color = request.background_color | default("black")%}
-{% set theme_color = settings.color_scheme | default('green')%}
-{% set loader_nr = request.loader | default("8")%}
+{% set background_opacity = request.background_opacity|default("50") %}
+{% set popup_top = request.top|default("200") %}
+{% set popup_left = request.left|default("200") %}
+{% set width = request.width|default("600")%}
+{% set height = request.height|default("700")%}
+{% set background_color = request.background_color|default("black")%}
+{% set theme_color = settings.color_scheme|default('green')%}
+{% set loader_nr = request.loader|default("8")%}
 {% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
-{% set border_radius = request.border_radius | default(0) %}
-{% set bind_selector = request.bind_selector | default('.order-button') %}
+{% set border_radius = request.border_radius|default(0) %}
+{% set bind_selector = request.bind_selector|default('.order-button') %}
 
     var orderbutton = function (){
         this.data_product_id = null;
@@ -55,7 +55,7 @@
 
     orderbutton.prototype.srclink = function(){
         var params = [
-            { name: "theme_color", value: "{{settings.color_scheme | default('green')}}" },
+            { name: "theme_color", value: "{{ settings.color_scheme|default('green') }}" },
             { name: "loader", value: "1" }
         ];
         var product_id = this.getDataProductId();
@@ -71,7 +71,7 @@
             params['show_custom_form_values'] = 1;
         {% endif %}
 
-        return "{{ "order" | link }}?"+jQuery.param(params);
+        return "{{ "order"|url }}?"+jQuery.param(params);
     };
 
     orderbutton.prototype.createIframe = function (){
@@ -150,7 +150,7 @@
 
     orderbutton.prototype.createLoaderImage = function(){
         this.loaderImageElem = $('<img />').attr({
-            'src': "{{ loader_url | mod_asset_url('orderbutton')}}",
+            'src': "{{ loader_url|mod_asset_url('orderbutton')}}",
             'id' : 'loader-image'
         }).css({
             'display': 'block',

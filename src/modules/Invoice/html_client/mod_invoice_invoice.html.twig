@@ -9,7 +9,7 @@
 {% block body_class %}invoice-invoice{% endblock %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{{ '/invoice'|link }}">{{ 'Invoices'|trans }}</a></li>
+    <li class="breadcrumb-item"><a href="{{ 'invoice'|url }}">{{ 'Invoices'|trans }}</a></li>
     <li class="breadcrumb-item active" aria-current="page">#{{ nr }}</li>
 {% endblock %}
 
@@ -24,13 +24,13 @@
                 <div class="card-body">
                     <h5 class="mb-1">{{ 'Payment methods'|trans }}</h5>
                     <p class="small text-muted">{{ 'Please choose a payment type and pay for your chosen products.'|trans }}</p>
-                    <form method="post" action="{{ 'api/guest/invoice/payment'|link }}" class="api-form" data-api-redirect="{{ ('invoice/'~invoice.hash)|link({ 'auto_redirect': 1 }) }}">
+                    <form method="post" action="{{ 'invoice/payment'|api_url(role: 'guest') }}" class="api-form" data-api-redirect='{{ "invoice/#{invoice.hash}"|url(query: { "auto_redirect": 1 }) }}'>
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
                         <div class="d-flex gap-3">
                             {% for gtw in guest.invoice_gateways %}
                                 {% if invoice.currency in gtw.accepted_currencies %}
-                                {% set banklink = 'invoice/banklink'|link %}
+                                {% set banklink = 'invoice/banklink'|url %}
                                 <div class="invoice-gateway rounded-2 p-2">
                                     <input type="radio" class="btn-check border-0" name="gateway_id" gateway_id="{{ gtw.id }}" id="{{ gtw.id }}" autocomplete="off">
                                     <label class="btn" for="{{ gtw.id }}"
@@ -59,8 +59,8 @@
                         </div>
                         <div class="d-flex align-items-center">
                             <div class="d-flex gap-2 align-items-center justify-content-end">
-                                <a href="{{ 'invoice/pdf'|link }}/{{ invoice.hash }}" target="_blank" class="btn btn-sm btn-danger">{{ 'PDF'|trans }}</a>
-                                <a href="{{ 'invoice/print'|link }}/{{ invoice.hash }}" target="_blank" class="btn btn-sm btn-dark">{{ 'Print'|trans }}</a>
+                                <a href='{{ "invoice/pdf/#{invoice.hash}"|url }}' target="_blank" class="btn btn-sm btn-danger">{{ 'PDF'|trans }}</a>
+                                <a href='{{ "invoice/print/#{invoice.hash}"|url }}' target="_blank" class="btn btn-sm btn-dark">{{ 'Print'|trans }}</a>
                             </div>
                         </div>
                     </div>
@@ -205,7 +205,7 @@
                                     <td>{{ i+1 }}</td>
                                     <td>
                                         {% if item.order_id %}
-                                            <a href="{{ '/order/service'|link }}/manage/{{ item.order_id }}">{{ item.title }}</a>
+                                            <a href='{{ "order/service/manage/#{item.order_id}"|url }}'>{{ item.title }}</a>
                                         {% else %}
                                             {{ item.title }}
                                         {% endif %}
@@ -283,7 +283,7 @@
 
     function paymentPrompt(id, supportsSubscription, title){
         invoiceHash = "{{ invoice.hash }}";
-        backLink    = "{{ 'invoice/banklink'|link }}";
+        backLink = "{{ 'invoice/banklink'|url }}";
         paymentLink = new URL(backLink.concat('/', invoiceHash, '/', id));
         invoiceSubscribable = {{ invoice.subscribable ? 'true' : 'false' }};
 

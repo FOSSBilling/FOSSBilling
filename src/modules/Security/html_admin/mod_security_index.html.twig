@@ -12,7 +12,7 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Security dashboard'|trans }}</h3>
             <div class="card-actions">
-                <a class="btn btn-primary btn-3 api-link" href="{{ 'api/admin/security/run_checks'|link }}" data-api-jsonp="setResults">{{ "Run all checks"|trans }}</a>
+                <a class="btn btn-primary btn-3 api-link" href="{{ 'security/run_checks'|api_url }}" data-api-jsonp="setResults">{{ "Run all checks"|trans }}</a>
             </div>
         </div>
         <div class="table-responsive">
@@ -30,7 +30,7 @@
                     <tr>
                         <td scope="row">
                             <a class="btn btn-small btn-primary api-link"
-                                href="{{ 'api/admin/security/run_check'|link({ 'id': check.id, 'throw': true, 'CSRFToken': CSRFToken }) }}"
+                                href="{{ 'security/run_check'|api_url(query: { 'id': check.id, 'throw': true, 'CSRFToken': CSRFToken }) }}"
                                 data-api-jsonp="setResult"
                                 >{{ 'Run check'|trans }}</a>
                         </td>
@@ -62,7 +62,7 @@
         } else {
             alertDiv.classList.add('alert', 'alert-danger');
         }
-        
+
         alertDiv.setAttribute('role', 'alert');
         alertDiv.innerText = result.message;
         const existingDiv = document.getElementById(result.id);

@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'WYSIWYG settings'|trans }}</li>
     </ol>
@@ -24,7 +24,7 @@
 
 {% block content %}
     <div class="card">
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+        <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
             <input type="hidden" name="ext" value="mod_wysiwyg">
             <div class="card-body">
                 <h3 class="card-title">{{ 'WYSIWYG settings'|trans }}</h3>

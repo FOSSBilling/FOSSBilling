@@ -36,7 +36,7 @@
         </div>
         <div class="card-footer">
             {% if admin.system_update_available or update_info['branch'] == 'preview' %}
-                <a href="{{ 'api/admin/system/update_core'|link({ 'CSRFToken': CSRFToken }) }}"
+                <a href="{{ 'system/update_core'|api_url(query: { 'CSRFToken': CSRFToken }) }}"
                     class="btn btn-primary api-link"
                     data-api-reload="1"
                     data-api-confirm="Proceed with automatic update?"
@@ -57,7 +57,7 @@
                     {{ 'Update FOSSBilling'|trans }}
                 </a>
             {% endif %}
-            <a href="{{ 'api/admin/system/recheck_update'|link({ 'CSRFToken': CSRFToken }) }}"
+            <a href="{{ 'system/recheck_update'|api_url(query: { 'CSRFToken': CSRFToken }) }}"
                 class="btn btn-primary api-link"
                 data-api-reload="1">
                 <svg class="icon">
@@ -65,7 +65,7 @@
                 </svg>
                 {{ 'Check for Updates'|trans }}
             </a>
-            <a href="{{ 'api/admin/system/manual_update'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.old.php." data-api-msg="Patches applied and configuration updated.">
+            <a href="{{ 'system/manual_update'|api_url(query: { 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.old.php." data-api-msg="Patches applied and configuration updated.">
                 <svg class="icon">
                     <use xlink:href="#cog-play" />
                 </svg>

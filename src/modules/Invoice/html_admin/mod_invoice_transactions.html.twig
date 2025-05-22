@@ -90,7 +90,7 @@
 {% set statuses = admin.invoice_transaction_get_statuses %}
     <section class="row row-cards mb-3">
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'invoice/transactions'|alink({ 'status': 'processed' }) }}">
+            <a class="card card-sm card-link" href="{{ 'invoice/transactions'|url(query: { 'status': 'processed' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -104,7 +104,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'invoice/transactions'|alink({ 'status': 'approved' }) }}">
+            <a class="card card-sm card-link" href="{{ 'invoice/transactions'|url(query: { 'status': 'approved' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -118,7 +118,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'invoice/transactions'|alink({ 'status': 'error' }) }}">
+            <a class="card card-sm card-link" href="{{ 'invoice/transactions'|url(query: { 'status': 'error' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -132,7 +132,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'invoice/transactions'|alink }}">
+            <a class="card card-sm card-link" href="{{ 'invoice/transactions'|url }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -181,7 +181,7 @@
                 </td>
                 <td>
                     {% if tx.invoice_id %}
-                        <a href="{{ 'invoice/manage'|alink }}/{{ tx.invoice_id }}">#{{ tx.invoice_id }}</a>
+                        <a href='{{ "invoice/manage/#{tx.invoice_id}"|url }}'>#{{ tx.invoice_id }}</a>
                     {% else %}
                         {{ 'n/a'|trans }}
                     {% endif %}
@@ -198,17 +198,17 @@
                 <td>{{ tx.amount|format_currency(tx.currency) }}</td>
                 <td>{{ tx.created_at|format_datetime }}</td>
                 <td>
-                    <a class="btn btn-icon" href="{{ 'invoice/transaction'|alink }}/{{ tx.id }}">
+                    <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
                         <svg class="icon">
                             <use xlink:href="#edit" />
                         </svg>
                     </a>
-                    <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': tx.id, 'CSRFToken': CSRFToken }) }}" data-api-msg="Processed" title="Process again">
+                    <a class="btn btn-icon api-link" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': tx.id, 'CSRFToken': CSRFToken }) }}" data-api-msg="Processed" title="Process again">
                         <svg class="icon">
                             <use xlink:href="#refresh" />
                         </svg>
                     </a>
-                    <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': tx.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                    <a class="btn btn-icon api-link" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': tx.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
                         <svg class="icon">
                             <use xlink:href="#delete" />
                         </svg>

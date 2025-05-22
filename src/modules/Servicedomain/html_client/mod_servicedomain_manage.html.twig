@@ -73,7 +73,7 @@
                     <h5 class="mt-1 mb-1">{{ 'Update Nameservers'|trans }}</h5>
                     <span class="small text-muted">{{ 'If you would like to host this domain with another company you can update nameservers.'|trans }}</span>
                 </div>
-                <form class="api-form" action="{{ 'api/client/servicedomain/update_nameservers'|link }}" data-api-msg="{{ 'Nameservers updated'|trans }}" method="post">
+                <form class="api-form" action="{{ 'servicedomain/update_nameservers'|api_url }}" data-api-msg="{{ 'Nameservers updated'|trans }}" method="post">
                     <div class="row">
                         <div class="col-md-12">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
@@ -114,7 +114,7 @@
                     <h5 class="mt-1 mb-1">{{ 'Update domain contact details'|trans }}</h5>
                     <span class="small text-secondary">{{ 'Domain contact details will be displayed once someone will check WHOIS output (which is public) of your service. This will update Technical, Billing and Admin contacts for this service. You can enable domain privacy protection if you want to hide your public WHOIS information.'|trans }}</span>
                 </div>
-                <form class="api-form" method="post" action="{{ 'api/client/servicedomain/update_contacts'|link }}" data-api-msg="{{ 'Contact details updated'|trans }}">
+                <form class="api-form" method="post" action="{{ 'servicedomain/update_contacts'|api_url }}" data-api-msg="{{ 'Contact details updated'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <div class="col-md-5">

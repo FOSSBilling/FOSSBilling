@@ -47,13 +47,13 @@
 <script type="text/javascript">
 $(function() {
     $('#client-login').on('submit', function(event) {
-        $.post("{{ constant('SYSTEM_URL') }}api/guest/client/login",
+        $.post("{{ 'client/login'|api_url(role: 'guest') }}",
             $(this).serialize(),
             function(json) {
                 if(json.error) {
                     alert(json.error.message);
                 } else {
-                    parent.window.location = "{{ constant('SYSTEM_URL') }}";
+                    parent.window.location = "{{ '/'|url }}";
                 }
             }, 'json')
         ;

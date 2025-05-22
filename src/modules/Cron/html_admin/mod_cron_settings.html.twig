@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Cron settings'|trans }}</li>
     </ol>
@@ -64,7 +64,7 @@
         </div>
         <div class="card-body container">
             {% set params = admin.extension_config_get({ 'ext': 'mod_cron' }) %}
-            <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+            <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                 <input type="hidden" name="ext" value="mod_cron">
                 <div class="row">
@@ -77,13 +77,13 @@
                         </label>
                     </div>
 
-                    <p class="text-muted">{{ 'If enabled, this URL can be used to execute the cronjob:'|trans }} {{ 'api/guest/cron/run'|link }}</p>
+                    <p class="text-muted">{{ 'If enabled, this URL can be used to execute the cronjob:'|trans }} {{ 'cron/run'|api_url(role: 'guest') }}</p>
                     <input class="btn btn-primary w-25" type="submit" value="{{ 'Update'|trans }}">
                 </div>
             </form>
         </div>
         <div class="card-footer text-center">
-            <a href="{{'api/admin/cron/run'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" target="_blank" data-api-msg="{{ 'Cron executed'|trans }}">
+            <a href="{{ 'cron/run'|api_url(query: { 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" target="_blank" data-api-msg="{{ 'Cron executed'|trans }}">
                 <svg class="icon icon-tabler">
                     <use xlink:href="#play"/>
                 </svg>

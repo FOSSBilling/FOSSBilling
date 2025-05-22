@@ -32,8 +32,7 @@
                                         {{ post.content|truncate(200)|markdown_to_html }}
                                     {% endif %}
                                 </p>
-                                <a class="link-offset-2 link-underline"
-                                   href="{{ '/news'|link }}/{{ post.slug }}">{{ 'Continue reading'|trans }}
+                                <a class="link-offset-2 link-underline" href='{{ "news/#{post.slug}"|url }}'>{{ 'Continue reading'|trans }}
                                     <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                                         <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/>
                                     </svg>

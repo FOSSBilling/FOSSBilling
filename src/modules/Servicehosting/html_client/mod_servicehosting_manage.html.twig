@@ -72,16 +72,16 @@
                 <div class="control-group">
                     <div class="controls">
                         {% if service.domain_order_id %}
-                            <a class="btn btn-primary" href="{{ '/order/service/manage'|link }}/{{ service.domain_order_id }}">{{ 'Manage domain'|trans }}</a>
+                            <a class="btn btn-primary" href='{{ "order/service/manage/#{service.domain_order_id}"|url }}'>{{ 'Manage domain'|trans }}</a>
                         {% endif %}
-                        <a class="btn btn-primary api-link" href="{{ 'api/client/servicehosting/get_login_url'|link({ 'order_id':  order.id, 'CSRFToken': CSRFToken }) }}" data-api-jsonp="onAfterLoginLinkCreated">{{ 'Login to control panel'|trans }}</a>
+                        <a class="btn btn-primary api-link" href="{{ 'servicehosting/get_login_url'|api_url(query: { 'order_id':  order.id, 'CSRFToken': CSRFToken }) }}" data-api-jsonp="onAfterLoginLinkCreated">{{ 'Login to control panel'|trans }}</a>
                     </div>
                 </div>
             </div>
             {# Hosting password #}
             <div class="tab-pane fade" role="tabpanel" id="password">
                 <h3>{{ 'Change your control panel/FTP/SSH password'|trans }}</h3>
-                <form class="api-form" action="{{ 'api/client/servicehosting/change_password'|link }}" method="post" data-api-msg="{{ 'Password changed'|trans }}">
+                <form class="api-form" action="{{ 'servicehosting/change_password'|api_url }}" method="post" data-api-msg="{{ 'Password changed'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <fieldset>
                         <div class="control-group">
@@ -109,7 +109,7 @@
             {# Hosting domain #}
             <div class="tab-pane fade" role="tabpanel" id="domain">
                 <h3>{{ 'Change domain'|trans }}</h3>
-                <form class="api-form" action="{{ 'api/client/servicehosting/change_domain'|link }}" method="post" data-api-msg="{{ 'Domain name changed'|trans }}">
+                <form class="api-form" action="{{ 'servicehosting/change_domain'|api_url }}" method="post" data-api-msg="{{ 'Domain name changed'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <fieldset>
                         <div class="control-group">
@@ -131,7 +131,7 @@
             {# Hosting username #}
             <div class="tab-pane fade" role="tabpanel" id="username">
                 <h3>{{ 'Change username'|trans }}</h3>
-                <form class="api-form" action="{{ 'api/client/servicehosting/change_username'|link }}" method="post" data-api-msg="{{ 'Username changed'|trans }}">
+                <form class="api-form" action="{{ 'servicehosting/change_username'|api_url }}" method="post" data-api-msg="{{ 'Username changed'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <fieldset>
                     <div class="control-group">

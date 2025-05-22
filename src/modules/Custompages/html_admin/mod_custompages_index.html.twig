@@ -65,20 +65,20 @@
                                 <td>{{ page.title }}</td>
                                 <td>{{ page.slug }}</td>
                                 <td class="text-end">
-                                    <a class="btn btn-icon" href="{{ 'page'|link }}/{{ page.slug }}"
+                                    <a class="btn btn-icon" href='{{ "page/#{page.slug}"|url }}'
                                        data-bs-toggle="tooltip" data-bs-title="{{ 'View'|trans }}">
                                         <svg class="icon">
                                             <use xlink:href="#eye"/>
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon" href="{{ 'custompages'|alink }}/{{ page.id }}"
+                                    <a class="btn btn-icon" href='{{ "custompages/#{page.id}"|url }}'
                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                         <svg class="icon">
                                             <use xlink:href="#edit"/>
                                         </svg>
                                     </a>
                                     <a class="btn btn-icon bb-rm-tr api-link"
-                                       href="{{ 'api/admin/custompages/delete'|link({ 'id': page.id, 'CSRFToken': CSRFToken }) }}"
+                                       href="{{ 'custompages/delete'|api_url(query: { 'id': page.id, 'CSRFToken': CSRFToken }) }}"
                                        title="{{ 'Delete'|trans }}"
                                        data-api-confirm="Are you sure?"
                                        data-api-type="danger"
@@ -106,7 +106,7 @@
             </div>
 
             <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                <form method="post" action="{{ 'api/admin/custompages/create'|link }}" class="api-form save" data-api-redirect="{{ 'custompages'|alink }}">
+                <form method="post" action="{{ 'custompages/create'|api_url }}" class="api-form save" data-api-redirect="{{ 'custompages'|url }}">
                     <div class="card-body mt-2">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <div class="mb-3 row">

@@ -8,7 +8,7 @@
 {% block breadcrumbs %}
     {% if not settings.hide_dashboard_breadcrumb %}
         <ul class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a> <span class="dropdown-divider">/</span></li>
+            <li class="breadcrumb-item"><a href="{{ '/'|url }}">{{ 'Home'|trans }}</a> <span class="dropdown-divider">/</span></li>
             <li class="active breadcrumb-item">{{ 'Dashboard'|trans }}</li>
         </ul>
     {% endif %}
@@ -51,11 +51,11 @@
         {% for i, ticket in tickets.list %}
         <tr>
             <td>{{ ticket.id }}</td>
-            <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}">{{ ticket.subject }}</a></td>
+            <td><a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject }}</a></td>
             <td>{{ ticket.helpdesk.name }}</td>
             <td><span class="badge">{{ mf.status_name(ticket.status) }}</span></td>
             <td title="{{ ticket.updated_at|format_datetime }}">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</td>
-            <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}" class="btn btn-small btn-dark">{{ 'Reply'|trans }}</a></td>
+            <td><a href='{{ "support/ticket/#{ticket.id}"|url }}' class="btn btn-small btn-dark">{{ 'Reply'|trans }}</a></td>
         </tr>
         {% else %}
         <tr>
@@ -78,7 +78,7 @@
             <h2>{{ 'Profile'|trans }}</h2>
             <ul class="data-header-actions">
                 <li>
-                    <a class="btn btn-dark" href="{{ 'client/profile'|link }}">{{ 'Update'|trans }}</a>
+                    <a class="btn btn-dark" href="{{ 'client/profile'|url }}">{{ 'Update'|trans }}</a>
                 </li>
             </ul>
         </header>
@@ -101,7 +101,7 @@
             <h2>{{ 'Invoices'|trans }}</h2>
             <ul class="data-header-actions">
                 <li>
-                    <a class="btn btn-dark" href="{{ 'invoice'|link }}">{{ 'All Invoices'|trans }}</a>
+                    <a class="btn btn-dark" href="{{ 'invoice'|url }}">{{ 'All Invoices'|trans }}</a>
                 </li>
             </ul>
         </header>
@@ -126,8 +126,8 @@
                 <h2>{{ 'Orders'|trans }}</h2>
                 <ul class="data-header-actions">
                     <li>
-                        <a class="btn btn-info order-button" href="{{ 'order'|link }}">{{ 'New Order'|trans }}</a>
-                        <a class="btn btn-dark" href="{{ 'order/service'|link }}">{{ 'All orders'|trans }}</a>
+                        <a class="btn btn-info order-button" href="{{ 'order'|url }}">{{ 'New Order'|trans }}</a>
+                        <a class="btn btn-dark" href="{{ 'order/service'|url }}">{{ 'All orders'|trans }}</a>
                     </li>
                 </ul>
             </header>
@@ -150,8 +150,8 @@
                 <h2>{{ 'Tickets'|trans }}</h2>
                 <ul class="data-header-actions">
                     <li>
-                        <a class="btn btn-info" href="{{ 'support'|link({ 'ticket': 1 }) }}">{{ 'New ticket'|trans }}</a>
-                        <a class="btn btn-dark" href="{{ 'support'|link }}">{{ 'All tickets'|trans }}</a>
+                        <a class="btn btn-info" href="{{ 'support'|url(query: { 'ticket': 1 }) }}">{{ 'New ticket'|trans }}</a>
+                        <a class="btn btn-dark" href="{{ 'support'|url }}">{{ 'All tickets'|trans }}</a>
                     </li>
                 </ul>
             </header>
@@ -181,7 +181,7 @@
                     {% for i, order in client.order_get_list({ "per_page": 5, "page": request.page, "hide_addons": 1 }).list %}
                     <tr>
                         <td>
-                            <a href="{{ 'order/service/manage'|link }}/{{ order.id }}">{{ order.title|truncate(30) }}</a>
+                            <a href='{{ "order/service/manage/#{order.id}"|url }}'>{{ order.title|truncate(30) }}</a>
                         </td>
                         <td>
                             <span class="badge {% if order.status == 'active' %}bg-success{% elseif order.status == 'pending_setup' %}bg-warning{% elseif order.status == 'failed_setup' or order.status == 'suspended' or order.status == 'failed_renew' %}bg-danger{% elseif order.status == 'canceled' %}bg-secondary{% endif %}">{{ mf.status_name(order.status) }}</span>
@@ -208,7 +208,7 @@
                     <tbody>
                     {% for i, email in client.email_get_list({ "per_page": 5 }).list %}
                     <tr>
-                        <td><a href="{{ 'email'|link }}/{{ email.id }}">{{ email.subject|truncate(30) }}</a></td>
+                        <td><a href='{{ "email/#{email.id}"|url }}'>{{ email.subject|truncate(30) }}</a></td>
                         <td title="{{ email.created_at|format_datetime }}">{{ email.created_at|timeago }} {{ 'ago'|trans }}</td>
                     </tr>
                     {% else %}

@@ -118,6 +118,7 @@ class Box_AppClient extends Box_App
 
         $twig->addGlobal('current_theme', $code);
         $twig->addGlobal('settings', $settings);
+        $twig->addGlobal('app_area', 'client');
 
         if (Environment::isDevelopment()) {
             $profile = new Profile();

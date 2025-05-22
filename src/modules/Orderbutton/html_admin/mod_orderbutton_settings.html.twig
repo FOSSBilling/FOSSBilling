@@ -10,14 +10,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home"/>
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Order Button settings'|trans }}</li>
     </ul>
@@ -36,7 +36,7 @@
             </li>
         </ul>
 
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form"
+        <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form"
               data-api-reload="Settings updated">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
             <input type="hidden" name="ext" value="mod_orderbutton">
@@ -86,14 +86,14 @@
                                         <div class="col">
                                             <label class="col-form-label" for="popup_width">{{ 'Width'|trans }}</label>
                                             <div class="input-group mb-2">
-                                                <input class="form-control" type="text" name="popup_width" id="popup_width" value="{{ params.popup_width | default(600) }}" placeholder="600">
+                                                <input class="form-control" type="text" name="popup_width" id="popup_width" value="{{ params.popup_width|default(600) }}" placeholder="600">
                                                 <span class="input-group-text">px</span>
                                             </div>
                                         </div>
                                         <div class="col">
                                             <label class="col-form-label" for="border-radius">{{ 'Border radius'|trans }}</label>
                                             <div class="input-group mb-2">
-                                                <input class="form-control" type="text" name="border_radius" value="{{ params.border_radius | default('0') }}" id="border-radius">
+                                                <input class="form-control" type="text" name="border_radius" value="{{ params.border_radius|default(0) }}" id="border-radius">
                                                 <span class="input-group-text">px</span>
                                             </div>
                                         </div>
@@ -109,14 +109,14 @@
                                             <label class="col-form-label" for="coloris-picker">{{ 'Color'|trans }}</label>
                                             <div>
                                                 <input type="text" class="form-control" name="background_color"
-                                                       id="coloris-picker" value="{{ params.background_color | default('#000000') }}">
+                                                       id="coloris-picker" value="{{ params.background_color|default('#000000') }}">
                                             </div>
                                         </div>
                                         <div class="col">
                                             <label class="col-form-label" for="background_opacity">{{ 'Opacity'|trans }}</label>
                                             <div class="input-group mb-2">
                                                 <input type="text" class="form-control" name="background_opacity"
-                                                       id="background_opacity" value="{{ params.background_opacity | default(50) }}">
+                                                       id="background_opacity" value="{{ params.background_opacity|default(50) }}">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </div>
@@ -138,7 +138,7 @@
                                                     </div>
                                                     <div>
                                                         <span>loader{{ i }}</span>
-                                                        <img class="ms-2" src="{{ loader_link | mod_asset_url('orderbutton') }}"/>
+                                                        <img class="ms-2" src="{{ loader_link|mod_asset_url('orderbutton') }}"/>
                                                     </div>
                                                 </div>
                                             </label>
@@ -192,7 +192,7 @@
                                 <label>{{ 'Clicking on an HTML element with the classname or ID'|trans }}</label>
                             </div>
                             <div class="col-5 col-sm-auto d-flex align-items-center mb-2">
-                                <input class="form-control" type="text" name="bind_selector" id="bind_selector" value="{{ params.bind_selector | default('.order-button') }}" placeholder=".order-button">
+                                <input class="form-control" type="text" name="bind_selector" id="bind_selector" value="{{ params.bind_selector|default('.order-button') }}" placeholder=".order-button">
                             </div>
                             <div class="col-7 col-sm-auto d-flex align-items-center mb-2">
                                 <label>{{ 'will open a popup window for'|trans }}</label>
@@ -289,7 +289,7 @@
             const generate_link = function (selector) {
                 selector = (typeof selector === "undefined") ? $('#bind_selector').val() : selector;
 
-                const initial_link = "{{ 'orderbutton/js' | link({'options' : 1}) }}";
+                const initial_link = "{{ 'orderbutton/js'|url(query: { 'options' : 1 }, detect_app_area: false) }}";
 
                 const options = {
                     'width': $('#popup_width').val(),

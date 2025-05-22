@@ -9,7 +9,7 @@
 
 {# include plugin #}
 
-<form method="post" action="{{ 'api/admin/servicecustom/update'|link }}" class="save api-form" data-api-msg="Service updated">
+<form method="post" action="{{ 'servicecustom/update'|api_url }}" class="save api-form" data-api-msg="Service updated">
     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
     <fieldset>
 

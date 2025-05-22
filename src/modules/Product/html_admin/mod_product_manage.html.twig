@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+            <a href="{{ 'product'|url }}">{{ 'Products'|trans }}</a>
         </li>
         <li class="breadcrumb-item active">{{ product.title }}</li>
     </ol>
@@ -69,7 +69,7 @@
                             {% else %}
                                 <div class="input-group">
                                     {{ mf.selectbox('form_id', admin.formbuilder_get_pairs, product.form_id, 0, 'None') }}
-                                    <a href="{{ 'extension/settings/formbuilder'|alink }}{% if product.form_id %}?id={{ product.form_id }}{% endif %}" class="btn" id="formbuilder_btn">
+                                    <a href="{{ 'extension/settings/formbuilder'|url }}{% if product.form_id %}?id={{ product.form_id }}{% endif %}" class="btn" id="formbuilder_btn">
                                         {# {{ (product.form_id) ? 'Edit Form' : 'Add new form' }} #}
                                         {% if product.form_id %}
                                         <svg class="icon">
@@ -235,7 +235,7 @@
                                 <label for="addon_{{ addon_id }}">{{ addon_title }}</label>
                             </td>
                             <td class="w-1">
-                                <a class="btn btn-icon" href="{{ '/product/addon'|alink }}/{{ addon_id }}">
+                                <a class="btn btn-icon" href='{{ "product/addon/#{addon_id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
@@ -251,7 +251,7 @@
                 </table>
 
                 <div class="card-footer">
-                    <a href="{{ 'product/addons'|alink }}#tab-new" class="btn btn-primary">
+                    <a href="{{ 'product/addons'|url }}#tab-new" class="btn btn-primary">
                         <svg class="icon">
                             <use xlink:href="#plus" />
                         </svg>
@@ -306,19 +306,19 @@
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Order Page (via ID)'|trans }}</label>
                     <div class="col">
-                        <input class="form-control" type="text" value="{{ 'order'|link }}/{{ product.id }}" readonly>
+                        <input class="form-control" type="text" value='{{ "order/#{product.id}"|url }}' readonly>
                     </div>
                 </div>
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Order Page (via Link)'|trans }}</label>
                     <div class="col">
-                        <input class="form-control" type="text" value="{{ 'order'|link }}/{{ product.slug }}" readonly>
+                        <input class="form-control" type="text" value='{{ "order/#{product.slug}"|url }}' readonly>
                     </div>
                 </div>
             </div>
 
             <div class="card-footer text-center">
-                <a href="{{ 'order'|link }}/{{ product.slug }}" class="btn btn-primary" target="_blank">
+                <a href='{{ "order/#{product.slug}"|url }}' class="btn btn-primary" target="_blank">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#search" />
                     </svg>
@@ -341,12 +341,12 @@
 
             if (form_id != "") {
                 btn.html("{{ 'Edit form'|trans }}");
-                var href = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + form_id;
+                var href = "{{ 'extension/settings/formbuilder'|url(query: { 'id': '' }) }}" + form_id;
                 btn.attr('href', href);
             }
             else {
                 btn.html("{{ 'Add new form'|trans }}");
-                btn.attr("href", "{{ 'extension/settings/formbuilder'|alink }}");
+                btn.attr("href", "{{ 'extension/settings/formbuilder'|url }}");
             }
         });
     });

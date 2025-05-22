@@ -11,7 +11,7 @@
 
 {% block body_class %}support-ticket{% endblock %}
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{{ 'support' | link }}">{{ 'Support tickets'|trans }}</a></li>
+    <li class="breadcrumb-item"><a href="{{ 'support'|url }}">{{ 'Support tickets'|trans }}</a></li>
     <li class="breadcrumb-item active" aria-current="page">{{ ticket.subject }}</li>
 {% endblock %}
 
@@ -60,7 +60,7 @@
                             <tr>
                                 <td>{{ 'Related to'|trans }}</td>
                                 <td>
-                                    <a href="{{ 'order/service/manage'|link }}/{{ ticket.rel_id }}">{{ 'Service #'|trans }} {{ ticket.rel_id }}</a>
+                                    <a href='{{ "order/service/manage/#{ticket.rel_id}"|url }}'>{{ 'Service #'|trans }} {{ ticket.rel_id }}</a>
                                 </td>
                             </tr>
                         {% endif %}
@@ -76,7 +76,7 @@
                         <div class="card {% if message.admin_id %}border-primary{% endif %}">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center gap-2">
-                                    <img src="{{ message.author.email|gravatar(40) }}" alt="{{ message.author.name }}"
+                                    <img src="{{ message.author.email|gravatar(size: 40) }}" alt="{{ message.author.name }}"
                                          class="img-fluid img-thumbnail d-none d-md-block">
                                     <div class="d-flex flex-column">
                                         <span class="text-muted">

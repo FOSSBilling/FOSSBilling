@@ -38,7 +38,7 @@
                             <tbody>
                             {% for i, order in orders.list %}
                                 <tr>
-                                    <td><a href="{{ '/order/service/manage'|link }}/{{ order.id }}">#{{ order.id }}</a></td>
+                                    <td><a href='{{ "order/service/manage/#{order.id}"|url }}'>#{{ order.id }}</a></td>
                                     <td>
                                         <span>{{ order.title }}</span>
                                     </td>
@@ -49,8 +49,7 @@
                                         class="badge {% if order.status == 'active' %}bg-success{% elseif order.status == 'pending_setup' %}bg-warning{% elseif order.status == 'failed_setup' or order.status == 'suspended' or order.status == 'failed_renew' %}bg-danger{% elseif order.status == 'canceled' %}bg-secondary{% endif %}">{{ mf.status_name(order.status) }}</span>
                                     </td>
                                     <td class="actions">
-                                        <a class="btn btn-sm btn-outline-primary"
-                                           href="{{ '/order/service/manage'|link }}/{{ order.id }}">Manage</a>
+                                        <a class="btn btn-sm btn-outline-primary" href='{{ "order/service/manage/#{order.id}"|url }}'>Manage</a>
                                     </td>
                                 </tr>
                             {% endfor %}
