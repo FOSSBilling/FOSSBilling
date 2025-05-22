@@ -20,11 +20,11 @@
         </tr>
         <tr>
             <td class="text-end">{{ 'Server Name'|trans }}:</td>
-            <td><a href="{{ 'servicehosting/server'|alink }}/{{ server.id }}">{{ server.name }}</a></td>
+            <td><a href='{{ "servicehosting/server/#{server.id}"|url }}'>{{ server.name }}</a></td>
         </tr>
         <tr>
             <td class="text-end">{{ 'Hosting plan'|trans }}:</td>
-            <td><a href="{{ 'servicehosting/plan'|alink }}/{{ hp.id }}">{{ hp.name }}</a></td>
+            <td><a href='{{ "servicehosting/plan/#{hp.id}"|url }}'>{{ hp.name }}</a></td>
         </tr>
         <tr>
             <td class="text-end">{{ 'Server IP'|trans }}:</td>
@@ -87,7 +87,7 @@
     {% endif %}
 
     <a class="btn btn-primary api-link"
-        href="{{ 'api/admin/servicehosting/sync'|link({ 'order_id': order.id, 'CSRFToken': CSRFToken }) }}"
+        href="{{ 'servicehosting/sync'|api_url(query: { 'order_id': order.id, 'CSRFToken': CSRFToken }) }}"
         data-api-confirm="{{ 'Are you sure?'|trans }}"
         data-api-msg="{{ 'Account was synced'|trans }}">
         <svg class="icon" width="24" height="24">
@@ -100,7 +100,7 @@
 <div class="card-body">
     <h3>{{ 'Change hosting plan'|trans }}</h3>
 
-    <form action="{{ 'api/admin/servicehosting/change_plan'|link }}" method="post" class="api-form" data-api-msg="{{ 'Hosting plan changed'|trans }}">
+    <form action="{{ 'servicehosting/change_plan'|api_url }}" method="post" class="api-form" data-api-msg="{{ 'Hosting plan changed'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'New hosting plan'|trans }}:</label>
@@ -115,7 +115,7 @@
     <hr>
 
     <h3>{{ 'Change account password'|trans }}</h3>
-    <form action="{{ 'api/admin/servicehosting/change_password'|link }}" method="post" class="api-form" data-api-msg="{{ 'Account password changed'|trans }}">
+    <form action="{{ 'servicehosting/change_password'|api_url }}" method="post" class="api-form" data-api-msg="{{ 'Account password changed'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}:</label>
@@ -136,7 +136,7 @@
     <hr>
 
     <h3>{{ 'Change IP'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicehosting/change_ip'|link }}" class="api-form" data-api-msg="{{ 'Account IP changed'|trans }}">
+    <form method="post" action="{{ 'servicehosting/change_ip'|api_url }}" class="api-form" data-api-msg="{{ 'Account IP changed'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'IP'|trans }}:</label>
@@ -151,7 +151,7 @@
     <hr>
 
     <h3>{{ 'Change username'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicehosting/change_username'|link }}" class="api-form" data-api-msg="{{ 'Account username changed'|trans }}">
+    <form method="post" action="{{ 'servicehosting/change_username'|api_url }}" class="api-form" data-api-msg="{{ 'Account username changed'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Username'|trans }}:</label>
@@ -166,7 +166,7 @@
     <hr>
 
     <h3>{{ 'Change domain'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicehosting/change_domain'|link }}" class="api-form" data-api-msg="{{ 'Account domain changed'|trans }}">
+    <form method="post" action="{{ 'servicehosting/change_domain'|api_url }}" class="api-form" data-api-msg="{{ 'Account domain changed'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Domain'|trans }}:</label>

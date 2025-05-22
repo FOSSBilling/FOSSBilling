@@ -9,17 +9,17 @@
 {% block breadcrumbs %}
 <ul class="breadcrumb">
     <li class="breadcrumb-item">
-        <a href="{{ '/'|alink }}">
+        <a href="{{ '/'|url }}">
             <svg class="icon">
                 <use xlink:href="#home" />
             </svg>
         </a>
     </li>
     <li class="breadcrumb-item">
-        <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+        <a href="{{ 'product'|url }}">{{ 'Products'|trans }}</a>
     </li>
     <li class="breadcrumb-item">
-        <a href="{{ 'product'|alink }}#tab-categories">{{ 'Categories'|trans }}</a>
+        <a href="{{ 'product'|url }}#tab-categories">{{ 'Categories'|trans }}</a>
     </li>
     <li class="breadcrumb-item active" aria-current="page">{{ category.title}}</li>
 </ul>
@@ -27,7 +27,7 @@
 
 {% block content %}
 <div class="card">
-    <form method="post" action="{{ 'api/admin/product/category_update'|link }}" class="api-form" data-api-msg="{{ 'Category updated'|trans }}">
+    <form method="post" action="{{ 'product/category_update'|api_url }}" class="api-form" data-api-msg="{{ 'Category updated'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <h3>{{ category.title }}</h3>
@@ -54,7 +54,7 @@
         <input type="hidden" name="id" value="{{ category.id }}">
 
         <div class="card-footer d-flex gap-2">
-            <a href="{{ 'product'|alink }}" class="btn btn-secondary w-25">
+            <a href="{{ 'product'|url }}" class="btn btn-secondary w-25">
                 <svg class="icon">
                     <use xlink:href="#arrow-sm-left" />
                 </svg>

@@ -9,20 +9,20 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+            <a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support/kb'|alink }}">{{ 'Knowledge Base'|trans }}</a>
+            <a href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support/kb'|alink }}#tab-index">{{ 'Articles'|trans }}</a>
+            <a href="{{ 'support/kb'|url }}#tab-index">{{ 'Articles'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ post.title }}</li>
     </ol>
@@ -30,7 +30,7 @@
 
 {% block content %}
 <div class="card">
-    <form method="post" action="{{ 'api/admin/support/kb_article_update'|link }}" class="api-form" data-api-msg="{{ 'Article Updated'|trans }}">
+    <form method="post" action="{{ 'support/kb_article_update'|api_url }}" class="api-form" data-api-msg="{{ 'Article Updated'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <h3>{{ post.title }}</h3>
@@ -83,7 +83,7 @@
         <input type="hidden" name="id" value="{{ post.id }}">
 
         <div class="card-footer d-flex gap-2">
-            <a href="{{ 'support/kb'|alink }}" class="btn btn-secondary w-25">
+            <a href="{{ 'support/kb'|url }}" class="btn btn-secondary w-25">
                 <svg class="icon">
                     <use xlink:href="#arrow-sm-left" />
                 </svg>

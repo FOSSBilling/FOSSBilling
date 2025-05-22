@@ -9,17 +9,17 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+            <a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support/canned-responses'|alink }}">{{ 'Canned Responses'|trans }}</a>
+            <a href="{{ 'support/canned-responses'|url }}">{{ 'Canned Responses'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ response.title }}</li>
     </ol>
@@ -31,7 +31,7 @@
         <h5>{{ 'Canned response'|trans }}</h5>
         <p class="text-muted">{{ response.title }}</p>
 
-        <form method="post" action="{{ 'api/admin/support/canned_update'|link }}" class="api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+        <form method="post" action="{{ 'support/canned_update'|api_url }}" class="api-form" data-api-redirect="{{ 'support/canned-responses'|url }}">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>

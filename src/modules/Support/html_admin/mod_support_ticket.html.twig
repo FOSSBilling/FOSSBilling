@@ -7,17 +7,17 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+            <a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support'|alink }}">{{ 'Tickets'|trans }}</a>
+            <a href="{{ 'support'|url }}">{{ 'Tickets'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">#{{ ticket.id }} - {{ ticket.subject }}</li>
     </ul>
@@ -56,7 +56,7 @@
                     </tr>
                     <tr>
                         <td>{{ 'Client'|trans }}</td>
-                        <td><a href="{{ 'client/manage'|alink }}/{{ ticket.client.id }}">{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a> (#{{ ticket.client.id }})</td>
+                        <td><a href='{{ "client/manage/#{ticket.client.id }"|url }}'>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a> (#{{ ticket.client.id }})</td>
                     </tr>
                     <tr>
                         <td>{{ 'Helpdesk'|trans }}</td>
@@ -86,14 +86,14 @@
                     {% if task.type == 'order' %}
                     <tr>
                         <td><label>{{ 'Related To'|trans }}</label></td>
-                        <td><a href="{{ 'order/manage'|alink }}/{{ task.id }}">Order #{{ task.id }}</a></td>
+                        <td><a href='{{ "order/manage/#{task.id}"|url }}'>Order #{{ task.id }}</a></td>
                     </tr>
                     {% endif %}
 
                     {% if task.task == 'upgrade' %}
                     <tr>
                         <td><label>{{ 'Upgrade To'|trans }}</label></td>
-                        <td><a href="{{ 'product/manage'|alink }}/{{ task.new_value }}">{{ admin.product_get_pairs[task.new_value] }}</a></td>
+                        <td><a href='{{ "product/manage/#{task.new_value}"|url }}'>{{ admin.product_get_pairs[task.new_value] }}</a></td>
                     </tr>
                     {% endif %}
                 </tbody>
@@ -102,9 +102,9 @@
             <div class="card-footer text-center">
                 {% if ticket.status != 'closed' %}
                 <a class="btn btn-primary api-link"
-                    href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'support/ticket_close'|api_url(query: { 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{ 'support'|alink({ 'status': 'open' }) }}">
+                    data-api-redirect="{{ 'support'|url(query: { 'status': 'open' }) }}">
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#close" />
                     </svg>
@@ -112,9 +112,9 @@
                 </a>
                 {% endif %}
                 <a class="btn btn-primary api-link"
-                    href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'support/ticket_delete'|api_url(query: { 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{ 'support'|alink }}">
+                    data-api-redirect="{{ 'support'|url }}">
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
@@ -122,7 +122,7 @@
                 </a>
 
                 {% if task.status == 'pending' %}
-                <a href="{{ 'api/admin/support/task_complete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="1">
+                <a href="{{ 'support/task_complete'|api_url(query: { 'id': ticket.id, 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="1">
                     <img src="images/icons/middlenav/check.png" alt="" data-api-reload="1">
                     <span>{{ 'Set Task Complete'|trans }}</span>
                 </a>
@@ -132,7 +132,7 @@
 
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/ticket_update'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'support/ticket_update'|api_url }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
@@ -170,12 +170,12 @@
             {% for note in ticket.notes %}
                 <tr>
                     <td class="w-1">
-                        <a href="{{ 'staff'|alink }}/manage/{{ note.admin_id }}">{{ note.author.name }}</a>
+                        <a href='{{ "staff/manage/#{note.admin_id}"|url }}'>{{ note.author.name }}</a>
                     </td>
                     <td>{{ note.note }}</td>
                     <td class="w-1">
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/support/note_delete'|link({ 'id': note.id, 'CSRFToken': CSRFToken }) }}"
+                            href="{{ 'support/note_delete'|api_url(query: { 'id': note.id, 'CSRFToken': CSRFToken }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-reload="1">
                             <svg class="icon">
@@ -189,7 +189,7 @@
             <hr>
 
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/note_create'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'support/note_create'|api_url }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label" for="textareaNote">{{ 'Note'|trans }}</label>
@@ -227,7 +227,7 @@
                         <td>{{ ticket.id }}</td>
                         <td>{{ ticket.helpdesk.name }}</td>
                         <td>
-                            <a href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">{{ ticket.subject|truncate(30) }}</a>
+                            <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
                         </td>
                         <td>
                             {% if ticket.status == 'open' %}
@@ -242,7 +242,7 @@
                             {{ mf.status_name(ticket.status) }}
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">
+                            <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
@@ -258,7 +258,7 @@
             </table>
 
             <div class="card-footer">
-                <a href="{{ 'support'|alink({ 'client_id': client.id}) }}#tab-new" class="btn btn-primary">
+                <a href="{{ 'support'|url(query: { 'client_id': client.id}) }}#tab-new" class="btn btn-primary">
                     <svg class="icon">
                         <use xlink:href="#plus" />
                     </svg>
@@ -273,9 +273,9 @@
     {% for i, message in ticket.messages %}
     <div class="card mb-3 col-md-10 {% if ticket.first.author.email != message.author.email %}offset-md-2{% endif %} {{ loop.last ? 'last' : '' }}" id="{{ message.id == request_message ? 'direct-msg' : '' }}">
         <div class="card-header" style="cursor: pointer;">
-            <span class="avatar avatar-xs me-2" style="background-image: url({{ message.author.email|gravatar }}&size=24)"></span>
+            <span class="avatar avatar-xs me-2" style="background-image: url({{ message.author.email|gravatar(size: 24) }})"></span>
             {{ message.author.name }}
-            <a class="ms-2" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}/message/{{ message.id }}">
+            <a class="ms-2" href='{{ "support/ticket/#{ticket.id}/message/#{message.id}"|url }}'>
                 <svg class="icon">
                     <use xlink:href="#link" />
                 </svg>
@@ -290,7 +290,7 @@
 </div>
 
 <div class="card" id="reply-box">
-    <form method="post" action="{{ 'api/admin/support/ticket_reply'|link }}" class="api-form" data-api-reload="1">
+    <form method="post" action="{{ 'support/ticket_reply'|api_url }}" class="api-form" data-api-reload="1">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <div class="d-flex">
@@ -317,9 +317,9 @@
 
             {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
             <a class="btn btn-danger w-25 api-link"
-                href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
+                href="{{ 'support/ticket_close'|api_url(query: { 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
                 data-api-confirm="{{ 'Are you sure?'|trans }}"
-                data-api-redirect="{{ 'support'|alink({ 'status': 'open' }) }}">
+                data-api-redirect="{{ 'support'|url(query: { 'status': 'open' }) }}">
                 <svg class="icon">
                     <use xlink:href="#check" />
                 </svg>

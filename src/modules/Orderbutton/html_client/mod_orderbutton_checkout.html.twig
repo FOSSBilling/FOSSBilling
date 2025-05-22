@@ -3,7 +3,7 @@
     <h2 class="accordion-header">
         <button class="accordion-button {% if not request.checkout %}collapsed{%endif%}" type="button" data-bs-toggle="collapse" data-bs-target="#checkout" aria-expanded="false" aria-controls="checkout">
             <svg class="svg-icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17,18A2,2 0 0,1 19,20A2,2 0 0,1 17,22C15.89,22 15,21.1 15,20C15,18.89 15.89,18 17,18M1,2H4.27L5.21,4H20A1,1 0 0,1 21,5C21,5.17 20.95,5.34 20.88,5.5L17.3,11.97C16.96,12.58 16.3,13 15.55,13H8.1L7.2,14.63L7.17,14.75A0.25,0.25 0 0,0 7.42,15H19V17H7C5.89,17 5,16.1 5,15C5,14.65 5.09,14.32 5.24,14.04L6.6,11.59L3,4H1V2M7,18A2,2 0 0,1 9,20A2,2 0 0,1 7,22C5.89,22 5,21.1 5,20C5,18.89 5.89,18 7,18M16,11L18.78,6H6.14L8.5,11H16Z" /></svg>
-            <span>{{ 'Cart'|trans }}</span>&nbsp;<span class="badge bg-success">{{ cart.items | length }}</span>
+            <span>{{ 'Cart'|trans }}</span>&nbsp;<span class="badge bg-success">{{ cart.items|length }}</span>
         </button>
     </h2>
     {% if cart.items %}
@@ -114,7 +114,7 @@
                             <a href="#" id="show-promo-field">{{ 'Have a coupon code?'|trans }}</a>
                         {% endif %}
 
-                        <form action="{{ 'api/guest/cart/apply_promo'|link }}" method="post" class="api-form well" data-api-msg="{{ 'Promo code was applied for your order'|trans }}"
+                        <form action="{{ 'cart/apply_promo'|api_url(role: 'guest') }}" method="post" class="api-form well" data-api-msg="{{ 'Promo code was applied for your order'|trans }}"
                             data-api-reload="1" {% if not cart.promocode %}style="display:none"{% endif %} id="apply-promo">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <div class="control-group">
@@ -122,7 +122,7 @@
                                     <div class="input-append">
                                         <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo.required %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
                                         {% if cart.promocode %}
-                                            <a class="btn btn-warning btn-sm mb-1 api-link" href="{{ 'api/guest/cart/remove_promo'|link({ 'CSRFToken': CSRFToken }) }}" type="button" data-api-reload="1">{{ 'Remove'|trans }}</a>
+                                            <a class="btn btn-warning btn-sm mb-1 api-link" href="{{ 'cart/remove_promo'|api_url(role: 'guest', query: { 'CSRFToken': CSRFToken }) }}" type="button" data-api-reload="1">{{ 'Remove'|trans }}</a>
                                         {% else %}
                                             <button class="btn btn-primary btn-sm mb-1" type="submit">{{ 'Apply'|trans }}</button>
                                         {% endif %}
@@ -161,7 +161,7 @@
 
                         </table>
 
-                        <form class="api-form" method="post" action="{{ 'api/client/cart/checkout'|link }}" data-api-jsonp="onOrderCheckout">
+                        <form class="api-form" method="post" action="{{ 'cart/checkout'|api_url }}" data-api-jsonp="onOrderCheckout">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <fieldset>
                                 {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
@@ -187,7 +187,7 @@
                                                 <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
                                                 <label class="form-check-label" for="flexCheckDefault">
                                                     {# TODO: Make this translatable once support for placeholders is implemented #}
-                                                    <span>I agree to the <a href="{{ '/tos'|link }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ '/privacy-policy'|link }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
+                                                    <span>I agree to the <a href="{{ 'tos'|url }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
                                                 </label>
                                             </div>
                                         {% endif %}
@@ -197,7 +197,7 @@
                             </fieldset>
                             {% if settings.checkout_tos == 'implicit' %}
                                 {# TODO: Make this translatable once support for placeholders is implemented #}
-                                <span class="text-muted">By completing your order, you agree to our <a href="{{ '/tos'|link }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ '/privacy-policy'|link }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
+                                <span class="text-muted">By completing your order, you agree to our <a href="{{ 'tos'|url }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
                             {% endif %}
                         </form>
                     </div>

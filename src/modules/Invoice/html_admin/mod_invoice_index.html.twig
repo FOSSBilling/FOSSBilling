@@ -120,7 +120,7 @@
     {% set statuses = admin.invoice_get_statuses %}
     <section class="row row-cards mb-3">
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'invoice'|alink({ 'status': 'unpaid' }) }}">
+            <a class="card card-sm card-link" href="{{ 'invoice'|url(query: { 'status': 'unpaid' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -134,7 +134,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'invoice'|alink({ 'status': 'paid' }) }}">
+            <a class="card card-sm card-link" href="{{ 'invoice'|url(query: { 'status': 'paid' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -148,7 +148,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'invoice'|alink({ 'status': 'refunded' }) }}">
+            <a class="card card-sm card-link" href="{{ 'invoice'|url(query: { 'status': 'refunded' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -162,7 +162,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'invoice'|alink }}">
+            <a class="card card-sm card-link" href="{{ 'invoice'|url }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -223,15 +223,15 @@
                                 <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-checkbox" data-item-id="{{ invoice.id }}">
                             </td>
                             <td>
-                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
+                                <a href="{{ 'invoice/manage'|url }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
                             </td>
                             <td>
-                                <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">
-                                    <span class="avatar avatar-xs" style="background-image: url({{ invoice.buyer.email|gravatar }}&size=24"></span>
+                                <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>
+                                    <span class="avatar avatar-xs" style="background-image: url({{ invoice.buyer.email|gravatar(size: 24) }})"></span>
                                 </a>
                             </td>
                             <td>
-                                <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
+                                <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
                             </td>
                             <td class="text-center">{{ invoice.total|format_currency(invoice.currency) }}</td>
                             <td class="text-center">{{ invoice.created_at|date('Y-m-d') }}</td>
@@ -252,13 +252,13 @@
                                 {{ mf.status_name(invoice.status) }}
                             </td>
                             <td>
-                                <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
+                                <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
                                 <a class="btn btn-icon api-link"
-                                    href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}"
+                                    href="{{ 'invoice/delete'|api_url({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}"
                                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                                     data-api-reload="1">
                                     <svg class="icon">
@@ -281,7 +281,7 @@
                         {{ include('partial_pagination.html.twig', { 'list': invoices, 'url': 'invoice' }) }}
                     </div>
                     <div>
-                        <a class="btn btn-secondary" href="{{ '/api/admin/invoice/export_csv'|link({ 'CSRFToken': CSRFToken }) }}" title="{{ 'Export Invoices'|trans }}">
+                        <a class="btn btn-secondary" href="{{ 'invoice/export_csv'|api_url(query: { 'CSRFToken': CSRFToken }) }}" title="{{ 'Export Invoices'|trans }}">
                             <svg class="icon">
                                 <use xlink:href="#download" />
                             </svg>
@@ -293,7 +293,7 @@
 
             <div class="tab-pane show" id="tab-new" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/admin/invoice/prepare'|link }}" class="api-form" data-api-jsonp="onAfterInvoicePrepared">
+                    <form method="post" action="{{ 'invoice/prepare'|api_url }}" class="api-form" data-api-jsonp="onAfterInvoicePrepared">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
@@ -324,7 +324,7 @@
 {% block js%}
 <script>
     function onAfterInvoicePrepared(id) {
-        bb.redirect("{{ 'invoice/manage/'|alink }}/" + id);
+        bb.redirect("{{ 'invoice/manage'|url }}/" + id);
     }
 </script>
 {% endblock %}

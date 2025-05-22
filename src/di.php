@@ -12,17 +12,20 @@ declare(strict_types=1);
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Twig\FOSSBillingExtension;
+use FOSSBilling\Twig\LegacyExtension;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
 use Lcharette\WebpackEncoreTwig\JsonManifest;
 use Lcharette\WebpackEncoreTwig\TagRenderer;
 use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
-use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
+use Twig\Extension\AttributeExtension;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
+use Twig\Extension\OptimizerExtension;
 use Twig\Extension\StringLoaderExtension;
 use Twig\Extra\Intl\IntlExtension;
 use Twig\Extra\Markdown\MarkdownExtension;
@@ -289,23 +292,38 @@ $di['twig'] = $di->factory(function () use ($di) {
         $twig->addExtension(new VersionedAssetsTwigExtension(new JsonManifest($di['encore_info']['manifest'])));
     }
 
-    $twig->addExtension(new StringLoaderExtension());
-    $twig->addExtension(new DebugExtension());
     $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
     $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
+
+    $twig->addExtension(new StringLoaderExtension());
+    $twig->addExtension(new DebugExtension());
     $twig->addExtension(new MarkdownExtension());
+    $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
+    $twig->addExtension(new AttributeExtension(LegacyExtension::class));
 
     $dateFormatter = new IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
-
     $twig->addExtension(new IntlExtension($dateFormatter));
 
-    $twig->addRuntimeLoader(new class implements RuntimeLoaderInterface {
+    class RuntimeLoader implements RuntimeLoaderInterface {
+        private $di = null;
+
+        public function __construct($di) {
+            $this->di = $di;
+        }
+
         public function load($class) {
             if (MarkdownRuntime::class === $class) {
                 return new MarkdownRuntime(new DefaultMarkdown());
             }
+            if (FOSSBillingExtension::class === $class) {
+                return new FOSSBillingExtension($this->di);
+            }
+            if (LegacyExtension::class === $class) {
+                return new LegacyExtension($this->di);
+            }
         }
-    });
+    }
+    $twig->addRuntimeLoader(new RuntimeLoader($di));
 
     // add globals
     if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {

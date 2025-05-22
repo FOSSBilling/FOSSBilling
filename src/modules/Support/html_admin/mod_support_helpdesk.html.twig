@@ -9,17 +9,17 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'extension/settings/support'|alink }}#tab-helpdesks">{{ 'Support'|trans }}</a>
+            <a href="{{ 'extension/settings/support'|url }}#tab-helpdesks">{{ 'Support'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Helpdesk -'|trans }} {{ helpdesk.name }}</li>
     </ol>
@@ -34,7 +34,7 @@
             <p class="card-subtitle">{{ 'Helpdesk name will be visible for clients when submitting a new ticket.'|trans }}</p>
         </div>
     </div>
-    <form method="post" action="{{ 'api/admin/support/helpdesk_update'|link }}" class="api-form" data-api-msg="{{ 'Helpdesk Updated'|trans }}">
+    <form method="post" action="{{ 'support/helpdesk_update'|api_url }}" class="api-form" data-api-msg="{{ 'Helpdesk Updated'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <div class="mb-3 row">
@@ -81,18 +81,18 @@
 
         <div class="card-footer d-flex justify-content-between">
             <div>
-                <a href="{{ 'extension/settings/support'|alink }}" class="btn btn-secondary">
+                <a href="{{ 'extension/settings/support'|url }}" class="btn btn-secondary">
                     <svg class="icon">
                         <use xlink:href="#arrow-sm-left" />
                     </svg>
                     {{ 'Go Back'|trans }}
                 </a>
                 <a class="btn btn-icon btn-danger api-link"
-                   href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id, 'CSRFToken': CSRFToken }) }}"
+                   href="{{ 'support/helpdesk_delete'|api_url(query: { 'id': helpdesk.id, 'CSRFToken': CSRFToken }) }}"
                    data-api-type="danger"
                    data-api-confirm-btn="{{ 'Delete'|trans }}"
                    data-api-confirm="{{ 'Are you sure?'|trans }}"
-                   data-api-redirect="{{ 'extension/settings/support'|alink }}">
+                   data-api-redirect="{{ 'extension/settings/support'|url }}">
                     <svg class="icon">
                         <use xlink:href="#delete" />
                     </svg>

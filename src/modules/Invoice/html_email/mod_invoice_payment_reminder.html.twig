@@ -44,8 +44,8 @@
         <li><strong>Due Date:</strong>  {{ invoice.due_at|format_date }}</li>
     </ul>
 
-    <p>You may view and pay the invoice <a href="{{'invoice'|link}}/{{invoice.hash}}" target="_blank">here.</a>
-    <p>You may also <a href="{{'login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{'client/profile'|link}}" target="_blank">edit your profile.</a>
+    <p>You may view and pay the invoice <a href='{{ "invoice/#{invoice.hash}"|url(detect_app_area: false) }}' target="_blank">here.</a>
+    <p>You may also <a href="{{ 'login'|url(query: { 'email': c.email }, detect_app_area: false) }}" target="_blank">login</a> or <a href="{{ 'client/profile'|url(detect_app_area: false) }}" target="_blank">edit your profile.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Orders settings'|trans }}</li>
     </ol>
@@ -28,7 +28,7 @@
         <h3>{{ 'Orders settings'|trans }}</h3>
 
         {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Settings updated'|trans }}">
+        <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form" data-api-msg="{{ 'Settings updated'|trans }}">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Expiration date'|trans }}</label>

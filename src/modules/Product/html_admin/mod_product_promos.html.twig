@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+            <a href="{{ 'product'|url }}">{{ 'Products'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Product Promotions'|trans }}</li>
     </ol>
@@ -65,17 +65,17 @@
                     {% for promo in promos.list %}
                     <tr>
                         <td>
-                            <a href="{{ '/product/promo'|alink }}/{{ promo.id }}">{{ promo.code }}</a>
+                            <a href='{{ "product/promo/#{promo.id}"|url }}'>{{ promo.code }}</a>
                         </td>
                         <td>{% if promo.type == 'percentage' %}{{ promo.value }}%{% endif %}{% if promo.type == 'absolute' %}{{ promo.value|format_currency(currency.code) }}{% endif %}</td>
                         <td>{% for pid,product in promo.applies_to %}
-                            <a href="{{ 'product/manage'|alink }}/{{ pid }}">{{ product|truncate(15) }}</a><br/>
+                            <a href='{{ "product/manage/#{pid}"|url }}'>{{ product|truncate(15) }}</a><br/>
                             {% else %}
                             {{ 'All Products'|trans }}
                             {% endfor %}
                         </td>
                         <td>{% for cid,client_group in promo.cgroups %}
-                            <a href="{{ 'client/group'|alink }}/{{ cid }}">{{ client_group|truncate(15) }}</a><br/>
+                            <a href='{{ "client/group/#{cid}"|url }}'>{{ client_group|truncate(15) }}</a><br/>
                             {% else %}
                             {{ 'All Client groups'|trans }}
                             {% endfor %}
@@ -96,12 +96,12 @@
                         </td>
                         <td>{{ promo.used }} / {% if promo.maxuses %}{{ promo.maxuses }}{% else %}&#8734;{% endif %}</td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/product/promo'|alink }}/{{ promo.id }}">
+                            <a class="btn btn-icon" href='{{ "product/promo/#{promo.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/promo_delete'|link({ 'id': promo.id }) }}" data-api-redirect="{{ 'product/promos'|alink }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'product/promo_delete'|api_url(query: { 'id': promo.id, 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'product/promos'|url }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -123,7 +123,7 @@
                 <div class="card-body">
                     <h3>{{ 'Create New Promotional Code'|trans }}</h3>
                     <p class="text-muted">{{ 'Create special offers for your clients by creating promo codes.'|trans }}</p>
-                    <form method="post" action="{{ 'api/admin/product/promo_create'|link }}" class="api-form" data-api-redirect="{{ 'product/promos'|alink }}">
+                    <form method="post" action="{{ 'product/promo_create'|api_url }}" class="api-form" data-api-redirect="{{ 'product/promos'|url }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Promo Code'|trans }}</label>

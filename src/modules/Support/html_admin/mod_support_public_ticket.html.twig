@@ -9,17 +9,17 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+            <a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">{{ 'Public Tickets'|trans }}</a>
+            <a href="{{ 'support/public-tickets'|url(query: { 'status': 'open' }) }}">{{ 'Public Tickets'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">#{{ ticket.id }} - {{ ticket.subject }}</li>
     </ol>
@@ -87,8 +87,8 @@
             <div class="card-footer text-center">
                 {% if ticket.status != 'closed' %}
                 <a class="btn btn-primary api-link"
-                    href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
-                    data-api-redirect="{{ 'support/public-tickets'|alink }}">
+                    href="{{ 'support/public_ticket_close'|api_url(query: { 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
+                    data-api-redirect="{{ 'support/public-tickets'|url }}">
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#close" />
                     </svg>
@@ -96,16 +96,16 @@
                 </a>
                 {% endif %}
                 <a class="btn btn-primary api-link"
-                    href="{{ 'api/admin/support/public_ticket_delete'|link({ 'id' : ticket.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'support/public_ticket_delete'|api_url(query: { 'id' : ticket.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{ 'support/public-tickets'|alink }}">
+                    data-api-redirect="{{ 'support/public-tickets'|url }}">
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
                 </a>
                 <a class="btn btn-primary"
-                    href="{{ 'support/contact-us/conversation'|link }}/{{ ticket.hash }}"
+                    href='{{ "support/contact-us/conversation/#{ticket.hash}"|url(detect_app_area: false) }}'
                     target="_blank">
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#eye" />
@@ -117,7 +117,7 @@
 
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/public_ticket_update'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'support/public_ticket_update'|api_url }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
@@ -155,7 +155,7 @@
     {% for i, message in ticket.messages %}
         <div class="card mb-3">
             <div class="card-header" style="cursor: pointer;">
-                <span class="avatar avatar-xs me-2" style="background-image: url({{ message.author.email|gravatar }}?size=20)"></span>
+                <span class="avatar avatar-xs me-2" style="background-image: url({{ message.author.email|gravatar }})"></span>
                 {{ message.author.name }}
                 <span class="ms-auto text-muted">{{ message.created_at|format_datetime }}</span>
             </div>
@@ -167,7 +167,7 @@
 </div>
 
 <div class="card" id="reply-box">
-    <form method="post" action="{{ 'api/admin/support/public_ticket_reply'|link }}" class="api-form" data-api-redirect="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">
+    <form method="post" action="{{ 'support/public_ticket_reply'|api_url }}" class="api-form" data-api-redirect="{{ 'support/public-tickets'|url(query: { 'status': 'open' }) }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <div class="d-flex">
@@ -195,9 +195,9 @@
 
             {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
             <a class="btn btn-danger w-25 api-link"
-                href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
+                href="{{ 'support/public_ticket_close'|api_url(query: { 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
                 data-api-confirm="{{ 'Are you sure?'|trans }}"
-                data-api-redirect="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">
+                data-api-redirect="{{ 'support/public-tickets'|url(query: { 'status': 'open' }) }}">
                 <svg class="icon">
                     <use xlink:href="#check" />
                 </svg>

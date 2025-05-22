@@ -6,17 +6,17 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'extension/settings/email'|alink }}">{{ 'Email'|trans }}</a>
+            <a href="{{ 'extension/settings/email'|url }}">{{ 'Email'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ template.action_code }}</li>
     </ol>
@@ -72,7 +72,7 @@
                         </div>
                         <div class="card-footer d-flex justify-content-between">
                             <a class="btn btn-danger api-link"
-                               href="{{ 'api/admin/email/template_reset'|link({'code' : template.action_code })}}"
+                               href="{{ 'email/template_reset'|api_url(query: {'code' : template.action_code , 'CSRFToken': CSRFToken })}}"
                                data-api-confirm="{{ 'Are you sure?'|trans }}"
                                data-api-confirm-btn="{{ 'Reset'|trans }}"
                                data-api-type="danger"
@@ -203,7 +203,7 @@
 
                             ***
 
-                            Link to login form: <{{ 'login'|link }}>
+                            Link to login form: <{{ 'login'|url }}>
 
                             Company signature: {{ guest.system_company.signature }}
 

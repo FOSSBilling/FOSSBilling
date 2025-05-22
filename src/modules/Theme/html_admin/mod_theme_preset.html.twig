@@ -5,17 +5,17 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'extension/settings/theme'|alink }}">{{ 'Themes'|trans }}</a>
+            <a href="{{ 'extension/settings/theme'|url }}">{{ 'Themes'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Settings for'|trans }} {{ theme_code }}</li>
     </ol>

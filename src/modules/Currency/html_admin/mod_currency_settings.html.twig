@@ -10,14 +10,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Currency settings'|trans }}</li>
     </ol>
@@ -77,20 +77,20 @@
                                 <tr>
                                     <td>{% if currency.default %}<strong>{{ currency.code }}</strong>{% else %}{{ currency.code }}{% endif %}</td>
                                     <td>
-                                        <a href="{{ '/currency/manage'|alink }}/{{ currency.code }}">{{ currency.title }}</a>
+                                        <a href='{{ "currency/manage/#{currency.code}"|url }}'>{{ currency.title }}</a>
                                     </td>
                                     <td>{{ currency.conversion_rate }}</td>
                                     <td>{{ 1|format_currency(default_currency.code) }} = {{ (1 * currency.conversion_rate)|format_currency(currency.code) }}</td>
                                     <td>
-                                        <a class="btn btn-icon" href="{{ '/currency/manage'|alink }}/{{ currency.code }}"
+                                        <a class="btn btn-icon" href='{{ "currency/manage/#{currency.code}"|url }}'
                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                             <svg class="icon">
                                                 <use xlink:href="#edit" />
                                             </svg>
                                         </a>
                                         <a class="btn btn-icon api-link"
-                                           href="{{ 'api/admin/currency/delete'|link({ 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
-                                           data-api-redirect="{{ 'extension/settings/currency'|alink }}"
+                                           href="{{ 'currency/delete'|api_url(query: { 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
+                                           data-api-redirect="{{ 'extension/settings/currency'|url }}"
                                            data-api-type="danger"
                                            data-api-confirm="{{ 'Are you sure you want to delete?'|trans }}"
                                            data-api-confirm-btn="{{ 'Delete'|trans }}"
@@ -101,8 +101,8 @@
                                         </a>
                                         {% if not currency.default %}
                                             <a class="btn btn-icon api-link"
-                                               data-api-redirect="{{ 'extension/settings/currency'|alink }}"
-                                               href="{{'api/admin/currency/set_default'|link({ 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
+                                               data-api-redirect="{{ 'extension/settings/currency'|url }}"
+                                               href="{{'currency/set_default'|api_url(query: { 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Set as default'|trans }}">
                                                 <svg class="icon">
                                                     <use xlink:href="#check" />
@@ -121,7 +121,7 @@
                     </div>
 
                     <div class="card-footer text-center">
-                        <a class="btn btn-primary api-link" href="{{ 'api/admin/currency/update_rates'|link({ 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'extension/settings/currency'|alink }}">
+                        <a class="btn btn-primary api-link" href="{{ 'currency/update_rates'|api_url(query: { 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'extension/settings/currency'|url }}">
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#refresh" />
                             </svg>
@@ -134,7 +134,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-new-currency" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/currency/create'|link }}" class="api-form" data-api-redirect="{{ 'extension/settings/currency'|alink }}">
+                    <form method="post" action="{{ 'currency/create'|api_url }}" class="api-form" data-api-redirect="{{ 'extension/settings/currency'|url }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <div class="card-body">
                             <div class="form-group mb-3 row">
@@ -169,7 +169,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-api-settings" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Successfully updated settings'|trans }}">
+                    <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form" data-api-msg="{{ 'Successfully updated settings'|trans }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <input type="hidden" name="ext" value="mod_currency">
                         <div class="card-body">
@@ -214,7 +214,7 @@
                                         <th><a href="https://currencylayer.com/currencies" target="_blank">{{ 'Supported currencies'|trans }}</a></th>
                                         <th>{{ 'Free / paid'|trans }}</th>
                                     </tr>
-                                  </tbody>                                    
+                                  </tbody>
                             </table>
                             <span class="text-muted">{{ 'When using ExchangeRate-API, their API informs FOSSBilling when the next update will occur which makes it more efficient for automated exchange rate syncing.'|trans }}</span>
                             <br/>

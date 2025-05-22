@@ -13,7 +13,7 @@
             <div class="row">
                 <span>{{ 'You must verify your email address before you may access our services.'|trans }}</span>
             </div>
-            <a href="{{ 'api/client/client/resend_email_verification'|link({ 'CSRFToken': CSRFToken }) }}"
+            <a href="{{ 'client/resend_email_verification'|api_url({ 'CSRFToken': CSRFToken }) }}"
                class="btn btn-primary api-link"
                data-api-msg="{{ 'Verification email has been resent'|trans }}">{{ 'Resend verification email'|trans }}</a>
         </div>
@@ -43,7 +43,7 @@
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                             <div class="row mb-4 d-flex justify-content-center">
                                 <div class="col-md-2">
-                                    <img class="img-fluid img-thumbnail" src="{{ profile.email|gravatar(100) }}"
+                                    <img class="img-fluid img-thumbnail" src="{{ profile.email|gravatar(size: 100) }}"
                                          alt="Gravatar"/>
                                 </div>
                                 <div class="col-md-10 d-flex align-items-center">
@@ -173,7 +173,7 @@
                     <div class="card-body tab-pane" id="pass-tab-pane" role="tabpanel" tabindex="0">
                         <h5 class="card-title mb-1">{{ 'Change Password'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'Enter your new password twice to avoid mistakes. '|trans }}</p>
-                        <form method="post" action="{{ 'api/client/profile/change_password'|link }}" class="api-form">
+                        <form method="post" action="{{ 'profile/change_password'|api_url }}" class="api-form">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                             <div class="mb-3">
                                 <label class="form-label" for="current_password">{{ 'Current Password'|trans }}</label>

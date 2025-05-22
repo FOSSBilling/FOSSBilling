@@ -111,13 +111,13 @@ $(function() {
     $('#anti-spam').remove();
 
     $('#public-ticket-create').on('submit', function(event) {
-        $.post("{{ constant('SYSTEM_URL') }}api/guest/support/ticket_create",
+        $.post("{{ 'support/ticket_create'|api_url(role: 'guest') }}",
         $(this).serialize(),
         function(json) {
             if(json.error) {
                 alert(json.error.message);
             } else {
-                parent.window.location = "{{ 'support/contact-us/conversation'|link }}" + '/' + json.result;
+                parent.window.location = "{{ 'support/contact-us/conversation'|url }}/" + json.result;
             }
         }, 'json');
 

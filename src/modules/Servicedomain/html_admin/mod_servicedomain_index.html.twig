@@ -68,7 +68,7 @@
                     {% for tld in admin.servicedomain_tld_get_list({ 'per_page': 99 }).list %}
                     <tr>
                         <td>
-                            <a href="{{ 'servicedomain/id'|alink }}/{{ tld.id }}">{{ tld.tld }}</a>
+                            <a href='{{ "servicedomain/id/#{tld.id}"|url }}'>{{ tld.tld }}</a>
                         </td>
                         <td>{{ tld.price_registration|format_currency(currency.code) }}</td>
                         <td>{{ tld.price_renew|format_currency(currency.code) }}</td>
@@ -79,15 +79,15 @@
                         {{ 'Active:'|trans }} {% if tld.active %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}
                         </td>
                         <td>
-                            <a href="{{ 'servicedomain/registrar'|alink }}/{{ tld.registrar.id }}">{{ tld.registrar.title }}</a>
+                            <a href='{{ "servicedomain/registrar/#{tld.registrar.id}"|url }}'>{{ tld.registrar.title }}</a>
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ 'servicedomain/id'|alink }}/{{ tld.id }}">
+                            <a class="btn btn-icon" href='{{ "servicedomain/id/#{tld.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1" href="{{ 'api/admin/servicedomain/tld_delete'|link({ 'tld': tld.tld, 'CSRFToken': CSRFToken }) }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1" href="{{ 'servicedomain/tld_delete'|api_url(query: { 'tld': tld.tld, 'CSRFToken': CSRFToken }) }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -104,7 +104,7 @@
                 <h5>{{ 'Add new top level domain'|trans }}</h5>
                 <p class="text-muted">{{ 'Setup new TLD prices and properties'|trans }}</p>
 
-                <form method="post" action="{{ 'api/admin/servicedomain/tld_create'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'servicedomain/tld_create'|api_url }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Tld'|trans }}:</label>
@@ -208,20 +208,20 @@
                     {% for registrar in admin.servicedomain_registrar_get_list.list %}
                     <tr>
                         <td>
-                            <a href="{{ 'servicedomain/registrar/'|alink }}/{{ registrar.id }}">{{ registrar.title }}</a>
+                            <a href='{{ "servicedomain/registrar/#{registrar.id}"|url }}'>{{ registrar.title }}</a>
                         </td>
                         <td>
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_copy'|link({ 'id': registrar.id }) }}" data-api-reload="1" title="{{ 'Install'|trans }}">
+                            <a class="btn btn-icon api-link" href="{{ 'servicedomain/registrar_copy'|api_url(query: { 'id': registrar.id, 'CSRFToken': CSRFToken }) }}" data-api-reload="1" title="Install">
                                 <svg class="icon">
                                     <use xlink:href="#copy" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'servicedomain/registrar/'|alink }}/{{ registrar.id }}">
+                            <a class="btn btn-icon" href='{{ "servicedomain/registrar/#{registrar.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_delete'|link({ 'id': registrar.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                            <a class="btn btn-icon api-link" href="{{ 'servicedomain/registrar_delete'|api_url(query: { 'id': registrar.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -262,7 +262,7 @@
                 <tr>
                     <td>{{ code }}</td>
                     <td>
-                        <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_install'|link({ 'code': code, 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Domain registrar installed'|trans }}" title="{{ 'Install'|trans }}">
+                        <a class="btn btn-icon api-link" href="{{ 'servicedomain/registrar_install'|api_url(query: { 'code': code, 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Domain registrar installed'|trans }}" title="Install">
                             <svg  class="icon">
                                 <use xlink:href="#cog" />
                             </svg>
@@ -290,7 +290,7 @@
                 <h5>{{ 'Nameservers'|trans }}</h5>
                 <p class="text-muted">{{ 'Set default nameservers that will be used for new domain registrations if a client has not provided their own nameservers while ordering a domain'|trans }}</p>
 
-                <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Nameservers updated'|trans }}">
+                <form method="post" action="{{ 'system/update_params'|api_url }}" class="api-form" data-api-msg="{{ 'Nameservers updated'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     {% set params = admin.system_get_params %}
                     <div class="mb-3 row">
