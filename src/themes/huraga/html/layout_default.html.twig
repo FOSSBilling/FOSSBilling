@@ -34,8 +34,18 @@
 {% block body %}
 {% if not client and settings.require_login %}
     <script>
-        $(function () {
-            bb.redirect('{{ "login"|link }}');
+        document.addEventListener("DOMContentLoaded", function () {
+            const publicPaths = [
+                '/news',
+                '/tos',
+                '/privacy-policy'
+            ];
+            const currentPath = window.location.pathname;
+
+            const isAllowed = publicPaths.some(path => currentPath.startsWith(path));
+            if (!isAllowed) {
+                window.location.href = '{{ "login"|link }}';
+            }
         });
     </script>
 {% endif %}
