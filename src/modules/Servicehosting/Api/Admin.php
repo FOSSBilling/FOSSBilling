@@ -163,6 +163,7 @@ class Admin extends \Api_Abstract
      * Get a paginated list of hosting accounts, along with the "order" and "client" information.
      *
      * @param $data array Accepts the optional "server_id" property
+     *
      * @return array
      */
     public function account_get_list($data)

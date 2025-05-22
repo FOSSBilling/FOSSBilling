@@ -254,7 +254,7 @@ class AdminTest extends \BBTestCase
         $result = $this->api->account_get_list([]);
         $this->assertIsArray($result);
     }
-    
+
     public function testserverGetList(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
