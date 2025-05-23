@@ -711,11 +711,11 @@ class Service implements InjectionAwareInterface
         $serverID = $data['server_id'] ?? null;
 
         if (!empty($serverID)) {
-            $sql = $sql . " WHERE service_hosting_server_id = :server_id";
+            $sql = $sql . ' WHERE service_hosting_server_id = :server_id';
             $params['server_id'] = $serverID;
         }
 
-        $sql = $sql . " ORDER BY id ASC";
+        $sql = $sql . ' ORDER BY id ASC';
 
         return [$sql, $params];
     }
