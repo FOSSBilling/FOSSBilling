@@ -5,7 +5,7 @@
 {% set active_menu = 'system' %}
 {% set params = admin.extension_config_get({ 'ext': 'mod_currency' }) %}
 
-{% block meta_title %}{{ 'Currency settings'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Currency Settings'|trans }}{% endblock %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
@@ -19,7 +19,7 @@
         <li class="breadcrumb-item">
             <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ 'Currency settings'|trans }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Currency Settings'|trans }}</li>
     </ol>
 {% endblock %}
 
@@ -34,7 +34,7 @@
                     <svg class="icon me-2">
                         <use xlink:href="#plus" />
                     </svg>
-                    {{ 'Add new currency'|trans }}
+                    {{ 'Add New Currency'|trans }}
                 </a>
             </li>
             <li class="nav-item" role="presentation">
@@ -48,7 +48,7 @@
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-currencies" role="tabpanel">
                     <div class="card-body border-bottom">
-                        <h3 class="card-title">{{ 'Manage currencies'|trans }}</h3>
+                        <h3 class="card-title">{{ 'Manage Currencies'|trans }}</h3>
                         <p class="card-subtitle">{{ 'The default currency is the one you define product pricing in. If your client chooses a different currency, pricing will be recalculated according to the conversion rate. Changing the default currency after orders have been placed may have unexpected issues. Nothing is recalculated on default currency change. Your income is calculated in the default currency. Changing the default currency after you have paid invoices will distort income statistics.'|trans }}</p>
                     </div>
                     {% if params.sync_rate != 'never' %}
@@ -63,13 +63,13 @@
                     <div class="table-responsive">
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
-                            <tr>
-                                <th>{{ 'ISO code'|trans }}</th>
-                                <th>{{ 'Title'|trans }}</th>
-                                <th>{{ 'Conversion rate'|trans }}</th>
-                                <th>{{ 'Example price'|trans }}</th>
-                                <th class="w-1"></th>
-                            </tr>
+                                <tr>
+                                    <th>{{ 'Currency Code'|trans }}</th>
+                                    <th>{{ 'Currency'|trans }}</th>
+                                    <th>{{ 'Conversion Rate'|trans }}</th>
+                                    <th>{{ 'Example Price'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
                             </thead>
                             <tbody>
                             {% set default_currency = guest.currency_get %}
@@ -77,7 +77,7 @@
                                 <tr>
                                     <td>{% if currency.default %}<strong>{{ currency.code }}</strong>{% else %}{{ currency.code }}{% endif %}</td>
                                     <td>
-                                        <a href='{{ "currency/manage/#{currency.code}"|url }}'>{{ currency.title }}</a>
+                                        <a href='{{ "currency/manage/#{currency.code}"|url }}'>{{ currency.code|currency_name }}</a>
                                     </td>
                                     <td>{{ currency.conversion_rate }}</td>
                                     <td>{{ 1|format_currency(default_currency.code) }} = {{ (1 * currency.conversion_rate)|format_currency(currency.code) }}</td>
@@ -88,22 +88,16 @@
                                                 <use xlink:href="#edit" />
                                             </svg>
                                         </a>
-                                        <a class="btn btn-icon api-link"
-                                           href="{{ 'currency/delete'|api_url(query: { 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
-                                           data-api-redirect="{{ 'extension/settings/currency'|url }}"
-                                           data-api-type="danger"
-                                           data-api-confirm="{{ 'Are you sure you want to delete?'|trans }}"
-                                           data-api-confirm-btn="{{ 'Delete'|trans }}"
+                                        <a class="btn btn-icon api-link" href="{{ 'currency/delete'|api_url(query: { 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
+                                           data-api-redirect="{{ 'extension/settings/currency'|url }}" data-api-type="danger" data-api-confirm="{{ 'Are you sure you want to delete?'|trans }}" data-api-confirm-btn="{{ 'Delete'|trans }}"
                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
                                             <svg class="icon">
                                                 <use xlink:href="#delete" />
                                             </svg>
                                         </a>
                                         {% if not currency.default %}
-                                            <a class="btn btn-icon api-link"
-                                               data-api-redirect="{{ 'extension/settings/currency'|url }}"
-                                               href="{{'currency/set_default'|api_url(query: { 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
-                                               data-bs-toggle="tooltip" data-bs-title="{{ 'Set as default'|trans }}">
+                                            <a class="btn btn-icon api-link" href="{{'currency/set_default'|api_url(query: { 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
+                                               data-api-redirect="{{ 'extension/settings/currency'|url }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Set as Default'|trans }}">
                                                 <svg class="icon">
                                                     <use xlink:href="#check" />
                                                 </svg>
@@ -128,7 +122,7 @@
                             <span>{{ 'Update Rates'|trans }}</span>
                         </a>
                         {% if params.provider|default('exchangerate-api') == "exchangerate-api" and not params.exchangerate_api_key %}
-                            <a href="https://www.exchangerate-api.com" target="_blank"><p class="mt-1 mb-0">{{ 'Currency exchange rates By ExchangeRate-API.'|trans }}</p></a>
+                            <a href="https://www.exchangerate-api.com" target="_blank"><p class="mt-1 mb-0">{{ 'Currency exchange rates by ExchangeRate-API'|trans }}</p></a>
                         {% endif %}
                     </div>
                 </div>
@@ -138,27 +132,15 @@
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <div class="card-body">
                             <div class="form-group mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Code'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Currency Code'|trans }}</label>
                                 <div class="col-md-6">
                                     {{ mf.selectbox('code', admin.currency_get_pairs, 'USD', 1) }}
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Title'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="title" value="" placeholder="{{ 'Leave blank to automatically set'|trans }}">
-                                </div>
-                            </div>
-                            <div class="form-group mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Conversion rate'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Conversion Rate'|trans }}</label>
                                 <div class="col-md-6">
                                     <input class="form-control" type="text" name="conversion_rate" value="" placeholder="{{ 'Leave blank to automatically set'|trans }}">
-                                </div>
-                            </div>
-                            <div class="form-group mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Format'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="format" value="$ {{ '{{price}}' }}" required>
                                 </div>
                             </div>
                         </div>
@@ -169,11 +151,11 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-api-settings" role="tabpanel">
-                    <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form" data-api-msg="{{ 'Successfully updated settings'|trans }}">
+                    <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form" data-api-msg="{{ 'Successfully Updated Settings'|trans }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <input type="hidden" name="ext" value="mod_currency">
                         <div class="card-body">
-                            <h3 class="card-title">{{ 'Available exchange rate data providers'|trans }}</h3>
+                            <h3 class="card-title">{{ 'Available Exchange Rate Data Providers'|trans }}</h3>
                             <p>{{ 'FOSSBilling provides integration with various currency exchange rate data providers, allowing you to choose whichever one best suits your needs. By default, FOSSBilling will use the ExchangeRate-API "Open Access Endpoint" which does not require any configuration.'|trans }}</p>
                             <table class="table">
                                 <thead>
@@ -187,32 +169,32 @@
                                   </thead>
                                   <tbody>
                                     <tr>
-                                      <th><a href="https://www.exchangerate-api.com/docs/free" target="_blank">{{ 'ExchangeRate-API (Open Access Endpoint)'|trans }}</a></th>
+                                      <th><a href="https://www.exchangerate-api.com/docs/free" target="_blank">{{ 'ExchangeRate-API (Open Access)'|trans }}</a></th>
                                       <th>✖️</th>
                                       <th>{{ '1D'|trans }}</th>
-                                      <th><a href="https://www.exchangerate-api.com/docs/supported-currencies" target="_blank">{{ 'Supported currencies'|trans }}</a></th>
+                                      <th><a href="https://www.exchangerate-api.com/docs/supported-currencies" target="_blank">{{ 'Supported Currencies'|trans }}</a></th>
                                       <th>{{ 'Free'|trans }}</th>
                                     </tr>
                                     <tr>
                                       <th><a href="https://www.exchangerate-api.com/#pricing" target="_blank">ExchangeRate-API</a></th>
                                       <th>☑️</th>
                                       <th>{{ '1D / 1H / 5M'|trans }}</th>
-                                      <th><a href="https://www.exchangerate-api.com/docs/supported-currencies" target="_blank">{{ 'Supported currencies'|trans }}</a></th>
-                                      <th>{{ 'Free / paid'|trans }}</th>
+                                      <th><a href="https://www.exchangerate-api.com/docs/supported-currencies" target="_blank">{{ 'Supported Currencies'|trans }}</a></th>
+                                      <th>{{ 'Free / Paid'|trans }}</th>
                                     </tr>
                                     <tr>
                                         <th><a href="https://apilayer.com/marketplace/currency_data-api" target="_blank">Currency Data API</a></th>
                                         <th>☑️</th>
                                         <th>{{ '1D / 1H / 10M / 1M'|trans }}</th>
-                                        <th><a href="https://currencylayer.com/currencies" target="_blank">{{ 'Supported currencies'|trans }}</a></th>
-                                        <th>{{ 'Free / paid'|trans }}</th>
+                                        <th><a href="https://currencylayer.com/currencies" target="_blank">{{ 'Supported Currencies'|trans }}</a></th>
+                                        <th>{{ 'Free / Paid'|trans }}</th>
                                     </tr>
                                     <tr>
                                         <th><a href="https://currencylayer.com/" target="_blank">currencylayer</a></th>
                                         <th>☑️</th>
                                         <th>{{ '1D / 1H / 10M / 1M'|trans }}</th>
-                                        <th><a href="https://currencylayer.com/currencies" target="_blank">{{ 'Supported currencies'|trans }}</a></th>
-                                        <th>{{ 'Free / paid'|trans }}</th>
+                                        <th><a href="https://currencylayer.com/currencies" target="_blank">{{ 'Supported Currencies'|trans }}</a></th>
+                                        <th>{{ 'Free / Paid'|trans }}</th>
                                     </tr>
                                   </tbody>
                             </table>
@@ -220,7 +202,7 @@
                             <br/>
                             <span class="text-muted">{{ 'To the best of our knowledge, "Currency Data API" and "currencylayer" are both owned by APILayer and provide the same data, but through a different API.'|trans }}</span>
                             <div class="form-group mb-3 mt-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Currency exchange rate data provider'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Currency Exchange Rate Data Provider'|trans }}</label>
                                 <div class="col-md-6">
                                     <select class="form-select" aria-label="{{ 'Currency data provider selection'|trans }}" name="provider" id="provider_select">
                                         <option value="exchangerate-api" selected>ExchangeRate-API</option>
@@ -235,20 +217,20 @@
                                     <input class="form-control" type="text" name="exchangerate_api_key" id="exchangerate_api" value="{{ params.exchangerate_api_key }}" hidden="true">
                                     <input class="form-control" type="text" name="currencydata_key" id="currencydata" value="{{ params.currencydata_key }}" hidden="true">
                                     <input class="form-control" type="text" name="currencylayer_key" id="currencylayer" value="{{ params.currencylayer_key }}"  hidden="true">
-                                    <span class="text-muted" id="exchangerate_api_help_text" hidden="true">{{ 'Leave this blank to use the ExchangeRate-API "Open Access Endpoint".'|trans }}</span>
+                                    <span class="text-muted" id="exchangerate_api_help_text" hidden="true">{{ 'Leave blank to use ExchangeRate-API (Open Access).'|trans }}</span>
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Automatic sync rate'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Automatic Sync Rate'|trans }}</label>
                                 <div class="col-md-6">
                                     <select class="form-select" aria-label="{{ 'Currency data provider selection'|trans }}" name="sync_rate" id="sync_rate">
                                         <option value="auto" id="auto-sync" selected>{{ 'Auto'|trans }}</option>
                                         <option value="never">{{ 'Never'|trans }}</option>
                                         <option value="1d">{{ 'Daily'|trans }}</option>
                                         <option value="1h">{{ 'Hourly'|trans }}</option>
-                                        <option value="10m">{{ 'Every 10 minutes'|trans }}</option>
-                                        <option value="5m">{{ 'Every 5 minutes'|trans }}</option>
-                                        <option value="1m" id="1m-sync">{{ 'Every minute'|trans }}</option>
+                                        <option value="10m">{{ 'Every 10 Minutes'|trans }}</option>
+                                        <option value="5m">{{ 'Every 5 Minutes'|trans }}</option>
+                                        <option value="1m" id="1m-sync">{{ 'Every Minute'|trans }}</option>
                                     </select>
                                 <p class="text-muted">{{ '"Auto" is only available for ExchangeRate-API and when used will cause API requests to be made only when new data is made available, preventing excess requests.'|trans }}</p>
                                 <p class="text-muted">{{ 'Exchange rate syncing runs via the cronjob and as such is limited by the frequency of your cron schedule (typically 5 minutes).'|trans }}</p>
