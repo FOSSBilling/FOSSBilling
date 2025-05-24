@@ -102,6 +102,16 @@
                                                 </svg>
                                             </a>
                                         {% endif %}
+                                        <a class="btn btn-icon api-link"
+                                           href="{{ 'api/admin/extension/uninstall'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}"
+                                           data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                           data-api-confirm-btn="{{ 'Uninstall'|trans }}"
+                                           data-api-jsonp="onAfterModuleUninstalled"
+                                           data-bs-toggle="tooltip" data-bs-title="{{ 'Uninstall'|trans }}">
+                                            <svg class="icon">
+                                                <use xlink:href="#delete" />
+                                            </svg>
+                                        </a>
                                     </td>
                                 </tr>
                             {% else %}
@@ -202,6 +212,9 @@
             } else {
                 bb.reload();
             }
+        }
+        function onAfterModuleUninstalled() {
+            bb.reload();
         }
     </script>
 {% endblock %}
