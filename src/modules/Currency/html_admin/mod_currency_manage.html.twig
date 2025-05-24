@@ -4,7 +4,7 @@
 
 {% set active_menu = 'system' %}
 
-{% block meta_title %}{{ 'Currency management'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Currency Management'|trans }}{% endblock %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
@@ -19,7 +19,7 @@
             <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'extension/settings/currency'|url }}">{{ 'Currency settings'|trans }}</a>
+            <a href="{{ 'extension/settings/currency'|url }}">{{ 'Currency Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ currency.code }}</li>
     </ol>
@@ -27,52 +27,15 @@
 
 {% block content %}
 <div class="card">
-    <form method="post" action="{{ 'currency/update'|api_url }}" class="api-form" data-api-msg="{{ 'Currency updated'|trans }}">
+    <form method="post" action="{{ 'currency/update'|api_url }}" class="api-form" data-api-msg="{{ 'Currency Updated'|trans }}">
         <div class="card-body">
-            <h3 class="card-title">{{ 'Edit currency information'|trans }} {{ currency.code }}</h3>
+            <h3 class="card-title">{{ 'Edit Currency Information'|trans }} - {{ currency.code|currency_name }} ({{ currency.code }})</h3>
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
             <input type="hidden" name="code" value="{{ currency.code }}">
             <div class="mb-3 row">
-                <label class="col-md-3 col-form-label">{{ 'Title'|trans }}</label>
-                <div class="col-md-6">
-                    <input class="form-control" type="text" name="title" value="{{ currency.title }}" required>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="col-md-3 col-form-label">{{ 'Conversion rate'|trans }}</label>
+                <label class="col-md-3 col-form-label">{{ 'Conversion Rate'|trans }}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="text" name="conversion_rate" value="{{ currency.conversion_rate }}" required>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="col-md-3 col-form-label">{{ 'Format'|trans }}</label>
-                <div class="col-md-6">
-                    <input class="form-control" type="text" name="format" value="{{ currency.format }}" required placeholder="$ {{ price|raw }}">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="col-md-3 form-label">{{ 'Price format'|trans }}</label>
-                <div class="col-md-6">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioPriceFormat1" type="radio" name="price_format" value="1"{% if currency.price_format == 1 %} checked{% endif %}>
-                        <label class="form-check-label" for="radioPriceFormat1">1234.56</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioPriceFormat2" type="radio" name="price_format" value="2"{% if currency.price_format == 2 %} checked{% endif %}>
-                        <label class="form-check-label" for="radioPriceFormat2">1,234.56</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioPriceFormat3" type="radio" name="price_format" value="3"{% if currency.price_format == 3 %} checked{% endif %}>
-                        <label class="form-check-label" for="radioPriceFormat3">1.234,56</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioPriceFormat4" type="radio" name="price_format" value="4"{% if currency.price_format == 4 %} checked{% endif %}>
-                        <label class="form-check-label" for="radioPriceFormat4">1,234</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioPriceFormat5" type="radio" name="price_format" value="5"{% if currency.price_format == 5 %} checked{% endif %}>
-                        <label class="form-check-label" for="radioPriceFormat5">1234</label>
-                    </div>
                 </div>
             </div>
         </div>
