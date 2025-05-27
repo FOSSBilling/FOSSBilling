@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     element.addEventListener('click', event => {
       event.preventDefault();
       localStorage.setItem('theme', element.getAttribute('href').split('=')[1]);
-      document.body.setAttribute("data-bs-theme", localStorage.getItem('theme'))
+      document.documentElement.setAttribute("data-bs-theme", localStorage.getItem('theme'))
     });
   });
 

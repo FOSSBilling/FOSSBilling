@@ -273,18 +273,9 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return sprintf('%d %s ', $no, $pds[$v]);
     }
 
-    public function twig_size_filter($value)
+    public function twig_size_filter($value): string
     {
-        $precision = 2;
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-
-        $bytes = max($value, 0);
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
-
-        $bytes /= 1024 ** $pow;
-
-        return round($bytes, $precision) . ' ' . $units[$pow];
+        return FOSSBilling\Tools::humanReadableBytes($value);
     }
 
     public function twig_markdown_filter(Twig\Environment $env, $value)

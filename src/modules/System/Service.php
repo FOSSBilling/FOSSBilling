@@ -175,6 +175,7 @@ class Service
             'company_bank_name',
             'company_bic',
             'company_display_bank_info',
+            'company_bank_info_pagebottom',
             'company_account_number',
             'company_number',
             'company_note',
