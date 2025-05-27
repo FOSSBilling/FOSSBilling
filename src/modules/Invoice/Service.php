@@ -421,6 +421,14 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * Finds all paid invoices associated with a given client order.
+     *
+     * @param \Model_ClientOrder $order The client order for which to find paid invoices.
+     * 
+     * @return array An array of paid invoices. Each element in the array represents an invoice record
+     *               as returned by the database, typically as an associative array or an object.
+     */
     public function findPaidInvoicesForOrder(\Model_ClientOrder $order): array
     {
         $bindings = [
