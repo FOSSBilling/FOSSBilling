@@ -421,6 +421,16 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    public function findPaidInvoicesForOrder(\Model_ClientOrder $order): array
+    {
+        $bindings = [
+            ':rel_id' => $order->id,
+            ':status' => \Model_Invoice::STATUS_PAID,
+        ];
+
+        return $this->di['db']->find('Invoice', 'id IN (SELECT invoice_id FROM invoice_item WHERE rel_id = :rel_id) AND status = :status', $bindings);
+    }
+
     public function getNextInvoiceNumber()
     {
         $systemService = $this->di['mod_service']('system');

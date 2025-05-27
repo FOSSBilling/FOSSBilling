@@ -630,9 +630,14 @@ class Service implements InjectionAwareInterface
             $invoice = $invoiceService->generateForOrder($order);
 
             $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
+
+            // mark order as paid on creation
+            if (!empty($data['mark_invoice_paid']) && $invoice instanceof \Model_Invoice) {
+                $invoiceService->markAsPaid($invoice);
+            }
         }
 
-        // activate immediately if say so
+        // activate immediately on creation
         if ($activate) {
             try {
                 $this->activateOrder($order);
@@ -950,6 +955,13 @@ class Service implements InjectionAwareInterface
             $this->saveStatusChange($order, $e->getMessage());
 
             throw $e;
+        }
+
+        // do not extend renewal date if this is first paid invoice
+        $invoiceService = $this->di['mod_service']('invoice');
+        $paidInvoices = $invoiceService->findPaidInvoicesForOrder($order);
+        if (count($paidInvoices) <= 1) {
+            return;
         }
 
         // set automatic order expiration
