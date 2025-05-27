@@ -631,7 +631,7 @@ class Service implements InjectionAwareInterface
 
             $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
 
-            // mark order as paid on creation
+            // mark invoice as paid on creation
             if (!empty($data['mark_invoice_paid']) && $invoice instanceof \Model_Invoice) {
                 $invoiceService->markAsPaid($invoice);
             }
