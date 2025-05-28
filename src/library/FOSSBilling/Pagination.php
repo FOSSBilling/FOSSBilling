@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-final class Paginator implements InjectionAwareInterface
+final class Pagination implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
 
