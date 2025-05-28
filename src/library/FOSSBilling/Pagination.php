@@ -61,8 +61,8 @@ final class Pagination implements InjectionAwareInterface
      */
     public function getPaginatedResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
     {
-        $page = (int) ($page ?? ($_GET[$pageParam] ?? 1));
-        $perPage = (int) ($perPage ?? ($_GET[$perPageParam] ?? $this->getDefaultPerPage()));
+        $page ??= $this->di['request']->query->getInt($pageParam, 1);
+        $perPage ??= $this->di['request']->query->getInt($perPageParam, $this->getDefaultPerPage());
 
         if ($page < 1) throw new InformationException("Page number ($pageParam) must be a positive integer.");
         if ($perPage < 1) throw new InformationException("The number of items per page ($perPageParam) must be a positive integer.");
