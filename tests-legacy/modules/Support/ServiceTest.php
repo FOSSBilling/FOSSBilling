@@ -1398,12 +1398,12 @@ class ServiceTest extends \BBTestCase
             'autorespond_message_id' => random_int(1, 100),
         ];
         $supportModMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
-            ->onlyMethods(['getConfig'])->getMock();
+            ->disableOriginalConstructor()->onlyMethods(['getConfig'])->getMock();
         $supportModMock->expects($this->atLeastOnce())->method('getConfig')
             ->willReturn($config);
 
         $staffServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)
-            ->disableOriginalConstructor()->onlyMethods(['getCronAdmin'])->getMock();
+            ->onlyMethods(['getCronAdmin'])->getMock();
         $staffServiceMock->expects($this->atLeastOnce())->method('getCronAdmin')
             ->willReturn(new \Model_Admin());
 
