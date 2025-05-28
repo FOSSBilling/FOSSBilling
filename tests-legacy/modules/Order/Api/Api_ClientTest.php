@@ -40,7 +40,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
                 0 => ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getAdvancedResultSet')
             ->willReturn($resultSet);
@@ -79,7 +79,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $serviceMock->expects($this->atLeastOnce())->method('getSoonExpiringActiveOrdersQuery')
             ->willReturn(['query', []]);
 
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getAdvancedResultSet')
             ->willReturn(['list' => []]);

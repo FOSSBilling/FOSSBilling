@@ -17,7 +17,7 @@ class DiTest extends PHPUnit\Framework\TestCase
         $this->assertTrue(isset($di['pdo']));
         $this->assertTrue(isset($di['db']));
 
-        $this->assertInstanceOf('Box_Pagination', $di['pager']);
+        $this->assertInstanceOf('\\' . FOSSBilling\Pagination::class, $di['pager']);
         $this->assertInstanceOf('Box_Url', $di['url']);
         $this->assertInstanceOf('Box_EventManager', $di['events_manager']);
 

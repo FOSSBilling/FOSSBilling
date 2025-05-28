@@ -21,7 +21,7 @@ class Api_AdminTest extends \BBTestCase
                 ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getAdvancedResultSet')
             ->willReturn($simpleResultArr);
@@ -479,7 +479,7 @@ class Api_AdminTest extends \BBTestCase
                 0 => ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getAdvancedResultSet')
             ->willReturn($resultSet);
@@ -756,7 +756,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testHelpdeksGetList(): void
     {
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn([]);
@@ -927,7 +927,7 @@ class Api_AdminTest extends \BBTestCase
                 0 => ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn($resultSet);
@@ -1625,7 +1625,7 @@ class Api_AdminTest extends \BBTestCase
             'list' => [],
         ];
 
-        $pager = $this->getMockBuilder('Box_Pagination')->getMock();
+        $pager = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pager->expects($this->atLeastOnce())
             ->method('getAdvancedResultSet')
             ->willReturn($willReturn);
