@@ -1,7 +1,7 @@
 <?php
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_ModTest extends PHPUnit\Framework\TestCase
+class FOSSBilling_ModuleTest extends PHPUnit\Framework\TestCase
 {
     public function testEmptyConfig(): void
     {
@@ -13,7 +13,7 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
         $di = new Pimple\Container();
         $di['db'] = $db;
 
-        $mod = new Box_Mod('api');
+        $mod = new FOSSBilling\Module('api');
         $mod->setDi($di);
         $array = $mod->getConfig();
         $this->assertEquals([], $array);
@@ -21,13 +21,13 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
 
     public function testCoreMod(): void
     {
-        $mod = new Box_Mod('api');
+        $mod = new FOSSBilling\Module('api');
         $this->assertTrue($mod->isCore());
 
         $array = $mod->getCoreModules();
         $this->assertIsArray($array);
 
-        $mod = new Box_Mod('Cookieconsent');
+        $mod = new FOSSBilling\Module('Cookieconsent');
         $this->assertFalse($mod->isCore());
     }
 
@@ -36,7 +36,7 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
         $di = new Pimple\Container();
         $di['url'] = new Box_Url();
 
-        $mod = new Box_Mod('Cookieconsent');
+        $mod = new FOSSBilling\Module('Cookieconsent');
         $mod->setDi($di);
 
         $bool = $mod->hasManifest();
@@ -48,7 +48,7 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
 
     public function testgetServiceSub(): void
     {
-        $mod = new Box_Mod('Invoice');
+        $mod = new FOSSBilling\Module('Invoice');
         $subServiceName = 'transaction';
 
         $di = new Pimple\Container();

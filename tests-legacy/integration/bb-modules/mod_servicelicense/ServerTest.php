@@ -60,7 +60,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $di = new Pimple\Container();
         $di['db'] = $this->di['db'];
         $di['logger'] = new Box_Log();
-        $di['mod'] = $di->protect(fn () => new Box_Mod('servicelicense'));
+        $di['mod'] = $di->protect(fn () => new FOSSBilling\Module('servicelicense'));
         $di['mod_service'] = $di->protect(fn () => $service);
 
         $server = new Box\Mod\Servicelicense\Server($di['logger']);
@@ -120,7 +120,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $di = new Pimple\Container();
         $di['db'] = $this->di['db'];
         $di['logger'] = $this->di['logger'];
-        $di['mod'] = $di->protect(fn () => new Box_Mod('servicelicense'));
+        $di['mod'] = $di->protect(fn () => new FOSSBilling\Module('servicelicense'));
         $di['mod_service'] = $di->protect(fn () => $service);
 
         $server = new Box\Mod\Servicelicense\Server($this->di['logger']);
@@ -164,7 +164,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $di = new Pimple\Container();
         $di['db'] = $this->di['db'];
         $di['logger'] = $this->di['logger'];
-        $di['mod'] = $di->protect(fn () => new Box_Mod('servicelicense'));
+        $di['mod'] = $di->protect(fn () => new FOSSBilling\Module('servicelicense'));
         $di['mod_service'] = $di->protect(fn () => $service);
 
         $server = new Box\Mod\Servicelicense\Server($this->di['logger']);
@@ -232,7 +232,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $di = new Pimple\Container();
         $di['db'] = $this->di['db'];
         $di['logger'] = $this->di['logger'];
-        $di['mod'] = $di->protect(fn () => new Box_Mod('servicelicense'));
+        $di['mod'] = $di->protect(fn () => new FOSSBilling\Module('servicelicense'));
         $di['mod_service'] = $di->protect(fn () => $service);
 
         $server = new Box\Mod\Servicelicense\Server($this->di['logger']);
