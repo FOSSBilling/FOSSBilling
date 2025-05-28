@@ -1550,7 +1550,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $sql .= ' ORDER BY kb_article_category_id DESC, views DESC';
 
-        return $this->di['pager']->getSimpleResultSet($sql, $filter, $per_page, $page);
+        return $this->di['pager']->getPaginatedResultSet($sql, $filter, $per_page, $page);
     }
 
     public function kbFindActiveArticleById($id)

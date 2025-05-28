@@ -109,7 +109,7 @@ class GuestTest extends \BBTestCase
         ];
         $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
-            ->method('getAdvancedResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($pager);
 
         $modelProductCategory = new \Model_ProductCategory();

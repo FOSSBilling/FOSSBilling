@@ -134,8 +134,8 @@ class Admin extends \Api_Abstract
     public function tld_get_list($data)
     {
         [$sql, $params] = $this->getService()->tldGetSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
-        $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $tldArr) {
             $tld = $this->di['db']->getExistingModelById('Tld', $tldArr['id'], sprintf('Tld #%s not found', $tldArr['id']));
             $pager['list'][$key] = $this->getService()->tldToApiArray($tld);
@@ -282,8 +282,8 @@ class Admin extends \Api_Abstract
     public function registrar_get_list($data)
     {
         [$sql, $params] = $this->getService()->registrarGetSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
-        $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
 
         $registrars = $this->di['db']->find('TldRegistrar', 'ORDER By name ASC');
 

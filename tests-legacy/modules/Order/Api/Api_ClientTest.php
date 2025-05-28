@@ -42,7 +42,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         ];
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getAdvancedResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($resultSet);
 
         $clientOrderMock = new Model_ClientOrder();
@@ -81,7 +81,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getAdvancedResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
         $di = new Pimple\Container();
