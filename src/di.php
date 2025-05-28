@@ -142,10 +142,10 @@ $di['db'] = function () use ($di) {
  *
  * @param void
  *
- * @return FOSSBilling\Paginator
+ * @return FOSSBilling\Pagination
  */
 $di['pager'] = function () use ($di) {
-    $service = new \FOSSBilling\Paginator();
+    $service = new \FOSSBilling\Pagination();
     $service->setDi($di);
 
     return $service;
