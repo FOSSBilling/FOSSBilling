@@ -19,7 +19,7 @@ class Api_Abstract implements InjectionAwareInterface
     protected $ip;
 
     /**
-     * @var Box_Mod
+     * @var FOSSBilling\Module
      */
     protected $mod;
 
@@ -44,7 +44,7 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @param Box_Mod $mod
+     * @param FOSSBilling\Module $mod
      */
     public function setMod($mod)
     {
@@ -52,7 +52,7 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @return Box_Mod
+     * @return FOSSBilling\Module
      */
     public function getMod()
     {
