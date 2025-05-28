@@ -155,7 +155,8 @@ class Guest extends \Api_Abstract
     public function paginator($data)
     {
         $midrange = 7;
-        $current_page = $data['page'];
+        $page_param = $data['page_param'] ?? 'page';
+        $current_page = $data[$page_param];
         $limit = $data['per_page'];
         $itemsCount = $data['total'];
 
