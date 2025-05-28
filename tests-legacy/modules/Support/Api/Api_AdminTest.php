@@ -23,7 +23,7 @@ class Api_AdminTest extends \BBTestCase
         ];
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getAdvancedResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($simpleResultArr);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
@@ -481,7 +481,7 @@ class Api_AdminTest extends \BBTestCase
         ];
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getAdvancedResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($resultSet);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
@@ -758,7 +758,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn([]);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
@@ -929,7 +929,7 @@ class Api_AdminTest extends \BBTestCase
         ];
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($resultSet);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
@@ -1627,7 +1627,7 @@ class Api_AdminTest extends \BBTestCase
 
         $pager = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pager->expects($this->atLeastOnce())
-            ->method('getAdvancedResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($willReturn);
 
         $di = new \Pimple\Container();

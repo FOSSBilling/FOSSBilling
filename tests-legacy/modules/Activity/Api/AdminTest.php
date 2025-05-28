@@ -18,7 +18,7 @@ class AdminTest extends \BBTestCase
         ];
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-                    ->method('getSimpleResultSet')
+                    ->method('getPaginatedResultSet')
                     ->willReturn($simpleResultArr);
 
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
@@ -57,7 +57,7 @@ class AdminTest extends \BBTestCase
         ];
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-                    ->method('getSimpleResultSet')
+                    ->method('getPaginatedResultSet')
                     ->willReturn($simpleResultArr);
 
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();

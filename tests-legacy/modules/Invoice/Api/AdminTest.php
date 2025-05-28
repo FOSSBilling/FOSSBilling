@@ -32,7 +32,7 @@ class AdminTest extends \BBTestCase
 
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getAdvancedResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
         $di = new \Pimple\Container();
@@ -729,7 +729,7 @@ class AdminTest extends \BBTestCase
 
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
         $di = new \Pimple\Container();
@@ -830,7 +830,7 @@ class AdminTest extends \BBTestCase
 
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
         $di = new \Pimple\Container();
@@ -1045,7 +1045,7 @@ class AdminTest extends \BBTestCase
 
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn([]);
 
         $di = new \Pimple\Container();
@@ -1301,7 +1301,7 @@ class AdminTest extends \BBTestCase
 
         $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn([]);
 
         $di = new \Pimple\Container();

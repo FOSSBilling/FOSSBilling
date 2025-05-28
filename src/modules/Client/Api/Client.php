@@ -28,8 +28,8 @@ class Client extends \Api_Abstract
         $data['client_id'] = $this->identity->id;
 
         [$q, $params] = $service->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
-        $pager = $this->di['pager']->getSimpleResultSet($q, $params, $per_page);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
+        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, $per_page);
 
         foreach ($pager['list'] as $key => $item) {
             $balance = $this->di['db']->getExistingModelById('ClientBalance', $item['id'], 'Balance not found');

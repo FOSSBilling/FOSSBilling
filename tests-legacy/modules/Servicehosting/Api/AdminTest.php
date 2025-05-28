@@ -240,7 +240,7 @@ class AdminTest extends \BBTestCase
 
         $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
         $di = new \Pimple\Container();
@@ -264,7 +264,7 @@ class AdminTest extends \BBTestCase
 
         $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
         $di = new \Pimple\Container();
@@ -481,7 +481,7 @@ class AdminTest extends \BBTestCase
 
         $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
         $di = new \Pimple\Container();
