@@ -1403,7 +1403,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($config);
 
         $staffServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)
-            ->onlyMethods(['getCronAdmin'])->getMock();
+            ->disableOriginalConstructor()->onlyMethods(['getCronAdmin'])->getMock();
         $staffServiceMock->expects($this->atLeastOnce())->method('getCronAdmin')
             ->willReturn(new \Model_Admin());
 
