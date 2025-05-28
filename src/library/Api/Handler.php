@@ -17,7 +17,7 @@ final class Api_Handler implements InjectionAwareInterface
     protected $ip;
     protected ?Pimple\Container $di = null;
 
-    private bool $_acl_exception = false;
+    private bool $_acl_exception = true;
 
     public function __construct(protected $identity)
     {
