@@ -238,7 +238,7 @@ class AdminTest extends \BBTestCase
             ->method('getAccountsSearchQuery')
             ->willReturn(['SQLstring', []]);
 
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn(['list' => []]);
@@ -262,7 +262,7 @@ class AdminTest extends \BBTestCase
             ->method('getServersSearchQuery')
             ->willReturn(['SQLstring', []]);
 
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn(['list' => []]);
@@ -479,7 +479,7 @@ class AdminTest extends \BBTestCase
             ->method('getHpSearchQuery')
             ->willReturn(['SQLstring', []]);
 
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn(['list' => []]);

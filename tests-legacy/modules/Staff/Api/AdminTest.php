@@ -37,7 +37,7 @@ class AdminTest extends \BBTestCase
         $resultSet = [
             'list' => ['id' => 1],
         ];
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn($resultSet);
@@ -325,7 +325,7 @@ class AdminTest extends \BBTestCase
             ->method('getAdminGroupSearchQuery')
             ->willReturn(['sqlString', []]);
 
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn(['list' => []]);
@@ -469,7 +469,7 @@ class AdminTest extends \BBTestCase
         $resultSet = [
             'list' => ['id' => 1],
         ];
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn($resultSet);

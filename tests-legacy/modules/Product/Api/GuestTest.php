@@ -107,7 +107,7 @@ class GuestTest extends \BBTestCase
                 0 => ['id' => 1],
             ],
         ];
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getAdvancedResultSet')
             ->willReturn($pager);

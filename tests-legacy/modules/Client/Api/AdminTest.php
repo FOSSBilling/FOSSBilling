@@ -20,7 +20,7 @@ class AdminTest extends \BBTestCase
                 ['id' => 1],
             ],
         ];
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn($simpleResultArr);
@@ -505,7 +505,7 @@ class AdminTest extends \BBTestCase
         ];
 
         $data = [];
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn($simpleResultArr);
@@ -630,7 +630,7 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->
         method('getHistorySearchQuery')->willReturn(['sql', 'params']);
 
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $pagerResultSet = [
             'list' => [],
         ];

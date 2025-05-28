@@ -183,7 +183,7 @@ class Api_GuestTest extends \BBTestCase
             ->willReturn($willReturn);
         $guestApi->setService($supportService);
 
-        $pagerMock = $this->getMockBuilder('Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getPer_page')
             ->willReturn(100);
@@ -355,7 +355,7 @@ class Api_GuestTest extends \BBTestCase
             'list' => [],
         ];
 
-        $pager = $this->getMockBuilder('Box_Pagination')->getMock();
+        $pager = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pager->expects($this->atLeastOnce())
             ->method('getAdvancedResultSet')
             ->willReturn($willReturn);

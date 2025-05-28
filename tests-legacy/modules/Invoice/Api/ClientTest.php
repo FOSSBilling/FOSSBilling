@@ -351,7 +351,7 @@ class ClientTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn(['list' => []]);

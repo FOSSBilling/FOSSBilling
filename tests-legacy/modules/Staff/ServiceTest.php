@@ -797,7 +797,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgetList(): void
     {
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn([]);

@@ -14,7 +14,7 @@ class Api_ClientTest extends \BBTestCase
                 'id' => 1,
             ],
         ];
-        $pager = $this->getMockBuilder('Box_Pagination')->getMock();
+        $pager = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pager->expects($this->atLeastOnce())
             ->method('getSimpleResultSet')
             ->willReturn($willReturn);
