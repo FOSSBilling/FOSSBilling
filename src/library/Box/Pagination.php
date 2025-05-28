@@ -37,10 +37,10 @@ class Box_Pagination implements InjectionAwareInterface
     public function getSimpleResultSet($q, $values, ?int $per_page = 100, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page')
     {
         if (is_null($page)) {
-            $page = $_GET[$pageParam] ?? ($_GET['page'] ?? 1);
+            $page = $_GET[$pageParam] ?? 1;
         }
 
-        $per_page = $_GET[$perPageParam] ?? ($_GET['per_page'] ?? $per_page ?? 100);
+        $per_page = $_GET[$perPageParam] ?? ($per_page ?? 100);
 
         if (!is_numeric($page) || $page < 1) {
             throw new FOSSBilling\InformationException('Invalid page number');
@@ -73,10 +73,10 @@ class Box_Pagination implements InjectionAwareInterface
     public function getAdvancedResultSet($q, $values, ?int $per_page = 100, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page')
     {
         if (is_null($page)) {
-            $page = $_GET[$pageParam] ?? ($_GET['page'] ?? 1);
+            $page = $_GET[$pageParam] ?? 1;
         }
 
-        $per_page = $_GET[$perPageParam] ?? ($_GET['per_page'] ?? $per_page ?? 100);
+        $per_page = $_GET[$perPageParam] ?? ($per_page ?? 100);
 
         if (!is_numeric($page) || $page < 1) {
             throw new FOSSBilling\InformationException('Invalid page number');
