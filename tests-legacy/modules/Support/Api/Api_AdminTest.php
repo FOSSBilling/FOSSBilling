@@ -1643,6 +1643,7 @@ class Api_AdminTest extends \BBTestCase
         ->getMock();
         $pager->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
+            ->with($this->isType('string'), $this->isType('array'))
             ->willReturn($willReturn);
 
         $di = new \Pimple\Container();

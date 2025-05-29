@@ -20,8 +20,10 @@ class AdminTest extends \BBTestCase
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
+
         $paginatorMock->expects($this->atLeastOnce())
                     ->method('getPaginatedResultSet')
+                    ->with($this->isType('string'), $this->isType('array'))
                     ->willReturn($simpleResultArr);
 
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
@@ -69,6 +71,7 @@ class AdminTest extends \BBTestCase
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
                 ->method('getSearchQuery')
+                ->with($this->isType('string'), $this->isType('array'))
                 ->willReturn('String');
 
         $model = new \Model_ActivitySystem();
