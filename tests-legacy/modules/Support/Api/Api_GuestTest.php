@@ -184,7 +184,7 @@ class Api_GuestTest extends \BBTestCase
         $guestApi->setService($supportService);
 
         $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
+        ->onlyMethods(['getDefaultPerPage'])
         ->disableOriginalConstructor()
         ->getMock();
         $pagerMock->expects($this->atLeastOnce())
@@ -364,6 +364,7 @@ class Api_GuestTest extends \BBTestCase
         ->getMock();
         $pager->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
+            ->with($this->isType('string'), $this->isType('array'))
             ->willReturn($willReturn);
 
         $di = new \Pimple\Container();

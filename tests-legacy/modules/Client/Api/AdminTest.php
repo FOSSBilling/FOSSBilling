@@ -26,6 +26,7 @@ class AdminTest extends \BBTestCase
         ->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
+            ->with($this->isType('string'), $this->isType('array'))
             ->willReturn($simpleResultArr);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
@@ -512,8 +513,10 @@ class AdminTest extends \BBTestCase
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
+
         $pagerMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
+            ->with($this->isType('string'), $this->isType('array'))
             ->willReturn($simpleResultArr);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
@@ -645,6 +648,7 @@ class AdminTest extends \BBTestCase
         ];
         $pagerMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
+            ->with($this->isType('string'), $this->isType('array'))
             ->willReturn($pagerResultSet);
 
         $di = new \Pimple\Container();
