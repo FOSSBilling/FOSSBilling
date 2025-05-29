@@ -15,7 +15,10 @@ class Api_AdminTest extends \BBTestCase
             ],
         ];
 
-        $pager = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
+        $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $pager->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn($willReturn);
@@ -283,7 +286,10 @@ class Api_AdminTest extends \BBTestCase
             ],
         ];
 
-        $pager = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
+        $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $pager->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn($willReturn);
