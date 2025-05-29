@@ -21,7 +21,7 @@ class Api_AdminTest extends \BBTestCase
                 ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn($simpleResultArr);
@@ -479,7 +479,7 @@ class Api_AdminTest extends \BBTestCase
                 0 => ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn($resultSet);
@@ -756,7 +756,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testHelpdeksGetList(): void
     {
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn([]);
@@ -927,7 +927,7 @@ class Api_AdminTest extends \BBTestCase
                 0 => ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn($resultSet);

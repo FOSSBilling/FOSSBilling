@@ -31,7 +31,7 @@ class ClientTest extends \BBTestCase
             ],
         ];
 
-        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn($simpleResultArr);

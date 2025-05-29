@@ -30,7 +30,7 @@ class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
@@ -727,7 +727,7 @@ class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
@@ -828,7 +828,7 @@ class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
@@ -1043,7 +1043,7 @@ class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn([]);
@@ -1299,7 +1299,7 @@ class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn([]);
