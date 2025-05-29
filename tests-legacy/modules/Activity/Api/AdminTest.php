@@ -65,14 +65,14 @@ class AdminTest extends \BBTestCase
         ->disableOriginalConstructor()
         ->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-                    ->method('getPaginatedResultSet')
-                    ->willReturn($simpleResultArr);
+            ->method('getPaginatedResultSet')
+            ->with($this->isType('string'), $this->isType('array'))
+            ->willReturn($simpleResultArr);
 
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
-                ->method('getSearchQuery')
-                ->with($this->isType('string'), $this->isType('array'))
-                ->willReturn('String');
+            ->method('getSearchQuery')
+            ->willReturn('String');
 
         $model = new \Model_ActivitySystem();
         $model->loadBean(new \DummyBean());
