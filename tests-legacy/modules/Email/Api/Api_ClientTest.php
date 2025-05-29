@@ -14,7 +14,10 @@ class Api_ClientTest extends \BBTestCase
                 'id' => 1,
             ],
         ];
-        $pager = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)->getMock();
+        $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $pager->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn($willReturn);
