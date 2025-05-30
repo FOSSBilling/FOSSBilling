@@ -77,7 +77,8 @@ class Pagination implements InjectionAwareInterface
         $fromPos = stripos($query, 'FROM');
         if ($fromPos === false) throw new InformationException('Invalid SQL query. Missing FROM clause.');
 
-        $countQuery = 'SELECT COUNT(1) ' . substr($query, $fromPos);
+        $query = rtrim($query, " ;\n\r\t");
+        $countQuery = 'SELECT COUNT(1) FROM (' . $query . ') AS sub';
         $total = (int) $this->di['db']->getCell($countQuery, $params);
 
         return [
