@@ -182,7 +182,7 @@ class Server_Manager_Directadmin extends Server_Manager
                 'bandwidth' => $package->getBandwidth(), // Bandwidth quota in MB
                 'catchall' => $package->getCustomValue('catchall') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
                 'cgi' => $package->getCustomValue('cgi') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run cgi scripts in their cgi-bin.
-                'cron' => $package->getCustomValue('cron') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to creat cronjobs.
+                'cron' => $package->getCustomValue('cron') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to create cronjobs.
                 'dnscontrol' => $package->getCustomValue('dnscontrol') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will be able to modify his/her dns records.
                 'domainptr' => $package->getMaxParkedDomains(), // Domain pointer quota
                 'ftp' => $package->getMaxFtp(), // FTP account quota
