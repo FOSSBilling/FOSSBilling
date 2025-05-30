@@ -153,10 +153,6 @@ class ServiceTest extends \BBTestCase
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
 
-        $itemInvoiceServiceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)->getMock();
-        $itemInvoiceServiceMock->expects($this->atLeastOnce())
-            ->method('getTax');
-
         $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getCompany');

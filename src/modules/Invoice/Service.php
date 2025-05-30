@@ -137,15 +137,19 @@ class Service implements InjectionAwareInterface
         $items = $this->di['db']->find('InvoiceItem', 'invoice_id = :iid', ['iid' => $row['id']]);
 
         $lines = [];
-        $total = $tax_total = 0;
+        $total = 0;
+        $taxable_subtotal = 0;
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         foreach ($items as $item) {
             $order_id = ($item->type == \Model_InvoiceItem::TYPE_ORDER) ? $item->rel_id : null;
 
             $line_total = $item->price * $item->quantity;
             $total += $line_total;
-            $line_tax = $invoiceItemService->getTax($item) * $item->quantity;
-            $tax_total += $line_tax;
+
+            if ($item->taxed) {
+                $taxable_subtotal += $line_total;
+            }
+
             $line = [
                 'id' => $item->id,
                 'title' => $item->title,
@@ -153,7 +157,7 @@ class Service implements InjectionAwareInterface
                 'quantity' => $item->quantity,
                 'unit' => $item->unit,
                 'price' => $item->price,
-                'tax' => $line_tax,
+                'tax' => 0, // Tax will be calculated on the total taxable subtotal
                 'taxed' => $item->taxed,
                 'charged' => $item->charged,
                 'total' => $line_total,
@@ -165,7 +169,13 @@ class Service implements InjectionAwareInterface
             ];
             $lines[] = $line;
         }
-        $tax = $tax_total;
+
+        $current_invoice_tax_rate = $row['taxrate'];
+        if ($current_invoice_tax_rate > 0 && $taxable_subtotal != 0) {
+            $tax = round($taxable_subtotal * $current_invoice_tax_rate / 100, 2);
+        } else {
+            $tax = 0;
+        }
 
         $invoice_number_padding = $this->di['mod_service']('system')->getParamValue('invoice_number_padding');
         $invoice_number_padding = $invoice_number_padding !== null && $invoice_number_padding !== '' ? $invoice_number_padding : 5;
@@ -568,20 +578,25 @@ class Service implements InjectionAwareInterface
         $required = $this->getTotalWithTax($invoice);
         $epsilon = 0.05;
 
-        if (abs($balance - $required) < $epsilon) {
+        if (abs($balance - $required) < $epsilon || $balance - $required > 0.00001) {
             if (DEBUG) {
-                $this->di['logger']->setChannel('billing')->info(sprintf('Setting invoice %s as paid with credits', $invoice->id));
+                $this->di['logger']->setChannel('billing')->info(sprintf('Setting invoice %s as paid with credits for the amount of %s', $invoice->id, $required));
             }
-            $this->markAsPaid($invoice);
 
-            return true;
-        }
+            $balanceTransaction = $this->di['db']->dispense('ClientBalance');
+            $balanceTransaction->client_id = $client->id;
+            $balanceTransaction->type = 'invoice';
+            $balanceTransaction->rel_id = $invoice->id;
 
-        if ($balance - $required > 0.00001) {
-            if (DEBUG) {
-                $this->di['logger']->setChannel('billing')->info(sprintf('Setting invoice %s as paid with credits', $invoice->id));
-            }
-            $this->markAsPaid($invoice);
+            $invoiceIdentifier = $invoice->serie_nr ? $invoice->serie_nr : $invoice->id;
+            $balanceTransaction->description = sprintf('Payment for invoice #%s using account credit', $invoiceIdentifier);
+
+            $balanceTransaction->amount = -$required;
+            $balanceTransaction->created_at = date('Y-m-d H:i:s');
+            $balanceTransaction->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($balanceTransaction);
+
+            $this->markAsPaid($invoice, false, true);
 
             return true;
         }
@@ -600,17 +615,29 @@ class Service implements InjectionAwareInterface
     public function getTax(\Model_Invoice $invoice)
     {
         if ($invoice->taxrate <= 0) {
-            return 0;
+            return 0.0;
         }
 
-        $iiService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $items = $this->di['db']->find('InvoiceItem', 'invoice_id = ? ', [$invoice->id]);
-        $tax = 0;
+        $items = $this->di['db']->find('InvoiceItem', 'invoice_id = :iid', [':iid' => $invoice->id]);
+
+        if (empty($items)) {
+            return 0.0;
+        }
+
+        $taxable_subtotal = 0.0;
         foreach ($items as $item) {
-            $tax += $iiService->getTax($item) * $item->quantity;
+            if ($item->taxed) {
+                $taxable_subtotal += ($item->price * $item->quantity);
+            }
         }
 
-        return $tax;
+        if ($taxable_subtotal == 0) {
+            return 0.0;
+        }
+
+        $tax = round($taxable_subtotal * $invoice->taxrate / 100, 2);
+
+        return (float) $tax;
     }
 
     public function getTotal(\Model_Invoice $invoice)

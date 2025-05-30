@@ -1,12 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^PHPDoc tag @phpstan\-ignore\-next\-line has invalid value \(\(No matter what I put for the return type of this function, PHPStan is unhappy\)\)\: Unexpected token "matter", expected ''\)'' at offset 34 on line 1$#'
-			identifier: phpDoc.parseError
-			count: 1
-			path: src/library/Box/BeanHelper.php
-
-		-
 			message: '#^Call to an undefined method Monolog\\Handler\\HandlerInterface\:\:setFormatter\(\)\.$#'
 			identifier: method.notFound
 			count: 1
