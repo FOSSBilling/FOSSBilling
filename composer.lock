@@ -712,16 +712,16 @@
         },
         {
             "name": "gabordemooij/redbean",
-            "version": "v5.7.4",
+            "version": "v5.7.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/gabordemooij/redbean.git",
-                "reference": "274c426583d91b20a1e39968b2e20969ef83cd1d"
+                "reference": "fc08c2f9bc5a4f5074721b0d9039881be244f842"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gabordemooij/redbean/zipball/274c426583d91b20a1e39968b2e20969ef83cd1d",
-                "reference": "274c426583d91b20a1e39968b2e20969ef83cd1d",
+                "url": "https://api.github.com/repos/gabordemooij/redbean/zipball/fc08c2f9bc5a4f5074721b0d9039881be244f842",
+                "reference": "fc08c2f9bc5a4f5074721b0d9039881be244f842",
                 "shasum": ""
             },
             "require": {
@@ -751,9 +751,9 @@
             ],
             "support": {
                 "issues": "https://github.com/gabordemooij/redbean/issues",
-                "source": "https://github.com/gabordemooij/redbean/tree/v5.7.4"
+                "source": "https://github.com/gabordemooij/redbean/tree/v5.7.5"
             },
-            "time": "2023-03-17T22:39:19+00:00"
+            "time": "2025-05-01T17:41:56+00:00"
         },
         {
             "name": "guzzlehttp/psr7",
