@@ -18,8 +18,8 @@ final class Api_Handler implements InjectionAwareInterface
     protected ?Pimple\Container $di = null;
 
     /**
-     * @var bool $_acl_exception When true, ACL permission denials are reported as exceptions.
-     *                          Defaults to true.
+     * @var bool When true, ACL permission denials are reported as exceptions.
+     *           Defaults to true.
      */
     private bool $_acl_exception = true;
 
