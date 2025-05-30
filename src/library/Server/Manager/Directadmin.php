@@ -410,8 +410,7 @@ class Server_Manager_Directadmin extends Server_Manager
         if ($account->getReseller()) {
             $command = 'ACCOUNT_RESELLER';
 
-            $fields['ips'] = 1; // Number of ips that will be allocated to the Reseller upon account during account
-            $fields['ip'] = 'assign';
+            $fields['ip'] = 'shared'; // Workaround: use shared IP for reseller accounts until support for dedicated IPs is added.
         }
 
         try {
