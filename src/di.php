@@ -166,14 +166,14 @@ $di['url'] = function () use ($di) {
 };
 
 /*
- * Returns a new Box_Mod object, created with the provided module name.
+ * Returns a new Module object, created with the provided module name.
  *
  * @param string $name The name of the module to create the object with.
  *
- * @return \Box_Mod The new Box_Mod object that was just created.
+ * @return \Module The new Module object that was just created.
  */
 $di['mod'] = $di->protect(function ($name) use ($di) {
-    $mod = new Box_Mod($name);
+    $mod = new FOSSBilling\Module($name);
     $mod->setDi($di);
 
     return $mod;

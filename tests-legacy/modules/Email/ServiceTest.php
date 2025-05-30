@@ -947,7 +947,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([
