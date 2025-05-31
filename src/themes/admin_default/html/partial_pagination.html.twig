@@ -1,6 +1,12 @@
 {% if list.pages > 1 %}
     {% set pageParam = page_param|default('page') %}
-    {% set currentPage = attribute(request, pageParam)|default(1) %}
+    {% set currentPageRaw = attribute(request, pageParam)|default(1) %}
+    {% if currentPageRaw matches '/^\\d+$/' %}
+        {% set currentPage = currentPageRaw %}
+    {% else %}
+        {% set currentPage = 1 %}
+    {% endif %}
+
     {% set paginator = guest.system_paginator({ 'total': list.total, 'page_param': pageParam, (pageParam): currentPage, 'per_page': list.per_page }) %}
 
     {# Removing current page parameter from the request to avoid duplication #}
