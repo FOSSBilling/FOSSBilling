@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Spamchecker\Api;
+namespace Box\Mod\Antispam\Api;
 
 class GuestTest extends \BBTestCase
 {
