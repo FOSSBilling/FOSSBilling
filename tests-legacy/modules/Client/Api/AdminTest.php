@@ -20,21 +20,22 @@ class AdminTest extends \BBTestCase
                 ['id' => 1],
             ],
         ];
-        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
-        $pagerMock->expects($this->atLeastOnce())
-            ->method('getPaginatedResultSet')
-            ->with($this->isType('string'), $this->isType('array'))
-            ->willReturn($simpleResultArr);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('getSearchQuery');
-        $serviceMock->expects($this->atLeastOnce())->
-        method('toApiArray')
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getSearchQuery')
+            ->willReturn(['String', []]);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
             ->willReturn([]);
+
+        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+            ->onlyMethods(['getPaginatedResultSet'])
+            ->getMock();
+
+        $pagerMock->expects($this->atLeastOnce())
+            ->method('getPaginatedResultSet')
+            ->willReturn($simpleResultArr);
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -509,19 +510,20 @@ class AdminTest extends \BBTestCase
         ];
 
         $data = [];
+
+
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getSearchQuery')
+            ->willReturn(['String', []]);
+
         $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+            ->onlyMethods(['getPaginatedResultSet'])
+            ->getMock();
 
         $pagerMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
-            ->with($this->isType('string'), $this->isType('array'))
             ->willReturn($simpleResultArr);
-
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('getSearchQuery');
 
         $model = new \Model_ClientBalance();
         $model->loadBean(new \DummyBean());
@@ -634,21 +636,21 @@ class AdminTest extends \BBTestCase
     public function testloginHistoryGetList(): void
     {
         $data = [];
-
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('getHistorySearchQuery')->willReturn(['sql', 'params']);
-
-        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
         $pagerResultSet = [
             'list' => [],
         ];
+
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getHistorySearchQuery')
+            ->willReturn(['String', []]);
+
+        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+            ->onlyMethods(['getPaginatedResultSet'])
+            ->getMock();
+
         $pagerMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
-            ->with($this->isType('string'), $this->isType('array'))
             ->willReturn($pagerResultSet);
 
         $di = new \Pimple\Container();

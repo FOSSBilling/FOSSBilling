@@ -16,20 +16,19 @@ class AdminTest extends \BBTestCase
                 ],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
-
-        $paginatorMock->expects($this->atLeastOnce())
-                    ->method('getPaginatedResultSet')
-                    ->with($this->isType('string'), $this->isType('array'))
-                    ->willReturn($simpleResultArr);
-
+        
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
-                ->method('getSearchQuery')
-                ->willReturn('String');
+            ->method('getSearchQuery')
+            ->willReturn(['String', []]);
+
+        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+            ->onlyMethods(['getPaginatedResultSet'])
+            ->getMock();
+
+        $paginatorMock->expects($this->atLeastOnce())
+            ->method('getPaginatedResultSet')
+            ->willReturn($simpleResultArr);
 
         $model = new \Model_ActivitySystem();
         $model->loadBean(new \DummyBean());
@@ -60,19 +59,19 @@ class AdminTest extends \BBTestCase
                 ],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
-        $paginatorMock->expects($this->atLeastOnce())
-            ->method('getPaginatedResultSet')
-            ->with($this->isType('string'), $this->isType('array'))
-            ->willReturn($simpleResultArr);
 
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getSearchQuery')
-            ->willReturn('String');
+            ->willReturn(['String', []]);
+
+        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+            ->onlyMethods(['getPaginatedResultSet'])
+            ->getMock();
+
+        $paginatorMock->expects($this->atLeastOnce())
+            ->method('getPaginatedResultSet')
+            ->willReturn($simpleResultArr);
 
         $model = new \Model_ActivitySystem();
         $model->loadBean(new \DummyBean());
