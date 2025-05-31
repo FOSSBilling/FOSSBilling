@@ -1737,23 +1737,21 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('_callOnService');
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('saveStatusChange');
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->period = '1Y';
 
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
-        $periodMock->expects($this->atLeastOnce())
-            ->method('getExpirationTime');
 
         $dbMock = $this->getMockBuilder('Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->with($clientOrderModel);
+
+        $invoiceServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $invoiceServiceMock->expects($this->atLeastOnce())
+            ->method('findPaidInvoicesForOrder');
 
         $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(fn ($name) => []);
+        $di['mod_service'] = $di->protect(fn () => $invoiceServiceMock);
         $di['period'] = $di->protect(fn () => $periodMock);
         $di['db'] = $dbMock;
 
