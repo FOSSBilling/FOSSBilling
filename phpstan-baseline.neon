@@ -68,19 +68,19 @@ parameters:
 		-
 			message: '#^Call to an undefined method Server_Package\:\:getMaxEmailAutoresponders\(\)\.$#'
 			identifier: method.notFound
-			count: 3
+			count: 4
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
 			message: '#^Call to an undefined method Server_Package\:\:getMaxEmailForwarders\(\)\.$#'
 			identifier: method.notFound
-			count: 3
+			count: 4
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
 			message: '#^Call to an undefined method Server_Package\:\:getMaxEmailLists\(\)\.$#'
 			identifier: method.notFound
-			count: 3
+			count: 4
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
