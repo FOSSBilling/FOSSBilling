@@ -26,9 +26,9 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
 
-        return $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        return $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
     }
 
     /**

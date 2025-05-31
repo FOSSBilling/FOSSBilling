@@ -27,9 +27,9 @@ class Admin extends \Api_Abstract
     public function log_get_list($data)
     {
         $data['no_debug'] = true;
-        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
 
         foreach ($pager['list'] as $key => $item) {
             if (isset($item['staff_id'])) {

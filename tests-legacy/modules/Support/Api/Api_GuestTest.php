@@ -183,9 +183,12 @@ class Api_GuestTest extends \BBTestCase
             ->willReturn($willReturn);
         $guestApi->setService($supportService);
 
-        $pagerMock = $this->getMockBuilder('Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getDefaultPerPage'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $pagerMock->expects($this->atLeastOnce())
-            ->method('getPer_page')
+            ->method('getDefaultPerPage')
             ->willReturn(100);
         $di = new \Pimple\Container();
         $di['pager'] = $pagerMock;
@@ -355,20 +358,23 @@ class Api_GuestTest extends \BBTestCase
             'list' => [],
         ];
 
-        $pager = $this->getMockBuilder('Box_Pagination')->getMock();
+        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryGetSearchQuery'])->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbCategoryGetSearchQuery')
+            ->willReturn(['String', []]);
+
+        $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+            ->onlyMethods(['getPaginatedResultSet'])
+            ->getMock();
+
         $pager->expects($this->atLeastOnce())
-            ->method('getAdvancedResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($willReturn);
 
         $di = new \Pimple\Container();
         $di['pager'] = $pager;
 
         $guestApi->setDi($di);
-
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryGetSearchQuery'])->getMock();
-        $kbService->expects($this->atLeastOnce())
-            ->method('kbCategoryGetSearchQuery')
-            ->willReturn(true);
         $guestApi->setService($kbService);
 
         $result = $guestApi->kb_category_get_list([]);

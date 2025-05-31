@@ -16,15 +16,19 @@ class AdminTest extends \BBTestCase
                 ],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
-        $paginatorMock->expects($this->atLeastOnce())
-                    ->method('getSimpleResultSet')
-                    ->willReturn($simpleResultArr);
-
+        
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
-                ->method('getSearchQuery')
-                ->willReturn('String');
+            ->method('getSearchQuery')
+            ->willReturn(['String', []]);
+
+        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+            ->onlyMethods(['getPaginatedResultSet'])
+            ->getMock();
+
+        $paginatorMock->expects($this->atLeastOnce())
+            ->method('getPaginatedResultSet')
+            ->willReturn($simpleResultArr);
 
         $model = new \Model_ActivitySystem();
         $model->loadBean(new \DummyBean());
@@ -55,15 +59,19 @@ class AdminTest extends \BBTestCase
                 ],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
-        $paginatorMock->expects($this->atLeastOnce())
-                    ->method('getSimpleResultSet')
-                    ->willReturn($simpleResultArr);
 
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
-                ->method('getSearchQuery')
-                ->willReturn('String');
+            ->method('getSearchQuery')
+            ->willReturn(['String', []]);
+
+        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+            ->onlyMethods(['getPaginatedResultSet'])
+            ->getMock();
+
+        $paginatorMock->expects($this->atLeastOnce())
+            ->method('getPaginatedResultSet')
+            ->willReturn($simpleResultArr);
 
         $model = new \Model_ActivitySystem();
         $model->loadBean(new \DummyBean());

@@ -37,9 +37,12 @@ class AdminTest extends \BBTestCase
         $resultSet = [
             'list' => ['id' => 1],
         ];
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $pagerMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($resultSet);
 
         $adminModel = new \Model_Admin();
@@ -325,9 +328,12 @@ class AdminTest extends \BBTestCase
             ->method('getAdminGroupSearchQuery')
             ->willReturn(['sqlString', []]);
 
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $pagerMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
         $di = new \Pimple\Container();
@@ -469,9 +475,12 @@ class AdminTest extends \BBTestCase
         $resultSet = [
             'list' => ['id' => 1],
         ];
-        $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();
+        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $pagerMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($resultSet);
 
         $model = new \Model_ActivityAdminHistory();

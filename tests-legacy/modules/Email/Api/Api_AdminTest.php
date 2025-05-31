@@ -15,9 +15,12 @@ class Api_AdminTest extends \BBTestCase
             ],
         ];
 
-        $pager = $this->getMockBuilder('Box_Pagination')->getMock();
+        $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $pager->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($willReturn);
 
         $di = new \Pimple\Container();
@@ -283,9 +286,12 @@ class Api_AdminTest extends \BBTestCase
             ],
         ];
 
-        $pager = $this->getMockBuilder('Box_Pagination')->getMock();
+        $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $pager->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($willReturn);
 
         $di = new \Pimple\Container();
