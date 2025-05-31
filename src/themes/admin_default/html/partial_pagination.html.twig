@@ -13,52 +13,54 @@
     {% set safeRequest = request|merge({ (pageParam): null }) %}
     {% set filteredRequest = safeRequest|filter(v => v is not null) %}
 
-    <ul class="pagination m-0">
-        {% if paginator.currentpage != 1 %}
-        <li class="page-item">
-            <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): currentPage - 1 })) }}">
-                <svg class="icon">
-                    <use xlink:href="#chevron-left" />
-                </svg>
-            </a>
-        </li>
-        {% endif %}
-        {% if (paginator.range.0 != 1) %}
+    <nav aria-label="Pagination">
+        <ul class="pagination m-0">
+            {% if paginator.currentpage != 1 %}
             <li class="page-item">
-                <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): 1 })) }}">1</a>
+                <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): currentPage - 1 })) }}">
+                    <svg class="icon">
+                        <use xlink:href="#chevron-left" />
+                    </svg>
+                </a>
             </li>
-        {% endif %}
-        {% for i in paginator.start..paginator.end %}
-            {% if paginator.range.0 > 2 and i == paginator.range.0 %}
-                ...
             {% endif %}
-
-            {% if i == paginator.currentpage %}
-                <li class="page-item active">
-                    <a class="page-link" href="#" onclick="return false;">{{ i }}</a>
-                </li>
-            {% else %}
+            {% if (paginator.range.0 != 1) %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): i })) }}"> {{ i }}</a>
+                    <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): 1 })) }}">1</a>
                 </li>
             {% endif %}
-        {% endfor %}
+            {% for i in paginator.start..paginator.end %}
+                {% if paginator.range.0 > 2 and i == paginator.range.0 %}
+                    ...
+                {% endif %}
 
-        {% if paginator.range[paginator.midrange -1] < paginator.numpages -1 and paginator.end == paginator.range[paginator.midrange-1] %}
-            ...
+                {% if i == paginator.currentpage %}
+                    <li class="page-item active">
+                        <span class="page-link" aria-current="page">{{ i }}</span>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): i })) }}"> {{ i }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if paginator.range[paginator.midrange -1] < paginator.numpages -1 and paginator.end == paginator.range[paginator.midrange-1] %}
+                ...
+                <li class="page-item">
+                    <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): paginator.numpages })) }}"> {{ paginator.numpages }}</a>
+                </li>
+            {% endif %}
+
+            {% if paginator.currentpage != paginator.numpages %}
             <li class="page-item">
-                <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): paginator.numpages })) }}"> {{ paginator.numpages }}</a>
+                <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): currentPage + 1 })) }}">
+                    <svg class="icon">
+                        <use xlink:href="#chevron-right" />
+                    </svg>
+                </a>
             </li>
-        {% endif %}
-
-        {% if paginator.currentpage != paginator.numpages %}
-        <li class="page-item">
-            <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): currentPage + 1 })) }}">
-                <svg class="icon">
-                    <use xlink:href="#chevron-right" />
-                </svg>
-            </a>
-        </li>
-        {% endif %}
-    </ul>
+            {% endif %}
+        </ul>
+    </nav>
 {% endif %}
