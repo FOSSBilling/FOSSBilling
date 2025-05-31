@@ -37,7 +37,7 @@
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Activate order'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Activate order'|trans }}</label>
                 <div class="col">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="radioEnabledYes" type="radio" name="activate" value="1" checked>
@@ -67,6 +67,16 @@
             {% if admin.system_template_exists({ 'file': product_order }) %}
                 {% include product_order %}
             {% endif %}
+
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Mark invoice as paid'|trans }}</label>
+                <div class="col">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="mark_invoice_paid" name="mark_invoice_paid" value="1">
+                        <label class="form-check-label" for="mark_invoice_paid">{{ 'Confirm that the first invoice has already been paid by the client'|trans }}.</label>
+                    </div>
+                </div>
+            </div>
 
             <input type="hidden" name="client_id" value="{{ client.id }}">
             <input type="hidden" name="product_id" value="{{ product.id }}">

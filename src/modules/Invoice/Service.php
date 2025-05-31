@@ -421,6 +421,24 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * Finds all paid invoices associated with a given client order.
+     *
+     * @param \Model_ClientOrder $order The client order for which to find paid invoices.
+     * 
+     * @return array An array of paid invoices. Each element in the array represents an invoice record
+     *               as returned by the database, typically as an associative array or an object.
+     */
+    public function findPaidInvoicesForOrder(\Model_ClientOrder $order): array
+    {
+        $bindings = [
+            ':rel_id' => $order->id,
+            ':status' => \Model_Invoice::STATUS_PAID,
+        ];
+
+        return $this->di['db']->find('Invoice', 'id IN (SELECT invoice_id FROM invoice_item WHERE rel_id = :rel_id) AND status = :status', $bindings);
+    }
+
     public function getNextInvoiceNumber()
     {
         $systemService = $this->di['mod_service']('system');
