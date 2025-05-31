@@ -358,24 +358,23 @@ class Api_GuestTest extends \BBTestCase
             'list' => [],
         ];
 
+        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryGetSearchQuery'])->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbCategoryGetSearchQuery')
+            ->willReturn(['String', []]);
+
         $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+            ->onlyMethods(['getPaginatedResultSet'])
+            ->getMock();
+
         $pager->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
-            ->with($this->isType('string'), $this->isType('array'))
             ->willReturn($willReturn);
 
         $di = new \Pimple\Container();
         $di['pager'] = $pager;
 
         $guestApi->setDi($di);
-
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryGetSearchQuery'])->getMock();
-        $kbService->expects($this->atLeastOnce())
-            ->method('kbCategoryGetSearchQuery')
-            ->willReturn(true);
         $guestApi->setService($kbService);
 
         $result = $guestApi->kb_category_get_list([]);

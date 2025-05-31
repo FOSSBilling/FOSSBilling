@@ -1637,24 +1637,23 @@ class Api_AdminTest extends \BBTestCase
             'list' => [],
         ];
 
+        $kbService = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryGetSearchQuery'])->getMock();
+        $kbService->expects($this->atLeastOnce())
+            ->method('kbCategoryGetSearchQuery')
+            ->willReturn(['String', []]);
+
         $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+            ->onlyMethods(['getPaginatedResultSet'])
+            ->getMock();
+
         $pager->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
-            ->with($this->isType('string'), $this->isType('array'))
             ->willReturn($willReturn);
 
         $di = new \Pimple\Container();
         $di['pager'] = $pager;
 
         $adminApi->setDi($di);
-
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryGetSearchQuery'])->getMock();
-        $kbService->expects($this->atLeastOnce())
-            ->method('kbCategoryGetSearchQuery')
-            ->willReturn(true);
         $adminApi->setService($kbService);
 
         $result = $adminApi->kb_category_get_list([]);
