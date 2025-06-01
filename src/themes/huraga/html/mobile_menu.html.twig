@@ -16,6 +16,8 @@
     </li>
 {% endif %}
 
+{% if client or not settings.hide_menu %}
+
 {% if settings.side_menu_support %}
     <li class="nav-item">
         <a class="nav-link d-flex align-items-center gap-2" href="{{ '/support'|link }}">
@@ -91,6 +93,8 @@
         <h5 class="text-secondary d-block pb-1">{{ settings.sidebar_note_title }}</h5>
         <span>{{ settings.sidebar_note_content }}</span>
     </li>
+{% endif %}
+
 {% endif %}
 
 {% if settings.top_menu_signout %}
