@@ -156,7 +156,7 @@
                 {% include 'partial_menu.html.twig' %}
             </div>
         {% endif %}
-            <div class="col-12 col-md-9" {% if not client or not settings.hide_menu %} style="margin-left: auto; margin-right: auto;" {% endif %}>
+            <div class="col-12 col-md-9" {% if not client and settings.hide_menu %} style="margin-left: auto; margin-right: auto;" {% endif %}>
                 <div id="wrapper">
                     <section role="main">
                         {% block content_before %}{% endblock %}
