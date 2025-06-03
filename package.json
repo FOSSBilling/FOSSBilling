@@ -56,7 +56,7 @@
     "@ckeditor/ckeditor5-dev-utils": {
       "serialize-javascript": "^6.0.2"
     },
-    "@melloware/coloris": "^0.24.0",
+    "@melloware/coloris": "^0.25.0",
     "@tabler/core": {
       "apexcharts": "^4.3.0"
     },

@@ -9,7 +9,7 @@
   "dependencies": {
     "@babel/plugin-transform-class-properties": "^7.25.7",
     "@babel/plugin-transform-object-rest-spread": "^7.25.7",
-    "@melloware/coloris": "^0.24.0",
+    "@melloware/coloris": "^0.25.0",
     "@tabler/core": "^1.2.0",
     "apexcharts": "^4.3.0",
     "autosize": "^6.0.1",
