@@ -424,8 +424,8 @@ class Service implements InjectionAwareInterface
     /**
      * Finds all paid invoices associated with a given client order.
      *
-     * @param \Model_ClientOrder $order The client order for which to find paid invoices.
-     * 
+     * @param \Model_ClientOrder $order the client order for which to find paid invoices
+     *
      * @return array An array of paid invoices. Each element in the array represents an invoice record
      *               as returned by the database, typically as an associative array or an object.
      */
@@ -606,7 +606,7 @@ class Service implements InjectionAwareInterface
             $balanceTransaction->type = 'invoice';
             $balanceTransaction->rel_id = $invoice->id;
 
-            $invoiceIdentifier = $invoice->serie_nr ? $invoice->serie_nr : $invoice->id;
+            $invoiceIdentifier = $invoice->serie_nr ?: $invoice->id;
             $balanceTransaction->description = sprintf('Payment for invoice #%s using account credit', $invoiceIdentifier);
 
             $balanceTransaction->amount = -$required;
@@ -653,9 +653,7 @@ class Service implements InjectionAwareInterface
             return 0.0;
         }
 
-        $tax = round($taxable_subtotal * $invoice->taxrate / 100, 2);
-
-        return (float) $tax;
+        return round($taxable_subtotal * $invoice->taxrate / 100, 2);
     }
 
     public function getTotal(\Model_Invoice $invoice)
