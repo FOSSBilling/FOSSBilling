@@ -850,7 +850,7 @@ class Server_Manager_Directadmin extends Server_Manager
     /**
      * Retrieves the list of user packages on the DirectAdmin server.
      *
-     * @return array the list of user packages available on the DirectAdmin server.
+     * @return array the list of user packages available on the DirectAdmin server
      *
      * @throws Server_Exception if there is an error while sending the request to the server
      */
