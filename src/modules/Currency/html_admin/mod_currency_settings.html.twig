@@ -221,7 +221,7 @@
                             <div class="form-group mb-3 mt-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Currency exchange rate data provider'|trans }}</label>
                                 <div class="col-md-6">
-                                    <select class="form-select" aria-label="Currency data provider selection" name="provider" id="provider_select">
+                                    <select class="form-select" aria-label="{{ 'Currency data provider selection'|trans }}" name="provider" id="provider_select">
                                         <option value="exchangerate-api" selected>ExchangeRate-API</option>
                                         <option value="currency_data_api">Currency Data API</option>
                                         <option value="currencylayer">currencylayer</option>
@@ -240,7 +240,7 @@
                             <div class="form-group mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Automatic sync rate'|trans }}</label>
                                 <div class="col-md-6">
-                                    <select class="form-select" aria-label="Currency data provider selection" name="sync_rate" id="sync_rate">
+                                    <select class="form-select" aria-label="{{ 'Currency data provider selection'|trans }}" name="sync_rate" id="sync_rate">
                                         <option value="auto" id="auto-sync" selected>{{ 'Auto'|trans }}</option>
                                         <option value="never">{{ 'Never'|trans }}</option>
                                         <option value="1d">{{ 'Daily'|trans }}</option>

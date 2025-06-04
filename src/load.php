@@ -172,7 +172,7 @@ function exceptionHandler(Exception|Error $e)
     if (defined('DEBUG') && DEBUG && $filesystem->exists(PATH_VENDOR)) {
         /**
          * If advanced debugging is enabled, print Whoops instead of our error page.
-         * flip/whoops documentation: https://github.com/filp/whoops/blob/master/docs/API%20Documentation.md.
+         * filp/whoops documentation: https://github.com/filp/whoops/blob/master/docs/API%20Documentation.md.
          */
         $whoops = new Run();
         $prettyPage = new PrettyPageHandler();
