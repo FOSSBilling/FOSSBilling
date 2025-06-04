@@ -105,7 +105,7 @@
 
             //special class "page"
             document.querySelectorAll('#theme-settings select.page').forEach((el) => {
-                el.append(createOptionElement('', "{{ 'None' '|trans }}"));
+                el.append(createOptionElement('', "{{ 'None'|trans }}"));
                 Object.entries({{ admin.page_get_pairs|json_encode|raw }}).forEach(([key, value]) => {
                     el.append(createOptionElement(key, value));
                 })
