@@ -13,7 +13,7 @@
     {% set safeRequest = request|merge({ (pageParam): null }) %}
     {% set filteredRequest = safeRequest|filter(v => v is not null) %}
 
-    <nav aria-label="Pagination">
+    <nav aria-label="{{ 'Pagination'|trans }}">
         <ul class="pagination m-0">
             {% if paginator.currentpage != 1 %}
             <li class="page-item">
