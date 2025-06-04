@@ -49,7 +49,7 @@
             <header class="navbar navbar-expand-lg navbar-light d-print-none">
                <div class="container-xl">
                    <div class="d-flex gap-3 align-items-center">
-                       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+                       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="{{ 'Toggle navigation'|trans }}">
                            <span class="navbar-toggler-icon"></span>
                        </button>
                        <h1 class="d-none d-sm-flex navbar-brand d-none-navbar-horizontal pe-0 pe-md-3 a">
@@ -110,7 +110,7 @@
                         <a class="nav-link d-flex lh-1 text-reset p-0"
                            href="{{ 'staff/profile'|alink }}"
                            data-bs-toggle="dropdown"
-                           aria-label="Open user menu"
+                           aria-label="{{ 'Open user menu'|trans }}"
                            aria-expanded="false">
                            <span class="avatar avatar-sm" style="background-image: url({{ profile.email|gravatar }}&size=32)"></span>
                            <div class="d-none d-xl-block ps-2">
@@ -229,7 +229,7 @@
         {% include '../build/symbol/icons-sprite.svg' %}
     </div>
 
-    <button type="button" aria-label="Back to top" class="btn btn-floating btn-lg btn-icon hidden" id="back-to-top">
+    <button type="button" aria-label="{ 'Back to top'|trans }}" class="btn btn-floating btn-lg btn-icon hidden" id="back-to-top">
         <svg class="icon">
             <use xlink:href="#arrow-up" />
         </svg>

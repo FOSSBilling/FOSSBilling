@@ -52,7 +52,7 @@
                             </select>
                             {% if presets|length > 1 and current_preset != 'Default' %}
                                 <a href="{{ 'api/admin/theme/preset_delete'|link({ 'code': theme_code, 'preset': current_preset, 'CSRFToken': CSRFToken}) }}" class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                   data-api-confirm-btn="Delete"
+                                   data-api-confirm-btn="{{ 'Delete'|trans }}"
                                    data-api-type="danger"
                                    data-api-reload="1">
                                     <svg class="icon">
@@ -105,7 +105,7 @@
 
             //special class "page"
             document.querySelectorAll('#theme-settings select.page').forEach((el) => {
-                el.append(createOptionElement('', 'None'));
+                el.append(createOptionElement('', "{{ 'None' '|trans }}"));
                 Object.entries({{ admin.page_get_pairs|json_encode|raw }}).forEach(([key, value]) => {
                     el.append(createOptionElement(key, value));
                 })
@@ -113,7 +113,7 @@
 
             //special class "snippet"
             document.querySelectorAll('#theme-settings select.snippet').forEach((el) => {
-                el.append(createOptionElement('', 'None'));
+                el.append(createOptionElement('', "{{ 'None'|trans }}"));
                 Object.entries({{ snippets|json_encode|raw }}).forEach(([key, value]) => {
                     el.append(createOptionElement(key, value));
                 })
@@ -121,7 +121,7 @@
 
             //special class "product"
             document.querySelectorAll('#theme-settings select.product').forEach((el) => {
-                el.append(createOptionElement('', 'None'));
+                el.append(createOptionElement('', "{{ 'None'|trans }}"));
                 Object.entries({{ admin.product_get_pairs|json_encode|raw }}).forEach(([key, value]) => {
                     el.append(createOptionElement(key, value));
                 })

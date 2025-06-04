@@ -77,7 +77,7 @@
                 {% endif %}
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                        aria-expanded="false" aria-label="{{ 'Toggle navigation'|trans }}">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -163,7 +163,7 @@
                         <div class="content-block" role="main">
                             {% if settings.show_breadcrumb %}
                                 {% block breadcrumbs %}
-                                    <nav aria-label="breadcrumb">
+                                    <nav aria-label="{{ 'breadcrumb'|trans }}">
                                         <ol class="breadcrumb d-none d-md-flex">
                                             <li class="breadcrumb-item"><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a>
                                             </li>
@@ -239,7 +239,7 @@
                             </div>
                             {% if guest.extension_is_on({"mod":'branding'}) %}
                                 <div class="d-flex justify-content-center">
-                                    <span>Powered by the&nbsp;</span>
+                                    <span>{{ 'Powered by the'|trans }}&nbsp;</span>
                                     <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
                                         href="https://fossbilling.org" title="Billing Software"
                                        target="_blank">{{ 'FOSSBilling Community'|trans }}</a>
@@ -260,7 +260,7 @@
         <div class="spinner-border"
              style="width: 4rem; height: 4rem; top: 50%; left: 50%; position: fixed; z-index: 999"></div>
     </div>
-    <noscript>NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
+    <noscript>{{ 'NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both in your browser\'s preference settings.'|trans }}</noscript>
 
     {% endblock %}
 
