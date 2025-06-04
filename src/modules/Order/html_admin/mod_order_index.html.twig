@@ -283,7 +283,7 @@
                                             name="client_id"
                                             data-resturl="admin/client/get_pairs"
                                             data-csrf="{{ CSRFToken }}"
-                                            required>
+                                            required aria-required="true">
                                     </select>
                                 {% else %}
                                     {% set client = admin.client_get({ 'id': request.client_id }) %}
