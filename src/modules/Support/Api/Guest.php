@@ -118,7 +118,7 @@ class Guest extends \Api_Abstract
         $status = $data['status'] ?? null;
         $search = $data['search'] ?? null;
         $cat = $data['kb_article_category_id'] ?? null;
-        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $page = $data['page'] ?? null;
 
         $pager = $this->getService()->kbSearchArticles($status, $search, $cat, $per_page, $page);
@@ -170,8 +170,8 @@ class Guest extends \Api_Abstract
         $data['article_status'] = \Model_SupportKbArticle::ACTIVE;
         [$query, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
 
-        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
-        $pager = $this->di['pager']->getAdvancedResultSet($query, $bindings, $per_page);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
+        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, $per_page);
 
         $q = $data['q'] ?? null;
 

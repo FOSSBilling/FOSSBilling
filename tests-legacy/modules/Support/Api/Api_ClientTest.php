@@ -21,9 +21,12 @@ class Api_ClientTest extends \BBTestCase
                 ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getAdvancedResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($simpleResultArr);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)

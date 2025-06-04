@@ -48,7 +48,7 @@ class Service
         }
         $sql .= ' ORDER BY id DESC';
 
-        return $this->di['pager']->getSimpleResultSet($sql, $filter, $per_page, $page);
+        return $this->di['pager']->getPaginatedResultSet($sql, $filter, $per_page, $page);
     }
 
     public function deletePage($id)

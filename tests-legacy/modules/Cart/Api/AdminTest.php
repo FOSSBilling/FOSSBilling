@@ -22,9 +22,12 @@ class AdminTest extends \BBTestCase
             ],
         ];
 
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($simpleResultArr);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)

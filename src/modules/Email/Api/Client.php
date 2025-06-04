@@ -26,9 +26,9 @@ class Client extends \Api_Abstract
     {
         $client = $this->getIdentity();
         $data['client_id'] = $client->id;
-        $per_page = $data['per_page'] ?? $this->di['pager']->getPer_page();
+        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [

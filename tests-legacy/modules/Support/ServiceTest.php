@@ -2543,9 +2543,12 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
 
-        $pager = $this->getMockBuilder('Box_Pagination')->getMock();
+        $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $pager->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn($willReturn);
 
         $client = new \Model_Client();

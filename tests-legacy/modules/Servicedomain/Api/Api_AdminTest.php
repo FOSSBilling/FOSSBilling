@@ -200,9 +200,12 @@ class Api_AdminTest extends \BBTestCase
 
     public function testTldGetList(): void
     {
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
@@ -453,9 +456,12 @@ class Api_AdminTest extends \BBTestCase
 
     public function testRegistrarGetList(): void
     {
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)

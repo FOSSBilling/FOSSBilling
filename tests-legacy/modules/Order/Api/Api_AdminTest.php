@@ -52,9 +52,12 @@ class Api_AdminTest extends BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->willReturn(['query', []]);
 
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getAdvancedResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
@@ -526,9 +529,12 @@ class Api_AdminTest extends BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('getOrderStatusSearchQuery')
             ->willReturn(['query', []]);
 
-        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        ->onlyMethods(['getPaginatedResultSet'])
+        ->disableOriginalConstructor()
+        ->getMock();
         $paginatorMock->expects($this->atLeastOnce())
-            ->method('getSimpleResultSet')
+            ->method('getPaginatedResultSet')
             ->willReturn([]);
 
         $di = new Pimple\Container();
