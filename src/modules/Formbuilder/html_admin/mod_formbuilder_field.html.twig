@@ -4,7 +4,7 @@
             <form class="modal-content api-form" method="post" action="admin/formbuilder/update_field" name="field_form{{ field.id }}" data-api-reload="1">
                 <div class="modal-header">
                     <h5 class="modal-title">{{ 'Edit field'|trans }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">

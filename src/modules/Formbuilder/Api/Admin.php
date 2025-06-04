@@ -51,7 +51,7 @@ class Admin extends \Api_Abstract
      * @optional bool $hide_label - Option either hide label of field or not
      * @optional string $description - Description of a field
      * @optional mixed $default_value - Default value of field. If field is checkbox or radio this variable must be array, otherwise it is string
-     * @optional bool $required - Option wither field need to have "required" attribute (Not applicable for checkboxes)
+     * @optional bool $required - Option whether field needs to have "required" attribute (Not applicable for checkboxes)
      * @optional bool $hidden - Option either field should be hidden
      * @optional bool $readonly - Option either field needs to be readonly
      * @optional string $prefix - Prefix for "text" type fields
