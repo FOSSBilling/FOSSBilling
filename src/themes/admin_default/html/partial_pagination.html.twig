@@ -1,6 +1,6 @@
 {% if list.pages > 1 %}
     {% set pageParam = page_param|default('page') %}
-    {% set currentPageRaw = attribute(request, pageParam)|default(1) %}
+    {% set currentPageRaw = request.(pageParam)|default(1) %}
     {% if currentPageRaw matches '/^\\d+$/' %}
         {% set currentPage = currentPageRaw %}
     {% else %}

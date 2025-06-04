@@ -57,7 +57,7 @@ class Pagination implements InjectionAwareInterface
      *     list: array
      * }
      *
-     * @throws InformationException If the page or per-page value is invalid.
+     * @throws InformationException If the page/per-page value or the SQL query is invalid.
      */
     public function getPaginatedResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
     {
@@ -95,7 +95,7 @@ class Pagination implements InjectionAwareInterface
     /* Deprecated functions */
 
     /**
-     * @deprecated Use getPaginatedResultSet() instead.
+     * @deprecated 0.7.0, you should use getPaginatedResultSet() instead which is a drop in replacement.
      * @return array
      */
     public function getAdvancedResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
@@ -106,7 +106,7 @@ class Pagination implements InjectionAwareInterface
     }
 
     /**
-     * @deprecated Use getPaginatedResultSet() instead.
+     * @deprecated 0.7.0, you should use getPaginatedResultSet() instead which is a drop in replacement.
      * @return array
      */
     public function getSimpleResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
@@ -117,7 +117,7 @@ class Pagination implements InjectionAwareInterface
     }
 
     /**
-     * @deprecated Use getDefaultPerPage() instead.
+     * @deprecated 0.7.0, you should use getDefaultPerPage() instead which is a drop in replacement.
      * @return int
      */
     public function getPer_page(): int
