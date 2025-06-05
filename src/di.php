@@ -145,7 +145,7 @@ $di['db'] = function () use ($di) {
  * @return FOSSBilling\Pagination
  */
 $di['pager'] = function () use ($di) {
-    $service = new \FOSSBilling\Pagination();
+    $service = new FOSSBilling\Pagination();
     $service->setDi($di);
 
     return $service;

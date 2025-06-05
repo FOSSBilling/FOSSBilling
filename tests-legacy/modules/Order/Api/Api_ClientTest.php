@@ -40,7 +40,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
                 0 => ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -82,7 +82,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $serviceMock->expects($this->atLeastOnce())->method('getSoonExpiringActiveOrdersQuery')
             ->willReturn(['query', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
