@@ -210,7 +210,7 @@
                             <a href="{{ 'servicedomain/registrar/'|alink }}/{{ registrar.id }}">{{ registrar.title }}</a>
                         </td>
                         <td>
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_copy'|link({ 'id': registrar.id, 'CSRFToken': CSRFToken }) }}" data-api-reload="1" title="Install">
+                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_copy'|link({ 'id': registrar.id }) }}" data-api-reload="1" title="{{ 'Install'|trans }}">
                                 <svg class="icon">
                                     <use xlink:href="#copy" />
                                 </svg>
@@ -220,7 +220,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_delete'|link({ 'id': registrar.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_delete'|link({ 'id': registrar.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -239,8 +239,8 @@
 
                 <div class="">
                     <ul>
-                        <li>{{ 'Check domain registrar you are looking for is available at'|trans }} <a href="http://extensions.fossbilling.org/" target="_blank">FOSSBilling extensions site</a></li>
-                        <li>{{ 'Download domain registrar file and place to'|trans }} <strong>{{ constant('PATH_LIBRARY') }}/Registrar/Adapter</strong></li>
+                        <li>{{ 'Check domain registrar you are looking for is available at'|trans }} <a href="http://extensions.fossbilling.org/" target="_blank">{{ 'FOSSBilling extensions site'|trans }}</a></li>
+                        <li>{{ 'Download domain registrar file and place to'|trans }} <strong>{{ constant('PATH_LIBRARY') }}Registrar/Adapter</strong></li>
                         <li>{{ 'Reload this page to see newly detected domain registrar'|trans }}</li>
                         <li>{{ 'Click on install button. Now you will be able to create top level domains with new domain registrar'|trans }}</li>
                         <li>{{ 'For developers. Read'|trans }} <a href="https://fossbilling.org/docs" target="_blank">{{ 'FOSSBilling documentation'|trans }}</a> {{ 'to learn how to create your own domain registrar.'|trans }}</li>
@@ -261,7 +261,7 @@
                 <tr>
                     <td>{{ code }}</td>
                     <td>
-                        <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_install'|link({ 'code': code, 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Domain registrar installed'|trans }}" title="Install">
+                        <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_install'|link({ 'code': code, 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Domain registrar installed'|trans }}" title="{{ 'Install'|trans }}">
                             <svg  class="icon">
                                 <use xlink:href="#cog" />
                             </svg>
@@ -281,7 +281,7 @@
         </div>
 
         <div class="tab-pane fade" id="tab-extension-directory" role="tabpanel">
-            {% include "partial_extensions.html.twig" with { 'type': 'domain-registrar', 'header': 'List of domain registrars on the Extension Directory' } only %}
+            {% include "partial_extensions.html.twig" with { 'type': 'domain-registrar', 'header': 'List of domain registrars on the Extension Directory'|trans } only %}
         </div>
 
         <div class="tab-pane fade" id="tab-nameservers" role="tabpanel">

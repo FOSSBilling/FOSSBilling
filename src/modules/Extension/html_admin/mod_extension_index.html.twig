@@ -29,7 +29,7 @@
                 <div class="tab-pane fade active show" id="tab-index" role="tabpanel">
                     <div class="card-header">
                         <div>
-                            <h3 class="card-title">FOSSBilling extensions</h3>
+                            <h3 class="card-title">{{ 'FOSSBilling extensions'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Activate or deactivate extensions'|trans }}</p>
                         </div>
                     </div>
@@ -117,8 +117,8 @@
                 <div class="tab-pane fade" id="tab-store" role="tabpanel">
                     <div class="card-header">
                         <div>
-                            <h3 class="card-title">Modules on the extension directory</h3>
-                            <p class="card-subtitle">These are all modules available for installation from the <a href="https://extensions.fossbilling.org/">extension directory</a> at the click of a button.</p>
+                            <h3 class="card-title">{{ 'Modules on the extension directory'|trans }}</h3>
+                            <p class="card-subtitle">{{ 'These are all modules available for installation from the <a href="https://extensions.fossbilling.org/">extension directory</a> at the click of a button.'|trans|raw }}</p>
                         </div>
                     </div>
                     {% include 'partial_extensions.html.twig' %}
@@ -132,33 +132,33 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <h3>More extensions</h3>
-                        <p>If you cannot find the extensions you are looking for in the admin area, please visit the extension directory at <a href="https://extensions.fossbilling.org" target="_blank">https://extensions.fossbilling.org</a>.</p>
+                        <h3>{{ 'More extensions'|trans }}</h3>
+                        <p>{{ 'If you cannot find the extensions you are looking for in the admin area, please visit the extension directory at <a href="https://extensions.fossbilling.org" target="_blank">https://extensions.fossbilling.org</a>.'|trans|raw }}</p>
 
-                        <h3>How to create a new extension</h3>
+                        <h3>{{ 'How to create a new extension'|trans }}</h3>
                         <ul>
-                            <li>Create a <a href="https://github.com/signup/free" target="_blank">GitHub</a> account for free.</li>
-                            <li>Create a new public repository dedicated to the extension only.</li>
-                            <li>The repository must have a valid manifest file for your extension in the JSON format. For more information, please refer <a href="https://github.com/FOSSBilling/example-extension" target="_blank">to our example extension</a>.</li> {# @TODO: Replace with some actual form of documentation #}
-                            <li>Create a pull request <a href="https://github.com/FOSSBilling/extension-directory">here</a>.</li>
-                            <li>The FOSSBilling team will review your extension and contact you if there are any issues.</li>
-                            <li>Registered extensions will then appear on the extension directory.</li>
+                            <li>{{ 'Create a <a href="https://github.com/signup/free" target="_blank">GitHub</a> account for free.'|trans|raw }}</li>
+                            <li>{{ 'Create a new public repository dedicated to the extension only.'|trans }}</li>
+                            <li>{{ 'The repository must have a valid manifest file for your extension in the JSON format. For more information, please refer <a href="https://github.com/FOSSBilling/example-extension" target="_blank">to our example extension</a>.'|trans|raw }}</li> {# @TODO: Replace with some actual form of documentation #}
+                            <li>{{ 'Create a pull request <a href="https://github.com/FOSSBilling/extension-directory">here</a>.'|trans|raw }}</li>
+                            <li>{{ 'The FOSSBilling team will review your extension and contact you if there are any issues.'|trans }}</li>
+                            <li>{{ 'Registered extensions will then appear on the extension directory.'|trans }}</li>
                         </ul>
 
-                        <h3>Supported extension types</h3>
+                        <h3>{{ 'Supported extension types'|trans }}</h3>
                         <ul>
-                            <li>Payment gateways</li>
-                            <li>Server managers</li>
-                            <li>Domain registrars</li>
-                            <li>Client area themes</li>
-                            <li>Admin area themes</li>
-                            <li>Translations for client and admin areas</li>
-                            <li>Event hooks - Hooks can be injected into the process, change its behaviour, stop executing actions</li>
-                            <li>API module - External program which uses FOSSBilling API</li>
+                            <li>{{ 'Payment gateways'|trans }}</li>
+                            <li>{{ 'Server managers'|trans }}</li>
+                            <li>{{ 'Domain registrars'|trans }}</li>
+                            <li>{{ 'Client area themes'|trans }}</li>
+                            <li>{{ 'Admin area themes'|trans }}</li>
+                            <li>{{ 'Translations for client and admin areas'|trans }}</li>
+                            <li>{{ 'Event hooks - Hooks can be injected into the process, change its behaviour, stop executing actions'|trans }}</li>
+                            <li>{{ 'API module - External program which uses FOSSBilling API'|trans }}</li>
                         </ul>
 
-                        <h3>Extension support</h3>
-                        <p>Contact extensions developers directly for support. You can find issue tracker on the extension directory.</p>
+                        <h3>{{ 'Extension support'|trans }}</h3>
+                        <p>{{ 'Contact extensions developers directly for support. You can find issue tracker on the extension directory.'|trans }}</p>
                     </div>
                 </div>
 

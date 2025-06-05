@@ -332,7 +332,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Changes status without performing action'|trans }}</label>
                         <div class="col">
-                            {{ mf.selectbox('status', admin.order_get_status_pairs, order.status, 0, 'Select status') }}
+                            {{ mf.selectbox('status', admin.order_get_status_pairs, order.status, 0, 'Select status'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -356,7 +356,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Period'|trans }}</label>
                         <div class="col">
-                            {{ mf.selectbox('period', guest.system_periods, order.period, 0, 'Not recurrent') }}
+                            {{ mf.selectbox('period', guest.system_periods, order.period, 0, 'Not recurrent'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">

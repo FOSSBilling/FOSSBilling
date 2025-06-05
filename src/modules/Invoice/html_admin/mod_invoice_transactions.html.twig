@@ -34,19 +34,19 @@
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}</label>
                 <div class="col">
-                    {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All currencies') }}
+                    {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All currencies'|trans) }}
                 </div>
             </div>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
                 <div class="col">
-                    {{ mf.selectbox('status', admin.invoice_transaction_get_statuses_pairs, request.status, 0, 'All statuses') }}
+                    {{ mf.selectbox('status', admin.invoice_transaction_get_statuses_pairs, request.status, 0, 'All statuses'|trans) }}
                 </div>
             </div>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>
                 <div class="col">
-                    {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'All payment gateways') }}
+                    {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'All payment gateways'|trans) }}
                 </div>
             </div>
             <div class="mb-3 row">
