@@ -403,7 +403,8 @@
         "Prins",
         "iplookup",
         "DDEV",
-        "CSRF"
+        "CSRF",
+        "undismissed"
     ],
     "ignorePaths": [
         "tests-legacy/**",
