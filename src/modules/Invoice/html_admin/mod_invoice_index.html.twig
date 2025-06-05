@@ -45,7 +45,7 @@
                 <div class="mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}</label>
                     <div class="col">
-                        {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All currencies') }}
+                        {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All currencies'|trans) }}
                     </div>
                 </div>
                 <div class="mb-3 row">

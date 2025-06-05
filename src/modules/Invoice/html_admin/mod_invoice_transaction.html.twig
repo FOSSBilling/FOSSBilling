@@ -83,7 +83,7 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'IP'|trans }}</td>
-                            <td>{{ transaction.ip }} {{ transaction.ip|ipcountryname|default('Unknown') }}</td>
+                            <td>{{ transaction.ip }} {{ transaction.ip|ipcountryname|default('Unknown'|trans) }}</td>
                         </tr>
                         {% if transaction.note %}
                         <tr>
@@ -154,7 +154,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>
                         <div class="col">
-                            {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, transaction.gateway_id, 0, 'Select payment gateway') }}
+                            {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, transaction.gateway_id, 0, 'Select payment gateway'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -175,13 +175,13 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Transaction type'|trans }}:</label>
                         <div class="col">
-                            {{ mf.selectbox('type', admin.invoice_transaction_types, transaction.type, 0, 'Select transaction type') }}
+                            {{ mf.selectbox('type', admin.invoice_transaction_types, transaction.type, 0, 'Select transaction type'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Transaction status on Payment Gateway'|trans }}:</label>
                         <div class="col">
-                            {{ mf.selectbox('txn_status', admin.invoice_transaction_gateway_statuses, transaction.txn_status, 0, 'Select status') }}
+                            {{ mf.selectbox('txn_status', admin.invoice_transaction_gateway_statuses, transaction.txn_status, 0, 'Select status'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">

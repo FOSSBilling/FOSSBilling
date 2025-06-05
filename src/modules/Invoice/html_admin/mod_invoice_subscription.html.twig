@@ -87,7 +87,7 @@
 
                 <div class="body footer text-center">
                     <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id, 'CSRFToken': CSRFToken }) }}"
+                        href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-redirect="{{ 'invoice/subscriptions'|alink }}">
                         <svg class="icon icon-tabler" width="24" height="24">
@@ -105,7 +105,7 @@
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>
                             <div class="col">
-                                {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, subscription.gateway.id, 0, 'Select payment gateway') }}
+                                {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, subscription.gateway.id, 0, 'Select payment gateway'|trans) }}
                             </div>
                         </div>
                         <div class="mb-3 row">
@@ -130,7 +130,7 @@
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Period'|trans }}:</label>
                             <div class="col">
-                                {{ mf.selectbox('period', guest.system_periods, subscription.period, 1, 'Select period') }}
+                                {{ mf.selectbox('period', guest.system_periods, subscription.period, 1, 'Select period'|trans) }}
                             </div>
                         </div>
                         <div class="mb-3 row">
@@ -142,7 +142,7 @@
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}</label>
                             <div class="col">
-                                {{ mf.selectbox('currency', guest.currency_get_pairs, subscription.currency, 1, 'Select currency') }}
+                                {{ mf.selectbox('currency', guest.currency_get_pairs, subscription.currency, 1, 'Select currency'|trans) }}
                             </div>
                         </div>
 
