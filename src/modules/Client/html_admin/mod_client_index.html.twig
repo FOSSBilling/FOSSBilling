@@ -198,7 +198,7 @@
     <div class="card">
         <div class="tab-content">
             <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                {% include 'partial_search.html.twig' %}
+                {{ include('partial_search.html.twig') }}
                 <div class="table-responsive">
                     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                         <thead>
@@ -277,8 +277,8 @@
 
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <div>
-                        {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/client/batch_delete' } %}
-                        {% include 'partial_pagination.html.twig' with { 'list': clients, 'url': 'client' } %}
+                        {{ include('partial_batch_delete.html.twig', { 'action': 'admin/client/batch_delete' }) }}
+                        {{ include('partial_pagination.html.twig', { 'list': clients, 'url': 'client' }) }}
                     </div>
                     <div>
                         <a class="btn btn-secondary" href="{{ '/api/admin/client/export_csv'|link({ 'CSRFToken': CSRFToken }) }}" title="{{ 'Export Clients'|trans }}">

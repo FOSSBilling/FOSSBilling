@@ -43,7 +43,7 @@
                 <div class="card-header">
                     <h3 class="card-title">{{ 'Promo codes'|trans }}</h3>
                     <div class="card-actions">
-                        {% include 'partial_search_action.html.twig' %}
+                        {{ include('partial_search_action.html.twig') }}
                     </div>
                 </div>
                 <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -114,7 +114,7 @@
                     </tbody>
                 </table>
 
-                {% include 'partial_pagination.html.twig' with { 'list': promos, 'url': 'product/promos' } %}
+                {{ include('partial_pagination.html.twig', { 'list': promos, 'url': 'product/promos' }) }}
             </div>
 
             <div class="tab-pane fade" id="tab-new" role="tabpanel">

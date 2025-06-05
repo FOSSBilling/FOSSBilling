@@ -38,7 +38,7 @@
             <div class="card-header">
                 <h3 class="card-title">{{ 'Products'|trans }}</h3>
                 <div class="card-actions">
-                    {% include 'partial_search_action.html.twig' %}
+                    {{ include('partial_search_action.html.twig') }}
                 </div>
             </div>
             <div class="table-responsive">
@@ -98,7 +98,7 @@
                         </tbody>
                     </table>
 
-                    {% include 'partial_pagination.html.twig' with { 'list': products, 'url': 'product' } %}
+                    {{ include('partial_pagination.html.twig', { 'list': products, 'url': 'product' }) }}
 
                     <div class="card-footer text-end">
                         <button type="submit" class="btn btn-primary">

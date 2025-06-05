@@ -10,15 +10,15 @@
             <div class="card-body p-1">
                 <div id="orderManager" class="accordion">
 
-                    {% include 'mod_orderbutton_choose_product.html.twig' %}
+                    {{ include('mod_orderbutton_choose_product.html.twig') }}
 
-                    {% include 'mod_orderbutton_product_configuration.html.twig' %}
+                    {{ include('mod_orderbutton_product_configuration.html.twig') }}
 
                     {% if not client %}
-                        {% include 'mod_orderbutton_client.html.twig' %}
+                        {{ include('mod_orderbutton_client.html.twig') }}
                     {% endif %}
 
-                    {% include 'mod_orderbutton_checkout.html.twig' %}
+                    {{ include('mod_orderbutton_checkout.html.twig') }}
 
                     <div class="accordion-item">
                         <h2 class="accordion-header">

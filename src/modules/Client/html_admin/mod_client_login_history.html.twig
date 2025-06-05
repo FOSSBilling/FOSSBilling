@@ -12,7 +12,7 @@
         <h5>{{ 'Client login history'|trans }}</h5>
     </div>
 
-    {% include 'partial_search.html.twig' %}
+    {{ include('partial_search.html.twig') }}
     <table class="table card-table table-vcenter table-striped text-nowrap">
         <thead>
             <tr>
@@ -66,8 +66,8 @@
     </table>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
-        {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/client/batch_delete_log' } %}
-        {% include 'partial_pagination.html.twig' with { 'list': history, 'url': 'client/logins' } %}
+        {{ include('partial_batch_delete.html.twig', { 'action': 'admin/client/batch_delete_log' }) }}
+        {{ include('partial_pagination.html.twig', { 'list': history, 'url': 'client/logins' }) }}
     </div>
 </div>
 {% endblock %}

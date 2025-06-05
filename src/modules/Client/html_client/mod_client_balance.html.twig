@@ -55,8 +55,7 @@
                         </tr>
                         </tfoot>
                     </table>
-                    {% include "partial_pagination.html.twig" with { 'list': transactions } %}
-
+                    {{ include('partial_pagination.html.twig', { 'list': transactions }) }}
                 </div>
             </div>
         </div>

@@ -207,8 +207,8 @@
                 <fieldset>
                     {% for i,field in form.fields %}
                         <div class="wrap-field">
-                            {% include 'mod_formbuilder_field.html.twig' with field %}
-                            {% include 'mod_formbuilder_preview.html.twig' with field %}
+                            {{ include('mod_formbuilder_field.html.twig', field) }}
+                            {{ include('mod_formbuilder_preview.html.twig', field) }}
                         </div>
                     {% endfor %}
                 </fieldset>

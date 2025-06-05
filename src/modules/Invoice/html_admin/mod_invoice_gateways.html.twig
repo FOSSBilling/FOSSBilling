@@ -32,7 +32,7 @@
 <div class="card">
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            {% include 'partial_search.html.twig' %}
+            {{ include('partial_search.html.twig') }}
             <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
                     <tr>
@@ -140,7 +140,7 @@
         </div>
 
         <div class="tab-pane fade" id="tab-extension-directory" role="tabpanel">
-            {% include "partial_extensions.html.twig" with {'type': 'payment-gateway', 'header':"List of payment gateways on the Extension Directory"} only %}
+            {{ include('partial_extensions.html.twig', { 'type': 'payment-gateway', 'header': 'List of payment gateways on the Extension Directory' }, with_context = false) }}
         </div>
     </div>
 </div>

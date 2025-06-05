@@ -138,7 +138,7 @@
                                     {{ 'New Helpdesk'|trans }}
                                 </a>
                             </div>
-                            {% include 'partial_search.html.twig' %}
+                            {{ include('partial_search.html.twig') }}
                         </div>
                     <table class="table card-table table-vcenter table-striped text-nowrap">
                         <thead>
@@ -191,7 +191,7 @@
         </div>
     </div>
 
-{% include 'modal/mod_support_new_helpdesk.html.twig' %}
+{{ include('modal/mod_support_new_helpdesk.html.twig') }}
 {% endblock %}
 
 {% block js %}

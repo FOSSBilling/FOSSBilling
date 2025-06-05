@@ -172,7 +172,7 @@
         <div class="card-body">
             <div class="d-flex">
                 <h5>{{ 'Reply as'|trans }} {{ profile.name }}</h5>
-                <div class="ms-auto">{% include 'mod_support_canned_selector.html.twig' %}</div>
+                <div class="ms-auto">{{ include('mod_support_canned_selector.html.twig') }}</div>
             </div>
 
             <textarea name="content" rows="10" required class="bb-textarea" id="rt">{{ 'Hello'|trans }} {{ ticket.client.first_name }},
