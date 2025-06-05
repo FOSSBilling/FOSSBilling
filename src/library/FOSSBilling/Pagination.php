@@ -16,8 +16,8 @@ class Pagination implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
 
-    const MAX_PER_PAGE = PHP_INT_MAX; // If we ever want to enforce a limit
-    const DEFAULT_PER_PAGE = 100;
+    public const MAX_PER_PAGE = PHP_INT_MAX; // If we ever want to enforce a limit
+    public const DEFAULT_PER_PAGE = 100;
 
     public function setDi(?\Pimple\Container $di): void
     {
@@ -31,8 +31,6 @@ class Pagination implements InjectionAwareInterface
 
     /**
      * Get the system-wide default number of results per page.
-     *
-     * @return int
      */
     public function getDefaultPerPage(): int
     {
@@ -42,12 +40,12 @@ class Pagination implements InjectionAwareInterface
     /**
      * Paginate a SQL query using a simple LIMIT clause and a secondary count query.
      *
-     * @param string     $query          The base SQL query without LIMIT.
-     * @param array      $params         The values to bind to the query.
-     * @param int|null   $perPage        Optional number of items per page. (defaults to 100)
-     * @param int|null   $page           Optional current page number. (grabbed from query parameters by default)
-     * @param string     $pageParam      Query parameter key for the page number (default: "page").
-     * @param string     $perPageParam   Query parameter key for the per-page count (default: "per_page").
+     * @param string   $query        the base SQL query without LIMIT
+     * @param array    $params       the values to bind to the query
+     * @param int|null $perPage      Optional number of items per page. (defaults to 100)
+     * @param int|null $page         Optional current page number. (grabbed from query parameters by default)
+     * @param string   $pageParam    query parameter key for the page number (default: "page")
+     * @param string   $perPageParam query parameter key for the per-page count (default: "per_page")
      *
      * @return array{
      *     pages: int,
@@ -57,7 +55,7 @@ class Pagination implements InjectionAwareInterface
      *     list: array
      * }
      *
-     * @throws InformationException If the page/per-page value or the SQL query is invalid.
+     * @throws InformationException if the page/per-page value or the SQL query is invalid
      */
     public function getPaginatedResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
     {
@@ -66,9 +64,15 @@ class Pagination implements InjectionAwareInterface
         $page ??= filter_var($request->query->get($pageParam), FILTER_VALIDATE_INT, ['options' => ['default' => 1]]);
         $perPage ??= filter_var($request->query->get($perPageParam), FILTER_VALIDATE_INT, ['options' => ['default' => $this->getDefaultPerPage()]]);
 
-        if ($page < 1) throw new InformationException("Page number ($pageParam) must be a positive integer.");
-        if ($perPage < 1) throw new InformationException("The number of items per page ($perPageParam) must be a positive integer.");
-        if ($perPage > self::MAX_PER_PAGE) throw new InformationException("The number of items per page ($perPageParam) must be below the maximum allowed amount (". self::MAX_PER_PAGE .").");
+        if ($page < 1) {
+            throw new InformationException("Page number ($pageParam) must be a positive integer.");
+        }
+        if ($perPage < 1) {
+            throw new InformationException("The number of items per page ($perPageParam) must be a positive integer.");
+        }
+        if ($perPage > self::MAX_PER_PAGE) {
+            throw new InformationException("The number of items per page ($perPageParam) must be below the maximum allowed amount (" . self::MAX_PER_PAGE . ').');
+        }
 
         $offset = ($page - 1) * $perPage;
 
@@ -77,7 +81,9 @@ class Pagination implements InjectionAwareInterface
 
         // Attempt to construct count query more reliably
         $fromPos = stripos($query, 'FROM');
-        if ($fromPos === false) throw new InformationException('Invalid SQL query. Missing FROM clause.');
+        if ($fromPos === false) {
+            throw new InformationException('Invalid SQL query. Missing FROM clause.');
+        }
 
         $query = rtrim($query, " ;\n\r\t");
         $countQuery = 'SELECT COUNT(1) FROM (' . $query . ') AS sub';
@@ -93,10 +99,8 @@ class Pagination implements InjectionAwareInterface
     }
 
     /* Deprecated functions */
-
     /**
      * @deprecated 0.7.0, you should use getPaginatedResultSet() instead which is a drop in replacement.
-     * @return array
      */
     public function getAdvancedResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
     {
@@ -107,7 +111,6 @@ class Pagination implements InjectionAwareInterface
 
     /**
      * @deprecated 0.7.0, you should use getPaginatedResultSet() instead which is a drop in replacement.
-     * @return array
      */
     public function getSimpleResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
     {
@@ -118,7 +121,6 @@ class Pagination implements InjectionAwareInterface
 
     /**
      * @deprecated 0.7.0, you should use getDefaultPerPage() instead which is a drop in replacement.
-     * @return int
      */
     public function getPer_page(): int
     {
