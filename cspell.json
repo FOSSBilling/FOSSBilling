@@ -25,7 +25,7 @@
         "recognised",
         "fordnox",
         "Dockerized",
-        "proccess",
+        "process",
         "unsuspended",
         "admdly",
         "Pictogrammers",
@@ -289,7 +289,7 @@
         "xaxis",
         "yaxis",
         "susp",
-        "cancelation",
+        "cancellation",
         "inps",
         "ptitle",
         "PLUGINNAME",
@@ -403,7 +403,8 @@
         "Prins",
         "iplookup",
         "DDEV",
-        "CSRF"
+        "CSRF",
+        "undismissed"
     ],
     "ignorePaths": [
         "tests-legacy/**",

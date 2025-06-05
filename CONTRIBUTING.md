@@ -27,7 +27,7 @@ We've tried to keep this document as short as possible but there is a lot of inf
 
 [Style Guides](#styleguides)
 
-[But, I still have a question!](#but-i=stil-have-a-question)
+[But, I still have a question!](#but-i-still-have-a-question)
 
 
 ## Why should I contribute?

@@ -1,7 +1,7 @@
 <div id="cookie-consent-block" class="container position-fixed bottom-0 left-0 block">
     <div class="rounded-0 mb-0 alert alert-primary alert-dismissible fade show" role="alert">
         {{ guest.cookieconsent_message }}
-        <button id="close-cookie-consent-btn" type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button id="close-cookie-consent-btn" type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
     </div>
 </div>
 <script type="text/javascript">

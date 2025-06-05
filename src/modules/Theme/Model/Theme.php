@@ -97,7 +97,7 @@ class Theme
      */
     public function getSettingsPageHtml()
     {
-        $spp = $this->getPathConfig() . DIRECTORY_SEPARATOR . 'settings.html';
+        $spp = $this->getPathConfig() . DIRECTORY_SEPARATOR . 'settings.html.twig';
         if (!file_exists($spp)) {
             error_log('Theme ' . $this->getName() . ' does not have settings page');
 

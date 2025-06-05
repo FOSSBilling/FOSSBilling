@@ -17,26 +17,26 @@
             </div>
         {% endif %}
         {% if alert.dismissible %}
-            <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+            <a class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></a>
         {% endif %}
     </div>
     {% endfor %}
     {% for msg in admin.system_messages({ 'type': 'danger' }) %}
     <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
         <strong>{{ 'Danger!'|trans }}</strong> {% if msg.url is not empty %}<a href="{{ msg.url }}">{{ msg.text }}</a>{% else %} {{ msg.text }} {% endif %}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
     </div>
     {% endfor %}
     {% for msg in admin.system_messages({ 'type': 'warning' }) %}
     <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
         <strong>{{ 'Warning'|trans }}:</strong> {% if msg.url is not empty %}<a href="{{ msg.url }}">{{ msg.text }}</a>{% else %} {{ msg.text }} {% endif %}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
     </div>
     {% endfor %}
     {% for msg in admin.system_messages({ 'type': 'info' }) %}
     <div class="alert alert-primary alert-dismissible fade show mb-3" role="alert">
         <strong>{{ 'Information'|trans }}:</strong> {% if msg.url is not empty %}<a href="{{ msg.url }}">{{ msg.text }}</a>{% else %} {{ msg.text }} {% endif %}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
     </div>
     {% endfor %}
 

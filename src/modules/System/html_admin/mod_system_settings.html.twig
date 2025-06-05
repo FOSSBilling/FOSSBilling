@@ -590,7 +590,7 @@ ZW=Zimbabwe
                             
                             <div class="col-12 col-lg-3">
                                 <label for="interface">{{"Select the default network interface:"|trans }}</label>
-                                <select class="form-select" aria-label="Available network interfaces" name="interface" id="interface">
+                                <select class="form-select" aria-label="{{ 'Available network interfaces'|trans }}" name="interface" id="interface">
                                     <option value="0" {% if constant('BIND_TO') == 0 %} selected {%endif%}>{{ 'None (Default PHP Behavior)'|trans }}</option>
                                     {% for i, interface in interface_ips %}
                                     <option value="{{ interface }}" {% if constant('BIND_TO') == interface %} selected {% endif %}>{{ interface }}</option>
