@@ -70,21 +70,13 @@
                         <td>{% for pid,product in promo.applies_to %}
                             <a href="{{ 'product/manage'|alink }}/{{ pid }}">{{ product|truncate(15) }}</a><br/>
                             {% else %}
-<<<<<<< HEAD
                             {{ 'All Products'|trans }}
-=======
-                            {{ 'All products'|trans }}
->>>>>>> ce692b874b52d668601dfaf818c01acdee16823a
                             {% endfor %}
                         </td>
                         <td>{% for cid,client_group in promo.cgroups %}
                             <a href="{{ 'client/group'|alink }}/{{ cid }}">{{ client_group|truncate(15) }}</a><br/>
                             {% else %}
-<<<<<<< HEAD
                             {{ 'All Client groups'|trans }}
-=======
-                            {{ 'All client groups'|trans }}
->>>>>>> ce692b874b52d668601dfaf818c01acdee16823a
                             {% endfor %}
                         </td>
                         <td>
