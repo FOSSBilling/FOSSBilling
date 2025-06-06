@@ -511,7 +511,6 @@ class AdminTest extends \BBTestCase
 
         $data = [];
 
-
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')

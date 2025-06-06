@@ -52,7 +52,7 @@ class Api_AdminTest extends BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->willReturn(['query', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -529,7 +529,7 @@ class Api_AdminTest extends BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('getOrderStatusSearchQuery')
             ->willReturn(['query', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();

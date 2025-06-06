@@ -16,7 +16,7 @@ class AdminTest extends \BBTestCase
                 ],
             ],
         ];
-        
+
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getSearchQuery')
