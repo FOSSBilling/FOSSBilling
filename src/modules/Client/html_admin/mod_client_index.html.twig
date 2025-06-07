@@ -44,7 +44,7 @@
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Group'|trans }}:</label>
                     <div class="col">
-                        {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'All groups') }}
+                        {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'All groups'|trans) }}
                     </div>
                 </div>
 
@@ -311,7 +311,7 @@
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Group'|trans }}:</label>
                             <div class="col">
-                                {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select group') }}
+                                {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select group'|trans) }}
                             </div>
                         </div>
                         <div class="form-group mb-3 row">
@@ -367,7 +367,7 @@
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
                             <div class="col">
-                                {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Select country') }}
+                                {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Select country'|trans) }}
                             </div>
                         </div>
                         <div class="form-group mb-3 row">
@@ -390,7 +390,7 @@
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}:</label>
                             <div class="col">
-                                {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'Select currency') }}
+                                {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'Select currency'|trans) }}
                             </div>
                         </div>
                         <div class="form-group mb-3 row">

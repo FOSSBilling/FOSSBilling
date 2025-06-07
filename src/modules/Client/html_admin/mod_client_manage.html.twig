@@ -210,7 +210,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Group'|trans }}:</label>
                         <div class="col">
-                            {{ mf.selectbox('group_id', admin.client_group_get_pairs, client.group_id, 0, 'Select group') }}
+                            {{ mf.selectbox('group_id', admin.client_group_get_pairs, client.group_id, 0, 'Select group'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -294,7 +294,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
                         <div class="col">
-                            {{ mf.selectbox('country', guest.system_countries, client.country, 0, 'Select country') }}
+                            {{ mf.selectbox('country', guest.system_countries, client.country, 0, 'Select country'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -345,7 +345,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}:</label>
                         <div class="col">
-                            {{ mf.selectbox('currency', guest.currency_get_pairs, client.currency, 0, 'Select currency') }}
+                            {{ mf.selectbox('currency', guest.currency_get_pairs, client.currency, 0, 'Select currency'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -742,7 +742,7 @@
                         {% for i, login in logins.list %}
                         <tr>
                             <td>{{ login.ip|iplookup }}</td>
-                            <td>{{ login.ip|ipcountryname|default('Unknown') }}</td>
+                            <td>{{ login.ip|ipcountryname|default('Unknown'|trans) }}</td>
                             <td>{{ login.created_at|format_datetime }}</td>
                         </tr>
                         {% else %}

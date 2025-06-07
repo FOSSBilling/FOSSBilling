@@ -2,7 +2,7 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}System activity{% endblock %}
+{% block meta_title %}{{ 'System activity'|trans }}{% endblock %}
 
 {% set active_menu = 'activity' %}
 
@@ -61,7 +61,7 @@
             </td>
             <td>{{ event.message }}</td>
             <td>{{ event.ip|iplookup }}</td>
-            <td>{{ event.ip|ipcountryname|default('Unknown') }}</td>
+            <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
             <td>{{ event.created_at|format_datetime }}</td>
             <td>
                 <a class="btn btn-icon api-link"

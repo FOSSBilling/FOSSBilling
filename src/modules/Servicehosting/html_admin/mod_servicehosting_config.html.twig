@@ -7,13 +7,13 @@
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Server'|trans }}:</label>
             <div class="col">
-                {{ mf.selectbox('config[server_id]', admin.servicehosting_server_get_pairs, product.config.server_id, 0, 'Select server') }}
+                {{ mf.selectbox('config[server_id]', admin.servicehosting_server_get_pairs, product.config.server_id, 0, 'Select server'|trans) }}
             </div>
         </div>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Hosting plan'|trans }}:</label>
             <div class="col">
-                {{ mf.selectbox('config[hosting_plan_id]', admin.servicehosting_hp_get_pairs, product.config.hosting_plan_id, 0, 'Select hosting plan') }}
+                {{ mf.selectbox('config[hosting_plan_id]', admin.servicehosting_hp_get_pairs, product.config.hosting_plan_id, 0, 'Select hosting plan'|trans) }}
             </div>
         </div>
         <div class="mb-3 row">

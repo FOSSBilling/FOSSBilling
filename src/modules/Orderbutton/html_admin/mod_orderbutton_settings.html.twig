@@ -80,7 +80,7 @@
                         <div class="card-body">
 
                             <div class="row mb-3">
-                                <label class="col-sm-4 col-md-3 col-form-label">Sizing</label>
+                                <label class="col-sm-4 col-md-3 col-form-label">{{ 'Sizing'|trans }}</label>
                                 <div class="col-sm-7 col-md-6">
                                     <div class="row mb-2">
                                         <div class="col">
@@ -102,7 +102,7 @@
                             </div>
 
                             <div class="row mb-3">
-                                <label class="col-sm-4 col-md-3 col-form-label">Background</label>
+                                <label class="col-sm-4 col-md-3 col-form-label">{{ 'Background'|trans }}</label>
                                 <div class="col-sm-7 col-md-6">
                                     <div class="row mb-2">
                                         <div class="col">
@@ -198,7 +198,7 @@
                                 <label>{{ 'will open a popup window for'|trans }}</label>
                             </div>
                             <div class="col-8 col-sm-2 d-flex align-items-center mb-2">
-                                {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All products') }}
+                                {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All products'|trans) }}
                             </div>
                             <div class="col-4 col-sm-auto d-flex align-items-center mb-2">
                                 <label>{{ 'symbols'|trans }}</label>
@@ -242,7 +242,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <span class="d-block mt-3">{{ 'data-product attribute value will be overridden if popup\'s product is selected from select-box above'|trans }}</span>
+                                <span class="d-block mt-3">{{ "data-product attribute value will be overridden if popup's product is selected from select-box above"|trans }}</span>
                             </div>
                         </div>
                     </div>

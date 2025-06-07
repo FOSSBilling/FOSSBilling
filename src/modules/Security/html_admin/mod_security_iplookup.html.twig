@@ -20,7 +20,7 @@
         <form method="post" action="{{'api/admin/security/ip_lookup'|link({ 'CSRFToken': CSRFToken }) }}"
             class="api-form" data-api-jsonp="appendResult">
             <div class="d-flex">
-                <input type="text" name="ip" class="form-control me-2" placeholder="IP address to lookup" {% if request.ip %}value="{{ request.ip }}"{% endif %}>
+                <input type="text" name="ip" class="form-control me-2" placeholder="{{ 'IP address to lookup'|trans }}" {% if request.ip %}value="{{ request.ip }}"{% endif %}>
                 <button class="btn btn-primary" type="submit">{{ 'Submit'|trans }}</button>
             </div>
         </form>
@@ -31,7 +31,7 @@
                     <tr>
                         <th scope="col">{{ 'IP Address'|trans }}</th>
                         <th scope="col">{{ 'Country'|trans }}</th>
-                        <th scope="col">ASN #</th>
+                        <th scope="col">ASN</th>
                         <th scope="col">{{ 'ASN Organization'|trans }}</th>
                     </tr>
                 </thead>

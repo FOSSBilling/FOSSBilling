@@ -1,6 +1,6 @@
 {% extends "layout_default.html.twig" %}
 
-{% block meta_title %}Email template{% endblock %}
+{% block meta_title %}{{ 'Email template'|trans }}{% endblock %}
 {% set active_menu = 'system' %}
 
 {% block breadcrumbs %}
@@ -47,7 +47,6 @@
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-template" role="tabpanel">
                     <form method="post" action="admin/email/template_update" class="api-form" data-api-msg="{{ 'Template updated'|trans }}">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <input type="hidden" name="id" value="{{ template.id }}">
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Manage email template'|trans }}</h3>
@@ -73,7 +72,7 @@
                         </div>
                         <div class="card-footer d-flex justify-content-between">
                             <a class="btn btn-danger api-link"
-                               href="{{ 'api/admin/email/template_reset'|link({'code' : template.action_code , 'CSRFToken': CSRFToken })}}"
+                               href="{{ 'api/admin/email/template_reset'|link({'code' : template.action_code })}}"
                                data-api-confirm="{{ 'Are you sure?'|trans }}"
                                data-api-confirm-btn="{{ 'Reset'|trans }}"
                                data-api-type="danger"
@@ -98,7 +97,6 @@
 
                 <div class="tab-pane fade" id="tab-manage" role="tabpanel">
                     <form method="post" action="admin/email/template_update" class="api-form" data-api-msg="{{ 'Template updated'|trans }}">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <input type="hidden" name="id" value="{{ template.id }}">
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Template settings'|trans }}</h3>

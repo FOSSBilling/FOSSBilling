@@ -10,7 +10,7 @@
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Settings</h3>
+            <h3 class="card-title">{{ 'Settings'|trans }}</h3>
         </div>
         <div class="card-body">
             <div class="datagrid">
@@ -21,14 +21,14 @@
                                 {% set icon_filename = ext.icon_url|split('/')|last %}
                                 {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg' and ext.icon_path) %}
                                     <div class="d-flex align-items-center gap-2">
-                                        <div class="text-primary" style="width:24px;height:24px;">
+                                        <div class="text-primary" style="width: 24px; height: 24px;">
                                             {{ source (ext.icon_path, ignore_missing = true) }}
                                         </div>
                                         <span>{{ ext.name }}</span>
                                     </div>
                                 {% else %}
                                     <div class="d-flex align-items-center gap-2">
-                                        <img src="{{ ext.icon_url }}" alt="{{ ext.name }}" style="width:32px;height:32px;">
+                                        <img src="{{ ext.icon_url }}" alt="{{ ext.name }}" style="width: 32px; height: 32px;">
                                         <span>{{ ext.name }}</span>
                                     </div>
                                 {% endif %}

@@ -28,31 +28,31 @@
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
                 <div class="col">
-                    {{ mf.selectbox('status', admin.order_get_status_pairs, request.status, 0, 'All statuses') }}
+                    {{ mf.selectbox('status', admin.order_get_status_pairs, request.status, 0, 'All statuses'|trans) }}
                 </div>
             </div>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
                 <div class="col">
-                    {{ mf.selectbox('type', admin.product_get_types, request.type, 0, 'All types') }}
+                    {{ mf.selectbox('type', admin.product_get_types, request.type, 0, 'All types'|trans) }}
                 </div>
             </div>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Product'|trans }}:</label>
                 <div class="col">
-                    {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All products') }}
+                    {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All products'|trans) }}
                 </div>
             </div>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Period'|trans }}</label>
                 <div class="col">
-                    {{ mf.selectbox('period', guest.system_periods, request.period, 0, 'All periods') }}
+                    {{ mf.selectbox('period', guest.system_periods, request.period, 0, 'All periods'|trans) }}
                 </div>
             </div>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Invoice option'|trans }}</label>
                 <div class="col">
-                    {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, request.invoice_option, 0, 'All types') }}
+                    {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, request.invoice_option, 0, 'All types'|trans) }}
                 </div>
             </div>
             <div class="form-group mb-3 row">

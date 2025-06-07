@@ -70,16 +70,17 @@
                         <td>{% for pid,product in promo.applies_to %}
                             <a href="{{ 'product/manage'|alink }}/{{ pid }}">{{ product|truncate(15) }}</a><br/>
                             {% else %}
-                            All Products
+                            {{ 'All Products'|trans }}
                             {% endfor %}
                         </td>
                         <td>{% for cid,client_group in promo.cgroups %}
                             <a href="{{ 'client/group'|alink }}/{{ cid }}">{{ client_group|truncate(15) }}</a><br/>
                             {% else %}
-                            All Client Groups
+                            {{ 'All Client groups'|trans }}
                             {% endfor %}
                         </td>
                         <td>
+                            {# We need variable support to effectively localize these. Not every language is in "From *x* until *y*" format. #}
                             From {% if promo.start_at %}{{ promo.start_at|format_date }}{% else %}now{% endif %}
                             until {% if promo.end_at %}{{ promo.end_at|format_date }}{% else %}disabled{% endif %}
                         </td>
@@ -99,7 +100,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/promo_delete'|link({ 'id': promo.id, 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'product/promos'|alink }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/promo_delete'|link({ 'id': promo.id }) }}" data-api-redirect="{{ 'product/promos'|alink }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
