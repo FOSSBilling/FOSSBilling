@@ -306,7 +306,7 @@ class Service
                 ];
             } elseif ((time() - strtotime($last_exec)) / 60 >= 15) {
                 $msgs['danger'][] = [
-                    'text' => __trans('FOSSBilling has detected that cron hasn\'t been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes.'),
+                    'text' => __trans("FOSSBilling has detected that cron hasn't been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes."),
                     'url' => $cronUrl,
                 ];
             }
@@ -327,7 +327,7 @@ class Service
                 if (!$lastErrorReportingNudge) {
                     // The user upgraded from a version that didn't have error reporting functionality, so let's nudge them about it now.
                     return [
-                        'text' => __trans('We\'d appreciate it if you\'d consider opting into error reporting for FOSSBilling. Doing so will help us improve the software and provide you with a better experience. (Message will remain for 15 minutes)'),
+                        'text' => __trans("We'd appreciate it if you'd consider opting into error reporting for FOSSBilling. Doing so will help us improve the software and provide you with a better experience. (Message will remain for 15 minutes)"),
                         'url' => $url,
                     ];
                 } elseif ((version_compare(SentryHelper::last_change, $lastErrorReportingNudge) === 1) && Config::getProperty('debug_and_monitoring.report_errors', false) && !Version::isPreviewVersion()) {
@@ -338,7 +338,7 @@ class Service
                     $item->expiresAfter(60 * 60 * 24);
 
                     return [
-                        'text' => __trans('Error reporting in FOSSBilling has changed since you last reviewed it. You may want to consider reviewing the changes to see what\'s been changed. (This message will remain for 24 hours)'),
+                        'text' => __trans("Error reporting in FOSSBilling has changed since you last reviewed it. You may want to consider reviewing the changes to see what's been changed. (This message will remain for 24 hours)"),
                         'url' => $url,
                     ];
                 } else {
