@@ -31,8 +31,8 @@ class Server_Manager_CWP extends Server_Manager
                         [
                             'name' => 'accesshash',
                             'type' => 'text',
-                            'label' => 'API key',
-                            'placeholder' => 'API key you generated from within CWP.',
+                            'label' => __trans('API key'),
+                            'placeholder' => __trans('API key you generated from within CWP.'),
                             'required' => true,
                         ],
                     ],

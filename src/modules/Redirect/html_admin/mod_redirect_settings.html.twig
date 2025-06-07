@@ -30,10 +30,9 @@
         <div class="card-body border-bottom">
             <h3 class="card-title">{{ 'Create new redirect'|trans }}</h3>
             <form method="post" action="{{ 'api/admin/redirect/create'|link }}" class="api-form" data-api-reload="1">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                 <div class="row row-cards">
                     <div class="col-sm-5 col-md-4 mb-3">
-                        <label class="form-label required" for="path">Path</label>
+                        <label class="form-label required" for="path">{{ 'Path'|trans }}</label>
                         <div class="col-auto">
                             <div class="input-group input-group-flat">
                             <span class="input-group-text">
@@ -44,7 +43,7 @@
                         </div>
                     </div>
                     <div class="col-sm-5 col-md-4 mb-3">
-                        <label class="form-label required" for="target">Target</label>
+                        <label class="form-label required" for="target">{{ 'Target'|trans }}</label>
                         <div class="col-auto">
                             <div class="input-group input-group-flat">
                             <span class="input-group-text">
@@ -97,10 +96,10 @@
                         </td>
                         <td>
                             <a class="btn btn-icon api-link"
-                               href="{{ 'api/admin/redirect/delete'|link({ 'id': r.id, 'CSRFToken': CSRFToken }) }}"
+                               href="{{ 'api/admin/redirect/delete'|link({ 'id': r.id }) }}"
                                data-api-confirm="{{ 'Are you sure?'|trans }}"
                                data-api-type="danger"
-                               data-api-confirm-btn="Delete"
+                               data-api-confirm-btn="{{ 'Delete'|trans }}"
                                data-api-reload="1">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
