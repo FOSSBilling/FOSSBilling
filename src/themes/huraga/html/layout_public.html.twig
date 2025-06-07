@@ -32,6 +32,6 @@
     <div aria-live="polite" aria-atomic="true" class="position-relative">
         <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
     </div>
-    {% include 'partial_pending_messages.html.twig' ignore missing %}
+    {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
 </body>
 </html>

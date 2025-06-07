@@ -21,12 +21,12 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="w-100">
                             <h1 class="mb-1">{{ 'Products'|trans }}</h1>
-                            {% include 'mod_orderbutton_currency.html.twig' %}
+                            {{ include('mod_orderbutton_currency.html.twig') }}
                         </div>
                     </div>
                 </div>
                 <div class="card-body overflow-hidden">
-                    {% include 'mod_orderbutton_index.html.twig' %}
+                    {{ include('mod_orderbutton_index.html.twig') }}
                 </div>
             </div>
         </div>
@@ -34,7 +34,7 @@
 {% endblock %}
 
 {% block sidebar2 %}
-    {% include 'partial_currency.html.twig' %}
+    {{ include('partial_currency.html.twig') }}
 {% endblock %}
 
 {% block js %}

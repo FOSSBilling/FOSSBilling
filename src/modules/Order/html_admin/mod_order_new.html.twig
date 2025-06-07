@@ -65,7 +65,7 @@
 
             {% set product_order = 'mod_service' ~ product.type ~ '_order.html.twig' %}
             {% if admin.system_template_exists({ 'file': product_order }) %}
-                {% include product_order %}
+                {{ include(product_order) }}
             {% endif %}
 
             <div class="mb-3 row">

@@ -62,7 +62,7 @@
                     {% endfor %}
                     </tbody>
                 </table>
-                {% include "partial_pagination.html.twig" with { 'list': tickets } %}
+                {{ include('partial_pagination.html.twig', { 'list': tickets }) }}
                 {% else %}
                     <div class="d-flex justify-content-center my-2 py-4">
                         <span class="blockquote m-0">{{ 'No support tickets'|trans }}</span>

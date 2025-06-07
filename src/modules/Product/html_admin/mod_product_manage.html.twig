@@ -190,7 +190,7 @@
                         </div>
                     </div>
 
-                    {% include 'partial_pricing.html.twig' with { 'product': product } %}
+                    {{ include('partial_pricing.html.twig', { 'product': product }) }}
 
                     <hr>
 
@@ -210,7 +210,7 @@
         <div class="tab-pane fade" id="tab-config" role="tabpanel" aria-labelledby="config-tab">
             {% set service_partial = 'mod_service' ~ product.type ~ '_config.html.twig' %}
             {% if admin.system_template_exists({ 'file': service_partial }) %}
-                {% include service_partial with { 'product': product } %}
+                {{ include(service_partial, { 'product': product }) }}
             {% else %}
                 <div class="help">
                     <h5>{{ 'No additional configuration for this product is required'|trans }}</h5>

@@ -519,9 +519,9 @@
         <div class="tab-pane fade" id="tab-service" role="tabpanel">
             {% if guest.system_template_exists({ 'file': service_partial }) %}
                 {% set service = admin.order_service({ 'id': order.id }) %}
-                {% include service_partial with { 'order': order, 'service': service } %}
+                {{ include(service_partial, { 'order': order, 'service': service }) }}
             {% elseif order.form_id and guest.extension_is_on({ 'mod': 'formbuilder' }) %}
-                {% include 'mod_formbuilder_manage.html.twig' with order %}
+                {{ include('mod_formbuilder_manage.html.twig', order) }}
             {% else %}
                 {# trans 'Order form was not found' #}
             {% endif %}

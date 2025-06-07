@@ -114,7 +114,7 @@
             {# Service management #}
             {% if guest.system_template_exists({ 'file': service_partial }) %}
                 {% set service = client.order_service({ 'id': order.id }) %}
-                {% include service_partial with { 'order': order, 'service': service } %}
+                {{ include(service_partial, { 'order': order, 'service': service }) }}
             {% endif %}
 
             {# Order addons #}

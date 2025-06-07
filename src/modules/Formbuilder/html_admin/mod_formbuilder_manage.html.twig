@@ -46,7 +46,7 @@
                                         required="required">
                                     {% for k,v in field.options %}
                                         <option value="{{ v }}"
-                                                {% if v == attribute (order.config, field.name) %}selected="selected"{% endif %}>{{ k }}</option>
+                                                {% if v == order.config.(field.name) %}selected="selected"{% endif %}>{{ k }}</option>
                                     {% endfor %}
                                 </select>
 
@@ -66,7 +66,7 @@
                                     <label class="form-check form-check-inline">
                                         <input id="{{ field.name }}" class="form-check-input" type="radio"
                                                name="config[{{ field.name }}]" value="{{ v }}"
-                                               {% if attribute (order.config, field.name) == v %}checked{% endif %}>
+                                               {% if order.config.(field.name) == v %}checked{% endif %}>
                                         <span class="form-check-label">{{ k }}</span>
                                     </label>
                                 {% endfor %}
@@ -76,7 +76,7 @@
                                           name="config[{{ field.name }}]"
                                           id="{{ field.name }}"
                                           {% if field.required==1 %}required="required"{% endif %}
-                                    {% if field.readonly==1 %}readonly="readonly"{% endif %}>{{ attribute (order.config, field.name) }}</textarea>
+                                    {% if field.readonly==1 %}readonly="readonly"{% endif %}>{{ order.config.(field.name) }}</textarea>
                             {% endif %}
                         </div>
                     </div>

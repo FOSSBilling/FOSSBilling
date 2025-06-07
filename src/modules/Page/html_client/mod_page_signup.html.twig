@@ -149,7 +149,7 @@
                                         <label class="form-label"
                                                for="{{ field_name }}">{{ field.title is not empty ? field.title : field_name | capitalize }}</label>
                                         <input class="form-control" id="{{ field_name }}" type="text"
-                                               name="{{ field_name }}" value="{{ attribute(request, field_name) }}"
+                                               name="{{ field_name }}" value="{{ request.(field_name) }}"
                                                {% if field.required %}required="required"{% endif %} />
                                     </div>
                                 {% endif %}

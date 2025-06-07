@@ -27,7 +27,7 @@
             <div class="card-body">
                     <h5>{{ 'Notifications'|trans }}</h5>
                 </div>
-                {% include 'partial_search.html.twig' %}
+                {{ include('partial_search.html.twig') }}
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
@@ -57,7 +57,7 @@
                     {% endfor %}
                     </tbody>
                 </table>
-                {% include "partial_pagination.html.twig" with {'list': events, 'url':'notification'} %}
+                {{ include('partial_pagination.html.twig', { 'list': events, 'url':'notification' }) }}
 
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <a class="btn btn-danger api-link" href="{{ 'api/admin/notification/delete_all'|link({ 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
@@ -68,7 +68,7 @@
                     </a>
                 </div>
             </div>
-        
+
 
         <div class="tab-pane fade" id="tab-new-note" role="tabpanel">
             <div class="card-body">

@@ -55,7 +55,7 @@
         <div class="card">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-staff" role="tabpanel">
-                    {% include 'partial_search.html.twig' %}
+                    {{ include('partial_search.html.twig') }}
                     <div class="table-responsive">
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
@@ -143,7 +143,7 @@
                             <div class="mb-3 row" id="check_ip"{% if not params.check_ip %} style="display:none;"{% endif %}>
                                 <div class="alert alert-danger" role="alert">
                                     {{ 'WARNING! Incorrect configuration of allowed IPs can lead to a complete lockout of the administrator panel. Only use when you have static IP addresses.'|trans }}
-                                </div>                                  
+                                </div>
                                 <label class="col-md-3 col-form-label">{{ 'Allowed IPs. One per line'|trans }}</label>
                                 <div class="col-md-6">
                                     <textarea class="form-control" name="allowed_ips" rows="2" placeholder="{{ admin.system_env({ 'ip': 1 }) }}">{{ params.allowed_ips }}</textarea>

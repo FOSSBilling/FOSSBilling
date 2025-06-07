@@ -142,7 +142,7 @@
                         {% endif %}
 
                         <div class="d-md-none">
-                            {% include 'mobile_menu.html.twig' %}
+                            {{ include('mobile_menu.html.twig') }}
                         </div>
                     </div>
                 </div>
@@ -153,7 +153,7 @@
         <div class="row">
         {% if client or not settings.hide_menu %}
             <div class="col-3 d-none d-md-block">
-                {% include 'partial_menu.html.twig' %}
+                {{ include('partial_menu.html.twig') }}
             </div>
         {% endif %}
             <div class="col-12 col-md-9" {% if not client and settings.hide_menu %} style="margin-left: auto; margin-right: auto;" {% endif %}>
@@ -177,7 +177,7 @@
 
                             {% block content %}{% endblock %}
 
-                            {% include "partial_message.html.twig" %}
+                            {{ include('partial_message.html.twig') }}
 
                             {% block content_after %}{% endblock %}
                         </div>
@@ -267,9 +267,9 @@
     {% if settings.inject_javascript %}
         {{ settings.inject_javascript | raw }}
     {% endif %}
-    {% include 'partial_pending_messages.html.twig' ignore missing %}
+    {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
     {% if guest.extension_is_on({ "mod": "cookieconsent" }) %}
-        {% include 'mod_cookieconsent_index.html.twig' ignore missing %}
+        {{ include('mod_cookieconsent_index.html.twig', ignore_missing: true) }}
     {% endif %}
 </div>
 {{ DebugBar_render() }}

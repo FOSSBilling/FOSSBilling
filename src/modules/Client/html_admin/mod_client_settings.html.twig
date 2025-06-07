@@ -99,7 +99,7 @@
                         <div class="card-body">
                             {% for i in 1..10 %}
                                 {% set field_name = 'custom_' ~ i %}
-                                {% set custom_field = attribute(params.custom_fields, field_name) %}
+                                {% set custom_field = params.custom_fields.(field_name) %}
                                 <div class="mb-4 row">
                                     <label class="col-sm-4 col-md-3 form-label">{% if custom_field.title is not empty %} {{ custom_field.title }} ({{ 'Custom_'|trans }}{{ i }}) {% else %}{{ 'Custom_'|trans }}{{ i }}{% endif %}</label>
                                     <div class="col-sm-7 col-md-6">
