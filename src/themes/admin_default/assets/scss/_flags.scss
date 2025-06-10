@@ -1,7 +1,7 @@
+@use "~flag-icons/sass/variables" as flagicons-variables;
+@use "~@tabler/core/scss/variables.scss" as tabler-variables;
+
 $flag-icons-path: "../../../../../node_modules/flag-icons/flags";
-
-@import "~flag-icons/sass/variables";
-
 
 .flag {
     position: relative;
@@ -9,8 +9,8 @@ $flag-icons-path: "../../../../../node_modules/flag-icons/flags";
     height: 1em;
     aspect-ratio: 1.33333;
     background: no-repeat center/cover;
-    box-shadow: $flag-box-shadow;
-    border-radius: $flag-border-radius;
+    box-shadow: tabler-variables.$flag-box-shadow;
+    border-radius: tabler-variables.$flag-border-radius;
     vertical-align: bottom;
 
     &.flag-country-np {
@@ -21,14 +21,15 @@ $flag-icons-path: "../../../../../node_modules/flag-icons/flags";
 
 @mixin flag-icon($country) {
     .flag-country-#{$country} {
-        background-image: url(#{$flag-icons-path}#{$flag-icons-rect-path}/#{$country}.svg);
+        background-image: url(#{$flag-icons-path}#{flagicons-variables.$flag-icons-rect-path}/#{$country}.svg);
     }
 }
 
-/* stylelint-disable-next-line no-invalid-position-at-import-rule */
-@import "~flag-icons/sass/flag-icons-list";
+@each $country in flagicons-variables.$flag-icons-included-countries {
+    @include flag-icon($country);
+}
 
-@each $flag-size, $size in $avatar-sizes {
+@each $flag-size, $size in tabler-variables.$avatar-sizes {
     .flag-#{$flag-size} {
         height: map-get($size, size);
     }
