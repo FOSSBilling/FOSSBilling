@@ -272,7 +272,7 @@ class Service implements InjectionAwareInterface
 
         $modules = $this->di['mod']('extension')->getCoreModules();
         $installed = $this->getInstalledMods();
-        $list = array_merge($modules, $installed);
+        $list = array_unique(array_merge($modules, $installed));
         foreach ($list as $mod) {
             if (!$staff_service->hasPermission($admin, $mod)) {
                 continue;
