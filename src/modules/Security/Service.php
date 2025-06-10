@@ -34,7 +34,6 @@ class Service
     {
         return [
             'can_always_access' => true,
-            'hide_permissions' => false,
             'run_checks' => [
                 'type' => 'bool',
                 'display_name' => __trans('Run security checks'),

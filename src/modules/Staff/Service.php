@@ -162,7 +162,7 @@ class Service implements InjectionAwareInterface
         $modulePermissions = $extensionService->getSpecificModulePermissions($module);
         $permissions = $this->getPermissions($member->id);
 
-        if ($modulePermissions === false || $modulePermissions === []) {
+        if ($modulePermissions['hide_permissions'] ?? false) {
             $canAlwaysAccess = true;
         } else {
             $canAlwaysAccess = $modulePermissions['can_always_access'] ?? false;

@@ -148,7 +148,7 @@
 								<input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
 								<input type="hidden" name="permissions[default]" value="">
 
-								{% for modName, mod in mods %}
+								{% for modName, mod in mods|filter(mod => mod.permissions.hide_permissions is not true) %}
 									<div class="row">
 										<div class="col-1"></div>
 										<div class="col-2">
