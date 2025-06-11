@@ -118,3 +118,9 @@ parameters:
 			identifier: method.notFound
 			count: 2
 			path: src/library/Server/Manager/Plesk.php
+
+        -
+            message: '#^Path in include\(\) \"\/app\/src\\config.php\" is not a file or it does not exist\.$#'
+            identifier: include.fileNotFound
+            count: 1
+            path: src/library/FOSSBilling/Config.php
