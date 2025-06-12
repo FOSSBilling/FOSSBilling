@@ -88,6 +88,10 @@ class Service implements InjectionAwareInterface
      */
     public function batchConnect($mod_name = null)
     {
+
+        // Clean up the existing list before we add to it
+        $this->_disconnectUnavailable();
+
         $mods = [];
         if ($mod_name !== null) {
             $mods[] = $mod_name;
@@ -109,8 +113,6 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->_disconnectUnavailable();
-
         return true;
     }
 
@@ -121,7 +123,7 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $type = $parameters[0]->getType() ? $parameters[0]->getType()->getName() : null;
+        $type = $parameters[0]->getType() instanceof \ReflectionNamedType ? $parameters[0]->getType()->getName() : null;
         if ($type == "Box_Event" || $type == "\Box_Event") {
             return true;
         }
@@ -208,7 +210,7 @@ class Service implements InjectionAwareInterface
                 }
 
 
-                // If the listener isn't for a module that's not installed and is **not** a core module, remove the listener
+                // If the listener is for a module that's not installed and is **not** a core module, remove the listener
                 $ext = $this->di['db']->findOne('extension', "type = 'mod' AND name = :mod AND status = 'installed'", ['mod' => $mod_name]);
                 if (!$ext && !$extensionService->isCoreModule($mod_name)) {
                     $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
