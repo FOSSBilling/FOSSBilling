@@ -162,7 +162,12 @@ class Service implements InjectionAwareInterface
         $modulePermissions = $extensionService->getSpecificModulePermissions($module);
         $permissions = $this->getPermissions($member->id);
 
-        $canAlwaysAccess = $modulePermissions['can_always_access'] ?? false;
+        if ($modulePermissions['hide_permissions'] ?? false) {
+            $canAlwaysAccess = true;
+        } else {
+            $canAlwaysAccess = $modulePermissions['can_always_access'] ?? false;
+        }
+
         if (!$canAlwaysAccess) {
             // They have no permissions or don't have any access to that module
             if (empty($permissions) || !array_key_exists($module, $permissions) || !is_array($permissions[$module]) || !($permissions[$module]['access'] ?? false)) {
@@ -170,15 +175,17 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        // If this passes, the permission key isn't assigned to them and they therefore don't have permission
-        if ((!is_null($key) && !is_array($permissions[$module])) || (!is_null($key) && !array_key_exists($key, $permissions[$module]))) {
-            return false;
-        }
+        if (!is_null($key)) {
+            // If this passes, the permission key isn't assigned to them and they therefore don't have permission
+            if (!is_array($permissions[$module]) || !array_key_exists($key, $permissions[$module])) {
+                return false;
+            }
 
-        if (!is_null($key) && !is_null($constraint)) {
-            return $permissions[$module][$key] === $constraint;
-        } elseif (!is_null($key)) {
-            return (bool) $permissions[$module][$key];
+            if (!is_null($constraint)) {
+                return $permissions[$module][$key] === $constraint;
+            } else {
+                return (bool) $permissions[$module][$key];
+            }
         }
 
         return true;
