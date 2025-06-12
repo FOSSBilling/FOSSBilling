@@ -102,11 +102,7 @@ class Service implements InjectionAwareInterface
                 $class = $mod->getService();
                 $reflector = new \ReflectionClass($class);
                 foreach ($reflector->getMethods() as $method) {
-                    $p = $method->getParameters();
-                    if ($method->isPublic()
-                        && isset($p[0])
-                        && $p[0]->getType() instanceof \ReflectionType && !$p[0]->getType()->isBuiltin() ? new \ReflectionClass($p[0]->getType()->getName()) : null // @phpstan-ignore-line (The code is valid)
-                        && in_array($p[0]->getType() instanceof \ReflectionType && !$p[0]->getType()->isBuiltin() ? new \ReflectionClass($p[0]->getType()->getName()) : null, ['Box_Event', '\Box_Event'])) { // @phpstan-ignore-line (The code is valid)
+                    if ($this->canBeConnected($method)) {
                         $this->connect(['event' => $method->getName(), 'mod' => $mod->getName()]);
                     }
                 }
@@ -116,6 +112,20 @@ class Service implements InjectionAwareInterface
         $this->_disconnectUnavailable();
 
         return true;
+    }
+
+    private function canBeConnected(\ReflectionMethod $method)
+    {
+        $parameters = $method->getParameters();
+        if (!isset($parameters[0]) || !$method->isPublic()) {
+            return false;
+        }
+
+        $type = $parameters[0]->getType() ? $parameters[0]->getType()->getName() : null;
+        if ($type == "Box_Event" || $type == "\Box_Event") {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -182,11 +192,6 @@ class Service implements InjectionAwareInterface
                 $mod_name = $listener['rel_id'];
                 $event = $listener['meta_value'];
 
-                // do not disconnect core modules
-                if ($extensionService->isCoreModule($mod_name)) {
-                    continue;
-                }
-
                 // disconnect modules without service class
                 $mod = $this->di['mod']($mod_name);
                 if (!$mod->hasService()) {
@@ -195,15 +200,17 @@ class Service implements InjectionAwareInterface
                     continue;
                 }
 
-                $ext = $this->di['db']->findOne('extension', "type = 'mod' AND name = :mod AND status = 'installed'", ['mod' => $mod_name]);
-                if (!$ext) {
+                // Remove listeners that don't exist or aren't actually hooks
+                $s = $mod->getService();
+                $reflector = new \ReflectionClass($s);
+                if (!$reflector->hasMethod($event) || !$this->canBeConnected($reflector->getMethod($event))) {
                     $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
-
-                    continue;
                 }
 
-                $s = $mod->getService();
-                if (!method_exists($s, $event)) {
+
+                // If the listener isn't for a module that's not installed and is **not** a core module, remove the listener
+                $ext = $this->di['db']->findOne('extension', "type = 'mod' AND name = :mod AND status = 'installed'", ['mod' => $mod_name]);
+                if (!$ext && !$extensionService->isCoreModule($mod_name)) {
                     $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
 
                     continue;
