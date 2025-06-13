@@ -168,7 +168,7 @@ class ServiceTest extends \BBTestCase
 
         $activityServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
 
-        $boxModMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $boxModMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $boxModMock->expects($this->atLeastOnce())
             ->method('hasService')
             ->willReturn(true);
