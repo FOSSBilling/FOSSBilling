@@ -29,16 +29,17 @@ class Exception extends \Exception
         $logStack = Config::getProperty('debug_and_monitoring.log_stacktrace', true);
         $stackLength = Config::getProperty('debug_and_monitoring.stacktrace_length', 25);
 
-        if (DEBUG && $logStack) {
-            error_log('An exception has been thrown. Stacktrace:');
-            error_log($this->stackTrace($stackLength, $protected));
-        }
-
         // Translate the exception
         if (function_exists('__trans')) {
             $message = __trans($message, $variables);
         } elseif (is_array($variables)) {
             $message = strtr($message, $variables);
+        }
+
+        if (DEBUG && $logStack) {
+            error_log("Exception: $message");
+            error_log("Stack trace:");
+            error_log($this->stackTrace($stackLength, $protected));
         }
 
         // Pass the message to the parent
