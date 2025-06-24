@@ -152,9 +152,6 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $dbMock->expects($this->atLeastOnce())
-            ->method('findOne');
-
         $returnArr = [
             [
                 'id' => 2,
@@ -180,9 +177,6 @@ class ServiceTest extends \BBTestCase
             ->willReturn('activity');
 
         $extensionServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
-        $extensionServiceMock->expects($this->atLeastOnce())
-            ->method('isCoreModule')
-            ->willReturn(false);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
