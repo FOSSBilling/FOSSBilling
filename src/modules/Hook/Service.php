@@ -198,7 +198,6 @@ class Service implements InjectionAwareInterface
                 $mod = $this->di['mod']($mod_name);
                 if (!$mod->hasService()) {
                     $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
-
                     continue;
                 }
 
@@ -207,6 +206,7 @@ class Service implements InjectionAwareInterface
                 $reflector = new \ReflectionClass($s);
                 if (!$reflector->hasMethod($event) || !$this->canBeConnected($reflector->getMethod($event))) {
                     $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
+                    continue;
                 }
 
 
@@ -214,7 +214,6 @@ class Service implements InjectionAwareInterface
                 $ext = $this->di['db']->findOne('extension', "type = 'mod' AND name = :mod AND status = 'installed'", ['mod' => $mod_name]);
                 if (!$ext && !$extensionService->isCoreModule($mod_name)) {
                     $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
-
                     continue;
                 }
             } catch (\Exception $e) {
