@@ -152,9 +152,6 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $dbMock->expects($this->atLeastOnce())
-            ->method('findOne');
-
         $returnArr = [
             [
                 'id' => 2,
