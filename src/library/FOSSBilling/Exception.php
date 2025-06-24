@@ -38,7 +38,7 @@ class Exception extends \Exception
 
         if (DEBUG && $logStack) {
             error_log("Exception: $message");
-            error_log("Stack trace:");
+            error_log('Stack trace:');
             error_log($this->stackTrace($stackLength, $protected));
         }
 
