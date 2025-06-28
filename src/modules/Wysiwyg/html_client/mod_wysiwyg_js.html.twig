@@ -5,7 +5,9 @@
         document.querySelectorAll('.{{ class }}').forEach(function (element) {
             let required = false;
             CKEditor
-                .create(element)
+                .create(element, {
+                    licenseKey: 'GPL'
+                })
                 .then(editor => {
                     if (element.hasAttribute('required')) {
                         element.removeAttribute('required');

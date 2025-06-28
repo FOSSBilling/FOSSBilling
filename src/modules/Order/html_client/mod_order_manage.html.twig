@@ -15,6 +15,10 @@
 {% set service_partial = "mod_service" ~ order.service_type ~ "_manage.html.twig" %}
 {% set upgradables = client.order_upgradables({ 'id': order.id }) %}
 
+{% block head %}
+    {{ mf.wysiwyg('.editor-textarea') }}
+{% endblock %}
+
 {% block content %}
     <div class="row">
         <div class="col-md-12">
@@ -217,7 +221,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label for="content" class="form-label">{{ 'Message'|trans }}</label>
-                                    <textarea class="form-control" id="content" name="content" rows="5" required>{{ request.content|e }}</textarea>
+                                    <textarea class="editor-textarea form-control" id="content" name="content" rows="5" required>{{ request.content|e }}</textarea>
                                 </div>
                             </div>
                             <div class="modal-footer">
