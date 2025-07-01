@@ -257,7 +257,7 @@ function init(): void
     define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
 
     // Set the system URL.
-    $scheme = Config::getProperty('security.force_https', true) || $request->isSecure() ? 'https://' : 'http://';
+    $scheme = Config::getProperty('security.force_https', true) || FOSSBilling\Tools::isHTTPS() ? 'https://' : 'http://';
     define('SYSTEM_URL', $scheme . Config::getProperty('url'));
 
     // Set the default interface.
