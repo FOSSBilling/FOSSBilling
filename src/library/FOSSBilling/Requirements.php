@@ -37,7 +37,7 @@ class Requirements
             'simplexml' => 'the Plesk integration',
             'xml' => 'the Plesk integration',
         ],
-        'min_version' => '8.1',
+        'min_version' => '8.2',
     ];
 
     public array $writable = [
