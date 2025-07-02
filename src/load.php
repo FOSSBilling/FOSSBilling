@@ -79,7 +79,7 @@ function checkSSL(): void
     global $request;
 
     if (!empty(Config::getProperty('security.force_https')) && Config::getProperty('security.force_https') && !Environment::isCLI()) {
-        if (!$request->isSecure()) {
+        if (!Tools::isHTTPS()) {
             header('Location: https://' . $request->getHost() . $request->getRequestUri());
             exit;
         }
@@ -257,8 +257,11 @@ function init(): void
     define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
 
     // Set the system URL.
-    $scheme = Config::getProperty('security.force_https', true) || $request->isSecure() ? 'https://' : 'http://';
-    define('SYSTEM_URL', $scheme . Config::getProperty('url'));
+    $scheme = Config::getProperty('security.force_https', true) || Tools::isHTTPS() ? 'https://' : 'http://';
+
+    // Keep the app working correctly if the URL didn't get correctly updated
+    $url = str_replace(['https://', 'http://'], '', Config::getProperty('url'));
+    define('SYSTEM_URL', $scheme . $url);
 
     // Set the default interface.
     define('BIND_TO', Tools::getDefaultInterface());
