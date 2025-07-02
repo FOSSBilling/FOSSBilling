@@ -1397,8 +1397,8 @@ class ServiceTest extends \BBTestCase
             'autorespond_enable' => 1,
             'autorespond_message_id' => random_int(1, 100),
         ];
-        $supportModMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()
-            ->onlyMethods(['getConfig'])->getMock();
+        $supportModMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
+            ->disableOriginalConstructor()->onlyMethods(['getConfig'])->getMock();
         $supportModMock->expects($this->atLeastOnce())->method('getConfig')
             ->willReturn($config);
 
