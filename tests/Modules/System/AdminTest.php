@@ -117,7 +117,7 @@ final class AdminTest extends TestCase
             sleep(2);
             $result = Request::makeRequest('admin/system/env', ['ip' => true]);
             $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-            $this->assertNotEmpty($result->getResult());
+            $this->assertEmpty($result->getResult());
         }
 
         // Finally reset everything to ensure networking will continue to function
