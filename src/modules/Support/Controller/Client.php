@@ -25,7 +25,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/support', 'get_tickets', [], static::class);
         $app->get('/support/ticket/:id', 'get_ticket', [], static::class);
@@ -39,14 +39,14 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function get_tickets(\Box_App $app)
+    public function get_tickets(\FOSSBilling\App $app)
     {
         $this->di['is_client_logged'];
 
         return $app->render('mod_support_tickets');
     }
 
-    public function get_ticket(\Box_App $app, $id)
+    public function get_ticket(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_client'];
         $ticket = $api->support_ticket_get(['id' => $id]);
@@ -54,12 +54,12 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_support_ticket', ['ticket' => $ticket]);
     }
 
-    public function get_contact_us(\Box_App $app)
+    public function get_contact_us(\FOSSBilling\App $app)
     {
         return $app->render('mod_support_contact_us');
     }
 
-    public function get_contact_us_conversation(\Box_App $app, $hash)
+    public function get_contact_us_conversation(\FOSSBilling\App $app, $hash)
     {
         $api = $this->di['api_guest'];
         $data = [
@@ -73,12 +73,12 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     /*
     * Support Knowledge Base.
     */
-    public function get_kb_index(\Box_App $app)
+    public function get_kb_index(\FOSSBilling\App $app)
     {
         return $app->render('mod_support_kb_index');
     }
 
-    public function get_kb_category(\Box_App $app, $category)
+    public function get_kb_category(\FOSSBilling\App $app, $category)
     {
         $api = $this->di['api_guest'];
         $data = ['slug' => $category];
@@ -87,7 +87,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_support_kb_category', ['category' => $model]);
     }
 
-    public function get_kb_article(\Box_App $app, $category, $slug)
+    public function get_kb_article(\FOSSBilling\App $app, $category, $slug)
     {
         $api = $this->di['api_guest'];
         $data = ['slug' => $slug];

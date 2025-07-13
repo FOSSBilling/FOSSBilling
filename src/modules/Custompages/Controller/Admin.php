@@ -40,20 +40,20 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/custompages', 'get_index', [], static::class);
         $app->get('/custompages/:id', 'get_page', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_custompages_index');
     }
 
-    public function get_page(\Box_App $app, $id)
+    public function get_page(\FOSSBilling\App $app, $id)
     {
         return $app->render('mod_custompages_page', ['page_id' => $id]);
     }
