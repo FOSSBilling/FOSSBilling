@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Module\Product;
 
 use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
 
 class Service implements InjectionAwareInterface
 {
@@ -29,14 +30,14 @@ class Service implements InjectionAwareInterface
     final public const SETUP_AFTER_PAYMENT = 'after_payment';
     final public const SETUP_MANUAL = 'manual';
 
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }

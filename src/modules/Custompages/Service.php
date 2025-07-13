@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,16 +12,24 @@
 
 namespace FOSSBilling\Module\Custompages;
 
-class Service
-{
-    protected ?\Pimple\Container $di = null;
+use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
 
-    public function setDi(\Pimple\Container $di): void
+class Service implements InjectionAwareInterface
+{
+    protected ?Container $di = null;
+
+    public function getDi(): ?Container
+    {
+        return $this->di;
+    }
+
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function install()
+    public function install(): bool
     {
         $sql = '
             CREATE TABLE IF NOT EXISTS `custom_pages` (

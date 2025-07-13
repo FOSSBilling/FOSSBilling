@@ -15,6 +15,7 @@ namespace FOSSBilling\Module\System;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
+use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Version;
 use Pimple\Container;
@@ -25,7 +26,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
 
-class Service
+class Service implements InjectionAwareInterface
 {
     protected ?Container $di = null;
     private readonly Filesystem $filesystem;
@@ -33,6 +34,11 @@ class Service
     public function __construct()
     {
         $this->filesystem = new Filesystem();
+    }
+
+    public function getDi(): ?Container
+    {
+        return $this->di;
     }
 
     public function setDi(Container $di): void

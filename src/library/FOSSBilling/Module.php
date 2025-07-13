@@ -21,7 +21,6 @@ use Symfony\Component\Filesystem\Path;
 class Module
 {
     private readonly array $coreModules;
-    private readonly string $module;
     private readonly Filesystem $filesystem;
 
     /**
@@ -30,7 +29,7 @@ class Module
      * @param Container $di     the dependency injection container
      * @param string    $module the module name (containing only letters)
      */
-    public function __construct(private Container $di, string $module)
+    public function __construct(private Container $di, private string $module)
     {
         if (!preg_match('/^[a-zA-Z]+$/', $module)) {
             throw new Exception('Invalid module name (:module). Module names must contain only letters.', [':module' => $module]);
@@ -319,7 +318,7 @@ class Module
     }
 
     /**
-     * Install the module if it has an install method.
+     * Install the module if it has a service class with an install method.
      *
      * @return bool true if the module was installed, false otherwise
      *
@@ -348,7 +347,7 @@ class Module
     }
 
     /**
-     * Update the module if an update method exists.
+     * Update the module if it has a service class with an install method.
      *
      * @return bool true if the module was updated, false otherwise
      *

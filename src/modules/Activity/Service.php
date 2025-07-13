@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -12,17 +13,18 @@
 namespace FOSSBilling\Module\Activity;
 
 use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
@@ -38,7 +40,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function logEvent($data)
+    public function logEvent($data): void
     {
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
@@ -59,7 +61,7 @@ class Service implements InjectionAwareInterface
     }
 
     /** EVENTS  **/
-    public static function onAfterClientLogin(\Box_Event $event)
+    public static function onAfterClientLogin(\Box_Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -80,7 +82,7 @@ class Service implements InjectionAwareInterface
         $di['db']->store($log);
     }
 
-    public static function onAfterAdminLogin(\Box_Event $event)
+    public static function onAfterAdminLogin(\Box_Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -131,7 +133,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function getSearchQuery($data)
+    public function getSearchQuery($data): array
     {
         $sql = 'SELECT m.*, a.id as staff_id, a.email as staff_email, a.name as staff_name, CONCAT(c.first_name, " ", c.last_name) as client_name, c.email as client_email
                 FROM activity_system as m
@@ -191,7 +193,7 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function logEmail($subject, $clientId = null, $sender = null, $recipients = null, $content_html = null, $content_text = null)
+    public function logEmail($subject, $clientId = null, $sender = null, $recipients = null, $content_html = null, $content_text = null): bool
     {
         $entry = $this->di['db']->dispense('ActivityClientEmail');
 
@@ -209,7 +211,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(\Model_ActivityClientHistory $model)
+    public function toApiArray(\Model_ActivityClientHistory $model): array
     {
         $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
 
@@ -226,7 +228,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function rmByClient(\Model_Client $client)
+    public function rmByClient(\Model_Client $client): void
     {
         $models = $this->di['db']->find('ActivitySystem', 'client_id = ?', [$client->id]);
         foreach ($models as $model) {

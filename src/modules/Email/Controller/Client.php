@@ -25,20 +25,20 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/email', 'get_emails', [], static::class);
         $app->get('/email/:id', 'get_email', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_emails(\Box_App $app)
+    public function get_emails(\FOSSBilling\App $app)
     {
         $this->di['is_client_logged'];
 
         return $app->render('mod_email_index');
     }
 
-    public function get_email(\Box_App $app, $id)
+    public function get_email(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_client'];
         $data = ['id' => $id];

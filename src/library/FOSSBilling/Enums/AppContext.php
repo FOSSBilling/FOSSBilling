@@ -6,18 +6,15 @@ declare(strict_types=1);
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @author Adam Daley <contact@adly.dev>
- * @author Belle Aerni
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Enums;
 
-use Pimple\Container;
-
-interface InjectionAwareInterface
+enum AppContext
 {
-    public function getDi(): ?Container;
-
-    public function setDi(Container $di): void;
+    case ADMIN;
+    case API;
+    case CLIENT;
 }
