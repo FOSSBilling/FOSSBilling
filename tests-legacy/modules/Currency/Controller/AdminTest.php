@@ -19,7 +19,7 @@ class AdminTest extends \BBTestCase
 
     public function testregister(): void
     {
-        $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
+        $boxAppMock = $this->getMockBuilder('\FOSSBilling\App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->once())
             ->method('get')
             ->with('/currency/manage/:code', 'get_manage', ['code' => '[a-zA-Z]+'], Admin::class);

@@ -61,7 +61,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/product', 'get_index', [], static::class);
         $app->get('/product/promos', 'get_promos', [], static::class);
@@ -72,21 +72,21 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/product/category/:id', 'get_cat_manage', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_product_index');
     }
 
-    public function get_addons(\Box_App $app)
+    public function get_addons(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_product_addons');
     }
 
-    public function get_addon_manage(\Box_App $app, $id)
+    public function get_addon_manage(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $addon = $api->product_addon_get(['id' => $id]);
@@ -94,7 +94,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_product_addon_manage', ['addon' => $addon, 'product' => $addon]);
     }
 
-    public function get_cat_manage(\Box_App $app, $id)
+    public function get_cat_manage(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $cat = $api->product_category_get(['id' => $id]);
@@ -102,7 +102,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_product_category', ['category' => $cat]);
     }
 
-    public function get_manage(\Box_App $app, $id)
+    public function get_manage(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $product = $api->product_get(['id' => $id]);
@@ -115,7 +115,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_product_manage', ['product' => $product, 'assigned_addons' => $addons]);
     }
 
-    public function get_promo(\Box_App $app, $id)
+    public function get_promo(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $promo = $api->product_promo_get(['id' => $id]);
@@ -123,7 +123,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_product_promo', ['promo' => $promo]);
     }
 
-    public function get_promos(\Box_App $app)
+    public function get_promos(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 

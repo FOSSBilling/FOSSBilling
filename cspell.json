@@ -48,6 +48,7 @@
         "xlink",
         "stylesheet",
         "endfor",
+        "checkperm",
         "currentpage",
         "numpages",
         "jquery",

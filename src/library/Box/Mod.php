@@ -19,7 +19,6 @@ class Box_Mod
     private ?Pimple\Container $di = null;
 
     private array $core = [
-        'api',
         'activity',
         'cart',
         'client',
@@ -267,7 +266,7 @@ class Box_Mod
         return $this->mod;
     }
 
-    public function registerClientRoutes(Box_App &$app)
+    public function registerClientRoutes(\FOSSBilling\App &$app)
     {
         if ($this->hasClientController()) {
             $cc = $this->getClientController();
