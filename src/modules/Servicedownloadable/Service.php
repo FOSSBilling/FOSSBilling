@@ -289,11 +289,64 @@ class Service implements InjectionAwareInterface
 
     public function saveProductConfig(\Model_Product $productModel, $data): bool
     {
-        $config = [];
+        $config = json_decode($productModel->config, 1);
+        if (!is_array($config)) {
+            $config = [];
+        }
         $config['update_orders'] = isset($data['update_orders']) && (bool) $data['update_orders'];
         $productModel->config = json_encode($config);
         $productModel->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($productModel);
+
+        return true;
+    }
+
+    /**
+     * Send product file for download.
+     * This method sends a file attached to a product for admin download.
+     * Unlike the regular sendFile method, this doesn't increment download counts.
+     *
+     * @param \Model_Product $product
+     * @return bool
+     * @throws \FOSSBilling\Exception
+     */
+    public function sendProductFile(\Model_Product $product)
+    {
+        $config = $product->config;
+        isset($config) ? $config = json_decode($config, true) : $config = [];
+
+        if (!isset($config['filename'])) {
+            throw new \FOSSBilling\Exception('No file associated with this product', null, 404);
+        }
+
+        $filesystem = new Filesystem();
+        $fileName = $config['filename'];
+        $filePath = Path::normalize(PATH_UPLOADS . md5($fileName));
+        
+        if (!$filesystem->exists($filePath)) {
+            throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
+        }
+
+        // Send the file for download, unless in testing environment.
+        if (!Environment::isTesting()) {
+            $response = new Response($filesystem->readFile($filePath));
+
+            $disposition = $response->headers->makeDisposition(
+                HeaderUtils::DISPOSITION_ATTACHMENT,
+                $fileName
+            );
+
+            $response->headers->set('Content-Type', 'application/force-download');
+            $response->headers->set('Content-Type', 'application/octet-stream');
+            $response->headers->set('Content-Type', 'application/download');
+            $response->headers->set('Content-Description', 'File Transfer');
+            $response->headers->set('Content-Disposition', $disposition);
+            $response->headers->set('Content-Transfer-Encoding', 'binary');
+
+            $response->send();
+        }
+
+        $this->di['logger']->info('Downloaded product %s file by admin', $product->id);
 
         return true;
     }
