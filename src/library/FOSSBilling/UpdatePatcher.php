@@ -420,8 +420,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to fix servicedownloadable products where filename was lost from config
                 // due to bug in saveProductConfig that reset config to empty array
                 // @see https://github.com/FOSSBilling/FOSSBilling/issues/xxxx
-
-                $filesystem = new \Symfony\Component\Filesystem\Filesystem();
+                $filesystem = new Filesystem();
 
                 // Find all downloadable products
                 $q = "SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'";
@@ -439,7 +438,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
 
                     // Find orders for this product
-                    $orderQuery = "SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id";
+                    $orderQuery = 'SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id';
                     $orderStmt = $this->di['pdo']->prepare($orderQuery);
                     $orderStmt->execute(['product_id' => $product['id']]);
                     $orders = $orderStmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -462,12 +461,13 @@ class UpdatePatcher implements InjectionAwareInterface
                             $foundFilename = $order_filename;
 
                             // Update the related servicedownloadable record that might have wrong filename
-                            $updateServiceQuery = "UPDATE service_downloadable SET filename = :filename WHERE id = :service_id";
+                            $updateServiceQuery = 'UPDATE service_downloadable SET filename = :filename WHERE id = :service_id';
                             $updateServiceStmt = $this->di['pdo']->prepare($updateServiceQuery);
                             $updateServiceStmt->execute([
                                 'filename' => $foundFilename,
-                                'service_id' => $order['service_id']
+                                'service_id' => $order['service_id'],
                             ]);
+
                             break;
                         }
                     }
@@ -476,12 +476,12 @@ class UpdatePatcher implements InjectionAwareInterface
                     if ($foundFilename !== null) {
                         $productConfig['filename'] = $foundFilename;
                         $newConfigJson = json_encode($productConfig);
-                        $updateProductQuery = "UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id";
+                        $updateProductQuery = 'UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id';
                         $updateProductStmt = $this->di['pdo']->prepare($updateProductQuery);
                         $updateProductStmt->execute([
                             'config' => $newConfigJson,
                             'updated_at' => date('Y-m-d H:i:s'),
-                            'id' => $product['id']
+                            'id' => $product['id'],
                         ]);
                     }
                 }
