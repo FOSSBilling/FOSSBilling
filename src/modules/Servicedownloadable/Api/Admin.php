@@ -90,7 +90,6 @@ class Admin extends \Api_Abstract
         return $service->saveProductConfig($model, $data);
     }
 
-
     /**
      * Send file for download for a specific product.
      * This is similar to the client send_file but uses product instead of order.

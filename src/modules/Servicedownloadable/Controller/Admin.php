@@ -33,11 +33,11 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     public function get_download(\Box_App $app, $id)
     {
         $this->di['is_admin_logged'];
-        
+
         $api = $this->di['api_admin'];
         $data = [
             'id' => $id,
         ];
         $api->servicedownloadable_send_file($data);
     }
-} 
+}

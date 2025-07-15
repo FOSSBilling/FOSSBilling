@@ -306,8 +306,8 @@ class Service implements InjectionAwareInterface
      * This method sends a file attached to a product for admin download.
      * Unlike the regular sendFile method, this doesn't increment download counts.
      *
-     * @param \Model_Product $product
      * @return bool
+     *
      * @throws \FOSSBilling\Exception
      */
     public function sendProductFile(\Model_Product $product)
@@ -322,7 +322,7 @@ class Service implements InjectionAwareInterface
         $filesystem = new Filesystem();
         $fileName = $config['filename'];
         $filePath = Path::normalize(PATH_UPLOADS . md5($fileName));
-        
+
         if (!$filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
