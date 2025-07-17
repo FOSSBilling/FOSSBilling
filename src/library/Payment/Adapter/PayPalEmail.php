@@ -27,49 +27,85 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
     public function __construct(private $config)
     {
-        if (!isset($this->config['email'])) {
-            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'PayPal', ':missing' => 'PayPal Email address'], 4001);
+        if (!isset($this->config['paypal_client_id'])) {
+            throw new Payment_Exception('The ":pay_gateway" payment gateway is not fully configured. Please configure the :missing', [':pay_gateway' => 'PayPal', ':missing' => 'PayPal Client ID'], 4001);
         }
     }
 
-    public static function getConfig()
-    {
-        return [
-            'supports_one_time_payments' => true,
-            'supports_subscriptions' => true,
-            'description' => 'Enter your PayPal email to start accepting payments by PayPal.',
-            'logo' => [
-                'logo' => 'paypal.png',
-                'height' => '25px',
-                'width' => '85px',
-            ],
-            'form' => [
-                'email' => [
-                    'text',
-                    [
-                        'label' => 'PayPal email address for payments',
-                        'validators' => ['EmailAddress'],
-                    ],
+public static function getConfig()
+{
+    return [
+        'supports_one_time_payments' => true,
+        'supports_subscriptions' => true,
+        'description' => 'Enter your PayPal client ID to start accepting payments via PayPal.',
+        'logo' => [
+            'logo' => 'paypal.png',
+            'height' => '25px',
+            'width' => '85px',
+        ],
+        'form' => [
+            'paypal_client_id' => [
+                'text',
+                [
+                    'label' => 'PayPal Client ID for payments',
+                    'validators' => ['NotEmpty'], // Validate that the Client ID is not empty
                 ],
             ],
-        ];
-    }
+        ],
+    ];
+}
 
-    public function getHtml($api_admin, $invoice_id, $subscription)
-    {
-        $invoice = $api_admin->invoice_get(['id' => $invoice_id]);
+public function getHtml($api_admin, $invoice_id, $subscription): string
+{
+    // Get invoice data
+    $invoice = $api_admin->invoice_get(['id' => $invoice_id]);
+    
+    // Retrieve payment data based on subscription or one-time payment
+    $data = $subscription
+        ? $this->getSubscriptionFields($invoice)
+        : $this->getOneTimePaymentFields($invoice);
 
-        $data = [];
-        if ($subscription) {
-            $data = $this->getSubscriptionFields($invoice);
-        } else {
-            $data = $this->getOneTimePaymentFields($invoice);
+    // Required data for PayPal integration
+    $clientId    = $this->config['paypal_client_id'];   // PayPal Client ID
+    $amount      = $data['amount'];  // Payment amount
+    $currency    = $data['currency_code'];  // Payment currency
+    $itemName    = $data['item_name'];  // Item description
+    $notifyUrl   = $data['notify_url'];  // IPN notification URL
+    $returnUrl   = $data['return'];  // URL to redirect after success
+
+    return <<<HTML
+<div id="paypal-button-container"></div>
+
+<form id="paypal-ipn-form" action="{$notifyUrl}" method="post" style="display:none;">
+    <input type="hidden" name="invoice" value="{$invoice['nr']}" />
+    <input type="hidden" name="amount" value="{$amount}" />
+    <input type="hidden" name="currency" value="{$currency}" />
+</form>
+
+<script src="https://www.paypal.com/sdk/js?client-id={$clientId}&currency={$currency}"></script>
+<script>
+paypal.Buttons({
+  createOrder: (data, actions) => {
+    return actions.order.create({
+      purchase_units: [{
+        description: "{$itemName}",
+        amount: {
+          value: "{$amount}"
         }
-
-        $url = $this->serviceUrl();
-
-        return $this->_generateForm($url, $data);
-    }
+      }]
+    });
+  },
+  onApprove: (data, actions) => {
+    return actions.order.capture().then(() => {
+      // Submit the form to trigger IPN
+      document.getElementById('paypal-ipn-form').submit();
+      window.location.href = "{$returnUrl}";
+    });
+  }
+}).render('#paypal-button-container');
+</script>
+HTML;
+}
 
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
@@ -323,7 +359,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         $data['return'] = $this->config['thankyou_url'];
         $data['cancel_return'] = $this->config['cancel_url'];
         $data['notify_url'] = $this->config['notify_url'];
-        $data['business'] = $this->config['email'];
+        $data['business'] = $this->config['paypal_client_id'];
 
         $data['cmd'] = '_xclick-subscriptions';
         $data['rm'] = '2';
@@ -361,25 +397,24 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return $data;
     }
 
-    public function getOneTimePaymentFields(array $invoice): array
-    {
-        $data = [];
-        $data['item_name'] = $this->getInvoiceTitle($invoice);
-        $data['item_number'] = $invoice['nr'];
-        $data['no_shipping'] = '1';
-        $data['no_note'] = '1';
-        $data['currency_code'] = $invoice['currency'];
-        $data['rm'] = '2';
-        $data['return'] = $this->config['thankyou_url'];
-        $data['cancel_return'] = $this->config['cancel_url'];
-        $data['notify_url'] = $this->config['notify_url'];
-        $data['business'] = $this->config['email'];
-        $data['cmd'] = '_xclick';
-        $data['amount'] = $this->moneyFormat($invoice['subtotal'], $invoice['currency']);
-        $data['tax'] = $this->moneyFormat($invoice['tax'], $invoice['currency']);
-        $data['bn'] = 'FOSSBilling_SP';
-        $data['charset'] = 'utf-8';
+public function getOneTimePaymentFields(array $invoice): array
+{
+    $data = [];
+    $data['item_name'] = $this->getInvoiceTitle($invoice);
+    $data['item_number'] = $invoice['nr'];
+    $data['no_shipping'] = '1';
+    $data['no_note'] = '1';
+    $data['currency_code'] = $invoice['currency'];
+    $data['rm'] = '2';
+    $data['return'] = $this->config['thankyou_url'];    // Return URL after successful payment
+    $data['cancel_return'] = $this->config['cancel_url'];  // URL if user cancels
+    $data['notify_url'] = $this->config['notify_url'];    // URL to receive IPN
+    $data['business'] = $this->config['paypal_client_id']; // Client ID for PayPal
+    $data['cmd'] = '_xclick'; // PayPal button type
+    $data['amount'] = $this->moneyFormat($invoice['subtotal'], $invoice['currency']);  // Payment amount
+    $data['tax'] = $this->moneyFormat($invoice['tax'], $invoice['currency']);  // Tax
+    $data['bn'] = 'FOSSBilling_SP';  // PayPal branding
+    $data['charset'] = 'utf-8';  // Charset setting for IPN
 
-        return $data;
-    }
+    return $data;
 }
