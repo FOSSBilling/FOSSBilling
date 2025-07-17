@@ -177,23 +177,33 @@ class Mail
      *
      * @throws InformationException if the SMTP host or port is not configured
      */
-    private function __smtpDsn(array $options): string
-    {
-        if (empty($options['smtp_host']) || empty($options['smtp_port'])) {
-            throw new InformationException('SMTP host or port is not configured');
-        }
-
-        $host = urlencode(trim($options['smtp_host']));
-
-        if (!empty($options['smtp_username'])) {
-            $username = urlencode(trim($options['smtp_username']));
-            $pass = urlencode(trim($options['smtp_password'] ?? ''));
-
-            $authString = !empty($pass) ? $username . ':' . $pass : $username;
-
-            return "smtp://$authString@" . $host . ':' . $options['smtp_port'];
-        } else {
-            return 'smtp://' . $host . ':' . $options['smtp_port'];
-        }
+private function __smtpDsn(array $options): string
+{
+    if (empty($options['smtp_host']) || empty($options['smtp_port'])) {
+        throw new InformationException('SMTP host or port is not configured');
     }
+
+    $host = urlencode(trim($options['smtp_host']));
+    $port = (int) $options['smtp_port'];
+
+    if (!empty($options['smtp_username'])) {
+        $username = urlencode(trim($options['smtp_username']));
+        $pass = urlencode(trim($options['smtp_password'] ?? ''));
+        $authString = !empty($pass) ? $username . ':' . $pass : $username;
+
+        if ($port === 25) {
+            // Geen SSL, geen TLS, geen validatie
+            return "smtp://$authString@$host:$port?verify_peer=0&verify_peer_name=0&allow_self_signed=1";
+        }
+
+        return "smtp://$authString@$host:$port";
+    } else {
+        // Geen authenticatie
+        if ($port === 25) {
+            return "smtp://$host:$port?verify_peer=0&verify_peer_name=0&allow_self_signed=1";
+        }
+
+        return "smtp://$host:$port";
+    }
+}
 }
