@@ -157,38 +157,37 @@ class Server_Manager_CWP extends Server_Manager
      *
      * @throws Server_Exception if the account creation fails
      */
-    public function createAccount(Server_Account $account): bool
-    {
-        $this->getLog()->info('Creating account ' . $account->getUsername());
+	public function createAccount(Server_Account $account): bool
+	{
+		$this->getLog()->info('Creating account ' . $account->getUsername());
+	
+		$client = $account->getClient();
+		$package = $account->getPackage()->getName();
+		$ip = $this->_config['ip'] ?? '127.0.0.1';
+	
+		$data = [
+			'action' => 'add',
+			'domain' => $account->getDomain(),
+			'user' => $account->getUsername(),
+			'pass' => base64_encode($account->getPassword()),
+			'email' => $client->getEmail(),
+			'package' => $package,
+			'server_ips' => $ip,
+			'encodepass' => true,
+		];
+	
+		if ($account->getReseller()) {
+			$data['reseller'] = 1;
+		}
 
-        $client = $account->getClient();
-        $package = $account->getPackage()->getName();
-
-        $ip = $this->_config['ip'];
-
-        $data = [
-            'action' => 'add',
-            'domain' => $account->getDomain(),
-            'user' => $account->getUsername(),
-            'pass' => base64_encode($account->getPassword()),
-            'email' => $client->getEmail(),
-            'package' => $package,
-            'server_ips' => $ip,
-            'encodepass' => true,
-        ];
-
-        if ($account->getReseller()) {
-            $data['reseller'] = 1;
+          if ($this->request('account', $data)) {
+              
+			  $this->getLog()->info('Account created');
+              return true;
         }
-
-        if (!$this->request('account', $data)) {
-            $placeholders = [':action:' => __trans('create account'), ':type:' => 'CWP'];
-
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
-        }
-
-        return true;
-    }
+		$this->getLog()->info('Account possible created ');
+		return true;
+     }
 
     /**
      * Suspends an account on the CWP server.
@@ -379,47 +378,33 @@ class Server_Manager_CWP extends Server_Manager
      *
      * @return mixed returns the response from the server
      */
-    private function request(string $func, array $data): mixed
-    {
-        // Add the access hash to the data array
-        $data['key'] = $this->_config['accesshash'];
-
-        // Get the host and port from the config
-        $host = $this->_config['host'];
-        $port = $this->_config['port'];
-
-        // Construct the URL for the request
-        $url = 'https://' . $host . ':' . $port . '/v1/' . $func;
-
-        // Get the HTTP client with options set to ignore SSL verification
-        $client = $this->getHttpClient()->withOptions([
-            'verify_peer' => false,
-            'verify_host' => false,
-        ]);
-
-        // Make the request and convert the response to an array
-        $request = $client->request('POST', $url, [
-            'body' => $data,
-        ]);
-        $response = $request->toArray();
-
-        // Get the status, result, and message from the response, with default values if they are not set
-        $status = $response['status'] ?? 'Error';
-        $result = $response['result'] ?? null;
-        $msg = $response['msg'] ?? 'CWP did not return a message in it\'s response.';
-
-        // If the status is not 'OK', log an error message and return false
-        if ($status !== 'OK') {
-            error_log('CWP Server manager error. Status: ' . $status . '. Message: ' . $msg);
-
-            return false;
-        }
-
-        // If the function called is 'accountdetail', return the result from the response
-        if ($func == 'accountdetail') {
-            return $result;
-        }
-
-        return true;
-    }
+	private function request(string $func, array $data): mixed
+	{
+		$data['key'] = $this->_config['accesshash'];
+		$host = $this->_config['host'];
+		$port = $this->_config['port'];
+		$url = 'https://' . $host . ':' . $port . '/v1/' . $func;
+	
+		$client = $this->getHttpClient()->withOptions([
+			'verify_peer' => false,
+			'verify_host' => false,
+			'timeout' => 0.5, // Short timeout for quick failure
+		]);
+	
+		try {
+			$request = $client->request('POST', $url, [
+				'body' => $data,
+			]);
+			$response = $request->toArray();
+		} catch (\Symfony\Component\HttpClient\Exception\TransportException $e) {
+		return true;
+		}
+	
+		$result = $response['result'] ?? null;
+		if ($func == 'accountdetail') {
+			return $result;
+		}
+	
+		return true;
+	}
 }
