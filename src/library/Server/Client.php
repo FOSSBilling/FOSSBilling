@@ -12,6 +12,8 @@ class Server_Client
 {
     private ?int $id = null;
     private ?string $email = null;
+    private ?string $first_name = 'FOSSBilling';
+    private ?string $last_name = 'Client';
     private ?string $full_name = 'FOSSBilling Client';
     private ?string $company = 'FOSSBilling';
     private ?string $www = 'www.fossbilling.org';
@@ -27,12 +29,8 @@ class Server_Client
 
     public function __call($name, $arguments)
     {
-        if (version_compare(PHP_VERSION, '5.4.0') < 0) {
-            $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        } else {
-            // Get only the stack frames we need (PHP 5.4 only).
-            $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-        }
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+
         error_log(sprintf('Calling %s inaccessible method %s from %s::%d', static::class, $name, $backtrace[1]['file'], $backtrace[1]['line']));
 
         return '';
@@ -58,6 +56,54 @@ class Server_Client
     public function setId(int $id): static
     {
         $this->id = $id;
+
+        return $this;
+    }
+
+    /**
+     * Get the first name of the Server_Client instance.
+     *
+     * @return string|null returns the first name of the Server_Client instance
+     */
+    public function getFirstName(): ?string
+    {
+        return $this->first_name;
+    }
+
+    /**
+     * Set the first name of the Server_Client instance.
+     *
+     * @param string|null $firstName the first name to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setFirstName(?string $firstName): static
+    {
+        $this->first_name = $firstName;
+
+        return $this;
+    }
+
+    /**
+     * Get the last name of the Server_Client instance.
+     *
+     * @return string|null returns the last name of the Server_Client instance
+     */
+    public function getLastName(): ?string
+    {
+        return $this->last_name;
+    }
+
+    /**
+     * Set the last name of the Server_Client instance.
+     *
+     * @param string|null $lastName the last name to be set
+     *
+     * @return $this returns the current instance to allow for method chaining
+     */
+    public function setLastName(?string $lastName): static
+    {
+        $this->last_name = $lastName;
 
         return $this;
     }
