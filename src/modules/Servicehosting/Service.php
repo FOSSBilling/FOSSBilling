@@ -453,6 +453,8 @@ class Service implements InjectionAwareInterface
         $server_client = new \Server_Client();
         $server_client
             ->setEmail($client->email)
+            ->setFirstName($client->first_name)
+            ->setLastName($client->last_name)
             ->setFullName($client->getFullName())
             ->setCompany($client->company)
             ->setStreet($client->address_1)
