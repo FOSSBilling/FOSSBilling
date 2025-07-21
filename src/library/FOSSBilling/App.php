@@ -410,7 +410,8 @@ class App
         header('HTTP/1.0 503 Service Unavailable');
         if ($this->module == 'api') {
             $exc = new InformationException('The system is undergoing maintenance. Please try again later', [], 503);
-            $api = new Api($this->di);
+            $api = new Api();
+            $api->setDi($this->di);
             $api->renderJson(null, $exc);
             return '';
         }
