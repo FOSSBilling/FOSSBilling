@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -111,7 +112,7 @@ abstract class Payment_AdapterAbstract
      * invoice id from IPN.
      *
      * @param array $data - Contains $_GET, $_POST, $HTTP_RAW_POST_DATA
-     *                    (or file_get_contents("php://input")) in format like:
+     *                    "php://input" in format like:
      *                    $data = array(
      *                    'get'=>$_GET,
      *                    'post'=>$_POST,

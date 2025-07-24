@@ -385,7 +385,7 @@ $di['is_admin_logged'] = function () use ($di) {
 
         $di['set_return_uri'];
 
-        header(sprintf('Location: %s', $di['url']->adminLink('staff/login')));
+        header("Location: {$di['url']->adminLink('staff/login')}");
         exit;
     }
 

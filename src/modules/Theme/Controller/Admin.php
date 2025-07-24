@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -64,16 +65,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $service->updateSettings($t, $preset, $_POST);
             $service->regenerateThemeCssAndJsFiles($t, $preset, $api);
         } catch (\Exception $e) {
-            $error = $e->getMessage();
-            error_log($error);
+            error_log($e->getMessage());
         }
 
         // optional data file
         try {
             $service->regenerateThemeSettingsDataFile($t);
         } catch (\Exception $e) {
-            $error = $e->getMessage();
-            error_log($error);
+            error_log($e->getMessage());
         }
 
         $red_url = '/theme/' . $theme;
@@ -111,7 +110,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'settings' => $service->getThemeSettings($t, $preset),
             'current_preset' => $preset,
             'presets' => $service->getThemePresets($t),
-            'snippets' => $t->getSnippets(),
         ];
 
         return $app->render('mod_theme_preset', $data);

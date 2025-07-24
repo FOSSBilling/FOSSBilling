@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -56,7 +57,7 @@ class Run extends Command implements \FOSSBilling\InjectionAwareInterface
         try {
             $service->runCrons($interval);
         } catch (\Exception $e) {
-            $output->writeln('<error>An error occurred: ' . $e->getMessage() . '</error>');
+            $output->writeln("<error>An error occurred: {$e->getMessage()}</error>");
 
             return Command::FAILURE;
         } finally {

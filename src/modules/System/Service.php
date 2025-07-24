@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -20,11 +21,19 @@ use Pimple\Container;
 use PrinsFrank\Standards\Country\CountryAlpha2;
 use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
 use PrinsFrank\Standards\Language\LanguageAlpha2;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service
 {
     protected ?Container $di = null;
+    private readonly Filesystem $filesystem;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(Container $di): void
     {
@@ -351,8 +360,8 @@ class Service
             }
         }
 
-        $install = PATH_ROOT . '/install';
-        if (file_exists(PATH_ROOT . '/install')) {
+        $install = Path::join(PATH_ROOT, 'install');
+        if ($this->filesystem->exists($install)) {
             $msgs['danger'][] = [
                 'text' => sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install),
             ];
@@ -380,7 +389,7 @@ class Service
             return [
                 [
                     'type' => 'warning',
-                    'message' => 'Warning: ' . $e->getMessage(),
+                    'message' => "Warning: {$e->getMessage()}",
                 ],
             ];
         }
@@ -396,7 +405,7 @@ class Service
         $themeService = $this->di['mod_service']('theme');
         $theme = $themeService->getThemeConfig($client);
         foreach ($theme['paths'] as $path) {
-            if (file_exists($path . DIRECTORY_SEPARATOR . $file)) {
+            if ($this->filesystem->exists(Path::join($path, $file))) {
                 return true;
             }
         }
@@ -414,7 +423,7 @@ class Service
                 try {
                     $twig->addGlobal('client', $this->di['api_client']);
                 } catch (\Exception $e) {
-                    error_log('api_client could not be added to template: ' . $e->getMessage());
+                    error_log("api_client could not be added to template: {$e->getMessage()}.");
                 }
             }
         } else {
@@ -460,7 +469,8 @@ class Service
 
     public function clearCache()
     {
-        $this->di['tools']->emptyFolder(PATH_CACHE);
+        $this->filesystem->remove(PATH_CACHE);
+        $this->filesystem->mkdir(PATH_CACHE);
 
         return true;
     }

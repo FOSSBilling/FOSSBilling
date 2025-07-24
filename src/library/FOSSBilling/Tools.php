@@ -16,12 +16,21 @@ use Egulias\EmailValidator\EmailValidator;
 use Egulias\EmailValidator\Validation\DNSCheckValidation;
 use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\RFCValidation;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\RetryableHttpClient;
+use Symfony\Component\Filesystem\Path;
 
 class Tools
 {
+    private readonly Filesystem $filesystem;
     protected ?\Pimple\Container $di = null;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -47,7 +56,7 @@ class Tools
 
     public function hasService($type)
     {
-        $file = PATH_MODS . '/mod_' . $type . '/Service.php';
+        $file = Path::join(PATH_MODS, '/mod_{$type}', 'Service.php');
 
         return file_exists($file);
     }
@@ -248,8 +257,8 @@ class Tools
     public function getTable($type)
     {
         $class = 'Model_' . ucfirst($type) . 'Table';
-        $file = PATH_LIBRARY . '/Model/' . $type . 'Table.php';
-        if (!file_exists($file)) {
+        $file = Path::join(PATH_LIBRARY, 'Model', "{$type}Table.php");
+        if (!$this->filesystem->exists($file)) {
             throw new Exception('Service class :class was not found in :path', [':class' => $class, ':path' => $file]);
         }
         require_once $file;

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -80,11 +81,7 @@ class Service implements InjectionAwareInterface
     {
         $repo = $model->getTable();
         $addons = $this->getAddonsApiArray($model);
-        if (is_string($model->config) && json_validate($model->config)) {
-            $config = json_decode($model->config, true);
-        } else {
-            $config = [];
-        }
+        $config = json_decode($model->config ?? '', true) ?? [];
         $pricing = $repo->getPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
 
@@ -271,11 +268,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($data['config']) && is_array($data['config'])) {
-            if (is_string($model->config) && json_validate($model->config)) {
-                $current = json_decode($model->config, true);
-            } else {
-                $current = [];
-            }
+            $current = json_decode($model->config ?? '', true) ?? [];
             $c = array_merge($current, $data['config']);
             $model->config = json_encode($c);
         }
@@ -341,11 +334,7 @@ class Service implements InjectionAwareInterface
     public function updateConfig(\Model_Product $model, $data)
     {
         /* add new config value */
-        if ($model->config) {
-            $config = json_decode($model->config, true);
-        } else {
-            $config = [];
-        }
+        $config = json_decode($model->config ?? '', true) ?? [];
 
         if (isset($data['config']) && is_array($data['config'])) {
             $config = array_intersect_key((array) $config, $data['config']);
@@ -643,7 +632,7 @@ class Service implements InjectionAwareInterface
         if (is_null($model->upgrades)) {
             $model->upgrades = '';
         }
-        $ids = json_decode($model->upgrades, 1);
+        $ids = json_decode($model->upgrades ?? '', true);
         $pids = $this->getProductTitlesByIds($ids);
         unset($pids[$model->id]);
 
@@ -773,20 +762,12 @@ class Service implements InjectionAwareInterface
 
     private function getPeriods(\Model_Promo $model): array
     {
-        if (is_string($model->periods) && json_validate($model->periods)) {
-            return json_decode($model->periods, true);
-        }
-
-        return [];
+        return json_decode($model->periods ?? '', true) ?? [];
     }
 
     private function getProducts(\Model_Promo $model): array
     {
-        if (is_string($model->products) && json_validate($model->products)) {
-            return json_decode($model->products, true);
-        }
-
-        return [];
+        return json_decode($model->products ?? '', true) ?? [];
     }
 
     /**
@@ -805,11 +786,7 @@ class Service implements InjectionAwareInterface
 
     public function getProductAddons(\Model_Product $model)
     {
-        if (is_string($model->addons) && json_validate($model->addons)) {
-            $ids = json_decode($model->addons, true);
-        } else {
-            $ids = [];
-        }
+        $ids = json_decode($model->addons ?? '', true) ?? [];
 
         if ($ids === []) {
             return [];
@@ -825,12 +802,7 @@ class Service implements InjectionAwareInterface
     {
         $productPayment = $this->di['db']->load('ProductPayment', $model->product_payment_id);
         $pricing = $this->toProductPaymentApiArray($productPayment);
-
-        if (is_string($model->config) && json_validate($model->config)) {
-            $config = json_decode($model->config, true);
-        } else {
-            $config = [];
-        }
+        $config = json_decode($model->config ?? '', true) ?? [];
 
         return [
             'id' => $model->id,
@@ -932,15 +904,15 @@ class Service implements InjectionAwareInterface
 
     public function toPromoApiArray(\Model_Promo $model, $deep = false, $identity = null)
     {
-        $products = $model->products ? $this->getProductTitlesByIds(json_decode($model->products, 1)) : null;
-        $clientGroups = $model->client_groups ? $this->di['tools']->getPairsForTableByIds('client_group', json_decode($model->client_groups, 1)) : null;
+        $products = $model->products ? $this->getProductTitlesByIds(json_decode($model->products, true)) : null;
+        $clientGroups = $model->client_groups ? $this->di['tools']->getPairsForTableByIds('client_group', json_decode($model->client_groups, true)) : null;
 
         $result = $this->di['db']->toArray($model);
         $result['applies_to'] = $products;
         $result['cgroups'] = $clientGroups;
-        $result['products'] = $model->products ? json_decode($model->products, 1) : null;
-        $result['periods'] = $model->periods ? json_decode($model->periods, 1) : null;
-        $result['client_groups'] = $model->client_groups ? json_decode($model->client_groups, 1) : null;
+        $result['products'] = json_decode($model->products ?? '', true);
+        $result['periods'] = json_decode($model->periods ?? '', true);
+        $result['client_groups'] = json_decode($model->client_groups ?? '', true);
 
         return $result;
     }

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -21,6 +22,7 @@ use Symfony\Component\HttpFoundation\Response;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private readonly Filesystem $filesystem;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -32,10 +34,14 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
+
     public function attachOrderConfig(\Model_Product $product, array &$data)
     {
-        $config = $product->config;
-        isset($config) ? $config = json_decode($config, true) : $config = [];
+        $config = json_decode($product->config ?? '', true) ?? [];
         $required = [
             'filename' => 'Product is not configured completely.',
         ];
@@ -59,7 +65,7 @@ class Service implements InjectionAwareInterface
      */
     public function action_create(\Model_ClientOrder $order)
     {
-        $c = json_decode($order->config, 1);
+        $c = json_decode($order->config ?? '', true);
         if (!is_array($c)) {
             throw new \FOSSBilling\Exception(sprintf('Order #%s config is missing', $order->id));
         }
@@ -149,7 +155,7 @@ class Service implements InjectionAwareInterface
     {
         $productService = $this->di['mod_service']('product');
         $result = [
-            'path' => Path::normalize(PATH_UPLOADS . md5($model->filename)),
+            'path' => Path::join(PATH_UPLOADS, md5($model->filename)),
             'filename' => $model->filename,
         ];
 
@@ -163,7 +169,6 @@ class Service implements InjectionAwareInterface
     public function uploadProductFile(\Model_Product $productModel)
     {
         $productService = $this->di['mod_service']('product');
-        $filesystem = new Filesystem();
         $request = $this->di['request'];
 
         if ($request->files->count() == 0) {
@@ -175,17 +180,13 @@ class Service implements InjectionAwareInterface
         $fileSavePath = PATH_UPLOADS;
         $file->move($fileSavePath, $fileNameHash);
 
-        if ($productModel->config) {
-            $config = json_decode($productModel->config, 1);
-        } else {
-            $config = [];
-        }
+        $config = json_decode($productModel->config = '', true) ?? [];
 
         // Remove old file.
         if (isset($config['filename'])) {
-            $oldFilePath = Path::normalize(PATH_UPLOADS . md5($config['filename']));
-            if ($filesystem->exists($oldFilePath)) {
-                $filesystem->remove($oldFilePath);
+            $oldFilePath = Path::join(PATH_UPLOADS, md5($config['filename']));
+            if ($this->filesystem->exists($oldFilePath)) {
+                $this->filesystem->remove($oldFilePath);
             }
         }
 
@@ -201,7 +202,7 @@ class Service implements InjectionAwareInterface
                 $this->updateProductFile($serviceDownloadable, $ordermodel);
 
                 // Update the filename
-                $oldconfig = json_decode($order['config'], 1);
+                $oldconfig = json_decode($order['config'] ?? '', true);
                 $oldconfig['filename'] = $fileName;
 
                 // Save the change to the DB
@@ -266,10 +267,9 @@ class Service implements InjectionAwareInterface
     {
         $info = $this->toApiArray($serviceDownloadable);
 
-        $filesystem = new Filesystem();
         $fileName = $info['filename'];
         $filePath = $info['path'];
-        if (!$filesystem->exists($filePath)) {
+        if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
@@ -280,7 +280,7 @@ class Service implements InjectionAwareInterface
 
         // Send the file for download, unless in testing environment.
         if (!Environment::isTesting()) {
-            $response = new Response($filesystem->readFile($filePath));
+            $response = new Response($this->filesystem->readFile($filePath));
 
             $disposition = $response->headers->makeDisposition(
                 HeaderUtils::DISPOSITION_ATTACHMENT,
