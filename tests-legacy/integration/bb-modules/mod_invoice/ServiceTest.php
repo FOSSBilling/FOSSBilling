@@ -60,7 +60,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
 
         $service->processTransaction($transactionModel->id);
 
-        $transactionIpn = json_decode($transactionModel->ipn, 1);
+        $transactionIpn = json_decode($transactionModel->ipn ?? '', true);
 
         $ipn = [
             'skip_validation' => true,

@@ -113,10 +113,10 @@ class ServiceTest extends \BBTestCase
                 ],
             ],
             [
-                ['paid_at' => 1_353_715_200],
+                ['paid_at' => '1353715200'],
                 "AND DATE_FORMAT(p.paid_at, '%Y-%m-%d') = :paid_at",
                 [
-                    'paid_at' => 1_353_715_200,
+                    'paid_at' => '1353715200',
                 ],
             ],
             [

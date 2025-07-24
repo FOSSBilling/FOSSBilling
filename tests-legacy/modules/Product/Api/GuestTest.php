@@ -224,6 +224,6 @@ class GuestTest extends \BBTestCase
 
         $result = $this->api->get_slider(['format' => 'json']);
         $this->assertIsString($result);
-        $this->assertIsArray(json_decode($result, 1));
+        $this->assertIsArray(json_decode($result ?? '', true));
     }
 }

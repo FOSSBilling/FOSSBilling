@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -13,10 +14,19 @@ namespace Box\Mod\Email;
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private readonly Filesystem $filesystem;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -128,11 +138,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getVars($t): array
     {
         $json = $this->di['crypt']->decrypt($t->vars, Config::getProperty('info.salt'));
-        if (is_string($json) && json_validate($json)) {
-            return json_decode($json, true);
-        }
 
-        return [];
+        return is_string($json) ? json_decode($json, true) : [];
     }
 
     public function sendTemplate($data)
@@ -251,10 +258,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $matches = [];
         preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', $code, $matches);
         $mod = $matches[1];
-        $path = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR . 'html_email' . DIRECTORY_SEPARATOR . $code . '.html.twig';
 
-        if (file_exists($path)) {
-            $tpl = file_get_contents($path);
+        $path = Path::join(PATH_MODS, ucfirst($mod), 'html_email', "{$code}.html.twig");
+
+        if ($this->filesystem->exists($path)) {
+            $tpl = $this->filesystem->readFile($path);
 
             $ms = [];
             preg_match('#{%.?block subject.?%}((.*?)+){%.?endblock.?%}#', $tpl, $ms);
@@ -509,43 +517,42 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $modelId = $this->di['db']->store($model);
 
-        $this->di['logger']->info('Added new  email template #%s', $modelId);
+        $this->di['logger']->info('Added new email template #%s', $modelId);
 
         return $model;
     }
 
     public function templateBatchGenerate()
     {
-        $pattern = PATH_MODS . '/*/html_email/*.html.twig';
-        $list = glob($pattern);
-        foreach ($list as $path) {
-            $code = str_replace('.html', '', pathinfo($path, PATHINFO_FILENAME));
-            $dir = pathinfo($path, PATHINFO_DIRNAME);
-            $dir = pathinfo($dir, PATHINFO_DIRNAME);
-            $dir = pathinfo($dir, PATHINFO_FILENAME);
-            $mod = strtolower($dir);
+        $extensionService = $this->di['mod_service']('extension');
 
-            // skip if disabled
-            $extensionService = $this->di['mod_service']('extension');
+        $finder = new Finder();
+        $finder = $finder->files()->in(PATH_MODS . '/*/html_email/')->name('*.html.twig');
 
-            if (!$extensionService->isExtensionActive('mod', $mod)) {
+        foreach ($finder as $file) {
+            $code = $file->getBasename('.html.twig');
+            $module = strtolower(Path::getFilenameWithoutExtension(Path::getDirectory($file->getPath())));
+
+            // Skip if module is not active.
+            if (!$extensionService->isExtensionActive('mod', $module)) {
                 continue;
             }
 
-            // skip if already exists
+            // Skip if template already exists.
             if ($this->di['db']->findOne('EmailTemplate', 'action_code = :code', [':code' => $code])) {
                 continue;
             }
 
-            [$subject, $content, $desc, $enabled, $mod] = $this->_getDefaults(['code' => $code]);
-            $t = $this->templateCreate($code, $subject, $content, $enabled, $mod);
-            if ($desc) {
-                $t->description = $desc;
-                $this->di['db']->store($t);
+            [$subject, $content, $description, $enabled, $module] = $this->_getDefaults(['code' => $code]);
+            $template = $this->templateCreate($code, $subject, $content, $enabled, $module);
+
+            if ($description) {
+                $template->description = $description;
+                $this->di['db']->store($template);
             }
         }
 
-        $this->di['logger']->info('Generated email templates for installed extensions');
+        $this->di['logger']->info('Generated email templates for installed modules.');
 
         return true;
     }

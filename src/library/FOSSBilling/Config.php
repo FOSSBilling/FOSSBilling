@@ -15,6 +15,7 @@ namespace FOSSBilling;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 
 class Config
 {
@@ -85,7 +86,7 @@ class Config
         $filesystem = new Filesystem();
 
         try {
-            $filesystem->copy(PATH_CONFIG, substr(PATH_CONFIG, 0, -4) . '.old.php');
+            $filesystem->copy(PATH_CONFIG, Path::changeExtension(PATH_CONFIG, 'old.php'));
         } catch (FileNotFoundException|IOException) {
             throw new Exception('An error occurred when creating a backup of the configuration file.');
         }
@@ -147,19 +148,19 @@ class Config
 
         // Handle strings (Outputs `=> 'strict',`)
         if (is_string($value)) {
-            return " => '" . $value . "'," . PHP_EOL;
+            return " => '{$value}'," . PHP_EOL;
         }
 
         // Handle numbers (Outputs `=> 7200,`)
         if (is_numeric($value)) {
-            return ' => ' . $value . ',' . PHP_EOL;
+            return " => {$value}," . PHP_EOL;
         }
 
         // Handle bools (Outputs `=> true,`)
         if (is_bool($value)) {
             $boolAsWord = $value ? 'true' : 'false';
 
-            return ' => ' . $boolAsWord . ',' . PHP_EOL;
+            return " => {$boolAsWord}," . PHP_EOL;
         }
 
         // Generate an indentation equal to 4 spaces per level of recursion

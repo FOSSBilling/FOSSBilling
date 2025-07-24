@@ -2,6 +2,9 @@
 
 namespace APIHelper;
 
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+
 class Request
 {
     /**
@@ -15,7 +18,7 @@ class Request
      */
     public static function makeRequest(string $endpoint, array $payload = [], ?string $role = null, ?string $apiKey = null, string $method = 'POST', ?string $baseUrl = null): Response
     {
-        $cookie = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'cookie.txt';
+        $cookie = Path::join(sys_get_temp_dir(), 'cookie.txt');
         if (!$role) {
             $role = str_starts_with($endpoint, 'admin') ? 'admin' : 'client';
         }
@@ -50,19 +53,18 @@ class Request
 
     public static function resetCookies()
     {
-        unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'cookie.txt');
+        $filesystem = new Filesystem();
+        $filesystem->remove(Path::join(sys_get_temp_dir(), 'cookie.txt'));
     }
 }
 
 class Response
 {
-    private array $decodedResponse = [];
+    private ?array $decodedResponse = [];
 
     public function __construct(private readonly int $code, private readonly string $rawResponse)
     {
-        if (json_validate($this->rawResponse)) {
-            $this->decodedResponse = json_decode($this->rawResponse, true);
-        }
+        $this->decodedResponse = json_decode($this->rawResponse, true);
     }
 
     public function getHttpCode(): int

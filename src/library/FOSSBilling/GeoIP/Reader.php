@@ -19,6 +19,7 @@ use MaxMind\Db\Reader\InvalidDatabaseException;
 use PrinsFrank\Standards\Language\LanguageAlpha2;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
@@ -35,7 +36,7 @@ class Reader
      */
     public static function getCountryDatabase(): string
     {
-        return PATH_LIBRARY . '/FOSSBilling/GeoIP/Databases/CC0-Country.mmdb';
+        return Path::join(PATH_LIBRARY, 'FOSSBilling', 'GeoIP', 'Databases', 'CC0-Country.mmdb');
     }
 
     /**
@@ -43,7 +44,7 @@ class Reader
      */
     public static function getAsnDatabase(): string
     {
-        return PATH_LIBRARY . '/FOSSBilling/GeoIP/Databases/PDDL-ASN.mmdb';
+        return Path::join(PATH_LIBRARY, 'FOSSBilling', 'GeoIP', 'Databases', 'PDDL-ASN.mmdb');
     }
 
     /**
@@ -67,7 +68,7 @@ class Reader
 
                     return true;
                 } catch (\Exception $e) {
-                    error_log('There was an error while updating the IP address database: ' . $e->getMessage());
+                    error_log("There was an error while updating the IP address database: {$e->getMessage()}.");
                 }
             }
         }
@@ -158,8 +159,8 @@ class Reader
      */
     private static function shouldUpdate(string $path, int $maxAge = 604800): bool
     {
-        $fs = new Filesystem();
-        if (!$fs->exists($path)) {
+        $filesystem = new Filesystem();
+        if (!$filesystem->exists($path)) {
             return true;
         }
 
@@ -182,10 +183,12 @@ class Reader
     {
         $httpClient = HttpClient::create();
         $response = $httpClient->request('GET', $url);
+        $filesystem = new Filesystem();
+
         if ($response->getStatusCode() === 200) {
-            file_put_contents($path, $response->getContent());
+            $filesystem->dumpFile($path, $response->getContent());
         } else {
-            throw new \Exception('Got a ' . $response->getStatusCode() . ' status code when attempting to download ' . $url);
+            throw new \Exception("Got a {$response->getStatusCode()} status code when attempting to download {$url}.");
         }
     }
 }

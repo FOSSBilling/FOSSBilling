@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -77,7 +78,7 @@ class Guest extends \Api_Abstract
             if ($allowed_ips) {
                 $allowed_ips = array_map(trim(...), $allowed_ips);
                 if (!in_array($this->getIp(), $allowed_ips)) {
-                    throw new \FOSSBilling\InformationException('You are not allowed to login to admin area from :ip address', [':ip' => $this->getIp()], 403);
+                    throw new \FOSSBilling\InformationException('You are not allowed to login to admin area from :ip address.', [':ip' => $this->getIp()], 403);
                 }
             }
         }

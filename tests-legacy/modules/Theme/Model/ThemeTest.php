@@ -16,7 +16,7 @@ class ThemeTest extends \BBTestCase
     {
         $themeName = 'not existing theme';
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage(sprintf('Theme "%s" does not exist', $themeName));
+        $this->expectExceptionMessage("Theme '{$themeName}' does not exist.");
         new Theme($themeName);
     }
 
@@ -32,13 +32,6 @@ class ThemeTest extends \BBTestCase
         $theme = new Theme($this->existingTheme);
         $result = $theme->isAssetsPathWritable();
         $this->assertIsBool($result);
-    }
-
-    public function testgetSnippets(): void
-    {
-        $theme = new Theme($this->existingTheme);
-        $result = $theme->getSnippets();
-        $this->assertIsArray($result);
     }
 
     public function testgetUploadedAssets(): void

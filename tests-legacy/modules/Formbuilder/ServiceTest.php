@@ -414,7 +414,7 @@ class ServiceTest extends \BBTestCase
         ];
 
         $expectedArray = $modelArray;
-        $expectedArray['options'] = json_decode($expectedArray['options']);
+        $expectedArray['options'] = json_decode($expectedArray['options'] ?? '');
 
         $model = new \Model_FormField();
         $model->loadBean(new \DummyBean());

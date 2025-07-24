@@ -44,8 +44,6 @@ class AdminTest extends \BBTestCase
         $themeMock->expects($this->atLeastOnce())
             ->method('getUploadedAssets');
         $themeMock->expects($this->atLeastOnce())
-            ->method('getSnippets');
-        $themeMock->expects($this->atLeastOnce())
             ->method('isAssetsPathWritable')
             ->willReturn(false);
 

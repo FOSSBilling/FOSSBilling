@@ -22,7 +22,7 @@ class ServiceTransactionTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testproccessReceivedATransactions(): void
+    public function testprocessReceivedATransactions(): void
     {
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \DummyBean());
@@ -47,7 +47,7 @@ class ServiceTransactionTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
-        $result = $serviceMock->proccessReceivedATransactions();
+        $result = $serviceMock->processReceivedATransactions();
         $this->assertTrue($result);
     }
 
