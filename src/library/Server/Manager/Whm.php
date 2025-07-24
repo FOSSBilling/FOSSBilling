@@ -102,7 +102,7 @@ class Server_Manager_Whm extends Server_Manager
                     return 'https://' . $this->_config['host'] . '/cpanel';
                 }
             } catch (Server_Exception $e) {
-                $this->getLog()->err('Failed to get login URL: ' . $e->getMessage());
+                $this->getLog()->err("Failed to get login URL: {$e->getMessage()}.");
 
                 return 'https://' . $this->_config['host'] . '/cpanel';
             }
@@ -141,7 +141,7 @@ class Server_Manager_Whm extends Server_Manager
                     return 'https://' . $this->_config['host'] . '/whm';
                 }
             } catch (Server_Exception $e) {
-                $this->getLog()->err('Failed to get login URL: ' . $e->getMessage());
+                $this->getLog()->err("Failed to get login URL: {$e->getMessage()}.");
 
                 return 'https://' . $this->_config['host'] . '/whm';
             }

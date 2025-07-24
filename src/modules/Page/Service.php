@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -12,6 +13,7 @@
 namespace Box\Mod\Page;
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Path;
 
 class Service implements InjectionAwareInterface
 {
@@ -43,14 +45,14 @@ class Service implements InjectionAwareInterface
         $themeService = $this->di['mod_service']('theme');
         $code = $themeService->getCurrentClientAreaThemeCode();
         $paths = [
-            PATH_THEMES . DIRECTORY_SEPARATOR . $code . DIRECTORY_SEPARATOR . 'html' . DIRECTORY_SEPARATOR,
-            PATH_MODS . DIRECTORY_SEPARATOR . 'mod_page' . DIRECTORY_SEPARATOR . 'html_client' . DIRECTORY_SEPARATOR,
+            Path::join(PATH_THEMES, $code, 'html'),
+            Path::join(PATH_MODS, 'mod_page', 'html_client'),
         ];
 
         $list = [];
         foreach ($paths as $path) {
             foreach (glob($path . 'mod_page_*.html.twig') as $file) {
-                $file = str_replace('mod_page_', '', pathinfo($file, PATHINFO_FILENAME));
+                $file = str_replace('mod_page_', '', Path::getFilenameWithoutExtension($file));
                 $list[$file] = ucwords(strtr($file, ['-' => ' ', '_' => ' ']));
             }
         }

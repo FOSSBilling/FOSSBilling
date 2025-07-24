@@ -56,7 +56,7 @@ class Run extends Command implements \FOSSBilling\InjectionAwareInterface
         try {
             $service->runCrons($interval);
         } catch (\Exception $e) {
-            $output->writeln('<error>An error occurred: ' . $e->getMessage() . '</error>');
+            $output->writeln("<error>An error occurred: {$e->getMessage()}</error>");
 
             return Command::FAILURE;
         } finally {

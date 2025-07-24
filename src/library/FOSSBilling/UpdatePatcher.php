@@ -15,10 +15,17 @@ namespace FOSSBilling;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 
 class UpdatePatcher implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
+    private readonly Filesystem $filesystem;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -125,14 +132,12 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function executeFileActions(array $files): void
     {
-        $filesystem = new Filesystem();
-
         foreach ($files as $file => $action) {
             try {
-                if ($action == 'unlink' && $filesystem->exists($file)) {
-                    $filesystem->remove($file);
-                } elseif ($filesystem->exists($file)) {
-                    $filesystem->rename($file, $action);
+                if ($action == 'unlink' && $this->filesystem->exists($file)) {
+                    $this->filesystem->remove($file);
+                } elseif ($this->filesystem->exists($file)) {
+                    $this->filesystem->rename($file, $action);
                 }
             } catch (IOException $e) {
                 error_log($e->getMessage());
@@ -239,7 +244,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to remove the old guzzlehttp package, as we no longer
                 // use it. Also serves as an example for how to perform file action.
                 $fileActions = [
-                    PATH_VENDOR . DIRECTORY_SEPARATOR . 'guzzlehttp' => 'unlink',
+                    Path::join(PATH_VENDOR, 'guzzlehttp') => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -247,8 +252,8 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to remove the old htaccess.txt file, and any old config.php backup.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
                 $fileActions = [
-                    PATH_ROOT . DIRECTORY_SEPARATOR . 'htaccess.txt' => 'unlink',
-                    PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php.old' => 'unlink',
+                    Path::join(PATH_ROOT, 'htaccess.txt') => 'unlink',
+                    Path::join(PATH_ROOT, 'config.php.old') => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -258,22 +263,22 @@ class UpdatePatcher implements InjectionAwareInterface
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1091
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1063
                 $fileActions = [
-                    PATH_VENDOR . DIRECTORY_SEPARATOR . 'phpmailer' => 'unlink',
-                    PATH_THEMES . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'images' => 'unlink',
-                    PATH_THEMES . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'bb-deprecated.scss' => 'unlink',
-                    PATH_THEMES . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'dataTable-deprecated.scss' => 'unlink',
-                    PATH_THEMES . DIRECTORY_SEPARATOR . 'admin_default' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'scss' . DIRECTORY_SEPARATOR . 'main-deprecated.scss' => 'unlink',
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Mail.php' => 'unlink',
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Ftp.php' => 'unlink',
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'FileCacheExcption.php' => 'unlink',
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Zip.php' => 'unlink',
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Requirements.php' => 'unlink',
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Version.php' => 'unlink',
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Extension.php' => 'unlink',
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Cookie.php' => 'unlink',
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'ExceptionAuth.php' => 'unlink',
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Response.php' => 'unlink',
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Box' . DIRECTORY_SEPARATOR . 'Config.php' => 'unlink',
+                    Path::join(PATH_VENDOR, 'phpmailer') => 'unlink',
+                    Path::join(PATH_THEMES, 'admin_default', 'images') => 'unlink',
+                    Path::join(PATH_THEMES, 'admin_default', 'assets', 'scss', 'bb-deprecated.scss') => 'unlink',
+                    Path::join(PATH_THEMES, 'admin_default', 'assets', 'scss', 'dataTable-deprecated.scss') => 'unlink',
+                    Path::join(PATH_THEMES, 'admin_default', 'assets', 'scss', 'main-deprecated.scss') => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Box', 'Mail.php') => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Box', 'Ftp.php') => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Box', 'FileCacheExcption.php') => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Box', 'Zip.php') => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Box', 'Requirements.php') => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Box', 'Version.php') => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Box', 'Extension.php') => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Box', 'Cookie.php') => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Box', 'ExceptionAuth.php') => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Box', 'Response.php') => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Box', 'Config.php') => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -281,7 +286,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to remove the old FileCache class that was replaced with Symfony's Cache component.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/1184
                 $fileActions = [
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'FileCache.php' => 'unlink',
+                    Path::join(PATH_LIBRARY, 'FileCache.php') => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -323,7 +328,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
                 // Finally, remove old Kb extension files/folders.
                 $fileActions = [
-                    PATH_MODS . DIRECTORY_SEPARATOR . 'Kb' => 'unlink',
+                    Path::join(PATH_MODS, 'Kb') => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -343,15 +348,15 @@ class UpdatePatcher implements InjectionAwareInterface
 
                 // Finally, remove old queue module from the disk.
                 $fileActions = [
-                    PATH_MODS . DIRECTORY_SEPARATOR . 'Queue' => 'unlink',
+                    Path::join(PATH_MODS, 'Queue') => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
             38 => function (): void {
                 // We need to remove the old ISPConfig3 and Virtualmin server managers from disk or else the leftover files could prevent the "hosting plans and servers" page from being loaded.
                 $fileActions = [
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Server' . DIRECTORY_SEPARATOR . 'Manager' . DIRECTORY_SEPARATOR . 'Ispconfig3.php' => 'unlink',
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Server' . DIRECTORY_SEPARATOR . 'Manager' . DIRECTORY_SEPARATOR . 'Virtualmin.php' => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Server', 'Manager', 'Ispconfig3.php') => 'unlink',
+                    Path::join(PATH_LIBRARY, 'Server', 'Manager', 'Virtualmin.php') => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -359,7 +364,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 // The Serbian language was incorrectly placed into a folder named `srp` by Crowdin which is now corrected for via the locale repo and as such we need to delete the old directory.
                 // @see https://github.com/FOSSBilling/locale/issues/212
                 $fileActions = [
-                    PATH_LANGS . DIRECTORY_SEPARATOR . 'srp' => 'unlink',
+                    Path::join(PATH_LANGS, 'srp') => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -401,7 +406,7 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             43 => function (): void {
                 $fileActions = [
-                    PATH_LIBRARY . DIRECTORY_SEPARATOR . 'GeoLite2-Country.mmdb' => 'unlink',
+                    Path::join(PATH_LIBRARY, 'GeoLite2-Country.mmdb') => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
             },
@@ -420,7 +425,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $loader = new \AntCMS\AntLoader([
             'mode' => 'filesystem',
-            'path' => PATH_CACHE . DIRECTORY_SEPARATOR . 'fallbackClassMap.php',
+            'path' => Path::join(PATH_CACHE, 'fallbackClassMap.php'),
         ]);
         $loader->addNamespace('', PATH_VENDOR);
         $loader->checkClassMap();

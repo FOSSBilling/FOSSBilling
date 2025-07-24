@@ -19,6 +19,7 @@ use Sentry\HttpClient\Request;
 use Sentry\HttpClient\Response;
 use Sentry\Options;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Filesystem\Path;
 
 class SentryHelper
 {
@@ -209,7 +210,6 @@ class SentryHelper
         while ($level <= 10) {
             if (dirname($strippedPath, $level + 1) === DIRECTORY_SEPARATOR) {
                 $name = trim(dirname($strippedPath, $level), DIRECTORY_SEPARATOR);
-
                 break;
             }
             ++$level;
@@ -220,7 +220,7 @@ class SentryHelper
 
     private static function getLibrary(string $exceptionPath)
     {
-        return pathinfo($exceptionPath, PATHINFO_FILENAME);
+        return Path::getFilenameWithoutExtension($exceptionPath);
     }
 
     /**

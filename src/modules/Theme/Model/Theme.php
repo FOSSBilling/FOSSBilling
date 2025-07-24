@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,12 +12,18 @@
 
 namespace Box\Mod\Theme\Model;
 
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+
 class Theme
 {
+    private readonly Filesystem $filesystem;
+
     public function __construct(private $name)
     {
-        if (!file_exists($this->getPath())) {
-            throw new \FOSSBilling\Exception('Theme ":name" does not exist', [':name' => $name]);
+        $this->filesystem = new Filesystem();
+        if (!$this->filesystem->exists($this->getPath())) {
+            throw new \FOSSBilling\Exception("Theme ':name' does not exist.", [':name' => $name]);
         }
     }
 
@@ -41,10 +48,10 @@ class Theme
     public function getSnippets(): array
     {
         $path = $this->getPathHtml();
-        $snippets = glob($path . DIRECTORY_SEPARATOR . 'snippet_*.html.twig');
+        $snippets = glob(Path::join($path, 'snippet_*.html.twig'));
         $result = [];
         foreach ($snippets as $snippet) {
-            $result[basename($snippet)] = str_replace('snippet_', '', pathinfo($snippet, PATHINFO_FILENAME));
+            $result[Path::getFilenameWithoutExtension($snippet)] = str_replace('snippet_', '', Path::getFilenameWithoutExtension($snippet, '.html.twig'));
         }
 
         return $result;
@@ -59,7 +66,7 @@ class Theme
         $files = $this->getSettingsPageFiles();
         $uploaded = [];
         foreach ($files as $file) {
-            if (file_exists($assets_folder . DIRECTORY_SEPARATOR . $file)) {
+            if ($this->filesystem->exists(Path::join($assets_folder, $file))) {
                 $uploaded[] = [
                     'name' => $file,
                     'url' => $this->getUrl() . '/assets/' . $file,
@@ -97,14 +104,14 @@ class Theme
      */
     public function getSettingsPageHtml()
     {
-        $spp = $this->getPathConfig() . DIRECTORY_SEPARATOR . 'settings.html.twig';
-        if (!file_exists($spp)) {
+        $spp = Path::join($this->getPathConfig(), 'settings.html.twig');
+        if (!$this->filesystem->exists($spp)) {
             error_log('Theme ' . $this->getName() . ' does not have settings page');
 
             return '';
         }
 
-        $settings_page = file_get_contents($spp);
+        $settings_page = $this->filesystem->readFile($spp);
         $settings_page = $this->strip_tags_content($settings_page, '<script><style>');
 
         // remove style attributes
@@ -119,12 +126,12 @@ class Theme
     private function getSettingsData()
     {
         $cp = $this->getPathSettingsDataFile();
-        if (!file_exists($cp)) {
+        if (!$this->filesystem->exists($cp)) {
             return [];
         }
 
-        $json = file_get_contents($cp);
-        $array = json_decode($json, 1);
+        $json = $this->filesystem->readFile($cp);
+        $array = json_decode($json, true);
         if (!is_array($array)) {
             return [];
         }
@@ -160,27 +167,27 @@ class Theme
 
     public function getPath()
     {
-        return PATH_THEMES . DIRECTORY_SEPARATOR . $this->name;
+        return Path::join(PATH_THEMES, $this->name);
     }
 
     public function getPathConfig()
     {
-        return $this->getPath() . DIRECTORY_SEPARATOR . 'config';
+        return Path::join($this->getPath(), 'config');
     }
 
     public function getPathAssets()
     {
-        return $this->getPath() . DIRECTORY_SEPARATOR . 'assets';
+        return Path::join($this->getPath(), 'assets');
     }
 
     public function getPathHtml()
     {
-        return $this->getPath() . DIRECTORY_SEPARATOR . 'html';
+        return Path::join($this->getPath(), 'html');
     }
 
     public function getPathSettingsDataFile()
     {
-        return $this->getPathConfig() . DIRECTORY_SEPARATOR . 'settings_data.json';
+        return Path::join($this->getPathConfig(), 'settings_data.json');
     }
 
     /**

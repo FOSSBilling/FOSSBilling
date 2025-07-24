@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -13,10 +14,18 @@ namespace Box\Mod\Email;
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private readonly Filesystem $filesystem;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -128,11 +137,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getVars($t): array
     {
         $json = $this->di['crypt']->decrypt($t->vars, Config::getProperty('info.salt'));
-        if (is_string($json) && json_validate($json)) {
-            return json_decode($json, true);
-        }
 
-        return [];
+        return json_decode($json, true) ?? [];
     }
 
     public function sendTemplate($data)
@@ -251,10 +257,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $matches = [];
         preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', $code, $matches);
         $mod = $matches[1];
-        $path = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR . 'html_email' . DIRECTORY_SEPARATOR . $code . '.html.twig';
+        $path = Path::join(PATH_MODS, ucfirst($mod), 'html_email', "{$code}.html.twig");
 
-        if (file_exists($path)) {
-            $tpl = file_get_contents($path);
+        if ($this->filesystem->exists($path)) {
+            $tpl = $this->filesystem->readFile($path);
 
             $ms = [];
             preg_match('#{%.?block subject.?%}((.*?)+){%.?endblock.?%}#', $tpl, $ms);
@@ -263,7 +269,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
 
             $mc = [];
-            preg_match('/{%.?block content.?%}((.*?\n)+){%.?endblock.?%}/m', $tpl, $mc);
+            preg_match('/{%.?block content.?%}((.*?
+)+){%.?endblock.?}/m', $tpl, $mc);
             if (isset($mc[1])) {
                 $content = $mc[1];
                 $enabled = 1;
@@ -516,13 +523,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function templateBatchGenerate()
     {
-        $pattern = PATH_MODS . '/*/html_email/*.html.twig';
+        $pattern = Path::join(PATH_MODS, '*', 'html_email', '*.html.twig');
         $list = glob($pattern);
         foreach ($list as $path) {
-            $code = str_replace('.html', '', pathinfo($path, PATHINFO_FILENAME));
-            $dir = pathinfo($path, PATHINFO_DIRNAME);
-            $dir = pathinfo($dir, PATHINFO_DIRNAME);
-            $dir = pathinfo($dir, PATHINFO_FILENAME);
+            $code = str_replace('.html', '', Path::getFilenameWithoutExtension($path));
+            $dir = Path::getDirectory($path);
+            $dir = Path::getDirectory($dir);
+            $dir = Path::getFilenameWithoutExtension($dir);
             $mod = strtolower($dir);
 
             // skip if disabled

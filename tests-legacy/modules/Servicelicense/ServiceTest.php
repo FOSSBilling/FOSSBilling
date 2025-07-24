@@ -204,7 +204,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage(sprintf('License plugin %s was not found', $serviceLicenseModel->plugin));
+        $this->expectExceptionMessage("License plugin {$serviceLicenseModel->plugin} was not found.");
         $this->service->action_activate($clientOrderModel);
     }
 

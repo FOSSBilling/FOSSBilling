@@ -1193,7 +1193,7 @@ class ServiceTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(788954);
-        $this->expectExceptionMessage(sprintf('Staff member with email %s is already registered', $data['email']));
+        $this->expectExceptionMessage("Staff member with email {$data['email']} is already registered.");
         $serviceMock->create($data);
     }
 
