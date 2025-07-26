@@ -394,6 +394,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     private function getOrCreateProduct(Model_Invoice $invoice)
     {
         $invoiceItems = $this->di['db']->getAll('SELECT title from invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => $invoice->id]);
+        if (empty($invoiceItems)) {
+            throw new \RuntimeException('No invoice items found for invoice ID: ' . $invoice->id);
+        }
         $productName = $invoiceItems[0]['title'];
 
         // Try to find existing product
