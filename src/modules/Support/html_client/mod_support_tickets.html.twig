@@ -45,7 +45,7 @@
                     {% for i, ticket in tickets.list %}
                         <tr>
                             <td>#{{ticket.id}}</td>
-                            <td><a href="{{ 'support/ticket'|link }}/{{ ticket.id }}">{{ ticket.subject|truncate(40) }}</a></td>
+                            <td><a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(40) }}</a></td>
                             <td>{{ ticket.helpdesk.name }}</td>
                             <td>
                                 <span class="badge {% if ticket.status == 'open' %}bg-success{% elseif ticket.status == 'on_hold' %}bg-warning{% elseif ticket.status == 'closed' %}bg-secondary{% endif %}">{{ mf.status_name(ticket.status) }}</span>
@@ -53,9 +53,9 @@
                             <td>{{ ticket.created_at|timeago }} {{ 'ago'|trans }}</td>
                             <td class="actions">
                                 {% if ticket.status == 'closed' %}
-                                    <a href="{{ 'support/ticket'|link }}/{{ ticket.id }}" class="btn btn-sm btn-outline-secondary">{{ 'View'|trans }}</a>
+                                    <a href='{{ "support/ticket/#{ticket.id}"|url }}' class="btn btn-sm btn-outline-secondary">{{ 'View'|trans }}</a>
                                 {% else %}
-                                    <a href="{{ 'support/ticket'|link }}/{{ ticket.id }}#reply-to" class="btn btn-sm btn-outline-info">{{ 'Reply'|trans }}</a>
+                                    <a href='{{ "support/ticket/#{ticket.id}"|url }}/#reply-to' class="btn btn-sm btn-outline-info">{{ 'Reply'|trans }}</a>
                                 {% endif %}
                             </td>
                         </tr>
@@ -116,7 +116,7 @@
                 e.preventDefault();
                 API.client.post('support/ticket_create',
                     new FormData(submitTicket).serializeObject(),
-                    (res) => bb.redirect("{{ 'support/ticket'|link }}" + '/' + res),
+                    (res) => bb.redirect("{{ 'support/ticket'|url }}/" + res),
                     (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error'),
                 )
                 return false;

@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
 <ul class="breadcrumb">
     <li class="breadcrumb-item">
-        <a href="{{ '/'|alink }}">
+        <a href="{{ '/'|url }}">
             <svg class="icon">
                 <use xlink:href="#home" />
             </svg>
         </a>
     </li>
     <li class="breadcrumb-item">
-        <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+        <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
     </li>
     <li class="breadcrumb-item active" aria-current="page">{{ 'SEO settings'|trans }}</li>
 </ul>
@@ -31,7 +31,7 @@
     {% set info = admin.seo_info %}
 
     {% set params = admin.extension_config_get({ "ext": "mod_seo" }) %}
-    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+    <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
         <input type="hidden" name="ext" value="mod_seo">
         <div class="card-body">
@@ -52,7 +52,7 @@
         <div class="card-body border-bottom">
             <span class="card-subtitle">{{ 'FOSSBilling will automatically ping every enabled search engine every 24 hours. Cron jobs must be working for this to work.'|trans }}</span>
         </div>
-        
+
         <div class="table-responsive">
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <tbody>

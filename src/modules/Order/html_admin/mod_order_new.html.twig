@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'order'|alink }}">{{ 'Orders'|trans }}</a>
+            <a href="{{ 'order'|url }}">{{ 'Orders'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Create new order'|trans }}</li>
     </ol>
@@ -28,7 +28,7 @@
         <h3>{{ 'Create new order'|trans }}</h3>
         <p class="text-muted">{{ product.title }} {{ 'for'|trans }} {{ client.first_name }} {{ client.last_name }}</h2>
 
-        <form method="post" action="{{ 'api/admin/order/create'|link }}" class="api-form" data-api-jsonp="onAfterOrderPlaced">
+        <form method="post" action="{{ 'order/create'|api_url }}" class="api-form" data-api-jsonp="onAfterOrderPlaced">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Invoice option'|trans }}</label>
@@ -89,7 +89,7 @@
 {% block js%}
 <script>
     function onAfterOrderPlaced(id) {
-        bb.redirect("{{ 'order/manage/'|alink }}/" + id);
+        bb.redirect("{{ 'order/manage/'|url }}/" + id);
     }
 
     $('#period').on('change', function() {

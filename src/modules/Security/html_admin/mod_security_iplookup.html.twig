@@ -17,7 +17,7 @@
         <span class="card-subtitle">{{ 'Lookup & discover info about IP addresses.'|trans }}</span>
     </div>
     <div class="card-body container">
-        <form method="post" action="{{'api/admin/security/ip_lookup'|link({ 'CSRFToken': CSRFToken }) }}"
+        <form method="post" action="{{ 'security/ip_lookup'|api_url(query: { 'CSRFToken': CSRFToken }) }}"
             class="api-form" data-api-jsonp="appendResult">
             <div class="d-flex">
                 <input type="text" name="ip" class="form-control me-2" placeholder="{{ 'IP address to lookup'|trans }}" {% if request.ip %}value="{{ request.ip }}"{% endif %}>

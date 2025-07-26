@@ -40,21 +40,21 @@
                 {% for i, member in members.list %}
                 <tr>
                     <td>
-                        <a href="{{ 'staff/manage'|alink }}/{{ member.id }}">
-                            <img src="{{ member.email|gravatar }}?size=25" alt="{{ member.id }}">
+                        <a href='{{ "staff/manage/#{member.id}"|url }}'>
+                            <img src="{{ member.email|gravatar(size: 25) }}" alt="{{ member.id }}">
                         </a>
                     </td>
                     <td>{{ member.name }}</td>
                     <td>{{ member.email }}</td>
                     <td>
-                        <a href="{{ '/staff/group'|alink }}/{{ member.group.id }}">{{ member.group.name }}</a>
+                        <a href='{{ "staff/group/#{member.group.id}"|url }}'>{{ member.group.name }}</a>
                     </td>
                     <td>{{ mf.status_name(member.status) }}</td>
                     <td style="width: 13%" class="actions">
-                        <a class="btn btn14" href="{{ '/staff/manage'|alink }}/{{ member.id }}">
+                        <a class="btn btn14" href='{{ "staff/manage/#{member.id}"|url }}'>
                             <img src="assets/icons/edit.svg" alt="">
                         </a>
-                        <a class="btn btn14 bb-rm-tr api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'staff'|alink }}" href="{{ 'api/admin/staff/delete'|link({ 'id': member.id, 'CSRFToken': CSRFToken }) }}">
+                        <a class="btn btn14 bb-rm-tr api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'staff'|url }}" href="{{ 'staff/delete'|api_url(query: { 'id': member.id, 'CSRFToken': CSRFToken }) }}">
                             <img src="assets/icons/delete.svg" alt="">
                         </a>
                     </td>
@@ -73,7 +73,7 @@
 
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-new">
-            <form method="post" action="{{ 'api/admin/staff/create'|link }}" class="mainForm api-form" data-api-jsonp="onAfterStaffCreate">
+            <form method="post" action="{{ 'staff/create'|api_url }}" class="mainForm api-form" data-api-jsonp="onAfterStaffCreate">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <fieldset>
                     <div class="rowElem noborder">
@@ -144,10 +144,10 @@
                 <tr>
                     <td>{{ group.name }}</td>
                     <td class="actions">
-                        <a class="btn btn14" href="{{ '/staff/group'|alink }}/{{ group.id }}">
+                        <a class="btn btn14" href='{{ "staff/group/#{group.id}"|url }}'>
                             <img src="assets/icons/edit.svg" alt="">
                         </a>
-                        <a class="btn btn14 bb-rm-tr api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'staff'|alink }}" href="{{ 'api/admin/staff/group_delete'|link({'id' : group.id, 'CSRFToken': CSRFToken}) }}"><img src="assets/icons/delete.svg" alt=""></a>
+                        <a class="btn btn14 bb-rm-tr api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'staff'|url }}" href="{{ 'staff/group_delete'|api_url(query: {'id' : group.id, 'CSRFToken': CSRFToken}) }}"><img src="assets/icons/delete.svg" alt=""></a>
                     </td>
                 </tr>
                 </tbody>
@@ -163,7 +163,7 @@
 
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-new-group">
-            <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'staff'|alink }}">
+            <form method="post" action="{{ 'staff/group_create'|api_url }}" class="mainForm save api-form" data-api-redirect="{{ 'staff'|url }}">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="rowElem noborder">
                     <label>{{ 'Name'|trans }}</label>
@@ -182,7 +182,7 @@
 {% block js %}
 <script>
     function onAfterStaffCreate(id) {
-        bb.redirect("{{ 'staff/manage/'|alink }}/" + id + '#tab-permissions');
+        bb.redirect("{{ 'staff/manage/'|url }}/" + id + '#tab-permissions');
     }
 </script>
 {% endblock %}

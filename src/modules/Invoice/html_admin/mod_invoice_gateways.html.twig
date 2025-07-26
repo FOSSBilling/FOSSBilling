@@ -48,7 +48,7 @@
                 {% for gateway in admin.invoice_gateway_get_list({ 'per_page': 100 }|merge(request)).list %}
                 <tr>
                     <td>
-                        <a href="{{ '/invoice/gateway'|alink }}/{{ gateway.id }}">{{ gateway.title }}</a>
+                        <a href='{{ "invoice/gateway/#{gateway.id}"|url }}'>{{ gateway.title }}</a>
                     </td>
                     <td>{{ gateway.code }}</td>
                     <td>{{ mf.q(gateway.enabled) }}</td>
@@ -56,22 +56,22 @@
                     <td>{{ mf.q(gateway.allow_recurrent) }}</td>
                     <td>
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/invoice/gateway_copy'|link({ 'id': gateway.id, 'CSRFToken': CSRFToken }) }}"
+                            href="{{ 'invoice/gateway_copy'|api_url(query: { 'id': gateway.id, 'CSRFToken': CSRFToken }) }}"
                             title="{{ 'Copy'|trans }}"
-                            data-api-redirect="{{ 'invoice/gateways'|alink }}">
+                            data-api-redirect="{{ 'invoice/gateways'|url }}">
                             <svg class="icon">
                                 <use xlink:href="#copy" />
                             </svg>
                         </a>
-                        <a class="btn btn-icon" href="{{ '/invoice/gateway'|alink }}/{{ gateway.id }}">
+                        <a class="btn btn-icon" href='{{ "invoice/gateway/#{gateway.id}"|url }}'>
                             <svg class="icon">
                                 <use xlink:href="#edit" />
                             </svg>
                         </a>
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/invoice/gateway_delete'|link({ 'id': gateway.id, 'CSRFToken': CSRFToken }) }}"
+                            href="{{ 'invoice/gateway_delete'|api_url(query: { 'id': gateway.id, 'CSRFToken': CSRFToken }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
-                            data-api-redirect="{{ 'invoice/gateways'|alink }}">
+                            data-api-redirect="{{ 'invoice/gateways'|url }}">
                             <svg class="icon">
                                 <use xlink:href="#delete" />
                             </svg>
@@ -118,9 +118,9 @@
                     <td>{{ gtw }}</td>
                     <td>
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/invoice/gateway_install'|link({ 'code': gtw }) }}"
+                            href="{{ 'invoice/gateway_install'|api_url(query: { 'code': gtw, 'CSRFToken': CSRFToken }) }}"
                              title="{{ 'Install'|trans }}"
-                            data-api-redirect="{{ 'invoice/gateways'|alink }}">
+                            data-api-redirect="{{ 'invoice/gateways'|url }}">
                             <svg class="icon">
                                 <use xlink:href="#cog" />
                             </svg>

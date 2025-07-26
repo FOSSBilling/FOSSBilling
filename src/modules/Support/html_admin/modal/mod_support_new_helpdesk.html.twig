@@ -1,7 +1,7 @@
 <div class="modal modal-blur fade" id="mod-support-new-helpdesk" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form method="post" action="{{ 'api/admin/support/helpdesk_create'|link }}" class="api-form" data-api-redirect="{{ 'extension/settings/support'|alink }}">
+            <form method="post" action="{{ 'support/helpdesk_create'|api_url }}" class="api-form" data-api-redirect="{{ 'extension/settings/support'|url }}">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="modal-header">
                     <h5 class="modal-title">{{ 'Create New Helpdesk'|trans }}</h5>
