@@ -248,7 +248,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
             $api_admin->invoice_subscription_create($sd);
 
-            // Pay the initial invoice immediately**
+            // Pay the initial invoice immediately
             $invoiceService = $this->di['mod_service']('Invoice');
             $clientService = $this->di['mod_service']('client');
             $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
