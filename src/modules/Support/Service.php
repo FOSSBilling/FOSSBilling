@@ -806,14 +806,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function ticketCreateForGuest($data)
     {
-        $extensionService = $this->di['mod_service']('extension');
-        $config = $extensionService->getConfig('mod_support');
-
-        if (isset($config['disable_public_tickets']) && $config['disable_public_tickets']) {
-            throw new InformationException("We currently aren't accepting support tickets from unregistered users. Please use another contact method.");
-        }
-
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
 
         $event_params = $data;
         $event_params['ip'] = $this->di['request']->getClientIp();
@@ -1222,7 +1215,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function publicTicketCreate($data, \Model_Admin $identity)
     {
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminPublicTicketOpen', 'params' => $data]);
 

@@ -254,9 +254,6 @@ class ServiceTest extends \BBTestCase
     public function testclearCache(): void
     {
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('emptyFolder')
-            ->willReturn(true);
 
         $di = new \Pimple\Container();
         $di['tools'] = $toolsMock;

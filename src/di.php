@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
@@ -563,11 +562,8 @@ $di['tools'] = function () use ($di) {
  *
  * @return \FOSSBilling\Validate
  */
-$di['validator'] = function () use ($di) {
-    $validator = new FOSSBilling\Validate();
-    $validator->setDi($di);
-
-    return $validator;
+$di['validator'] = function () {
+    return new \FOSSBilling\Validate;
 };
 
 /*
@@ -705,13 +701,6 @@ $di['license_server'] = function () use ($di) {
  * @return \FOSSBilling\GeoIP\Reader
  */
 $di['geoip'] = fn (): FOSSBilling\GeoIP\Reader => new FOSSBilling\GeoIP\Reader();
-
-/*
- * @param void
- *
- * @return \FOSSBilling\PasswordManager
- */
-$di['password'] = fn (): FOSSBilling\PasswordManager => new FOSSBilling\PasswordManager();
 
 /*
  * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.

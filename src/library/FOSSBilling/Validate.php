@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
@@ -17,18 +16,6 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 class Validate
 {
-    protected ?\Pimple\Container $di = null;
-
-    public function setDi(\Pimple\Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?\Pimple\Container
-    {
-        return $this->di;
-    }
-
     /**
      * Check if second level domain (SLD) is valid.
      */
@@ -188,5 +175,36 @@ class Validate
         }
 
         return true;
+    }
+
+    /**
+     * Checks if a given email address is valid.
+     * In a production environment, this will both check that the email address matches RFC standards as well as validating the domain.
+     * In a testing / development environment it will only check the RFC standards.
+     */
+    public function validateAndSanitizeEmail(string $email, bool $throw = true)
+    {
+        $email = htmlspecialchars($email);
+
+        $validator = new EmailValidator();
+        if (Environment::isProduction()) {
+            $validations = new MultipleValidationWithAnd([
+                new RFCValidation(),
+                new DNSCheckValidation()
+            ]);
+        } else {
+            $validations = new RFCValidation();
+        }
+
+        if (!$validator->isValid($email, $validations)) {
+            if ($throw) {
+                $friendlyName = ucfirst(__trans('Email address'));
+                throw new Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
+            } else {
+                return false;
+            }
+        }
+
+        return $email;
     }
 }

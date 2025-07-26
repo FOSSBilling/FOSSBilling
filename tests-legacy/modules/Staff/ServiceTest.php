@@ -894,14 +894,9 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt');
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-        $di['tools'] = new \FOSSBilling\Tools();
-        $di['password'] = $passwordMock;
+        $di             = new \Pimple\Container();
+        $di['db']       = $dbMock;
+        $di['tools']    = new \FOSSBilling\Tools();
 
         $service = new Service();
         $service->setDi($di);
@@ -1052,11 +1047,6 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($plainTextPassword);
-
         $profileService = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
@@ -1067,12 +1057,13 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
-        $di['logger'] = $logMock;
-        $di['db'] = $dbMock;
-        $di['password'] = $passwordMock;
-        $di['mod_service'] = $di->protect(fn () => $profileService);
+        $di['logger']         = $logMock;
+        $di['db']             = $dbMock;
+        $di['mod_service'] = $di->protect(fn() => $profileService);
 
-        $serviceMock->setDi($di);
+
+        $service = new \Box\Mod\Staff\Service();
+        $service->setDi($di);
 
         $result = $serviceMock->changePassword($adminModel, $plainTextPassword);
         $this->assertTrue($result);
@@ -1111,22 +1102,11 @@ class ServiceTest extends \BBTestCase
 
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->onlyMethods(['hasPermission'])->getMock();
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('hasPermission')->willReturn(true);
-
-        $di = new \Pimple\Container();
+        $di                   = new \Pimple\Container();
         $di['events_manager'] = $eventsMock;
-        $di['logger'] = $logMock;
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['logger']         = $logMock;
+        $di['db']             = $dbMock;
+        $di['mod_service']    = $di->protect(fn() => $systemServiceMock);
 
         $di['password'] = $passwordMock;
 
@@ -1170,13 +1150,11 @@ class ServiceTest extends \BBTestCase
 
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
-            ->onlyMethods(['hasPermission'])->getMock();
+        $di                   = new \Pimple\Container();
+        $di['events_manager'] = $eventsMock;
+        $di['logger']         = $logMock;
+        $di['db']             = $dbMock;
+        $di['mod_service']    = $di->protect(fn() => $systemServiceMock);
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
@@ -1224,20 +1202,14 @@ class ServiceTest extends \BBTestCase
 
         $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
-        $di = new \Pimple\Container();
-        $di['logger'] = $logMock;
-        $di['db'] = $dbMock;
+        $di                = new \Pimple\Container();
+        $di['logger']      = $logMock;
+        $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService) {
             if ($serviceName == 'system') {
                 return $systemService;
             }
         });
-        $di['password'] = $passwordMock;
 
         $service = new Service();
         $service->setDi($di);
@@ -1618,8 +1590,8 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $member_id = 1;
-        $expected = json_decode($queryResult, 1);
-        $result = $service->getPermissions($member_id);
+        $expected  = json_decode($queryResult, true);
+        $result    = $service->getPermissions($member_id);
         $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
