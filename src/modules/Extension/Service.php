@@ -735,7 +735,7 @@ class Service implements InjectionAwareInterface
     }
 
     // Checks if the current user has permission to edit a module's settings
-    public function hasManagePermission(string $module, ?\Box_App $app = null): void
+    public function hasManagePermission(string $module, ?\FOSSBilling\App $app = null): void
     {
         $staff_service = $this->di['mod_service']('Staff');
 

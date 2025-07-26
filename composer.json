@@ -17,64 +17,64 @@
     ],
     "homepage": "https://fossbilling.org",
     "require": {
-        "php": ">=8.2",
-        "ext-curl": "*",
-        "ext-intl": "*",
+        "php": ">=8.1",
         "ext-mbstring": "*",
         "ext-pdo": "*",
         "ext-zlib": "*",
         "antcms/antloader": "^2.0.2",
-        "dompdf/dompdf": "^3.0.0",
+        "dompdf/dompdf": "^2.0.1",
         "egulias/email-validator": "^4.0",
         "filp/whoops": "^2.14",
         "gabordemooij/redbean": "^5.7",
+        "geoip2/geoip2": "^3.0.0",
         "io-developer/php-whois": "^4.1",
         "lcharette/webpack-encore-twig": "^1.2.0",
         "league/commonmark": "^2.3",
         "league/csv": "^9.8",
-        "liborm85/composer-vendor-cleaner": "^1.7",
         "mattketmo/email-checker": "^2.2",
-        "php-debugbar/php-debugbar": "^2.1.6",
-        "maxmind-db/reader": "^1.11",
+        "maximebf/debugbar": "^1.19",
         "monolog/monolog": "^3.5",
         "nelexa/zip": "^4.0.2",
         "phpmyadmin/motranslator": "^5.3.0",
         "pimple/pimple": "^3.3",
         "plesk/api-php-lib": "^2.0.0",
-        "prinsfrank/standards": "^3.8",
         "psr/log": "^3.0.0",
         "ramsey/uuid": "^4.7",
         "sentry/sentry": "^4",
-        "stripe/stripe-php": "^17.0.0",
-        "symfony/cache": "^7.2",
-        "symfony/console": "^7.2",
-        "symfony/filesystem": "^7.2",
-        "symfony/http-client": "^7.2",
-        "symfony/http-foundation": "^7.2",
-        "symfony/mailer": "^7.2",
-        "symfony/polyfill-php83": "^1.29",
-        "symfony/polyfill-php84": "^1.31",
-        "symfony/sendgrid-mailer": "^7.0",
+        "stripe/stripe-php": "^13.0.0",
+        "symfony/cache": "^6.4",
+        "symfony/filesystem": "^6.4",
+        "symfony/http-client": "^6.4",
+        "symfony/http-foundation": "^6.4",
+        "symfony/mailer": "^6.4",
+        "symfony/polyfill-intl-icu": "^1.27",
+        "symfony/polyfill-intl-idn": "*",
+        "symfony/sendgrid-mailer": "^6.4",
+        "symfony/translation": "^6.4",
+        "symfony/twig-bridge": "^6.4",
         "symfony/webpack-encore-bundle": "^2.1",
         "twig/intl-extra": "^3.5",
         "twig/twig": "^3.3.9"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.8",
-        "phpstan/phpstan": "^2.0",
         "phpstan/extension-installer": "^1.2",
-        "phpstan/phpstan-deprecation-rules": "^2.0",
-        "phpunit/phpunit": "^11.4.3",
-        "rector/rector": "^2.0.0",
+        "phpstan/phpstan-deprecation-rules": "^1.1",
+        "phpunit/phpunit": "^10.4",
+        "rector/rector": "^0.18.0",
         "symfony/deprecation-contracts": "^3.0.0",
-        "symfony/phpunit-bridge": "^7.0"
+        "symfony/phpunit-bridge": "^6.4"
+    },
+    "suggest": {
+        "ext-curl": "*",
+        "ext-gettext": "*",
+        "ext-intl": "*"
     },
     "config": {
         "sort-packages": true,
         "allow-plugins": {
             "phpstan/extension-installer": true,
-            "php-http/discovery": true,
-            "liborm85/composer-vendor-cleaner": true
+            "php-http/discovery": true
         },
         "vendor-dir": "src/vendor"
     },
@@ -82,29 +82,6 @@
         "php-http/message-factory": "*",
         "symfony/polyfill-php72": "*",
         "symfony/polyfill-php80": "*",
-        "symfony/polyfill-php81": "*",
-        "symfony/polyfill-php82": "*",
-        "symfony/polyfill-intl-icu": "*",
-        "symfony/polyfill-intl-idn": "*"
-    },
-    "extra": {
-        "dev-files": {
-            "/": [
-                "tests/",
-                "docs/",
-                ".travis.yml",
-                ".github/",
-                ".devcontainer/"
-            ],
-            "gabordemooij/redbean": [
-                "testing/"
-            ],
-            "mattketmo/email-checker": [
-                "res/"
-            ],
-            "maxmind-db/reader": [
-                "ext"
-            ]
-        }
+        "symfony/polyfill-php81": "*"
     }
 }
