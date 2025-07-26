@@ -12,6 +12,7 @@
 use DebugBar\Bridge\NamespacedTwigProfileCollector;
 use FOSSBilling\Environment;
 use FOSSBilling\TwigExtensions\DebugBar;
+use Symfony\Component\Filesystem\Path;
 use Twig\Extension\ProfilerExtension;
 use Twig\Profiler\Profile;
 
@@ -40,7 +41,7 @@ class Box_AppAdmin extends Box_App
 
     public function render($fileName, $variableArray = []): string
     {
-        $template = $this->getTwig()->load($fileName . '.html.twig');
+        $template = $this->getTwig()->load(Path::changeExtension($fileName, '.html.twig'));
 
         return $template->render($variableArray);
     }
@@ -60,7 +61,7 @@ class Box_AppAdmin extends Box_App
         $loader = new Box_TwigLoader(
             [
                 'mods' => PATH_MODS,
-                'theme' => PATH_THEMES . DIRECTORY_SEPARATOR . $theme['code'],
+                'theme' => Path::join(PATH_THEMES, $theme['code']),
                 'type' => 'admin',
             ]
         );

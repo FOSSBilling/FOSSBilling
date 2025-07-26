@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -12,6 +13,7 @@
 namespace Box\Mod\Seo;
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Path;
 
 class Service implements InjectionAwareInterface
 {
@@ -96,11 +98,11 @@ class Service implements InjectionAwareInterface
     private function _getEngines(): array
     {
         $engines = [];
-        $dir = __DIR__ . '/Engines';
+        $dir = Path::join(__DIR__, 'Engines');
         $files = scandir($dir);
 
         foreach ($files as $file) {
-            if (str_ends_with($file, '.php')) {
+            if (Path::hasExtension($file, '.php')) {
                 $engine = substr($file, 0, -4);
                 $class = 'Box\\Mod\\Seo\\Engines\\' . $engine;
                 $engines[$engine] = new $class();

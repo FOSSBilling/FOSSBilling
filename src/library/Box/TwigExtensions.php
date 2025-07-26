@@ -270,7 +270,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             $pds[$v] .= 's';
         }
 
-        return sprintf('%d %s ', $no, $pds[$v]);
+        return "{$no} {$pds[$v]} ";
     }
 
     public function twig_size_filter($value): string

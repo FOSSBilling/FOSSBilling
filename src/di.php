@@ -385,7 +385,7 @@ $di['is_admin_logged'] = function () use ($di) {
 
         $di['set_return_uri'];
 
-        header(sprintf('Location: %s', $di['url']->adminLink('staff/login')));
+        header("Location: {$di['url']->adminLink('staff/login')}");
         exit;
     }
 
@@ -705,13 +705,6 @@ $di['license_server'] = function () use ($di) {
  * @return \FOSSBilling\GeoIP\Reader
  */
 $di['geoip'] = fn (): FOSSBilling\GeoIP\Reader => new FOSSBilling\GeoIP\Reader();
-
-/*
- * @param void
- *
- * @return \FOSSBilling\PasswordManager
- */
-$di['password'] = fn (): FOSSBilling\PasswordManager => new FOSSBilling\PasswordManager();
 
 /*
  * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.

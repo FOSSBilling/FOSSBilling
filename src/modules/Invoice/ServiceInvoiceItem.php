@@ -70,7 +70,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                             $orderService->activateOrder($order);
                         } catch (\Exception $e) {
                             error_log($e->getMessage());
-                            $orderService->saveStatusChange($order, 'Order could not be activated due to error: ' . $e->getMessage());
+                            $orderService->saveStatusChange($order, "Order could not be activated due to error: {$e->getMessage()}.");
                         }
                     }
 
@@ -87,7 +87,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                         $orderService->renewOrder($order);
                     } catch (\Exception $e) {
                         error_log($e->getMessage());
-                        $orderService->saveStatusChange($order, 'Order could not renew due to error: ' . $e->getMessage());
+                        $orderService->saveStatusChange($order, "Order could not renew due to error: {$e->getMessage()}.");
                     }
 
                     break;

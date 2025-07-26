@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\Response;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private readonly Filesystem $filesystem;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -30,6 +31,11 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
     }
 
     public function attachOrderConfig(\Model_Product $product, array &$data)
@@ -149,7 +155,7 @@ class Service implements InjectionAwareInterface
     {
         $productService = $this->di['mod_service']('product');
         $result = [
-            'path' => Path::normalize(PATH_UPLOADS . md5($model->filename)),
+            'path' => Path::join(PATH_UPLOADS, md5($model->filename)),
             'filename' => $model->filename,
         ];
 
@@ -163,7 +169,6 @@ class Service implements InjectionAwareInterface
     public function uploadProductFile(\Model_Product $productModel)
     {
         $productService = $this->di['mod_service']('product');
-        $filesystem = new Filesystem();
         $request = $this->di['request'];
 
         if ($request->files->count() == 0) {
@@ -183,9 +188,9 @@ class Service implements InjectionAwareInterface
 
         // Remove old file.
         if (isset($config['filename'])) {
-            $oldFilePath = Path::normalize(PATH_UPLOADS . md5($config['filename']));
-            if ($filesystem->exists($oldFilePath)) {
-                $filesystem->remove($oldFilePath);
+            $oldFilePath = Path::join(PATH_UPLOADS, md5($config['filename']));
+            if ($this->filesystem->exists($oldFilePath)) {
+                $this->filesystem->remove($oldFilePath);
             }
         }
 
@@ -266,10 +271,9 @@ class Service implements InjectionAwareInterface
     {
         $info = $this->toApiArray($serviceDownloadable);
 
-        $filesystem = new Filesystem();
         $fileName = $info['filename'];
         $filePath = $info['path'];
-        if (!$filesystem->exists($filePath)) {
+        if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
@@ -280,7 +284,7 @@ class Service implements InjectionAwareInterface
 
         // Send the file for download, unless in testing environment.
         if (!Environment::isTesting()) {
-            $response = new Response($filesystem->readFile($filePath));
+            $response = new Response($this->filesystem->readFile($filePath));
 
             $disposition = $response->headers->makeDisposition(
                 HeaderUtils::DISPOSITION_ATTACHMENT,

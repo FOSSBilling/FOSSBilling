@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
 class i18n
@@ -110,6 +111,7 @@ class i18n
      */
     public static function getLocales(bool $includeLocaleDetails = false, bool $disabled = false): array
     {
+        $filesystem = new Filesystem();
         $locales = self::getLocaleList($disabled);
         if (!$includeLocaleDetails) {
             return $locales;
@@ -117,8 +119,8 @@ class i18n
         $details = [];
 
         // Handle when FOSSBilling is running with a dummy locale folder.
-        if (file_exists(Path::normalize(PATH_LANGS . '/locales.php'))) {
-            $array = include Path::normalize(PATH_LANGS . '/locales.php');
+        if ($filesystem->exists(Path::join(PATH_LANGS, 'locales.php'))) {
+            $array = include Path::join(PATH_LANGS, 'locales.php');
         } else {
             $array = ['en_US' => 'English'];
         }
@@ -146,20 +148,23 @@ class i18n
      */
     public static function toggleLocale(string $locale): bool
     {
-        $basePath = PATH_LANGS . DIRECTORY_SEPARATOR . $locale;
-        if (!is_dir($basePath)) {
+        $filesystem = new Filesystem();
+        $basePath = Path::join(PATH_LANGS, $locale);
+        if (!$filesystem->exists($basePath)) {
             throw new InformationException('Unable to enable / disable the locale as it is not present in the locale folder.');
         }
 
-        $disablePath = $basePath . DIRECTORY_SEPARATOR . '.disabled';
+        $disablePath = Path::join($basePath, '.disabled');
 
         // Reverse the status of the locale
-        if (file_exists($disablePath)) {
-            return unlink($disablePath);
-        } else {
-            file_put_contents($disablePath, '');
+        if ($filesystem->exists($disablePath)) {
+            $filesystem->remove($disablePath);
 
-            return file_exists($disablePath);
+            return true;
+        } else {
+            $filesystem->dumpFile($disablePath, '');
+
+            return $filesystem->exists($disablePath);
         }
     }
 
@@ -173,12 +178,13 @@ class i18n
      */
     public static function getLocaleCompletionPercent(string $locale): int
     {
+        $filesystem = new Filesystem();
         if ($locale === 'en_US') {
             return 100;
         }
 
-        $completionFile = Path::normalize(PATH_LANGS . '/completion.php');
-        if (!file_exists($completionFile)) {
+        $completionFile = Path::join(PATH_LANGS, 'completion.php');
+        if (!$filesystem->exists($completionFile)) {
             return 0;
         }
 
@@ -196,12 +202,13 @@ class i18n
      */
     private static function getLocaleList(bool $disabled = false): array
     {
+        $filesystem = new Filesystem();
         if ($disabled) {
             // Only get a list of the disabled locales
-            $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), fn ($dir): bool => is_dir($dir) && file_exists($dir . DIRECTORY_SEPARATOR . '.disabled'));
+            $locales = array_filter(glob(Path::join(PATH_LANGS, '*')), fn ($dir): bool => $filesystem->exists($dir) && $filesystem->exists(Path::join($dir, '.disabled')));
         } else {
             // Only get a list of the enabled locales
-            $locales = array_filter(glob(PATH_LANGS . DIRECTORY_SEPARATOR . '*'), fn ($dir): bool => is_dir($dir) && !file_exists($dir . DIRECTORY_SEPARATOR . '.disabled'));
+            $locales = array_filter(glob(Path::join(PATH_LANGS, '*')), fn ($dir): bool => $filesystem->exists($dir) && !$filesystem->exists(Path::join($dir, '.disabled')));
         }
 
         $locales = array_map(basename(...), $locales); // get only the directory name

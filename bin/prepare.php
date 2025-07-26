@@ -1,9 +1,11 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Set up an instance of FOSSBilling. Usually used for setting up a test environment.
- * 
+ *
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc. 
+ * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -32,22 +34,23 @@ $loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
 use FOSSBilling\Environment;
-use \Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 
 // Make sure the install folder exists
 $filesystem = new Filesystem();
 if (!$filesystem->exists(PATH_INSTALL)) {
-    throw new Exception('The \'install\' folder is missing. Please clone the repository again.');
+    throw new Exception("The 'install' folder is missing. Please clone the repository again.");
 }
 
 if (!$filesystem->exists(PATH_CONFIG_SAMPLE)) {
-    throw new Exception('The \'config-sample.php\' file is missing. Please clone the repository again.');
+    throw new Exception("The 'config-sample.php' file is missing. Please clone the repository again.");
 }
 
 // Determine which SQL dump to use
-$sqlBase = PATH_INSTALL . DIRECTORY_SEPARATOR . 'sql';
-$sqlStructure = $sqlBase . DIRECTORY_SEPARATOR . 'structure.sql';
-$sqlContent = $sqlBase . DIRECTORY_SEPARATOR . 'content' . (Environment::isTesting() ? '_test' : '') . '.sql';
+$sqlBase = Path::join(PATH_INSTALL, 'sql');
+$sqlStructure = Path::join($sqlBase, 'structure.sql');
+$sqlContent = Path::join($sqlBase, 'content' . (Environment::isTesting() ? '_test' : '') . '.sql');
 
 $db = [
     'type' => 'mysql',
@@ -63,7 +66,7 @@ if (in_array(null, $databaseConfig, true)) {
 }
 
 echo sprintf("Setting up a new FOSSBilling instance for the %s environment", Environment::getCurrentEnvironment()) . PHP_EOL;
-echo sprintf("Attempting to connect to the database: %s@%s/%s", $db['user'], $db['host'], $db['dbname']) . PHP_EOL;
+echo sprintf("Attempting to connect to the database: {$db['user']}@{$db['host']}/{$db['dbname']}") . PHP_EOL;
 
 $iter = 30;
 $waitIntervalInSeconds = 2;
@@ -78,7 +81,7 @@ while (!$connected && $iter > 0) {
         ]);
 
         $version = $pdo->query('SELECT version()');
-        echo sprintf("Connected to the database server, version: %s", $version->fetchColumn()) . PHP_EOL;
+        echo "Connected to the database server, version: {$version->fetchColumn()}" . PHP_EOL;
 
         $connected = true;
     } catch (Exception $e) {
@@ -88,7 +91,7 @@ while (!$connected && $iter > 0) {
             sleep($waitIntervalInSeconds); // The server might still be initializing. Wait a bit.
             $iter--;
 
-            echo sprintf("Waiting for the database container to go up (Attempt: %s, Message: %s)", $iter, $message) . PHP_EOL;
+            echo "Waiting for the database container to go up (Attempt: {$iter}, Message: {$message})." . PHP_EOL;
         } else {
             throw $e;
         }
@@ -115,11 +118,11 @@ echo sprintf("Connecting to the %s database with the user: %s", $db['dbname'], $
 execSQL($pdo, sprintf("USE %s;", $db['dbname']));
 
 echo sprintf("Setting up the database structure from the dump: %s", $sqlStructure) . PHP_EOL;
-$sql = file_get_contents($sqlStructure);
+$sql = $filesystem->readFile($sqlStructure);
 execSQL($pdo, $sql);
 
 echo sprintf("Importing the database content from the dump: %s", $sqlContent) . PHP_EOL;
-$sql = file_get_contents($sqlContent);
+$sql = $filesystem->readFile($sqlContent);
 execSQL($pdo, $sql);
 
 echo ("Creating the configuration file: config.php") . PHP_EOL;

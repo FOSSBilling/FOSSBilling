@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -13,14 +14,18 @@ if (php_sapi_name() !== 'cli') {
     exit('This script can only be run from the command line.');
 }
 
-require_once __DIR__ . '/load.php';
-$di = include __DIR__ . '/di.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 
 use Symfony\Component\Console\Application;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+
+$di = include Path::join(PATH_ROOT, 'di.php');
 
 $di['translate']();
 
 $application = new Application();
+$filesystem = new Filesystem();
 
 // Setting the application constraints
 $application->setName('FOSSBilling');
@@ -29,7 +34,7 @@ $application->setVersion($di['mod_service']('system')->getVersion());
 $modules = $di['mod']('extension')->getCoreModules();
 
 // Check if the config file exists. If it does, the database is likely already initialized and this will work.
-if (file_exists(PATH_CONFIG)) {
+if ($filesystem->exists(PATH_CONFIG)) {
     // Try to load the modules from the database. If this fails, the database might not initialized yet. We will use the list of the core modules instead.
     try {
         $modules = $di['mod_service']('extension')->getCoreAndActiveModules();
@@ -43,10 +48,10 @@ foreach ($modules as $module) {
     // Our manifests declare the names in lowercase, but the module directories start with an uppercase letter.
     $cap = ucfirst($module);
 
-    $commands = glob(__DIR__ . '/modules/' . $cap . '/Commands/*.php');
+    $commands = glob(Path::join(PATH_ROOT, 'modules', $cap, 'Commands', '*.php'));
 
     foreach ($commands as $command) {
-        $command = basename($command, '.php');
+        $command = Path::getFilenameWithoutExtension($command, '.php');
         $class = 'Box\\Mod\\' . $cap . '\\Commands\\' . $command;
 
         $command = new $class();

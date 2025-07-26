@@ -11,9 +11,18 @@
 
 namespace Box\Mod\Servicedomain;
 
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private readonly Filesystem $filesystem;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -912,10 +921,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $exists = $this->di['db']->getAssoc($query);
 
-        $pattern = PATH_LIBRARY . '/Registrar/Adapter/*.php';
+        $pattern = Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', '*.php');
         $adapters = [];
         foreach (glob($pattern) as $path) {
-            $adapter = pathinfo($path, PATHINFO_FILENAME);
+            $adapter = Path::getFilenameWithoutExtension($path);
             if (!array_key_exists($adapter, $exists)) {
                 $adapters[] = $adapter;
             }
@@ -938,11 +947,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function registrarGetConfiguration(\Model_TldRegistrar $model): array
     {
-        if (is_string($model->config) && json_validate($model->config)) {
-            return json_decode($model->config, true);
-        }
-
-        return [];
+        return json_decode($model->config, true) ?? [];
     }
 
     public function registrarGetRegistrarAdapterConfig(\Model_TldRegistrar $model)
@@ -954,7 +959,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function registrarGetRegistrarAdapterClassName(\Model_TldRegistrar $model)
     {
-        if (!file_exists(PATH_LIBRARY . '/Registrar/Adapter/' . $model->registrar . '.php')) {
+        if (!$this->filesystem->exists(Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', "{$model->registrar}.php"))) {
             throw new \FOSSBilling\Exception('Domain registrar :adapter was not found', [':adapter' => $model->registrar]);
         }
 
