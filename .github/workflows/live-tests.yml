@@ -175,10 +175,16 @@ jobs:
       - name: Run the API test suite
         run: php ./src/vendor/bin/phpunit --configuration phpunit-live.xml
 
-      - name: Display the FOSSBilling PHP error log
+      - name: Display the FOSSBilling PHP error log, if it exists
         if: always()
-        run: cat /var/www/localhost/data/log/php_error.log
-
+        run: |
+          PHP_ERROR_LOG_PATH="/var/www/localhost/data/log/php_error.log"
+            
+          if [ -f "$PHP_ERROR_LOG_PATH" ]; then
+            cat "$PHP_ERROR_LOG_PATH"
+          else
+            echo "The PHP error log does not exist."
+          fi
       - name: Display the other FOSSBilling logs
         if: always()
         working-directory: /var/www/localhost/data/log/
