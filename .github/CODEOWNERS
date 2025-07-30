@@ -1,4 +1,4 @@
-# @see https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#codeowners-and-forks
+# @see https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 src/modules/Security/ @BelleNottelling
 src/modules/Serviceapikey/ @BelleNottelling
