@@ -104,16 +104,10 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($password);
-
-        $di = new \Pimple\Container();
-        $di['logger'] = new \Box_Log();
+        $di                   = new \Pimple\Container();
+        $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db'] = $dbMock;
-        $di['password'] = $passwordMock;
+        $di['db']             = $dbMock;
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -147,7 +141,8 @@ class ServiceTest extends \BBTestCase
             ]);
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
         $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
@@ -156,10 +151,11 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $clientServiceMock);
-        $di['mod'] = $di->protect(fn () => $modMock);
-        $di['tools'] = $toolsMock;
+        $di['db']             = $dbMock;
+        $di['mod_service']    = $di->protect(fn($name) => $clientServiceMock);
+        $di['mod']            = $di->protect(fn() => $modMock);
+        $di['tools']          = $toolsMock;
+        $di['validator']      = $validatorMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -272,7 +268,8 @@ class ServiceTest extends \BBTestCase
             ]);
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
         $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
@@ -281,10 +278,11 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $clientServiceMock);
-        $di['mod'] = $di->protect(fn () => $modMock);
-        $di['tools'] = $toolsMock;
+        $di['db']             = $dbMock;
+        $di['mod_service']    = $di->protect(fn($name) => $clientServiceMock);
+        $di['mod']            = $di->protect(fn() => $modMock);
+        $di['tools']          = $toolsMock;
+        $di['validator']      = $validatorMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -338,16 +336,10 @@ class ServiceTest extends \BBTestCase
 
         $password = 'new password';
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($password);
-
-        $di = new \Pimple\Container();
-        $di['logger'] = new \Box_Log();
+        $di                   = new \Pimple\Container();
+        $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
-        $di['db'] = $dbMock;
-        $di['password'] = $passwordMock;
+        $di['db']             = $dbMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());

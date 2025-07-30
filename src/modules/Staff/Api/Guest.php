@@ -41,7 +41,7 @@ class Guest extends \Api_Abstract
         $validator->isPasswordStrong($data['password']);
 
         if (!is_null($data['email'])) {
-            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
         }
 
         $result = $this->getService()->createAdmin($data);
@@ -67,7 +67,7 @@ class Guest extends \Api_Abstract
         ];
         $validator = $this->di['validator'];
         $validator->checkRequiredParamsForArray($required, $data);
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
+        $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
 
         $config = $this->getMod()->getConfig();
 
@@ -117,8 +117,10 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
         }
 
+        $box_passwd = new \Box_Password;
+
         $c = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
-        $c->pass = $this->di['password']->hashIt($data['password']);
+        $c->pass = $box_passwd->hashIt($data['password']);
         $this->di['db']->store($c);
 
         $this->di['logger']->info('Admin user requested password reset. Sent to email %s', $c->email);
@@ -145,7 +147,7 @@ class Guest extends \Api_Abstract
         ];
         $validator = $this->di['validator'];
         $validator->checkRequiredParamsForArray($required, $data);
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
         $c = $this->di['db']->findOne('Admin', 'email = ?', [$data['email']]);
 
         if (!$c instanceof \Model_Admin) {

@@ -679,11 +679,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $company_number = !empty($client->company_number) ? $client->company_number : '';
         $document_nr = !empty($client->document_nr) ? $client->document_nr : '';
 
+        $password = new \Box_Password;
+
         $contact = new \Registrar_Domain_Contact();
         $contact
             ->setEmail($email)
             ->setUsername($email)
-            ->setPassword($this->di['tools']->generatePassword(10))
+            ->setPassword($password->generate(10, 3))
             ->setFirstname($first_name)
             ->setLastname($last_name)
             ->setCity($city)
@@ -938,11 +940,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function registrarGetConfiguration(\Model_TldRegistrar $model): array
     {
-        if (is_string($model->config) && json_validate($model->config)) {
-            return json_decode($model->config, true);
-        }
-
-        return [];
+        return json_decode($model->config, true) ?: [];
     }
 
     public function registrarGetRegistrarAdapterConfig(\Model_TldRegistrar $model)

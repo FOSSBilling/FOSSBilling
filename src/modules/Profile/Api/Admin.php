@@ -73,7 +73,7 @@ class Admin extends \Api_Abstract
     public function update($data)
     {
         if (!is_null($data['email'])) {
-            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = $this->di['validator']->validateAndSanitizeEmail($data['email']);
         }
 
         return $this->getService()->updateAdmin($this->getIdentity(), $data);
@@ -113,7 +113,9 @@ class Admin extends \Api_Abstract
 
         $staff = $this->getIdentity();
 
-        if (!$this->di['password']->verify($data['current_password'], $staff->pass)) {
+        $box_passwd = new \Box_Password;
+
+        if (!$box_passwd->verify($data['current_password'], $staff->pass)) {
             throw new \FOSSBilling\InformationException('Current password incorrect');
         }
 

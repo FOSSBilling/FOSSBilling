@@ -1372,7 +1372,56 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $randId);
     }
 
-    public function testTicketCreateForClient(): void
+    public function testTicketCreateForGuest()
+    {
+        $message = new \Model_SupportTicketMessage();
+        $message->loadBean(new \DummyBean());
+
+        $randId = random_int(1, 100);
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('dispense')
+            ->will($this->returnValue($message));
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->will($this->returnValue($randId));
+
+        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire')
+            ->will($this->returnValue(array()));
+
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+
+        $di                   = new \Pimple\Container();
+        $di['db']             = $dbMock;
+        $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
+        $di['request']        = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
+        $di['events_manager'] = $eventMock;
+        $di['tools']          = $toolsMock;
+        $di['validator']      = $validatorMock;
+
+        $this->service->setDi($di);
+
+        $helpdesk = new \Model_SupportHelpdesk();
+        $helpdesk->loadBean(new \DummyBean());
+
+        $data = array(
+            'name'    => 'Name',
+            'email'   => 'email@example.com',
+            'subject' => 'Subject',
+            'message' => 'message'
+        );
+
+        $result = $this->service->ticketCreateForGuest($data);
+        $this->assertIsString($result);
+        $this->assertGreaterThanOrEqual(200, strlen($result));
+        $this->assertLessThanOrEqual(255, strlen($result));
+    }
+
+    public function testTicketCreateForClient()
     {
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
@@ -1943,7 +1992,8 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;

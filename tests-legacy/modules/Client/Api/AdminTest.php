@@ -158,7 +158,6 @@ class AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -188,7 +187,6 @@ class AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -309,7 +307,6 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray');
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -398,7 +395,6 @@ class AdminTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -446,18 +442,13 @@ class AdminTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
         $profileService = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['logger'] = new \Box_Log();
-        $di['password'] = $passwordMock;
+        $di['logger']         = new \Box_Log();
+
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')

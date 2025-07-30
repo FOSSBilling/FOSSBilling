@@ -1,5 +1,5 @@
 <?php
-
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -130,7 +130,7 @@ class Service implements InjectionAwareInterface
         $stmt = $pdo->prepare($sql);
         $stmt->execute(['id' => $member_id]);
         $json = $stmt->fetchColumn() ?? '';
-        $permissions = json_decode($json, 1);
+        $permissions = json_decode($json, true);
         if (!$permissions) {
             return [];
         }
@@ -441,16 +441,18 @@ class Service implements InjectionAwareInterface
             return $cron;
         }
 
-        $cronEmail = $this->di['tools']->generatePassword() . '@' . $this->di['tools']->generatePassword() . '.com';
+        $password = new \Box_Password;
+
+        $cronEmail = $password->generate() . '@' . $password->generate() . '.com';
         $cronEmail = filter_var($cronEmail, FILTER_SANITIZE_EMAIL);
 
-        $CronPass = $this->di['tools']->generatePassword(256, 4);
+        $CronPass = $password->generate(256, 4);
 
         $cron = $this->di['db']->dispense('Admin');
         $cron->role = \Model_Admin::ROLE_CRON;
         $cron->admin_group_id = 1;
         $cron->email = $cronEmail;
-        $cron->pass = $this->di['password']->hashIt($CronPass);
+        $cron->pass = $password->hashIt($CronPass);
         $cron->name = 'System Cron Job';
         $cron->signature = '';
         $cron->protected = 1;
@@ -544,7 +546,8 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 
-        $model->pass = $this->di['password']->hashIt($password);
+        $box_passwd = new \Box_Password;
+        $model->pass = $box_passwd->hashIt($password);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
@@ -570,11 +573,13 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
 
+        $box_passwd = new \Box_Password;
+
         $model = $this->di['db']->dispense('Admin');
         $model->role = \Model_Admin::ROLE_STAFF;
         $model->admin_group_id = $data['admin_group_id'];
         $model->email = $data['email'];
-        $model->pass = $this->di['password']->hashIt($data['password']);
+        $model->pass = $box_passwd->hashIt($data['password']);
         $model->name = $data['name'];
         $model->status = $model->getStatus($data['status']);
         $model->signature = $signature;
@@ -599,12 +604,14 @@ class Service implements InjectionAwareInterface
      */
     public function createAdmin(array $data)
     {
+        $box_passwd = new \Box_Password;
+
         $admin = $this->di['db']->dispense('Admin');
         $admin->role = 'admin';
         $admin->admin_group_id = 1;
         $admin->name = 'Administrator';
         $admin->email = $data['email'];
-        $admin->pass = $this->di['password']->hashIt($data['password']);
+        $admin->pass = $box_passwd->hashIt($data['password']);
         $admin->protected = 1;
         $admin->status = 'active';
         $admin->created_at = date('Y-m-d H:i:s');

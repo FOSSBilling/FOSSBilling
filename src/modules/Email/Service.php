@@ -132,7 +132,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return json_decode($json, true);
         }
 
-        return [];
+        return json_decode($json, true) ?: [];
     }
 
     public function sendTemplate($data)

@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
@@ -25,6 +24,8 @@ class Environment
     /**
      * Get the current environment of the application.
      * The environment variable set in the operating system will have priority over the environment variable set in the .env file.
+     *
+     * @return string
      */
     public static function getCurrentEnvironment(): string
     {

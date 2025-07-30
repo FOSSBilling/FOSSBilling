@@ -13,6 +13,7 @@ namespace Box\Mod\Extension;
 
 use FOSSBilling\Config;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
@@ -515,7 +516,8 @@ class Service implements InjectionAwareInterface
             unlink($zipPath);
         }
 
-        $this->di['tools']->emptyFolder($extractedPath);
+        $filesystem = new Filesystem();
+        $filesystem->remove($extractedPath);
 
         return true;
     }
@@ -610,15 +612,8 @@ class Service implements InjectionAwareInterface
                 $config = [];
             } else {
                 $config = $this->di['crypt']->decrypt($c->meta_value, $this->_getSalt());
-
-                if (is_string($config) && json_validate($config)) {
-                    $config = json_decode($config, true);
-                } else {
-                    $config = [];
-                }
+                $config = $this->di['tools']->decodeJ($config);
             }
-
-            $config['ext'] = $ext;
 
             return $config;
         });
@@ -626,7 +621,6 @@ class Service implements InjectionAwareInterface
 
     public function setConfig($data)
     {
-        $this->hasManagePermission($data['ext']);
         $ext = $data['ext'];
         $this->getConfig($ext); // Creates new config if it does not exist in DB
 

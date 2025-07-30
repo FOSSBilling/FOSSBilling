@@ -253,11 +253,7 @@ class Service implements InjectionAwareInterface
 
     public function getConfig(\Model_ClientOrder $model)
     {
-        if (is_string($model->config) && json_validate($model->config)) {
-            return json_decode($model->config, true);
-        }
-
-        return [];
+        return json_decode($model->config, true) ?: [];
     }
 
     public function productHasOrders(\Model_Product $product)

@@ -284,7 +284,9 @@ class ServiceTest extends \BBTestCase
         $themeMock = $this->getMockBuilder('\\' . Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getPathSettingsDataFile')
-            ->willReturn('location/Of/Assets/file');
+            ->will($this->returnValue('location/Of/Assets/file'));
+
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
 
         $di = new \Pimple\Container();
 

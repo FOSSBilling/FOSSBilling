@@ -110,11 +110,11 @@ class AdminTest extends \BBTestCase
     {
         $di = new \Pimple\Container();
         $di['validator'] = new \FOSSBilling\Validate();
-        $di['password'] = new \FOSSBilling\PasswordManager();
+        $box_passwd = new \Box_Password;
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
-        $model->pass = $di['password']->hashIt('oldpw');
+        $model->pass = $box_passwd->hashIt('oldpw');
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
             ->getMock();

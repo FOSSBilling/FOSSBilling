@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
@@ -16,6 +15,8 @@ use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Level;
 use Monolog\Logger;
+use Monolog\Formatter\LineFormatter;
+use Monolog\Handler\StreamHandler;
 use Symfony\Component\Filesystem\Path;
 
 class Monolog
