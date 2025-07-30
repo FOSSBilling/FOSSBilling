@@ -109,7 +109,7 @@ class Box_Mod
         $info['id'] = $this->mod;
         $info['type'] = 'mod';
         if (!empty($info['icon_url'])) {
-            Path::join('modules', ucfirst($this->mod), $info['icon_url']);
+            $info['icon_url'] = Path::join('modules', ucfirst($this->mod), $info['icon_url']);
         }
 
         return $info;

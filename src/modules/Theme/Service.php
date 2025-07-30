@@ -398,7 +398,7 @@ class Service implements InjectionAwareInterface
         $manifest = 'manifest';
         $encoreInfo['is_encore_theme'] = true;
 
-        if (!$this->filesystem->exists($this->getEncoreJsonPath($entrypoint)) && !$this->di['filesystem']->exists($this->getEncoreJsonPath($manifest))) {
+        if (!$this->filesystem->exists($this->getEncoreJsonPath($entrypoint)) && !$this->filesystem->exists($this->getEncoreJsonPath($manifest))) {
             $encoreInfo['is_encore_theme'] = false;
         }
 
