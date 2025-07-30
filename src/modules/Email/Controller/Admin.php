@@ -40,7 +40,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/email/history/', 'get_history', [], static::class);
         $app->get('/email/history', 'get_history', [], static::class);
@@ -49,14 +49,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/email/:id', 'get_email', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_history(\Box_App $app)
+    public function get_history(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_email_history');
     }
 
-    public function get_template(\Box_App $app, $id)
+    public function get_template(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $template = $api->email_template_get(['id' => $id]);
@@ -64,7 +64,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_email_template', ['template' => $template]);
     }
 
-    public function get_email(\Box_App $app, $id)
+    public function get_email(\FOSSBilling\App $app, $id)
     {
         $api = $this->di['api_admin'];
         $template = $api->email_email_get(['id' => $id]);

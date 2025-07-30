@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,6 +12,8 @@
 
 require __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 global $di;
+
+use Symfony\Component\HttpFoundation\Request;
 
 // Setting up the debug bar
 $debugBar = new DebugBar\StandardDebugBar();
@@ -26,17 +29,12 @@ $configCollector->useHtmlVarDumper();
 
 $debugBar->addCollector($configCollector);
 
-// Get the request URL
-$url = $_GET['_url'] ?? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
-// Rewrite for custom pages
-if (str_starts_with($url, '/page/')) {
-    $url = substr_replace($url, '/custompages/', 0, 6);
-}
-
-// Set the final URL
-$_GET['_url'] = $url;
-$http_err_code = $_GET['_errcode'] ?? null;
+// Get request information.
+$request = Request::createFromGlobals();
+$requestPath = $request->getPathInfo() ?: '/';
+$request->query->set('_url', $requestPath); // TODO: Legacy support for _url.
+$httpErrorCode = $request->query->get('_errcode'); // TODO: Legacy support for _errcode.
+$restoreSession = $request->query->get('restore_session'); // TODO: Legacy support for restore_session.
 
 $debugBar['time']->startMeasure('session_start', 'Starting / restoring the session');
 
@@ -44,42 +42,32 @@ $debugBar['time']->startMeasure('session_start', 'Starting / restoring the sessi
  * Workaround: Session IDs get reset when using PGs like PayPal because of the `samesite=strict` cookie attribute, resulting in the client getting logged out.
  * Internally the return and cancel URLs get a restore_session GET parameter attached to them with the proper session ID to restore, so we do so here.
  */
-if (!empty($_GET['restore_session'])) {
-    session_id($_GET['restore_session']);
+if (!empty($restoreSession)) {
+    session_id($restoreSession);
 }
 
 $di['session'];
 $debugBar['time']->stopMeasure('session_start');
 
-if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
-    define('ADMIN_AREA', true);
-    $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $url));
-    $app = new Box_AppAdmin([], $debugBar);
-} else {
-    define('ADMIN_AREA', false);
-    $appUrl = $url;
-    $app = new Box_AppClient([], $debugBar);
-}
-
-$app->setUrl($appUrl);
+$app = new \FOSSBilling\App($request, $debugBar);
 $app->setDi($di);
 
 $debugBar['time']->startMeasure('translate', 'Setting up translations');
 $di['translate']();
 $debugBar['time']->stopMeasure('translate');
 
-// If HTTP error code has been passed, handle it.
-if (!is_null($http_err_code)) {
-    switch ($http_err_code) {
+// TODO: Legacy error handling - if HTTP error code has been passed, handle it.
+if (!is_null($httpErrorCode)) {
+    switch ($httpErrorCode) {
         case '404':
-            $e = new FOSSBilling\Exception('Page :url not found', [':url' => $url], 404);
+            $e = new FOSSBilling\Exception('Page :url not found', [':url' => $requestPath], 404);
             echo $app->show404($e);
 
             break;
         default:
-            $http_err_code = intval($http_err_code);
-            http_response_code($http_err_code);
-            $e = new FOSSBilling\Exception('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
+            $httpErrorCode = intval($httpErrorCode);
+            http_response_code($httpErrorCode);
+            $e = new FOSSBilling\Exception('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $httpErrorCode, ':url' => $requestPath], $httpErrorCode);
             echo $app->render('error', ['exception' => $e]);
     }
     exit;
