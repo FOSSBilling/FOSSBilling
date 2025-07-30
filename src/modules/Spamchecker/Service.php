@@ -149,10 +149,11 @@ class Service implements InjectionAwareInterface
     {
         $url = 'https://www.stopforumspam.com/api';
         $client = HttpClient::create(['bindto' => BIND_TO]);
+        $queryParams = array_merge($data, ['f' => 'json']);
         $response = $client->request(
             'GET',
             $url,
-            ['query' => ['f' => 'json']]
+            ['query' => $queryParams]
         );
         $file_contents = $response->getContent(false);
 

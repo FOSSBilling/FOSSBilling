@@ -180,7 +180,7 @@ class Service implements InjectionAwareInterface
         $fileSavePath = PATH_UPLOADS;
         $file->move($fileSavePath, $fileNameHash);
 
-        $config = json_decode($productModel->config = '', true) ?? [];
+        $config = json_decode($productModel->config ?? '', true) ?? [];
 
         // Remove old file.
         if (isset($config['filename'])) {

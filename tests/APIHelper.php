@@ -60,11 +60,14 @@ class Request
 
 class Response
 {
-    private ?array $decodedResponse = [];
+    private array $decodedResponse = [];
 
     public function __construct(private readonly int $code, private readonly string $rawResponse)
     {
         $this->decodedResponse = json_decode($this->rawResponse, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \RuntimeException('Invalid JSON response: ' . json_last_error_msg());
+        }
     }
 
     public function getHttpCode(): int
