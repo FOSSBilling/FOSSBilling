@@ -39,7 +39,7 @@
 	<p>Hello {{ staff.name }},</p>
 	<p>Client <strong>{{ order.client.first_name }} {{ order.client.last_name }}</strong> placed a new order for <strong>{{ order.title }}</strong> on {{ order.created_at|format_date }}</p>
 
-    <p><a href="{{ 'order/manage'|alink }}/{{ order.id }}" target="_blank">Manage order.</a>
+    <p><a href='{{ "order/manage/#{order.id}"|url(detect_app_area: false) }}' target="_blank">Manage order.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

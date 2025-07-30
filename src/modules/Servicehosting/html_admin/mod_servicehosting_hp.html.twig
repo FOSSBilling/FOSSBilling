@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'servicehosting'|alink }}">{{ 'Hosting plans and servers'|trans }}</a>
+            <a href="{{ 'servicehosting'|url }}">{{ 'Hosting plans and servers'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ hp.name }}</li>
     </ol>
@@ -24,7 +24,7 @@
 <div class="card">
     <div class="card-body">
         <h5>{{ 'Manage hosting plan'|trans }}</h5>
-        <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" class="api-form" data-api-msg="{{ 'Hosting plan updated'|trans }}">
+        <form method="post" action="{{ 'servicehosting/hp_update'|api_url }}" class="api-form" data-api-msg="{{ 'Hosting plan updated'|trans }}">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
@@ -100,7 +100,7 @@
         <h3>{{ 'Hosting plan additional parameters'|trans }}</h3>
         <p class="text-muted">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters. List of parameters server managers requires you can find on extensions page.'|trans }}</p>
 
-        <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" class="api-form" data-api-reload="1">
+        <form method="post" action="{{ 'servicehosting/hp_update'|api_url }}" class="api-form" data-api-reload="1">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row g-2">
                 <div class="col">

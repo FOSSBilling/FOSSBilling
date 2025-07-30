@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+            <a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Tickets'|trans }}</li>
     </ul>
@@ -112,7 +112,7 @@
     {% set statuses = admin.support_ticket_get_statuses %}
     <section class="row row-cards mb-3">
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'support'|alink({ 'status': 'open' }) }}">
+            <a class="card card-sm card-link" href="{{ 'support'|url(query: { 'status': 'open' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -126,7 +126,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'support'|alink({ 'status': 'on_hold' }) }}">
+            <a class="card card-sm card-link" href="{{ 'support'|url(query: { 'status': 'on_hold' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -140,7 +140,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'support'|alink({ 'status': 'closed' }) }}">
+            <a class="card card-sm card-link" href="{{ 'support'|url(query: { 'status': 'closed' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -154,7 +154,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'support'|alink }}">
+            <a class="card card-sm card-link" href="{{ 'support'|url }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -220,12 +220,12 @@
                         </td>
                         <td>
                             <div class="d-flex py-1 align-items-center">
-                                <a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}">
-                                    <span class="avatar me-2" style="background-image: url({{ ticket.client.email|gravatar }}?size=40)"></span>
+                                <a href='{{ "client/manage/#{ticket.client_id}"|url }}'>
+                                    <span class="avatar me-2" style="background-image: url({{ ticket.client.email|gravatar(size: 40) }})"></span>
                                 </a>
                                 <div class="flex-fill">
                                     <div class="font-weight-medium">
-                                        <a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}">{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a>
+                                        <a href='{{ "client/manage/#{ticket.client_id}"|url }}'>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a>
                                     </div>
                                     <div class="text-muted">{{ ticket.client.email }}</div>
                                 </div>
@@ -233,7 +233,7 @@
                         </td>
                         <td>
                             <div>
-                                <a href="{{ 'support/ticket'|alink }}/{{ ticket.id }}#reply-box">#{{ ticket.id }} - {{ ticket.subject|truncate(50) }} ({{ ticket.replies }})</a>
+                                <a href='{{ "support/ticket/#{ticket.id}"|url }}/#reply-box'>#{{ ticket.id }} - {{ ticket.subject|truncate(50) }} ({{ ticket.replies }})</a>
                             </div>
                             {% if ticket.notes|length %}
                                 <a href="#" rel="{{ ticket.id }}" title="{{ ticket.notes|length }}" class="show-notes">
@@ -257,15 +257,15 @@
                             {{ mf.status_name(ticket.status) }}</td>
                         <td>{{ ticket.helpdesk.name }}</td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}#reply-box">
+                            <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
+                                href="{{ 'support/ticket_delete'|api_url(query: { 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
                                 data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                data-api-redirect="{{ 'support'|alink }}">
+                                data-api-redirect="{{ 'support'|url }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -289,7 +289,7 @@
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
             <div class="card-body">
                 <h5>{{ 'Open Ticket for Existing Client'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" class="api-form" data-api-redirect="{{ 'support'|alink }}">
+                <form method="post" action="{{ 'support/ticket_create'|api_url }}" class="api-form" data-api-redirect="{{ 'support'|url }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
@@ -335,7 +335,7 @@
         <div class="tab-pane fade" id="tab-email" role="tabpanel" aria-labelledby="email-tab">
             <div class="card-body">
                 <h5>{{ 'Open Public Ticket for Non-client'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="api-form" data-api-jsonp="onAfterPublicTicketCreate">
+                <form method="post" action="{{ 'support/public_ticket_create'|api_url }}" class="api-form" data-api-jsonp="onAfterPublicTicketCreate">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Receiver Name'|trans }}</label>
@@ -395,7 +395,7 @@
     })
 
     function onAfterPublicTicketCreate(result) {
-        bb.redirect("{{ 'support/public-ticket'|alink }}/" + result);
+        bb.redirect("{{ 'support/public-ticket'|url }}/" + result);
     }
 </script>
 {% endblock %}

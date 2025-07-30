@@ -31,7 +31,7 @@
                                     <a class="list-group-item list-group-item-action mt-0{% if loop.first %} active{% endif %}"
                                        href="#mail-{{ loop.index }}" data-bs-toggle="list" role="tab">
                                         <div class="flex-column py-1">
-                                            <p class="m-0" style="font-size: 80%;">{{ email.subject | truncate }}</p>
+                                            <p class="m-0" style="font-size: 80%;">{{ email.subject|truncate }}</p>
                                             <span class="text-muted small" style="font-size: 80%;">{{ email.created_at|format_datetime }}</span>
                                         </div>
                                     </a>
@@ -52,8 +52,8 @@
                                                     <span class="d-block"><span class="text-muted me-2">{{ 'To'|trans }}</span>{{ email.recipients }}</span>
                                                 </div>
                                                 <div class="d-flex flex-column gap-2">
-                                                    <div class="btn-group d-flex" role="group" aria-label="{{ 'Mail Action'|trans }}">
-                                                        <a class="btn btn-sm btn-outline-secondary border-end-0" href="{{ 'email'|link }}/{{ email.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'View'|trans }}">
+                                                    <div class="btn-group d-flex" role="group" aria-label="Mail Action">
+                                                        <a class="btn btn-sm btn-outline-secondary border-end-0" href='{{ "email/#{email.id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'View'|trans }}">
                                                             <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9M12,4.5C17,4.5 21.27,7.61 23,12C21.27,16.39 17,19.5 12,19.5C7,19.5 2.73,16.39 1,12C2.73,7.61 7,4.5 12,4.5M3.18,12C4.83,15.36 8.24,17.5 12,17.5C15.76,17.5 19.17,15.36 20.82,12C19.17,8.64 15.76,6.5 12,6.5C8.24,6.5 4.83,8.64 3.18,12Z" /></svg>
                                                         </a>
                                                         <a class="btn btn-sm btn-outline-secondary email-resend" href="#" data-id="{{ email.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Resend'|trans }}">
@@ -110,7 +110,7 @@
                             () => {
                                 flashMessage({
                                     message: 'Email resent',
-                                    reload: '{{ 'email'|link }}'
+                                    reload: '{{ 'email'|url }}'
                                 });
                             },
                             (res) => {
@@ -131,7 +131,7 @@
                                 () => {
                                     flashMessage({
                                         message: 'Email #'+ deleteBtn.dataset.id +' deleted',
-                                        reload: '{{ 'email'|link }}'
+                                        reload: '{{ 'email'|url }}'
                                     });
                                 },
                                 (res) => {

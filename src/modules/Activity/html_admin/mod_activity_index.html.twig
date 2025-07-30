@@ -39,12 +39,12 @@
             </td>
             <td>
                 {% if event.client %}
-                <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
-                    <span class="avatar avatar-sm d-none d-md-inline-block" style="background-image: url({{ event.client.email|gravatar }}&size=20)"></span>
+                <a href='{{ "client/manage/#{event.client.id}"|url }}'>
+                    <span class="avatar avatar-sm d-none d-md-inline-block" style="background-image: url({{ event.client.email|gravatar }})"></span>
                 </a>
                 {% elseif event.staff %}
-                <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
-                    <span class="avatar avatar-sm d-none d-md-inline-block" style="background-image: url({{ event.staff.email|gravatar }}&size=24)"></span>
+                <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
+                    <span class="avatar avatar-sm d-none d-md-inline-block" style="background-image: url({{ event.staff.email|gravatar(size: 24) }})"></span>
                 </a>
                 {% else %}
                 &nbsp;
@@ -52,9 +52,9 @@
             </td>
             <td>
                 {% if event.client %}
-                <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.name }}</a>
+                <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.name }}</a>
                 {% elseif event.staff %}
-                <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">{{ event.staff.name }}</a>
+                <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>{{ event.staff.name }}</a>
                 {% else %}
                 Guest
                 {% endif %}
@@ -65,9 +65,9 @@
             <td>{{ event.created_at|format_datetime }}</td>
             <td>
                 <a class="btn btn-icon api-link"
-                    href="{{ 'api/admin/activity/log_delete'|link({ 'id': event.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'activity/log_delete'|api_url(query: { 'id': event.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{ 'activity'|alink }}">
+                    data-api-redirect="{{ 'activity'|url }}">
                     <svg class="icon">
                         <use xlink:href="#delete" />
                     </svg>

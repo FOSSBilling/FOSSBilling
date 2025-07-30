@@ -12,19 +12,26 @@ declare(strict_types=1);
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Twig\FOSSBillingExtension;
+use FOSSBilling\Twig\LegacyExtension;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
 use Lcharette\WebpackEncoreTwig\JsonManifest;
 use Lcharette\WebpackEncoreTwig\TagRenderer;
 use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
-use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
+use Twig\Extension\AttributeExtension;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
+use Twig\Extension\OptimizerExtension;
 use Twig\Extension\StringLoaderExtension;
 use Twig\Extra\Intl\IntlExtension;
+use Twig\Extra\Markdown\MarkdownExtension;
+use Twig\Extra\Markdown\DefaultMarkdown;
+use Twig\Extra\Markdown\MarkdownRuntime;
+use Twig\RuntimeLoader\RuntimeLoaderInterface;
 
 $di = new Pimple\Container();
 
@@ -277,9 +284,6 @@ $di['twig'] = $di->factory(function () use ($di) {
     $loader = new Twig\Loader\ArrayLoader();
     $twig = new Twig\Environment($loader, $options);
 
-    $box_extensions = new Box_TwigExtensions();
-    $box_extensions->setDi($di);
-
     if ($di['encore_info']['is_encore_theme']) {
         $entryPoints = new EntrypointLookup($di['encore_info']['entrypoints']);
         $tagRenderer = new TagRenderer($entryPoints);
@@ -288,15 +292,38 @@ $di['twig'] = $di->factory(function () use ($di) {
         $twig->addExtension(new VersionedAssetsTwigExtension(new JsonManifest($di['encore_info']['manifest'])));
     }
 
-    // $twig->addExtension(new OptimizerExtension());
+    $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
+    $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
+
     $twig->addExtension(new StringLoaderExtension());
     $twig->addExtension(new DebugExtension());
-    $twig->addExtension($box_extensions);
-    $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
+    $twig->addExtension(new MarkdownExtension());
+    $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
+    $twig->addExtension(new AttributeExtension(LegacyExtension::class));
 
     $dateFormatter = new IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
-
     $twig->addExtension(new IntlExtension($dateFormatter));
+
+    class RuntimeLoader implements RuntimeLoaderInterface {
+        private $di = null;
+
+        public function __construct($di) {
+            $this->di = $di;
+        }
+
+        public function load($class) {
+            if (MarkdownRuntime::class === $class) {
+                return new MarkdownRuntime(new DefaultMarkdown());
+            }
+            if (FOSSBillingExtension::class === $class) {
+                return new FOSSBillingExtension($this->di);
+            }
+            if (LegacyExtension::class === $class) {
+                return new LegacyExtension($this->di);
+            }
+        }
+    }
+    $twig->addRuntimeLoader(new RuntimeLoader($di));
 
     // add globals
     if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
@@ -769,41 +796,6 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
 
     // Prevent further output from being added to the end of the CSV
     exit;
-});
-
-/*
- * Converts markdown into HTML and returns the result.
- *
- * @param string|null $content The content to convert
- *
- * @return string
- */
-$di['parse_markdown'] = $di->protect(function (?string $content, bool $addAttributes = true) use ($di) {
-    $content ??= '';
-    $defaultAttributes = [];
-
-    // If we are defining the default attributes, build the list and add them to the config
-    if ($addAttributes) {
-        $attributes = $di['mod_service']('theme')->getDefaultMarkdownAttributes();
-        foreach ($attributes as $class => $classAttributes) {
-            $reflectionClass = new ReflectionClass($class);
-            $fqcn = $reflectionClass->getName();
-            $defaultAttributes[$fqcn] = $classAttributes;
-        }
-    }
-
-    $parser = new League\CommonMark\GithubFlavoredMarkdownConverter([
-        'html_input' => 'escape',
-        'allow_unsafe_links' => false,
-        'max_nesting_level' => 50,
-        'default_attributes' => $defaultAttributes,
-    ]);
-
-    if ($addAttributes) {
-        $parser->getEnvironment()->addExtension(new DefaultAttributesExtension());
-    }
-
-    return $parser->convert($content);
 });
 
 return $di;
