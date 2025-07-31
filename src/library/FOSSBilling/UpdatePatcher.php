@@ -410,6 +410,11 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
+            44 => function (): void {
+                // Patch to create a database table for the widgets.
+                $q = 'CREATE TABLE `widgets` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `mod_name` varchar(64) NOT NULL, `slot` varchar(64) NOT NULL, `template` varchar(64) NOT NULL, `priority` int(11) DEFAULT 10, `context_method` varchar(64) DEFAULT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), UNIQUE KEY `mod_slot_template_unique` (`mod_name`, `slot`, `template`)) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
+                $this->executeSql($q);
+            }
         ];
         ksort($patches, SORT_NATURAL);
 
