@@ -142,10 +142,15 @@ class Service implements InjectionAwareInterface
         $client->gender = $data['gender'] ?? $client->gender;
 
         $birthday = $data['birthday'] ?? null;
-        if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
+
+        // Special handling for the birthday field
+        if (is_string($birthday) && strlen(trim($birthday)) === 0) {
+            $birthday = null;
+        } elseif ($birthday !== null && strtotime($birthday) === false) {
             throw new \FOSSBilling\InformationException('Invalid birthdate value');
         }
-        $client->birthday = $birthday;
+
+        $client->birthday = $birthday ?? $client->birthday;
 
         $client->company = $data['company'] ?? $client->company;
         $client->company_vat = $data['company_vat'] ?? $client->company_vat;
