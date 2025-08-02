@@ -15,6 +15,8 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
+    public const DEFAULT_PRIORITY = 10;
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -44,7 +46,7 @@ class Service implements InjectionAwareInterface
             $widgets = $this->getModuleWidgets($mod_name);
 
             foreach ($widgets as $widget) {
-                $this->connect($widget);
+                $this->register($mod_name, $widget);
             }
         }
     }
@@ -81,8 +83,6 @@ class Service implements InjectionAwareInterface
      */
     public function getModuleWidgets(string $mod_name): array
     {
-        if (empty($mod_name)) throw new Exception("The module name must not be empty.");
-
         $mod = $this->di['mod']($mod_name);
 
         if ($mod->hasService()) {
@@ -97,17 +97,64 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Connect a widget.
+     * Register a widget (store it in the database).
+     * 
+     * @param string $mod name of the module
+     * @param array $widget a valid widget array
      */
-    private function connect($widget)
+    private function register(string $mod, array $widget)
     {
-        var_dump($widget);
+        $required = [
+            'slot' => 'Slot name must be specified for the widget.',
+            'template' => 'Template name must be specified for the widget.',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $widget);
+
+        $priority = $widget['priority'] ?? self::DEFAULT_PRIORITY;
+
+        $q = "SELECT id
+            FROM widgets
+            WHERE mod_name = :mod
+            AND slot = :slot
+            AND template = :template";
+
+        $existingId = $this->di['db']->getCell($q, [
+            'mod' => $mod,
+            'slot' => $widget['slot'],
+            'template' => $widget['template']
+        ]);
+
+        if (!is_int($priority) || $priority <= 0) {
+            throw new Exception('Widget priority must be a positive integer.');
+        }
+
+        if ($existingId) {
+            // Update existing entry
+            $meta = $this->di['db']->load('widgets', $existingId);
+            $meta->priority = $priority;
+            $meta->context_method = $widget['context_method'];
+            $meta->updated_at = date('Y-m-d H:i:s');
+        } else {
+            // Create new entry
+            $meta = $this->di['db']->dispense('widgets');
+            $meta->mod_name = $mod;
+            $meta->slot = $widget['slot'];
+            $meta->template = $widget['template'];
+            $meta->priority = $priority;
+            $meta->context_method = $widget['context_method'];
+            $meta->created_at = date('Y-m-d H:i:s');
+            $meta->updated_at = date('Y-m-d H:i:s');
+        }
+
+        $this->di['db']->store($meta);
+
+        return true;
     }
 
     /**
      * Disconnect unavailable listeners.
      */
-    private function disconnectUnavailable(?string $mod_name)
+    private function disconnectUnavailable(?string $mod_name = null)
     {
 
     }
@@ -120,7 +167,21 @@ class Service implements InjectionAwareInterface
      */
     public static function onAfterAdminActivateExtension(\Box_Event $event)
     {
+        $params = $event->getParameters();
 
+        if (!isset($params['id'])) {
+            $event->setReturnValue(false);
+        } else {
+            $di = $event->getDi();
+
+            $ext = $di['db']->load('extension', $params['id']);
+            
+            if (is_object($ext) && $ext->type === 'mod') {
+                $service = $di['mod_service']('widgets');
+                $service->batchConnect($ext->name);
+            }
+            $event->setReturnValue(true);
+        }
     }
 
     /**
@@ -131,6 +192,17 @@ class Service implements InjectionAwareInterface
      */
     public static function onAfterAdminDeactivateExtension(\Box_Event $event)
     {
+        $di = $event->getDi();
+        $params = $event->getParameters();
+        
+        if ($params['type'] == 'mod') {
+            $q = "DELETE FROM widgets WHERE mod_name = :mod";
+            
+            // A quirk of FOSSBilling: here, "id" refers to the module name,
+            // but in the onAfterAdminActivateExtension event, "id" indeed is the numeric module ID.
+            $di['db']->exec($q, ['mod' => $params['id']]);
+        }
 
+        $event->setReturnValue(true);
     }
 }
