@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -14,10 +15,19 @@ namespace Box\Mod\Servicehosting;
 use FOSSBilling\Exception;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private readonly Filesystem $filesystem;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -529,19 +539,11 @@ class Service implements InjectionAwareInterface
             $result['id'] = $model->id;
             $result['active'] = $model->active;
             $result['secure'] = $model->secure;
-            if (!is_null($model->assigned_ips)) {
-                $result['assigned_ips'] = json_decode($model->assigned_ips, 1);
-            } else {
-                $result['assigned_ips'] = '';
-            }
+            $result['assigned_ips'] = json_decode($model->assigned_ips ?? '', true) ?? '';
             $result['status_url'] = $model->status_url;
             $result['max_accounts'] = $model->max_accounts;
             $result['manager'] = $model->manager;
-            if (!empty($model->config) && json_validate($model->config)) {
-                $result['config'] = json_decode($model->config, true);
-            } else {
-                $result['config'] = [];
-            }
+            $result['config'] = json_decode($model->config ?? '', true) ?? [];
             $result['username'] = $model->username;
             $result['password'] = $model->password;
             $result['accesshash'] = $model->accesshash;
@@ -652,23 +654,23 @@ class Service implements InjectionAwareInterface
 
     private function _getServerManagers(): array
     {
-        $dir = PATH_LIBRARY . '/Server/Manager';
         $files = [];
-        $directory = opendir($dir);
-        while ($item = readdir($directory)) {
-            if (($item != '.') && ($item != '..') && ($item != '.svn')) {
-                $files[] = pathinfo($item, PATHINFO_FILENAME);
-            }
+
+        $finder = new Finder();
+        $finder->files()->in(Path::join(PATH_LIBRARY, 'Server', 'Manager'))->name('*.php');
+        $finder->sortByName();
+
+        foreach ($finder as $file) {
+            $files[] = $file->getFilenameWithoutExtension();
         }
-        sort($files);
 
         return $files;
     }
 
     public function getServerManagerConfig($manager)
     {
-        $filename = PATH_LIBRARY . '/Server/Manager/' . $manager . '.php';
-        if (!file_exists($filename)) {
+        $filename = Path::join(PATH_LIBRARY, 'Server', 'Manager', "{$manager}.php");
+        if (!$this->filesystem->exists($filename)) {
             return [];
         }
 
@@ -818,11 +820,7 @@ class Service implements InjectionAwareInterface
         $config['host'] = $model->hostname;
         $config['port'] = $model->port;
         $config['config'] = [];
-        if (!empty($model->config) && json_validate($model->config)) {
-            $config['config'] = json_decode($model->config, true);
-        } else {
-            $config['config'] = [];
-        }
+        $config['config'] = json_decode($model->config ?? '', true) ?? [];
         $config['secure'] = $model->secure;
         $config['username'] = $model->username;
         $config['password'] = $model->password;
@@ -832,7 +830,7 @@ class Service implements InjectionAwareInterface
         $manager = $this->di['server_manager']($model->manager, $config);
 
         if (!$manager instanceof \Server_Manager) {
-            throw new Exception('Server manager :adapter is invalid', [':adapter' => $model->manager]);
+            throw new Exception('Server manager :adapter is invalid.', [':adapter' => $model->manager]);
         }
 
         return $manager;
@@ -906,7 +904,7 @@ class Service implements InjectionAwareInterface
             'max_sub' => $model->max_sub,
             'max_park' => $model->max_park,
             'max_addon' => $model->max_addon,
-            'config' => json_decode($model->config, 1),
+            'config' => json_decode($model->config ?? '', true),
 
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
@@ -926,11 +924,7 @@ class Service implements InjectionAwareInterface
         $model->max_park = $data['max_park'] ?? $model->max_park;
 
         /* add new config value to hosting plan */
-        if (!empty($model->config) && json_validate($model->config)) {
-            $config = json_decode($model->config, true);
-        } else {
-            $config = [];
-        }
+        $config = json_decode($model->config ?? '', true) ?? [];
 
         $inConfig = $data['config'] ?? null;
 
@@ -986,7 +980,7 @@ class Service implements InjectionAwareInterface
 
     public function getServerPackage(\Model_ServiceHostingHp $model)
     {
-        $config = json_decode($model->config ?? '', 1);
+        $config = json_decode($model->config ?? '', true);
         if (!is_array($config)) {
             $config = [];
         }
@@ -1033,7 +1027,7 @@ class Service implements InjectionAwareInterface
 
             return [$m->getLoginUrl(null), $m->getResellerLoginUrl(null)];
         } catch (\Exception $e) {
-            error_log('Error while retrieving control panel url: ' . $e->getMessage());
+            error_log("Error while retrieving control panel url: {$e->getMessage()}.");
         }
 
         return [false, false];
@@ -1059,11 +1053,7 @@ class Service implements InjectionAwareInterface
         $data['sld'] = $sld;
         $data['tld'] = $tld;
 
-        if (is_string($product->config) && json_validate($product->config)) {
-            $c = json_decode($product->config, true);
-        } else {
-            $c = [];
-        }
+        $c = json_decode($product->config ?? '', true) ?? [];
 
         return array_merge($c, $data);
     }
@@ -1073,11 +1063,7 @@ class Service implements InjectionAwareInterface
         $data = $this->prependOrderConfig($product, $data);
         $product->getService()->validateOrderData($data);
 
-        if (is_string($product->config) && json_validate($product->config)) {
-            $c = json_decode($product->config, true);
-        } else {
-            $c = [];
-        }
+        $c = json_decode($product->config ?? '', true) ?? [];
 
         $dc = $data['domain'];
         $action = $dc['action'];
@@ -1107,12 +1093,7 @@ class Service implements InjectionAwareInterface
 
     public function getFreeTlds(\Model_Product $product): array
     {
-        if (is_string($product->config) && json_validate($product->config)) {
-            $config = json_decode($product->config, true);
-        } else {
-            $config = [];
-        }
-
+        $config = json_decode($product->config ?? '', true) ?? [];
         $freeTlds = $config['free_tlds'] ?? [];
         $result = [];
         foreach ($freeTlds as $tld) {
@@ -1154,7 +1135,7 @@ class Service implements InjectionAwareInterface
         $array = array_filter($array, fn ($ip): bool => $ip !== '');
 
         // Validate that each entry is a valid IP address (works both with IPv4 and IPv6)
-        $array = array_filter($array, fn ($ip) => filter_var($ip, FILTER_VALIDATE_IP));
+        $array = array_filter($array, fn ($ip): mixed => filter_var($ip, FILTER_VALIDATE_IP));
 
         return json_encode(array_values($array));
     }

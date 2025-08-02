@@ -34,14 +34,15 @@
                         </div>
                     </div>
                     <div class="table-responsive">
-                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <table class="table card-table table-vcenter table-striped sortable">
                             <thead>
-                            <tr>
-                                <th></th>
-                                <th>{{ 'Extension'|trans }}</th>
-                                <th>{{ 'Description'|trans }}</th>
-                                <th class="w-1"></th>
-                            </tr>
+                                <tr>
+                                    <th class="no-sort"></th>
+                                    <th>{{ 'Extension'|trans }}</th>
+                                    <th>{{ 'Description'|trans }}</th>
+                                    <th class="w-1"></th>
+                                    <th class="w-1"></th>
+                                </tr>
                             </thead>
                             <tbody>
                             {% for ext in admin.extension_get_list %}
@@ -93,7 +94,8 @@
                                         {% else %}
                                             &nbsp;
                                         {% endif %}
-
+                                    </td>
+                                    <td>
                                         {% if ext.has_settings %}
                                             <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}"
                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -12,6 +13,8 @@
 namespace Box\Mod\Servicelicense;
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 
 class Service implements InjectionAwareInterface
 {
@@ -34,8 +37,7 @@ class Service implements InjectionAwareInterface
      */
     public function attachOrderConfig(\Model_Product $product, array $data)
     {
-        $config = $product->config;
-        isset($config) ? $config = json_decode($config, true) : $config = [];
+        $config = json_decode($product->config ?? '', true) ?? [];
 
         return array_merge($config, $data);
     }
@@ -52,18 +54,16 @@ class Service implements InjectionAwareInterface
 
     public function getLicensePlugins(): array
     {
-        $dir = __DIR__ . '/Plugin/';
+        $dir = Path::join(__DIR__, 'Plugin');
         $files = [];
-        $directory = opendir($dir);
-        while ($item = readdir($directory)) {
-            // We filter the elements that we don't want to appear ".", ".." and ".svn"
-            if (($item != '.') && ($item != '..') && ($item != '.svn')) {
-                $info = pathinfo($item);
-                $info['path'] = $dir . $item;
-                $files[] = $info;
-            }
+
+        $finder = new Finder();
+        $finder->files()->ignoreVCS(true)->in($dir);
+        foreach ($finder as $file) {
+            $info['filename'] = $file->getFilenameWithoutExtension();
+            $info['path'] = $file->getPathname();
+            $files[] = $info;
         }
-        closedir($directory);
 
         return $files;
     }
@@ -113,7 +113,7 @@ class Service implements InjectionAwareInterface
         $plugin = $this->_getPlugin($model);
 
         if (!is_object($plugin)) {
-            throw new \FOSSBilling\Exception('License plugin :plugin was not found', [':plugin' => $model->plugin]);
+            throw new \FOSSBilling\Exception('License plugin :plugin was not found.', [':plugin' => $model->plugin]);
         }
 
         if (!method_exists($plugin, 'generate')) {
@@ -391,7 +391,7 @@ class Service implements InjectionAwareInterface
                 return new $class_name();
             }
         }
-        error_log(sprintf('License #%s plugin %s is invalid', $model->id, $model->plugin));
+        error_log("License #{$model->id} plugin {$model->plugin} is invalid.");
 
         return null;
     }
@@ -430,7 +430,7 @@ class Service implements InjectionAwareInterface
         $result = [];
         $log = $this->di['logger']->setChannel('license');
         if (DEBUG) {
-            $log->debug(print_r($data, 1));
+            $log->debug(print_r($data, true));
         }
 
         /*

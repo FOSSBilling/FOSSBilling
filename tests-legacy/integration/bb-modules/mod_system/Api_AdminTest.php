@@ -46,7 +46,7 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
         ];
         $string = $this->api_admin->system_string_render($vars);
         $json = html_entity_decode($string);
-        $result = json_decode($json, 1);
+        $result = json_decode($json ?? '', true);
         $expected = $this->api_guest->system_states();
         $this->assertEquals($expected, $result);
 
@@ -56,7 +56,7 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
         ];
         $string = $this->api_admin->system_string_render($vars);
         $json = html_entity_decode($string);
-        $result = json_decode($json, 1);
+        $result = json_decode($json ?? '', true);
         $expected = $this->api_admin->cron_info();
         $this->assertEquals($expected, $result);
 
@@ -67,7 +67,7 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
         ];
         $string = $this->api_admin->system_string_render($vars);
         $json = html_entity_decode($string);
-        $result = json_decode($json, 1);
+        $result = json_decode($json ?? '', true);
         $expected = $this->api_client->order_get_list();
         $this->assertEquals($expected, $result);
     }

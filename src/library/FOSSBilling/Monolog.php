@@ -43,7 +43,7 @@ class Monolog
         $channels = $this->channels;
 
         foreach ($channels as $channel) {
-            $path = Path::normalize(PATH_LOG . "/$channel/" . $channel . '.log');
+            $path = Path::join(PATH_LOG, $channel, "{$channel}.log");
 
             $this->logger[$channel] = new Logger($channel);
             $rotatingHandler = new RotatingFileHandler($path, 90, Level::Debug);

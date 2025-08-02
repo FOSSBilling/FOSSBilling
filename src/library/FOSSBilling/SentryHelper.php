@@ -18,6 +18,7 @@ use Sentry\HttpClient\HttpClientInterface;
 use Sentry\HttpClient\Request;
 use Sentry\HttpClient\Response;
 use Sentry\Options;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 
 class SentryHelper
@@ -67,7 +68,6 @@ class SentryHelper
         'servicehosting',
         'servicelicense',
         'servicemembership',
-        // 'serviceproxmox',
         'spamchecker',
         'staff',
         'stats',
@@ -220,7 +220,7 @@ class SentryHelper
 
     private static function getLibrary(string $exceptionPath)
     {
-        return pathinfo($exceptionPath, PATHINFO_FILENAME);
+        return Path::getFilenameWithoutExtension($exceptionPath);
     }
 
     /**
