@@ -12,6 +12,9 @@ namespace Box\Mod\Widgets;
 
 use FOSSBilling\Exception;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 
 class Service implements InjectionAwareInterface
 {
@@ -151,6 +154,57 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    private function readTemplateContent(string $mod_name, string $template): string
+    {
+        $filesystem = new Filesystem();
+        
+        try {
+            $path = Path::join(PATH_MODS, ucfirst($mod_name), 'html_widgets', $template . '.html.twig');
+            $content = $filesystem->readFile($path);
+        } catch (IOException $e) {
+            throw new Exception($e->getMessage());
+        }
+
+        return $content;
+    }
+
+    private function renderSlot(string $slot, array $params = [])
+    {
+        $q = "SELECT * FROM widgets WHERE slot = :slot ORDER BY priority ASC";
+        $widgets = $this->di['db']->getAll($q, ['slot' => $slot]);
+
+        $systemService = $this->di['mod_service']('System');
+        $output = '';
+
+        foreach ($widgets as $w) {
+            $context = [];
+
+            if (!empty($w['context_method']) && !empty($w['mod_name'])) {
+                try {
+                    $service = $this->di['mod_service']($w['mod_name']);
+                    
+                    if (method_exists($service, $w['context_method'])) {
+                        $context = call_user_func([$service, $w['context_method']], $params);
+                    }
+                } catch (\Exception $e) {
+                    throw new Exception($e->getMessage());
+                }
+            }
+
+            $renderData = array_merge($params, $context);
+
+            try {
+                $template = $this->readTemplateContent($w['mod_name'], $w['template']);
+                
+                $output .= $systemService->renderString($template, false, $renderData);
+            } catch (\Exception $e) {
+                throw new Exception($e->getMessage());
+            }
+        }
+
+        return $output;
+    }
+
     /**
      * Disconnect unavailable listeners.
      */
@@ -200,6 +254,7 @@ class Service implements InjectionAwareInterface
             
             // A quirk of FOSSBilling: here, "id" refers to the module name,
             // but in the onAfterAdminActivateExtension event, "id" indeed is the numeric module ID.
+            // The module name also isn't supplied with the event data, so you need to fetch it from the `extension` table first.
             $di['db']->exec($q, ['mod' => $params['id']]);
         }
 
