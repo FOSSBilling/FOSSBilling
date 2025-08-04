@@ -67,7 +67,7 @@
 
 		<div class='InvoiceText' style='top: {{ text_1_top }}px;'>
 			{% if invoice.text_1 %}
-				{{ invoice.text_1|markdown }}
+				{{ invoice.text_1|markdown_to_html }}
 			{% endif %}
 		</div>
 
@@ -114,7 +114,7 @@
 
         {% if invoice.text_2 %}
             <div class='InvoiceText' style='top: {{ text_2_top }}px;'>
-                {{ invoice.text_2|markdown }}
+                {{ invoice.text_2|markdown_to_html }}
             </div>
         {% endif %}
 

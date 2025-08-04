@@ -197,7 +197,7 @@ tests-legacy/                  # Legacy PHPUnit tests
   </svg>
   ```
 
-* Check the available Twig filters and functions in `src/library/Box/TwigExtensions.php`. Use these where applicable.
+* Check the available Twig filters and functions in `src/library/FOSSBilling/Twig/Extension/FOSSBillingExtension.php` and `src/library/FOSSBilling/Twig/Extension/LegacyExtension.php`. Use these where applicable.
 
 ### Interacting with the FOSSBilling API
 
