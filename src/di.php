@@ -12,26 +12,9 @@ declare(strict_types=1);
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
-use FOSSBilling\Twig\FOSSBillingExtension;
-use FOSSBilling\Twig\LegacyExtension;
-use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
-use Lcharette\WebpackEncoreTwig\JsonManifest;
-use Lcharette\WebpackEncoreTwig\TagRenderer;
-use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
-use Twig\Extension\AttributeExtension;
-use Twig\Extension\CoreExtension;
-use Twig\Extension\DebugExtension;
-use Twig\Extension\OptimizerExtension;
-use Twig\Extension\StringLoaderExtension;
-use Twig\Extra\Intl\IntlExtension;
-use Twig\Extra\Markdown\MarkdownExtension;
-use Twig\Extra\Markdown\DefaultMarkdown;
-use Twig\Extra\Markdown\MarkdownRuntime;
-use Twig\RuntimeLoader\RuntimeLoaderInterface;
 
 $di = new Pimple\Container();
 
@@ -259,94 +242,15 @@ $di['cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('sf_cache', 24 
  */
 $di['auth'] = fn (): Box_Authorization => new Box_Authorization($di);
 
-/*
- * Creates a new Twig environment that's configured for FOSSBilling.
- *
- * @param void
+/**
+ * Creates new base Twig environment configured for FOSSBilling.
+ * Used as a fallback for contexts that don't need admin/client specific setup.
  *
  * @return \Twig\Environment The new Twig environment that was just created.
- *
- * @throws \Twig\Error\LoaderError If the Twig environment could not be created.
- * @throws \Twig\Error\RuntimeError If an error occurs while rendering a template.
- * @throws \Twig\Error\SyntaxError If a template is malformed.
- */
+ **/
 $di['twig'] = $di->factory(function () use ($di) {
-    $options = Config::getProperty('twig');
-
-    // Get internationalisation settings from config, or use sensible defaults for
-    // missing required settings.
-    $locale = FOSSBilling\i18n::getActiveLocale();
-    $timezone = Config::getProperty('i18n.timezone', 'UTC');
-    $date_format = strtoupper(Config::getProperty('i18n.date_format', 'MEDIUM'));
-    $time_format = strtoupper(Config::getProperty('i18n.time_format', 'SHORT'));
-    $datetime_pattern = Config::getProperty('i18n.datetime_pattern');
-
-    $loader = new Twig\Loader\ArrayLoader();
-    $twig = new Twig\Environment($loader, $options);
-
-    if ($di['encore_info']['is_encore_theme']) {
-        $entryPoints = new EntrypointLookup($di['encore_info']['entrypoints']);
-        $tagRenderer = new TagRenderer($entryPoints);
-        $encoreExtensions = new EntrypointsTwigExtension($entryPoints, $tagRenderer);
-        $twig->addExtension($encoreExtensions);
-        $twig->addExtension(new VersionedAssetsTwigExtension(new JsonManifest($di['encore_info']['manifest'])));
-    }
-
-    $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
-    $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
-
-    $twig->addExtension(new StringLoaderExtension());
-    $twig->addExtension(new DebugExtension());
-    $twig->addExtension(new MarkdownExtension());
-    $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
-    $twig->addExtension(new AttributeExtension(LegacyExtension::class));
-
-    $dateFormatter = new IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
-    $twig->addExtension(new IntlExtension($dateFormatter));
-
-    class RuntimeLoader implements RuntimeLoaderInterface {
-        private $di = null;
-
-        public function __construct($di) {
-            $this->di = $di;
-        }
-
-        public function load($class) {
-            if (MarkdownRuntime::class === $class) {
-                return new MarkdownRuntime(new DefaultMarkdown());
-            }
-            if (FOSSBillingExtension::class === $class) {
-                return new FOSSBillingExtension($this->di);
-            }
-            if (LegacyExtension::class === $class) {
-                return new LegacyExtension($this->di);
-            }
-        }
-    }
-    $twig->addRuntimeLoader(new RuntimeLoader($di));
-
-    // add globals
-    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
-        $_GET['ajax'] = true;
-    }
-
-    // CSRF token
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        $token = hash('md5', $_COOKIE['PHPSESSID'] ?? '');
-    } else {
-        $token = hash('md5', session_id());
-    }
-
-    if (!empty($_SESSION['redirect_uri'])) {
-        $twig->addGlobal('redirect_uri', $_SESSION['redirect_uri']);
-    }
-
-    $twig->addGlobal('CSRFToken', $token);
-    $twig->addGlobal('request', $_GET);
-    $twig->addGlobal('guest', $di['api_guest']);
-    $twig->addGlobal('FOSSBillingVersion', FOSSBilling\Version::VERSION);
-
-    return $twig;
+    $twigFactory = new FOSSBilling\Twig\TwigFactory($di);
+    return $twigFactory->createBaseEnvironment();
 });
 
 /*

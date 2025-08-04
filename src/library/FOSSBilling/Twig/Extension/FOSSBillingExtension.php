@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Twig;
+namespace FOSSBilling\Twig\Extension;
 
 use Twig\Attribute\AsTwigFilter;
 use Twig\Environment;
 
 class FOSSBillingExtension
 {
-    protected ?\Pimple\Container $di = null;
+    private ?\Pimple\Container $di = null;
 
     /**
-     * @param \Pimple\Container|null $di
+     * @param ?\Pimple\Container $di
      */
-    public function __construct(\Pimple\Container $di)
+    public function __construct(?\Pimple\Container $di)
     {
         $this->di = $di;
     }
@@ -31,12 +31,12 @@ class FOSSBillingExtension
      * Automatically detects the role, where possible and no role is specified,
      * based on Twig global. Otherwise, defaults to 'guest'.
      *
-     * @param \Twig\Environment $env Twig environment.
-     * @param string $action API action.
-     * @param array|null $query URL query parameters.
-     * @param string|null $role User role (admin, client, guest).
+     * @param \Twig\Environment     $env    Twig environment.
+     * @param string                $action API action.
+     * @param array|null            $query  URL query parameters.
+     * @param string|null           $role   User role (admin, client, guest).
      *
-     * @return string
+     * @return string The generated API URL.
      */
     #[AsTwigFilter('api_url', isSafe: ['html'], needsEnvironment: true)]
     public function apiUrl(Environment $env, string $action, ?array $query = null, ?string $role = null): string
@@ -59,7 +59,7 @@ class FOSSBillingExtension
      *
      * @param string $dateTime Date and time in ISO 8601 format.
      *
-     * @return int
+     * @return int The number of days left until the date.
      */
     #[AsTwigFilter('daysleft')]
     public function daysleft(string $dateTime): int
@@ -74,7 +74,7 @@ class FOSSBillingExtension
      *
      * @param int $size File size in bytes.
      *
-     * @return string
+     * @return string The human-readable file size.
      */
     #[AsTwigFilter('file_size')]
     public function fileSize(int $size): string
@@ -85,10 +85,10 @@ class FOSSBillingExtension
     /**
      * Get Gravatar URL for a given email address.
      *
-     * @param string $email Email address.
-     * @param int $size Size of the Gravatar image (default is 20).
+     * @param string    $email  Email address.
+     * @param int       $size   Size of Gravatar image (default is 20).
      *
-     * @return string
+     * @return string The Gravatar URL.
      */
     #[AsTwigFilter('gravatar')]
     public function gravatar(string $email, int $size = 20): string
@@ -102,7 +102,7 @@ class FOSSBillingExtension
      *
      * @param string $dateTime Date and time in ISO 8601 format.
      *
-     * @return string
+     * @return string The time ago in a human-readable format.
      */
     #[AsTwigFilter('timeago')]
     public function timeago(string $dateTime): string
@@ -145,17 +145,15 @@ class FOSSBillingExtension
     /**
      * Truncate a string to a specified length and append a suffix.
      *
-     * @param string $text The text to truncate.
-     * @param int $length The maximum length of the truncated string.
-     * @param string $suffix The suffix to append if the text is truncated.
+     * @param string    $text   The text to truncate.
+     * @param int       $length The maximum length of the truncated string.
+     * @param string    $suffix The suffix to append if the text is truncated.
      *
      * @return string The truncated string.
      */
     #[AsTwigFilter('truncate')]
     public function truncate(string $text, int $length = 30, string $suffix = '...'): string
     {
-        $text ??= '';
-
         if (mb_strlen($text) > $length) {
             return mb_substr($text, 0, $length) . $suffix;
         }
@@ -164,15 +162,17 @@ class FOSSBillingExtension
     }
 
     /**
-     * Generate URL for a given path and query parameters. Detects the area (admin or client)
-     * automatically, unless specified otherwise in which case uses base URL.
+     * Generate URL for a given path and query parameters. Detects the app area
+     * (admin or client) automatically, unless specified otherwise in which
+     * case uses base URL.
      *
-     * @param \Twig\Environment $env Twig environment.
-     * @param string $path URL path.
-     * @param array|null $query URL query parameters.
-     * @param bool $detectAppArea Whether to detect the area (admin or client) automatically. Default is true.
+     * @param \Twig\Environment $env            Twig environment.
+     * @param string            $path           URL path.
+     * @param array|null        $query          URL query parameters.
+     * @param bool              $detectAppArea  Whether to detect the app area
+     *                                          (admin or client). Default true.
      *
-     * @return string
+     * @return string The generated URL.
      */
     #[AsTwigFilter('url', isSafe: ['html'], needsEnvironment: true)]
     public function url(Environment $env, string $path, ?array $query = null, bool $detectAppArea = true): string

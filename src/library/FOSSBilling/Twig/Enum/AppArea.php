@@ -9,11 +9,10 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Enums;
+namespace FOSSBilling\Twig\Enum;
 
-enum SecurityCheckResultEnum: string
+enum AppArea: string
 {
-    case PASS = 'passed';
-    case WARN = 'warning';
-    case FAIL = 'failed';
+    case ADMIN = 'admin';
+    case CLIENT = 'client';
 }
