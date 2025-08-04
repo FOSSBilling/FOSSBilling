@@ -53,7 +53,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/system', 'get_index', [], static::class);
         $app->get('/system/', 'get_index', [], static::class);
@@ -62,21 +62,21 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/system/update', 'get_update', [], static::class);
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_system_index');
     }
 
-    public function get_activity(\Box_App $app)
+    public function get_activity(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_system_activity');
     }
 
-    public function get_update(\Box_App $app)
+    public function get_update(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 

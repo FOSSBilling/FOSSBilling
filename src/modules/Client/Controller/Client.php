@@ -25,7 +25,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/client/reset-password-confirm/:hash', 'get_reset_password_confirm', ['hash' => '[a-z0-9]+'], static::class);
         $app->get('/client', 'get_client_index', [], static::class);
@@ -34,14 +34,14 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $app->get('/client/confirm-email/:hash', 'get_client_confirmation', ['page' => '[a-z0-9-]+'], static::class);
     }
 
-    public function get_client_index(\Box_App $app)
+    public function get_client_index(\FOSSBilling\App $app)
     {
         $this->di['is_client_logged'];
 
         return $app->render('mod_client_index');
     }
 
-    public function get_client_confirmation(\Box_App $app, $hash): never
+    public function get_client_confirmation(\FOSSBilling\App $app, $hash): never
     {
         $service = $this->di['mod_service']('client');
         $service->approveClientEmailByHash($hash);
@@ -50,14 +50,14 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $app->redirect('/');
     }
 
-    public function get_client_logout(\Box_App $app): never
+    public function get_client_logout(\FOSSBilling\App $app): never
     {
         $api = $this->di['api_client'];
         $api->profile_logout();
         $app->redirect('/');
     }
 
-    public function get_client_page(\Box_App $app, $page)
+    public function get_client_page(\FOSSBilling\App $app, $page)
     {
         $this->di['is_client_logged'];
         $template = 'mod_client_' . $page;
@@ -65,7 +65,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render($template);
     }
 
-    public function get_reset_password_confirm(\Box_App $app, $hash)
+    public function get_reset_password_confirm(\FOSSBilling\App $app, $hash)
     {
         $service = $this->di['mod_service']('client');
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
