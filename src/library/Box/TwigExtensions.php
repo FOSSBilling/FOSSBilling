@@ -12,6 +12,7 @@
 use FOSSBilling\InjectionAwareInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
+use Twig\TwigFunction;
 
 class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInterface
 {
@@ -81,6 +82,18 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     }
 
     /**
+     * Returns a list of functions to add to the existing list.
+     *
+     * @return array An array of functions
+     */
+    public function getFunctions(): array
+    {
+        return [
+            new TwigFunction('render_widget_slot', $this->twig_render_widget_slot(...), ['is_safe' => ['html']]),
+        ];
+    }
+
+    /**
      * Returns the name of the extension.
      *
      * @return string The extension name
@@ -88,6 +101,18 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function getName()
     {
         return 'bb';
+    }
+
+    /**
+     * Part of the Widgets module. Renders the widgets of a specified slot.
+     * 
+     * @param string $slot name of the slot
+     * @param array $context optional slot context, such as order or client details
+     * @return string Slot content
+     */
+    public function twig_render_widget_slot(string $slot, array $context = []): string
+    {
+        return $this->di['mod_service']('widgets')->renderSlot($slot, $context);
     }
 
     public function twig_ipcountryname_filter($value)
