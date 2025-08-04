@@ -541,7 +541,7 @@ ZW=Zimbabwe
                             <div class="accordion-item">
                                 <div class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-1-default" aria-expanded="false">
-                                    Enabled modules
+                                    {{ 'Enabled modules'|trans }}
                                     <div class="accordion-button-toggle">
                                         <svg class="icon">
                                             <use xlink:href="#chevron-down" />
@@ -558,7 +558,7 @@ ZW=Zimbabwe
                                                 <div class="border rounded px-3 py-2 mb-2 d-flex justify-content-between align-items-center">
                                                     <span>
                                                     {% if module.status == 'core' %}
-                                                        <svg class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="This is a core module included with FOSSBilling and cannot be disabled.">
+                                                        <svg class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'This is a core module included with FOSSBilling and cannot be disabled.'|trans }}">
                                                             <use xlink:href="#cog" />
                                                         </svg>
                                                     {% endif %}
