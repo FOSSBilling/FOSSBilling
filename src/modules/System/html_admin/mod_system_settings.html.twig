@@ -536,6 +536,44 @@ ZW=Zimbabwe
                                 <div class="datagrid-content"><a href="https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE" target="_blank">Apache 2.0</a></div>
                             </div>
                         </div>
+
+                        <div class="accordion mt-4" id="accordion-default">
+                            <div class="accordion-item">
+                                <div class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-1-default" aria-expanded="false">
+                                    {{ 'Enabled modules'|trans }}
+                                    <div class="accordion-button-toggle">
+                                        <svg class="icon">
+                                            <use xlink:href="#chevron-down" />
+                                        </svg>
+                                    </div>
+                                </button>
+                                </div>
+                                <div id="collapse-1-default" class="accordion-collapse collapse" data-bs-parent="#accordion-default">
+                                    <div class="accordion-body">
+                                        <div class="container">
+                                            <div style="column-count: 3; column-gap: 2rem;">
+                                                {% set modules = admin.extension_get_list({ 'active': true }) %}
+                                                {% for module in modules %}
+                                                <div class="border rounded px-3 py-2 mb-2 d-flex justify-content-between align-items-center">
+                                                    <span>
+                                                    {% if module.status == 'core' %}
+                                                        <svg class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'This is a core module included with FOSSBilling and cannot be disabled.'|trans }}">
+                                                            <use xlink:href="#cog" />
+                                                        </svg>
+                                                    {% endif %}
+                                                    <span title="Module ID: {{ module.id }}">{{ module.name }}</span>
+                                                    </span>
+                                                    <span class="badge bg-default text-default-fg">{{ module.version }}</span>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
