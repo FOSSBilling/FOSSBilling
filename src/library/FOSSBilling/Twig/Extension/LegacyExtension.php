@@ -2,26 +2,28 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Twig;
+namespace FOSSBilling\Twig\Extension;
 
 use Twig\Attribute\AsTwigFilter;
 use Twig\Environment;
 
 class LegacyExtension
 {
-    protected ?\Pimple\Container $di = null;
+    private ?\Pimple\Container $di = null;
 
     /**
-     * @param \Pimple\Container|null $di
+     * LegacyExtension constructor.
+     *
+     * @param ?\Pimple\Container $di dependency injection container
      */
-    public function __construct(\Pimple\Container $di)
+    public function __construct(?\Pimple\Container $di)
     {
         $this->di = $di;
     }
@@ -29,17 +31,16 @@ class LegacyExtension
     /**
      * Get the country name for a given IP address.
      *
-     * @param string $ip IP address.
+     * @param string $ip IP address
      *
-     * @throws \Exception If the IP address is invalid or if the GeoIP service fails.
+     * @return string the country name associated with the IP address
      *
-     * @return string Country name.
+     * @throws \Exception if the IP address is invalid or if the GeoIP service
+     *                    fails
      */
     #[AsTwigFilter('ip_country_name')]
     public function ipCountryName(string $ip): string
     {
-        $ip ??= '';
-
         try {
             $record = $this->di['geoip']->country($ip);
 
@@ -65,10 +66,10 @@ class LegacyExtension
     /**
      * Get module asset URL.
      *
-     * @param string $asset Asset file name.
-     * @param string $module Module name.
+     * @param string $asset  asset file name
+     * @param string $module module name
      *
-     * @return string
+     * @return string the full URL to the asset
      */
     #[AsTwigFilter('mod_asset_url')]
     public function modAssetUrl(string $asset, string $module): string
@@ -79,10 +80,10 @@ class LegacyExtension
     /**
      * Get period title.
      *
-     * @param \Twig\Environment $env Twig environment.
-     * @param string|null $period Period code.
+     * @param Environment $env    twig environment
+     * @param string|null $period period code
      *
-     * @return string
+     * @return string the period title
      */
     #[AsTwigFilter('period_title', isSafe: ['html'], needsEnvironment: true)]
     public function periodTitle(Environment $env, ?string $period): string

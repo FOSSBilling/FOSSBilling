@@ -9,14 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
-use FOSSBilling\Environment;
-use FOSSBilling\Twig\DebugBarExtension;
-use Twig\Extension\AttributeExtension;
 use Symfony\Component\Filesystem\Path;
-use Twig\Extension\ProfilerExtension;
-use Twig\Profiler\Profile;
-use Twig\RuntimeLoader\FactoryRuntimeLoader;
 
 class Box_AppClient extends Box_App
 {
@@ -100,52 +93,13 @@ class Box_AppClient extends Box_App
         return $template->render($variableArray);
     }
 
+    /**
+     * Get Twig environment for client area.
+     */
     protected function getTwig(): Twig\Environment
     {
-        $service = $this->di['mod_service']('theme');
-        $code = $service->getCurrentClientAreaThemeCode();
-        $theme = $service->getTheme($code);
-        $settings = $service->getThemeSettings($theme);
+        $twigFactory = new FOSSBilling\Twig\TwigFactory($this->di);
 
-        $loader = new Box_TwigLoader(
-            [
-                'mods' => PATH_MODS,
-                'theme' => Path::join(PATH_THEMES, $code),
-                'type' => 'client',
-            ]
-        );
-
-        $twig = $this->di['twig'];
-        $twig->setLoader($loader);
-
-        $twig->addGlobal('current_theme', $code);
-        $twig->addGlobal('settings', $settings);
-        $twig->addGlobal('app_area', 'client');
-
-        if (Environment::isDevelopment()) {
-            $profile = new Profile();
-            $twig->addExtension(new ProfilerExtension($profile));
-            $collector = new NamespacedTwigProfileCollector($profile);
-            if (!$this->debugBar->hasCollector($collector->getName())) {
-                $this->debugBar->addCollector($collector);
-            }
-        }
-
-        $twig->addExtension(new AttributeExtension(DebugBarExtension::class));
-        $twig->addRuntimeLoader(new FactoryRuntimeLoader([
-            DebugBarExtension::class => function () {
-                return new DebugBarExtension($this->getDebugBar());
-            },
-        ]));
-
-        if ($this->di['auth']->isClientLoggedIn()) {
-            $twig->addGlobal('client', $this->di['api_client']);
-        }
-
-        if ($this->di['auth']->isAdminLoggedIn()) {
-            $twig->addGlobal('admin', $this->di['api_admin']);
-        }
-
-        return $twig;
+        return $twigFactory->createClientEnvironment($this->debugBar);
     }
 }

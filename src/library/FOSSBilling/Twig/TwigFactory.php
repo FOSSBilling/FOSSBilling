@@ -15,12 +15,12 @@ use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
 use FOSSBilling\i18n;
-use FOSSBilling\Version;
 use FOSSBilling\Twig\Enum\AppArea;
 use FOSSBilling\Twig\Extension\DebugBarExtension;
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;
 use FOSSBilling\Twig\Extension\LegacyExtension;
 use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
+use FOSSBilling\Version;
 use Symfony\Component\Filesystem\Path;
 use Twig\Environment;
 use Twig\Extension\AttributeExtension;
@@ -44,7 +44,7 @@ class TwigFactory
     /**
      * TwigFactory constructor.
      *
-     * @param \Pimple\Container $di Dependency injection container.
+     * @param \Pimple\Container $di dependency injection container
      */
     public function __construct(\Pimple\Container $di)
     {
@@ -54,8 +54,6 @@ class TwigFactory
 
     /**
      * Create base Twig environment with extensions and configuration.
-     *
-     * @return Environment
      */
     public function createBaseEnvironment(): Environment
     {
@@ -104,9 +102,7 @@ class TwigFactory
     /**
      * Create admin-specific Twig environment.
      *
-     * @param StandardDebugBar $debugBar Debugbar instance.
-     *
-     * @return Environment
+     * @param StandardDebugBar $debugBar debugbar instance
      */
     public function createAdminEnvironment(StandardDebugBar $debugBar): Environment
     {
@@ -135,9 +131,7 @@ class TwigFactory
     /**
      * Create client-specific Twig environment.
      *
-     * @param StandardDebugBar $debugBar Debugbar instance.
-     *
-     * @return Environment
+     * @param StandardDebugBar $debugBar debugbar instance
      */
     public function createClientEnvironment(StandardDebugBar $debugBar): Environment
     {
@@ -173,7 +167,9 @@ class TwigFactory
     /**
      * Configure and register runtime loaders.
      *
-     * @param Environment $twig Twig environment.
+     * @param Environment $twig twig environment
+     *
+     * @return void
      */
     private function configureRuntimeLoaders(Environment $twig): void
     {
@@ -202,7 +198,9 @@ class TwigFactory
     /**
      * Configure global Twig variables.
      *
-     * @param Environment $twig Twig environment.
+     * @param Environment $twig twig environment
+     *
+     * @return void
      */
     private function configureGlobals(Environment $twig): void
     {
@@ -231,8 +229,8 @@ class TwigFactory
     /**
      * Configure debugging and profiling.
      *
-     * @param Environment       $twig       Twig environment.
-     * @param StandardDebugBar  $debugBar   DebugBar instance.
+     * @param Environment      $twig     twig environment
+     * @param StandardDebugBar $debugBar debugBar instance
      */
     private function configureDebugging(Environment $twig, StandardDebugBar $debugBar): void
     {
@@ -247,7 +245,7 @@ class TwigFactory
 
         $twig->addExtension(new AttributeExtension(DebugBarExtension::class));
         $twig->addRuntimeLoader(new FactoryRuntimeLoader([
-            DebugBarExtension::class => fn() => new DebugBarExtension($debugBar),
+            DebugBarExtension::class => fn () => new DebugBarExtension($debugBar),
         ]));
     }
 }
