@@ -25,7 +25,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/me', 'get_profile', [], '\\' . \Box\Mod\Client\Controller\Client::class);
         $app->get('/balance', 'get_balance', [], '\\' . \Box\Mod\Client\Controller\Client::class);
@@ -46,7 +46,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function do_redirect(\Box_App $app): never
+    public function do_redirect(\FOSSBilling\App $app): never
     {
         $service = $this->di['mod_service']('redirect');
         $target = $service->getRedirectByPath($app->uri);

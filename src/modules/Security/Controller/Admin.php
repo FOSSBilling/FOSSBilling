@@ -53,21 +53,21 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/security', 'get_index', [], static::class);
         $app->get('/security/', 'get_index', [], static::class);
         $app->get('/security/iplookup', 'ip_lookup', [], static::class);
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_security_index');
     }
 
-    public function ip_lookup(\Box_App $app)
+    public function ip_lookup(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
         $record = [];

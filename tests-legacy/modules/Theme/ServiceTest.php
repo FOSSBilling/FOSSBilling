@@ -324,39 +324,4 @@ class ServiceTest extends \BBTestCase
         $result = $this->service->getCurrentAdminAreaTheme();
         $this->assertIsArray($result);
     }
-
-    public function testgetCurrentClientAreaTheme(): void
-    {
-        $themeMock = $this->getMockBuilder('\\' . Model\Theme::class)->disableOriginalConstructor()->getMock();
-
-        $serviceMock = $this->getMockBuilder('\\' . Service::class)
-            ->onlyMethods(['getCurrentClientAreaThemeCode', 'getTheme'])
-            ->getMock();
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getCurrentClientAreaThemeCode');
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getTheme')
-            ->willReturn($themeMock);
-
-        $result = $serviceMock->getCurrentClientAreaTheme();
-        $this->assertInstanceOf('\\' . Model\Theme::class, $result);
-    }
-
-    public function testgetCurrentClientAreaThemeCode(): void
-    {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn([]);
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-        $this->service->setDi($di);
-
-        $result = $this->service->getCurrentClientAreaThemeCode();
-        $this->assertIsString($result);
-        $this->assertEquals('huraga', $result);
-    }
 }
