@@ -15,7 +15,7 @@ class GuestTest extends \BBTestCase
 
     public function testsettings(): void
     {
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())->method('getConfig')->willReturn([]);
 
         $api = new Guest();
