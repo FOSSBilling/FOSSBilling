@@ -32,6 +32,32 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getSearchQuery($data)
+    {
+        $sql = 'SELECT * FROM widgets';
+        $params = [];
+        $conditions = [];
+
+        $mod_name = $data['mod'] ?? null;
+        $slot = $data['slot'] ?? null;
+
+        if (!empty($mod_name)) {
+            $conditions[] = "mod_name = :mod_name";
+            $params['mod_name'] = $mod_name;
+        }
+
+        if (!empty($slot)) {
+            $conditions[] = "slot = :slot";
+            $params['slot'] = $slot;
+        }
+
+        if ($conditions) $sql .= ' WHERE ' . implode(' AND ', $conditions);
+
+        $sql = $sql . " ORDER BY id DESC";
+
+        return [$sql, $params];
+    }
+
     public function batchConnect(?string $mod_name = null): void
     {
         $mods = [];
@@ -154,21 +180,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    private function readTemplateContent(string $mod_name, string $template): string
-    {
-        $filesystem = new Filesystem();
-        
-        try {
-            $path = Path::join(PATH_MODS, ucfirst($mod_name), 'html_widgets', $template . '.html.twig');
-            $content = $filesystem->readFile($path);
-        } catch (IOException $e) {
-            throw new Exception($e->getMessage());
-        }
-
-        return $content;
-    }
-
-    private function renderSlot(string $slot, array $params = [])
+    public function renderSlot(string $slot, array $params = [])
     {
         $q = "SELECT * FROM widgets WHERE slot = :slot ORDER BY priority ASC";
         $widgets = $this->di['db']->getAll($q, ['slot' => $slot]);
@@ -211,6 +223,20 @@ class Service implements InjectionAwareInterface
     private function disconnectUnavailable(?string $mod_name = null)
     {
 
+    }
+
+    private function readTemplateContent(string $mod_name, string $template): string
+    {
+        $filesystem = new Filesystem();
+        
+        try {
+            $path = Path::join(PATH_MODS, ucfirst($mod_name), 'html_widgets', $template . '.html.twig');
+            $content = $filesystem->readFile($path);
+        } catch (IOException $e) {
+            throw new Exception($e->getMessage());
+        }
+
+        return $content;
     }
 
     /**

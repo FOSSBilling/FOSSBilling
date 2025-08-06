@@ -12,6 +12,20 @@ namespace Box\Mod\Widgets\Api;
 
 class Admin extends \Api_Abstract
 {
+    /**
+     * Get a paginated list of widgets.
+     *
+     * @return array
+     */
+    public function get_list($data)
+    {
+        $service = $this->getService();
+        [$sql, $params] = $service->getSearchQuery($data);
+        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
+
+        return $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+    }
+
     public function batch_connect($data)
     {
         $mod = $data['mod'] ?? null;
