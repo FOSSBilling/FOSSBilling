@@ -1501,11 +1501,17 @@ class Service implements InjectionAwareInterface
 
         // If hash_access is not 0 or if a client is logged in, get the logged-in client
         if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {
-            $client = $this->di['loggedin_client'];
-            if ($invoiceClientId != $client->id) {
+            if ($this->di['auth']->isClientLoggedIn()) {
+                $client = isset($this->di['loggedin_client']) ? $this->di['loggedin_client'] : null;
+            }
+            if (!isset($client->id) || $invoiceClientId != $client->id) {
                 // Then either give an appropriate API response or redirect to the login page.
                 $api_str = '/api/';
                 $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+                // Return directly when cron or callback
+                if (empty($url)) {
+                    return;
+                }
                 if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
                     // Throw Exception if api request
                     throw new InformationException('You do not have permission to perform this action', [], 403);
