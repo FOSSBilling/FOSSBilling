@@ -81,51 +81,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Determine if the service class has a getWidgets function.
-     * 
-     * @param $service Service class
-     * @return bool
-     */
-    private function canBeConnected($service)
-    {
-        $reflector = new \ReflectionClass($service);
-        
-        if ($reflector->hasMethod('getWidgets')) {
-            $method = $reflector->getMethod('getWidgets');
-
-            // Make sure the method is public and requires no arguments
-            if ($method->isPublic() && $method->getNumberOfRequiredParameters() === 0) {
-                return true;
-            } else {
-                throw new Exception("The getWidgets() method in {$reflector->name} must be public and take no required parameters.");
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Get a module's widgets as an array
-     * 
-     * @param string $mod_name
-     * @return array
-     */
-    public function getModuleWidgets(string $mod_name): array
-    {
-        $mod = $this->di['mod']($mod_name);
-
-        if ($mod->hasService()) {
-            $service = $mod->getService();
-                
-            if ($this->canBeConnected($service)) {
-                return $service->getWidgets();
-            }
-        }
-
-        return [];
-    }
-
-    /**
      * Register a widget (store it in the database).
      * 
      * @param string $mod name of the module
@@ -180,6 +135,13 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * Render the widgets for a specific slot.
+     * 
+     * @param string $slot Name of the slot
+     * @param array $params Optional context passed by the template such as order or product data
+     * @return string Final content of the slot
+     */
     public function renderSlot(string $slot, array $params = [])
     {
         $q = "SELECT * FROM widgets WHERE slot = :slot AND enabled = 1 ORDER BY priority ASC";
@@ -188,15 +150,15 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
         $output = '';
 
-        foreach ($widgets as $w) {
+        foreach ($widgets as $widget) {
             $context = [];
 
-            if (!empty($w['context_method']) && !empty($w['mod_name'])) {
+            if (!empty($widget['context_method']) && !empty($widget['mod_name'])) {
                 try {
-                    $service = $this->di['mod_service']($w['mod_name']);
+                    $service = $this->di['mod_service']($widget['mod_name']);
                     
-                    if (method_exists($service, $w['context_method'])) {
-                        $context = call_user_func([$service, $w['context_method']], $params);
+                    if (method_exists($service, $widget['context_method'])) {
+                        $context = call_user_func([$service, $widget['context_method']], $params);
                     }
                 } catch (\Exception $e) {
                     throw new Exception($e->getMessage());
@@ -206,7 +168,7 @@ class Service implements InjectionAwareInterface
             $renderData = array_merge($params, $context);
 
             try {
-                $template = $this->readTemplateContent($w['mod_name'], $w['template']);
+                $template = $this->readTemplateContent($widget['mod_name'], $widget['template']);
                 
                 $output .= $systemService->renderString($template, false, $renderData);
             } catch (\Exception $e) {
@@ -218,13 +180,80 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Disconnect unavailable listeners.
+     * Disconnect widgets that are no longer available or no longer declared in the module.
+     *
+     * @param string|null $mod_name If specified, only checks widgets from that module.
+     * @return void
      */
     private function disconnectUnavailable(?string $mod_name = null)
     {
+        $params = [];
+        $sql = "SELECT * FROM widgets";
+        
+        if ($mod_name !== null) {
+            $sql .= " WHERE mod_name = :mod";
+            $params['mod'] = $mod_name;
+        }
 
+        $dbWidgets = $this->di['db']->getAll($sql, $params);
+
+        $mods = array_values(array_unique(array_column($dbWidgets, 'mod_name')));
+
+        foreach ($mods as $mod) {
+            $validWidgetsMap = [];
+
+            try {
+                $modWidgets = $this->getModuleWidgets($mod);
+
+                foreach ($modWidgets as $w) {
+                    $key = $w['slot'] . ':' . $w['template'];
+                    $validWidgetsMap[$key] = true;
+                }
+                
+                foreach ($dbWidgets as $w) {
+                    $key = $w['slot'] . ':' . $w['template'];
+                    
+                    if (!isset($validWidgetsMap[$key])) {
+                        $this->di['db']->exec('DELETE FROM widgets WHERE id = :id', ['id' => $w['id']]);
+                    }
+                }
+            } catch (\Exception $e) {
+                // If the module is inactive or errors out for some reason, delete all its widgets
+                $this->di['db']->exec('DELETE FROM widgets WHERE mod_name = :mod_name', ['mod_name' => $mod]);
+            }
+        }
     }
 
+    /**
+     * Determine if the service class has a getWidgets function.
+     * 
+     * @param $service Service class
+     * @return bool
+     */
+    private function canBeConnected($service)
+    {
+        $reflector = new \ReflectionClass($service);
+        
+        if ($reflector->hasMethod('getWidgets')) {
+            $method = $reflector->getMethod('getWidgets');
+
+            // Make sure the method is public and requires no arguments
+            if ($method->isPublic() && $method->getNumberOfRequiredParameters() === 0) {
+                return true;
+            } else {
+                throw new Exception("The getWidgets() method in {$reflector->name} must be public and take no required parameters.");
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Read the content of a template file.
+     * @param string $mod_name
+     * @param string $template
+     * @return string
+     */
     private function readTemplateContent(string $mod_name, string $template): string
     {
         $filesystem = new Filesystem();
@@ -237,6 +266,27 @@ class Service implements InjectionAwareInterface
         }
 
         return $content;
+    }
+
+    /**
+     * Get a module's widgets as an array
+     * 
+     * @param string $mod_name
+     * @return array
+     */
+    public function getModuleWidgets(string $mod_name): array
+    {
+        $mod = $this->di['mod']($mod_name);
+
+        if ($mod->hasService()) {
+            $service = $mod->getService();
+                
+            if ($this->canBeConnected($service)) {
+                return $service->getWidgets();
+            }
+        }
+
+        return [];
     }
 
     /**
