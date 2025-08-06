@@ -1,7 +1,8 @@
 {
   "id": "widgets",
   "type": "mod",
-  "name": "Widgets subsystem",
+  "name": "Widgets",
   "description": "FOSSBilling core module",
+  "icon_url": "icon.svg",
   "version": "1.0.0"
 }
