@@ -10,6 +10,7 @@
 
 namespace Box\Mod\Widgets;
 
+use FOSSBilling\Environment;
 use FOSSBilling\Exception;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Exception\IOException;
@@ -170,9 +171,17 @@ class Service implements InjectionAwareInterface
             try {
                 $template = $this->readTemplateContent($widget['mod_name'], $widget['template']);
                 
-                $output .= $systemService->renderString($template, false, $renderData);
+                $output .= $systemService->renderString($template, false, $renderData) . '\n';
             } catch (\Exception $e) {
-                throw new Exception($e->getMessage());
+                $template = $this->readTemplateContent('widgets', 'mod_widgets_error');
+                
+                $p = ['widget' => $widget];
+
+                if (Environment::isDevelopment()) {
+                    $p['error'] = $e->getMessage();
+                }
+                
+                $output .= $systemService->renderString($template, false, $p) . '\n';
             }
         }
 
