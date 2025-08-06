@@ -182,7 +182,7 @@ class Service implements InjectionAwareInterface
 
     public function renderSlot(string $slot, array $params = [])
     {
-        $q = "SELECT * FROM widgets WHERE slot = :slot ORDER BY priority ASC";
+        $q = "SELECT * FROM widgets WHERE slot = :slot AND enabled = 1 ORDER BY priority ASC";
         $widgets = $this->di['db']->getAll($q, ['slot' => $slot]);
 
         $systemService = $this->di['mod_service']('System');
