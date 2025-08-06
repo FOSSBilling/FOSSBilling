@@ -33,7 +33,7 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getSearchQuery($data)
+    public function getSearchQuery($data): array
     {
         $sql = 'SELECT * FROM widgets';
         $params = [];
@@ -87,7 +87,7 @@ class Service implements InjectionAwareInterface
      * @param string $mod name of the module
      * @param array $widget a valid widget array
      */
-    private function register(string $mod, array $widget)
+    private function register(string $mod, array $widget): void
     {
         $required = [
             'slot' => 'Slot name must be specified for the widget.',
@@ -132,8 +132,6 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['db']->store($meta);
-
-        return true;
     }
 
     /**
@@ -143,7 +141,7 @@ class Service implements InjectionAwareInterface
      * @param array $params Optional context passed by the template such as order or product data
      * @return string Final content of the slot
      */
-    public function renderSlot(string $slot, array $params = [])
+    public function renderSlot(string $slot, array $params = []): string
     {
         $q = "SELECT * FROM widgets WHERE slot = :slot AND enabled = 1 ORDER BY priority ASC";
         $widgets = $this->di['db']->getAll($q, ['slot' => $slot]);
@@ -152,26 +150,15 @@ class Service implements InjectionAwareInterface
         $output = '';
 
         foreach ($widgets as $widget) {
-            $context = [];
-
-            if (!empty($widget['context_method']) && !empty($widget['mod_name'])) {
-                try {
-                    $service = $this->di['mod_service']($widget['mod_name']);
-                    
-                    if (method_exists($service, $widget['context_method'])) {
-                        $context = call_user_func([$service, $widget['context_method']], $params);
-                    }
-                } catch (\Exception $e) {
-                    throw new Exception($e->getMessage());
-                }
-            }
+            $context = $this->resolveWidgetContext($widget, $params);
 
             $renderData = array_merge($params, $context);
 
+            // Read the template and render it
             try {
                 $template = $this->readTemplateContent($widget['mod_name'], $widget['template']);
                 
-                $output .= $systemService->renderString($template, false, $renderData) . '\n';
+                $output .= $systemService->renderString($template, false, $renderData) . '<br />';
             } catch (\Exception $e) {
                 $template = $this->readTemplateContent('widgets', 'mod_widgets_error');
                 
@@ -181,7 +168,7 @@ class Service implements InjectionAwareInterface
                     $p['error'] = $e->getMessage();
                 }
                 
-                $output .= $systemService->renderString($template, false, $p) . '\n';
+                $output .= $systemService->renderString($template, false, $p) . '<br />';
             }
         }
 
@@ -194,7 +181,7 @@ class Service implements InjectionAwareInterface
      * @param string|null $mod_name If specified, only checks widgets from that module.
      * @return void
      */
-    private function disconnectUnavailable(?string $mod_name = null)
+    private function disconnectUnavailable(?string $mod_name = null): void
     {
         $params = [];
         $sql = "SELECT * FROM widgets";
@@ -220,6 +207,8 @@ class Service implements InjectionAwareInterface
                 }
                 
                 foreach ($dbWidgets as $w) {
+                    if ($w['mod_name'] !== $mod) continue; // only check the widgets for the relevant module
+                    
                     $key = $w['slot'] . ':' . $w['template'];
                     
                     if (!isset($validWidgetsMap[$key])) {
@@ -236,10 +225,10 @@ class Service implements InjectionAwareInterface
     /**
      * Determine if the service class has a getWidgets function.
      * 
-     * @param $service Service class
+     * @param object $service Service class
      * @return bool
      */
-    private function canBeConnected($service)
+    private function canBeConnected($service): bool
     {
         $reflector = new \ReflectionClass($service);
         
@@ -277,6 +266,26 @@ class Service implements InjectionAwareInterface
         return $content;
     }
 
+    private function resolveWidgetContext(array $widget, array $params): array
+    {
+        if (empty($widget['context_method']) || empty($widget['mod_name'])) {
+            return [];
+        }
+
+        try {
+            $service = $this->di['mod_service']($widget['mod_name']);
+
+            if (method_exists($service, $widget['context_method'])) {
+                return call_user_func([$service, $widget['context_method']], $params);
+            }
+        } catch (\Exception $e) {
+            $this->di['logger']->error("Failed to resolve context for widget: " . $e->getMessage());
+            return [];
+        }
+
+        return [];
+    }
+
     /**
      * Get a module's widgets as an array
      * 
@@ -304,7 +313,7 @@ class Service implements InjectionAwareInterface
      * @param \Box_Event $event
      * @return void
      */
-    public static function onAfterAdminActivateExtension(\Box_Event $event)
+    public static function onAfterAdminActivateExtension(\Box_Event $event): void
     {
         $params = $event->getParameters();
 
@@ -329,7 +338,7 @@ class Service implements InjectionAwareInterface
      * @param \Box_Event $event
      * @return void
      */
-    public static function onAfterAdminDeactivateExtension(\Box_Event $event)
+    public static function onAfterAdminDeactivateExtension(\Box_Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
