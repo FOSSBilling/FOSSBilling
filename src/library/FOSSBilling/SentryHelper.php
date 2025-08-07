@@ -68,7 +68,7 @@ class SentryHelper
         'servicelicense',
         'servicemembership',
         // 'serviceproxmox',
-        'spamchecker',
+        'antispam',
         'staff',
         'stats',
         'support',
