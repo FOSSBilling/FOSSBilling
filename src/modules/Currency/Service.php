@@ -565,7 +565,7 @@ class Service implements InjectionAwareInterface
                 $currencyService->updateCurrencyRates();
             }
         } catch (\Exception $e) {
-            error_log($e);
+            error_log($e->getMessage());
         }
 
         return true;

@@ -411,7 +411,7 @@ class Service implements InjectionAwareInterface
                 try {
                     $invoiceItemService->executeTask($item);
                 } catch (\Exception $e) {
-                    error_log($e);
+                    error_log($e->getMessage());
                 }
             }
         }

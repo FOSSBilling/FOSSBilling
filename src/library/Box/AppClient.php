@@ -64,7 +64,7 @@ class Box_AppClient extends Box_App
             return $this->render($tpl, ['post' => $_POST], $ext);
         } catch (Exception $e) {
             if (DEBUG) {
-                error_log($e);
+                error_log($e->getMessage());
             }
         }
         $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
