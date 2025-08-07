@@ -606,7 +606,7 @@ class Server_Manager_Whm extends Server_Manager
             ]);
         } catch (HttpExceptionInterface $error) {
             $e = new Server_Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
-            $this->getLog()->err($e);
+            $this->getLog()->err($e->getMessage());
 
             throw $e;
         }

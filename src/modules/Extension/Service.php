@@ -75,7 +75,7 @@ class Service implements InjectionAwareInterface
         try {
             $extensionService->getExtensionsList([]);
         } catch (\Exception $e) {
-            error_log($e);
+            error_log($e->getMessage());
         }
 
         return true;
