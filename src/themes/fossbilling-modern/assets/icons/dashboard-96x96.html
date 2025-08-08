@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>PWA Icon 96x96</title>
+  <style>
+    body { 
+      margin: 0; 
+      padding: 20px; 
+      background: #f0f0f0;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .icon { 
+      width: 96px; 
+      height: 96px; 
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .info {
+      margin-top: 20px;
+      text-align: center;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <h3>FOSSBilling PWA Icon</h3>
+    <p>Size: 96×96px | Emoji: 🏠 + 📊</p>
+  </div>
+  <svg width="96" height="96" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0dcaf0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0048a0;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="96" height="96" fill="url(#grad)" rx="9.600000000000001" />
+  <circle cx="48" cy="48" r="38.400000000000006" fill="rgba(255,255,255,0.1)" />
+  <circle cx="48" cy="48" r="24" fill="rgba(255,255,255,0.05)" />
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" 
+        font-size="43.2" font-family="Apple Color Emoji, Segoe UI Emoji, system-ui"
+        filter="url(#glow)">
+    🏠
+  </text>
+  
+</svg>
+  <div class="info">
+    <p><small>Screenshot this area to create PNG version</small></p>
+  </div>
+  <script>
+    // This page can be screenshot to create a PNG
+    console.log('📸 Screenshot the icon at 96x96 to create the PNG version');
+    console.log('🎨 Icon features: 🏠 with 📊 accent, gradient background');
+  </script>
+</body>
+</html>

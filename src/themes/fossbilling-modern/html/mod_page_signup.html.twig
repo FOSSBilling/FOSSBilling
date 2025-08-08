@@ -1,0 +1,208 @@
+{% extends "layout_public.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}{{ 'Register'|trans }}{% endblock %}
+
+{% set company = guest.system_company %}
+
+{% if settings.theme == 'dark' %}
+    {% set logo_url =  company.logo_url_dark %}
+{% else %}
+    {% set logo_url =  company.logo_url %}
+{% endif %}
+
+{% block body_class %}page-signup{% endblock %}
+{% block body %}
+    <div class="container h-100">
+        <div class="row h-75 justify-content-center align-items-center">
+            <div class="col-md-6 col-lg-4">
+                {% if settings.login_page_show_logo %}
+                    <div class="d-flex justify-content-center">
+                        <a href="{{ settings.login_page_logo_url|default('/') }}">
+                            <img class="my-4" height="50px" src="{{ logo_url }}" alt="{{ company.name }}"/>
+                        </a>
+                    </div>
+                {% endif %}
+                <div class="card">
+                    <div class="card-body">
+                        <h1 class="text-center m-4">🎉 {{ 'Create a new account'|trans }}</h1>
+                        <form class="api-form auth" action="{{ 'api/guest/client/create'|link }}" method="post" data-api-redirect="{{ '/'|link }}">
+                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                            {% set r = guest.client_required %}
+
+                            <div class="mb-3">
+                                <label class="form-label" for="first-name">👤 {{ 'First Name'|trans }}</label>
+                                <input class="form-control" id="first-name" type="text" name="first_name"
+                                       value="{{ request.first_name }}" required="required"/>
+                            </div>
+
+                            {% if 'last_name' in r %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="last_name">👥 {{ 'Last Name'|trans }}</label>
+                                    <input class="form-control" id="last_name" type="text" name="last_name"
+                                           value="{{ request.last_name }}" required="required"/>
+                                </div>
+                            {% endif %}
+
+                            <div class="mb-3">
+                                <label class="form-label" for="reg-email">📧 {{ 'Email Address'|trans }}</label>
+                                <input class="form-control" id="reg-email" type="email" name="email"
+                                       value="{{ request.email }}" required="required"/>
+                            </div>
+
+                            {% if 'company' in r %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="company">🏢 {{ 'Company'|trans }}</label>
+                                    <input class="form-control" id="company" type="text" name="company"
+                                           value="{{ request.company }}" required="required"/>
+                                </div>
+                            {% endif %}
+
+                            {% if 'birthday' in r %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="birthday">🎂 {{ 'Birthday'|trans }}</label>
+                                    <input class="form-control" id="birthday" type="date" name="birthday" value=""/>
+                                </div>
+                            {% endif %}
+
+                            {% if 'gender' in r %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="gender">⚧️ {{ 'Gender'|trans }}</label>
+                                    <select class="form-select" id="gender" name="gender">
+                                        <option value="male">♂️ {{ 'Male'|trans }}</option>
+                                        <option value="female">♀️ {{ 'Female'|trans }}</option>
+                                        <option value="nonbinary">⚧️ {{ 'Non-binary'|trans }}</option>
+                                        <option value="other">🌈 {{ 'Other'|trans }}</option>
+                                    </select>
+                                </div>
+                            {% endif %}
+
+                            {% if 'address_1' in r %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="address_1">🏠 {{ 'Address'|trans }}</label>
+                                    <input class="form-control" id="address_1" type="text" name="address_1"
+                                           value="{{ request.address_1 }}"/>
+                                </div>
+                            {% endif %}
+
+                            {% if 'address_2' in r %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="address_2">🏠 {{ 'Address 2'|trans }}</label>
+                                    <input class="form-control" id="address_2" type="text" name="address_2"
+                                           value="{{ request.address_2 }}"/>
+                                </div>
+                            {% endif %}
+
+                            {% if 'city' in r %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="city">🏙️ {{ 'City'|trans }}</label>
+                                    <input class="form-control" id="city" type="text" name="city"
+                                           value="{{ request.city }}"/>
+                                </div>
+                            {% endif %}
+
+                            {% if 'country' in r %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="country">🌍 {{ 'Country'|trans }}</label>
+                                    <select class="form-select" id="country" name="country" required="required">
+                                        <option value="">-- {{ 'Select country'|trans }} --</option>
+                                        {% for val,label in guest.system_countries %}
+                                            <option value="{{ val }}" label="{{ label|e }}">{{ label|e }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            {% endif %}
+
+                            {% if 'state' in r %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="state">📍 {{ 'State'|trans }}</label>
+                                    <input class="form-control" id="state" type="text" name="state"
+                                           value="{{ request.state }}"/>
+                                </div>
+                            {% endif %}
+
+                            {% if 'postcode' in r %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="postcode">📮 {{ 'Zip/Postal Code'|trans }}</label>
+                                    <input class="form-control" id="postcode" type="text" name="postcode"
+                                           value="{{ request.postcode }}"/>
+                                </div>
+                            {% endif %}
+
+                            {% if 'phone' in r %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="phone">📱 {{ 'Phone Number'|trans }}</label>
+                                    <div class="input-group">
+                                        <input class="form-control" id="phone" type="text" name="phone_cc" value=""
+                                               style="width: 20%"/>
+                                        <input class="form-control" id="phone" type="text" name="phone"
+                                               value="{{ request.phone }}" style="width: 70%"/>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            {% set custom_fields = guest.client_custom_fields %}
+                            {% for field_name, field in custom_fields %}
+                                {% if field.active %}
+                                    <div class="mb-3">
+                                        <label class="form-label"
+                                               for="{{ field_name }}">⚙️ {{ field.title is not empty ? field.title : field_name | capitalize }}</label>
+                                        <input class="form-control" id="{{ field_name }}" type="text"
+                                               name="{{ field_name }}" value="{{ request.(field_name) }}"
+                                               {% if field.required %}required="required"{% endif %} />
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+
+                            <div class="mb-3">
+                                <label class="form-label" for="reg-password">🔑 {{ 'Password'|trans }}</label>
+                                <input class="form-control" id="reg-password" type="password" name="password" value=""
+                                       required="required"/>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="password-confirm">🔐 {{ 'Password confirm'|trans }}</label>
+                                <input class="form-control" id="password-confirm" type="password" name="password_confirm" value="" required="required"/>
+                            </div>
+
+                            {{ mf.recaptcha }}
+
+                            {% if settings.signup_tos == 'explicit' %}
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
+                                    <label class="form-check-label" for="flexCheckDefault">
+                                        {# TODO: Make this translatable once support for placeholders is implemented #}
+                                        <span>✅ I agree to the <a href="{{ '/tos'|link }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ '/privacy-policy'|link }}" target="_blank">{{ 'privacy policy'|trans }}.</span>
+                                    </label>
+                                </div>
+                            {% endif %}
+
+                            <div class="form-actions mb-3">
+                                <button class="btn btn-primary w-100" type="submit">🚀 {{ 'Register'|trans }}</button>
+                            </div>
+
+                            {% if settings.signup_tos == 'implicit' %}
+                                <div class="mb-1">
+                                    {# TODO: Make this translatable once support for placeholders is implemented #}
+                                    <span class="text-muted mb-1">📄 By creating an account, you agree to our <a href="{{ '/tos'|link }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ '/privacy-policy'|link }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
+                                </div>
+                            {% endif %}
+                        </form>
+                        <div class="row">
+                            <div class="col">
+                                <a class="btn btn-outline-primary mb-2 w-100"
+                                   href="{{ 'login'|link }}">🔐 {{ 'Already a user?'|trans }}</a>
+                            </div>
+                            {% if settings.show_password_reset_link %}
+                                <div class="col">
+                                    <a class="btn btn-outline-primary mb-2 w-100" href="{{ 'password-reset'|link }}">🔐 {{ 'Forgot password?'|trans }}</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

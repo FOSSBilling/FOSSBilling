@@ -1,0 +1,27 @@
+<svg width="152" height="152" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#005fc5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0048a0;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="152" height="152" fill="url(#grad)" rx="15.200000000000001" />
+  <circle cx="76" cy="76" r="60.800000000000004" fill="rgba(255,255,255,0.1)" />
+  <circle cx="76" cy="76" r="38" fill="rgba(255,255,255,0.05)" />
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" 
+        font-size="68.4" font-family="Apple Color Emoji, Segoe UI Emoji, system-ui"
+        filter="url(#glow)">
+    💳
+  </text>
+  <text x="75%" y="25%" dominant-baseline="middle" text-anchor="middle" 
+        font-size="30.400000000000002" font-family="Apple Color Emoji, Segoe UI Emoji, system-ui">
+    💰
+  </text>
+</svg>

@@ -1,0 +1,132 @@
+{% if settings.side_menu_dashboard %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="{{ '/'|link }}">
+            <span class="emoji-icon">🏠</span>
+            {{ 'Dashboard'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if settings.side_menu_order %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="{{ '/order'|link }}">
+            <span class="emoji-icon">🛒</span>
+            {{ 'Order'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if client or not settings.hide_menu %}
+
+{% if settings.side_menu_support %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="{{ '/support'|link }}">
+            <span class="emoji-icon">🆘</span>
+            {{ 'Support'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if settings.side_menu_services %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="{{ '/order/service'|link }}">
+            <span class="emoji-icon">⚙️</span>
+            {{ 'Services'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if settings.side_menu_invoices %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="{{ '/invoice'|link }}">
+            <span class="emoji-icon">🧾</span>
+            {{ 'Invoices'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if settings.side_menu_emails %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="{{ '/email'|link }}">
+            <span class="emoji-icon">📧</span>
+            {{ 'Email'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if settings.side_menu_payments %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="{{ '/client/balance'|link }}">
+            <span class="emoji-icon">💳</span>
+            {{ 'Wallet'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if (guest.extension_is_on({"mod":"news"}) and settings.side_menu_news) %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="{{ '/news'|link }}">
+            <span class="emoji-icon">📰</span>
+            {{ 'News'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if (guest.support_kb_enabled() and settings.side_menu_kb) %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="{{ 'support/kb'|link }}">
+            <span class="emoji-icon">📚</span>
+            {{ 'Knowledge Base'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if settings.sidebar_balance_enabled and client %}
+    <li class="pt-3 ps-3">
+        <h5 class="text-secondary d-block pb-1">💰 {{ 'Account balance'|trans }}</h5>
+        <h4><strong>{{ profile.balance | money(profile.currency) }}</strong></h4>
+    </li>
+{% endif %}
+
+{% if settings.sidebar_note_enabled %}
+    <li class="pt-3 ps-3">
+        <h5 class="text-secondary d-block pb-1">{{ settings.sidebar_note_title }}</h5>
+        <span>{{ settings.sidebar_note_content }}</span>
+    </li>
+{% endif %}
+
+{% endif %}
+
+{% if settings.top_menu_signout %}
+    <li class="nav-item">
+        {% if client %}
+            <div class="dropdown">
+                <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img class="img-fluid rounded-circle" alt="{{ profile.first_name }} {{ profile.last_name }} gravatar" src="{{ profile.email|gravatar(60) }}" height="25px" width="25px">
+                    {% if profile.company %}
+                        <span>{{ profile.first_name }} {{ profile.last_name }}|{{ profile.company }}</span>
+                    {% else %}
+                        <span>{{ profile.first_name }} {{ profile.last_name }}</span>
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item"
+                           href="{{ 'client/profile'|link }}">👤 {{ 'Profile'|trans }}</a></li>
+                    <li><a class="dropdown-item"
+                           href="{{ 'client/logout'|link }}">🚪 {{ 'Sign out'|trans }}</a></li>
+                </ul>
+            </div>
+        {% else %}
+            <div class="row pt-2">
+                <div class="col">
+                    <a class="btn btn-outline-primary mb-2 w-100"
+                       href="{{ 'login'|link }}">🔐 {{ 'Login'|trans }}</a>
+                </div>
+                <div class="col">
+                    <a class="btn btn-outline-primary mb-2 w-100"
+                       href="{{ 'signup'|link }}">📝 {{ 'Register'|trans }}</a>
+                </div>
+            </div>
+        {% endif %}
+    </li>
+{% endif %}

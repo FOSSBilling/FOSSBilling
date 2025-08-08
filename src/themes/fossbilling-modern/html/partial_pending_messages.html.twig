@@ -1,0 +1,8 @@
+{% set pending_messages = guest.system_get_pending_messages %}
+{% if pending_messages %}
+<script>
+    {% for message in pending_messages %}
+        FOSSBilling.message('{{message}}');
+    {% endfor %}
+</script>
+{% endif %}

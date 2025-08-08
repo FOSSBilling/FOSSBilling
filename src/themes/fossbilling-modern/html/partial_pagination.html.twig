@@ -1,0 +1,69 @@
+{% if list.pages > 1 %}
+    {% set pageParam = page_param|default('page') %}
+    {% set currentPageRaw = request.(pageParam)|default(1) %}
+    {% if currentPageRaw matches '/^\\d+$/' %}
+        {% set currentPage = currentPageRaw %}
+    {% else %}
+        {% set currentPage = 1 %}
+    {% endif %}
+
+    {% set paginator = guest.system_paginator({ 'total': list.total, 'page_param': pageParam, (pageParam): currentPage, 'per_page': list.per_page }) %}
+
+    {# Removing current page parameter from the request to avoid duplication #}
+    {% set safeRequest = request|merge({ (pageParam): null }) %}
+    {% set filteredRequest = safeRequest|filter(v => v is not null) %}
+    <nav aria-label="{{ 'Pagination'|trans }}">
+        <ul class="pagination justify-content-center mb-0">
+            <li class="page-item{% if not currentPage or currentPage == 1 %} disabled{% endif %}">
+                <a class="page-link"
+                   href="{{ url|link(filteredRequest|merge({ (pageParam): 1 })) }}"
+                   aria-label="{{ 'First'|trans }}">
+                    <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M18.41,7.41L17,6L11,12L17,18L18.41,16.59L13.83,12L18.41,7.41M12.41,7.41L11,6L5,12L11,18L12.41,16.59L7.83,12L12.41,7.41Z"/>
+                    </svg>
+                </a>
+            </li>
+
+            <li class="page-item{% if not currentPage or currentPage == 1 %} disabled{% endif %}">
+                <a class="page-link"
+                   href="{{ url|link(filteredRequest|merge({ (pageParam): currentPage - 1 })) }}"
+                   aria-label="{{ 'Previous'|trans }}" rel="prev">
+                    <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"/>
+                    </svg>
+                </a>
+            </li>
+
+            {% for i in 1..list.pages %}
+                <li class="page-item{% if i == currentPage %} active{% endif %}">
+                    {% if i == currentPage or (not currentPage and i == 1) %}
+                        <span class="page-link" aria-current="page">{{ i }}</span>
+                    {% else %}
+                        <a class="page-link"
+                           href="{{ url|link(filteredRequest|merge({ (pageParam): i })) }}">{{ i }}</a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+
+            <li class="page-item{% if currentPage == list.pages %} disabled{% endif %}">
+                <a class="page-link"
+                   href="{{ url|link(filteredRequest|merge({ (pageParam): currentPage + 1 })) }}"
+                   aria-label="{{ 'Next'|trans }}" rel="next">
+                    <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/>
+                    </svg>
+                </a>
+            </li>
+
+            <li class="page-item{% if currentPage == list.pages %} disabled{% endif %}">
+                <a class="page-link"
+                   href="{{ url|link(filteredRequest|merge({ (pageParam): list.pages })) }}"
+                   aria-label="{{ 'Last'|trans }}">
+                    <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M5.59,7.41L7,6L13,12L7,18L5.59,16.59L10.17,12L5.59,7.41M11.59,7.41L13,6L19,12L13,18L11.59,16.59L16.17,12L11.59,7.41Z"/>
+                    </svg>
+                </a>
+            </li>
+        </ul>
+    </nav>
+{% endif %}
