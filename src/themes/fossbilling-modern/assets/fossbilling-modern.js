@@ -43,7 +43,7 @@ function showInstallButton() {
   const installButton = document.createElement('button');
   installButton.className = 'btn btn-outline-primary btn-sm position-fixed';
   installButton.style.bottom = '20px';
-  installButton.style.right = '20px';
+  installButton.style.left = '20px';
   installButton.style.zIndex = '1050';
   
   // Secure icon creation without innerHTML
