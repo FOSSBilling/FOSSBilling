@@ -1,0 +1,87 @@
+{% macro selectbox(name, options, selected, required, nullOption) %}
+    <select name="{{ name }}" class="form-control{% if required %} is-required{% endif %}">
+        {% if nullOption %}<option value="">{{ nullOption }}</option>{% endif %}
+        {% for val, label in options %}
+        <option value="{{ val }}" {% if selected == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+{% endmacro %}
+
+{% macro selectboxtld(name, options, selected, required) %}
+    <select name="{{ name }}" class="form-control{% if required %} is-required{% endif %}" style="width: 80px;">
+        {% for data in options %}
+        <option value="{{ data.tld }}" {% if selected == data.tld %}selected{% endif %}>{{ data.tld }}</option>
+        {% endfor %}
+    </select>
+{% endmacro %}
+
+{# deprecated - use money filter #}
+{% macro currency_format(price, currency) %}
+    {{ price | money(currency) }}
+{% endmacro %}
+
+{# deprecated - use money_convert filter #}
+{% macro currency(price, currency) %}
+    {{ price | money_convert(currency) }}
+{% endmacro %}
+
+{% macro status_name(status) %}
+    {% set status = status|replace({'_': " "})|title|trim %}
+    {% if status == 'Active' %}
+        {{ 'Active'|trans }}
+    {% elseif status == 'Pending Setup' %}
+        {{ 'Pending Setup'|trans }}
+    {% elseif status == 'Failed Setup' %}
+        {{ 'Failed Setup'|trans }}
+    {% elseif status == 'Failed Renew' %}
+        {{ 'Failed Renewal'|trans }}
+    {% elseif status == 'Suspended' %}
+        {{ 'Suspended'|trans }}
+    {% elseif status == 'Canceled' %}
+        {{ 'Canceled'|trans }}
+    {% elseif status == 'Paid' %}
+        {{ 'Paid'|trans }}
+    {% elseif status == 'Unpaid' %}
+        {{ 'Unpaid'|trans }}
+    {% elseif status == 'Refunded' %}
+        {{ 'Refunded'|trans }}
+    {% else %}
+        {{ status|trans }}
+    {% endif %}
+{% endmacro %}
+
+{# deprecated - use period_title filter #}
+{% macro period_name(period) %}
+    {{ period | period_title }}
+{% endmacro %}
+
+{% macro markdown_quote(text) %}
+
+
+
+{% for line in text|split('\n') %}
+> {{ line }}
+{% endfor %}
+{% endmacro %}
+
+
+{% macro recaptcha() %}
+
+{% if guest.extension_is_on({"mod":"spamchecker"}) %}
+{% set rc = guest.spamchecker_recaptcha %}
+    {% if rc.enabled %}
+        {% if rc.version == 2 %}
+            <script src='https://www.google.com/recaptcha/api.js' async defer></script>
+            <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
+        {% endif %}
+    {% endif %}
+{% endif %}
+{% endmacro %}
+
+{% macro wysiwyg(selector) %}
+{% if guest.extension_is_on({"mod":"wysiwyg"}) %}
+{{ include('mod_wysiwyg_js.html.twig', { 'class': selector|trim('.#') }) }}
+{% else %}
+<!-- No WYSIWYG, no fancy stuff. Enable the WYSIWYG extension for a better management experience. -->
+{% endif %}
+{% endmacro %}

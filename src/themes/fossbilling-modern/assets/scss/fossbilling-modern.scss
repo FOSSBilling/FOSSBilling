@@ -1,0 +1,535 @@
+// CSS Custom Properties for modern theming
+:root {
+    --primary-color: #005fc5;
+    --primary-rgb: 0, 95, 197;
+    --warning-color: #f59e0b;
+    --danger-color: #dc2626;
+    --success-color: #16a34a;
+    --body-bg: #f8fafc;
+    --surface-color: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --border-radius: 8px;
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+// Explicit light theme (Bootstrap data-bs-theme="light")
+[data-bs-theme="light"] {
+    --primary-color: #005fc5;
+    --primary-rgb: 0, 95, 197;
+    --warning-color: #f59e0b;
+    --danger-color: #dc2626;
+    --success-color: #16a34a;
+    --body-bg: #ffffff;
+    --surface-color: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+}
+
+// Explicit dark theme (Bootstrap data-bs-theme="dark")
+[data-bs-theme="dark"] {
+    --primary-color: #3b82f6;
+    --primary-rgb: 59, 130, 246;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --success-color: #10b981;
+    --body-bg: #0f172a;
+    --surface-color: #1e293b;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border-color: #334155;
+}
+
+// System preference fallback (only when no explicit theme is set)
+@media (prefers-color-scheme: dark) {
+    :root:not([data-bs-theme]) {
+        --body-bg: #0f172a;
+        --surface-color: #1e293b;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border-color: #334155;
+    }
+}
+
+// Bootstrap variable overrides (using actual colors since Bootstrap Sass functions need real values)
+$primary: #005fc5;
+$warning: #f59e0b;
+$danger: #dc2626;
+$success: #16a34a;
+$body-bg: #f8fafc;
+$body-color: #1e293b;
+$border-color: #e2e8f0;
+
+$accordion-button-active-bg: rgba(0, 95, 197, .05);
+$accordion-button-focus-border-color: rgba(0, 95, 197, .08);
+
+@import "~bootstrap/scss/bootstrap";
+@import "~tom-select/dist/css/tom-select.bootstrap5.css";
+@import "flags";
+
+html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    background-color: var(--body-bg) !important;
+    color: var(--text-primary) !important;
+    transition: var(--transition-base);
+}
+
+body {
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    
+    // Ensure Bootstrap components use theme colors
+    --bs-body-bg: var(--body-bg);
+    --bs-body-color: var(--text-primary);
+    --bs-border-color: var(--border-color);
+    --bs-primary: var(--primary-color);
+    --bs-primary-rgb: var(--primary-rgb);
+}
+
+// Modern utility classes
+.fs-7 {
+    font-size: .875rem;
+}
+
+.surface {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hover-lift {
+    transition: var(--transition-base);
+    
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+}
+
+.grid-auto-fit {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.grid-auto-fill {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+// Enhanced focus states for accessibility
+.focus-ring {
+    &:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+}
+
+.offcanvas-item {
+    border-bottom: 1px solid var(--border-color);
+    transition: var(--transition-base);
+
+    &:first-child {
+        border-top: 1px solid var(--border-color);
+    }
+
+    &:hover {
+        background-color: rgba(var(--primary-rgb), 0.05);
+        transform: translateX(4px);
+    }
+
+    > a {
+        color: var(--text-secondary);
+        text-decoration: none;
+        padding: 0.75rem 1rem;
+        display: block;
+        
+        &:hover {
+            color: var(--primary-color);
+        }
+    }
+}
+
+// Enhanced card styles
+.card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-base);
+    background-color: var(--surface-color);
+    
+    &:hover {
+        box-shadow: var(--shadow-md);
+    }
+}
+
+.card-header {
+    background-color: rgba(var(--primary-rgb), 0.02);
+    border-bottom: 1px solid var(--border-color);
+    
+    h1 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0;
+    }
+}
+
+.page-password-reset .card h1, 
+.page-login .card h1, 
+.page-signup .card h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+// Enhanced table styles
+.card-body {
+    background-color: var(--surface-color);
+    
+    table {
+        > thead {
+            > tr {
+                > th {
+                    font-size: 0.75rem;
+                    color: var(--text-secondary);
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    border-bottom: 2px solid var(--border-color);
+                    padding: 1rem 0.75rem;
+                }
+            }
+        }
+
+        > tbody {
+            > tr {
+                transition: var(--transition-base);
+                
+                &:hover {
+                    background-color: rgba(var(--primary-rgb), 0.02);
+                }
+                
+                > td {
+                    vertical-align: middle;
+                    padding: 0.875rem 0.75rem;
+                    border-bottom: 1px solid var(--border-color);
+                }
+            }
+        }
+    }
+}
+
+.svg-icon {
+    height: 20px;
+    width: 20px;
+    fill: currentColor;
+}
+
+// Remove order management accordion icons
+#orderManager {
+    --#{$prefix}accordion-btn-icon: none;
+    --#{$prefix}accordion-btn-active-icon: none;
+}
+
+// TomSelect dropdown
+.ts-input {
+    color: inherit;
+}
+
+.ts-wrapper {
+    &.form-select {
+        background-color: inherit;
+    }
+
+    .ts-control {
+        font-size: 14px;
+        width: 100%;
+        color: inherit;
+
+        &.locale {
+            width: 205px;
+        }
+
+        .dropdown-menu {
+            width: 100%;
+            height: auto;
+        }
+    }
+
+    .ts-dropdown {
+        font-size: 14px;
+
+        .active {
+            background-color: rgba($secondary, .06);
+            color: inherit;
+        }
+
+        .selected {
+            background-color: rgba($secondary, .1);
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .ts-wrapper.js-language-selector {
+        width: 180px
+    }
+}
+
+// Modern invoice gateway styles
+.invoice-gateway {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    transition: var(--transition-base);
+    background-color: var(--surface-color);
+    cursor: pointer;
+
+    &:hover {
+        border-color: var(--primary-color);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+// Enhanced email list with modern styling
+.email-list {
+    border-radius: var(--border-radius);
+    background-color: var(--surface-color);
+    box-shadow: var(--shadow-sm);
+
+    .list-group-item {
+        border: none;
+        border-bottom: 1px solid var(--border-color);
+        border-left: 3px solid transparent;
+        background-color: transparent;
+        transition: var(--transition-base);
+        padding: 1rem 1.25rem;
+
+        &:hover {
+            background-color: rgba(var(--primary-rgb), 0.03);
+            border-left-color: rgba(var(--primary-rgb), 0.3);
+        }
+
+        &.active {
+            border-left-color: var(--primary-color);
+            background-color: rgba(var(--primary-rgb), 0.08);
+            color: var(--text-primary);
+            
+            &::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 3px;
+                background: linear-gradient(to bottom, var(--primary-color), rgba(var(--primary-rgb), 0.6));
+            }
+        }
+
+        &:first-child {
+            border-top-left-radius: var(--border-radius);
+            border-top-right-radius: var(--border-radius);
+        }
+
+        &:last-child {
+            border-bottom: none;
+            border-bottom-left-radius: var(--border-radius);
+            border-bottom-right-radius: var(--border-radius);
+        }
+    }
+}
+
+// Bootstrap component overrides for proper theming
+
+// Responsive navbar logo
+.navbar-logo {
+    height: 35px; // Default size for mobile
+    max-width: 200px;
+    width: auto;
+    transition: var(--transition-base);
+    
+    // Larger size for tablets and desktop
+    @media (min-width: 576px) {
+        height: 40px;
+    }
+    
+    @media (min-width: 768px) {
+        height: 45px;
+    }
+    
+    // Ensure logo fits well in navbar-brand
+    .navbar-brand & {
+        margin-right: 0;
+    }
+}
+
+// Improve navbar-brand spacing
+.navbar-brand {
+    padding-top: 0.3125rem;
+    padding-bottom: 0.3125rem;
+    display: flex;
+    align-items: center;
+    
+    // Better spacing on mobile
+    @media (max-width: 767.98px) {
+        font-size: 1rem;
+    }
+}
+
+// Theme toggle button styling
+.navbar-theme-toggle {
+    border-radius: 50px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-base);
+    border: 1px solid var(--border-color);
+    background-color: var(--surface-color);
+    padding: 0.5rem;
+    
+    &:hover {
+        transform: scale(1.1);
+        box-shadow: var(--shadow-md);
+    }
+    
+    &:focus {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+    
+    .theme-icon {
+        font-size: 1.1rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+// Floating theme toggle (fallback)
+.theme-toggle {
+    width: 50px;
+    
+    &:hover {
+        transform: scale(1.1);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    &:focus {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+    
+    .theme-icon {
+        font-size: 1.2rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+.btn {
+    --bs-btn-border-color: var(--border-color);
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--primary-color);
+    --bs-btn-border-color: var(--primary-color);
+    --bs-btn-hover-bg: rgba(var(--primary-rgb), 0.8);
+    --bs-btn-hover-border-color: rgba(var(--primary-rgb), 0.8);
+}
+
+.form-control, .form-select {
+    background-color: var(--surface-color);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    
+    &:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+    }
+}
+
+.dropdown-menu {
+    background-color: var(--surface-color);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.dropdown-item {
+    color: var(--text-primary);
+    
+    &:hover, &:focus {
+        background-color: rgba(var(--primary-rgb), 0.1);
+        color: var(--text-primary);
+    }
+}
+
+.modal-content {
+    background-color: var(--surface-color);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.alert {
+    border-color: var(--border-color);
+    
+    &.alert-primary {
+        background-color: rgba(var(--primary-rgb), 0.1);
+        border-color: rgba(var(--primary-rgb), 0.2);
+        color: var(--primary-color);
+    }
+}
+
+// Ensure text colors are properly inherited
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+}
+
+p, span, div {
+    color: var(--text-primary);
+}
+
+a {
+    color: var(--primary-color);
+    
+    &:hover {
+        color: rgba(var(--primary-rgb), 0.8);
+    }
+}

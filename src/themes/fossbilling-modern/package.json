@@ -1,0 +1,22 @@
+{
+  "name": "fossbilling-modern-pwa",
+  "version": "1.0.0",
+  "description": "Modern PWA theme for FOSSBilling",
+  "scripts": {
+    "dev-server": "encore dev-server",
+    "dev": "encore dev",
+    "watch": "encore dev --watch", 
+    "build": "encore production --progress",
+    "pwa:generate-icons": "node scripts/generate-pwa-icons.js",
+    "analyze": "webpack-bundle-analyzer build/js --port 8888"
+  },
+  "dependencies": {
+    "github-markdown-css": "^5.7.0"
+  },
+  "devDependencies": {
+    "webpack-bundle-analyzer": "^4.10.1",
+    "workbox-webpack-plugin": "^7.0.0",
+    "sharp": "^0.32.6",
+    "canvas": "^2.11.2"
+  }
+}
