@@ -222,12 +222,13 @@ class Service implements InjectionAwareInterface
         }
 
         foreach ($result as $key => $value) {
-            $iconPath = Path::join('assets', 'icons', 'cog.svg');
+            $defaultIconUrl = 'assets/icons/cog.svg';
+            $iconPath = Path::normalize($defaultIconUrl);
             $icon_url = $value['icon_url'] ?? null;
             if ($icon_url) {
                 $iconPath = SYSTEM_URL . $icon_url;
             }
-            $result[$key]['icon_url'] = $iconPath;
+            $result[$key]['icon_url'] = $defaultIconUrl;
         }
 
         foreach ($result as $key => $value) {
