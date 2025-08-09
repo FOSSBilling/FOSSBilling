@@ -1,0 +1,27 @@
+<div class="alert alert-danger" role="alert">
+	<div class="alert-icon">
+		<svg class="icon">
+            <use xlink:href="#alert-triangle" />
+		</svg>
+	</div>
+	<div>
+		<h4 class="alert-heading">An error occurred while rendering this widget.</h4>
+		<div class="alert-description">
+			<ul class="mb-1">
+                <li>
+                    <strong>Slot:</strong>
+                    {{ widget.slot|e }}</li>
+                <li>
+                    <strong>Module:</strong>
+                    {{ widget.mod_name|e }}</li>
+                <li>
+                    <strong>Template:</strong>
+                    {{ widget.template|e }}.html.twig</li>
+            </ul>
+
+            {% if error %}
+                <pre class="mt-3 mb-0 bg-light p-2 border rounded text-danger small">{{ error|e }}</pre>
+            {% endif %}
+		</div>
+	</div>
+</div>
