@@ -89,7 +89,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('render_widget_slot', $this->twig_render_widget_slot(...), ['is_safe' => ['html']]),
+            new TwigFunction('render_widgets', $this->twig_render_widgets(...), ['is_safe' => ['html']]),
         ];
     }
 
@@ -110,7 +110,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
      * @param array $context optional slot context, such as order or client details
      * @return string Slot content
      */
-    public function twig_render_widget_slot(string $slot, array $context = []): string
+    public function twig_render_widgets(string $slot, array $context = []): string
     {
         return $this->di['mod_service']('widgets')->renderSlot($slot, $context);
     }
