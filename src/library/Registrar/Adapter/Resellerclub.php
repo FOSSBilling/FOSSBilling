@@ -689,7 +689,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             }
             $this->getLog()->info('API RESULT: ' . $result->getContent(false));
         } catch (HttpExceptionInterface $error) {
-            $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
+            $e = new Registrar_Exception("HttpClientException: {$error->getMessage()}.");
             $this->getLog()->err($e->getMessage());
 
             throw $e;

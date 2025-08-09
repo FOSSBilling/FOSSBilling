@@ -139,7 +139,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                 $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
             }
         } catch (HttpExceptionInterface $error) {
-            $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
+            $e = new Registrar_Exception("HttpClientException: {$error->getMessage()}.");
             $this->getLog()->err($e->getMessage());
 
             throw $e;

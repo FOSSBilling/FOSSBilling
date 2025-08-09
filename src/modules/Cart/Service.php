@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -237,11 +238,11 @@ class Service implements InjectionAwareInterface
         }
 
         if ($removeAddons) {
-            $config_main = json_decode($cartProduct->config, true);
+            $config_main = json_decode($cartProduct->config ?? '', true);
             $domain_name = $config_main['domain_name'] ?? '';
             $allCartProducts = $this->di['db']->find('CartProduct', 'cart_id = :cart_id', [':cart_id' => $cart->id]);
             foreach ((array) $allCartProducts as $cProduct) {
-                $config = json_decode($cProduct->config, true);
+                $config = json_decode($cProduct->config ?? '', true);
                 if (isset($config['parent_id']) && $config['parent_id'] == $cartProduct->product_id) {
                     $domain_name_addon = $config['domain_name'] ?? '';
                     if ($domain_name && $domain_name != $domain_name_addon) {
@@ -404,11 +405,7 @@ class Service implements InjectionAwareInterface
 
     public function isPromoAvailableForClientGroup(\Model_Promo $promo)
     {
-        if (is_string($promo->client_groups) && json_validate($promo->client_groups)) {
-            $clientGroups = json_decode($promo->client_groups, true);
-        } else {
-            $clientGroups = [];
-        }
+        $clientGroups = json_decode($promo->client_groups ?? '', true) ?? [];
 
         if (empty($clientGroups)) {
             return true;
@@ -681,7 +678,7 @@ class Service implements InjectionAwareInterface
             } catch (\Exception $e) {
                 error_log($e->getMessage());
                 $status = 'error';
-                $notes = 'Order could not be activated after checkout due to error: ' . $e->getMessage();
+                $notes = "Order could not be activated after checkout due to error: {$e->getMessage()}.";
                 $orderService->orderStatusAdd($order, $status, $notes);
             }
         }
@@ -773,11 +770,7 @@ class Service implements InjectionAwareInterface
 
     public function getItemConfig(\Model_CartProduct $model)
     {
-        if (is_string($model->config) && json_validate($model->config)) {
-            return json_decode($model->config, true);
-        }
-
-        return [];
+        return json_decode($model->config ?? '', true) ?? [];
     }
 
     public function cartProductToApiArray(\Model_CartProduct $model)

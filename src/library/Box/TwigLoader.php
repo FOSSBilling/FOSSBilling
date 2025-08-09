@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -8,9 +9,14 @@
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
+
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+
 class Box_TwigLoader extends Twig\Loader\FilesystemLoader
 {
     protected $options = [];
+    private readonly Filesystem $filesystem;
 
     /**
      * Constructor.
@@ -33,6 +39,7 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
         }
 
         $this->options = $options;
+        $this->filesystem = new Filesystem();
         $paths_arr = [$options['mods'], $options['theme']];
         $this->setPaths($paths_arr);
     }
@@ -49,19 +56,19 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
         $name_split = explode('_', $name);
 
         $paths = [];
-        $paths[] = $this->options['theme'] . DIRECTORY_SEPARATOR . 'html_custom';
-        $paths[] = $this->options['theme'] . DIRECTORY_SEPARATOR . 'html';
+        $paths[] = Path::join($this->options['theme'], 'html_custom');
+        $paths[] = Path::join($this->options['theme'], 'html');
         if (isset($name_split[1])) {
-            $paths[] = $this->options['mods'] . DIRECTORY_SEPARATOR . ucfirst($name_split[1]) . DIRECTORY_SEPARATOR . 'html_' . $this->options['type'];
+            $paths[] = Path::join($this->options['mods'], ucfirst($name_split[1]), "html_{$this->options['type']}");
         }
 
         foreach ($paths as $path) {
-            if (file_exists($path . DIRECTORY_SEPARATOR . $name)) {
-                return $this->cache[$name] = $path . '/' . $name;
+            if ($this->filesystem->exists(Path::join($path, $name))) {
+                return $this->cache[$name] = Path::join($path, $name);
             }
 
-            if (str_ends_with($name, 'icon.svg') && file_exists(dirname($path) . DIRECTORY_SEPARATOR . 'icon.svg')) {
-                return $this->cache[$name] = dirname($path) . DIRECTORY_SEPARATOR . 'icon.svg';
+            if (str_ends_with($name, 'icon.svg') && $this->filesystem->exists(Path::join(Path::getDirectory($path), 'icon.svg'))) {
+                return $this->cache[$name] = Path::join(Path::getDirectory($path), 'icon.svg');
             }
         }
 

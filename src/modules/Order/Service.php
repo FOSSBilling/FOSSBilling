@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -253,11 +254,7 @@ class Service implements InjectionAwareInterface
 
     public function getConfig(\Model_ClientOrder $model)
     {
-        if (is_string($model->config) && json_validate($model->config)) {
-            return json_decode($model->config, true);
-        }
-
-        return [];
+        return json_decode($model->config ?? '', true) ?? [];
     }
 
     public function productHasOrders(\Model_Product $product)
@@ -339,11 +336,7 @@ class Service implements InjectionAwareInterface
         $supportService = $this->di['mod_service']('support');
 
         $data = $this->di['db']->toArray($model);
-        if (!empty($model->config) && json_validate($model->config)) {
-            $data['config'] = json_decode($model->config, true);
-        } else {
-            $data['config'] = [];
-        }
+        $data['config'] = json_decode($model->config ?? '', true) ?? [];
         $data['total'] = $this->getTotal($model);
         $data['title'] = $model->title;
         $data['meta'] = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', [':id' => $model->id]);
@@ -759,7 +752,7 @@ class Service implements InjectionAwareInterface
         if ($productModel instanceof \Model_Product) {
             $this->stockSale($productModel, $order->quantity);
         } else {
-            error_log(sprintf('Order without product ID detected Order #%s', $order->id));
+            error_log("Order without product ID detected Order #{$order->id}.");
         }
 
         $this->saveStatusChange($order, 'Order activated');
@@ -809,7 +802,7 @@ class Service implements InjectionAwareInterface
                 return $repo->$action($o, $service);
             }
         }
-        error_log(sprintf('Service %s does not support action %s', $order->service_type, $action));
+        error_log("Service {$order->service_type} does not support action {$action}.");
 
         return null;
     }
@@ -1157,7 +1150,7 @@ class Service implements InjectionAwareInterface
             if (!$forceDelete) {
                 throw $e;
             } else {
-                error_log($e->getMessage() . 'in ' . $e->getFile() . ':' . $e->getFile());
+                error_log("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
             }
         }
 
@@ -1327,13 +1320,13 @@ class Service implements InjectionAwareInterface
         $orderId = $order->id;
         $service = $this->getOrderService($order);
         if (!is_object($service)) {
-            error_log(sprintf('Order #%s has no active service', $orderId));
+            error_log("Order #{$orderId} has no active service.");
 
             return null;
         }
         $srepo = $this->di['mod_service']('service' . $order->service_type);
         if (!method_exists($srepo, 'toApiArray')) {
-            error_log(sprintf('service #%s method toApiArray is missing', $order->service_type));
+            error_log("Service #{$order->service_type} method toApiArray is missing.");
 
             return null;
         }

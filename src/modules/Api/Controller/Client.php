@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -18,12 +19,19 @@ namespace Box\Mod\Api\Controller;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Filesystem;
 
 class Client implements InjectionAwareInterface
 {
     private int|float|null $_requests_left = null;
     private $_api_config;
+    private readonly Filesystem $filesystem;
     protected ?\Pimple\Container $di = null;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -64,9 +72,9 @@ class Client implements InjectionAwareInterface
         $p = $_POST;
 
         // adding support for raw post input with json string
-        $input = file_get_contents('php://input');
+        $input = $this->filesystem->readFile('php://input');
         if (empty($p) && !empty($input)) {
-            $p = @json_decode($input, 1);
+            $p = @json_decode($input, true);
         }
 
         $call = $class . '_' . $method;
@@ -280,7 +288,7 @@ class Client implements InjectionAwareInterface
         header('X-RateLimit-Limit: ' . $this->_api_config['rate_limit']);
         header('X-RateLimit-Remaining: ' . $this->_requests_left);
         if ($e instanceof \Exception) {
-            error_log($e->getMessage() . ' ' . $e->getCode());
+            error_log("{$e->getMessage()} {$e->getCode()}.");
             $code = $e->getCode() ?: 9999;
             $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
             $authFailed = [201, 202, 206, 204, 205, 203, 403, 1004, 1002];
@@ -315,7 +323,7 @@ class Client implements InjectionAwareInterface
             return true;
         }
 
-        $input = file_get_contents('php://input') ?? '';
+        $input = $this->filesystem->readFile('php://input') ?? '';
         $data = json_decode($input);
         if (!is_object($data)) {
             $data = new \stdClass();

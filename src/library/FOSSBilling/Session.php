@@ -129,7 +129,7 @@ class Session implements InjectionAwareInterface
             $this->di['db']->store($session);
         }
 
-        $storedFingerprint = json_decode($session->fingerprint, true);
+        $storedFingerprint = json_decode($session->fingerprint ?? '', true);
         if (!$fingerprint->checkFingerprint($storedFingerprint) && Config::getProperty('security.perform_session_fingerprinting', true)) {
             // TODO: Trying to use monolog here causes a 503 error with an empty error log. Would love to find out why and use it instead of error_log
             $invalid = true;

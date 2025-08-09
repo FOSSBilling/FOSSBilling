@@ -1193,7 +1193,7 @@ class ServiceTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(788954);
-        $this->expectExceptionMessage(sprintf('Staff member with email %s is already registered', $data['email']));
+        $this->expectExceptionMessage("Staff member with email {$data['email']} is already registered.");
         $serviceMock->create($data);
     }
 
@@ -1618,7 +1618,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $member_id = 1;
-        $expected = json_decode($queryResult, 1);
+        $expected = json_decode($queryResult ?? '', true);
         $result = $service->getPermissions($member_id);
         $this->assertIsArray($result);
         $this->assertEquals($expected, $result);

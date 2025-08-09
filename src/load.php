@@ -34,7 +34,7 @@ function checkInstaller(): void
     }
 
     // Check if /install directory still exists after installation has been completed.
-    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install/install.php'))) {
+    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::join('install', 'install.php'))) {
         // Throw exception only if debug mode is NOT enabled.
         if (!empty(Config::getProperty('debug_and_monitoring.debug'))) {
             throw new Exception('For security reasons, you have to delete the install directory before you can use FOSSBilling.', 2);
@@ -91,7 +91,7 @@ function checkSSL(): void
  */
 function checkUpdatePatcher(): void
 {
-    global $di, $request;
+    global $di, $filesystem, $request;
 
     $version = FOSSBilling\Version::VERSION;
     if ($di['cache']->getItem('updatePatcher')->isHit() && $version === $di['cache']->getItem('updatePatcher')->get()) {
@@ -105,12 +105,16 @@ function checkUpdatePatcher(): void
         try {
             $patcher->applyConfigPatches();
             $patcher->applyCorePatches();
-            $di['tools']->emptyFolder(PATH_CACHE);
+
+            // Clear the file cache after applying patches.
+            $filesystem->remove(PATH_CACHE);
+            $filesystem->mkdir(PATH_CACHE);
+
             $di['cache']->getItem('updatePatcher')->set(FOSSBilling\Version::VERSION);
 
             exit('Any missing config migrations or database patches have been applied and the cache has been cleared.');
         } catch (Exception $e) {
-            exit('An error occurred while attempting to apply patches: <br>' . $e->getMessage());
+            exit("An error occurred while attempting to apply patches: <br>{$e->getMessage()}.");
         }
     }
 }
@@ -156,7 +160,7 @@ function exceptionHandler(Exception|Error $e)
 
         return;
     } else {
-        error_log($e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+        error_log("{$e->getMessage()} at {$e->getFile()} : {$e->getLine()}");
     }
 
     $message = htmlspecialchars($e->getMessage());
@@ -209,19 +213,19 @@ function preInit(): void
     require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
 
     // Define global paths.
-    define('PATH_LIBRARY', Path::normalize(PATH_ROOT . '/library/'));
-    define('PATH_THEMES', Path::normalize(PATH_ROOT . '/themes/'));
-    define('PATH_MODS', Path::normalize(PATH_ROOT . '/modules/'));
-    define('PATH_LANGS', Path::normalize(PATH_ROOT . '/locale/'));
-    define('PATH_UPLOADS', Path::normalize(PATH_ROOT . '/uploads/'));
-    define('PATH_CONFIG', Path::normalize(PATH_ROOT . '/config.php'));
+    define('PATH_LIBRARY', Path::join(PATH_ROOT, 'library'));
+    define('PATH_THEMES', Path::join(PATH_ROOT, 'themes'));
+    define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
+    define('PATH_LANGS', Path::join(PATH_ROOT, 'locale'));
+    define('PATH_UPLOADS', Path::join(PATH_ROOT, 'uploads'));
+    define('PATH_CONFIG', Path::join(PATH_ROOT, 'config.php'));
 
     // Load required FOSSBilling libraries.
-    require Path::normalize(PATH_LIBRARY . '/FOSSBilling/ErrorPage.php');
-    require Path::normalize(PATH_LIBRARY . '/FOSSBilling/SentryHelper.php');
-    require Path::normalize(PATH_LIBRARY . '/FOSSBilling/Environment.php');
-    require Path::normalize(PATH_LIBRARY . '/FOSSBilling/Config.php');
-    require Path::normalize(PATH_LIBRARY . '/FOSSBilling/Tools.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'ErrorPage.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'SentryHelper.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Environment.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Config.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Tools.php');
 }
 
 /*
@@ -239,11 +243,11 @@ function init(): void
     $request = Request::createFromGlobals();
 
     // Check config exists, redirecting to installer or throwing an exception if not.
-    if (!$filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install/install.php'))) {
+    if (!$filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::join('install', 'install.php'))) {
         $response = new RedirectResponse($request->getSchemeAndHttpHost() . $request->getBasePath() . '/install/install.php', 307);
         $response->send();
         exit;
-    } elseif (!$filesystem->exists(PATH_CONFIG) && !$filesystem->exists(Path::normalize('install/install.php'))) {
+    } elseif (!$filesystem->exists(PATH_CONFIG) && !$filesystem->exists(Path::join('install', 'install.php'))) {
         throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
     }
 
@@ -252,8 +256,8 @@ function init(): void
     define('ADMIN_PREFIX', Config::getProperty('admin_area_prefix'));
     define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
     define('PATH_DATA', Path::normalize(Config::getProperty('path_data')));
-    define('PATH_CACHE', Path::normalize(PATH_DATA . '/cache'));
-    define('PATH_LOG', Path::normalize(PATH_DATA . '/log'));
+    define('PATH_CACHE', Path::join(PATH_DATA, 'cache'));
+    define('PATH_LOG', Path::join(PATH_DATA, 'log'));
     define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
 
     // Set the system URL.
@@ -267,13 +271,13 @@ function init(): void
     define('BIND_TO', Tools::getDefaultInterface());
 
     // Initial setup and checks passed, now we setup our custom autoloader.
-    require Path::normalize(PATH_LIBRARY . '/FOSSBilling/Autoloader.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Autoloader.php');
     $loader = new FOSSBilling\AutoLoader();
     $loader->register();
 
     // Load the DI container.
     global $di;
-    $di = require Path::normalize(PATH_ROOT . '/di.php');
+    $di = require Path::join(PATH_ROOT, 'di.php');
 
     // Now that the config file is loaded, we can enable Sentry.
     SentryHelper::registerSentry();
@@ -287,7 +291,7 @@ function postInit(): void
     // Set error and exception handlers, and default logging settings.
     ini_set('log_errors', '1');
     ini_set('html_errors', false);
-    ini_set('error_log', Path::normalize(PATH_LOG . '/php_error.log'));
+    ini_set('error_log', Path::join(PATH_LOG, 'php_error.log'));
     error_reporting(E_ALL);
 
     if (DEBUG) {
