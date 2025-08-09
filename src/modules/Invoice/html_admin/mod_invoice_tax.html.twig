@@ -49,7 +49,7 @@
                             <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ tax.id }}">
                         </td>
                         <td>
-                            <a href="{{ 'invoice/tax'|alink}}/{{ tax.id }}">{{ tax.name }}</a>
+                            <a href='{{ "invoice/tax/#{tax.id}"|url }}'>{{ tax.name }}</a>
                         </td>
                         <td>
                             {% if tax.country %}
@@ -67,13 +67,13 @@
                         </td>
                         <td>{{ tax.taxrate }}%</td>
                         <td>
-                            <a class="btn btn-icon" href="{{ 'invoice/tax'|alink}}/{{ tax.id }}">
+                            <a class="btn btn-icon" href='{{ "invoice/tax/#{tax.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/invoice/tax_delete'|link({ 'id': tax.id, 'CSRFToken': CSRFToken }) }}"
+                                href="{{ 'invoice/tax_delete'|api_url(query: { 'id': tax.id, 'CSRFToken': CSRFToken }) }}"
                                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                                 data-api-reload="1">
                                 <svg class="icon">
@@ -99,7 +99,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/invoice/tax_create'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'invoice/tax_create'|api_url }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Tax title'|trans }}:</label>
@@ -137,7 +137,7 @@
 
         <div class="tab-pane fade" id="tab-settings" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Tax settings updated'|trans }}">
+                <form method="post" action="{{ 'system/update_params'|api_url }}" class="api-form" data-api-msg="{{ 'Tax settings updated'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Enable tax support'|trans }}:</label>

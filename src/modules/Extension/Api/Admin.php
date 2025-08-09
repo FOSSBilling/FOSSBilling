@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,6 +11,8 @@
  */
 
 namespace Box\Mod\Extension\Api;
+
+use League\CommonMark\CommonMarkConverter;
 
 class Admin extends \Api_Abstract
 {
@@ -62,7 +65,9 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $extensionInfo = $this->di['extension_manager']->getExtension($data['extension_id']);
 
-        return $this->di['parse_markdown']($extensionInfo['readme']);
+        $markdownConverter = new CommonMarkConverter();
+
+        return $markdownConverter->convert($extensionInfo['readme'])->getContent();
     }
 
     /**

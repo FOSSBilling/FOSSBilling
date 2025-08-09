@@ -69,7 +69,7 @@
                                         {% if ext.type == 'mod' %}
                                             {% if ext.status == 'installed' %}
                                                 <a class="btn btn-icon api-link"
-                                                   href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}"
+                                                   href="{{ 'extension/deactivate'|api_url(query: { 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}"
                                                    data-api-type="danger"
                                                    data-api-confirm-btn="Deactivate"
                                                    data-api-confirm="{{ 'Are you sure?'|trans }}"
@@ -81,7 +81,7 @@
                                                 </a>
                                             {% else %}
                                                 <a class="btn btn-icon api-link"
-                                                   href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}"
+                                                   href="{{ 'extension/activate'|api_url(query: { 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}"
                                                    data-api-confirm="{{ 'Are you sure?'|trans }}"
                                                    data-api-confirm-btn="Activate"
                                                    data-api-jsonp="onAfterModuleActivated"
@@ -97,7 +97,7 @@
                                     </td>
                                     <td>
                                         {% if ext.has_settings %}
-                                            <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}"
+                                            <a class="btn btn-icon" href='{{ "extension/settings/#{ext.id}"|url }}'
                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">
                                                 <svg class="icon">
                                                     <use xlink:href="#cog" />
@@ -198,9 +198,9 @@
         function onAfterUpdate(result) {}
         function onAfterModuleActivated(result) {
             if(result.redirect && result.type === 'mod') {
-                bb.redirect("{{ ''|alink }}/" + result.id);
+                bb.redirect("{{ ''|url }}/" + result.id);
             } else if (result.has_settings) {
-                bb.redirect("{{ 'extension/settings'|alink }}/" + result.id);
+                bb.redirect("{{ 'extension/settings'|url }}/" + result.id);
             } else {
                 bb.reload();
             }

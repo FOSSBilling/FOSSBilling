@@ -12,7 +12,7 @@
     {{ include('partial_bb_meta.html.twig') }}
 
     {{ encore_entry_link_tags('fossbilling') }}
-    {{ "Api/API.js" | library_url | script_tag }}
+    <script src="{{ constant('SYSTEM_URL') ~ 'library/Api/API.js?' ~ FOSSBillingVersion }}"></script>
     {{ encore_entry_script_tags('fossbilling') }}
 </head>
 
@@ -29,7 +29,7 @@
     {% block js %}{% endblock %}
 
     <div class="d-none">
-        {{ include('../build/symbol/icons-sprite.svg') }}
+        {{ source('@symbol/icons-sprite.svg') }}
     </div>
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;">
     </div>

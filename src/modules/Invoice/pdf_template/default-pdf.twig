@@ -71,8 +71,8 @@
 					<tr>
 						<td style='text-align: center; width:25px;'>{{ nr }}</td>
 						<td style='text-align: left'>{{ item.title }}</td>
-						<td style='text-align: right'>{{ item.quantity }}x {{ item.price|money(currency_code) }}</td>
-						<td style='text-align: right'>{{ item.total|money(currency_code) }}</td>
+						<td style='text-align: right'>{{ item.quantity }}x {{ item.price|format_currency(currency_code) }}</td>
+						<td style='text-align: right'>{{ item.total|format_currency(currency_code) }}</td>
 					</tr>
 				{% endfor %}
 				<tr>
@@ -82,18 +82,18 @@
 					<tr>
 						<th style='text-align: right' colspan='3'>{{ invoice.taxname }}
 							{{ invoice.taxrate }}% Tax:</th>
-						<th style='text-align: right'>{{ invoice.tax|money(currency_code) }}</th>
+						<th style='text-align: right'>{{ invoice.tax|format_currency(currency_code) }}</th>
 					</tr>
 				{% endif %}
 				{% if invoice.discount|default and invoice.discount > 0 %}
 					<tr>
 						<th style='text-align: right' colspan='3'>{{ 'Discount'|trans }}:</th>
-						<th style='text-align: right'>{{ invoice.discount|money(currency_code) }}</th>
+						<th style='text-align: right'>{{ invoice.discount|format_currency(currency_code) }}</th>
 					</tr>
 				{% endif %}
 				<tr>
 					<th style='text-align: right'  colspan='3'>{{ 'Total'|trans }}:</th>
-					<th style='text-align: right'>{{ invoice.total|money(currency_code) }}</th>
+					<th style='text-align: right'>{{ invoice.total|format_currency(currency_code) }}</th>
 				</tr>
 			</table>
 		<span class="muted-text">{{ footer.signature }}</span>

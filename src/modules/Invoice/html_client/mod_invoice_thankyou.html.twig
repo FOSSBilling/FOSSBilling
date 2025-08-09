@@ -19,7 +19,7 @@
 
             <script type="text/javascript">
                 setTimeout(function() {
-                    bb.redirect("{{ ('/invoice/'~invoice.hash)|link }}");
+                    bb.redirect('{{ "invoice/#{invoice.hash}"|url }}');
                 }, 1 * 60 * 1000);
             </script>
         </div>

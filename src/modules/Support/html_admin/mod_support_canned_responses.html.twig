@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon" width="24">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+            <a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Canned Responses'|trans }}</li>
     </ol>
@@ -65,18 +65,18 @@
                 {% for i, response in responses.list %}
                 <tr>
                     <td>
-                        <a href="{{ '/support/canned'|alink }}/{{ response.id }}">{{ response.title }}</a>
+                        <a href='{{ "support/canned/#{response.id}"|url }}'>{{ response.title }}</a>
                     </td>
                     <td class="text-center">
-                        <a href="{{ '/support/canned-category'|alink }}/{{ response.category.id }}">{{ response.category.title }}</a>
+                        <a href='{{ "support/canned-category/#{response.category.id}"|url }}'>{{ response.category.title }}</a>
                     </td>
                     <td>
-                        <a class="btn btn-icon" href="{{ '/support/canned'|alink }}/{{ response.id }}">
+                        <a class="btn btn-icon" href='{{ "support/canned/#{response.id}"|url }}'>
                             <svg class="icon">
                                 <use xlink:href="#edit" />
                             </svg>
                         </a>
-                        <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/support/canned_delete'|link({ 'id': response.id }) }}" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                        <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'support/canned_delete'|api_url(query: { 'id': response.id, 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'support/canned-responses'|url }}">
                             <svg class="icon">
                                 <use xlink:href="#delete" />
                             </svg>
@@ -95,7 +95,8 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/canned_create'|link }}" class="save api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                <form method="post" action="{{ 'support/canned_create'|api_url }}" class="save api-form" data-api-redirect="{{ 'support/canned-responses'|url }}">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
                         <div class="col">
@@ -133,18 +134,18 @@
                     {% for cat_id, cat_title in admin.support_canned_category_pairs %}
                     <tr>
                         <td>
-                            <a href="{{ '/support/canned-category'|alink }}/{{ cat_id }}">{{ cat_title }}</a>
+                            <a href='{{ "support/canned-category/#{cat_id}"|url }}'>{{ cat_title }}</a>
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/support/canned-category'|alink }}/{{ cat_id }}">
+                            <a class="btn btn-icon" href='{{ "support/canned-category/#{cat_id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/support/canned_category_delete'|link({ 'id': cat_id }) }}"
+                                href="{{ 'support/canned_category_delete'|api_url(query: { 'id': cat_id }) }}"
                                 data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                                data-api-redirect="{{ 'support/canned-responses'|url }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -162,7 +163,8 @@
 
         <div class="tab-pane fade" id="tab-new-category" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/canned_category_create'|link }}" class="api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                <form method="post" action="{{ 'support/canned_category_create'|api_url }}" class="api-form" data-api-redirect="{{ 'support/canned-responses'|url }}">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                         <div class="col">
