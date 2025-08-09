@@ -177,7 +177,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         try {
             $model = $this->_getOrderService($order);
         } catch (\Exception $e) {
-            error_log($e);
+            error_log($e->getMessage());
 
             return true;
         }

@@ -339,7 +339,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             ]);
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception(sprintf('HttpClientException: %s', $error->getMessage()));
-            $this->getLog()->err($e);
+            $this->getLog()->err($e->getMessage());
 
             throw $e;
         }

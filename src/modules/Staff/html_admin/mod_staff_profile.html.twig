@@ -119,7 +119,7 @@
 {% block js %}
 <script>
     function onAfterKeyUpdate(result) {
-        bb.post('admin/profile/get', {}, function(result) {
+        API.admin.post('profile/get', {}, function(result) {
             $('#apikey').val(result.api_token);
             FOSSBilling.message("{{ 'New API key generated. Applications using old key are now not working.'|trans }}");
         })
