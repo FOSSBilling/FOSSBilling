@@ -36,7 +36,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         return [
             [
-                'slot' => 'client::footer.end',
+                'slot' => 'client::theme.footer.end',
                 'template' => 'mod_branding_footer'
             ]
         ];

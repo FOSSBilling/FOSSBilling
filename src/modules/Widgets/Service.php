@@ -247,7 +247,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Read the content of a template file.
+     * Read the content of a template file. Hacky way until our Twig loader is refactored.
      * @param string $mod_name
      * @param string $template
      * @return string
@@ -255,15 +255,38 @@ class Service implements InjectionAwareInterface
     private function readTemplateContent(string $mod_name, string $template): string
     {
         $filesystem = new Filesystem();
+        $service = $this->di['mod_service']('theme');
         
-        try {
-            $path = Path::join(PATH_MODS, ucfirst($mod_name), 'html_widgets', $template . '.html.twig');
-            $content = $filesystem->readFile($path);
-        } catch (IOException $e) {
-            throw new Exception($e->getMessage());
+        // Define the template paths
+        if (defined('ADMIN_AREA') && ADMIN_AREA === true) {
+            $theme = $service->getCurrentAdminAreaTheme();
+
+            $paths = [
+                Path::join(PATH_THEMES, $theme['code'], 'html', 'widgets', $template . '.html.twig'),
+                Path::join(PATH_MODS, ucfirst($mod_name), 'html_admin', 'widgets', $template . '.html.twig')
+            ];
+        } else {
+            $code = $service->getCurrentClientAreaThemeCode();
+
+            $paths = [
+                Path::join(PATH_THEMES, $code, 'html', 'widgets', $template . '.html.twig'),
+                Path::join(PATH_MODS, ucfirst($mod_name), 'html_client', 'widgets', $template . '.html.twig')
+            ];
         }
 
-        return $content;
+        // Read the template
+        foreach ($paths as $path) {
+            try {
+                if ($filesystem->exists($path)) {
+                    return $filesystem->readFile($path);
+                }
+            } catch (IOException $e) {
+                // Continue to next path if current path fails to read
+                continue;
+            }
+        }
+
+        throw new Exception("Widget template file not found. Paths checked: \n\n" . implode(",\n", $paths));
     }
 
     private function resolveWidgetContext(array $widget, array $params): array
