@@ -1461,7 +1461,6 @@ CREATE TABLE `widgets` (
   `slot` varchar(64) NOT NULL,
   `template` varchar(64) NOT NULL,
   `priority` int(11) DEFAULT 10,
-  `context_method` varchar(64) DEFAULT NULL,
   `enabled` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,

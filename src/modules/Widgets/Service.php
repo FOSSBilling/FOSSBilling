@@ -117,7 +117,6 @@ class Service implements InjectionAwareInterface
             // Update existing entry
             $meta = $this->di['db']->load('widgets', $existingId);
             $meta->priority = $priority;
-            $meta->context_method = $widget['context_method'];
             $meta->updated_at = date('Y-m-d H:i:s');
         } else {
             // Create new entry
@@ -126,7 +125,6 @@ class Service implements InjectionAwareInterface
             $meta->slot = $widget['slot'];
             $meta->template = $widget['template'];
             $meta->priority = $priority;
-            $meta->context_method = $widget['context_method'];
             $meta->created_at = date('Y-m-d H:i:s');
             $meta->updated_at = date('Y-m-d H:i:s');
         }
@@ -138,7 +136,7 @@ class Service implements InjectionAwareInterface
      * Render the widgets for a specific slot.
      * 
      * @param string $slot Name of the slot
-     * @param array $params Optional context passed by the template such as order or product data
+     * @param array $params Optional context passed by the parent template such as order or product data
      * @return string Final content of the slot
      */
     public function renderSlot(string $slot, array $params = []): string
@@ -150,15 +148,11 @@ class Service implements InjectionAwareInterface
         $output = '';
 
         foreach ($widgets as $widget) {
-            $context = $this->resolveWidgetContext($widget, $params);
-
-            $renderData = array_merge($params, $context);
-
             // Read the template and render it
             try {
                 $template = $this->readTemplateContent($widget['mod_name'], $widget['template']);
                 
-                $output .= $systemService->renderString($template, false, $renderData) . '<br />';
+                $output .= $systemService->renderString($template, false, $params) . '<br />';
             } catch (\Exception $e) {
                 $template = $this->readTemplateContent('widgets', 'mod_widgets_error');
                 
@@ -287,26 +281,6 @@ class Service implements InjectionAwareInterface
         }
 
         throw new Exception("Widget template file not found. Paths checked: \n\n" . implode(",\n", $paths));
-    }
-
-    private function resolveWidgetContext(array $widget, array $params): array
-    {
-        if (empty($widget['context_method']) || empty($widget['mod_name'])) {
-            return [];
-        }
-
-        try {
-            $service = $this->di['mod_service']($widget['mod_name']);
-
-            if (method_exists($service, $widget['context_method'])) {
-                return call_user_func([$service, $widget['context_method']], $params);
-            }
-        } catch (\Exception $e) {
-            $this->di['logger']->error("Failed to resolve context for widget: " . $e->getMessage());
-            return [];
-        }
-
-        return [];
     }
 
     /**
