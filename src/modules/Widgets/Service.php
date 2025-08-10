@@ -147,6 +147,14 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
         $output = '';
 
+        if ($this->di['auth']->isClientLoggedIn()) {
+            $params['client'] = $this->di['api_client'];
+        }
+
+        if ($this->di['auth']->isAdminLoggedIn()) {
+            $params['admin'] = $this->di['api_admin'];
+        }
+
         foreach ($widgets as $widget) {
             // Read the template and render it
             try {
