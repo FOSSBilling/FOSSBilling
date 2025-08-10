@@ -340,7 +340,7 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
         $params = $event->getParameters();
         
-        if ($params['type'] == 'mod') {
+        if ($params['type'] === 'mod') {
             $q = "DELETE FROM widgets WHERE mod_name = :mod";
             
             // A quirk of FOSSBilling: here, "id" refers to the module name,
