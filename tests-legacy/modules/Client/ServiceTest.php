@@ -788,7 +788,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public static function testIsClientTaxableProvider()
+    public static function isClientTaxableProvider()
     {
         $self = new ServiceTest('ServiceTest');
         $self->assertTrue(true);
@@ -812,7 +812,7 @@ class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('testIsClientTaxableProvider')]
+    #[\PHPUnit\Framework\Attributes\DataProvider('isClientTaxableProvider')]
     public function testIsClientTaxable($getParamValueReturn, $tax_exempt, $expected): void
     {
         $service = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
