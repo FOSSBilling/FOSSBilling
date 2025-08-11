@@ -788,7 +788,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public static function testIsClientTaxableProvider()
+    public static function isClientTaxableProvider()
     {
         $self = new ServiceTest('ServiceTest');
         $self->assertTrue(true);
