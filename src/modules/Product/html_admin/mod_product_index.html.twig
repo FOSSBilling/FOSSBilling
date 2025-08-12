@@ -42,7 +42,7 @@
                 </div>
             </div>
             <div class="table-responsive">
-                <form method="post" action="{{ 'api/admin/product/update_priority'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'product/update_priority'|api_url }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                         <thead>
@@ -63,9 +63,9 @@
                                 <td>{{ product.id }}</td>
                                 <td>{{ mf.status_name(product.type) }}</td>
                                 <td>
-                                    <a href="{{ '/product/category'|alink }}/{{ product.category.id }}">{{ product.category.title }}</a>
+                                    <a href='{{ "product/category/#{product.category.id}"|url }}'>{{ product.category.title }}</a>
                                 </td>
-                                <td><a href="{{ '/product/manage'|alink }}/{{ product.id }}">{{ product.title }}</a></td>
+                                <td><a href='{{ "product/manage/#{product.id}"|url }}'>{{ product.title }}</a></td>
                                 <td>
                                     {% if product.status == 'enabled' %}
                                         <span class="badge bg-success me-1"></span>
@@ -78,12 +78,12 @@
                                     <input type="text" class="form-control form-control-sm" name="priority[{{ product.id }}]" value="{{ product.priority }}" size="2">
                                 </td>
                                 <td>
-                                    <a class="btn btn-icon" href="{{ '/product/manage'|alink }}/{{ product.id }}">
+                                    <a class="btn btn-icon" href='{{ "product/manage/#{product.id}"|url }}'>
                                         <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/delete'|link({'id' : product.id, 'CSRFToken': CSRFToken}) }}" data-api-redirect="{{ 'product'|alink }}">
+                                    <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'product/delete'|api_url(query: {'id' : product.id, 'CSRFToken': CSRFToken}) }}" data-api-redirect="{{ 'product'|url }}">
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -114,7 +114,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/prepare'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'product/prepare'|api_url }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
@@ -154,15 +154,15 @@
                     <tr>
                         <td>{{ loop.index }}</td>
                         <td>
-                            <a href="{{ '/product/category'|alink }}/{{ cat_id }}">{{ cat_title }}</a>
+                            <a href='{{ "product/category/#{cat_id}"|url }}'>{{ cat_title }}</a>
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/product/category'|alink }}/{{ cat_id }}">
+                            <a class="btn btn-icon" href='{{ "product/category/#{cat_id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/category_delete'|link({ 'id': cat_id, 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'product'|alink }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'product/category_delete'|api_url(query: { 'id': cat_id, 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'product'|url }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -180,7 +180,7 @@
 
         <div class="tab-pane fade" id="tab-new-category" role="tabpanel" aria-labelledby="new-category-tab">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/category_create'|link }}" class="save api-form" data-api-redirect="{{ 'product'|alink }}">
+                <form method="post" action="{{ 'product/category_create'|api_url }}" class="save api-form" data-api-redirect="{{ 'product'|url }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>

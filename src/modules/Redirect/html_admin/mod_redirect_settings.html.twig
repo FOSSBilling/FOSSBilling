@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a></li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Redirects'|trans }}</li>
     </ol>
 {% endblock %}
@@ -29,14 +29,15 @@
         </div>
         <div class="card-body border-bottom">
             <h3 class="card-title">{{ 'Create new redirect'|trans }}</h3>
-            <form method="post" action="{{ 'api/admin/redirect/create'|link }}" class="api-form" data-api-reload="1">
+            <form method="post" action="{{ 'redirect/create'|api_url }}" class="api-form" data-api-reload="1">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                 <div class="row row-cards">
                     <div class="col-sm-5 col-md-4 mb-3">
                         <label class="form-label required" for="path">{{ 'Path'|trans }}</label>
                         <div class="col-auto">
                             <div class="input-group input-group-flat">
                             <span class="input-group-text">
-                                {{ ''|link }}
+                                {{ ''|url }}
                             </span>
                                 <input type="text" class="form-control ps-0" name="path" id="path">
                             </div>
@@ -47,7 +48,7 @@
                         <div class="col-auto">
                             <div class="input-group input-group-flat">
                             <span class="input-group-text">
-                                {{ ''|link }}
+                                {{ ''|url }}
                             </span>
                                 <input type="text" class="form-control ps-0" name="target" id="target">
                             </div>
@@ -80,7 +81,7 @@
                 {% for r in redirects %}
                     <tr>
                         <td>
-                            <a href="{{ r.path|link }}" target="_blank">{{ r.path | link }}</a>
+                            <a href="{{ r.path|url(detect_app_area: false) }}" target="_blank">{{ r.path|url(detect_app_area: false) }}</a>
                         </td>
                         <td>
                             <svg class="icon">
@@ -91,12 +92,12 @@
                             {% if '://' in r.target %}
                                 <a href="{{ r.target }}" target="_blank">{{ r.target }}</a>
                             {% else %}
-                                <a href="{{ r.target|link }}" target="_blank">{{ r.target | link }}</a>
+                                <a href="{{ r.target|url(detect_app_area: false) }}" target="_blank">{{ r.target|url(detect_app_area: false) }}</a>
                             {% endif %}
                         </td>
                         <td>
                             <a class="btn btn-icon api-link"
-                               href="{{ 'api/admin/redirect/delete'|link({ 'id': r.id }) }}"
+                               href="{{ 'redirect/delete'|api_url(query: { 'id': r.id, 'CSRFToken': CSRFToken }) }}"
                                data-api-confirm="{{ 'Are you sure?'|trans }}"
                                data-api-type="danger"
                                data-api-confirm-btn="{{ 'Delete'|trans }}"

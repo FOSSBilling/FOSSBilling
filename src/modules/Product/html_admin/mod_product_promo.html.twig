@@ -7,17 +7,17 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+            <a href="{{ 'product'|url }}">{{ 'Products'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'product/promos'|alink }}">{{ 'Product Promotions'|trans }}</a>
+            <a href="{{ 'product/promos'|url }}">{{ 'Product Promotions'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ promo.code }}</li>
     </ol>
@@ -27,7 +27,7 @@
 <div class="card">
     <div class="card-body">
         <h3>{{ 'Manage Promotion'|trans }}</h3>
-        <form method="post" action="{{ 'api/admin/product/promo_update'|link }}" class="api-form" data-api-redirect="{{ 'product/promos'|alink }}">
+        <form method="post" action="{{ 'product/promo_update'|api_url }}" class="api-form" data-api-redirect="{{ 'product/promos'|url }}">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Promo Code'|trans }}</label>

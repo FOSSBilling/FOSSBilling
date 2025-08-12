@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+            <a href="{{ 'product'|url }}">{{ 'Products'|trans }}</a>
         </li>
         <li class="breadcrumb-item active">{{ 'Addons'|trans }}</li>
     </ol>
@@ -53,17 +53,17 @@
                     <tr>
                         <td>{{ loop.index }}</td>
                         <td>
-                            <a href="{{ '/product/addon'|alink }}/{{ addon_id }}">{{ addon_title }}</a>
+                            <a href='{{ "product/addon/#{addon_id}"|url }}'>{{ addon_title }}</a>
                         </td>
                         <td><!-- TODO: show addon description --></td>
                         <td><!-- TODO: show addon status --></td>
                         <td class="w-1">
-                            <a class="btn btn-icon" href="{{ '/product/addon'|alink }}/{{ addon_id }}">
+                            <a class="btn btn-icon" href='{{ "product/addon/#{addon_id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'product/addons'|alink }}" href="{{ 'api/admin/product/delete'|link({ 'id': addon_id, 'CSRFToken': CSRFToken }) }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'product/addons'|url }}" href="{{ 'product/delete'|api_url(query: { 'id': addon_id, 'CSRFToken': CSRFToken }) }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -81,7 +81,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/addon_create'|link }}" class="api-form" data-api-jsonp="onAfterAddonCreate">
+                <form method="post" action="{{ 'product/addon_create'|api_url }}" class="api-form" data-api-jsonp="onAfterAddonCreate">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
@@ -143,7 +143,7 @@
 {% block js %}
 <script>
     function onAfterAddonCreate(result) {
-        bb.redirect("{{ 'product/addon/'|alink }}/" + result);
+        bb.redirect("{{ 'product/addon/'|url }}/" + result);
     }
 </script>
 {% endblock %}

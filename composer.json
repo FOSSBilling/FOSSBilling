@@ -58,6 +58,7 @@
         "symfony/sendgrid-mailer": "^7.0",
         "symfony/webpack-encore-bundle": "^2.1",
         "twig/intl-extra": "^3.5",
+        "twig/markdown-extra": "^3.21",
         "twig/twig": "^3.3.9"
     },
     "require-dev": {

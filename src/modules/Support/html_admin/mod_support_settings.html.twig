@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Support'|trans }}</li>
     </ol>
@@ -36,7 +36,7 @@
         <div class="card">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration Updated'|trans }}">
+                    <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form" data-api-msg="{{ 'Configuration Updated'|trans }}">
                         {% set params = admin.extension_config_get({ 'ext': 'mod_support' }) %}
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Auto Responder'|trans }}</h3>
@@ -154,23 +154,23 @@
                             <tr>
                                 <td>{{ loop.index }}</td>
                                 <td>
-                                    <a href="{{ '/support/helpdesk'|alink }}/{{ helpdesk.id }}">{{ helpdesk.name }}</a>
+                                    <a href='{{ "support/helpdesk/#{helpdesk.id}"|url }}'>{{ helpdesk.name }}</a>
                                 </td>
                                 <td>{{ helpdesk.email }}</td>
                                 <td>{{ helpdesk.close_after }} {{ 'hour(s)'|trans }}</td>
                                 <td>
-                                    <a class="btn btn-icon" href="{{ '/support/helpdesk'|alink }}/{{ helpdesk.id }}"
+                                    <a class="btn btn-icon" href='{{ "support/helpdesk/#{helpdesk.id}"|url }}'
                                     data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                         <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
                                     <a class="btn btn-icon api-link"
-                                       href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}"
+                                       href="{{ 'support/helpdesk_delete'|api_url(query: { 'id': helpdesk.id, 'CSRFToken': CSRFToken }) }}"
                                        data-api-confirm="{{ 'Are you sure?'|trans }}"
                                        data-api-confirm-btn="{{ 'Delete'|trans }}"
                                        data-api-type="danger"
-                                       data-api-redirect="{{ 'extension/settings/support'|alink }}"
+                                       data-api-redirect="{{ 'extension/settings/support'|url }}"
                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
                                         <svg class="icon">
                                             <use xlink:href="#delete" />

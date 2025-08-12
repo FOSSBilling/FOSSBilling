@@ -49,7 +49,7 @@
 <script>
     $(function() {
         $('#domain-checker').on('submit', function(event) {
-            $.post("{{ constant('SYSTEM_URL') }}api/guest/servicedomain/check",
+            $.post("{{ 'servicedomain/check'|api_url(role: 'guest') }}",
             $(this).serialize(),
             function(json) {
                 if (json.error) {

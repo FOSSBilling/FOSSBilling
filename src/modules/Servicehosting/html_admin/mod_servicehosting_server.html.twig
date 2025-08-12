@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
 <ul class="breadcrumb">
     <li class="breadcrumb-item">
-        <a href="{{ '/'|alink }}">
+        <a href="{{ '/'|url }}">
             <svg class="icon">
                 <use xlink:href="#home" />
             </svg>
         </a>
     </li>
     <li class="breadcrumb-item">
-        <a href="{{ 'servicehosting'|alink }}">{{ 'Hosting plans and servers'|trans }}</a>
+        <a href="{{ 'servicehosting'|url }}">{{ 'Hosting plans and servers'|trans }}</a>
     </li>
     <li class="breadcrumb-item active" aria-current="page">{{ server.name }}</li>
 </ul>
@@ -25,7 +25,7 @@
     <div class="card-body">
         <h3>{{ 'Server management'|trans }}</h3>
 
-        <form method="post" action="{{ 'api/admin/servicehosting/server_update'|link }}" id="server-update" class="api-form" data-api-msg="{{ 'Server updated'|trans }}">
+        <form method="post" action="{{ 'servicehosting/server_update'|api_url }}" id="server-update" class="api-form" data-api-msg="{{ 'Server updated'|trans }}">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
