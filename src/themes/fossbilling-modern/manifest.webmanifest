@@ -1,0 +1,99 @@
+{
+  "name": "FOSSBilling Modern",
+  "short_name": "FOSSBilling",
+  "description": "Modern PWA-enabled billing system",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#005fc5",
+  "theme_color": "#005fc5",
+  "orientation": "portrait-primary",
+  "categories": ["business", "finance", "productivity"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/themes/fossbilling-modern/assets/icons/icon-72x72.svg",
+      "sizes": "72x72",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/themes/fossbilling-modern/assets/icons/icon-96x96.svg",
+      "sizes": "96x96",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/themes/fossbilling-modern/assets/icons/icon-128x128.svg",
+      "sizes": "128x128",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/themes/fossbilling-modern/assets/icons/icon-144x144.svg",
+      "sizes": "144x144",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/themes/fossbilling-modern/assets/icons/icon-152x152.svg",
+      "sizes": "152x152",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/themes/fossbilling-modern/assets/icons/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/themes/fossbilling-modern/assets/icons/icon-384x384.svg",
+      "sizes": "384x384",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/themes/fossbilling-modern/assets/icons/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Admin Dashboard",
+      "short_name": "Admin",
+      "description": "Access admin panel",
+      "url": "/admin",
+      "icons": [
+        {
+          "src": "/themes/fossbilling-modern/assets/icons/admin-96x96.svg",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Client Area",
+      "short_name": "Client",
+      "description": "Access client dashboard",
+      "url": "/client",
+      "icons": [
+        {
+          "src": "/themes/fossbilling-modern/assets/icons/client-96x96.svg",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/themes/fossbilling-modern/screenshot.jpg",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "FOSSBilling Modern Interface"
+    }
+  ]
+}

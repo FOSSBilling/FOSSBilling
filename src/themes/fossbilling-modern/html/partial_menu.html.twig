@@ -1,0 +1,100 @@
+<div class="offcanvas-md offcanvas-end" tabindex="-1" id="sidebarMenu">
+    <div class="offcanvas-body d-md-flex flex-column overflow-y-auto">
+        <ul class="nav flex-column">
+            {% if settings.side_menu_dashboard %}
+                <li class="nav-item offcanvas-item">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ '/'|link }}">
+                        <span class="emoji-icon">🏠</span>
+                        {{ 'Dashboard'|trans }}
+                    </a>
+                </li>
+            {% endif %}
+
+            {% if settings.side_menu_order %}
+                <li class="nav-item offcanvas-item">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ '/order'|link }}">
+                        <span class="emoji-icon">🛒</span>
+                        {{ 'Order'|trans }}
+                    </a>
+                </li>
+            {% endif %}
+
+            {% if settings.side_menu_support %}
+                <li class="nav-item offcanvas-item">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ '/support'|link }}">
+                        <span class="emoji-icon">🆘</span>
+                        {{ 'Support'|trans }}
+                    </a>
+                </li>
+            {% endif %}
+
+            {% if settings.side_menu_services %}
+                <li class="nav-item offcanvas-item">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ '/order/service'|link }}">
+                        <span class="emoji-icon">⚙️</span>
+                        {{ 'Services'|trans }}
+                    </a>
+                </li>
+            {% endif %}
+
+            {% if settings.side_menu_invoices %}
+                <li class="nav-item offcanvas-item">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ '/invoice'|link }}">
+                        <span class="emoji-icon">🧾</span>
+                        {{ 'Invoices'|trans }}
+                    </a>
+                </li>
+            {% endif %}
+
+            {% if settings.side_menu_emails %}
+                <li class="nav-item offcanvas-item">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ '/email'|link }}">
+                        <span class="emoji-icon">📧</span>
+                        {{ 'Email'|trans }}
+                    </a>
+                </li>
+            {% endif %}
+
+            {% if settings.side_menu_payments %}
+                <li class="nav-item offcanvas-item">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ '/client/balance'|link }}">
+                        <span class="emoji-icon">💳</span>
+                        {{ 'Wallet'|trans }}
+                    </a>
+                </li>
+            {% endif %}
+
+            {% if (guest.extension_is_on({"mod":"news"}) and settings.side_menu_news) %}
+                <li class="nav-item offcanvas-item">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ '/news'|link }}">
+                        <span class="emoji-icon">📰</span>
+                        {{ 'News'|trans }}
+                    </a>
+                </li>
+            {% endif %}
+
+            {% if (guest.support_kb_enabled() and settings.side_menu_kb) %}
+                <li class="nav-item offcanvas-item">
+                    <a class="nav-link d-flex align-items-center gap-2" href="{{ 'support/kb'|link }}">
+                        <span class="emoji-icon">📚</span>
+                        {{ 'Knowledge Base'|trans }}
+                    </a>
+                </li>
+            {% endif %}
+
+            {% if settings.sidebar_balance_enabled and client %}
+                <li class="pt-3 ps-3">
+                    <h5 class="text-secondary d-block pb-1">💰 {{ 'Account balance'|trans }}</h5>
+                    <h4><strong>{{ profile.balance | money(profile.currency) }}</strong></h4>
+                </li>
+            {% endif %}
+
+            {% if settings.sidebar_note_enabled %}
+                <li class="pt-3 ps-3">
+                    <h5 class="text-secondary d-block pb-1">{{ settings.sidebar_note_title }}</h5>
+                    <span>{{ settings.sidebar_note_content }}</span>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
