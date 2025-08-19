@@ -17,7 +17,7 @@
         <ul class="pagination m-0">
             {% if paginator.currentpage != 1 %}
             <li class="page-item">
-                <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): currentPage - 1 })) }}">
+                <a class="page-link" href="{{ url({ filteredRequest|merge({ pageParam: currentPage - 1 }) }) }}">
                     <svg class="icon">
                         <use xlink:href="#chevron-left" />
                     </svg>
@@ -26,7 +26,7 @@
             {% endif %}
             {% if (paginator.range.0 != 1) %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): 1 })) }}">1</a>
+                    <a class="page-link" href="{{ url({ filteredRequest|merge({ pageParam: 1 }) }) }}">1</a>
                 </li>
             {% endif %}
             {% for i in paginator.start..paginator.end %}
@@ -40,27 +40,27 @@
                     </li>
                 {% else %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): i })) }}"> {{ i }}</a>
+                        <a class="page-link" href="{{ url({ filteredRequest|merge({ pageParam: i }) }) }}"> {{ i }}</a>
                     </li>
                 {% endif %}
             {% endfor %}
 
-            {% if paginator.range[paginator.midrange -1] < paginator.numpages -1 and paginator.end == paginator.range[paginator.midrange-1] %}
-                ...
-                <li class="page-item">
-                    <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): paginator.numpages })) }}"> {{ paginator.numpages }}</a>
-                </li>
-            {% endif %}
-
-            {% if paginator.currentpage != paginator.numpages %}
+        {% if paginator.range[paginator.midrange -1] < paginator.numpages -1 and paginator.end == paginator.range[paginator.midrange-1] %}
+            ...
             <li class="page-item">
-                <a class="page-link" href="{{ url|alink(filteredRequest|merge({ (pageParam): currentPage + 1 })) }}">
-                    <svg class="icon">
-                        <use xlink:href="#chevron-right" />
-                    </svg>
-                </a>
+                <a class="page-link" href="{{ url({}|merge(request)|slice(1,request|length)|merge({ 'page': paginator.numpages })) }}"> {{ paginator.numpages }}</a>
             </li>
-            {% endif %}
-        </ul>
-    </nav>
+        {% endif %}
+
+        {% if paginator.currentpage != paginator.numpages %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url({}|merge(request)|slice(1,request|length)|merge({ 'page': currentPage + 1 })) }}">
+                <svg class="icon">
+                    <use xlink:href="#chevron-right" />
+                </svg>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+{# </div> #}
 {% endif %}

@@ -27,7 +27,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/guest/support/ticket_create'|link}} " id="public-ticket-create" class="api-form" data-api-jsonp="onTicketCreate">
+                    <form method="post" action="{{ 'support/ticket_create'|api_url(role: 'guest')}} " id="public-ticket-create" class="api-form" data-api-jsonp="onTicketCreate">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="mb-3">
                             <label class="form-label" for="name">{{ 'Name'|trans }}</label>
@@ -90,7 +90,7 @@
             $('#anti-spam').remove();
         });
         function onTicketCreate(result){
-            bb.redirect("{{ 'support/contact-us/conversation'|link }}" + '/' + result);
+            bb.redirect("{{ 'support/contact-us/conversation'|url }}/" + result);
         }
     </script>
 {% endblock %}

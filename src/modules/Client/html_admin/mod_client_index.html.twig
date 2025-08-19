@@ -110,7 +110,7 @@
     {% set count_clients = admin.client_get_statuses %}
     <section class="row row-cards mb-3">
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'client'|alink({ 'status': 'active' }) }}">
+            <a class="card card-sm card-link" href="{{ 'client'|url(query: { 'status': 'active' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -124,7 +124,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'client'|alink({ 'status': 'suspended' }) }}">
+            <a class="card card-sm card-link" href="{{ 'client'|url(query: { 'status': 'suspended' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -138,7 +138,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'client'|alink({ 'status': 'canceled' }) }}">
+            <a class="card card-sm card-link" href="{{ 'client'|url(query: { 'status': 'canceled' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -152,7 +152,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'client'|alink }}">
+            <a class="card card-sm card-link" href="{{ 'client'|url }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -223,12 +223,12 @@
                                 </td>
                                 <td>
                                     <div class="d-flex py-1 align-items-center">
-                                        <a href="{{ 'client/manage'|alink }}/{{ client.id }}">
-                                            <span class="avatar me-2" style="background-image: url({{ client.email|gravatar }}&size=40)"></span>
+                                        <a href='{{ "client/manage/#{client.id}"|url }}'>
+                                            <span class="avatar me-2" style="background-image: url({{ client.email|gravatar(size: 40) }})"></span>
                                         </a>
                                         <div class="flex-fill">
                                             <div class="font-weight-medium">
-                                                <a href="{{ 'client/manage'|alink }}/{{ client.id }}">{{ client.first_name }} {{ client.last_name }}</a>
+                                                <a href='{{ "client/manage/#{client.id }"|url }}'>{{ client.first_name }} {{ client.last_name }}</a>
                                                 <span class="flag flag-country-{{ client.country|lower }}" title="{{ guest.system_countries[client.country] }}"></span>
                                             </div>
                                             <div class="text-muted">
@@ -238,7 +238,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <a href="{{ 'client/manage'|alink }}/{{ client.id }}" title="{{ client.company }}">{{ client.company|default('-')|truncate(30) }}</a>
+                                    <a href='{{ "client/manage/#{client.id}"|url }}' title="{{ client.company }}">{{ client.company|default('-')|truncate(30) }}</a>
                                 </td>
                                 <td>
                                     {% if client.status == 'active' %}
@@ -254,12 +254,12 @@
                                 </td>
                                 <td>{{ client.created_at|format_date }}</td>
                                 <td>
-                                    <a class="btn btn-icon" href="{{ 'client/manage'|alink }}/{{ client.id }}">
+                                    <a class="btn btn-icon" href='{{ "client/manage/#{client.id}"|url }}'>
                                         <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" href="{{ 'api/admin/client/delete'|link({ 'id': client.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                                    <a class="btn btn-icon api-link" href="{{ 'client/delete'|api_url(query: { 'id': client.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -281,7 +281,7 @@
                         {{ include('partial_pagination.html.twig', { 'list': clients, 'url': 'client' }) }}
                     </div>
                     <div>
-                        <a class="btn btn-secondary" href="{{ '/api/admin/client/export_csv'|link({ 'CSRFToken': CSRFToken }) }}" title="{{ 'Export Clients'|trans }}">
+                        <a class="btn btn-secondary" href="{{ 'client/export_csv'|api_url(query: { 'CSRFToken': CSRFToken }) }}" title="{{ 'Export Clients'|trans }}">
                             <svg class="icon">
                                 <use xlink:href="#download" />
                             </svg>
@@ -293,7 +293,7 @@
 
             <div class="tab-pane fade" id="tab-new" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/admin/client/create'|link }}" class="api-form save" data-api-redirect="{{ 'client'|alink }}">
+                    <form method="post" action="{{ 'client/create'|api_url }}" class="api-form save" data-api-redirect="{{ 'client'|url }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
@@ -417,15 +417,15 @@
                         {% for id, group in admin.client_group_get_pairs %}
                         <tr>
                             <td>
-                                <a href="{{ 'client/group'|alink }}/{{ id }}">{{ group }}</a>
+                                <a href='{{ "client/group/#{id}"|url }}'>{{ group }}</a>
                             </td>
                             <td>
-                                <a class="btn btn-icon" href="{{ 'client/group'|alink }}/{{ id }}">
+                                <a class="btn btn-icon" href='{{ "client/group/#{id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
-                                <a class="btn btn-icon api-link" href="{{ 'api/admin/client/group_delete'|link({ 'id': id, 'CSRFToken': CSRFToken }) }}" data-api-reload="1" data-api-confirm="{{ 'Are you sure?'|trans }}">
+                                <a class="btn btn-icon api-link" href="{{ 'client/group_delete'|api_url(query: { 'id': id, 'CSRFToken': CSRFToken }) }}" data-api-reload="1" data-api-confirm="{{ 'Are you sure?'|trans }}">
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
@@ -443,7 +443,7 @@
 
             <div class="tab-pane fade" id="tab-new-group" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/admin/client/group_create'|link }}" class="api-form" data-api-redirect="{{ 'client'|alink }}">
+                    <form method="post" action="{{ 'client/group_create'|api_url }}" class="api-form" data-api-redirect="{{ 'client'|url }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>

@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'invoice/gateways'|alink }}">{{ 'Payment gateways'|trans }}</a>
+            <a href="{{ 'invoice/gateways'|url }}">{{ 'Payment gateways'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ gateway.title }}</li>
     </ul>
@@ -29,7 +29,7 @@
         <h5>{{ gateway.title }}</h5>
         {{ gateway.description|raw }}
 
-        <form method="post" action="{{ 'api/admin/invoice/gateway_update'|link }}" class="api-form" data-api-msg="{{ 'Gateway updated'|trans }}">
+        <form method="post" action="{{ 'invoice/gateway_update'|api_url }}" class="api-form" data-api-msg="{{ 'Gateway updated'|trans }}">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Payment gateway title'|trans }}:</label>

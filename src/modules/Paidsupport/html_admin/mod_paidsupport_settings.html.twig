@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Paid support settings'|trans }}</li>
     </ul>
@@ -27,7 +27,7 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Paid support settings'|trans }}</h3>
             <div class="card-actions">
-                <a href="{{ 'extension/settings/support'|alink }}#tab-new-helpdesk" class="btn btn-primary">
+                <a href="{{ 'extension/settings/support'|url }}#tab-new-helpdesk" class="btn btn-primary">
                     <svg class="icon">
                         <use xlink:href="#plus"/>
                     </svg>
@@ -37,7 +37,7 @@
         </div>
 
         {% set params = admin.extension_config_get({ "ext": "mod_paidsupport" }) %}
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="Settings updated">
+        <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form" data-api-msg="Settings updated">
             <div class="card-body">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <input type="hidden" name="ext" value="mod_paidsupport" />
@@ -76,8 +76,7 @@
                             </td>
                             <td><label for="helpdesk_{{ id }}">{{ title }}</label></td>
                             <td class="text-end">
-                                <a class="btn btn-icon" href="{{ '/support/helpdesk'|alink }}/{{ id }}"
-                                data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                                <a class="btn btn-icon" href='{{ "support/helpdesk/#{id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                     <svg class="icon">
                                         <use xlink:href="#edit"/>
                                     </svg>

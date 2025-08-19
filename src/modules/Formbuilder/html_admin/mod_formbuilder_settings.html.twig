@@ -9,21 +9,21 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home"/>
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         {% if not request.id %}
             <li class="breadcrumb-item active" aria-current="page">{{ 'Custom form builder'|trans }}</li>
         {% else %}
             {% set form = admin.formbuilder_get_form({ "id": request.id }) %}
             <li class="breadcrumb-item">
-                <a href="{{ 'extension/settings/formbuilder'|alink }}">{{ 'Custom form builder'|trans }}</a>
+                <a href="{{ 'extension/settings/formbuilder'|url }}">{{ 'Custom form builder'|trans }}</a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">{{ form.name }}</li>
         {% endif %}
@@ -75,7 +75,7 @@
                                             <use xlink:href="#copy" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon" href="{{ 'extension/settings/formbuilder'|alink({'id' : form.id}) }}" title="Edit">
+                                    <a class="btn btn-icon" href="{{ 'extension/settings/formbuilder'|url(query: {'id' : form.id}) }}" title="Edit">
                                         <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
@@ -95,7 +95,7 @@
         </div>
 
 {#        <div class="tab-pane fade" id="tab-import" role="tabpanel">#}
-{#            <form method="post" action="{{ 'api/admin/formbuilder/import'|link }}" class="mainForm api-form save"#}
+{#            <form method="post" action="{{ 'formbuilder/import'|api_url }}" class="mainForm api-form save"#}
 {#                data-api-reload="1">#}
 {#                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />#}
 {#                <fieldset>#}
@@ -115,7 +115,7 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Form options'|trans }}</h3>
         </div>
-        <form method="POST" action="{{ 'api/admin/formbuilder/update_form_settings'|link }}" class="api-form"
+        <form method="POST" action="{{ 'formbuilder/update_form_settings'|api_url }}" class="api-form"
               data-api-msg="{{ 'Form options were updated'|trans }}">
             <div class="row row-cards">
                 <div class="card-body col-12">
@@ -166,35 +166,35 @@
             <div class="card-body col-12">
                 <div class="mb-3 row">
                     <div class="d-flex gap-2 flex-wrap mb-3" id="fields">
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text'}) }}"
+                        <a href="{{ 'formbuilder/add_field'|api_url(query: { 'form_id': form.id, 'type': 'text', 'CSRFToken': CSRFToken }) }}"
                            class="btn btn-outline-primary api-link" data-api-reload="1">
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
                             <span>{{ 'Text'|trans }}</span>
                         </a>
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select'}) }}"
+                        <a href="{{ 'formbuilder/add_field'|api_url(query: { 'form_id': form.id, 'type': 'select', 'CSRFToken': CSRFToken }) }}"
                            class="btn btn-outline-primary api-link" data-api-reload="1">
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
                             <span>{{ 'Dropdown'|trans }}</span>
                         </a>
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio'}) }}"
+                        <a href="{{ 'formbuilder/add_field'|api_url(query: { 'form_id': form.id, 'type': 'radio', 'CSRFToken': CSRFToken }) }}"
                            class="btn btn-outline-primary api-link" data-api-reload="1">
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
                             <span>{{ 'Radio'|trans }}</span>
                         </a>
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox'}) }}"
+                        <a href="{{ 'formbuilder/add_field'|api_url(query: { 'form_id': form.id, 'type': 'checkbox', 'CSRFToken': CSRFToken }) }}"
                            class="btn btn-outline-primary api-link" data-api-reload="1">
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
                             </svg>
                             <span>{{ 'Checkbox'|trans }}</span>
                         </a>
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea'}) }}"
+                        <a href="{{ 'formbuilder/add_field'|api_url(query: { 'form_id': form.id, 'type': 'textarea', 'CSRFToken': CSRFToken }) }}"
                            class="btn btn-outline-primary api-link" data-api-reload="1">
                             <svg class="icon">
                                 <use xlink:href="#plus"/>
@@ -256,7 +256,7 @@
                 confirmButton: '{{ "Delete"|trans }}',
                 confirmCallback: function () {
                     API.admin.post('formbuilder/delete_form', {id: fid}, function () {
-                        bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}");
+                        bb.redirect("{{ 'extension/settings/formbuilder'|url(query: { 'id': '' }) }}");
                     });
                 }
             });
@@ -274,7 +274,7 @@
                     API.admin.post('formbuilder/create_form', {
                         name: title
                     }, function (id) {
-                        bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id);
+                        bb.redirect("{{ 'extension/settings/formbuilder'|url(query: { 'id': '' }) }}" + id);
                     });
                 }
             });
@@ -294,7 +294,7 @@
                         name: title,
                         form_id: fid
                     }, function (id) {
-                        bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id);
+                        bb.redirect("{{ 'extension/settings/formbuilder'|url(query: { 'id': '' }) }}" + id);
                     });
                 }
             });

@@ -13,14 +13,14 @@
         <div class="accordion-body">
             <div class="accordion-inner">
                 <form method="post" style="background:none;" class="api-form form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}"
-                    action="{{ 'api/guest/cart/add_item'|link }}" data-api-msg="{{ 'Product was added to shopping cart'|trans }}"
-                    data-api-redirect="{{ 'order'|link({ 'checkout' : 1 }) }}" + "{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}">
+                    action="{{ 'cart/add_item'|api_url(role: 'guest') }}" data-api-msg="{{ 'Product was added to shopping cart'|trans }}"
+                    data-api-redirect="{{ 'order'|url(query: { 'checkout' : 1 }) }}" + "{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     {% set product_details %}
                         <div class="well">
                             <h3>{{ product.title }}</h3>
                             {% if product.description %}
-                                {{ product.description | markdown }}
+                                {{ product.description|markdown_to_html }}
                             {% endif %}
 
                             <hr>
@@ -36,19 +36,20 @@
                                     {% endif %}
                                 </div>
                                 <div class="col">
+                                    {% set cart_currency = guest.cart_get_currency %}
                                     {% if product.pricing.type == 'recurrent' %}
                                     {% set periods = guest.system_periods %}
                                     <select class="form-select" name="period" id="period-selector">
                                         {% for code,prices in product.pricing.recurrent %}
                                             {% if prices.enabled %}
-                                                <option value="{{code}}" data-bb-price="{{ prices.price | money_convert }}" name="period">{{ prices.price | money_convert }} ({{ periods[code] }})</option>
+                                                <option value="{{ code }}" data-bb-price="{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}" name="period">{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} ({{ periods[code] }})</option>
                                             {% endif %}
                                         {% endfor %}
                                     </select>
                                     {% elseif product.pricing.type == 'free' %}
-                                    <span class="badge bg-success">{{ 0 | money_convert }}</span>
+                                    <span class="badge bg-success">{{ 0|format_currency(cart_currency.code) }}</span>
                                     {% else %}
-                                    <span class="badge bg-success">{{ product.pricing.once.price | money_convert }}</span>
+                                    <span class="badge bg-success">{{ (product.pricing.once.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span>
                                     {% endif %}
                                 </div>
                             </div>

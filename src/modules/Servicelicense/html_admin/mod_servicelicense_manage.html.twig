@@ -31,7 +31,7 @@
 <div class="card-body">
     <h3>{{ 'License configuration'|trans }}</h3>
 
-    <form action="{{ 'api/admin/servicelicense/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'License updated'|trans }}">
+    <form action="{{ 'servicelicense/update'|api_url }}" method="post" class="api-form" data-api-msg="{{ 'License updated'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'License key'|trans }}:</label>
