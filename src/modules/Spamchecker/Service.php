@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Spamchecker;
+namespace FOSSBilling\Module\Spamchecker;
 
 use EmailChecker\Adapter;
 use EmailChecker\Utilities;

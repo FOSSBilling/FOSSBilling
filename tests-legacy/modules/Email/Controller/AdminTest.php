@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Email\Controller;
+namespace FOSSBilling\Module\Email\Controller;
 
 class AdminTest extends \BBTestCase
 {

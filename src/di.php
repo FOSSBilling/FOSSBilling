@@ -166,7 +166,7 @@ $di['url'] = function () use ($di) {
 };
 
 /*
- * Returns a new Box_Mod object, created with the provided module name.
+ * Returns a new FOSSBilling\Module object, created with the provided module name.
  *
  * @param string $name The name of the module to create the object with.
  *
@@ -690,10 +690,10 @@ $di['table'] = $di->protect(function ($name) use ($di) {
 /*
  * @param void
  *
- * @return \Box\Mod\Servicelicense\Server
+ * @return FOSSBilling\Module\Servicelicense\Server
  */
 $di['license_server'] = function () use ($di) {
-    $server = new Box\Mod\Servicelicense\Server($di['logger']);
+    $server = new FOSSBilling\Module\Servicelicense\Server($di['logger']);
     $server->setDi($di);
 
     return $server;

@@ -14,7 +14,7 @@
  * Class does not extend any other class.
  */
 
-namespace Box\Mod\Custompages\Controller;
+namespace FOSSBilling\Module\Custompages\Controller;
 
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
@@ -44,7 +44,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_page(\Box_App $app, $slug)
     {
-        $service = new \Box\Mod\Custompages\Service();
+        $service = new \FOSSBilling\Module\Custompages\Service();
         $service->setDi($this->di);
         $page = $service->getPage($slug, 'slug');
         if (isset($page['id'])) {

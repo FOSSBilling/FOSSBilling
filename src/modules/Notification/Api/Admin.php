@@ -18,7 +18,7 @@
  * For example cron job can inform staff members
  */
 
-namespace Box\Mod\Notification\Api;
+namespace FOSSBilling\Module\Notification\Api;
 
 class Admin extends \Api_Abstract
 {
@@ -106,7 +106,7 @@ class Admin extends \Api_Abstract
     public function delete_all()
     {
         $sql = "DELETE
-            FROM extension_meta 
+            FROM extension_meta
             WHERE extension = 'mod_notification'
             AND meta_key = 'message';";
         $this->di['db']->exec($sql);

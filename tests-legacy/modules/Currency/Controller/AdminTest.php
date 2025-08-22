@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Currency\Controller;
+namespace FOSSBilling\Module\Currency\Controller;
 
 class AdminTest extends \BBTestCase
 {

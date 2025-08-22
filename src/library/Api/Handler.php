@@ -80,7 +80,7 @@ final class Api_Handler implements InjectionAwareInterface
             }
         }
 
-        $api_class = '\Box\Mod\\' . ucfirst($mod) . '\\Api\\' . ucfirst($this->type);
+        $api_class = '\FOSSBilling\Module\\' . ucfirst($mod) . '\\Api\\' . ucfirst($this->type);
 
         $api = new $api_class();
 

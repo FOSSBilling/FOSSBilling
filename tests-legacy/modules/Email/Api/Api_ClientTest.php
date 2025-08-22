@@ -6,8 +6,8 @@ class Api_ClientTest extends \BBTestCase
 {
     public function testGetList(): void
     {
-        $clientApi = new \Box\Mod\Email\Api\Client();
-        $emailService = new \Box\Mod\Email\Service();
+        $clientApi = new \FOSSBilling\Module\Email\Api\Client();
+        $emailService = new \FOSSBilling\Module\Email\Service();
 
         $willReturn = [
             'list' => [
@@ -45,11 +45,11 @@ class Api_ClientTest extends \BBTestCase
 
     public function testGet(): void
     {
-        $clientApi = new \Box\Mod\Email\Api\Client();
+        $clientApi = new \FOSSBilling\Module\Email\Api\Client();
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
-        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['findOneForClientById', 'toApiArray'])->getMock();
+        $service = $this->getMockBuilder(\FOSSBilling\Module\Email\Service::class)->onlyMethods(['findOneForClientById', 'toApiArray'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->willReturn($model);
@@ -78,9 +78,9 @@ class Api_ClientTest extends \BBTestCase
 
     public function testGetNotFoundException(): void
     {
-        $clientApi = new \Box\Mod\Email\Api\Client();
+        $clientApi = new \FOSSBilling\Module\Email\Api\Client();
 
-        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['findOneForClientById'])->getMock();
+        $service = $this->getMockBuilder(\FOSSBilling\Module\Email\Service::class)->onlyMethods(['findOneForClientById'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->willReturn(false);
@@ -108,12 +108,12 @@ class Api_ClientTest extends \BBTestCase
 
     public function testResend(): void
     {
-        $clientApi = new \Box\Mod\Email\Api\Client();
+        $clientApi = new \FOSSBilling\Module\Email\Api\Client();
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
 
-        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['findOneForClientById', 'resend'])->getMock();
+        $service = $this->getMockBuilder(\FOSSBilling\Module\Email\Service::class)->onlyMethods(['findOneForClientById', 'resend'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->willReturn($model);
@@ -143,9 +143,9 @@ class Api_ClientTest extends \BBTestCase
 
     public function testResendNotFoundException(): void
     {
-        $clientApi = new \Box\Mod\Email\Api\Client();
+        $clientApi = new \FOSSBilling\Module\Email\Api\Client();
 
-        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['findOneForClientById'])->getMock();
+        $service = $this->getMockBuilder(\FOSSBilling\Module\Email\Service::class)->onlyMethods(['findOneForClientById'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->willReturn(false);
@@ -174,13 +174,13 @@ class Api_ClientTest extends \BBTestCase
 
     public function testDelete(): void
     {
-        $clientApi = new \Box\Mod\Email\Api\Client();
+        $clientApi = new \FOSSBilling\Module\Email\Api\Client();
 
         $di = new \Pimple\Container();
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
-        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['findOneForClientById', 'rm'])->getMock();
+        $service = $this->getMockBuilder(\FOSSBilling\Module\Email\Service::class)->onlyMethods(['findOneForClientById', 'rm'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->willReturn($model);
@@ -208,9 +208,9 @@ class Api_ClientTest extends \BBTestCase
 
     public function testDeleteNotFoundException(): void
     {
-        $clientApi = new \Box\Mod\Email\Api\Client();
+        $clientApi = new \FOSSBilling\Module\Email\Api\Client();
 
-        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['findOneForClientById'])->getMock();
+        $service = $this->getMockBuilder(\FOSSBilling\Module\Email\Service::class)->onlyMethods(['findOneForClientById'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
             ->willReturn(false);

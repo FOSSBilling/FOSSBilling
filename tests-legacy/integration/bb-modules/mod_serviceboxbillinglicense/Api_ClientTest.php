@@ -11,7 +11,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
             'order_id' => 16,
         ];
 
-        $serviceMock = $this->getMockBuilder('Box\Mod\Serviceboxbillinglicense\Service')->getMock();
+        $serviceMock = $this->getMockBuilder('FOSSBilling\Module\Serviceboxbillinglicense\Service')->getMock();
         $serviceMock->expects($this->any())
             ->method('reset')
             ->willReturn(true);
@@ -20,7 +20,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $client->loadBean(new RedBeanPHP\OODBBean());
         $client->id = 1;
 
-        $clientApi = new Box\Mod\Serviceboxbillinglicense\Api\Client();
+        $clientApi = new FOSSBilling\Module\Serviceboxbillinglicense\Api\Client();
         $clientApi->setService($serviceMock);
         $clientApi->setDi($this->di);
         $clientApi->setIdentity($client);
@@ -33,7 +33,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
     {
         $data = [];
 
-        $clientApi = new Box\Mod\Serviceboxbillinglicense\Api\Client();
+        $clientApi = new FOSSBilling\Module\Serviceboxbillinglicense\Api\Client();
         $clientApi->setDi($this->di);
 
         $this->expectException(FOSSBilling\Exception::class);
@@ -52,7 +52,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $client->loadBean(new RedBeanPHP\OODBBean());
         $client->id = 1;
 
-        $clientApi = new Box\Mod\Serviceboxbillinglicense\Api\Client();
+        $clientApi = new FOSSBilling\Module\Serviceboxbillinglicense\Api\Client();
         $clientApi->setDi($this->di);
         $clientApi->setIdentity($client);
 
@@ -72,7 +72,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $client->loadBean(new RedBeanPHP\OODBBean());
         $client->id = 1;
 
-        $clientApi = new Box\Mod\Serviceboxbillinglicense\Api\Client();
+        $clientApi = new FOSSBilling\Module\Serviceboxbillinglicense\Api\Client();
         $clientApi->setDi($this->di);
         $clientApi->setIdentity($client);
 

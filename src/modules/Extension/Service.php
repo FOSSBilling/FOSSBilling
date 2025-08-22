@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Extension;
+namespace FOSSBilling\Module\Extension;
 
 use FOSSBilling\Config;
 use FOSSBilling\InjectionAwareInterface;
@@ -715,7 +715,7 @@ class Service implements InjectionAwareInterface
 
     public function getSpecificModulePermissions(string $module): array|false
     {
-        $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
+        $class = 'FOSSBilling\Module\\' . ucfirst($module) . '\Service';
         if (class_exists($class) && method_exists($class, 'getModulePermissions')) {
             $moduleService = new $class();
             if (method_exists($moduleService, 'setDi')) {

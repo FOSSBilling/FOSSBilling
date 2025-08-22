@@ -5,13 +5,13 @@ namespace Box\Tests\Mod\Servicecustom;
 class ServiceTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Servicecustom\Service
+     * @var \FOSSBilling\Module\Servicecustom\Service
      */
     protected $service;
 
     public function setup(): void
     {
-        $this->service = new \Box\Mod\Servicecustom\Service();
+        $this->service = new \FOSSBilling\Module\Servicecustom\Service();
     }
 
     public function testDi(): void
@@ -36,7 +36,7 @@ class ServiceTest extends \BBTestCase
             ],
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Formbuilder\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getForm')
             ->willReturn($form);
@@ -71,7 +71,7 @@ class ServiceTest extends \BBTestCase
             ],
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Formbuilder\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getForm')
             ->willReturn($form);
@@ -104,7 +104,7 @@ class ServiceTest extends \BBTestCase
             ],
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Formbuilder\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getForm')
             ->willReturn($form);
@@ -171,7 +171,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -191,7 +191,7 @@ class ServiceTest extends \BBTestCase
         $order->client_id = random_int(1, 100);
         $order->config = 'config';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(null);
@@ -214,7 +214,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -241,7 +241,7 @@ class ServiceTest extends \BBTestCase
         $order->client_id = random_int(1, 100);
         $order->config = 'config';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(null);
@@ -265,7 +265,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -295,7 +295,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -325,7 +325,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -355,7 +355,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -385,7 +385,7 @@ class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -459,7 +459,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ClientOrder());
 
-        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $orderService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceCustom());
@@ -481,7 +481,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ClientOrder());
 
-        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $orderService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(null);
@@ -500,7 +500,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = random_int(1, 100);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\Module\Servicecustom\Service::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
             ->willReturn($model);
@@ -526,7 +526,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = random_int(1, 100);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\Module\Servicecustom\Service::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn($model);

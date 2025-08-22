@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Client\Api;
+namespace FOSSBilling\Module\Client\Api;
 
 class ClientTest extends \BBTestCase
 {
@@ -20,7 +20,7 @@ class ClientTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\ServiceBalance::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['sql', []]);
@@ -67,7 +67,7 @@ class ClientTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\ServiceBalance::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->willReturn($balanceAmount);
@@ -89,7 +89,7 @@ class ClientTest extends \BBTestCase
     {
         $clientIsTaxable = true;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
             ->willReturn($clientIsTaxable);

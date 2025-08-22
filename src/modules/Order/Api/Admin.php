@@ -13,7 +13,7 @@
  * Orders management.
  */
 
-namespace Box\Mod\Order\Api;
+namespace FOSSBilling\Module\Order\Api;
 
 class Admin extends \Api_Abstract
 {

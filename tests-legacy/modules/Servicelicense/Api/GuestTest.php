@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Servicelicense\Api;
+namespace FOSSBilling\Module\Servicelicense\Api;
 
 class GuestTest extends \BBTestCase
 {
@@ -36,7 +36,7 @@ class GuestTest extends \BBTestCase
             'expires_at' => '2020-01+01',
             'valid' => true,
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicelicense\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('checkLicenseDetails')
             ->willReturn($licenseResult);

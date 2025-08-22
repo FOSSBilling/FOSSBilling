@@ -5,7 +5,7 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 {
     public function testService(): void
     {
-        $service = new Box\Mod\Serviceboxbillinglicense\Service();
+        $service = new FOSSBilling\Module\Serviceboxbillinglicense\Service();
         $service->setDi($this->di);
         $result = $service->install();
         $this->assertNull($result);
@@ -23,7 +23,7 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 
     public function testActions(): void
     {
-        $service = new Box\Mod\Serviceboxbillinglicense\Service();
+        $service = new FOSSBilling\Module\Serviceboxbillinglicense\Service();
         $service->setDi($this->di);
 
         $order = $this->di['db']->load('ClientOrder', 1);
@@ -75,7 +75,7 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
 
     public function testUninstall(): void
     {
-        $service = new Box\Mod\Serviceboxbillinglicense\Service();
+        $service = new FOSSBilling\Module\Serviceboxbillinglicense\Service();
         $service->setDi($this->di);
         $result = $service->uninstall();
         $this->assertNull($result);

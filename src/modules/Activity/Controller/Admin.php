@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Activity\Controller;
+namespace FOSSBilling\Module\Activity\Controller;
 
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {

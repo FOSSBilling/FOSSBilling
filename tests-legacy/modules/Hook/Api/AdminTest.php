@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Hook\Api;
+namespace FOSSBilling\Module\Hook\Api;
 
 class AdminTest extends \BBTestCase
 {
@@ -24,7 +24,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetList(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Hook\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Hook\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
@@ -78,7 +78,7 @@ class AdminTest extends \BBTestCase
 
     public function testbatchConnect(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Hook\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Hook\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('batchConnect')

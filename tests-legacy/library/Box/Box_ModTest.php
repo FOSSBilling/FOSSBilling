@@ -55,6 +55,6 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
         $mod->setDi($di);
 
         $subService = $mod->getService($subServiceName);
-        $this->assertInstanceOf(Box\Mod\Invoice\ServiceTransaction::class, $subService);
+        $this->assertInstanceOf(FOSSBilling\Module\Invoice\ServiceTransaction::class, $subService);
     }
 }

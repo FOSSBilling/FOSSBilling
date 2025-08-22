@@ -3,19 +3,19 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Mode_ThemeTest extends PHPUnit\Framework\TestCase
 {
-    private Box\Mod\Theme\Model\Theme $model;
+    private FOSSBilling\Module\Theme\Model\Theme $model;
 
     public function setup(): void
     {
-        $this->model = new Box\Mod\Theme\Model\Theme('boxbilling');
+        $this->model = new FOSSBilling\Module\Theme\Model\Theme('boxbilling');
     }
 
     public function testTypes(): void
     {
-        $theme1 = new Box\Mod\Theme\Model\Theme('boxbilling');
+        $theme1 = new FOSSBilling\Module\Theme\Model\Theme('boxbilling');
         $this->assertFalse($theme1->isAdminAreaTheme());
 
-        $theme2 = new Box\Mod\Theme\Model\Theme('admin_default');
+        $theme2 = new FOSSBilling\Module\Theme\Model\Theme('admin_default');
         $this->assertTrue($theme2->isAdminAreaTheme());
     }
 

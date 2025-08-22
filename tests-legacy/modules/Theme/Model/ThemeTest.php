@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Theme\Model;
+namespace FOSSBilling\Module\Theme\Model;
 
 class ThemeTest extends \BBTestCase
 {

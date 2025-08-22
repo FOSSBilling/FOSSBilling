@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Seo;
+namespace FOSSBilling\Module\Seo;
 
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Path;
@@ -104,7 +104,7 @@ class Service implements InjectionAwareInterface
         $finder->files()->in(Path::join(__DIR__, 'Engines'))->name('*.php');
         foreach ($finder as $file) {
             $engine = $file->getFilenameWithoutExtension();
-            $class = "Box\\Mod\\Seo\\Engines\\{$engine}";
+            $class = "FOSSBilling\\Module\\Seo\\Engines\\{$engine}";
             $engines[$engine] = new $class();
         }
 

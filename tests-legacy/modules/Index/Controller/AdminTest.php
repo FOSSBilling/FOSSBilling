@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Index\Controller;
+namespace FOSSBilling\Module\Index\Controller;
 
 class AdminTest extends \BBTestCase
 {

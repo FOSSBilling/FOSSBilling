@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\System;
+namespace FOSSBilling\Module\System;
 
 use Twig\Environment;
 
@@ -270,7 +270,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgetCountries(): void
     {
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\FOSSBilling\Module')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn(['countries' => 'US']);
@@ -285,7 +285,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgetEuCountries(): void
     {
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\FOSSBilling\Module')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn(['countries' => 'US']);

@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Servicedownloadable;
+namespace FOSSBilling\Module\Servicedownloadable;
 
 class ServiceTest extends \BBTestCase
 {
@@ -80,7 +80,7 @@ class ServiceTest extends \BBTestCase
     {
         $clientOrderModel = new \Model_ClientOrder();
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceDownloadable());

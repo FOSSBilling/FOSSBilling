@@ -16,7 +16,7 @@
  * still reserved.
  */
 
-namespace Box\Mod\Paidsupport;
+namespace FOSSBilling\Module\Paidsupport;
 
 use FOSSBilling\InjectionAwareInterface;
 

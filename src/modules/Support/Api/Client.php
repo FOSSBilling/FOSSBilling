@@ -13,7 +13,7 @@
  * Client support tickets management.
  */
 
-namespace Box\Mod\Support\Api;
+namespace FOSSBilling\Module\Support\Api;
 
 class Client extends \Api_Abstract
 {

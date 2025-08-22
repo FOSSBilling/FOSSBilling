@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Cron\Api;
+namespace FOSSBilling\Module\Cron\Api;
 
 class AdminTest extends \BBTestCase
 {
@@ -15,7 +15,7 @@ class AdminTest extends \BBTestCase
 
     public function testinfo(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Cron\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getCronInfo')->willReturn([]);
 
         $api_admin = new Admin();

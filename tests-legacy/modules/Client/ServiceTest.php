@@ -7,7 +7,7 @@ class ServiceTest extends \BBTestCase
     public function testgetDi(): void
     {
         $di = new \Pimple\Container();
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
         $getDi = $service->getDi();
         $this->assertEquals($di, $getDi);
@@ -24,7 +24,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
         $result = $clientService->approveClientEmailByHash('');
 
@@ -40,7 +40,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -68,7 +68,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $database;
         $di['tools'] = $toolsMock;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
 
         $client_id = 1;
@@ -89,7 +89,7 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
             method('getParameters')->willReturn($eventParams);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->willReturn(true);
@@ -102,7 +102,7 @@ class ServiceTest extends \BBTestCase
             ->method('getDi')
             ->willReturn($di);
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
         $result = $clientService->onAfterClientSignUp($eventMock);
 
@@ -121,12 +121,12 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
             method('getParameters')->willReturn($eventParams);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->willReturn(true);
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->onlyMethods(['generateEmailConfirmationLink'])->getMock();
+        $clientServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)->onlyMethods(['generateEmailConfirmationLink'])->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
             method('generateEmailConfirmationLink')->willReturn('Link_string');
 
@@ -144,7 +144,7 @@ class ServiceTest extends \BBTestCase
             ->method('getDi')
             ->willReturn($di);
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $result = $clientService->onAfterClientSignUp($eventMock);
 
         $this->assertTrue($result);
@@ -161,7 +161,7 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
             method('getParameters')->willReturn($eventParams);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)->getMock();
         $service->expects($this->atLeastOnce())->
             method('sendTemplate')->will($this->throwException(new \Exception('exception created in unit test')));
 
@@ -174,7 +174,7 @@ class ServiceTest extends \BBTestCase
             ->method('getDi')
             ->willReturn($di);
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
         $result = $clientService->onAfterClientSignUp($eventMock);
 
@@ -251,7 +251,7 @@ class ServiceTest extends \BBTestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
     public function testgetSearchQuery($data, $expectedStr, $expectedParams): void
     {
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $result = $clientService->getSearchQuery($data);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
@@ -264,7 +264,7 @@ class ServiceTest extends \BBTestCase
     {
         $data = [];
         $selectStmt = 'c.id, CONCAT(c.first_name, c.last_name) as full_name';
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $result = $clientService->getSearchQuery($data, $selectStmt);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
@@ -283,7 +283,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
         $result = $clientService->getPairs($data);
         $this->assertIsArray($result);
@@ -300,7 +300,7 @@ class ServiceTest extends \BBTestCase
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $result = $clientService->toSessionArray($model);
 
         $this->assertIsArray($result);
@@ -319,7 +319,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
 
         $result = $clientService->emailAlreadyRegistered($email);
@@ -333,7 +333,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->email = $email;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
 
         $result = $clientService->emailAlreadyRegistered($email, $model);
         $this->assertIsBool($result);
@@ -354,7 +354,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
         $result = $clientService->canChangeCurrency($model, $currency);
         $this->assertIsBool($result);
@@ -370,7 +370,7 @@ class ServiceTest extends \BBTestCase
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->never())->method('findOne');
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
 
         $result = $clientService->canChangeCurrency($model, $currency);
         $this->assertIsBool($result);
@@ -387,7 +387,7 @@ class ServiceTest extends \BBTestCase
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->never())->method('findOne');
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
 
         $result = $clientService->canChangeCurrency($model, $currency);
         $this->assertIsBool($result);
@@ -413,7 +413,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -440,7 +440,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
 
         $clientService->canChangeCurrency($model, $currency);
@@ -479,7 +479,7 @@ class ServiceTest extends \BBTestCase
     {
         $di = new \Pimple\Container();
 
-        $clientBalanceService = new \Box\Mod\Client\ServiceBalance();
+        $clientBalanceService = new \FOSSBilling\Module\Client\ServiceBalance();
         $clientBalanceService->setDi($di);
         [$sql, $params] = $clientBalanceService->getSearchQuery($data);
         $this->assertNotEmpty($sql);
@@ -509,7 +509,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
 
         $result = $clientService->addFunds($modelClient, $amount, $description);
@@ -524,7 +524,7 @@ class ServiceTest extends \BBTestCase
         $amount = '2.22';
         $description = 'test description';
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('You must define the client\'s currency before adding funds.');
@@ -540,7 +540,7 @@ class ServiceTest extends \BBTestCase
         $amount = null;
         $description = '';
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Funds amount is invalid');
@@ -556,7 +556,7 @@ class ServiceTest extends \BBTestCase
         $amount = '2.22';
         $description = null;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Funds description is invalid');
@@ -573,7 +573,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
 
         $result = $clientService->getExpiredPasswordReminders();
@@ -603,7 +603,7 @@ class ServiceTest extends \BBTestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('searchHistoryQueryData')]
     public function testgetHistorySearchQuery($data, $expectedStr, $expectedParams): void
     {
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $di = new \Pimple\Container();
 
         $clientService->setDi($di);
@@ -625,7 +625,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
 
         $result = $clientService->counter();
@@ -648,7 +648,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
 
         $result = $clientService->getGroupPairs();
@@ -666,7 +666,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
 
         $result = $clientService->clientAlreadyExists('email@example.com');
@@ -684,7 +684,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $database;
 
-        $clientService = new \Box\Mod\Client\Service();
+        $clientService = new \FOSSBilling\Module\Client\Service();
         $clientService->setDi($di);
 
         $result = $clientService->getByLoginDetails('email@example.com', 'password');
@@ -712,7 +712,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $data = [$fieldName => $fieldValue];
@@ -729,7 +729,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $data = ['id' => 0];
@@ -750,7 +750,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $result = $service->getClientBalance($model);
@@ -776,7 +776,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)
             ->onlyMethods(['getClientBalance'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -815,7 +815,7 @@ class ServiceTest extends \BBTestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('isClientTaxableProvider')]
     public function testIsClientTaxable($getParamValueReturn, $tax_exempt, $expected): void
     {
-        $service = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->willReturn($getParamValueReturn);
@@ -823,7 +823,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn () => $service);
 
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $client = new \Model_Client();
@@ -868,7 +868,7 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['password'] = $passwordMock;
 
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $result = $service->adminCreateClient($data);
@@ -887,7 +887,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $model = new \Model_ClientGroup();
@@ -907,7 +907,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $model = new \Model_ClientGroup();
@@ -938,7 +938,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['auth'] = $authMock;
 
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $result = $service->authorizeClient($email, $password);
@@ -969,7 +969,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['auth'] = $authMock;
         $di['mod_config'] = $di->protect(fn ($name) => ['require_email_confirmation' => false]);
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $result = $service->authorizeClient($email, $password);
@@ -1001,7 +1001,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['auth'] = $authMock;
         $di['mod_config'] = $di->protect(fn ($name) => ['require_email_confirmation' => true]);
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $result = $service->authorizeClient($email, $password);
@@ -1020,7 +1020,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(fn ($modName) => $config);
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $result = $service->canChangeEmail($clientModel, $email);
@@ -1041,7 +1041,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(fn ($modName) => $config);
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $result = $service->canChangeEmail($clientModel, $email);
@@ -1058,7 +1058,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(fn ($modName) => $config);
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $result = $service->canChangeEmail($clientModel, $email);
@@ -1077,7 +1077,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(fn ($modName) => $config);
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -1094,7 +1094,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(fn ($modName) => $config);
 
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Field Id cannot be empty');
@@ -1115,7 +1115,7 @@ class ServiceTest extends \BBTestCase
         $di['mod_config'] = $di->protect(fn ($modName) => $config);
 
         $data = [];
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Field custom_field_title cannot be empty');
@@ -1136,7 +1136,7 @@ class ServiceTest extends \BBTestCase
         $di['mod_config'] = $di->protect(fn ($modName) => $config);
 
         $data = [];
-        $service = new \Box\Mod\Client\Service();
+        $service = new \FOSSBilling\Module\Client\Service();
         $service->setDi($di);
         $result = $service->checkCustomFields($data);
         $this->assertNull($result);

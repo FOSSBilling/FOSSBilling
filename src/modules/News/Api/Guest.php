@@ -13,7 +13,7 @@
  * News and announcements management.
  */
 
-namespace Box\Mod\News\Api;
+namespace FOSSBilling\Module\News\Api;
 
 class Guest extends \Api_Abstract
 {

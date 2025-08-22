@@ -5,13 +5,13 @@ namespace Box\Tests\Mod\Support\Api;
 class Api_ClientTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Support\Api\Client
+     * @var \FOSSBilling\Module\Support\Api\Client
      */
     protected $clientApi;
 
     public function setup(): void
     {
-        $this->clientApi = new \Box\Mod\Support\Api\Client();
+        $this->clientApi = new \FOSSBilling\Module\Support\Api\Client();
     }
 
     public function testTicketGetList(): void
@@ -29,7 +29,7 @@ class Api_ClientTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($simpleResultArr);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['getSearchQuery', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->willReturn(['query', []]);
@@ -65,7 +65,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testTicketGet(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['findOneByClient', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findOneByClient')
             ->willReturn(new \Model_SupportTicket());
@@ -98,7 +98,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testHelpdeskGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['helpdeskGetPairs'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskGetPairs')
             ->willReturn([0 => 'General']);
@@ -112,7 +112,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testTicketCreate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['ticketCreateForClient'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForClient')
             ->willReturn(random_int(1, 100));
@@ -151,7 +151,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testTicketReply(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['canBeReopened', 'ticketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('canBeReopened')
             ->willReturn(true);
@@ -192,7 +192,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testTicketReplyCanNotBeReopenedException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['canBeReopened', 'ticketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('canBeReopened')
             ->willReturn(false);
@@ -233,7 +233,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testTicketClose(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['findOneByClient', 'closeTicket'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findOneByClient')
             ->willReturn(new \Model_SupportTicket());

@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Servicelicense;
+namespace FOSSBilling\Module\Servicelicense;
 
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Path;
@@ -386,7 +386,7 @@ class Service implements InjectionAwareInterface
         foreach ($plugins as $plugin) {
             if ($model->plugin == $plugin['filename']) {
                 require_once $plugin['path'];
-                $class_name = 'Box\\Mod\\Servicelicense\\Plugin\\' . $model->plugin;
+                $class_name = 'FOSSBilling\\Module\\Servicelicense\\Plugin\\' . $model->plugin;
 
                 return new $class_name();
             }

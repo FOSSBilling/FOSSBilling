@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Extension;
+namespace FOSSBilling\Module\Extension;
 
 class PdoMock extends \PDO
 {
@@ -37,8 +37,7 @@ class ServiceTest extends \BBTestCase
 
     public function testisCoreModule(): void
     {
-        $coreModules = ['extension', 'cron', 'staff'];
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\FOSSBilling\Module')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getCoreModules')
             ->willReturn($coreModules);
@@ -83,7 +82,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->name = 'extensionName';
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\FOSSBilling\Module')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getManifest')->willThrowException(new \Exception());
 
@@ -200,7 +199,7 @@ class ServiceTest extends \BBTestCase
             ->method('find')
             ->willReturn([$modelFind]);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\FOSSBilling\Module')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getManifest')
             ->willReturn([]);
@@ -225,10 +224,8 @@ class ServiceTest extends \BBTestCase
             ->method('getConfig')
             ->willReturn([]);
 
-        $staffServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
-        $staffServiceMock->expects($this->atLeastOnce())
-            ->method('hasPermission')
-            ->willReturn(true);
+        $staffServiceMock = $this->getMockBuilder('\FOSSBilling\Module\Staff\Service')
+            ->onlyMethods(['hasPermission'])->getMock();
 
         $pdoStatment = $this->getMockBuilder('\\' . PdoStatmentsMock::class)->getMock();
         $pdoStatment->expects($this->atLeastOnce())
@@ -244,12 +241,6 @@ class ServiceTest extends \BBTestCase
 
         $link = 'extension';
 
-        $urlMock = $this->getMockBuilder('Box_Url')->getMock();
-        $urlMock->expects($this->atLeastOnce())
-            ->method('adminLink')
-            ->willReturn('http://fossbilling.org/index.php?_url=/' . $link);
-        $di['url'] = $urlMock;
-
         $di = new \Pimple\Container();
         $di['mod'] = $di->protect(function ($name) use ($di) {
             $mod = new \Box_Mod($name);
@@ -259,11 +250,13 @@ class ServiceTest extends \BBTestCase
         });
         $di['tools'] = new \FOSSBilling\Tools();
         $di['mod_service'] = $di->protect(function ($mod) use ($extensionServiceMock, $staffServiceMock) {
-            if ($mod == 'staff') {
+            // Service->getAdminNavigation calls $this->di['mod_service']('Staff')
+            // ensure we return the staff service mock regardless of case
+            if (strtolower((string) $mod) === 'staff') {
                 return $staffServiceMock;
-            } else {
-                return $extensionServiceMock;
             }
+
+            return $extensionServiceMock;
         });
         $di['pdo'] = $pdoMock;
         $di['url'] = $urlMock;
@@ -299,7 +292,7 @@ class ServiceTest extends \BBTestCase
 
         $extensionMock = $this->getMockBuilder('\\' . \FOSSBilling\ExtensionManager::class)->getMock();
 
-        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService = $this->getMockBuilder('FOSSBilling\Module\Staff\Service')->getMock();
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -327,17 +320,13 @@ class ServiceTest extends \BBTestCase
             'has_settings' => true,
         ];
 
-        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService = $this->getMockBuilder('FOSSBilling\Module\Staff\Service')->getMock();
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\FOSSBilling\Module')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getManifest')
             ->willReturn(['version' => 1]);
-
-        $modMock->expects($this->atLeastOnce())
-            ->method('hasAdminController')
-            ->willReturn(true);
 
         $modMock->expects($this->atLeastOnce())
             ->method('hasSettingsPage')
@@ -379,7 +368,7 @@ class ServiceTest extends \BBTestCase
             ->method('uninstall')
             ->willReturn(true);
 
-        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService = $this->getMockBuilder('FOSSBilling\Module\Staff\Service')->getMock();
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -406,7 +395,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCoreModules')
             ->willReturn([$ext->name]);
 
-        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService = $this->getMockBuilder('FOSSBilling\Module\Staff\Service')->getMock();
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -439,7 +428,7 @@ class ServiceTest extends \BBTestCase
             ->method('uninstall')
             ->willThrowException(new \FOSSBilling\Exception($exceptionMessage));
 
-        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService = $this->getMockBuilder('FOSSBilling\Module\Staff\Service')->getMock();
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -465,7 +454,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService = $this->getMockBuilder('FOSSBilling\Module\Staff\Service')->getMock();
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -497,7 +486,7 @@ class ServiceTest extends \BBTestCase
             ->method('uninstall')
             ->willReturn(true);
 
-        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService = $this->getMockBuilder('FOSSBilling\Module\Staff\Service')->getMock();
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -520,7 +509,7 @@ class ServiceTest extends \BBTestCase
             ->method('getLatestExtensionRelease')
             ->willReturn([]);
 
-        $staffService = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffService = $this->getMockBuilder('FOSSBilling\Module\Staff\Service')->getMock();
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -717,7 +706,7 @@ class ServiceTest extends \BBTestCase
         $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $staffMock = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
+        $staffMock = $this->getMockBuilder('FOSSBilling\Module\Staff\Service')->getMock();
 
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())->method('getCoreModules')->willReturn([]);

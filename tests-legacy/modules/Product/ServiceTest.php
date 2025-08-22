@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Product;
+namespace FOSSBilling\Module\Product;
 
 class ServiceTest extends \BBTestCase
 {
@@ -123,7 +123,7 @@ class ServiceTest extends \BBTestCase
 
         $expectedArray['customtest'] = 'Customtest';
 
-        $extensionServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $extensionServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getInstalledMods')
             ->willReturn($modArray);
@@ -170,7 +170,7 @@ class ServiceTest extends \BBTestCase
 
     public function testcreateProduct(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
@@ -436,7 +436,7 @@ class ServiceTest extends \BBTestCase
     {
         $model = new \Model_Product();
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('productHasOrders')
             ->willReturn(true);
@@ -503,7 +503,7 @@ class ServiceTest extends \BBTestCase
     {
         $newCategoryId = 1;
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
@@ -601,7 +601,7 @@ class ServiceTest extends \BBTestCase
 
     public function testcreatePromo(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 

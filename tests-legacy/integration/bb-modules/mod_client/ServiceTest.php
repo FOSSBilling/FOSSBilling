@@ -5,7 +5,7 @@ class Box_Mod_Client_ServiceTest extends ApiTestCase
 {
     public function testEvents(): void
     {
-        $service = new Box\Mod\Client\Service();
+        $service = new FOSSBilling\Module\Client\Service();
         $service->setDi($this->di);
         $params = [
             'id' => 1,
@@ -19,7 +19,7 @@ class Box_Mod_Client_ServiceTest extends ApiTestCase
 
     public function testGenerateEmailConfirmationLink(): void
     {
-        $service = new Box\Mod\Client\Service();
+        $service = new FOSSBilling\Module\Client\Service();
         $service->setDi($this->di);
         $link = $service->generateEmailConfirmationLink(1);
         $this->assertIsString($link);
@@ -95,7 +95,7 @@ class Box_Mod_Client_ServiceTest extends ApiTestCase
         $clientModel = $this->di['db']->load('Client', $id);
         $this->assertInstanceOf('Model_Client', $clientModel);
 
-        $service = new Box\Mod\Client\Service();
+        $service = new FOSSBilling\Module\Client\Service();
         $service->setDi($this->di);
         $service->remove($clientModel);
 

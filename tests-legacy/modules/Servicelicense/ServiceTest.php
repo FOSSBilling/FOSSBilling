@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Servicelicense;
+namespace FOSSBilling\Module\Servicelicense;
 
 class ServiceTest extends \BBTestCase
 {
@@ -66,7 +66,7 @@ class ServiceTest extends \BBTestCase
             ->method('dispense')
             ->willReturn($serviceLicenseModel);
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
@@ -90,7 +90,7 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
@@ -121,7 +121,7 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn(['iterations' => 3]);
@@ -155,7 +155,7 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
@@ -190,7 +190,7 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'TestPlugin';
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
@@ -213,7 +213,7 @@ class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
@@ -239,7 +239,7 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceLicenseModel);
@@ -288,7 +288,7 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getServiceOrder')
             ->willReturn($clientOrderModel);
@@ -306,7 +306,7 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getServiceOrder')
             ->willReturn(null);
@@ -574,7 +574,7 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getServiceOrder')
             ->willReturn($clientOrderModel);

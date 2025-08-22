@@ -5,13 +5,13 @@ namespace Box\Tests\Mod\Staff\Api;
 class GuestTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Staff\Api\Guest
+     * @var \FOSSBilling\Module\Staff\Api\Guest
      */
     protected $api;
 
     public function setup(): void
     {
-        $this->api = new \Box\Mod\Staff\Api\Guest();
+        $this->api = new \FOSSBilling\Module\Staff\Api\Guest();
     }
 
     public function testgetDi(): void
@@ -26,13 +26,13 @@ class GuestTest extends \BBTestCase
     {
         $adminId = 1;
 
-        $apiMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Api\Guest::class)
+        $apiMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Api\Guest::class)
             ->onlyMethods(['login'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('login');
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('createAdmin')
             ->willReturn($adminId);
@@ -93,7 +93,7 @@ class GuestTest extends \BBTestCase
      */
     public function testLoginWithoutEmail(): void
     {
-        $guestApi = new \Box\Mod\Staff\Api\Guest();
+        $guestApi = new \FOSSBilling\Module\Staff\Api\Guest();
 
         $di = new \Pimple\Container();
         $di['validator'] = new \FOSSBilling\Validate();
@@ -108,7 +108,7 @@ class GuestTest extends \BBTestCase
      */
     public function testLoginWithoutPassword(): void
     {
-        $guestApi = new \Box\Mod\Staff\Api\Guest();
+        $guestApi = new \FOSSBilling\Module\Staff\Api\Guest();
 
         $di = new \Pimple\Container();
         $di['validator'] = new \FOSSBilling\Validate();
@@ -120,14 +120,14 @@ class GuestTest extends \BBTestCase
 
     public function testSuccessfulLogin(): void
     {
-        $modMock = $this->getMockBuilder('Box_Mod')
+        $modMock = $this->getMockBuilder('FOSSBilling\Module')
             ->disableOriginalConstructor()
             ->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('login')
@@ -149,7 +149,7 @@ class GuestTest extends \BBTestCase
         $di['tools'] = $toolsMock;
         $di['session'] = $sessionMock;
 
-        $guestApi = new \Box\Mod\Staff\Api\Guest();
+        $guestApi = new \FOSSBilling\Module\Staff\Api\Guest();
         $guestApi->setMod($modMock);
         $guestApi->setService($serviceMock);
         $guestApi->setDi($di);
@@ -159,7 +159,7 @@ class GuestTest extends \BBTestCase
 
     public function testLoginCheckIpException(): void
     {
-        $modMock = $this->getMockBuilder('\Box_Mod')
+        $modMock = $this->getMockBuilder('\FOSSBilling\Module')
             ->disableOriginalConstructor()
             ->getMock();
         $configArr = [
@@ -181,7 +181,7 @@ class GuestTest extends \BBTestCase
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
-        $guestApi = new \Box\Mod\Staff\Api\Guest();
+        $guestApi = new \FOSSBilling\Module\Staff\Api\Guest();
         $guestApi->setMod($modMock);
         $guestApi->setDi($di);
         $ip = '192.168.0.1';

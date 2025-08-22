@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Servicedownloadable\Api;
+namespace FOSSBilling\Module\Servicedownloadable\Api;
 
 class AdminTest extends \BBTestCase
 {
@@ -32,7 +32,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
@@ -58,12 +58,12 @@ class AdminTest extends \BBTestCase
 
         $modelDownloadableModel = new \Model_ServiceDownloadable();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedownloadable\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicedownloadable\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateProductFile')
             ->willReturn(true);
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($modelDownloadableModel);

@@ -5,13 +5,13 @@ namespace Box\Tests\Mod\Cart\Api;
 class AdminTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Cart\Api\Admin
+     * @var \FOSSBilling\Module\Cart\Api\Admin
      */
     protected $adminApi;
 
     public function setup(): void
     {
-        $this->adminApi = new \Box\Mod\Cart\Api\Admin();
+        $this->adminApi = new \FOSSBilling\Module\Cart\Api\Admin();
     }
 
     public function testGetList(): void
@@ -30,7 +30,7 @@ class AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($simpleResultArr);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Cart\Service::class)
             ->onlyMethods(['getSearchQuery', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->willReturn(['query', []]);
@@ -71,7 +71,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_Cart());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Cart\Service::class)
             ->onlyMethods(['toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);

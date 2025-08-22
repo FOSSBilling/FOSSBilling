@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Wysiwyg\Api;
+namespace FOSSBilling\Module\Wysiwyg\Api;
 
 class Admin extends \Api_Abstract
 {

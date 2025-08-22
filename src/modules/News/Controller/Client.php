@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\News\Controller;
+namespace FOSSBilling\Module\News\Controller;
 
 class Client implements \FOSSBilling\InjectionAwareInterface
 {

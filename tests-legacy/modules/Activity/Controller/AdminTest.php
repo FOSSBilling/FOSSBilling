@@ -6,7 +6,7 @@ class AdminTest extends \BBTestCase
 {
     public function testDi(): void
     {
-        $controller = new \Box\Mod\Activity\Controller\Admin();
+        $controller = new \FOSSBilling\Module\Activity\Controller\Admin();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -28,7 +28,7 @@ class AdminTest extends \BBTestCase
             ->willReturn('https://fossbilling.org/index.php?_url=/' . $link);
         $di['url'] = $urlMock;
 
-        $controllerAdmin = new \Box\Mod\Activity\Controller\Admin();
+        $controllerAdmin = new \FOSSBilling\Module\Activity\Controller\Admin();
         $controllerAdmin->setDi($di);
 
         $result = $controllerAdmin->fetchNavigation();
@@ -40,9 +40,9 @@ class AdminTest extends \BBTestCase
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
             ->method('get')
-            ->with('/activity', 'get_index', [], \Box\Mod\Activity\Controller\Admin::class);
+            ->with('/activity', 'get_index', [], \FOSSBilling\Module\Activity\Controller\Admin::class);
 
-        $controllerAdmin = new \Box\Mod\Activity\Controller\Admin();
+        $controllerAdmin = new \FOSSBilling\Module\Activity\Controller\Admin();
         $controllerAdmin->register($boxAppMock);
     }
 
@@ -53,7 +53,7 @@ class AdminTest extends \BBTestCase
             ->method('render')
             ->with('mod_activity_index');
 
-        $controllerAdmin = new \Box\Mod\Activity\Controller\Admin();
+        $controllerAdmin = new \FOSSBilling\Module\Activity\Controller\Admin();
         $di = new \Pimple\Container();
         $di['is_admin_logged'] = true;
 

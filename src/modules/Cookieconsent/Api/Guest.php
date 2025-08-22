@@ -15,7 +15,7 @@
  * Show cookie consent message to comply with European Cookie Law
  */
 
-namespace Box\Mod\Cookieconsent\Api;
+namespace FOSSBilling\Module\Cookieconsent\Api;
 
 class Guest extends \Api_Abstract
 {

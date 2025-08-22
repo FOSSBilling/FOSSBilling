@@ -6,7 +6,7 @@ class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -19,7 +19,7 @@ class ServiceTest extends \BBTestCase
 
     public function testGetSearchQuery(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
         $result = $service->getSearchQuery();
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
@@ -28,7 +28,7 @@ class ServiceTest extends \BBTestCase
 
     public function testGetBaseCurrencyRate(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
         $rate = 0.6;
         $expected = 1 / $rate;
         $di = new \Pimple\Container();
@@ -46,7 +46,7 @@ class ServiceTest extends \BBTestCase
 
     public function testGetBaseCurrencyRateException(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -78,7 +78,7 @@ class ServiceTest extends \BBTestCase
         $bean->code = $defaultCode;
         $model->loadBean($bean);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)
             ->onlyMethods(['getDefault', 'getBaseCurrencyRate'])
             ->getMock();
 
@@ -129,7 +129,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->willReturn($currency);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getDefault', 'getByCode'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->onlyMethods(['getDefault', 'getByCode'])->getMock();
 
         $serviceMock->expects($getDefaultCalled)
             ->method('getDefault')
@@ -157,7 +157,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->willReturn(new \Model_Currency());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getDefault', 'getByCode'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->onlyMethods(['getDefault', 'getByCode'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getDefault')
@@ -178,7 +178,7 @@ class ServiceTest extends \BBTestCase
     public function testgetByCode(): void
     {
         $di = new \Pimple\Container();
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
         $bean = new \DummyBean();
         $bean->code = 'EUR';
         $model = new \Model_Currency();
@@ -213,7 +213,7 @@ class ServiceTest extends \BBTestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('getRateByCodeProvider')]
     public function testGetRateByCode($code, $returns, $expected): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -229,7 +229,7 @@ class ServiceTest extends \BBTestCase
 
     public function testGetDefault(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $bean = new \DummyBean();
         $model = new \Model_Currency();
@@ -273,7 +273,7 @@ class ServiceTest extends \BBTestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('setAsDefaultProvider')]
     public function testSetAsDefault($model, $expects): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -291,7 +291,7 @@ class ServiceTest extends \BBTestCase
 
     public function testSetAsDefaultException(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -312,7 +312,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgetPairs(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $pairs = [
             'USD' => 'US Dollar',
@@ -334,7 +334,7 @@ class ServiceTest extends \BBTestCase
 
     public function testRmDefaultCurrencyException(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -355,7 +355,7 @@ class ServiceTest extends \BBTestCase
 
     public function testRm(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -377,7 +377,7 @@ class ServiceTest extends \BBTestCase
 
     public function testRmMissingCodeException(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -398,7 +398,7 @@ class ServiceTest extends \BBTestCase
 
     public function testToApiArray(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $model = new \Model_Currency();
         $model->loadBean(new \DummyBean());
@@ -425,12 +425,12 @@ class ServiceTest extends \BBTestCase
 
     public function testCreateCurrency(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $code = 'EUR';
         $format = '€{{price}}';
 
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->onlyMethods(['checkLimits'])->getMock();
+        $systemService = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->onlyMethods(['checkLimits'])->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('checkLimits')
             ->willReturn(null);
@@ -471,7 +471,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getByCode'])->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->onlyMethods(['getByCode'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
             ->willReturn($model);
@@ -496,7 +496,7 @@ class ServiceTest extends \BBTestCase
         $price_format = '€{{Price}}';
         $conversion_rate = 0.6;
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getByCode'])->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->onlyMethods(['getByCode'])->getMock();
         $di = new \Pimple\Container();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -522,7 +522,7 @@ class ServiceTest extends \BBTestCase
 
         $model = new \Model_Currency();
         $model->loadBean(new \DummyBean());
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getByCode'])->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->onlyMethods(['getByCode'])->getMock();
         $di = new \Pimple\Container();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -544,7 +544,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getDefault', '_getRate'])->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->onlyMethods(['getDefault', '_getRate'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getDefault')
             ->willReturn($model);
@@ -586,7 +586,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getDefault', '_getRate'])->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->onlyMethods(['getDefault', '_getRate'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getDefault')
             ->willReturn($model);
@@ -626,7 +626,7 @@ class ServiceTest extends \BBTestCase
 
         $code = 'EUR';
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getByCode', 'rm'])->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->onlyMethods(['getByCode', 'rm'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
             ->willReturn($model);
@@ -657,7 +657,7 @@ class ServiceTest extends \BBTestCase
     {
         $code = 'EUR';
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getByCode', 'rm'])->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->onlyMethods(['getByCode', 'rm'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
             ->willReturn(null);
@@ -671,7 +671,7 @@ class ServiceTest extends \BBTestCase
 
     public function testValidateCurrencyFormatPriceTagMissing(): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        $service = new \FOSSBilling\Module\Currency\Service();
 
         $this->expectException(\Exception::class);
         $service->validateCurrencyFormat('$$$');

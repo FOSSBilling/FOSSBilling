@@ -37,7 +37,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
     #[PHPUnit\Framework\Attributes\DataProvider('variations')]
     public function testLicenseServer($data, $valid, $validation): void
     {
-        $service = $this->getMockBuilder(Box\Mod\Servicelicense\Service::class)->getMock();
+        $service = $this->getMockBuilder(FOSSBilling\Module\Servicelicense\Service::class)->getMock();
         $service->expects($this->any())
             ->method('isLicenseActive')
             ->willReturn(true);
@@ -60,10 +60,10 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $di = new Pimple\Container();
         $di['db'] = $this->di['db'];
         $di['logger'] = new Box_Log();
-        $di['mod'] = $di->protect(fn () => new Box_Mod('servicelicense'));
+        $di['mod'] = $di->protect(fn () => new FOSSBilling\Module('servicelicense'));
         $di['mod_service'] = $di->protect(fn () => $service);
 
-        $server = new Box\Mod\Servicelicense\Server($di['logger']);
+        $server = new FOSSBilling\Module\Servicelicense\Server($di['logger']);
         $server->setDi($di);
         $result = $server->handle_deprecated(json_encode($data));
         $this->assertEquals($valid, $result['valid'], print_r($result, 1));
@@ -100,7 +100,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
 
         $valid = true;
 
-        $service = $this->getMockBuilder(Box\Mod\Servicelicense\Service::class)->getMock();
+        $service = $this->getMockBuilder(FOSSBilling\Module\Servicelicense\Service::class)->getMock();
         $service->expects($this->any())
             ->method('isLicenseActive')
             ->willReturn(true);
@@ -120,10 +120,10 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $di = new Pimple\Container();
         $di['db'] = $this->di['db'];
         $di['logger'] = $this->di['logger'];
-        $di['mod'] = $di->protect(fn () => new Box_Mod('servicelicense'));
+        $di['mod'] = $di->protect(fn () => new FOSSBilling\Module('servicelicense'));
         $di['mod_service'] = $di->protect(fn () => $service);
 
-        $server = new Box\Mod\Servicelicense\Server($this->di['logger']);
+        $server = new FOSSBilling\Module\Servicelicense\Server($this->di['logger']);
         $server->setDi($di);
 
         $result = $server->process(json_encode($data));
@@ -144,7 +144,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
 
         $valid = true;
 
-        $service = $this->getMockBuilder(Box\Mod\Servicelicense\Service::class)->getMock();
+        $service = $this->getMockBuilder(FOSSBilling\Module\Servicelicense\Service::class)->getMock();
         $service->expects($this->never())
             ->method('isLicenseActive')
             ->willReturn(true);
@@ -164,10 +164,10 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $di = new Pimple\Container();
         $di['db'] = $this->di['db'];
         $di['logger'] = $this->di['logger'];
-        $di['mod'] = $di->protect(fn () => new Box_Mod('servicelicense'));
+        $di['mod'] = $di->protect(fn () => new FOSSBilling\Module('servicelicense'));
         $di['mod_service'] = $di->protect(fn () => $service);
 
-        $server = new Box\Mod\Servicelicense\Server($this->di['logger']);
+        $server = new FOSSBilling\Module\Servicelicense\Server($this->di['logger']);
         $server->setDi($di);
 
         $result = $server->process(json_encode($data));
@@ -212,7 +212,7 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
 
         $valid = true;
 
-        $service = $this->getMockBuilder(Box\Mod\Servicelicense\Service::class)->getMock();
+        $service = $this->getMockBuilder(FOSSBilling\Module\Servicelicense\Service::class)->getMock();
         $service->expects($called[0])
             ->method('isLicenseActive')
             ->willReturn($isActive);
@@ -232,10 +232,10 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $di = new Pimple\Container();
         $di['db'] = $this->di['db'];
         $di['logger'] = $this->di['logger'];
-        $di['mod'] = $di->protect(fn () => new Box_Mod('servicelicense'));
+        $di['mod'] = $di->protect(fn () => new FOSSBilling\Module('servicelicense'));
         $di['mod_service'] = $di->protect(fn () => $service);
 
-        $server = new Box\Mod\Servicelicense\Server($this->di['logger']);
+        $server = new FOSSBilling\Module\Servicelicense\Server($this->di['logger']);
         $server->setDi($di);
 
         $result = $server->process(json_encode($data));

@@ -13,7 +13,7 @@
  *Email logs and templates management.
  */
 
-namespace Box\Mod\Email\Api;
+namespace FOSSBilling\Module\Email\Api;
 
 class Admin extends \Api_Abstract
 {

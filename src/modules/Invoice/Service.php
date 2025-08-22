@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Invoice;
+namespace FOSSBilling\Module\Invoice;
 
 use Dompdf\Dompdf;
 use FOSSBilling\Environment;
@@ -1354,7 +1354,7 @@ class Service implements InjectionAwareInterface
     private function _isAutoApproved()
     {
         /**
-         * @var \Box\Mod\System\Service $systemService
+         * @var \FOSSBilling\Module\System\Service $systemService
          */
         $systemService = $this->di['mod_service']('system');
 

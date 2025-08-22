@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Client\Api;
+namespace FOSSBilling\Module\Client\Api;
 
 class GuestTest extends \BBTestCase
 {
@@ -26,7 +26,7 @@ class GuestTest extends \BBTestCase
             'password_confirm' => 'testpaswword',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('clientAlreadyExists')
             ->willReturn(false);
@@ -76,7 +76,7 @@ class GuestTest extends \BBTestCase
             'password_confirm' => 'testpaswword',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('clientAlreadyExists')
             ->willReturn(true);
@@ -167,7 +167,7 @@ class GuestTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('authorizeClient')
             ->with($data['email'], $data['password'])
@@ -186,7 +186,7 @@ class GuestTest extends \BBTestCase
         $sessionMock->expects($this->atLeastOnce())
             ->method('set');
 
-        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Cart\Service::class)->getMock();
         $cartServiceMock->expects($this->once())
             ->method('transferFromOtherSession')
             ->willReturn(true);
@@ -241,7 +241,7 @@ class GuestTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')->willReturn(1);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate');
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
@@ -342,7 +342,7 @@ class GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->willReturn(null);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)->getMock();
         $emailServiceMock->expects($this->once())
             ->method('sendTemplate');
 

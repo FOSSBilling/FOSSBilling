@@ -11,7 +11,7 @@ class DiTest extends PHPUnit\Framework\TestCase
     public function testInjector(): void
     {
         $di = $this->di;
-        $this->assertInstanceOf('Box_Mod', $di['mod']('admin'));
+        $this->assertInstanceOf('FOSSBilling\Module', $di['mod']('admin'));
         $this->assertInstanceOf('Box_Log', $di['logger']);
         $this->assertInstanceOf('Box_Crypt', $di['crypt']);
         $this->assertTrue(isset($di['pdo']));
@@ -29,7 +29,7 @@ class DiTest extends PHPUnit\Framework\TestCase
 
         $this->assertTrue(isset($di['mod']));
         $this->assertTrue(isset($di['mod_config']));
-        $this->assertInstanceOf(Box\Mod\Cron\Service::class, $di['mod_service']('cron'));
+        $this->assertInstanceOf(FOSSBilling\Module\Cron\Service::class, $di['mod_service']('cron'));
         $this->assertInstanceOf('\\' . FOSSBilling\ExtensionManager::class, $di['extension_manager']);
         $this->assertInstanceOf('\Box_Update', $di['updater']);
         $this->assertInstanceOf('\Server_Package', $di['server_package']);
@@ -37,7 +37,7 @@ class DiTest extends PHPUnit\Framework\TestCase
         $this->assertInstanceOf('\Server_Account', $di['server_account']);
         $this->assertTrue(isset($di['server_manager']));
         $this->assertInstanceOf('\\' . FOSSBilling\Requirements::class, $di['requirements']);
-        $this->assertInstanceOf('\\' . Box\Mod\Theme\Model\Theme::class, $di['theme']);
+        $this->assertInstanceOf('\\' . FOSSBilling\Module\Theme\Model\Theme::class, $di['theme']);
         $this->assertInstanceOf('\Model_Cart', $di['cart']);
         $this->assertInstanceOf('\\' . GeoIp2\Database\Reader::class, $di['geoip']);
         $this->assertInstanceOf('\FOSSBilling\PasswordManager', $di['password']);

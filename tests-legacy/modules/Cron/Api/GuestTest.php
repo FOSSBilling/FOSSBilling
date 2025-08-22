@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Cron\Api;
+namespace FOSSBilling\Module\Cron\Api;
 
 class GuestTest extends \BBTestCase
 {
@@ -15,7 +15,7 @@ class GuestTest extends \BBTestCase
 
     public function testsettings(): void
     {
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\FOSSBilling\Module')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())->method('getConfig')->willReturn([]);
 
         $api = new Guest();
@@ -27,7 +27,7 @@ class GuestTest extends \BBTestCase
 
     public function testisLate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Cron\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('isLate')->willReturn(true);
 
         $api = new Guest();
