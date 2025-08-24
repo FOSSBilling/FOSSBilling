@@ -1,0 +1,10 @@
+name: phpmyadmin
+repository: ddev/ddev-phpmyadmin
+version: v1.0.0
+install_date: "2025-08-24T12:09:35-07:00"
+project_files:
+    - docker-compose.phpmyadmin.yaml
+    - docker-compose.phpmyadmin_norouter.yaml
+    - commands/host/phpmyadmin
+global_files: []
+removal_actions: []

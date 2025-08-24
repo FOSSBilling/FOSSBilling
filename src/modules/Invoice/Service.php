@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice;
 
 use Dompdf\Dompdf;
+use FOSSBilling\Environment;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
@@ -1508,7 +1509,7 @@ class Service implements InjectionAwareInterface
         $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '0');
 
         // If hash_access is not 0 or if a client is logged in, get the logged-in client
-        if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0') {
+        if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0' && !Environment::isCLI()) {
             $client = $this->di['loggedin_client'];
             if ($invoiceClientId != $client->id) {
                 // Then either give an appropriate API response or redirect to the login page.
