@@ -288,7 +288,7 @@ class Service implements InjectionAwareInterface
 
     public function saveProductConfig(\Model_Product $productModel, $data): bool
     {
-        $config = json_decode((string) $productModel->config, true);
+        $config = json_decode($productModel->config ?? '', true) ?: [];
         if (!is_array($config)) {
             $config = [];
         }
@@ -312,7 +312,7 @@ class Service implements InjectionAwareInterface
     public function sendProductFile(\Model_Product $product)
     {
         $config = $product->config;
-        isset($config) ? $config = json_decode($config, true) : $config = [];
+        $config = json_decode($config ?? '', true) ?: [];
 
         if (!isset($config['filename'])) {
             throw new \FOSSBilling\Exception('No file associated with this product', null, 404);
