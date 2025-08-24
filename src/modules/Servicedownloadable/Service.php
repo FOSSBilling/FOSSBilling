@@ -290,13 +290,8 @@ class Service implements InjectionAwareInterface
                 $fileName
             );
 
-            $response->headers->set('Content-Type', 'application/force-download');
             $response->headers->set('Content-Type', 'application/octet-stream');
-            $response->headers->set('Content-Type', 'application/download');
-            $response->headers->set('Content-Description', 'File Transfer');
             $response->headers->set('Content-Disposition', $disposition);
-            $response->headers->set('Content-Transfer-Encoding', 'binary');
-
             $response->send();
         }
 
@@ -307,7 +302,7 @@ class Service implements InjectionAwareInterface
 
     public function saveProductConfig(\Model_Product $productModel, $data)
     {
-        $config = json_decode($productModel->config, 1);
+        $config = json_decode((string) $productModel->config, true);
         if (!is_array($config)) {
             $config = [];
         }
@@ -354,13 +349,8 @@ class Service implements InjectionAwareInterface
                 $fileName
             );
 
-            $response->headers->set('Content-Type', 'application/force-download');
             $response->headers->set('Content-Type', 'application/octet-stream');
-            $response->headers->set('Content-Type', 'application/download');
-            $response->headers->set('Content-Description', 'File Transfer');
             $response->headers->set('Content-Disposition', $disposition);
-            $response->headers->set('Content-Transfer-Encoding', 'binary');
-
             $response->send();
         }
 
