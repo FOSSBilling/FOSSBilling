@@ -109,7 +109,8 @@
         FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
         let registerEl = document.getElementById('register');
         new bootstrap.Collapse('#register').hide();
-        document.querySelector("#checkoutButton").disabled = false;
+        document.querySelector("#checkoutButton").hidden = false;
+        document.querySelector("#loginMessage").hidden = true;
         setTimeout(() => {
             registerEl.parentElement.remove();
             new bootstrap.Collapse('#checkout').show();
@@ -129,7 +130,8 @@
                 FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
                 let registerEl = document.getElementById('register');
                 new bootstrap.Collapse('#register').hide();
-                document.querySelector("#checkoutButton").disabled = false;
+                document.querySelector("#checkoutButton").hidden = false;
+                document.querySelector("#loginMessage").hidden = true;
                 setTimeout(() => {
                     registerEl.parentElement.remove();
                     new bootstrap.Collapse('#checkout').show();

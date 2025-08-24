@@ -191,7 +191,8 @@
                                                 </label>
                                             </div>
                                         {% endif %}
-                                        <button id="checkoutButton" class="btn btn-primary btn-large" type="submit" {% if not client %} disabled {% endif %}>{{ 'Checkout'|trans }}</button>
+                                        <button id="checkoutButton" class="btn btn-primary btn-large" type="submit" {% if not client %} hidden="true" {% endif %}>{{ 'Checkout'|trans }}</button>
+                                        <p id="loginMessage" {% if client %} hidden="true" {% endif %}>{{ 'You must first login / create an account before you can checkout.'|trans }}</p>
                                     </div>
                                 </div>
                             </fieldset>
