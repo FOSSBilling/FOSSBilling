@@ -999,7 +999,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage(sprintf('Server manager %s is invalid', $hostingServerModel->manager));
+        $this->expectExceptionMessage("Server manager {$hostingServerModel->manager} is invalid.");
         $this->service->getServerManager($hostingServerModel);
     }
 

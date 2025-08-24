@@ -40,7 +40,7 @@ class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '["hello", "world"]';
         $data = ['testing' => 'phase'];
-        $expected = array_merge(json_decode($productModel->config, 1), $data);
+        $expected = array_merge(json_decode($productModel->config ?? '', true), $data);
 
         $result = $this->service->attachOrderConfig($productModel, $data);
         $this->assertIsArray($result);
@@ -204,7 +204,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage(sprintf('License plugin %s was not found', $serviceLicenseModel->plugin));
+        $this->expectExceptionMessage("License plugin {$serviceLicenseModel->plugin} was not found.");
         $this->service->action_activate($clientOrderModel);
     }
 

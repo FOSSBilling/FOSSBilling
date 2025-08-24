@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+
 class Requirements
 {
     private bool $isOk = true;
@@ -40,16 +43,23 @@ class Requirements
         'min_version' => '8.2',
     ];
 
-    public array $writable = [
-        'folders' => [
-            PATH_ROOT . '/data/cache',
-            PATH_ROOT . '/data/log',
-            PATH_ROOT . '/data/uploads',
-        ],
-        'files' => [
-            PATH_ROOT . '/config.php',
-        ],
-    ];
+    private readonly Filesystem $filesystem;
+    public array $writable;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+        $this->writable = [
+            'folders' => [
+                Path::join(PATH_ROOT, 'data', 'cache'),
+                Path::join(PATH_ROOT, 'data', 'log'),
+                Path::join(PATH_ROOT, 'data', 'uploads'),
+            ],
+            'files' => [
+                Path::join(PATH_ROOT, 'config.php'),
+            ],
+        ];
+    }
 
     public function isPhpVersionOk(): bool
     {
@@ -67,14 +77,14 @@ class Requirements
         $writable = false;
         if (is_writable($path)) {
             $writable = true;
-        } elseif (!file_exists($path)) {
-            $written = @file_put_contents($path, 'Test?');
-            if ($written) {
+        } elseif (!$this->filesystem->exists($path)) {
+            try {
+                $this->filesystem->dumpFile($path, 'Test?');
                 $writable = true;
-            } else {
+            } catch (\Exception) {
                 $this->isOk = false;
             }
-            @unlink($path);
+            $this->filesystem->remove($path);
         } else {
             $this->isOk = false;
         }

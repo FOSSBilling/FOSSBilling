@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -137,7 +138,7 @@ class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
     public function offsetGet(mixed $name): mixed
     {
         if (!array_key_exists($name, $this->parameters)) {
-            throw new InvalidArgumentException(sprintf('The event "%s" has no "%s" parameter.', $this->name, $name));
+            throw new InvalidArgumentException("The event '{$this->name}' has no '{$name}' parameter.");
         }
 
         return $this->parameters[$name];

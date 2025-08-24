@@ -36,7 +36,7 @@ class Box_LogDb
                 $this->service->logEvent($event);
             }
         } catch (Exception $e) {
-            error_log($e);
+            error_log($e->getMessage());
         }
     }
 }

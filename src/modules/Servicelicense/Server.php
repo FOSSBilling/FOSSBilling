@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -68,9 +69,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
 
     public function process($data)
     {
-        if (!is_array($data)) {
-            $data = json_decode($data, true) ?: [];
-        }
+        $data = (!is_array($data)) ? json_decode($data ?? '', true) : [];
 
         if (empty($data)) {
             throw new \LogicException('Invalid request. Parameters missing?', 1000);

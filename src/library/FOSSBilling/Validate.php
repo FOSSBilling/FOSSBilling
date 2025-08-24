@@ -12,12 +12,20 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Validate
 {
     protected ?\Pimple\Container $di = null;
+    private readonly Filesystem $filesystem;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -71,10 +79,10 @@ class Validate
 
             $client = HttpClient::create(['bindto' => BIND_TO]);
             $response = $client->request('GET', 'https://publicsuffix.org/list/public_suffix_list.dat');
-            $dbPath = PATH_CACHE . DIRECTORY_SEPARATOR . 'tlds.txt';
+            $dbPath = Path::join(PATH_CACHE, 'tlds.txt');
 
             if ($response->getStatusCode() === 200) {
-                @file_put_contents($dbPath, $response->getContent());
+                $this->filesystem->dumpFile($dbPath, $response->getContent());
             } else {
                 $item->expiresAfter(3600);
 
@@ -82,7 +90,7 @@ class Validate
             }
 
             @$database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            @unlink($dbPath);
+            $this->filesystem->remove($dbPath);
             if (!$database) {
                 $item->expiresAfter(3600);
 

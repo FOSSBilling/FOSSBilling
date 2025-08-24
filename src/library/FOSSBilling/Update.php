@@ -16,6 +16,7 @@ use PhpZip\Exception\ZipException;
 use PhpZip\ZipFile;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
@@ -28,6 +29,12 @@ class Update implements InjectionAwareInterface
         'https://github.com/FOSSBilling/FOSSBilling/releases/',
         'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/assets/',
     ];
+    private readonly Filesystem $filesystem;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -88,7 +95,7 @@ class Update implements InjectionAwareInterface
             $item->expiresAfter(3600);
 
             $httpClient = HttpClient::create(['bindto' => BIND_TO]);
-            $response = $httpClient->request('GET', "https://api.fossbilling.org/versions/build_changelog/$end");
+            $response = $httpClient->request('GET', "https://api.fossbilling.org/versions/build_changelog/{$end}");
             $result = $response->toArray();
 
             return $result['result'];
@@ -118,7 +125,7 @@ class Update implements InjectionAwareInterface
             return [
                 'version' => Version::VERSION,
                 'download_url' => $downloadUrl,
-                'release_notes' => "Release notes are not available for the preview branch. You can check the latest changes on our [GitHub]($compareLink) repository.",
+                'release_notes' => "Release notes are not available for the preview branch. You can check the latest changes on our [GitHub]({$compareLink}) repository.",
                 'update_type' => 0,
                 'last_check' => time(),
                 'next_check' => time() + 3600,
@@ -214,7 +221,7 @@ class Update implements InjectionAwareInterface
 
         error_log('Started FOSSBilling auto-update script');
         $latestVersionNum = $this->getLatestVersion();
-        $archiveFile = PATH_CACHE . DIRECTORY_SEPARATOR . $latestVersionNum . '.zip';
+        $archiveFile = Path::join(PATH_CACHE, "{$latestVersionNum}.zip");
 
         $releaseInfo = $this->getLatestVersionInfo($updateBranch);
 
@@ -276,9 +283,8 @@ class Update implements InjectionAwareInterface
 
         // Clear the cache folder to reduce chances of errors
         try {
-            $filesystem = new Filesystem();
-            $filesystem->remove(PATH_CACHE);
-            $filesystem->mkdir(PATH_CACHE, 0o755);
+            $this->filesystem->remove(PATH_CACHE);
+            $this->filesystem->mkdir(PATH_CACHE, 0o755);
         } catch (\Exception) {
             // This step is rarely important, we can safely ignore an error here
         }
@@ -289,9 +295,8 @@ class Update implements InjectionAwareInterface
 
         // Clear cache and remove the install folder.
         try {
-            $filesystem = new Filesystem();
-            $filesystem->remove([PATH_CACHE, PATH_ROOT . '/install']);
-            $filesystem->mkdir(PATH_CACHE, 0o755);
+            $this->filesystem->remove([PATH_CACHE, Path::join(PATH_ROOT, 'install')]);
+            $this->filesystem->mkdir(PATH_CACHE, 0o755);
         } catch (IOException $e) {
             error_log($e->getMessage());
 

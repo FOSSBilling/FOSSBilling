@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -177,11 +178,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $row = $row->export();
         }
 
-        if ($row['filter']) {
-            $row['filter'] = json_decode($row['filter'], 1);
-        } else {
-            $row['filter'] = [];
-        }
+        $row['filter'] = json_decode($row['filter'] ?? '', true) ?? [];
 
         return $row;
     }

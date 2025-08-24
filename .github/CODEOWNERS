@@ -1,0 +1,8 @@
+# @see https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+/src/modules/Security/ @BelleNottelling
+/src/modules/Serviceapikey/ @BelleNottelling
+/src/library/FOSSBilling/GeoIP/ @BelleNottelling
+/src/library/FOSSBilling/Fingerprint.php @BelleNottelling
+/src/library/FOSSBilling/SentryHelper.php @BelleNottelling
+/src/tests/ @BelleNottelling
