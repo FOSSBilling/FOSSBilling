@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Invoice\Api;
+namespace FOSSBilling\Module\Invoice\Api;
 
 class GuestTest extends \BBTestCase
 {
@@ -24,7 +24,7 @@ class GuestTest extends \BBTestCase
 
     public function testget(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
@@ -81,7 +81,7 @@ class GuestTest extends \BBTestCase
 
     public function testupdate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateInvoice')
             ->willReturn(true);
@@ -166,7 +166,7 @@ class GuestTest extends \BBTestCase
 
     public function testgateways(): void
     {
-        $gatewayServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServicePayGateway::class)->getMock();
         $gatewayServiceMock->expects($this->atLeastOnce())
             ->method('getActive')
             ->willReturn([]);
@@ -186,7 +186,7 @@ class GuestTest extends \BBTestCase
             'hash' => '',
             'gateway_id' => '',
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('processInvoice')
             ->willReturn([]);
@@ -226,7 +226,7 @@ class GuestTest extends \BBTestCase
         $data = [
             'hash' => '',
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('generatePDF');
 

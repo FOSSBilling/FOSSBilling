@@ -6,7 +6,7 @@ class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
-        $service = new \Box\Mod\Activity\Service();
+        $service = new \FOSSBilling\Module\Activity\Service();
 
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -34,7 +34,7 @@ class ServiceTest extends \BBTestCase
     public function testgetSearchQuery($filterKey, $search, $expected): void
     {
         $di = new \Pimple\Container();
-        $service = new \Box\Mod\Activity\Service();
+        $service = new \FOSSBilling\Module\Activity\Service();
         $service->setDi($di);
         $result = $service->getSearchQuery($filterKey);
         $this->assertIsString($result[0]);
@@ -44,7 +44,7 @@ class ServiceTest extends \BBTestCase
 
     public function testLogEmail(): void
     {
-        $service = new \Box\Mod\Activity\Service();
+        $service = new \FOSSBilling\Module\Activity\Service();
         $data = [
             'client_id' => random_int(1, 100),
             'sender' => 'sender',
@@ -92,7 +92,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
-        $service = new \Box\Mod\Activity\Service();
+        $service = new \FOSSBilling\Module\Activity\Service();
         $service->setDi($di);
 
         $result = $service->toApiArray($clientHistoryModel);
@@ -129,7 +129,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
 
-        $service = new \Box\Mod\Activity\Service();
+        $service = new \FOSSBilling\Module\Activity\Service();
         $service->setDi($di);
 
         $service->rmByClient($clientModel);

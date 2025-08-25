@@ -7,21 +7,21 @@ class ServiceTest extends BBDbApiTestCase
 
     public function testUninstall(): void
     {
-        $service = new Box\Mod\Example\Service();
+        $service = new FOSSBilling\Module\Example\Service();
         $result = $service->uninstall();
         $this->assertTrue($result);
     }
 
     public function testUpdate(): void
     {
-        $service = new Box\Mod\Example\Service();
+        $service = new FOSSBilling\Module\Example\Service();
         $result = $service->update([]);
         $this->assertTrue($result);
     }
 
     public function testGetSearchQuery(): void
     {
-        $service = new Box\Mod\Example\Service();
+        $service = new FOSSBilling\Module\Example\Service();
         $di = new Pimple\Container();
         $service->setDi($di);
 
@@ -37,7 +37,7 @@ class ServiceTest extends BBDbApiTestCase
 
     public function testEvents(): void
     {
-        $service = new Box\Mod\Example\Service();
+        $service = new FOSSBilling\Module\Example\Service();
         $params = [
             'ip' => '123.123.123.123',
         ];

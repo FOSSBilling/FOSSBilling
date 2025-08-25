@@ -10,25 +10,27 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Security;
+namespace FOSSBilling\Module\Security;
 
 use FOSSBilling\GeoIP\IncompleteRecord;
 use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\InformationException;
+use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Interfaces\SecurityCheckInterface;
+use Pimple\Container;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
-class Service
+class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
@@ -58,7 +60,7 @@ class Service
         $finder->files()->in(Path::join(__DIR__, 'Checks'))->name('*.php');
         foreach ($finder as $file) {
             $checkID = $file->getFilenameWithoutExtension();
-            $className = "Box\Mod\Security\Checks\\{$checkID}";
+            $className = "FOSSBilling\Module\Security\Checks\\{$checkID}";
             if (!class_exists($className)) {
                 continue;
             }
@@ -105,7 +107,7 @@ class Service
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
 
-        $class = "Box\Mod\Security\Checks\\$checkID";
+        $class = "FOSSBilling\Module\Security\Checks\\$checkID";
         if (!class_exists($class)) {
             throw new InformationException('The check :checkName: does not exist.', [':checkName:' => $checkID]);
         }

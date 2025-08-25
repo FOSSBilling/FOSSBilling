@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Staff\Api;
+namespace FOSSBilling\Module\Staff\Api;
 
 class AdminTest extends \BBTestCase
 {
@@ -26,7 +26,7 @@ class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['sqlString', []]);
@@ -67,7 +67,7 @@ class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toModel_AdminApiArray')
             ->willReturn([]);
@@ -95,7 +95,7 @@ class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
@@ -124,7 +124,7 @@ class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('delete')
             ->willReturn(true);
@@ -163,7 +163,7 @@ class AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('changePassword')
             ->willReturn(true);
@@ -216,7 +216,7 @@ class AdminTest extends \BBTestCase
 
         $newStaffId = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('create')
             ->willReturn($newStaffId);
@@ -247,7 +247,7 @@ class AdminTest extends \BBTestCase
         $staffModel = new \Model_Admin();
         $staffModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPermissions')
             ->willReturn([]);
@@ -278,7 +278,7 @@ class AdminTest extends \BBTestCase
             'permissions' => 'default',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('setPermissions')
             ->willReturn(true);
@@ -309,7 +309,7 @@ class AdminTest extends \BBTestCase
 
     public function testgroupGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdminGroupPair')
             ->willReturn([]);
@@ -323,7 +323,7 @@ class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdminGroupSearchQuery')
             ->willReturn(['sqlString', []]);
@@ -351,7 +351,7 @@ class AdminTest extends \BBTestCase
         $data['name'] = 'Prime Group';
         $newGroupId = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('createGroup')
             ->willReturn($newGroupId);
@@ -375,7 +375,7 @@ class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toAdminGroupApiArray')
             ->willReturn([]);
@@ -404,7 +404,7 @@ class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteGroup')
             ->willReturn(true);
@@ -434,7 +434,7 @@ class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateGroup')
             ->willReturn(true);
@@ -464,7 +464,7 @@ class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getActivityAdminHistorySearchQuery')
             ->willReturn(['sqlString', []]);
@@ -505,7 +505,7 @@ class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toActivityAdminHistoryApiArray')
             ->willReturn([]);
@@ -534,7 +534,7 @@ class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteLoginHistory')
             ->willReturn(true);

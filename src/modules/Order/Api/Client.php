@@ -13,7 +13,7 @@
  * Client orders management.
  */
 
-namespace Box\Mod\Order\Api;
+namespace FOSSBilling\Module\Order\Api;
 
 class Client extends \Api_Abstract
 {

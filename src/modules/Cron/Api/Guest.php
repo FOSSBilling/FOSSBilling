@@ -13,7 +13,7 @@
  * Cron checker.
  */
 
-namespace Box\Mod\Cron\Api;
+namespace FOSSBilling\Module\Cron\Api;
 
 use FOSSBilling\InformationException;
 

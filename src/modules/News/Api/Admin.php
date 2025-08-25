@@ -13,7 +13,7 @@
  * News management.
  */
 
-namespace Box\Mod\News\Api;
+namespace FOSSBilling\Module\News\Api;
 
 class Admin extends \Api_Abstract
 {

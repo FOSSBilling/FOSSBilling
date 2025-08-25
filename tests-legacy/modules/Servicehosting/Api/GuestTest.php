@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Servicehosting\Api;
+namespace FOSSBilling\Module\Servicehosting\Api;
 
 class GuestTest extends \BBTestCase
 {
@@ -34,7 +34,7 @@ class GuestTest extends \BBTestCase
 
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getFreeTlds')
             ->with($model)
@@ -65,7 +65,7 @@ class GuestTest extends \BBTestCase
 
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->never())->method('getFreeTlds');
         $this->api->setService($serviceMock);
         $this->api->setDi($di);

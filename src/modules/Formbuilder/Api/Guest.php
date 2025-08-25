@@ -13,7 +13,7 @@
  * Custom forms.
  */
 
-namespace Box\Mod\Formbuilder\Api;
+namespace FOSSBilling\Module\Formbuilder\Api;
 
 class Guest extends \Api_Abstract
 {

@@ -6,14 +6,14 @@ class Api_GuestTest extends \BBTestCase
 {
     public function testGetPairs(): void
     {
-        $guestApi = new \Box\Mod\Currency\Api\Guest();
+        $guestApi = new \FOSSBilling\Module\Currency\Api\Guest();
 
         $willReturn = [
             'EUR' => 'Euro',
             'USD' => 'US Dollar',
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getPairs')
             ->willReturn($willReturn);
@@ -54,7 +54,7 @@ class Api_GuestTest extends \BBTestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('getProvider')]
     public function testGet($data, $model, $expectsGetByCode, $expectsGetDefault): void
     {
-        $guestApi = new \Box\Mod\Currency\Api\Guest();
+        $guestApi = new \FOSSBilling\Module\Currency\Api\Guest();
 
         $willReturn = [
             'code' => 'EUR',
@@ -65,7 +65,7 @@ class Api_GuestTest extends \BBTestCase
             'default' => 1,
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
         $service->expects($expectsGetByCode)
             ->method('getByCode')
             ->willReturn($model);
@@ -87,7 +87,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testGetException(): void
     {
-        $guestApi = new \Box\Mod\Currency\Api\Guest();
+        $guestApi = new \FOSSBilling\Module\Currency\Api\Guest();
 
         $willReturn = [
             'code' => 'EUR',
@@ -98,7 +98,7 @@ class Api_GuestTest extends \BBTestCase
             'default' => 1,
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
         $service->expects($this->never())
             ->method('getByCode')
             ->willReturn(null);
@@ -155,12 +155,12 @@ class Api_GuestTest extends \BBTestCase
             'price' => 100000,
             'without_currency' => false,
         ];
-        $guestApi = $this->getMockBuilder('\\' . \Box\Mod\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
+        $guestApi = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
         $guestApi->expects($this->atLeastOnce())
             ->method('get')
             ->willReturn($willReturn);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
 
         $di = new \Pimple\Container();
 
@@ -211,12 +211,12 @@ class Api_GuestTest extends \BBTestCase
             'default' => 1,
         ];
 
-        $guestApi = $this->getMockBuilder('\\' . \Box\Mod\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
+        $guestApi = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
         $guestApi->expects($this->atLeastOnce())
             ->method('get')
             ->willReturn($willReturn);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
 
         $di = new \Pimple\Container();
 

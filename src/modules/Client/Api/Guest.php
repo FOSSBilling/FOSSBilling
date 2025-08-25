@@ -13,7 +13,7 @@
  * Clients API methods.
  */
 
-namespace Box\Mod\Client\Api;
+namespace FOSSBilling\Module\Client\Api;
 
 class Guest extends \Api_Abstract
 {

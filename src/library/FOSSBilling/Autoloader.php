@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
+ * Copyright 2022-2025 FOSSBilling.
  * SPDX-License-Identifier: Apache-2.0.
  *
+ * @author Belle Aerni
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
@@ -38,7 +38,7 @@ class AutoLoader
 
         if ($registerFOSSBillingDefaults) {
             $this->AntLoader->addNamespace('', PATH_LIBRARY, 'psr0');
-            $this->AntLoader->addNamespace('Box\\Mod\\', PATH_MODS);
+            $this->AntLoader->addNamespace('FOSSBilling\\Module\\', PATH_MODS);
         }
 
         $this->AntLoader->checkClassMap();

@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Notification\Controller;
+namespace FOSSBilling\Module\Notification\Controller;
 
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
@@ -25,12 +25,12 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/notification', 'get_index', [], static::class);
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\FOSSBilling\App $app)
     {
         $this->di['is_admin_logged'];
 

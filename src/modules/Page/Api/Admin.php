@@ -13,7 +13,7 @@
  * Static Pages management.
  */
 
-namespace Box\Mod\Page\Api;
+namespace FOSSBilling\Module\Page\Api;
 
 class Admin extends \Api_Abstract
 {

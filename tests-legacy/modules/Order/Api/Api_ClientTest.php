@@ -9,13 +9,13 @@
 class Api_ClientTest extends PHPUnit\Framework\TestCase
 {
     /**
-     * @var Box\Mod\Order\Api\Client
+     * @var FOSSBilling\Module\Order\Api\Client
      */
     protected $api;
 
     public function setup(): void
     {
-        $this->api = new Box\Mod\Order\Api\Client();
+        $this->api = new FOSSBilling\Module\Order\Api\Client();
     }
 
     public function testgetDi(): void
@@ -28,7 +28,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testGetList(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Service::class)
             ->onlyMethods(['getSearchQuery', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->willReturn(['query', []]);
@@ -77,7 +77,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testGetListExpiring(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Service::class)
             ->onlyMethods(['getSoonExpiringActiveOrdersQuery'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSoonExpiringActiveOrdersQuery')
             ->willReturn(['query', []]);
@@ -115,12 +115,12 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Service::class)
             ->onlyMethods(['toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);
@@ -137,7 +137,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testAddons(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Service::class)
             ->onlyMethods(['getOrderAddonsList', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getOrderAddonsList')
             ->willReturn([new Model_ClientOrder()]);
@@ -147,7 +147,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -168,12 +168,12 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Service::class)
             ->onlyMethods(['getOrderServiceData'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getOrderServiceData')
             ->willReturn([]);
@@ -197,12 +197,12 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $productServiceMock = $this->getMockBuilder('\\' . Box\Mod\Product\Service::class)->onlyMethods(['getUpgradablePairs'])->getMock();
+        $productServiceMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Product\Service::class)->onlyMethods(['getUpgradablePairs'])->getMock();
         $productServiceMock->expects($this->atLeastOnce())
             ->method('getUpgradablePairs')
             ->willReturn([]);
@@ -231,12 +231,12 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order->loadBean(new DummyBean());
         $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Service::class)
             ->onlyMethods(['deleteFromOrder'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('deleteFromOrder')
             ->willReturn(true);
@@ -256,12 +256,12 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Service::class)
             ->onlyMethods(['deleteFromOrder'])->getMock();
         $serviceMock->expects($this->never())->method('deleteFromOrder')
             ->willReturn(true);
@@ -288,7 +288,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Service::class)
             ->onlyMethods(['findForClientById', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findForClientById')
             ->willReturn($order);
@@ -321,7 +321,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->method('checkRequiredParamsForArray')
             ->willReturn(null);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Order\Service::class)
             ->onlyMethods(['findForClientById', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findForClientById')
             ->willReturn(null);

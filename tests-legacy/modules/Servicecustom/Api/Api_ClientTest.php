@@ -5,18 +5,18 @@ namespace Box\Tests\Mod\Servicecustom\Api;
 class Api_ClientTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Servicecustom\Api\Client
+     * @var \FOSSBilling\Module\Servicecustom\Api\Client
      */
     protected $api;
 
     public function setup(): void
     {
-        $this->api = new \Box\Mod\Servicecustom\Api\Client();
+        $this->api = new \FOSSBilling\Module\Servicecustom\Api\Client();
     }
 
     public function testCall(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\Module\Servicecustom\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());
@@ -37,7 +37,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testCallArgumentsNotSetException(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\Module\Servicecustom\Service::class)->getMock();
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());
@@ -54,7 +54,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testCallOrderIdNotSetException(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\Module\Servicecustom\Service::class)->getMock();
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());

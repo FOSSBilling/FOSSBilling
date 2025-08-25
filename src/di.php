@@ -166,18 +166,14 @@ $di['url'] = function () use ($di) {
 };
 
 /*
- * Returns a new Box_Mod object, created with the provided module name.
+ * Returns a new FOSSBilling\Module object, created with the provided module name.
  *
- * @param string $name The name of the module to create the object with.
+ * @param Container $di The dependency injection container.
+ * @param string $moduleName The name of the module to create the object with.
  *
- * @return \Box_Mod The new Box_Mod object that was just created.
+ * @return FOSSBilling\Module The new FOSSBilling\Module object that was just created.
  */
-$di['mod'] = $di->protect(function ($name) use ($di) {
-    $mod = new Box_Mod($name);
-    $mod->setDi($di);
-
-    return $mod;
-});
+$di['mod'] = $di->protect(fn ($moduleName): FOSSBilling\Module => new FOSSBilling\Module($di, $moduleName));
 
 /*
  *
@@ -690,10 +686,10 @@ $di['table'] = $di->protect(function ($name) use ($di) {
 /*
  * @param void
  *
- * @return \Box\Mod\Servicelicense\Server
+ * @return FOSSBilling\Module\Servicelicense\Server
  */
 $di['license_server'] = function () use ($di) {
-    $server = new Box\Mod\Servicelicense\Server($di['logger']);
+    $server = new FOSSBilling\Module\Servicelicense\Server($di['logger']);
     $server->setDi($di);
 
     return $server;

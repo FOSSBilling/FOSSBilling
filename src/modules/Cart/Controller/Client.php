@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Cart\Controller;
+namespace FOSSBilling\Module\Cart\Controller;
 
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
@@ -25,12 +25,12 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/cart', 'get_cart', [], static::class);
     }
 
-    public function get_cart(\Box_App $app)
+    public function get_cart(\FOSSBilling\App $app)
     {
         return $app->render('mod_cart_index');
     }

@@ -13,7 +13,7 @@
  * Products management api.
  */
 
-namespace Box\Mod\Product\Api;
+namespace FOSSBilling\Module\Product\Api;
 
 class Guest extends \Api_Abstract
 {

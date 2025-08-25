@@ -13,7 +13,7 @@
  * Client management.
  */
 
-namespace Box\Mod\Client\Api;
+namespace FOSSBilling\Module\Client\Api;
 
 class Admin extends \Api_Abstract
 {

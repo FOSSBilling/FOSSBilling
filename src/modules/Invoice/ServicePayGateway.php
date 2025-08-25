@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Invoice;
+namespace FOSSBilling\Module\Invoice;
 
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
@@ -418,7 +418,7 @@ class ServicePayGateway implements InjectionAwareInterface
         if ($model instanceof \Model_Invoice) {
             $p['invoice_id'] = $model->id;
             $p['invoice_hash'] = $model->hash;
-            $p['redirect'] = 1;
+            $p['redirect'] = true;
         }
 
         return SYSTEM_URL . 'ipn.php?' . http_build_query($p);

@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Page\Api;
+namespace FOSSBilling\Module\Page\Api;
 
 class AdminTest extends \BBTestCase
 {
@@ -24,7 +24,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Page\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Page\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPairs')

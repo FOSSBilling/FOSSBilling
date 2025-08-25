@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Formbuilder;
+namespace FOSSBilling\Module\Formbuilder;
 
 class ServiceTest extends \BBTestCase
 {

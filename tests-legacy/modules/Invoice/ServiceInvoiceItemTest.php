@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Invoice;
+namespace FOSSBilling\Module\Invoice;
 
 class ServiceInvoiceItemTest extends \BBTestCase
 {
@@ -39,7 +39,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)
             ->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('unsetUnpaidInvoice')
@@ -138,7 +138,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $di['db'] = $dbMock;
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)->getMock();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($clientServiceMock) {
             if ($serviceName == 'Client') {
                 return $clientServiceMock;

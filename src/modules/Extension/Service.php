@@ -10,10 +10,12 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Extension;
+namespace FOSSBilling\Module\Extension;
 
 use FOSSBilling\Config;
 use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
+use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -21,7 +23,7 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
     private readonly Filesystem $filesystem;
 
     public function __construct()
@@ -29,12 +31,12 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
@@ -53,9 +55,9 @@ class Service implements InjectionAwareInterface
 
     public function isCoreModule($mod)
     {
-        $core = $this->di['mod']('extension')->getCoreModules();
+        $mod = $this->di['mod']($mod);
 
-        return in_array($mod, $core);
+        return $mod->isCore();
     }
 
     public function isExtensionActive($type, $id)
@@ -132,6 +134,42 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
+    public function getCoreModules(): array
+    {
+        // TODO: move to global?
+        $coreMods = [
+            'activity',
+            'cart',
+            'client',
+            'cron',
+            'currency',
+            'email',
+            'extension',
+            'hook',
+            'index',
+            'invoice',
+            'order',
+            'page',
+            'product',
+            'profile',
+            'security',
+            'servicecustom',
+            'servicedomain',
+            'servicedownloadable',
+            'servicehosting',
+            'servicelicense',
+            'staff',
+            'stats',
+            'support',
+            'system',
+            'theme',
+            'orderbutton',
+            'formbuilder',
+        ];
+
+        return $coreMods;
+    }
+
     /**
      * @return mixed[]
      */
@@ -149,7 +187,7 @@ class Service implements InjectionAwareInterface
         $result = [];
 
         if ($installed_and_core) {
-            $core = $this->di['mod']('extension')->getCoreModules();
+            $core = $this->getCoreModules();
             foreach ($core as $core_mod) {
                 $m = $this->di['mod']($core_mod);
                 $manifest = $m->getManifest();
@@ -258,7 +296,9 @@ class Service implements InjectionAwareInterface
                     continue;
                 }
 
-                if (!$mod->hasManifest()) {
+                try {
+                    $mod->getManifest();
+                } catch (FileNotFoundException) {
                     error_log("Module {$m} manifest file is missing or is not readable.");
 
                     continue;
@@ -274,13 +314,13 @@ class Service implements InjectionAwareInterface
 
     public function getAdminNavigation($admin, $url = null)
     {
-        $staff_service = $this->di['mod_service']('staff');
+        $staff_service = $this->di['mod_service']('Staff');
         $current_mod = null;
         $current_url = null;
         $nav = [];
         $subpages = [];
 
-        $modules = $this->di['mod']('extension')->getCoreModules();
+        $modules = $this->getCoreModules();
         $installed = $this->getInstalledMods();
         $list = array_unique(array_merge($modules, $installed));
         foreach ($list as $mod) {
@@ -288,9 +328,15 @@ class Service implements InjectionAwareInterface
                 continue;
             }
             $m = $this->di['mod']($mod);
-            $obj = $m->getAdminController();
 
-            if (!is_null($obj) && method_exists($obj, 'fetchNavigation')) {
+            try {
+                $obj = $m->getAdminController();
+            } catch (FileNotFoundException) {
+                // If the module does not have an admin controller, skip it.
+                continue;
+            }
+
+            if (method_exists($obj, 'fetchNavigation')) {
                 $n = $obj->fetchNavigation();
 
                 if (isset($n['group'])) {
@@ -367,10 +413,20 @@ class Service implements InjectionAwareInterface
         switch ($ext->type) {
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 $mod = $this->di['mod']($ext->name);
+
+                $hasAdminController = null;
+
+                try {
+                    $hasAdminController = $mod->getAdminController();
+                    $hasAdminController = true;
+                } catch (FileNotFoundException) {
+                    $hasAdminController = false;
+                }
+
                 $manifest = $mod->getManifest();
                 $this->installModule($ext);
                 $ext->version = $manifest['version'];
-                $result['redirect'] = $mod->hasAdminController();
+                $result['redirect'] = $hasAdminController;
                 $result['has_settings'] = $mod->hasSettingsPage();
 
                 break;
@@ -558,8 +614,8 @@ class Service implements InjectionAwareInterface
         }
 
         $info = $mod->getManifest();
-        if (isset($info['minimum_boxbilling_version']) && \FOSSBilling\Version::compareVersion($info['minimum_boxbilling_version']) > 0) {
-            throw new \FOSSBilling\InformationException('Module cannot be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_boxbilling_version'], ':v' => \FOSSBilling\Version::VERSION]);
+        if (isset($info['min_fb_version']) && \FOSSBilling\Version::compareVersion($info['min_fb_version']) > 0) {
+            throw new \FOSSBilling\InformationException('Module cannot be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['min_fb_version'], ':v' => \FOSSBilling\Version::VERSION]);
         }
 
         // Allow install module even if no installer exists
@@ -687,8 +743,7 @@ class Service implements InjectionAwareInterface
             $list = array_values($extensions);
         }
 
-        $extensionMod = $this->di['mod']('extension');
-        $mods = $extensionMod->getCoreModules();
+        $mods = $this->getCoreModules();
 
         $modules = array_merge($mods, $list);
         sort($modules);
@@ -715,7 +770,7 @@ class Service implements InjectionAwareInterface
 
     public function getSpecificModulePermissions(string $module): array|false
     {
-        $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
+        $class = 'FOSSBilling\Module\\' . ucfirst($module) . '\Service';
         if (class_exists($class) && method_exists($class, 'getModulePermissions')) {
             $moduleService = new $class();
             if (method_exists($moduleService, 'setDi')) {
@@ -743,7 +798,7 @@ class Service implements InjectionAwareInterface
     }
 
     // Checks if the current user has permission to edit a module's settings
-    public function hasManagePermission(string $module, ?\Box_App $app = null): void
+    public function hasManagePermission(string $module, ?\FOSSBilling\App $app = null): void
     {
         $staff_service = $this->di['mod_service']('Staff');
 

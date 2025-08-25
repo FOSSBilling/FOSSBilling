@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Index\Controller;
+namespace FOSSBilling\Module\Index\Controller;
 
 use FOSSBilling\InjectionAwareInterface;
 
@@ -27,7 +27,7 @@ class Admin implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('', 'get_index', [], static::class);
         $app->get('/', 'get_index', [], static::class);
@@ -35,7 +35,7 @@ class Admin implements InjectionAwareInterface
         $app->get('/index/', 'get_index', [], static::class);
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\FOSSBilling\App $app)
     {
         if ($this->di['auth']->isAdminLoggedIn()) {
             return $app->render('mod_index_dashboard');

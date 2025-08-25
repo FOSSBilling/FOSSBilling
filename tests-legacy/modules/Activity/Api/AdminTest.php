@@ -17,7 +17,7 @@ class AdminTest extends \BBTestCase
             ],
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['String', []]);
@@ -41,7 +41,7 @@ class AdminTest extends \BBTestCase
         $api->setDi($di);
         $di['api_admin'] = $api;
 
-        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity = new \FOSSBilling\Module\Activity\Api\Admin();
         $activity->setDi($di);
         $activity->setService($service);
         $activity->log_get_list([]);
@@ -60,7 +60,7 @@ class AdminTest extends \BBTestCase
             ],
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Activity\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['String', []]);
@@ -84,7 +84,7 @@ class AdminTest extends \BBTestCase
         $api->setDi($di);
         $di['api_admin'] = $api;
 
-        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity = new \FOSSBilling\Module\Activity\Api\Admin();
         $activity->setDi($di);
         $activity->setService($service);
         $activity->log_get_list([]);
@@ -94,7 +94,7 @@ class AdminTest extends \BBTestCase
     {
         $di = new \Pimple\Container();
 
-        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity = new \FOSSBilling\Module\Activity\Api\Admin();
         $activity->setDi($di);
         $result = $activity->log([]);
         $this->assertFalse($result, 'Empty array key m');
@@ -102,14 +102,14 @@ class AdminTest extends \BBTestCase
 
     public function testlogEmail(): void
     {
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->onlyMethods(['logEmail'])->getMock();
+        $service = $this->getMockBuilder('\\' . \FOSSBilling\Module\Activity\Service::class)->onlyMethods(['logEmail'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('logEmail')
             ->willReturn(true);
 
         $di = new \Pimple\Container();
 
-        $adminApi = new \Box\Mod\Activity\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Activity\Api\Admin();
         $adminApi->setService($service);
         $adminApi->setDi($di);
         $result = $adminApi->log_email(['subject' => 'Proper subject']);
@@ -119,7 +119,7 @@ class AdminTest extends \BBTestCase
 
     public function testlogEmailWithoutSubject(): void
     {
-        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity = new \FOSSBilling\Module\Activity\Api\Admin();
         $result = $activity->log_email([]);
         $this->assertFalse($result);
     }
@@ -136,7 +136,7 @@ class AdminTest extends \BBTestCase
         $databaseMock->expects($this->atLeastOnce())->
             method('trash');
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->onlyMethods(['hasPermission'])->getMock();
+        $serviceMock = $this->getMockBuilder('\FOSSBilling\Module\Staff\Service')->onlyMethods(['hasPermission'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')
             ->willReturn(true);
@@ -150,7 +150,7 @@ class AdminTest extends \BBTestCase
 
         $di['mod_service'] = $di->protect(fn () => $serviceMock);
 
-        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity = new \FOSSBilling\Module\Activity\Api\Admin();
         $activity->setDi($di);
 
         $result = $activity->log_delete(['id' => 1]);
@@ -159,7 +159,7 @@ class AdminTest extends \BBTestCase
 
     public function testBatchDelete(): void
     {
-        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Activity\Api\Admin::class)->onlyMethods(['log_delete'])->getMock();
+        $activityMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Activity\Api\Admin::class)->onlyMethods(['log_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('log_delete')->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();

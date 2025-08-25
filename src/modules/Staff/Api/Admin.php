@@ -13,7 +13,7 @@
  *Staff management.
  */
 
-namespace Box\Mod\Staff\Api;
+namespace FOSSBilling\Module\Staff\Api;
 
 class Admin extends \Api_Abstract
 {

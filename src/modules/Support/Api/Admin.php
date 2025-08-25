@@ -13,7 +13,7 @@
  * Support management module.
  */
 
-namespace Box\Mod\Support\Api;
+namespace FOSSBilling\Module\Support\Api;
 
 class Admin extends \Api_Abstract
 {

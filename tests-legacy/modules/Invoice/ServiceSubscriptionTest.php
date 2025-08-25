@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Invoice;
+namespace FOSSBilling\Module\Invoice;
 
 class ServiceSubscriptionTest extends \BBTestCase
 {
@@ -102,7 +102,7 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->method('load')
             ->will($this->onConsecutiveCalls($clientModel, $gatewayModel));
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
+        $clientServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('toApiArray')

@@ -8,7 +8,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Seo\Engines;
+namespace FOSSBilling\Module\Seo\Engines;
 
 use Symfony\Component\HttpClient\HttpClient;
 

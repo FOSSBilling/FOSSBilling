@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Paidsupport;
+namespace FOSSBilling\Module\Paidsupport;
 
 class ServiceTest extends \BBTestCase
 {
@@ -29,7 +29,7 @@ class ServiceTest extends \BBTestCase
 
         $clientTotalAmount = 25;
 
-        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $clientBalanceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->with($clientModel)
@@ -64,7 +64,7 @@ class ServiceTest extends \BBTestCase
 
         $clientTotalAmount = 0;
 
-        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $clientBalanceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->with($clientModel)
@@ -101,7 +101,7 @@ class ServiceTest extends \BBTestCase
 
         $clientTotalAmount = 4;
 
-        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $clientBalanceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->with($clientModel)
@@ -136,7 +136,7 @@ class ServiceTest extends \BBTestCase
 
         $clientTotalAmount = 4;
 
-        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $clientBalanceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->with($clientModel)
@@ -346,7 +346,7 @@ class ServiceTest extends \BBTestCase
             ->method('enoughInBalanceToOpenTicket')
             ->with($clientModel);
 
-        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $clientBalanceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('deductFunds');
 
@@ -585,7 +585,7 @@ class ServiceTest extends \BBTestCase
     {
         $di = new \Pimple\Container();
 
-        $extensionServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $extensionServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('setConfig')
             ->willReturn(true);

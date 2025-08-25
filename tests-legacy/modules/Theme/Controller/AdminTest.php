@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Theme\Controller;
+namespace FOSSBilling\Module\Theme\Controller;
 
 class AdminTest extends \BBTestCase
 {
@@ -19,7 +19,7 @@ class AdminTest extends \BBTestCase
 
     public function testregister(): void
     {
-        $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
+        $boxAppMock = $this->getMockBuilder('\FOSSBilling\App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->exactly(1))
             ->method('get');
 
@@ -29,13 +29,13 @@ class AdminTest extends \BBTestCase
 
     public function testgetTheme(): void
     {
-        $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
+        $boxAppMock = $this->getMockBuilder('\FOSSBilling\App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
             ->with('mod_theme_preset')
             ->willReturn('Rendering ...');
 
-        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getSettingsPageHtml')
             ->willReturn('');
@@ -47,7 +47,7 @@ class AdminTest extends \BBTestCase
             ->method('isAssetsPathWritable')
             ->willReturn(false);
 
-        $themeServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $themeServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Theme\Service::class)->getMock();
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
@@ -59,7 +59,7 @@ class AdminTest extends \BBTestCase
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('getThemePresets');
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\FOSSBilling\Module')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getService')
             ->willReturn($themeServiceMock);

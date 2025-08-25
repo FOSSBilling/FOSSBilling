@@ -13,7 +13,7 @@
  *Currency management.
  */
 
-namespace Box\Mod\Currency\Api;
+namespace FOSSBilling\Module\Currency\Api;
 
 class Guest extends \Api_Abstract
 {

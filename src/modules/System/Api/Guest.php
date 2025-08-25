@@ -13,7 +13,7 @@
  * System methods.
  */
 
-namespace Box\Mod\System\Api;
+namespace FOSSBilling\Module\System\Api;
 
 use FOSSBilling\i18n;
 

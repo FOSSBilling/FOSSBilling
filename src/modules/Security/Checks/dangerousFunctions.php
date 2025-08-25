@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Security\Checks;
+namespace FOSSBilling\Module\Security\Checks;
 
 use FOSSBilling\Enums\SecurityCheckResultEnum;
 use FOSSBilling\SecurityCheckResult;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Order;
+namespace FOSSBilling\Module\Order;
 
 class PdoMock extends \PDO
 {
@@ -81,7 +81,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)
             ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->willReturn(true);
@@ -143,7 +143,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)
             ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->willThrowException(new \Exception('PHPUnit controlled exception'));
@@ -205,7 +205,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)
             ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->willReturn(true);
@@ -265,7 +265,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)
             ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->willThrowException(new \Exception('PHPUnit controlled exception'));
@@ -325,7 +325,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)
             ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->willReturn(true);
@@ -385,7 +385,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)
             ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->willThrowException(new \Exception('PHPUnit controlled exception'));
@@ -446,7 +446,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)
             ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->willReturn(true);
@@ -506,7 +506,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)
             ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->willThrowException(new \Exception('PHPUnit controlled exception'));
@@ -566,7 +566,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)
             ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->willReturn(true);
@@ -624,7 +624,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)
             ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->willThrowException(new \Exception('PHPUnit controlled exception'));
@@ -682,7 +682,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)
             ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->willReturn(true);
@@ -742,7 +742,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $emailServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)
             ->onlyMethods(['sendTemplate'])->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->willThrowException(new \Exception('PHPUnit controlled exception'));
@@ -987,7 +987,7 @@ class ServiceTest extends \BBTestCase
         $orderStatus = new \Model_ClientOrderStatus();
         $orderStatus->loadBean(new \DummyBean());
 
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)
+        $systemService = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)
             ->onlyMethods(['getParamValue'])->getMock();
         $systemService->expects($this->atLeastOnce())->method('getParamValue')
             ->willReturn($randId);
@@ -1109,12 +1109,12 @@ class ServiceTest extends \BBTestCase
         $model->quantity = 1;
         $model->client_id = 1;
 
-        $clientService = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)->getMock();
         $clientService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
 
-        $supportService = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)->getMock();
         $supportService->expects($this->atLeastOnce())
             ->method('getActiveTicketsCountForOrder')
             ->willReturn(1);
@@ -1284,7 +1284,7 @@ class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getDefault')
             ->willReturn(null);
@@ -1315,12 +1315,12 @@ class ServiceTest extends \BBTestCase
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \DummyBean());
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getByCode')
             ->willReturn($currencyModel);
 
-        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Cart\Service::class)->getMock();
         $cartServiceMock->expects($this->atLeastOnce())
             ->method('isStockAvailable')
             ->with($modelProduct)
@@ -1363,12 +1363,12 @@ class ServiceTest extends \BBTestCase
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \DummyBean());
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getByCode')
             ->willReturn($currencyModel);
 
-        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Cart\Service::class)->getMock();
         $cartServiceMock->expects($this->atLeastOnce())
             ->method('isStockAvailable')
             ->with($modelProduct)
@@ -1410,12 +1410,12 @@ class ServiceTest extends \BBTestCase
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \DummyBean());
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getByCode')
             ->willReturn($currencyModel);
 
-        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Cart\Service::class)->getMock();
         $cartServiceMock->expects($this->atLeastOnce())
             ->method('isStockAvailable')
             ->with($modelProduct)
@@ -1463,11 +1463,11 @@ class ServiceTest extends \BBTestCase
 
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \DummyBean());
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getByCode')
             ->willReturn($currencyModel);
-        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Cart\Service::class)->getMock();
         $cartServiceMock->expects($this->atLeastOnce())
             ->method('isStockAvailable')
             ->with($modelProduct)
@@ -1477,7 +1477,7 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $productServiceMock = $this->getMockBuilder('\Box\Mod\Servicecustom')->getMock();
+        $productServiceMock = $this->getMockBuilder('\FOSSBilling\Module\Servicecustom')->getMock();
 
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1745,7 +1745,7 @@ class ServiceTest extends \BBTestCase
 
         $dbMock = $this->getMockBuilder('Box_Database')->getMock();
 
-        $invoiceServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $invoiceServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $invoiceServiceMock->expects($this->atLeastOnce())
             ->method('findPaidInvoicesForOrder');
 

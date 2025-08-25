@@ -13,7 +13,7 @@
  * Cron management.
  */
 
-namespace Box\Mod\Cron\Api;
+namespace FOSSBilling\Module\Cron\Api;
 
 class Admin extends \Api_Abstract
 {

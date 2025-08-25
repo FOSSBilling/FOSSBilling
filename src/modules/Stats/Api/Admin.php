@@ -13,7 +13,7 @@
  * Statistics retrieval.
  */
 
-namespace Box\Mod\Stats\Api;
+namespace FOSSBilling\Module\Stats\Api;
 
 class Admin extends \Api_Abstract
 {

@@ -10,24 +10,26 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Theme;
+namespace FOSSBilling\Module\Theme;
 
+use FOSSBilling\Enums\AppContext;
 use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
     private readonly Filesystem $filesystem;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
@@ -250,16 +252,10 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentClientAreaTheme()
     {
-        $code = $this->getCurrentClientAreaThemeCode();
-
-        return $this->getTheme($code);
-    }
-
-    public function getCurrentClientAreaThemeCode()
-    {
         $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
+        !empty($theme) ? $theme : 'huraga';
 
-        return !empty($theme) ? $theme : 'huraga';
+        return new Model\Theme($theme);
     }
 
     /**
@@ -293,7 +289,7 @@ class Service implements InjectionAwareInterface
     {
         if ($client) {
             $default = 'huraga';
-            $theme = $this->getCurrentClientAreaThemeCode();
+            $theme = $this->getCurrentClientAreaTheme()->getName();
         } else {
             $default = 'admin_default';
             $systemService = $this->di['mod_service']('system');
@@ -383,7 +379,7 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentRouteTheme(): string
     {
-        if (defined('ADMIN_AREA') && ADMIN_AREA == true) {
+        if (defined('APP_CONTEXT') && APP_CONTEXT == AppContext::ADMIN) {
             return $this->getCurrentAdminAreaTheme()['code'];
         }
 
@@ -415,7 +411,7 @@ class Service implements InjectionAwareInterface
 
     public function getDefaultMarkdownAttributes(): array
     {
-        if (defined('ADMIN_AREA') && ADMIN_AREA == true) {
+        if (defined('APP_CONTEXT') && APP_CONTEXT == AppContext::ADMIN) {
             $config = $this->getThemeConfig(false);
         } else {
             $config = $this->getThemeConfig(true);

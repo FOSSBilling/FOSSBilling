@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Servicelicense\Api;
+namespace FOSSBilling\Module\Servicelicense\Api;
 
 class AdminTest extends \BBTestCase
 {
@@ -34,7 +34,7 @@ class AdminTest extends \BBTestCase
             'plugin3' => 'plugin3',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicelicense\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getLicensePlugins')
             ->willReturn($licensePluginArray);
@@ -59,7 +59,7 @@ class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn(new \Model_ServiceLicense());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicelicense\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
@@ -84,7 +84,7 @@ class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn(new \Model_ServiceLicense());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicelicense\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('reset')
             ->willReturn(true);
@@ -100,7 +100,7 @@ class AdminTest extends \BBTestCase
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceLicense());
@@ -129,7 +129,7 @@ class AdminTest extends \BBTestCase
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(null);

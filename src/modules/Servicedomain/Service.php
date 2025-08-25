@@ -10,15 +10,17 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Servicedomain;
+namespace FOSSBilling\Module\Servicedomain;
 
+use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
     private readonly Filesystem $filesystem;
 
     public function __construct()
@@ -26,12 +28,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Invoice;
+namespace FOSSBilling\Module\Invoice;
 
 class ServicePayGatewayTest extends \BBTestCase
 {

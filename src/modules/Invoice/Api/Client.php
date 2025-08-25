@@ -13,7 +13,7 @@
  *Invoice management.
  */
 
-namespace Box\Mod\Invoice\Api;
+namespace FOSSBilling\Module\Invoice\Api;
 
 class Client extends \Api_Abstract
 {

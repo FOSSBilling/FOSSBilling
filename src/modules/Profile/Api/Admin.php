@@ -13,7 +13,7 @@
  * Admin profile management.
  */
 
-namespace Box\Mod\Profile\Api;
+namespace FOSSBilling\Module\Profile\Api;
 
 class Admin extends \Api_Abstract
 {

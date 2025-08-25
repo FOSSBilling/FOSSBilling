@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -9,18 +10,21 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Branding;
+namespace FOSSBilling\Module\Branding;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
+
+class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
@@ -32,7 +36,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function uninstall()
+    public function uninstall(): bool
     {
         return true;
     }

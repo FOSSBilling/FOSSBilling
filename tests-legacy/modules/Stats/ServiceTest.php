@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Stats;
+namespace FOSSBilling\Module\Stats;
 
 class PdoMock extends \PDO
 {
@@ -37,7 +37,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgetOrdersStatuses(): void
     {
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('counter')
             ->willReturn([]);

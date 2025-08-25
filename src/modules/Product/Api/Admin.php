@@ -14,7 +14,7 @@ declare(strict_types=1);
  * Products management.
  */
 
-namespace Box\Mod\Product\Api;
+namespace FOSSBilling\Module\Product\Api;
 
 class Admin extends \Api_Abstract
 {

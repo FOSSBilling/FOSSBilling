@@ -1,11 +1,11 @@
 <?php
 
-namespace Box\Mod\Formbuilder\Api;
+namespace FOSSBilling\Module\Formbuilder\Api;
 
 class AdminTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Formbuilder\Service
+     * @var \FOSSBilling\Module\Formbuilder\Service
      */
     protected $service;
 
@@ -16,12 +16,12 @@ class AdminTest extends \BBTestCase
 
     public function getServiceMock()
     {
-        return $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
+        return $this->getMockBuilder('\\' . \FOSSBilling\Module\Formbuilder\Service::class)->getMock();
     }
 
     public function setup(): void
     {
-        $this->service = new \Box\Mod\Formbuilder\Service();
+        $this->service = new \FOSSBilling\Module\Formbuilder\Service();
         $this->api = new Admin();
     }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Servicehosting\Api;
+namespace FOSSBilling\Module\Servicehosting\Api;
 
 class ClientTest extends \BBTestCase
 {
@@ -33,7 +33,7 @@ class ClientTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountUsername')
             ->willReturn(true);
@@ -56,7 +56,7 @@ class ClientTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountDomain')
             ->willReturn(true);
@@ -79,7 +79,7 @@ class ClientTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountPassword')
             ->willReturn(true);
@@ -93,7 +93,7 @@ class ClientTest extends \BBTestCase
 
     public function testhpGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getHpPairs')
             ->willReturn([]);
@@ -116,7 +116,7 @@ class ClientTest extends \BBTestCase
             ->willReturn($clientOrderModel);
 
         $model = new \Model_ServiceHosting();
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
@@ -150,7 +150,7 @@ class ClientTest extends \BBTestCase
             ->willReturn($clientOrderModel);
 
         $model = null;
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);

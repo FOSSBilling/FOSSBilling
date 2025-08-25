@@ -10,7 +10,7 @@ class Box_Mod_Staff_ServiceTest extends ApiTestCase
         ];
         $event = $this->_bb_event = new Box_Event(null, 'name', $params, $this->api_admin, $this->api_guest);
         $event->setDi($this->di);
-        $service = new Box\Mod\Staff\Service();
+        $service = new FOSSBilling\Module\Staff\Service();
         $bool = $service->onAfterClientSignUp($event);
         $this->assertTrue($bool);
     }

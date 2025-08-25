@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Servicedownloadable\Api;
+namespace FOSSBilling\Module\Servicedownloadable\Api;
 
 class ClientTest extends \BBTestCase
 {
@@ -64,7 +64,7 @@ class ClientTest extends \BBTestCase
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
@@ -94,12 +94,12 @@ class ClientTest extends \BBTestCase
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedownloadable\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicedownloadable\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendFile')
             ->willReturn(true);
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceDownloadable());

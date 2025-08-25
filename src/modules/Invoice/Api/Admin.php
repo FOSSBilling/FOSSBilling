@@ -14,7 +14,7 @@ declare(strict_types=1);
  * Invoice management API.
  */
 
-namespace Box\Mod\Invoice\Api;
+namespace FOSSBilling\Module\Invoice\Api;
 
 use FOSSBilling\InformationException;
 

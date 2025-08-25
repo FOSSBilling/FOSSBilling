@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Embed\Controller;
+namespace FOSSBilling\Module\Embed\Controller;
 
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
@@ -30,14 +30,14 @@ class Client implements \FOSSBilling\InjectionAwareInterface
      * Always use your module prefix to avoid conflicts with other modules
      * in future.
      *
-     * @param \Box_App $app - returned by reference
+     * @param \FOSSBilling\App $app - returned by reference
      */
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/embed/:what', 'get_object', ['what' => '[a-z0-9-]+'], static::class);
     }
 
-    public function get_object(\Box_App $app, $what)
+    public function get_object(\FOSSBilling\App $app, $what)
     {
         $tpl = 'mod_embed_' . $what;
 

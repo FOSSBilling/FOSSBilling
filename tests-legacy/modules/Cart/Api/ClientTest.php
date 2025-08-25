@@ -5,13 +5,13 @@ namespace Box\Tests\Mod\Cart\Api;
 class ClientTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Cart\Api\Client
+     * @var \FOSSBilling\Module\Cart\Api\Client
      */
     protected $clientApi;
 
     public function setup(): void
     {
-        $this->clientApi = new \Box\Mod\Cart\Api\Client();
+        $this->clientApi = new \FOSSBilling\Module\Cart\Api\Client();
     }
 
     public function testCheckout(): void
@@ -19,7 +19,7 @@ class ClientTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Cart\Service::class)
              ->onlyMethods(['getSessionCart', 'checkoutCart'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')

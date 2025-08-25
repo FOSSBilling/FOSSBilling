@@ -13,7 +13,7 @@ class Box_Mod_Spamchecker_ServiceTest extends BBDbApiTestCase
         $event = new Box_Event(null, 'any', $parameters, $this->api_admin);
         $event->setDi($this->di);
 
-        $object = new Box\Mod\Spamchecker\Service();
+        $object = new FOSSBilling\Module\Spamchecker\Service();
         $object->onBeforeClientSignUp($event);
     }
 }

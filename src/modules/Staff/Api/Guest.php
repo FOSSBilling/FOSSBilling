@@ -14,7 +14,7 @@ declare(strict_types=1);
  *Staff methods.
  */
 
-namespace Box\Mod\Staff\Api;
+namespace FOSSBilling\Module\Staff\Api;
 
 class Guest extends \Api_Abstract
 {

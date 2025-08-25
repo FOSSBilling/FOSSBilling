@@ -13,7 +13,7 @@
  * Invoice processing.
  */
 
-namespace Box\Mod\Invoice\Api;
+namespace FOSSBilling\Module\Invoice\Api;
 
 class Guest extends \Api_Abstract
 {

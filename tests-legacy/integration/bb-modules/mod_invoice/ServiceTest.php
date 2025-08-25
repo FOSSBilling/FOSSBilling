@@ -8,7 +8,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
 
     public function testEvents(): void
     {
-        $service = new Box\Mod\Invoice\Service();
+        $service = new FOSSBilling\Module\Invoice\Service();
         $service->setDi($this->di);
         $params = [
             'id' => 1,
@@ -32,7 +32,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
      */
     public function testprocessTransaction(): void
     {
-        $service = new Box\Mod\Invoice\ServiceTransaction();
+        $service = new FOSSBilling\Module\Invoice\ServiceTransaction();
         $service->setDi($this->di);
 
         $transactionModel = $this->di['db']->load('Transaction', 10);
@@ -49,7 +49,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
      */
     public function testcreateAndProcessTransactionDuplicate(): void
     {
-        $service = new Box\Mod\Invoice\ServiceTransaction();
+        $service = new FOSSBilling\Module\Invoice\ServiceTransaction();
         $service->setDi($this->di);
 
         $transactionModel = $this->di['db']->load('Transaction', 10);
@@ -103,7 +103,7 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
             ->willReturn($this->di);
-        $service = new Box\Mod\Invoice\Service();
+        $service = new FOSSBilling\Module\Invoice\Service();
         $service->onAfterAdminCronRun($eventMock);
 
         $result = $this->di['db']->getAll($sql, $binigns);

@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Stats\Api;
+namespace FOSSBilling\Module\Stats\Api;
 
 class AdminTest extends \BBTestCase
 {
@@ -24,7 +24,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetSummary(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSummary')
             ->willReturn([]);
@@ -37,7 +37,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetSummaryIncome(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSummaryIncome')
             ->willReturn([]);
@@ -50,7 +50,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetOrdersStatuses(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrdersStatuses')
             ->willReturn([]);
@@ -64,7 +64,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetProductSummary(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSummary')
             ->willReturn([]);
@@ -78,7 +78,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetProductSales(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSales')
             ->willReturn([]);
@@ -92,7 +92,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetIncomeVsRefunds(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('incomeAndRefundStats')
             ->willReturn([]);
@@ -106,7 +106,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetRefunds(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getRefunds')
             ->willReturn([]);
@@ -120,7 +120,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetIncome(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getIncome')
             ->willReturn([]);
@@ -134,7 +134,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetOrders(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->willReturn([]);
@@ -148,7 +148,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetClients(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->willReturn([]);
@@ -162,7 +162,7 @@ class AdminTest extends \BBTestCase
 
     public function testclientCountries(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getClientCountries')
             ->willReturn([]);
@@ -176,7 +176,7 @@ class AdminTest extends \BBTestCase
 
     public function testsalesCountries(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSalesByCountry')
             ->willReturn([]);
@@ -190,7 +190,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetInvoices(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->willReturn([]);
@@ -204,7 +204,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetTickets(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Stats\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->willReturn([]);

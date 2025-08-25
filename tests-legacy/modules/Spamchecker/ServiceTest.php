@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Spamchecker;
+namespace FOSSBilling\Module\Spamchecker;
 
 use Symfony\Component\HttpFoundation\Request;
 

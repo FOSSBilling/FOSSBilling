@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Cron;
+namespace FOSSBilling\Module\Cron;
 
 class ServiceTest extends \BBTestCase
 {
@@ -15,7 +15,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgetCronInfo(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())->method('getParamValue');
 
         $di = new \Pimple\Container();
@@ -29,7 +29,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgetLastExecutionTime(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->willReturn('2012-12-12 12:12:12');

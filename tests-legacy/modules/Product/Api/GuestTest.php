@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Product\Api;
+namespace FOSSBilling\Module\Product\Api;
 
 class GuestTest extends \BBTestCase
 {
@@ -30,7 +30,7 @@ class GuestTest extends \BBTestCase
 
         $model = new \Model_Product();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveById')
             ->willReturn($model);
@@ -54,7 +54,7 @@ class GuestTest extends \BBTestCase
 
         $model = new \Model_Product();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveBySlug')
             ->willReturn($model);
@@ -78,7 +78,7 @@ class GuestTest extends \BBTestCase
 
         $model = null;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveBySlug')
             ->willReturn($model);
@@ -94,7 +94,7 @@ class GuestTest extends \BBTestCase
 
     public function testcategoryGetList(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductCategorySearchQuery')
             ->willReturn(['sqlString', []]);
@@ -134,7 +134,7 @@ class GuestTest extends \BBTestCase
 
     public function testcategoryGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductCategoryPairs')
             ->willReturn([]);
@@ -182,7 +182,7 @@ class GuestTest extends \BBTestCase
             'pricing' => '1W',
             'config' => [],
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn($arr);
@@ -213,7 +213,7 @@ class GuestTest extends \BBTestCase
             'pricing' => '1W',
             'config' => [],
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn($arr);

@@ -54,7 +54,7 @@ foreach ($modules as $module) {
 
     foreach ($finder as $file) {
         $command = $file->getFilenameWithoutExtension();
-        $class = 'Box\\Mod\\' . $cap . '\\Commands\\' . $command;
+        $class = 'FOSSBilling\\Module\\' . $cap . '\\Commands\\' . $command;
 
         $command = new $class();
         $command->setDi($di);
