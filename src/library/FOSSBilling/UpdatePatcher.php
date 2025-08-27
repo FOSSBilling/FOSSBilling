@@ -454,7 +454,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
                         $order_filename = $orderConfig['filename'];
                         $hashedFilename = md5($order_filename);
-                        $filePath = PATH_UPLOADS . DIRECTORY_SEPARATOR . $hashedFilename;
+                        $filePath = Path::join(PATH_UPLOADS, $hashedFilename);
 
                         // Check if the file exists
                         if ($filesystem->exists($filePath)) {
