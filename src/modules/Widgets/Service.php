@@ -113,10 +113,16 @@ class Service implements InjectionAwareInterface
             throw new Exception('Widget priority must be a positive integer.');
         }
 
+        $options = null;
+        if (isset($widget['options'])) {
+            $options = json_encode($widget['options'], JSON_THROW_ON_ERROR);
+        }
+
         if ($existingId) {
             // Update existing entry
             $meta = $this->di['db']->load('widgets', $existingId);
             $meta->priority = $priority;
+            $meta->options = $options;
             $meta->updated_at = date('Y-m-d H:i:s');
         } else {
             // Create new entry
@@ -125,6 +131,7 @@ class Service implements InjectionAwareInterface
             $meta->slot = $widget['slot'];
             $meta->template = $widget['template'];
             $meta->priority = $priority;
+            $meta->options = $options;
             $meta->created_at = date('Y-m-d H:i:s');
             $meta->updated_at = date('Y-m-d H:i:s');
         }
@@ -159,8 +166,20 @@ class Service implements InjectionAwareInterface
             // Read the template and render it
             try {
                 $template = $this->readTemplateContent($widget['mod_name'], $widget['template']);
+
+                // Decode widget options if present
+                $options = [];
                 
-                $output .= $systemService->renderString($template, false, $params) . '<br />';
+                if (!empty($widget['options'])) {
+                    $options = json_decode($widget['options'], true, 512, JSON_THROW_ON_ERROR);
+                }
+                
+                $output .= $systemService->renderString($template, false, $params);
+
+                // Add <br /> if add_br is not set or true
+                if (!isset($options['add_br']) || $options['add_br'] === true) {
+                    $output .= '<br />';
+                }
             } catch (\Exception $e) {
                 $template = $this->readTemplateContent('widgets', 'mod_widgets_error');
                 
@@ -169,7 +188,7 @@ class Service implements InjectionAwareInterface
                 if (Environment::isDevelopment()) {
                     $p['error'] = $e->getMessage();
                 }
-                
+
                 $output .= $systemService->renderString($template, false, $p) . '<br />';
             }
         }
