@@ -1462,6 +1462,7 @@ CREATE TABLE `widgets` (
   `template` varchar(64) NOT NULL,
   `priority` int(11) DEFAULT 10,
   `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `options` JSON DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
