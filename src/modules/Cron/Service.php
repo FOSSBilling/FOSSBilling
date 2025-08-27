@@ -30,7 +30,7 @@ class Service
         return $this->di;
     }
 
-    public function getCronInfo()
+    public function getCronInfo(): array
     {
         $service = $this->di['mod_service']('system');
 
@@ -40,12 +40,7 @@ class Service
         ];
     }
 
-    /**
-     * @return bool
-     *
-     * @todo finish fixing, time to sleep (note: idk what exactly this is referring to. It predates FOSSBilling and is from BoxBilling well before we touched this code)
-     */
-    public function runCrons()
+    public function runCrons(): bool
     {
         $api = $this->di['api_system'];
         $this->di['logger']->setChannel('cron')->info('Started executing cron jobs.');
@@ -53,6 +48,8 @@ class Service
         // @core tasks
         $this->_exec($api, 'hook_batch_connect');
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminCronRun']);
+
+        $this->_exec($api, 'widgets_batch_connect');
 
         $this->_exec($api, 'invoice_batch_pay_with_credits');
         $this->_exec($api, 'invoice_batch_activate_paid');
@@ -83,7 +80,7 @@ class Service
     /**
      * @param string $method
      */
-    protected function _exec($api, $method, $params = null)
+    protected function _exec($api, $method, $params = null): void
     {
         try {
             $api->{$method}($params);
@@ -106,7 +103,7 @@ class Service
         return $service->getParamValue('last_cron_exec');
     }
 
-    public function isLate()
+    public function isLate(): bool
     {
         $t1 = new \DateTime($this->getLastExecutionTime());
         $t2 = new \DateTime('-6min');
