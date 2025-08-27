@@ -57,7 +57,7 @@
                                 <td class="w-1">{{ lang.locale }}</td>
                                 <td class="w-1">
                                     <a class="btn btn-icon api-link"
-                                        href="{{ 'api/admin/extension/toggle_language'|link({ 'locale_id': lang.locale }) }}"
+                                        href="{{ 'extension/toggle_language'|api_url(query: { 'locale_id': lang.locale }) }}"
                                         data-api-reload="1">
                                         <svg class="icon">
                                             <use xlink:href="#close" />
@@ -116,7 +116,7 @@
                                     <td class="w-1">{{ lang.locale }}</td>
                                     <td class="w-1">
                                         <a class="btn btn-icon api-link"
-                                            href="{{ 'api/admin/extension/toggle_language'|link({ 'locale_id': lang.locale }) }}"
+                                            href="{{ 'extension/toggle_language'|api_url(query: { 'locale_id': lang.locale }) }}"
                                             data-api-reload="1">
                                             <svg class="icon">
                                                 <use xlink:href="#check" />

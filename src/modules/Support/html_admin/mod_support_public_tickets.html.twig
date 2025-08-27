@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+            <a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Public Tickets'|trans }}</li>
     </ul>
@@ -26,7 +26,7 @@
     {% set statuses = admin.support_public_ticket_get_statuses %}
     <section class="row row-cards mb-3">
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">
+            <a class="card card-sm card-link" href="{{ 'support/public-tickets'|url(query: { 'status': 'open' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -40,7 +40,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'support/public-tickets'|alink({ 'status': 'on_hold' }) }}">
+            <a class="card card-sm card-link" href="{{ 'support/public-tickets'|url(query: { 'status': 'on_hold' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -54,7 +54,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'support/public-tickets'|alink({ 'status': 'closed' }) }}">
+            <a class="card card-sm card-link" href="{{ 'support/public-tickets'|url(query: { 'status': 'closed' }) }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -68,7 +68,7 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'support/public-tickets'|alink }}">
+            <a class="card card-sm card-link" href="{{ 'support/public-tickets'|url }}">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
@@ -110,7 +110,7 @@
                     <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-checkbox" data-item-id="{{ ticket.id }}">
                 </td>
                 <td>
-                    <a href="{{ '/support/public-ticket'|alink }}/{{ ticket.id }}">#{{ ticket.id }} - {{ ticket.subject }} ({{ ticket.messages|length }})</a>
+                    <a href='{{ "support/public-ticket/#{ticket.id}"|url }}'>#{{ ticket.id }} - {{ ticket.subject }} ({{ ticket.messages|length }})</a>
                 </td>
                 <td>{{ ticket.author_email }}</td>
                 <td>
@@ -127,7 +127,7 @@
                 </td>
                 <td>{{ ticket.updated_at|format_date }}</td>
                 <td>
-                    <a class="btn btn-icon" href="{{ '/support/public-ticket'|alink }}/{{ ticket.id }}">
+                    <a class="btn btn-icon" href='{{ "support/public-ticket/#{ticket.id}"|url }}'>
                         <svg class="icon">
                             <use xlink:href="#edit" />
                         </svg>

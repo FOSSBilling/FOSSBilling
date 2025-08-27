@@ -28,7 +28,7 @@
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-profile" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/profile/update'|link }}" class="api-form" data-api-msg="{{ 'Profile updated'|trans }}">
+                <form method="post" action="{{ 'profile/update'|api_url }}" class="api-form" data-api-msg="{{ 'Profile updated'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}</label>
@@ -57,7 +57,7 @@
 
         <div class="tab-pane fade" id="tab-password" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/profile/change_password'|link }}" class="api-form" data-api-msg="{{ 'Password Changed'|trans }}">
+                <form method="post" action="{{ 'profile/change_password'|api_url }}" class="api-form" data-api-msg="{{ 'Password Changed'|trans }}">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label for="current_password" class="col-3 col-form-label">{{ 'Current Password'|trans }}</label>
@@ -90,7 +90,7 @@
                 <p class="text-muted">{{ 'External application can control every aspect of FOSSBilling using this API key.'|trans }}</p>
                 <p class="text-muted">{{ 'Warning! Resetting the key will break existing applications using it.'|trans }}</p>
 
-                <form method="post" action="{{ 'api/admin/profile/generate_api_key'|link }}" class="api-form" data-api-jsonp="onAfterKeyUpdate">
+                <form method="post" action="{{ 'profile/generate_api_key'|api_url }}" class="api-form" data-api-jsonp="onAfterKeyUpdate">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'API Key'|trans }}</label>
@@ -107,7 +107,7 @@
         <div class="tab-pane fade" id="tab-gravatar" role="tabpanel">
             <div class="card-body text-center">
                 <div>
-                    <span class="avatar avatar-xl mb-3 avatar-rounded" style="background-image: url({{ profile.email|gravatar }}&size=112)"></span>
+                    <span class="avatar avatar-xl mb-3 avatar-rounded" style="background-image: url({{ profile.email|gravatar(size: 112) }})"></span>
                 </div>
                 <p>{{ 'Change your avatar at'|trans }} <a href="https://gravatar.com/" target="_blank">gravatar.com</a>.</p>
             </div>

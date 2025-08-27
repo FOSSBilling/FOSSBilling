@@ -1,61 +1,60 @@
 {% extends 'layout_login.html.twig' %}
 
-{% block meta_title %}{{ 'Login' | trans }}{% endblock %}
+{% block meta_title %}{{ 'Login'|trans }}{% endblock %}
 
 {% block content %}
 
 <div class="page page-center">
     <div class="container-tight py-4">
         <div class="text-center mb-4">
-            <a href="{{ '/'|link }}" class="navbar-brand">
-                <img class="navbar-brand-image hide-theme-light" src="{{ guest.system_company.logo_url_dark }}" style="height: 50px; width: auto;" alt="{{ guest.system_company.name }} logo">
-                <img class="navbar-brand-image hide-theme-dark" src="{{ guest.system_company.logo_url }}" style="height: 50px; width: auto;" alt="{{ guest.system_company.name }} logo">
+            <a href="{{ '/'|url }}" class="navbar-brand">
+                <img src="{{ guest.system_company.logo_url }}" height="75" alt="{{ company.name }}">
             </a>
         </div>
         <div class="card card-md">
             <div class="card-body">
                 {% if create_admin %}
-                    <h2 class="card-title text-center mb-4">{{ 'Create main administrator account' | trans }}</h2>
-                    <form class="api-form" action="{{ 'api/guest/staff/create'|link }}" method="post" data-api-redirect="{{ 'index'|alink }}">
+                    <h2 class="card-title text-center mb-4">{{ 'Create main administrator account'|trans }}</h2>
+                    <form class="api-form" action="{{ 'staff/create'|api_url(role: 'guest') }}" method="post" data-api-redirect="{{ 'index'|url }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="mb-3">
-                            <label class="form-label" for="inputEmail">{{ 'Email' | trans }}</label>
+                            <label class="form-label" for="inputEmail">{{ 'Email'|trans }}</label>
                             <div class="col">
-                                <input class="form-control" id="inputEmail" type="email" name="email" value="{{ request.email }}" placeholder="{{ 'Enter your email address' | trans }}">
+                                <input class="form-control" id="inputEmail" type="email" name="email" value="{{ request.email }}" placeholder="{{ 'Enter your email address'|trans }}">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" for="inputPassword">{{ 'Password' | trans }}</label>
+                            <label class="form-label" for="inputPassword">{{ 'Password'|trans }}</label>
                             <div class="col">
-                                <input class="form-control" id="inputPassword" type="password" name="password" value="{{ request.password }}" placeholder="{{ 'Enter your password' | trans }}">
+                                <input class="form-control" id="inputPassword" type="password" name="password" value="{{ request.password }}" placeholder="{{ 'Enter your password'|trans }}">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <button class="btn btn-primary w-100" type="submit">{{ 'Create administrator account' | trans }}</button>
+                            <button class="btn btn-primary w-100" type="submit">{{ 'Create administrator account'|trans }}</button>
                         </div>
                     </form>
                 {% else %}
                 {% set params = guest.extension_settings({ 'ext': 'mod_staff' }) %}
-                    <h2 class="h2 text-center mb-4">{{ 'Log into your account' | trans }}</h2>
-                    <form class="api-form" action="{{ 'api/guest/staff/login'|link }}" method="post" data-api-redirect="{{ redirect_uri|default('/')|alink }}">
+                    <h2 class="h2 text-center mb-4">{{ 'Log into your account'|trans }}</h2>
+                    <form class="api-form" action="{{ 'staff/login'|api_url(role: 'guest') }}" method="post" data-api-redirect="{{ redirect_uri|default('/')|url }}">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="mb-3">
-                            <label class="form-label" for="inputEmail">{{ 'Email' | trans }}</label>
+                            <label class="form-label" for="inputEmail">{{ 'Email'|trans }}</label>
                             <input class="form-control"
                                 id="inputEmail"
                                 type="email"
                                 name="email"
                                 value="{{ request.email }}"
-                                placeholder="{{ 'Enter your email address' | trans }}"
+                                placeholder="{{ 'Enter your email address'|trans }}"
                                 required
                                 autofocus>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="inputPassword">
-                                {{ 'Password' | trans }}
+                                {{ 'Password'|trans }}
                                 {% if params.reset_pw == 1 %}
                                 <span class="form-label-description">
-                                    <a href="{{ 'staff/passwordreset'|alink }}">{{ 'Forgot your password?' | trans }}</a>
+                                    <a href="{{ 'staff/passwordreset'|url }}">{{ 'Forgot your password?'|trans }}</a>
                                 </span>
                                 {% endif %}
                             </label>
@@ -64,11 +63,11 @@
                                 type="password"
                                 name="password"
                                 value="{{ request.password }}"
-                                placeholder="{{ 'Enter your password' | trans }}"
+                                placeholder="{{ 'Enter your password'|trans }}"
                                 required>
                         </div>
                         <div class="form-footer">
-                            <button class="btn btn-primary w-100" type="submit">{{ 'Login' | trans }}</button>
+                            <button class="btn btn-primary w-100" type="submit">{{ 'Login'|trans }}</button>
                         </div>
                     </form>
                 {% endif %}

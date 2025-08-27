@@ -26,8 +26,8 @@
                 {% endif %}
                 <div class="card">
                     <div class="card-body">
-                        <h1 class="text-center m-4">{{ 'Create a new account'|trans }}</h1>
-                        <form class="api-form auth" action="{{ 'api/guest/client/create'|link }}" method="post" data-api-redirect="{{ '/'|link }}">
+                        <h5 class="text-center m-4">{{ 'Create a new account'|trans }}</h5>
+                        <form class="api-form auth" action="{{ 'client/create'|api_url(role: 'guest') }}" method="post" data-api-redirect="{{ '/'|url }}">
                             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             {% set r = guest.client_required %}
 
@@ -147,7 +147,7 @@
                                 {% if field.active %}
                                     <div class="mb-3">
                                         <label class="form-label"
-                                               for="{{ field_name }}">{{ field.title is not empty ? field.title : field_name | capitalize }}</label>
+                                               for="{{ field_name }}">{{ field.title is not empty ? field.title : field_name|capitalize }}</label>
                                         <input class="form-control" id="{{ field_name }}" type="text"
                                                name="{{ field_name }}" value="{{ request.(field_name) }}"
                                                {% if field.required %}required="required"{% endif %} />
@@ -173,7 +173,7 @@
                                     <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
                                     <label class="form-check-label" for="flexCheckDefault">
                                         {# TODO: Make this translatable once support for placeholders is implemented #}
-                                        <span>I agree to the <a href="{{ '/tos'|link }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ '/privacy-policy'|link }}" target="_blank">{{ 'privacy policy'|trans }}.</span>
+                                        <span>I agree to the <a href="{{ 'tos'|url }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'privacy policy'|trans }}.</span>
                                     </label>
                                 </div>
                             {% endif %}
@@ -185,18 +185,18 @@
                             {% if settings.signup_tos == 'implicit' %}
                                 <div class="mb-1">
                                     {# TODO: Make this translatable once support for placeholders is implemented #}
-                                    <span class="text-muted mb-1">By creating an account, you agree to our <a href="{{ '/tos'|link }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ '/privacy-policy'|link }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
+                                    <span class="text-muted mb-1">By creating an account, you agree to our <a href="{{ 'tos'|url }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
                                 </div>
                             {% endif %}
                         </form>
                         <div class="row">
                             <div class="col">
                                 <a class="btn btn-outline-primary mb-2 w-100"
-                                   href="{{ 'login'|link }}">{{ 'Already a user?'|trans }}</a>
+                                   href="{{ 'login'|url }}">{{ 'Already a user?'|trans }}</a>
                             </div>
                             {% if settings.show_password_reset_link %}
                                 <div class="col">
-                                    <a class="btn btn-outline-primary mb-2 w-100" href="{{ 'password-reset'|link }}">{{ 'Forgot password?'|trans }}</a>
+                                    <a class="btn btn-outline-primary mb-2 w-100" href="{{ 'password-reset'|url }}">{{ 'Forgot password?'|trans }}</a>
                                 </div>
                             {% endif %}
                         </div>

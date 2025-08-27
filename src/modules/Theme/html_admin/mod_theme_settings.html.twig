@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home"/>
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Themes'|trans }}</li>
     </ol>
@@ -42,7 +42,7 @@
                 </td>
                 <td>
                     {% if theme.hasSettings %}
-                        <a class="btn btn-outline-primary" href="{{ 'theme'|alink }}/{{ theme.code }}">
+                        <a class="btn btn-outline-primary" href='{{ "theme/#{theme.code}"|url }}'>
                             <svg class="icon">
                                 <use xlink:href="#cog"/>
                             </svg>
@@ -59,16 +59,16 @@
                 </td>
                 <td>
                     {% if guest.extension_theme(true).code != theme.code %}
-                        <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                           href="{{ 'api/admin/theme/select'|link({ 'code': theme.code, 'CSRFToken': CSRFToken }) }}">
+                        <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|url }}"
+                           href="{{ 'theme/select'|api_url(query: { 'code': theme.code, 'CSRFToken': CSRFToken }) }}">
                             <svg class="icon">
                                 <use xlink:href="#check"/>
                             </svg>
                             {{ 'Set as default'|trans }}
                         </a>
                     {% else %}
-                        <a class="btn btn-primary api-link disabled" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                            href="{{ 'api/admin/theme/select'|link({ 'code': theme.code, 'CSRFToken': CSRFToken }) }}" aria-disabled="true">
+                        <a class="btn btn-primary api-link disabled" data-api-redirect="{{ 'extension/settings/theme'|url }}"
+                            href="{{ 'theme/select'|api_url(query: { 'code': theme.code, 'CSRFToken': CSRFToken }) }}" aria-disabled="true">
                             <svg class="icon">
                             <use xlink:href="#check"/>
                         </svg>
@@ -109,7 +109,7 @@
                 </td>
                 <td>
                     {% if theme.hasSettings %}
-                        <a class="btn btn-outline-primary" href="{{ 'theme'|alink }}/{{ theme.code }}">
+                        <a class="btn btn-outline-primary" href='{{ "theme/#{theme.code}"|url }}'>
                             <svg class="icon">
                                 <use xlink:href="#cog"/>
                             </svg>
@@ -126,16 +126,16 @@
                 </td>
                 <td>
                     {% if guest.extension_theme(false).code != theme.code %}
-                        <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                            href="{{ 'api/admin/theme/select'|link({'code' : theme.code, 'CSRFToken': CSRFToken}) }}">
+                        <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|url }}"
+                            href="{{ 'theme/select'|api_url(query: {'code' : theme.code, 'CSRFToken': CSRFToken}) }}">
                             <svg class="icon">
                                 <use xlink:href="#check"/>
                             </svg>
                             {{ 'Set as default'|trans }}
                         </a>
                     {% else %}
-                        <a class="btn btn-primary api-link disabled" data-api-redirect="{{ 'extension/settings/theme'|alink }}"
-                            href="{{ 'api/admin/theme/select'|link({'code' : theme.code, 'CSRFToken': CSRFToken}) }}" aria-disabled="true">
+                        <a class="btn btn-primary api-link disabled" data-api-redirect="{{ 'extension/settings/theme'|url }}"
+                            href="{{ 'theme/select'|api_url(query: {'code' : theme.code, 'CSRFToken': CSRFToken}) }}" aria-disabled="true">
                             <svg class="icon">
                                 <use xlink:href="#check"/>
                             </svg>

@@ -6,14 +6,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Email'|trans }}</li>
     </ul>
@@ -48,19 +48,19 @@
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
 
                     <div class="card-footer text-center">
-                        <a href="{{ 'api/admin/email/batch_template_generate'|link }}" class="btn btn-primary api-link" data-api-reload="1">
+                        <a href="{{ 'email/batch_template_generate'|api_url(query: { 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-reload="1">
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#mail" />
                             </svg>
                             <span>{{ 'Regenerate templates'|trans }}</span>
                         </a>
-                        <a href="{{ 'api/admin/email/batch_template_enable'|link }}" class="btn btn-primary api-link" data-api-msg="{{ 'All email templates enabled'|trans }}">
+                        <a href="{{ 'email/batch_template_enable'|api_url(query: { 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-msg="All email templates enabled">
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#play" />
                             </svg>
                             <span>{{ 'Enable all'|trans }}</span>
                         </a>
-                        <a href="{{ 'api/admin/email/batch_template_disable'|link }}" class="btn btn-primary api-link" data-api-msg="{{ 'All email templates disabled'|trans }}">
+                        <a href="{{ 'email/batch_template_disable'|api_url(query: { 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-msg="All email templates disabled">
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#close" />
                             </svg>
@@ -85,7 +85,7 @@
                             {% for i, template in templates.list %}
                                 <tr>
                                     <td>
-                                        <a href="{{ '/email/template'|alink }}/{{ template.id }}">{{ template.subject }}</a>
+                                        <a href='{{ "email/template/#{template.id}"|url }}'>{{ template.subject }}</a>
                                     </td>
                                     <td>{{ template.category }}</td>
                                     <td>{{ template.action_code }}</td>
@@ -99,14 +99,14 @@
                                         {{ mf.q(template.enabled) }}
                                     </td>
                                     <td>
-                                        <a class="btn btn-icon" href="{{ '/email/template'|alink }}/{{ template.id }}"
+                                        <a class="btn btn-icon" href='{{ "email/template/#{template.id}"|url }}'
                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                             <svg class="icon">
                                                 <use xlink:href="#edit" />
                                             </svg>
                                         </a>
                                         <a class="btn btn-icon api-link"
-                                           href="{{ 'api/admin/email/template_delete'|link({ 'id': template.id }) }}"
+                                           href="{{ 'email/template_delete'|api_url(query: { 'id': template.id, 'CSRFToken': CSRFToken }) }}"
                                            data-api-confirm="{{ 'Are you sure?'|trans }}"
                                            data-api-confirm-content="{{ 'Are you sure you want to delete this template?'|trans }}"
                                            data-api-type="danger"
@@ -130,7 +130,8 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/email/template_create'|link }}" class="api-form" data-api-reload="1">
+                    <form method="post" action="{{ 'api/admin/email/template_create'|api_url(query: { 'CSRFToken': CSRFToken }) }}" class="api-form" data-api-reload="1">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Where I can use new email template?'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Newly created email templates can be used in custom event hooks.'|trans }}</p>
@@ -240,7 +241,8 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-email" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Email settings updated'|trans }}">
+                    <form method="post" action="{{ 'extension/config_save'|api_url }}" class="api-form" data-api-msg="{{ 'Email settings updated'|trans }}">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Configure email options'|trans }}</h3>
                             <p class="card-subtitle">{{ 'FOSSBilling sends emails using <em>sendmail</em> by default or you can configure your own SMTP server'|trans|raw }}</p>
