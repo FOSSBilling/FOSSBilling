@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Redirect\Controller;
+namespace FOSSBilling\Module\Redirect\Controller;
 
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
@@ -25,19 +25,19 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
-        $app->get('/me', 'get_profile', [], '\\' . \Box\Mod\Client\Controller\Client::class);
-        $app->get('/balance', 'get_balance', [], '\\' . \Box\Mod\Client\Controller\Client::class);
-        $app->get('/reset-password-confirm/:hash', 'get_reset_password_confirm', ['hash' => '[a-z0-9]+'], '\\' . \Box\Mod\Client\Controller\Client::class);
-        $app->get('/emails', 'get_emails', [], '\\' . \Box\Mod\Email\Controller\Client::class);
-        $app->get('/banklink/:hash/:id', 'get_banklink', ['id' => '[0-9]+', 'hash' => '[a-z0-9]+'], '\\' . \Box\Mod\Invoice\Controller\Client::class);
-        $app->get('/blog', 'get_news', [], '\\' . \Box\Mod\News\Controller\Client::class);
-        $app->get('/blog/:slug', 'get_news_item', ['slug' => '[a-z0-9-]+'], '\\' . \Box\Mod\News\Controller\Client::class);
-        $app->get('/service', 'get_orders', [], '\\' . \Box\Mod\Order\Controller\Client::class);
-        $app->get('/service/manage/:id', 'get_order', ['id' => '[0-9]+'], '\\' . \Box\Mod\Order\Controller\Client::class);
-        $app->get('/contact-us', 'get_contact_us', [], '\\' . \Box\Mod\Support\Controller\Client::class);
-        $app->get('/contact-us/conversation/:hash', 'get_contact_us_conversation', ['hash' => '[a-z0-9]+'], '\\' . \Box\Mod\Support\Controller\Client::class);
+        $app->get('/me', 'get_profile', [], '\\' . \FOSSBilling\Module\Client\Controller\Client::class);
+        $app->get('/balance', 'get_balance', [], '\\' . \FOSSBilling\Module\Client\Controller\Client::class);
+        $app->get('/reset-password-confirm/:hash', 'get_reset_password_confirm', ['hash' => '[a-z0-9]+'], '\\' . \FOSSBilling\Module\Client\Controller\Client::class);
+        $app->get('/emails', 'get_emails', [], '\\' . \FOSSBilling\Module\Email\Controller\Client::class);
+        $app->get('/banklink/:hash/:id', 'get_banklink', ['id' => '[0-9]+', 'hash' => '[a-z0-9]+'], '\\' . \FOSSBilling\Module\Invoice\Controller\Client::class);
+        $app->get('/blog', 'get_news', [], '\\' . \FOSSBilling\Module\News\Controller\Client::class);
+        $app->get('/blog/:slug', 'get_news_item', ['slug' => '[a-z0-9-]+'], '\\' . \FOSSBilling\Module\News\Controller\Client::class);
+        $app->get('/service', 'get_orders', [], '\\' . \FOSSBilling\Module\Order\Controller\Client::class);
+        $app->get('/service/manage/:id', 'get_order', ['id' => '[0-9]+'], '\\' . \FOSSBilling\Module\Order\Controller\Client::class);
+        $app->get('/contact-us', 'get_contact_us', [], '\\' . \FOSSBilling\Module\Support\Controller\Client::class);
+        $app->get('/contact-us/conversation/:hash', 'get_contact_us_conversation', ['hash' => '[a-z0-9]+'], '\\' . \FOSSBilling\Module\Support\Controller\Client::class);
 
         $service = $this->di['mod_service']('redirect');
         $redirects = $service->getRedirects();
@@ -46,10 +46,10 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function do_redirect(\Box_App $app): never
+    public function do_redirect(\FOSSBilling\App $app): never
     {
         $service = $this->di['mod_service']('redirect');
-        $target = $service->getRedirectByPath($app->uri);
+        $target = $service->getRedirectByPath($app->getContextRelativePath());
         header('HTTP/1.1 301 Moved Permanently');
         header('Location: ' . $target);
         exit;

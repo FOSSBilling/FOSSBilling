@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Invoice;
+namespace FOSSBilling\Module\Invoice;
 
 class ServiceTest extends \BBTestCase
 {
@@ -153,7 +153,7 @@ class ServiceTest extends \BBTestCase
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
 
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getCompany');
 
@@ -260,7 +260,7 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('getParameters');
 
-        $emailService = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('sendTemplate');
 
@@ -313,7 +313,7 @@ class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('getParameters');
 
-        $emailService = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('sendTemplate');
 
@@ -353,7 +353,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
 
         $remove_after_days = 64;
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->with('remove_after_days')
@@ -398,7 +398,7 @@ class ServiceTest extends \BBTestCase
             ->method('getParameters')
             ->willReturn($params);
 
-        $emailService = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Email\Service::class)->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('sendTemplate');
 
@@ -449,11 +449,11 @@ class ServiceTest extends \BBTestCase
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
             ->method('executeTask');
 
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue');
 
-        $currencyService = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
         $currencyService->expects($this->atLeastOnce())
             ->method('getRateByCode');
 
@@ -498,7 +498,7 @@ class ServiceTest extends \BBTestCase
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
-        $currencyService = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
         $currencyService->expects($this->atLeastOnce())
             ->method('toBaseCurrency');
 
@@ -544,7 +544,7 @@ class ServiceTest extends \BBTestCase
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \DummyBean());
 
-        $currencyService = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Currency\Service::class)->getMock();
         $currencyService->expects($this->atLeastOnce())
             ->method('getDefault')
             ->willReturn($currencyModel);
@@ -604,12 +604,12 @@ class ServiceTest extends \BBTestCase
             'email' => '',
             'postcode' => '',
         ];
-        $clientService = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)->getMock();
         $clientService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn($buyer);
 
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $seller = [
             'name' => '',
             'vat_number' => '',
@@ -775,7 +775,7 @@ class ServiceTest extends \BBTestCase
         $eventManagerMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->willReturn('negative_invoice');
@@ -1147,7 +1147,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgenerateInvoicesForExpiringOrdersNoExpOrders(): void
     {
-        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getSoonExpiringActiveOrders')
             ->willReturn([]);
@@ -1181,7 +1181,7 @@ class ServiceTest extends \BBTestCase
             ->method('generateForOrder')
             ->willReturn($invoiceModel);
 
-        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getSoonExpiringActiveOrders')
             ->willReturn([[]]);
@@ -1291,7 +1291,7 @@ class ServiceTest extends \BBTestCase
 
     public function testdoBatchInvokeDueEvent(): void
     {
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue');
         $systemService->expects($this->atLeastOnce())
@@ -1393,7 +1393,7 @@ class ServiceTest extends \BBTestCase
 
         $minAmount = 10;
         $maxAmount = 50;
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->will($this->onConsecutiveCalls($minAmount, $maxAmount));
@@ -1418,7 +1418,7 @@ class ServiceTest extends \BBTestCase
 
         $minAmount = 10;
         $maxAmount = 50;
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->will($this->onConsecutiveCalls($minAmount, $maxAmount));
@@ -1453,7 +1453,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->once())
             ->method('setInvoiceDefaults');
 
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->will($this->onConsecutiveCalls($minAmount, $maxAmount, true));

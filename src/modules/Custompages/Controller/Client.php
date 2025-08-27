@@ -14,7 +14,7 @@
  * Class does not extend any other class.
  */
 
-namespace Box\Mod\Custompages\Controller;
+namespace FOSSBilling\Module\Custompages\Controller;
 
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
@@ -35,16 +35,16 @@ class Client implements \FOSSBilling\InjectionAwareInterface
      * Always use your module prefix to avoid conflicts with other modules
      * in future.
      *
-     * @param \Box_App $app - returned by reference
+     * @param \FOSSBilling\App $app - returned by reference
      */
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/custompages/:slug', 'get_page', ['slug' => '[a-z0-9-]+'], static::class);
     }
 
-    public function get_page(\Box_App $app, $slug)
+    public function get_page(\FOSSBilling\App $app, $slug)
     {
-        $service = new \Box\Mod\Custompages\Service();
+        $service = new \FOSSBilling\Module\Custompages\Service();
         $service->setDi($this->di);
         $page = $service->getPage($slug, 'slug');
         if (isset($page['id'])) {

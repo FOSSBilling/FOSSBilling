@@ -10,9 +10,10 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Product;
+namespace FOSSBilling\Module\Product;
 
 use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
 
 class Service implements InjectionAwareInterface
 {
@@ -29,14 +30,14 @@ class Service implements InjectionAwareInterface
     final public const SETUP_AFTER_PAYMENT = 'after_payment';
     final public const SETUP_MANUAL = 'manual';
 
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }

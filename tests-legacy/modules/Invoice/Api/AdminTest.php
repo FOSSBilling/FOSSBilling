@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Invoice\Api;
+namespace FOSSBilling\Module\Invoice\Api;
 
 class AdminTest extends \BBTestCase
 {
@@ -24,7 +24,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetList(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
@@ -49,7 +49,7 @@ class AdminTest extends \BBTestCase
 
     public function testget(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
@@ -85,7 +85,7 @@ class AdminTest extends \BBTestCase
             'execute' => true,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('markAsPaid')
             ->willReturn(true);
@@ -125,7 +125,7 @@ class AdminTest extends \BBTestCase
         $invoiceModel->loadBean(new \DummyBean());
         $invoiceModel->id = $newInvoiceId;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('prepareInvoice')
             ->willReturn($invoiceModel);
@@ -159,7 +159,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('approveInvoice')
             ->willReturn(true);
@@ -193,7 +193,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
         $newNegativeInvoiceId = 2;
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('refundInvoice')
             ->willReturn($newNegativeInvoiceId);
@@ -227,7 +227,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateInvoice')
             ->willReturn(true);
@@ -261,7 +261,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $invoiceItemService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceInvoiceItem::class)->getMock();
+        $invoiceItemService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceInvoiceItem::class)->getMock();
         $invoiceItemService->expects($this->atLeastOnce())
             ->method('remove')
             ->willReturn(true);
@@ -296,7 +296,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteInvoiceByAdmin')
             ->willReturn(true);
@@ -331,7 +331,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
         $newInvoiceId = 3;
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('renewInvoice')
             ->willReturn($newInvoiceId);
@@ -394,7 +394,7 @@ class AdminTest extends \BBTestCase
 
     public function testbatchPayWithCredits(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('doBatchPayWithCredits')
             ->willReturn(true);
@@ -412,7 +412,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('payInvoiceWithCredits')
             ->willReturn(true);
@@ -443,7 +443,7 @@ class AdminTest extends \BBTestCase
 
     public function testbatchGenerate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('generateInvoicesForExpiringOrders')
             ->willReturn(true);
@@ -457,7 +457,7 @@ class AdminTest extends \BBTestCase
 
     public function testbatchActivatePaid(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('doBatchPaidInvoiceActivation')
             ->willReturn(true);
@@ -471,7 +471,7 @@ class AdminTest extends \BBTestCase
 
     public function testbatchSendReminders(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('doBatchRemindersSend')
             ->willReturn(true);
@@ -485,7 +485,7 @@ class AdminTest extends \BBTestCase
 
     public function testbatchInvokeDueEvent(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('doBatchInvokeDueEvent')
             ->willReturn(true);
@@ -503,7 +503,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendInvoiceReminder')
             ->willReturn(true);
@@ -534,7 +534,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetStatuses(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('counter')
             ->willReturn([]);
@@ -547,7 +547,7 @@ class AdminTest extends \BBTestCase
 
     public function testtransactionProcessAll(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('processReceivedATransactions')
             ->willReturn(true);
@@ -567,7 +567,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('preProcessTransaction')
             ->willReturn(true);
@@ -608,7 +608,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
@@ -640,7 +640,7 @@ class AdminTest extends \BBTestCase
     public function testtransactionCreate(): void
     {
         $newTransactionId = 1;
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('create')
             ->willReturn($newTransactionId);
@@ -660,7 +660,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('delete')
             ->willReturn(true);
@@ -695,7 +695,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
@@ -725,7 +725,7 @@ class AdminTest extends \BBTestCase
 
     public function testtransactionGetList(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
@@ -749,7 +749,7 @@ class AdminTest extends \BBTestCase
 
     public function testtransactionGetStatuses(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('counter')
             ->willReturn([]);
@@ -765,7 +765,7 @@ class AdminTest extends \BBTestCase
 
     public function testtransactionGetStatusesPairs(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('getStatusPairs')
             ->willReturn([]);
@@ -781,7 +781,7 @@ class AdminTest extends \BBTestCase
 
     public function testtransactionStatuses(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('getStatuses')
             ->willReturn([]);
@@ -797,7 +797,7 @@ class AdminTest extends \BBTestCase
 
     public function testtransactionGatewayStatuses(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('getGatewayStatuses')
             ->willReturn([]);
@@ -813,7 +813,7 @@ class AdminTest extends \BBTestCase
 
     public function testtransactionTypes(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
             ->method('getTypes')
             ->willReturn([]);
@@ -829,7 +829,7 @@ class AdminTest extends \BBTestCase
 
     public function testgatewayGetList(): void
     {
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServicePayGateway::class)->getMock();
         $gatewayService->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
@@ -853,7 +853,7 @@ class AdminTest extends \BBTestCase
 
     public function testgatewayGetPairs(): void
     {
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServicePayGateway::class)->getMock();
         $gatewayService->expects($this->atLeastOnce())
             ->method('getPairs')
             ->willReturn([]);
@@ -868,7 +868,7 @@ class AdminTest extends \BBTestCase
 
     public function testgatewayGetAvailable(): void
     {
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServicePayGateway::class)->getMock();
         $gatewayService->expects($this->atLeastOnce())
             ->method('getAvailable')
             ->willReturn([]);
@@ -887,7 +887,7 @@ class AdminTest extends \BBTestCase
             'code' => 'PP',
         ];
 
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServicePayGateway::class)->getMock();
         $gatewayService->expects($this->atLeastOnce())
             ->method('install')
             ->willReturn(true);
@@ -912,7 +912,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServicePayGateway::class)->getMock();
         $gatewayService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
@@ -946,7 +946,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
         $newGatewayId = 1;
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServicePayGateway::class)->getMock();
         $gatewayService->expects($this->atLeastOnce())
             ->method('copy')
             ->willReturn($newGatewayId);
@@ -981,7 +981,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServicePayGateway::class)->getMock();
         $gatewayService->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
@@ -1016,7 +1016,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServicePayGateway::class)->getMock();
         $gatewayService->expects($this->atLeastOnce())
             ->method('delete')
             ->willReturn(true);
@@ -1047,7 +1047,7 @@ class AdminTest extends \BBTestCase
 
     public function subscription_get_list()
     {
-        $subscriptionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)->getMock();
+        $subscriptionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceSubscription::class)->getMock();
         $subscriptionService->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
@@ -1077,7 +1077,7 @@ class AdminTest extends \BBTestCase
             'currency' => 'EU',
         ];
         $newSubscriptionId = 1;
-        $subscriptionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)->getMock();
+        $subscriptionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceSubscription::class)->getMock();
         $subscriptionService->expects($this->atLeastOnce())
             ->method('create')
             ->willReturn($newSubscriptionId);
@@ -1150,7 +1150,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $subscriptionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)->getMock();
+        $subscriptionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceSubscription::class)->getMock();
         $subscriptionService->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
@@ -1185,7 +1185,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $subscriptionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)->getMock();
+        $subscriptionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceSubscription::class)->getMock();
         $subscriptionService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
@@ -1214,7 +1214,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $subscriptionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)->getMock();
+        $subscriptionService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceSubscription::class)->getMock();
         $subscriptionService->expects($this->atLeastOnce())
             ->method('delete')
             ->willReturn(true);
@@ -1249,7 +1249,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $taxService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)->getMock();
+        $taxService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTax::class)->getMock();
         $taxService->expects($this->atLeastOnce())
             ->method('delete')
             ->willReturn(true);
@@ -1284,7 +1284,7 @@ class AdminTest extends \BBTestCase
             'id' => 1,
         ];
         $newTaxId = 1;
-        $taxService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)->getMock();
+        $taxService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTax::class)->getMock();
         $taxService->expects($this->atLeastOnce())
             ->method('create')
             ->willReturn($newTaxId);
@@ -1306,7 +1306,7 @@ class AdminTest extends \BBTestCase
 
     public function tax_get_list()
     {
-        $taxService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)->getMock();
+        $taxService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTax::class)->getMock();
         $taxService->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
@@ -1408,7 +1408,7 @@ class AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $taxService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)->getMock();
+        $taxService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTax::class)->getMock();
         $taxService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
@@ -1440,7 +1440,7 @@ class AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $taxService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)->getMock();
+        $taxService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Invoice\ServiceTax::class)->getMock();
         $taxService->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);

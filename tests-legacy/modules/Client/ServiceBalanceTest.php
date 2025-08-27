@@ -7,7 +7,7 @@ class ServiceBalanceTest extends \BBTestCase
     public function testgetDi(): void
     {
         $di = new \Pimple\Container();
-        $service = new \Box\Mod\Client\ServiceBalance();
+        $service = new \FOSSBilling\Module\Client\ServiceBalance();
         $service->setDi($di);
         $getDi = $service->getDi();
         $this->assertEquals($di, $getDi);
@@ -30,7 +30,7 @@ class ServiceBalanceTest extends \BBTestCase
             ->with($clientBalance);
         $di['db'] = $dbMock;
 
-        $service = new \Box\Mod\Client\ServiceBalance();
+        $service = new \FOSSBilling\Module\Client\ServiceBalance();
         $service->setDi($di);
 
         $clientModel = new \Model_Client();
@@ -54,7 +54,7 @@ class ServiceBalanceTest extends \BBTestCase
 
     public function testdeductFundsInvalidDescription(): void
     {
-        $service = new \Box\Mod\Client\ServiceBalance();
+        $service = new \FOSSBilling\Module\Client\ServiceBalance();
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -73,7 +73,7 @@ class ServiceBalanceTest extends \BBTestCase
 
     public function testdeductFundsInvalidAmount(): void
     {
-        $service = new \Box\Mod\Client\ServiceBalance();
+        $service = new \FOSSBilling\Module\Client\ServiceBalance();
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());

@@ -13,7 +13,7 @@
  * Public tickets management.
  */
 
-namespace Box\Mod\Support\Api;
+namespace FOSSBilling\Module\Support\Api;
 
 class Guest extends \Api_Abstract
 {

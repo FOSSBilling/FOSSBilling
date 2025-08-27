@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Servicehosting;
+namespace FOSSBilling\Module\Servicehosting;
 
 class ServiceTest extends \BBTestCase
 {
@@ -59,7 +59,7 @@ class ServiceTest extends \BBTestCase
             'sld' => 'great',
             'tld' => 'com',
         ];
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn($confArr);
@@ -106,7 +106,7 @@ class ServiceTest extends \BBTestCase
     //            'password' => 'password'
     //        );
     //
-    //        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+    //        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
     //        $orderServiceMock->expects($this->atLeastOnce())
     //            ->method('getConfig')
     //            ->will($this->returnValue($confArr));
@@ -127,7 +127,7 @@ class ServiceTest extends \BBTestCase
     //        $dbMock->expects($this->atLeastOnce())
     //            ->method('store');
     //
-    //        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)
+    //        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicehosting\Service::class)
     //            ->onlyMethods(array('_getAM'))
     //            ->getMock();
     //
@@ -161,7 +161,7 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHostingHp();
         $model->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
@@ -185,7 +185,7 @@ class ServiceTest extends \BBTestCase
         $orderModel->loadBean(new \DummyBean());
         $orderModel->id = 1;
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
@@ -206,7 +206,7 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
@@ -241,7 +241,7 @@ class ServiceTest extends \BBTestCase
         $orderModel->loadBean(new \DummyBean());
         $orderModel->id = 1;
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
@@ -262,7 +262,7 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
@@ -297,7 +297,7 @@ class ServiceTest extends \BBTestCase
         $orderModel->loadBean(new \DummyBean());
         $orderModel->id = 1;
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
@@ -318,7 +318,7 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
@@ -353,7 +353,7 @@ class ServiceTest extends \BBTestCase
         $orderModel->loadBean(new \DummyBean());
         $orderModel->id = 1;
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
@@ -376,7 +376,7 @@ class ServiceTest extends \BBTestCase
     //            'sld' => 'great',
     //            'tld' => 'com'
     //        );
-    //        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+    //        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
     //        $orderServiceMock->expects($this->atLeastOnce())
     //            ->method('getConfig')
     //            ->will($this->returnValue($confArr));
@@ -413,7 +413,7 @@ class ServiceTest extends \BBTestCase
     //
     //
     //
-    //        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)
+    //        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicehosting\Service::class)
     //            ->onlyMethods(array('_getAM'))
     //            ->getMock();
     //
@@ -439,7 +439,7 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
@@ -779,7 +779,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->onConsecutiveCalls($hostingServer, $hostingHp));
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getServiceOrder');
 
@@ -1174,7 +1174,7 @@ class ServiceTest extends \BBTestCase
             ->method('getServerManager')
             ->willReturn($serverManagerMock);
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getLogger')
             ->willReturn(new \Box_Log());
@@ -1238,7 +1238,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
 
         $tldArray = ['tld' => '.com'];
-        $serviceDomainServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceDomainServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicedomain\Service::class)->getMock();
         $serviceDomainServiceMock->expects($this->atLeastOnce())
             ->method('tldToApiArray')
             ->willReturn($tldArray);

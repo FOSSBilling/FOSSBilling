@@ -2,7 +2,7 @@
 
 namespace Box\Tests\Mod\Profile;
 
-use Box\Mod\Profile\Service;
+use FOSSBilling\Module\Profile\Service;
 
 class ServiceTest extends \BBTestCase
 {
@@ -139,7 +139,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\FOSSBilling\Module')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([
@@ -149,7 +149,7 @@ class ServiceTest extends \BBTestCase
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->willReturn(false);
 
@@ -218,14 +218,14 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\FOSSBilling\Module')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([
                 'disable_change_email' => 1,
             ]);
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->never())->
         method('emailAlreadyRegistered')->willReturn(false);
 
@@ -264,7 +264,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\FOSSBilling\Module')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([
@@ -274,7 +274,7 @@ class ServiceTest extends \BBTestCase
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->willReturn(true);
 

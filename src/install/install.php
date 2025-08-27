@@ -10,8 +10,8 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use Box\Mod\Email\Service;
 use FOSSBilling\Environment;
+use FOSSBilling\Module\Email\Service;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;

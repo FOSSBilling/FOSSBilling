@@ -5,18 +5,18 @@ namespace Box\Tests\Mod\Servicedomain\Api;
 class Api_GuestTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Servicedomain\Api\Guest
+     * @var \FOSSBilling\Module\Servicedomain\Api\Guest
      */
     protected $guestApi;
 
     public function setup(): void
     {
-        $this->guestApi = new \Box\Mod\Servicedomain\Api\Guest();
+        $this->guestApi = new \FOSSBilling\Module\Servicedomain\Api\Guest();
     }
 
     public function testTlds(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicedomain\Service::class)
             ->onlyMethods(['tldToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldToApiArray')
             ->willReturn([]);
@@ -40,7 +40,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testPricing(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'tldToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
@@ -67,7 +67,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testPricingTldNotFoundException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'tldToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(null);
@@ -95,7 +95,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCheck(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'isDomainAvailable'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
@@ -145,7 +145,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCheckTldNotFoundException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'isDomainAvailable'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(null);
@@ -176,7 +176,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCheckDomainNotAvailableException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'isDomainAvailable'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
@@ -207,7 +207,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCanBeTransferred(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'canBeTransferred'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
@@ -236,7 +236,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCanBeTransferredTldNotFoundException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'canBeTransferred'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(null);
@@ -264,7 +264,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCanBeTransferredCanNotBeTransferredException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'canBeTransferred'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());

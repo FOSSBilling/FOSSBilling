@@ -48,7 +48,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $extension = new Model_Extension();
         $extension->loadBean(new RedBeanPHP\OODBBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Extension\Service::class)->onlyMethods(['update', 'findExtension'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Extension\Service::class)->onlyMethods(['update', 'findExtension'])->getMock();
         $serviceMock->expects($this->any())
             ->method('update')
             ->willReturn($versions);
@@ -62,7 +62,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
             'type' => 'mod',
             'id' => 'branding',
         ];
-        $api = new Box\Mod\Extension\Api\Admin();
+        $api = new FOSSBilling\Module\Extension\Api\Admin();
         $api->setDi($this->di);
         $api->setService($serviceMock);
         $arr = $api->update($data);
@@ -148,7 +148,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         $extension = new Model_Extension();
         $extension->loadBean(new RedBeanPHP\OODBBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Extension\Service::class)->onlyMethods(['downloadAndExtract'])->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . FOSSBilling\Module\Extension\Service::class)->onlyMethods(['downloadAndExtract'])->getMock();
         $serviceMock->expects($this->any())
             ->method('downloadAndExtract')
             ->willReturn(true);
@@ -159,7 +159,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
             'id' => 'branding',
             'type' => 'mod',
         ];
-        $api = new Box\Mod\Extension\Api\Admin();
+        $api = new FOSSBilling\Module\Extension\Api\Admin();
         $api->setService($serviceMock);
         $api->setDi($this->di);
         $arr = $api->install($data);

@@ -10,10 +10,11 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Servicedownloadable;
+namespace FOSSBilling\Module\Servicedownloadable;
 
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -21,15 +22,15 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
     private readonly Filesystem $filesystem;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }

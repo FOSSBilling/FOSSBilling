@@ -10,20 +10,22 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Massmailer;
+namespace FOSSBilling\Module\Massmailer;
 
 use FOSSBilling\Environment;
+use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }

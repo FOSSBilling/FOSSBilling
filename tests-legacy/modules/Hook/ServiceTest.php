@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Hook;
+namespace FOSSBilling\Module\Hook;
 
 class ServiceTest extends \BBTestCase
 {
@@ -163,12 +163,9 @@ class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->willReturn($returnArr);
 
-        $activityServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
+        $activityServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Activity\Service::class)->getMock();
 
-        $boxModMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
-        $boxModMock->expects($this->atLeastOnce())
-            ->method('hasService')
-            ->willReturn(true);
+        $boxModMock = $this->getMockBuilder('\FOSSBilling\Module')->disableOriginalConstructor()->getMock();
         $boxModMock->expects($this->any())
             ->method('getService')
             ->willReturn($activityServiceMock);
@@ -176,7 +173,7 @@ class ServiceTest extends \BBTestCase
             ->method('getName')
             ->willReturn('activity');
 
-        $extensionServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $extensionServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Invoice;
+namespace FOSSBilling\Module\Invoice;
 
 class ServiceTaxTest extends \BBTestCase
 {
@@ -28,7 +28,7 @@ class ServiceTaxTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
+        $clientServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
@@ -60,7 +60,7 @@ class ServiceTaxTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
+        $clientServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
@@ -92,7 +92,7 @@ class ServiceTaxTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
+        $clientServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
@@ -123,7 +123,7 @@ class ServiceTaxTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
+        $clientServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
@@ -151,7 +151,7 @@ class ServiceTaxTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
+        $clientServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
@@ -231,7 +231,7 @@ class ServiceTaxTest extends \BBTestCase
 
     public function testcreate(): void
     {
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('checkLimits');
 

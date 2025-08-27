@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -9,20 +10,22 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Hook;
+namespace FOSSBilling\Module\Hook;
 
 use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
+use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
@@ -101,7 +104,8 @@ class Service implements InjectionAwareInterface
 
         foreach ($mods as $m) {
             $mod = $this->di['mod']($m);
-            if ($mod->hasService()) {
+
+            try {
                 $class = $mod->getService();
                 $reflector = new \ReflectionClass($class);
                 foreach ($reflector->getMethods() as $method) {
@@ -109,6 +113,9 @@ class Service implements InjectionAwareInterface
                         $this->connect(['event' => $method->getName(), 'mod' => $mod->getName()]);
                     }
                 }
+            } catch (FileNotFoundException) {
+                // If the module does not have a service class, skip it.
+                continue;
             }
         }
 
@@ -196,7 +203,10 @@ class Service implements InjectionAwareInterface
 
                 // disconnect modules without service class
                 $mod = $this->di['mod']($mod_name);
-                if (!$mod->hasService()) {
+
+                try {
+                    $mod->getService();
+                } catch (FileNotFoundException) {
                     $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
 
                     continue;

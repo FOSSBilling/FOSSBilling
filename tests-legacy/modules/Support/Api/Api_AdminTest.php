@@ -5,13 +5,13 @@ namespace Box\Tests\Mod\Support\Api;
 class Api_AdminTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Support\Api\Admin
+     * @var \FOSSBilling\Module\Support\Api\Admin
      */
     protected $adminApi;
 
     public function setup(): void
     {
-        $this->adminApi = new \Box\Mod\Support\Api\Admin();
+        $this->adminApi = new \FOSSBilling\Module\Support\Api\Admin();
     }
 
     public function testTicketGetList(): void
@@ -29,7 +29,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($simpleResultArr);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['getSearchQuery', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->willReturn(['query', []]);
@@ -70,7 +70,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicket());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);
@@ -102,7 +102,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicket());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['ticketUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketUpdate')
             ->willReturn(true);
@@ -134,7 +134,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicketMessage());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['ticketMessageUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketMessageUpdate')
             ->willReturn(true);
@@ -167,7 +167,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicket());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['rm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('rm')
             ->willReturn(true);
@@ -199,7 +199,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicket());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['ticketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
             ->willReturn(true);
@@ -235,7 +235,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($ticket);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['closeTicket'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('closeTicket')
             ->willReturn(true);
@@ -271,7 +271,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($ticket);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['closeTicket'])->getMock();
         $serviceMock->expects($this->never())->method('closeTicket')
             ->willReturn(true);
@@ -310,7 +310,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->onConsecutiveCalls($clientModel, $supportHelpdeskModel));
 
         $randID = random_int(1, 100);
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForAdmin')
             ->willReturn($randID);
 
@@ -336,7 +336,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testBatchTicketAutoClose(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['getExpired', 'autoClose'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getExpired')
             ->willReturn([['id' => 1], ['id' => 2]]);
@@ -370,7 +370,7 @@ class Api_AdminTest extends \BBTestCase
         $ticket->loadBean(new \DummyBean());
         $ticket->id = random_int(1, 100);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['getExpired', 'autoClose'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getExpired')
             ->willReturn([['id' => 1], ['id' => 2]]);
@@ -394,7 +394,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testBatchPublicTicketAutoClose(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['publicGetExpired', 'publicAutoClose'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicGetExpired')
             ->willReturn([new \Model_SupportPTicket(), new \Model_SupportPTicket()]);
@@ -414,7 +414,7 @@ class Api_AdminTest extends \BBTestCase
         $ticket->loadBean(new \DummyBean());
         $ticket->id = random_int(1, 100);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['publicGetExpired', 'publicAutoClose'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicGetExpired')
             ->willReturn([$ticket, $ticket]);
@@ -437,7 +437,7 @@ class Api_AdminTest extends \BBTestCase
             \Model_SupportPTicket::ONHOLD => 'On hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['getStatuses', 'counter'])->getMock();
         $serviceMock->expects($this->never())->method('getStatuses')
             ->willReturn($statuses);
@@ -458,7 +458,7 @@ class Api_AdminTest extends \BBTestCase
             \Model_SupportPTicket::ONHOLD => 'On hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['getStatuses', 'counter'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getStatuses')
             ->willReturn($statuses);
@@ -490,7 +490,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($resultSet);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['publicGetSearchQuery', 'publicToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicGetSearchQuery')
             ->willReturn(['query', []]);
@@ -526,7 +526,7 @@ class Api_AdminTest extends \BBTestCase
             ->willReturn(null);
 
         $randID = random_int(1, 100);
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['publicTicketCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketCreate')
             ->willReturn($randID);
@@ -563,7 +563,7 @@ class Api_AdminTest extends \BBTestCase
             ->willReturn(new \Model_SupportPTicket());
 
         $randID = random_int(1, 100);
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['publicToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
             ->willReturn([]);
@@ -595,7 +595,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPTicket());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['publicRm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicRm')
             ->willReturn(true);
@@ -627,7 +627,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPTicket());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['publicCloseTicket'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicCloseTicket')
             ->willReturn(true);
@@ -660,7 +660,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPTicket());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['publicTicketUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketUpdate')
             ->willReturn(true);
@@ -693,7 +693,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPTicket());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['publicTicketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketReply')
             ->willReturn(true);
@@ -722,7 +722,7 @@ class Api_AdminTest extends \BBTestCase
             \Model_SupportPTicket::ONHOLD => 'On hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['publicGetStatuses', 'publicCounter'])->getMock();
         $serviceMock->expects($this->never())->method('publicGetStatuses')
             ->willReturn($statuses);
@@ -743,7 +743,7 @@ class Api_AdminTest extends \BBTestCase
             \Model_SupportPTicket::ONHOLD => 'On hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['publicGetStatuses', 'publicCounter'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicGetStatuses')
             ->willReturn($statuses);
@@ -770,7 +770,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn([]);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['helpdeskGetSearchQuery'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskGetSearchQuery')
             ->willReturn(['query', []]);
@@ -790,7 +790,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testHelpdeksGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['helpdeskGetPairs'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskGetPairs')
             ->willReturn([]);
@@ -815,7 +815,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportHelpdesk());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['helpdeskToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskToApiArray')
             ->willReturn(true);
@@ -848,7 +848,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportHelpdesk());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['helpdeskUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskUpdate')
             ->willReturn(true);
@@ -876,7 +876,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->willReturn(null);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['helpdeskCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskCreate')
             ->willReturn(true);
@@ -908,7 +908,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportHelpdesk());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['helpdeskRm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskRm')
             ->willReturn(true);
@@ -944,7 +944,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($resultSet);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['cannedGetSearchQuery', 'cannedToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedGetSearchQuery')
             ->willReturn(['query', []]);
@@ -1001,7 +1001,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPr());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['cannedToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedToApiArray')
             ->willReturn([]);
@@ -1034,7 +1034,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPr());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['cannedRm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedRm')
             ->willReturn([]);
@@ -1062,7 +1062,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->willReturn(null);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['cannedCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCreate')
             ->willReturn(random_int(1, 100));
@@ -1092,7 +1092,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->willReturn(null);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['cannedUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedUpdate')
             ->willReturn(random_int(1, 100));
@@ -1151,7 +1151,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPrCategory());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['cannedCategoryToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryToApiArray')
             ->willReturn([]);
@@ -1187,7 +1187,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($supportCategory);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['cannedCategoryUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryUpdate')
             ->willReturn([]);
@@ -1224,7 +1224,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($supportCategory);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['cannedCategoryRm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryRm')
             ->willReturn([]);
@@ -1252,7 +1252,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->willReturn(null);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['cannedCategoryCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryCreate')
             ->willReturn([]);
@@ -1278,7 +1278,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->willReturn(null);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['noteCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('noteCreate')
             ->willReturn([]);
@@ -1312,7 +1312,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->willReturn(null);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['noteRm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('noteRm')
             ->willReturn([]);
@@ -1345,7 +1345,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray')
             ->willReturn(null);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)
             ->onlyMethods(['ticketTaskComplete'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketTaskComplete')
             ->willReturn(true);
@@ -1372,7 +1372,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testBatchDelete(): void
     {
-        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Api\Admin::class)->onlyMethods(['ticket_delete'])->getMock();
+        $activityMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Api\Admin::class)->onlyMethods(['ticket_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('ticket_delete')->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
@@ -1390,7 +1390,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testBatchDeletePublic(): void
     {
-        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Api\Admin::class)->onlyMethods(['public_ticket_delete'])->getMock();
+        $activityMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Api\Admin::class)->onlyMethods(['public_ticket_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('public_ticket_delete')->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
@@ -1414,7 +1414,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $di = new \Pimple\Container();
 
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
         $adminApi->setDi($di);
 
         $data = [
@@ -1423,7 +1423,7 @@ class Api_AdminTest extends \BBTestCase
             'cat' => 'category',
         ];
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbSearchArticles'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbSearchArticles'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbSearchArticles')
             ->willReturn(['list' => []]);
@@ -1436,7 +1436,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleGet(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
         $data = [
             'id' => random_int(1, 100),
@@ -1462,7 +1462,7 @@ class Api_AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbToApiArray'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbToApiArray'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbToApiArray')
             ->willReturn([]);
@@ -1474,7 +1474,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleGetNotFoundException(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
         $data = [
             'id' => random_int(1, 100),
@@ -1499,7 +1499,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleCreate(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
         $data = [
             'kb_article_category_id' => random_int(1, 100),
@@ -1510,7 +1510,7 @@ class Api_AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCreateArticle'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbCreateArticle'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCreateArticle')
             ->willReturn($id);
@@ -1529,7 +1529,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleUpdate(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
         $data = [
             'id' => random_int(1, 100),
@@ -1541,7 +1541,7 @@ class Api_AdminTest extends \BBTestCase
             'views' => random_int(1, 100),
         ];
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbUpdateArticle'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbUpdateArticle'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbUpdateArticle')
             ->willReturn(true);
@@ -1563,7 +1563,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleDelete(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
         $data = [
             'id' => random_int(1, 100),
@@ -1585,7 +1585,7 @@ class Api_AdminTest extends \BBTestCase
 
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbRm'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbRm'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbRm')
             ->willReturn(true);
@@ -1597,7 +1597,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleDeleteNotFoundException(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -1614,7 +1614,7 @@ class Api_AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbRm'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbRm'])->getMock();
         $kbService->expects($this->never())
             ->method('kbRm')
             ->willReturn(true);
@@ -1627,7 +1627,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryGetList(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
         $willReturn = [
             'pages' => 5,
@@ -1637,7 +1637,7 @@ class Api_AdminTest extends \BBTestCase
             'list' => [],
         ];
 
-        $kbService = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryGetSearchQuery'])->getMock();
+        $kbService = $this->getMockBuilder('\\' . \FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbCategoryGetSearchQuery'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCategoryGetSearchQuery')
             ->willReturn(['String', []]);
@@ -1663,7 +1663,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryGet(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -1679,7 +1679,7 @@ class Api_AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryToApiArray'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbCategoryToApiArray'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCategoryToApiArray')
             ->willReturn([]);
@@ -1694,7 +1694,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryGetIdNotSetException(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->never())
@@ -1710,7 +1710,7 @@ class Api_AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryToApiArray'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbCategoryToApiArray'])->getMock();
         $kbService->expects($this->never())
             ->method('kbCategoryToApiArray')
             ->willReturn([]);
@@ -1723,7 +1723,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryGetNotFoundException(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -1739,7 +1739,7 @@ class Api_AdminTest extends \BBTestCase
         $di['db'] = $db;
         $adminApi->setDi($di);
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryToApiArray'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbCategoryToApiArray'])->getMock();
         $kbService->expects($this->never())
             ->method('kbCategoryToApiArray')
             ->willReturn([]);
@@ -1756,9 +1756,9 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryCreate(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCreateCategory'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbCreateCategory'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCreateCategory')
             ->willReturn([]);
@@ -1784,9 +1784,9 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryUpdate(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbUpdateCategory'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbUpdateCategory'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbUpdateCategory')
             ->willReturn([]);
@@ -1821,9 +1821,9 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryUpdateIdNotSet(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbUpdateCategory'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbUpdateCategory'])->getMock();
         $kbService->expects($this->never())
             ->method('kbUpdateCategory')
             ->willReturn([]);
@@ -1852,9 +1852,9 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryUpdateNotFound(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbUpdateCategory'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbUpdateCategory'])->getMock();
         $kbService->expects($this->never())
             ->method('kbUpdateCategory')
             ->willReturn([]);
@@ -1888,9 +1888,9 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryDelete(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryRm'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbCategoryRm'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCategoryRm')
             ->willReturn([]);
@@ -1919,9 +1919,9 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryDeleteIdNotSet(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryRm'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbCategoryRm'])->getMock();
         $kbService->expects($this->never())
             ->method('kbCategoryRm')
             ->willReturn([]);
@@ -1949,9 +1949,9 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryDeleteNotFound(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryRm'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbCategoryRm'])->getMock();
         $kbService->expects($this->never())
             ->method('kbCategoryRm')
             ->willReturn([]);
@@ -1982,9 +1982,9 @@ class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryGetPairs(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = new \FOSSBilling\Module\Support\Api\Admin();
 
-        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryGetPairs'])->getMock();
+        $kbService = $this->getMockBuilder(\FOSSBilling\Module\Support\Service::class)->onlyMethods(['kbCategoryGetPairs'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCategoryGetPairs')
             ->willReturn([]);

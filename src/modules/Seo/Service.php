@@ -10,22 +10,23 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Seo;
+namespace FOSSBilling\Module\Seo;
 
 use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
 class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
@@ -104,7 +105,7 @@ class Service implements InjectionAwareInterface
         $finder->files()->in(Path::join(__DIR__, 'Engines'))->name('*.php');
         foreach ($finder as $file) {
             $engine = $file->getFilenameWithoutExtension();
-            $class = "Box\\Mod\\Seo\\Engines\\{$engine}";
+            $class = "FOSSBilling\\Module\\Seo\\Engines\\{$engine}";
             $engines[$engine] = new $class();
         }
 

@@ -20,7 +20,7 @@ class Api_Abstract implements InjectionAwareInterface
     protected $ip;
 
     /**
-     * @var Box_Mod
+     * @var FOSSBilling\Module
      */
     protected $mod;
 
@@ -45,7 +45,7 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @param Box_Mod $mod
+     * @param FOSSBilling\Module $mod
      */
     public function setMod($mod)
     {
@@ -53,12 +53,12 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @return Box_Mod
+     * @return FOSSBilling\Module
      */
     public function getMod()
     {
         if (!$this->mod) {
-            throw new FOSSBilling\Exception('Mod object is not set for the service');
+            throw new FOSSBilling\Exception('Module object is not set for the service.');
         }
 
         return $this->mod;

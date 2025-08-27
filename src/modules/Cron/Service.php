@@ -10,27 +10,29 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Cron;
+namespace FOSSBilling\Module\Cron;
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\InjectionAwareInterface;
+use Pimple\Container;
 use Symfony\Component\Filesystem\Path;
 
-class Service
+class Service implements InjectionAwareInterface
 {
-    protected ?\Pimple\Container $di = null;
+    protected ?Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
 
-    public function getCronInfo()
+    public function getCronInfo(): array
     {
         $service = $this->di['mod_service']('system');
 
@@ -41,11 +43,9 @@ class Service
     }
 
     /**
-     * @return bool
-     *
      * @todo finish fixing, time to sleep (note: idk what exactly this is referring to. It predates FOSSBilling and is from BoxBilling well before we touched this code)
      */
-    public function runCrons()
+    public function runCrons(): bool
     {
         $api = $this->di['api_system'];
         $this->di['logger']->setChannel('cron')->info('Started executing cron jobs.');
@@ -83,7 +83,7 @@ class Service
     /**
      * @param string $method
      */
-    protected function _exec($api, $method, $params = null)
+    protected function _exec($api, $method, $params = null): void
     {
         try {
             $api->{$method}($params);
@@ -96,17 +96,14 @@ class Service
         }
     }
 
-    /**
-     * @return string|null
-     */
-    public function getLastExecutionTime()
+    public function getLastExecutionTime(): ?string
     {
         $service = $this->di['mod_service']('system');
 
         return $service->getParamValue('last_cron_exec');
     }
 
-    public function isLate()
+    public function isLate(): bool
     {
         $t1 = new \DateTime($this->getLastExecutionTime());
         $t2 = new \DateTime('-6min');

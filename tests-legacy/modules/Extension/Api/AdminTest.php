@@ -1,11 +1,11 @@
 <?php
 
-namespace Box\Mod\Extension\Api;
+namespace FOSSBilling\Module\Extension\Api;
 
 class AdminTest extends \BBTestCase
 {
     /**
-     * @var \Box\Mod\Extension\Service
+     * @var \FOSSBilling\Module\Extension\Service
      */
     protected $service;
 
@@ -16,7 +16,7 @@ class AdminTest extends \BBTestCase
 
     public function setup(): void
     {
-        $this->service = new \Box\Mod\Extension\Service();
+        $this->service = new \FOSSBilling\Module\Extension\Service();
         $this->api = new Admin();
     }
 
@@ -32,7 +32,7 @@ class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getExtensionsList')
             ->willReturn([]);
@@ -84,7 +84,7 @@ class AdminTest extends \BBTestCase
     {
         $data = ['url' => 'billing'];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdminNavigation')
             ->willReturn([]);
@@ -110,7 +110,7 @@ class AdminTest extends \BBTestCase
             'type' => 'extensioTYpe',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findExtension')
             ->willReturn(null);
@@ -136,7 +136,7 @@ class AdminTest extends \BBTestCase
             'type' => 'extensionType',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('activateExistingExtension')
             ->willReturn([]);
@@ -166,7 +166,7 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Extension();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findExtension')
             ->will($this->onConsecutiveCalls($model));
@@ -205,7 +205,7 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Extension();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findExtension')
             ->willReturn($model);
@@ -249,7 +249,7 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Extension();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('downloadAndExtract')
             ->willReturn(true);
@@ -291,7 +291,7 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Extension();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('downloadAndExtract')
             ->willReturn(true);
@@ -327,7 +327,7 @@ class AdminTest extends \BBTestCase
             'ext' => 'extensionName',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
@@ -353,7 +353,7 @@ class AdminTest extends \BBTestCase
             'ext' => 'extensionName',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('setConfig')
             ->willReturn(true);

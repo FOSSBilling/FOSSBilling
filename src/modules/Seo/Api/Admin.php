@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-namespace Box\Mod\Seo\Api;
+namespace FOSSBilling\Module\Seo\Api;
 
 class Admin extends \Api_Abstract
 {

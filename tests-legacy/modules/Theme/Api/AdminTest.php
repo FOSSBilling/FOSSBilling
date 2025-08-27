@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Theme\Api;
+namespace FOSSBilling\Module\Theme\Api;
 
 class AdminTest extends \BBTestCase
 {
@@ -24,7 +24,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetList(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Theme\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getThemes')
             ->willReturn([]);
@@ -41,7 +41,7 @@ class AdminTest extends \BBTestCase
             'code' => 'themeCode',
         ];
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Theme\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('loadTheme')
             ->willReturn([]);
@@ -66,17 +66,17 @@ class AdminTest extends \BBTestCase
             'code' => 'pjw',
         ];
 
-        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('isAdminAreaTheme')
             ->willReturn(false);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Theme\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
             ->with($this->equalTo('theme'));
@@ -106,17 +106,17 @@ class AdminTest extends \BBTestCase
             'code' => 'pjw',
         ];
 
-        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('isAdminAreaTheme')
             ->willReturn(true);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Theme\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
             ->with($this->equalTo('admin_theme'));
@@ -147,9 +147,9 @@ class AdminTest extends \BBTestCase
             'preset' => 'themePreset',
         ];
 
-        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Theme\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
@@ -178,9 +178,9 @@ class AdminTest extends \BBTestCase
             'preset' => 'themePreset',
         ];
 
-        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Theme\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);

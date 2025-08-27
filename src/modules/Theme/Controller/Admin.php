@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Theme\Controller;
+namespace FOSSBilling\Module\Theme\Controller;
 
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
@@ -26,7 +26,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/theme/:theme', 'get_theme', ['theme' => '[a-z0-9-_]+'], static::class);
         $app->post('/theme/:theme', 'save_theme_settings', ['theme' => '[a-z0-9-_]+'], static::class);
@@ -35,7 +35,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     /**
      * Save theme settings.
      */
-    public function save_theme_settings(\Box_App $app, $theme)
+    public function save_theme_settings(\FOSSBilling\App $app, $theme)
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeThemeSettingsSave', 'params' => $_POST]);
 
@@ -82,7 +82,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->redirect($red_url);
     }
 
-    public function get_theme(\Box_App $app, $theme)
+    public function get_theme(\FOSSBilling\App $app, $theme)
     {
         $this->di['is_admin_logged'];
 

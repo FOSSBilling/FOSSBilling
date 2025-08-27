@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\System\Api;
+namespace FOSSBilling\Module\System\Api;
 
 class AdminTest extends \BBTestCase
 {
@@ -27,7 +27,7 @@ class AdminTest extends \BBTestCase
         $data = [
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getParams')
             ->willReturn([]);
@@ -43,7 +43,7 @@ class AdminTest extends \BBTestCase
         $data = [
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateParams')
             ->willReturn(true);
@@ -64,7 +64,7 @@ class AdminTest extends \BBTestCase
 
         $this->api->setDi($di);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getMessages')
             ->willReturn([]);
@@ -81,7 +81,7 @@ class AdminTest extends \BBTestCase
             'file' => 'testing.txt',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('templateExists')
             ->willReturn(true);
@@ -99,7 +99,7 @@ class AdminTest extends \BBTestCase
             '_tpl' => 'default',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('renderString')
             ->willReturn('returnStringType');
@@ -116,7 +116,7 @@ class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\System\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getEnv')
             ->willReturn([]);
@@ -136,7 +136,7 @@ class AdminTest extends \BBTestCase
             'mod' => 'extension',
         ];
 
-        $staffServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $staffServiceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Staff\Service::class)->getMock();
         $staffServiceMock->expects($this->atLeastOnce())
             ->method('hasPermission')
             ->willReturn(true);

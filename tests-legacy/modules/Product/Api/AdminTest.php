@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Product\Api;
+namespace FOSSBilling\Module\Product\Api;
 
 class AdminTest extends \BBTestCase
 {
@@ -24,7 +24,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetList(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSearchQuery')
@@ -49,7 +49,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPairs')
@@ -72,7 +72,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
         ->method('toApiArray')
         ->willReturn([]);
@@ -93,7 +93,7 @@ class AdminTest extends \BBTestCase
 
     public function testgetTypes(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTypes')
             ->willReturn([]);
@@ -110,7 +110,7 @@ class AdminTest extends \BBTestCase
             'type' => 'domain',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getMainDomainProduct')
             ->willReturn(new \Model_ProductDomain());
@@ -144,7 +144,7 @@ class AdminTest extends \BBTestCase
             'domain' => 'Domain',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTypes')
             ->willReturn($typeArray);
@@ -180,7 +180,7 @@ class AdminTest extends \BBTestCase
 
         $newProductId = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTypes')
             ->willReturn($typeArray);
@@ -214,7 +214,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateProduct')
             ->willReturn(true);
@@ -249,7 +249,7 @@ class AdminTest extends \BBTestCase
             'priority' => [],
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updatePriority')
             ->willReturn(true);
@@ -272,7 +272,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateConfig')
             ->willReturn(true);
@@ -295,7 +295,7 @@ class AdminTest extends \BBTestCase
 
     public function testaddonGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAddons')
             ->willReturn([]);
@@ -309,7 +309,7 @@ class AdminTest extends \BBTestCase
     {
         $data = ['title' => 'Title4test'];
         $newAddonId = 1;
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('createAddon')
             ->willReturn($newAddonId);
@@ -343,7 +343,7 @@ class AdminTest extends \BBTestCase
             ->method('load')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
@@ -426,7 +426,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteProduct')
             ->willReturn(true);
@@ -449,7 +449,7 @@ class AdminTest extends \BBTestCase
 
     public function testcategoryGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductCategoryPairs')
             ->willReturn([]);
@@ -471,7 +471,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateCategory')
             ->willReturn(true);
@@ -505,7 +505,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toProductCategoryApiArray')
             ->willReturn([]);
@@ -530,7 +530,7 @@ class AdminTest extends \BBTestCase
         $data = ['title' => 'test Title'];
         $newCategoryId = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('createCategory')
             ->willReturn($newCategoryId);
@@ -562,7 +562,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('removeProductCategory')
             ->willReturn(true);
@@ -585,7 +585,7 @@ class AdminTest extends \BBTestCase
 
     public function testpromoGetList(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPromoSearchQuery')
@@ -619,7 +619,7 @@ class AdminTest extends \BBTestCase
         ];
         $newPromoId = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('createPromo')
             ->willReturn($newPromoId);
@@ -669,7 +669,7 @@ class AdminTest extends \BBTestCase
             ->willReturn(null);
         $di['validator'] = $validatorMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('toPromoApiArray')
             ->willReturn([]);
@@ -693,7 +693,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updatePromo')
             ->willReturn(true);
@@ -724,7 +724,7 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\Module\Product\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('deletePromo')
             ->willReturn(true);

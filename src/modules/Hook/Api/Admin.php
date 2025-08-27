@@ -13,7 +13,7 @@
  * Hooks management module.
  */
 
-namespace Box\Mod\Hook\Api;
+namespace FOSSBilling\Module\Hook\Api;
 
 class Admin extends \Api_Abstract
 {

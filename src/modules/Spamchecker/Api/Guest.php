@@ -13,7 +13,7 @@
  * Spam checking module management.
  */
 
-namespace Box\Mod\Spamchecker\Api;
+namespace FOSSBilling\Module\Spamchecker\Api;
 
 class Guest extends \Api_Abstract
 {

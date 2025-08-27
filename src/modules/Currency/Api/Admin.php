@@ -13,7 +13,7 @@
  * Currency management.
  */
 
-namespace Box\Mod\Currency\Api;
+namespace FOSSBilling\Module\Currency\Api;
 
 class Admin extends \Api_Abstract
 {

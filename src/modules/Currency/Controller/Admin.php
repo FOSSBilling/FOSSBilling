@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Currency\Controller;
+namespace FOSSBilling\Module\Currency\Controller;
 
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
@@ -25,12 +25,12 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\FOSSBilling\App &$app)
     {
         $app->get('/currency/manage/:code', 'get_manage', ['code' => '[a-zA-Z]+'], static::class);
     }
 
-    public function get_manage(\Box_App $app, $code)
+    public function get_manage(\FOSSBilling\App $app, $code)
     {
         $this->di['is_admin_logged'];
         $guest_api = $this->di['api_guest'];

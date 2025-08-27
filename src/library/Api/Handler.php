@@ -10,6 +10,7 @@
  */
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 
 final class Api_Handler implements InjectionAwareInterface
 {
@@ -80,7 +81,7 @@ final class Api_Handler implements InjectionAwareInterface
             }
         }
 
-        $api_class = '\Box\Mod\\' . ucfirst($mod) . '\\Api\\' . ucfirst($this->type);
+        $api_class = '\FOSSBilling\Module\\' . ucfirst($mod) . '\\Api\\' . ucfirst($this->type);
 
         $api = new $api_class();
 
@@ -94,8 +95,12 @@ final class Api_Handler implements InjectionAwareInterface
         $api->setMod($bb_mod);
         $api->setIdentity($this->identity);
         $api->setIp($this->di['request']->getClientIp());
-        if ($bb_mod->hasService()) {
+
+        try {
+            $bb_mod->getService();
             $api->setService($this->di['mod_service']($mod));
+        } catch (FileNotFoundException) {
+            // If the module does not have a service class, skip it.
         }
 
         if (!method_exists($api, $method_name) || !is_callable([$api, $method_name])) {

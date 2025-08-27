@@ -5,7 +5,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 {
     public function testgetCurrentThemePreset(): void
     {
-        $service = new Box\Mod\Theme\Service();
+        $service = new FOSSBilling\Module\Theme\Service();
         $service->setDi($this->di);
         $themeModel = $service->getTheme('huraga');
         $result = $service->getCurrentThemePreset($themeModel);
@@ -15,7 +15,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testgetThemePresets(): void
     {
-        $service = new Box\Mod\Theme\Service();
+        $service = new FOSSBilling\Module\Theme\Service();
         $service->setDi($this->di);
         $themeModel = $service->getTheme('huraga');
         $result = $service->getThemePresets($themeModel);
@@ -25,7 +25,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testgetThemeSettings(): void
     {
-        $service = new Box\Mod\Theme\Service();
+        $service = new FOSSBilling\Module\Theme\Service();
         $service->setDi($this->di);
         $themeModel = $service->getTheme('huraga');
         $result = $service->getThemeSettings($themeModel);
@@ -34,7 +34,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testupdateSettings(): void
     {
-        $service = new Box\Mod\Theme\Service();
+        $service = new FOSSBilling\Module\Theme\Service();
         $service->setDi($this->di);
 
         $themeModel = $service->getTheme('huraga');
@@ -48,7 +48,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testregenerateThemeSettingsDataFile(): void
     {
-        $service = new Box\Mod\Theme\Service();
+        $service = new FOSSBilling\Module\Theme\Service();
         $service->setDi($this->di);
 
         $themeModel = $service->getTheme('huraga');
@@ -59,7 +59,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testregenerateThemeCssAndJsFiles(): void
     {
-        $service = new Box\Mod\Theme\Service();
+        $service = new FOSSBilling\Module\Theme\Service();
         $service->setDi($this->di);
 
         $themeModel = $service->getTheme('huraga');
@@ -71,7 +71,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testgetCurrentAdminAreaTheme(): void
     {
-        $service = new Box\Mod\Theme\Service();
+        $service = new FOSSBilling\Module\Theme\Service();
         $service->setDi($this->di);
 
         $result = $service->getCurrentAdminAreaTheme();
@@ -82,11 +82,11 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
 
     public function testgetCurrentClientAreaTheme(): void
     {
-        $service = new Box\Mod\Theme\Service();
+        $service = new FOSSBilling\Module\Theme\Service();
         $service->setDi($this->di);
 
         $result = $service->getCurrentClientAreaTheme();
-        $this->assertInstanceOf('\\' . Box\Mod\Theme\Model\Theme::class, $result);
+        $this->assertInstanceOf('\\' . FOSSBilling\Module\Theme\Model\Theme::class, $result);
         $this->assertEquals('huraga', $result->getName());
     }
 }

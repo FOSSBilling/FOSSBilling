@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Servicedownloadable\Api;
+namespace FOSSBilling\Module\Servicedownloadable\Api;
 
 /**
  * Downloadable service management.
