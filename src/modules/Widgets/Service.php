@@ -238,6 +238,7 @@ class Service implements InjectionAwareInterface
                 }
             } catch (\Exception $e) {
                 // If the module is inactive or errors out for some reason, delete all its widgets
+                error_log("Exception in getModuleWidgets for module '{$mod}': " . $e->getMessage() . "\n" . $e->getTraceAsString());
                 $this->di['db']->exec('DELETE FROM widgets WHERE mod_name = :mod_name', ['mod_name' => $mod]);
             }
         }
