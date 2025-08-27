@@ -38,7 +38,9 @@
         "jambroseclarke",
         "Egulias",
         "ICANN",
-        "failovers"
+        "failovers",
+        "Autosize",
+        "analyse"
     ],
 
     "ignoreWords": [
@@ -405,7 +407,8 @@
         "DDEV",
         "CSRF",
         "undismissed",
-        "filp"
+        "filp",
+        "phpunit"
     ],
     "ignorePaths": [
         "tests-legacy/**",

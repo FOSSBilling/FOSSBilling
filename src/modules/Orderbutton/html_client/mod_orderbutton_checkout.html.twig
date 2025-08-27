@@ -1,4 +1,4 @@
-{% set cart = guest.cart_get%}
+{% set cart = guest.cart_get %}
 <div class="accordion-item">
     <h2 class="accordion-header">
         <button class="accordion-button {% if not request.checkout %}collapsed{%endif%}" type="button" data-bs-toggle="collapse" data-bs-target="#checkout" aria-expanded="false" aria-controls="checkout">
@@ -191,7 +191,8 @@
                                                 </label>
                                             </div>
                                         {% endif %}
-                                        <button class="btn btn-primary btn-large" type="submit">{{ 'Checkout'|trans }}</button>
+                                        <button id="checkoutButton" class="btn btn-primary btn-large" type="submit" {% if not client %} hidden="true" {% endif %}>{{ 'Checkout'|trans }}</button>
+                                        <p id="loginMessage" {% if client %} hidden="true" {% endif %}>{{ 'You must first login / create an account before you can checkout.'|trans }}</p>
                                     </div>
                                 </div>
                             </fieldset>
