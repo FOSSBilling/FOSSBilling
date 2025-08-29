@@ -36,6 +36,8 @@ class Exception extends \Exception
             $message = strtr($message, $variables);
         }
 
+        // @todo Improve error handling here.
+        // @phpstan-ignore-next-line - (Debug-only logging)
         if (DEBUG && $logStack) {
             error_log("Exception: $message");
             error_log('Stack trace:');
@@ -78,11 +80,11 @@ class Exception extends \Exception
             $func .= ')';
 
             $entry_file = 'NO_FILE';
-            if (array_key_exists('file', $entry)) {
+            if (isset($entry['file'])) {
                 $entry_file = str_replace(PATH_ROOT, '', $entry['file']);
             }
             $entry_line = 'NO_LINE';
-            if (array_key_exists('line', $entry)) {
+            if (isset($entry['line'])) {
                 $entry_line = $entry['line'];
             }
             $output .= $entry_file . ':' . $entry_line . ' - ' . $func . PHP_EOL;

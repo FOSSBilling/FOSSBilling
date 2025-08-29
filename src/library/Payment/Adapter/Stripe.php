@@ -128,6 +128,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
+        // @todo Improve error handling here.
+        // @phpstan-ignore-next-line (Debug-only logging)
         if (DEBUG) {
             error_log(json_encode($e->getJsonBody()));
         }
