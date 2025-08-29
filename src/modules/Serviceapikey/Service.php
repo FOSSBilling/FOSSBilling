@@ -191,6 +191,7 @@ class Service implements InjectionAwareInterface
         }
 
         try {
+            // @phpstan-ignore expr.resultUnused
             $this->di['is_client_logged'];
             $client = $this->di['loggedin_client'];
         } catch (\Exception) {

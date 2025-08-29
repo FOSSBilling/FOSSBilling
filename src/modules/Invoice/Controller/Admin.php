@@ -106,6 +106,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_taxes(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_invoice_tax');
@@ -121,6 +122,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_invoice_index');
@@ -144,6 +146,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_transactions(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_invoice_transactions');
@@ -151,6 +154,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_subscriptions(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_invoice_subscriptions');
@@ -166,6 +170,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_gateways(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_invoice_gateways');

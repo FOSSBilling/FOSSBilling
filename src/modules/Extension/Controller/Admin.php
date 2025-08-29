@@ -62,6 +62,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_extension_index');
@@ -69,6 +70,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_langs(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_extension_languages');
@@ -76,7 +78,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_settings(\Box_App $app, $mod)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
+
         $extensionService = $this->di['mod_service']('Extension');
         $extensionService->hasManagePermission($mod, $app);
 

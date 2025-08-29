@@ -70,6 +70,7 @@ class Admin implements InjectionAwareInterface
 
     public function get_profile(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_staff_profile');
@@ -99,6 +100,7 @@ class Admin implements InjectionAwareInterface
 
     public function get_history(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_staff_login_history');

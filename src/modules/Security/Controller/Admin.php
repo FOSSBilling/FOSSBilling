@@ -62,6 +62,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_security_index');
@@ -69,6 +70,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function ip_lookup(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
         $record = [];
 

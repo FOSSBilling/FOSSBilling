@@ -428,6 +428,8 @@ class Service implements InjectionAwareInterface
     {
         $result = [];
         $log = $this->di['logger']->setChannel('license');
+        // @todo Improve error handling here.
+        // @phpstan-ignore-next-line (Debug-only logging)
         if (DEBUG) {
             $log->debug(print_r($data, true));
         }

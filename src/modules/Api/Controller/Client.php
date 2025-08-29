@@ -161,9 +161,11 @@ class Client implements InjectionAwareInterface
     private function isRoleLoggedIn($role)
     {
         if ($role == 'client') {
+            // @phpstan-ignore expr.resultUnused
             $this->di['is_client_logged'];
         }
         if ($role == 'admin') {
+            // @phpstan-ignore expr.resultUnused
             $this->di['is_admin_logged'];
         }
 
@@ -265,7 +267,7 @@ class Client implements InjectionAwareInterface
     {
         $allowed = ['guest', 'client', 'admin'];
         if (!in_array($role, $allowed)) {
-            new \FOSSBilling\Exception('Unknown API call :call', [':call' => ''], 701);
+            throw new \FOSSBilling\Exception('Unknown API call :call', [':call' => ''], 701);
         }
 
         return true;

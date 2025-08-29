@@ -51,6 +51,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_news_index');

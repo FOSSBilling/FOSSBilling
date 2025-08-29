@@ -55,8 +55,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         unset($_POST['save-current-setting-preset']);
         unset($_POST['save-current-setting']);
 
-        $error = null;
-
         try {
             if (!$t->isAssetsPathWritable()) {
                 throw new \FOSSBilling\Exception('Theme ":name" assets folder is not writable. Files cannot be uploaded and settings cannot be saved. Set folder permissions to 755', [':name' => $t->getName()]);
@@ -75,14 +73,13 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         }
 
         $red_url = '/theme/' . $theme;
-        if ($error) {
-            $red_url .= '?error=' . $error;
-        }
+
         $app->redirect($red_url);
     }
 
     public function get_theme(\Box_App $app, $theme)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         $mod = $this->di['mod']('theme');

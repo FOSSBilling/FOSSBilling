@@ -532,11 +532,13 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $this->_makeRequest('contacts/add', $contact, 'POST');
     }
 
+    // @phpstan-ignore-next-line - unused private method
     private function getResellerDetails()
     {
         return $this->_makeRequest('resellers/details');
     }
 
+    // @phpstan-ignore-next-line - unused private method
     private function getPromoPrices()
     {
         return $this->_makeRequest('resellers/promo-details');
@@ -549,6 +551,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      *
      * @return stdClass
      */
+    // @phpstan-ignore-next-line - unused private helper
     private function addSubReseller($params)
     {
         // default values
@@ -603,6 +606,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $this->_makeRequest('contacts/default', $params, 'POST');
     }
 
+    // @phpstan-ignore-next-line - unused private helper
     private function removeCustomer($params)
     {
         $required_params = [
@@ -931,7 +935,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         $param_exists = true;
         $attr_number = 1;
         while ($param_exists) {
-            if (!array_key_exists('attr-name' . $attr_number, $contact)) {
+            if (!isset($contact['attr-name' . $attr_number])) {
                 $contact['attr-name' . $attr_number] = 'idnLanguageCode';
                 $contact['attr-value' . $attr_number] = strtolower($client->getIdnLanguageCode());
                 $param_exists = false;

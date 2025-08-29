@@ -48,7 +48,9 @@ if (!empty($_GET['restore_session'])) {
     session_id($_GET['restore_session']);
 }
 
+// @phpstan-ignore expr.resultUnused
 $di['session'];
+
 $debugBar['time']->stopMeasure('session_start');
 
 if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {

@@ -294,6 +294,8 @@ function postInit(): void
     ini_set('error_log', Path::join(PATH_LOG, 'php_error.log'));
     error_reporting(E_ALL);
 
+    // @todo Improve runtime flag setting.
+    // @phpstan-ignore-next-line (Debug-only runtime flag)
     if (DEBUG) {
         ini_set('display_errors', '1');
         ini_set('display_startup_errors', '1');

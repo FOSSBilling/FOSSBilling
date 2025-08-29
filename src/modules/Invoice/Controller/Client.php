@@ -41,6 +41,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_invoices(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_client_logged'];
 
         return $app->render('mod_invoice_index');

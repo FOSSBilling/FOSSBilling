@@ -48,9 +48,12 @@ class Admin extends \Api_Abstract
 
         $event = $data['event'];
         $params = $data['params'] ?? null;
+
+        // @todo Improve error handling here.
+        // @phpstan-ignore-next-line - (Debug-only logging)
         if (DEBUG) {
             try {
-                $this->di['logger']->info($event . ': ' . var_export($params, 1));
+                $this->di['logger']->info($event . ': ' . var_export($params, true));
             } catch (\Exception $e) {
                 error_log($e->getMessage());
             }
