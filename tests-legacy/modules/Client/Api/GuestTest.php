@@ -394,7 +394,7 @@ class GuestTest extends \BBTestCase
         $client = new Guest();
         $client->setDi($di);
 
-        // Expect a Box_Exception to be thrown with a specific message
+        // Expect a FOSSBilling\Exception to be thrown with a specific message
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('The link has expired or you have already reset your password.');
         $client->update_password($data);
