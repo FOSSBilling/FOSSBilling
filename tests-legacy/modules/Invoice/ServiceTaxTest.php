@@ -74,7 +74,7 @@ class ServiceTaxTest extends \BBTestCase
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->onConsecutiveCalls(null, $taxModel));
+            ->willReturnOnConsecutiveCalls(null, $taxModel);
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
@@ -106,7 +106,7 @@ class ServiceTaxTest extends \BBTestCase
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->onConsecutiveCalls(null, null, $taxModel));
+            ->willReturnOnConsecutiveCalls(null, null, $taxModel);
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
@@ -133,7 +133,7 @@ class ServiceTaxTest extends \BBTestCase
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->onConsecutiveCalls(null, null, null));
+            ->willReturnOnConsecutiveCalls(null, null, null);
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn () => $clientServiceMock);

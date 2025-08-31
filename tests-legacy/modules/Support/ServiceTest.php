@@ -2319,13 +2319,13 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($randId);
 
-        $settingsServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
-            ->addMethods(['checkLimits'])->getMock();
-        $settingsServiceMock->expects($this->atLeastOnce())->method('checkLimits')
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)
+            ->onlyMethods(['checkLimits'])->getMock();
+        $systemServiceMock->expects($this->atLeastOnce())->method('checkLimits')
             ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $settingsServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
