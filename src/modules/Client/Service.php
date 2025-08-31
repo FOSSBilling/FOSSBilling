@@ -60,7 +60,7 @@ class Service implements InjectionAwareInterface
     public static function onAfterClientSignUp(\Box_Event $event)
     {
         $di = $event->getDi();
-        $params = $event->getParameters() ?? [];
+        $params = $event->getParameters();
         $config = $di['mod_config']('client');
         $emailService = $di['mod_service']('email');
 

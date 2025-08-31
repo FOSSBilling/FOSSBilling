@@ -184,7 +184,6 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         if (isset($data['price'])) {
             $item->price = (float) $data['price'];
         } else {
-            $item->price = $item->price;
         }
 
         $item_quantity = $data['quantity'] ?? 1;

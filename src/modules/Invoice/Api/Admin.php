@@ -34,6 +34,7 @@ class Admin extends \Api_Abstract
             $id = $item['id'] ?? null;
             if ($id === null) {
                 $pager['list'][$key] = [];
+
                 continue;
             }
             $invoice = $this->di['db']->getExistingModelById('Invoice', $id, 'Invoice not found');

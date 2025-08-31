@@ -206,9 +206,7 @@ class i18n
         $locales = iterator_to_array($finder);
         $locales = ($disabled) ? array_filter($locales, fn ($locale): bool => $filesystem->exists(Path::join($locale->getPathname(), '.disabled')))
                                : array_filter($locales, fn ($locale): bool => !$filesystem->exists(Path::join($locale->getPathname(), '.disabled')));
-        $locales = array_map(function ($locale) {
-            return basename($locale->getPathname());
-        }, $locales);
+        $locales = array_map(fn ($locale): string => basename($locale->getPathname()), $locales);
         sort($locales);
 
         return $locales;

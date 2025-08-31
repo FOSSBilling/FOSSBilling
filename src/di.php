@@ -696,7 +696,7 @@ $di['table'] = $di->protect(function ($name) use ($di) {
  * @return \Box\Mod\Servicelicense\Server
  */
 $di['license_server'] = function () use ($di) {
-    $server = new Box\Mod\Servicelicense\Server;
+    $server = new Box\Mod\Servicelicense\Server();
     $server->setDi($di);
 
     return $server;

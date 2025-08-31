@@ -133,7 +133,7 @@ class Registrar_Domain_Contact implements Stringable
 
         $bits = explode(' ', (string) $this->name);
 
-        return $bits[0] ?? '';
+        return $bits[0];
     }
 
     public function setLastName($param)

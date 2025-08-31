@@ -175,8 +175,8 @@ class Service implements InjectionAwareInterface
                 $manifest['has_settings'] = $m->hasSettingsPage();
             }
 
-            $manifest['has_settings'] = $manifest['has_settings'] ?? false;
-            $manifest['icon_url'] = $manifest['icon_url'] ?? null;
+            $manifest['has_settings'] ??= false;
+            $manifest['icon_url'] ??= null;
 
             $result[] = $manifest;
         }
