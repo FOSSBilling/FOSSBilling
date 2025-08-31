@@ -124,7 +124,7 @@ class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
      */
     public function offsetExists(mixed $name): bool
     {
-        return array_key_exists($name, $this->parameters);
+        return isset($this->parameters[$name]);
     }
 
     /**
@@ -136,7 +136,7 @@ class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
      */
     public function offsetGet(mixed $name): mixed
     {
-        if (!array_key_exists($name, $this->parameters)) {
+        if (!isset($this->parameters[$name])) {
             throw new InvalidArgumentException("The event '{$this->name}' has no '{$name}' parameter.");
         }
 

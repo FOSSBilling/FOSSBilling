@@ -325,7 +325,7 @@ class Client implements InjectionAwareInterface
             return true;
         }
 
-        $input = $this->filesystem->readFile('php://input') ?? '';
+        $input = $this->filesystem->readFile('php://input');
         $data = json_decode($input);
         if (!is_object($data)) {
             $data = new \stdClass();

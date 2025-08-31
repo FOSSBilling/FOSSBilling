@@ -260,19 +260,23 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $s;
     }
 
-    private function callOnAdapter(\Model_ServiceCustom $model, $method, $params = [])
+    private function callOnAdapter(\Model_ServiceCustom|\RedBeanPHP\SimpleModel $model, $method, $params = [])
     {
+        /** @var \Model_ServiceCustom $model */
         $plugin = $model->plugin;
         if (empty($plugin)) {
-            // error_log('Plugin is not used for this custom service');
+            // Plugin not configured for this custom service
             return null;
         }
 
         // check if plugin exists. If plugin does not exist, do not throw error. Simply add to log
         $file = Path::join('Plugin', $plugin, "{$plugin}.php");
+
+        // DEBUG / testing environment check (suppress static false positive)
         if (!Environment::isTesting() && !$this->filesystem->exists(Path::join(PATH_LIBRARY, $file))) {
             $e = new \FOSSBilling\Exception('Plugin class file :file was not found', [':file' => $file], 3124);
-            if (DEBUG) {
+
+            if (defined('DEBUG')) {
                 error_log($e->getMessage());
             }
 

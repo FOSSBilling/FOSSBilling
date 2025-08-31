@@ -206,7 +206,7 @@ class Service implements InjectionAwareInterface
         if (isset($data['pricing'])) {
             $types = $this->getPaymentTypes();
 
-            if (!isset($data['pricing']['type']) || !array_key_exists($data['pricing']['type'], $types)) {
+            if (!isset($data['pricing']['type']) || !isset($types[$data['pricing']['type']])) {
                 throw new \FOSSBilling\InformationException('Pricing type is required');
             }
             $productPayment = $this->di['db']->getExistingModelById('ProductPayment', $model->product_payment_id, 'Product payment not found');
@@ -215,51 +215,51 @@ class Service implements InjectionAwareInterface
             $productPayment->type = $data['pricing']['type'];
 
             if ($data['pricing']['type'] == \Model_ProductPayment::ONCE) {
-                $productPayment->once_setup_price = (float) $data['pricing']['once']['setup'];
-                $productPayment->once_price = (float) $data['pricing']['once']['price'];
+                $productPayment->once_setup_price = (float) ($data['pricing']['once']['setup'] ?? 0);
+                $productPayment->once_price = (float) ($data['pricing']['once']['price'] ?? 0);
             }
 
             if ($data['pricing']['type'] == \Model_ProductPayment::RECURRENT) {
                 if (isset($pricing['recurrent']['1W'])) {
-                    $productPayment->w_setup_price = $pricing['recurrent']['1W']['setup'];
-                    $productPayment->w_price = $pricing['recurrent']['1W']['price'];
-                    $productPayment->w_enabled = $pricing['recurrent']['1W']['enabled'];
+                    $productPayment->w_setup_price = (float) ($pricing['recurrent']['1W']['setup'] ?? 0);
+                    $productPayment->w_price = (float) ($pricing['recurrent']['1W']['price'] ?? 0);
+                    $productPayment->w_enabled = (int) ($pricing['recurrent']['1W']['enabled'] ?? 0);
                 }
 
                 if (isset($pricing['recurrent']['1M'])) {
-                    $productPayment->m_setup_price = $pricing['recurrent']['1M']['setup'];
-                    $productPayment->m_price = $pricing['recurrent']['1M']['price'];
-                    $productPayment->m_enabled = $pricing['recurrent']['1M']['enabled'];
+                    $productPayment->m_setup_price = (float) ($pricing['recurrent']['1M']['setup'] ?? 0);
+                    $productPayment->m_price = (float) ($pricing['recurrent']['1M']['price'] ?? 0);
+                    $productPayment->m_enabled = (int) ($pricing['recurrent']['1M']['enabled'] ?? 0);
                 }
 
                 if (isset($pricing['recurrent']['3M'])) {
-                    $productPayment->q_setup_price = $pricing['recurrent']['3M']['setup'];
-                    $productPayment->q_price = $pricing['recurrent']['3M']['price'];
-                    $productPayment->q_enabled = $pricing['recurrent']['3M']['enabled'];
+                    $productPayment->q_setup_price = (float) ($pricing['recurrent']['3M']['setup'] ?? 0);
+                    $productPayment->q_price = (float) ($pricing['recurrent']['3M']['price'] ?? 0);
+                    $productPayment->q_enabled = (int) ($pricing['recurrent']['3M']['enabled'] ?? 0);
                 }
 
                 if (isset($pricing['recurrent']['6M'])) {
-                    $productPayment->b_setup_price = $pricing['recurrent']['6M']['setup'];
-                    $productPayment->b_price = $pricing['recurrent']['6M']['price'];
-                    $productPayment->b_enabled = $pricing['recurrent']['6M']['enabled'];
+                    $productPayment->b_setup_price = (float) ($pricing['recurrent']['6M']['setup'] ?? 0);
+                    $productPayment->b_price = (float) ($pricing['recurrent']['6M']['price'] ?? 0);
+                    $productPayment->b_enabled = (int) ($pricing['recurrent']['6M']['enabled'] ?? 0);
                 }
 
                 if (isset($pricing['recurrent']['1Y'])) {
-                    $productPayment->a_setup_price = $pricing['recurrent']['1Y']['setup'];
-                    $productPayment->a_price = $pricing['recurrent']['1Y']['price'];
-                    $productPayment->a_enabled = $pricing['recurrent']['1Y']['enabled'];
+                    $productPayment->a_setup_price = (float) ($pricing['recurrent']['1Y']['setup'] ?? 0);
+                    $productPayment->a_price = (float) ($pricing['recurrent']['1Y']['price'] ?? 0);
+                    $productPayment->a_enabled = (int) ($pricing['recurrent']['1Y']['enabled'] ?? 0);
                 }
 
                 if (isset($pricing['recurrent']['2Y'])) {
-                    $productPayment->bia_setup_price = $pricing['recurrent']['2Y']['setup'];
-                    $productPayment->bia_price = $pricing['recurrent']['2Y']['price'];
-                    $productPayment->bia_enabled = $pricing['recurrent']['2Y']['enabled'];
+                    $productPayment->bia_setup_price = (float) ($pricing['recurrent']['2Y']['setup'] ?? 0);
+                    $productPayment->bia_price = (float) ($pricing['recurrent']['2Y']['price'] ?? 0);
+                    $productPayment->bia_enabled = (int) ($pricing['recurrent']['2Y']['enabled'] ?? 0);
                 }
 
                 if (isset($pricing['recurrent']['3Y'])) {
-                    $productPayment->tria_setup_price = $pricing['recurrent']['3Y']['setup'];
-                    $productPayment->tria_price = $pricing['recurrent']['3Y']['price'];
-                    $productPayment->tria_enabled = $pricing['recurrent']['3Y']['enabled'];
+                    $productPayment->tria_setup_price = (float) ($pricing['recurrent']['3Y']['setup'] ?? 0);
+                    $productPayment->tria_price = (float) ($pricing['recurrent']['3Y']['price'] ?? 0);
+                    $productPayment->tria_enabled = (int) ($pricing['recurrent']['3Y']['enabled'] ?? 0);
                 }
             }
 
@@ -292,7 +292,7 @@ class Service implements InjectionAwareInterface
         }
         if (is_array($data['addons'] ?? null)) {
             $addons = array_values(array_filter($data['addons']));
-            if (is_null($addons)) {
+            if (empty($addons)) {
                 $model->addons = null;
             } else {
                 $model->addons = json_encode($addons);
@@ -646,7 +646,7 @@ class Service implements InjectionAwareInterface
 
         $pairs = $this->getUpgradablePairs($model);
 
-        return array_key_exists($new->id, $pairs);
+        return isset($pairs[$new->id]);
     }
 
     /**
@@ -886,7 +886,7 @@ class Service implements InjectionAwareInterface
         $model->freesetup = $data['freesetup'] ?? 0;
         $model->once_per_client = (bool) ($data['once_per_client'] ?? 0);
         $model->recurring = (bool) ($data['recurring'] ?? 0);
-        $model->maxuses = (int) $data['maxuses'] ?? null;
+        $model->maxuses = isset($data['maxuses']) ? (int) $data['maxuses'] : null;
         $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime($data['start_at'])) : null;
         $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime($data['end_at'])) : null;
         $model->products = json_encode($products);
@@ -928,7 +928,7 @@ class Service implements InjectionAwareInterface
         $model->used = $data['used'] ?? $model->used;
         $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime($data['start_at'])) : null;
         $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime($data['end_at'])) : null;
-        $model->maxuses = (int) $data['maxuses'] ?? $model->maxuses;
+        $model->maxuses = isset($data['maxuses']) ? (int) $data['maxuses'] : $model->maxuses;
 
         if (!is_array($data['products'] ?? null)) {
             $model->products = null;

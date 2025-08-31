@@ -95,7 +95,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $adapters = [];
         foreach ($finder as $file) {
             $adapter = $file->getFilenameWithoutExtension();
-            if (!array_key_exists($adapter, $exists)) {
+            if (!isset($exists[$adapter])) {
                 $adapters[] = $adapter;
             }
         }
@@ -108,7 +108,7 @@ class ServicePayGateway implements InjectionAwareInterface
                 ->depth('== 0');
             foreach ($subFinder as $file) {
                 $adapter = $file->getFilenameWithoutExtension();
-                if (!array_key_exists($adapter, $exists)) {
+                if (!isset($exists[$adapter])) {
                     $adapters[] = $adapter;
                 }
             }
@@ -227,13 +227,15 @@ class ServicePayGateway implements InjectionAwareInterface
             } else {
                 $gateway = $this->toApiArray($gtw);
                 $adapter = $this->getPaymentAdapter($gtw);
-                if (array_key_exists('logo', $adapter->getConfig())) {
-                    $gateway['logo'] = $adapter->getConfig()['logo'];
-                    if ($this->filesystem->exists(Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $adapter->getConfig()['logo']['logo']))) {
-                        $gateway['logo']['logo'] = $this->di['tools']->url("/library/Payment/Adapter/{$adapter->getConfig()['logo']['logo']}");
+                $adapterConfig = $adapter->getConfig();
+                if (isset($adapterConfig['logo'])) {
+                    $gateway['logo'] = $adapterConfig['logo'];
+                    $logoName = $adapterConfig['logo']['logo'] ?? '';
+                    if ($logoName !== '' && $this->filesystem->exists(Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $logoName))) {
+                        $gateway['logo']['logo'] = $this->di['tools']->url("/library/Payment/Adapter/{$logoName}");
                     } else {
-                        if ($this->filesystem->exists(Path::join(PATH_DATA, 'assets', 'gateways', $adapter->getConfig()['logo']['logo']))) {
-                            $gateway['logo']['logo'] = $this->di['tools']->url("/data/assets/gateways/{$adapter->getConfig()['logo']['logo']}");
+                        if ($logoName !== '' && $this->filesystem->exists(Path::join(PATH_DATA, 'assets', 'gateways', $logoName))) {
+                            $gateway['logo']['logo'] = $this->di['tools']->url("/data/assets/gateways/{$logoName}");
                         } else {
                             $gateway['logo']['logo'] = $this->di['tools']->url('/data/assets/gateways/default.png');
                         }
@@ -323,7 +325,7 @@ class ServicePayGateway implements InjectionAwareInterface
             return [];
         }
 
-        return call_user_func([$class, 'getConfig']);
+        return $class::getConfig();
     }
 
     public function getAdapterClassName(\Model_PayGateway $pg)

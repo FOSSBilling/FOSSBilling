@@ -344,8 +344,11 @@ class Service implements InjectionAwareInterface
         $items_discount = 0;
         foreach ($products as $product) {
             $p = $this->cartProductToApiArray($product);
-            $total += $p['total'] + $p['setup_price'];
-            $items_discount += $p['discount'];
+            if (!is_array($p)) {
+                $p = [];
+            }
+            $total += ($p['total'] ?? 0) + ($p['setup_price'] ?? 0);
+            $items_discount += $p['discount'] ?? 0;
             $items[] = $p;
         }
 
@@ -617,8 +620,10 @@ class Service implements InjectionAwareInterface
                 ];
             }
 
-            if ($item['setup_price'] > 0) {
-                $setup_price = ($item['setup_price'] * $currency->conversion_rate) - ($item['discount_setup'] * $currency->conversion_rate);
+            $item_setup_price = isset($item['setup_price']) ? $item['setup_price'] : 0;
+            $item_discount_setup = isset($item['discount_setup']) ? $item['discount_setup'] : 0;
+            if ($item_setup_price > 0) {
+                $setup_price = ($item_setup_price * $currency->conversion_rate) - ($item_discount_setup * $currency->conversion_rate);
                 $invoice_items[] = [
                     'title' => __trans(':product setup', [':product' => $order->title]),
                     'price' => $setup_price,
@@ -699,24 +704,6 @@ class Service implements InjectionAwareInterface
     public function findActivePromoByCode($code)
     {
         return $this->di['db']->findOne('Promo', 'code = :code AND active = 1 ORDER BY id ASC', [':code' => $code]);
-    }
-
-    private function getItemPrice(\Model_CartProduct $model)
-    {
-        $product = $this->di['db']->load('Product', $model->product_id);
-        $config = $this->getItemConfig($model);
-        $repo = $product->getTable();
-
-        return $repo->getProductPrice($product, $config);
-    }
-
-    private function getItemSetupPrice(\Model_CartProduct $model)
-    {
-        $product = $this->di['db']->load('Product', $model->product_id);
-        $config = $this->getItemConfig($model);
-        $repo = $product->getTable();
-
-        return $repo->getProductSetupPrice($product, $config);
     }
 
     /**

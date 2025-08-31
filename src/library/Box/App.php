@@ -232,7 +232,7 @@ class Box_App
         ];
 
         foreach ($adminApiPrefixes as $adminApiPrefix) {
-            $realAdminApiUrl = SYSTEM_URL[-1] === '/' ? substr(SYSTEM_URL, 0, -1) . $adminApiPrefix : SYSTEM_URL . $adminApiPrefix;
+            $realAdminApiUrl = str_ends_with(SYSTEM_URL, '/') ? substr(SYSTEM_URL, 0, -1) . $adminApiPrefix : SYSTEM_URL . $adminApiPrefix;
             $allowedURLs[] = parse_url($realAdminApiUrl)['path'];
         }
         foreach ($allowedURLs as $url) {
@@ -271,7 +271,7 @@ class Box_App
     {
         $REQUEST_URI = $_SERVER['REQUEST_URI'] ?? null;
 
-        $realAdminUrl = SYSTEM_URL[-1] === '/' ? substr(SYSTEM_URL, 0, -1) . ADMIN_PREFIX : SYSTEM_URL . ADMIN_PREFIX;
+        $realAdminUrl = str_ends_with(SYSTEM_URL, '/') ? substr(SYSTEM_URL, 0, -1) . ADMIN_PREFIX : SYSTEM_URL . ADMIN_PREFIX;
         $realAdminPath = parse_url($realAdminUrl)['path'];
 
         if (preg_match('/^' . str_replace('/', '\/', $realAdminPath) . '(.*)/', $REQUEST_URI) !== 0) {

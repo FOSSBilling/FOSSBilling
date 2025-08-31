@@ -77,9 +77,10 @@ class Guest extends \Api_Abstract
         $this->di['validator']->isPasswordStrong($data['password']);
         $service = $this->getService();
 
-        $email = $data['email'] ?? null;
+        $email = $data['email'] ?? '';
         $email = $this->di['tools']->validateAndSanitizeEmail($email);
-        $email = strtolower(trim($email));
+        $email = strtolower(trim((string) $email));
+
         if ($service->clientAlreadyExists($email)) {
             throw new \FOSSBilling\InformationException('This email address is already registered.');
         }
@@ -133,7 +134,10 @@ class Guest extends \Api_Abstract
         $this->di['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->id, 'ip' => $this->ip]]);
 
         $oldSession = $this->di['session']->getId();
-        session_regenerate_id();
+        if (function_exists('session_regenerate_id') && session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id();
+        }
+
         $result = $service->toSessionArray($client);
         $this->di['session']->set('client_id', $client->id);
 

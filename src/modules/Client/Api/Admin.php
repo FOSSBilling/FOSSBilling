@@ -150,7 +150,7 @@ class Admin extends \Api_Abstract
             throw new \FOSSBilling\InformationException('This email address is already registered.');
         }
 
-        $validator->isPasswordStrong($data['password']);
+        $validator->isPasswordStrong($data['password'] ?? null);
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
         $id = $service->adminCreateClient($data);

@@ -40,7 +40,8 @@ class Service implements InjectionAwareInterface
 
     public function typeValidation($type)
     {
-        return array_key_exists($type, $this->getFormFieldsTypes());
+        $types = $this->getFormFieldsTypes();
+        return isset($types[$type]);
     }
 
     public function isArrayUnique($data)
@@ -68,11 +69,15 @@ class Service implements InjectionAwareInterface
         return $form_id;
     }
 
-    public function addNewField($field) // TODO server-side required check
+    public function addNewField($field) // @todo server-side required check
     {
-        $field_number = (int) $this->getFormFieldsCount($field['form_id']) + 1;
+        if (!is_array($field)) {
+            throw new \InvalidArgumentException('Field must be an array');
+        }
 
-        $formId = $field['form_id'];
+        $field_number = (int) $this->getFormFieldsCount($field['form_id'] ?? 0) + 1;
+
+        $formId = $field['form_id'] ?? 0;
         $types = $this->getFormFieldsTypes();
         $type = $field['type'];
 
@@ -82,7 +87,7 @@ class Service implements InjectionAwareInterface
         if ($type == 'select' || $type == 'checkbox' || $type == 'radio') {
             $field['options'] = '{"First option":"1", "Second option": "2", "Third option":"3"}';
         }
-        if ($field['type'] == 'textarea' && !isset($field['options'])) {
+        if (($field['type'] ?? '') == 'textarea' && !isset($field['options'])) {
             $field['options'] = '{"height":"100", "width": "300"}';
         }
         if (isset($field['default_value'])) {
@@ -90,6 +95,18 @@ class Service implements InjectionAwareInterface
         }
         if (isset($field['options']) && is_array($field['options'])) {
             $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
+        }
+
+        $options = $field['options'] ?? '';
+        $options = is_string($options) ? $options : '';
+        if ($options !== '' && (str_starts_with($options, '[') || str_starts_with($options, '{')))
+        {
+            $decoded = json_decode($options, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $options = $decoded;
+            } else {
+                $options = [];
+            }
         }
         $bean = $this->di['db']->dispense('FormField');
         $bean->form_id = $formId;
@@ -102,7 +119,7 @@ class Service implements InjectionAwareInterface
         $bean->required = $field['required'] ?? null;
         $bean->hidden = $field['hidden'] ?? null;
         $bean->readonly = $field['readonly'] ?? null;
-        $bean->options = $field['options'] ?? null;
+        $bean->options = $options;
         $bean->prefix = $field['prefix'] ?? null;
         $bean->suffix = $field['suffix'] ?? null;
         $bean->show_initial = $field['show_initial'] ?? null;
@@ -155,7 +172,7 @@ class Service implements InjectionAwareInterface
         $name = $this->slugify($field['name']);
 
         $get_field = $this->getField($field['id']);
-        $field['form_id'] = $get_field['form_id'];
+        $field['form_id'] = $get_field['form_id'] ?? '';
 
         if ($this->formFieldNameExists(['form_id' => $field['form_id'], 'field_name' => $field['name'], 'field_id' => $fieldId])) {
             throw new \FOSSBilling\InformationException('Unfortunately field with this name exists in this form already. Form must have different field names.', null, 7628);
@@ -168,14 +185,16 @@ class Service implements InjectionAwareInterface
 
         if (isset($field['type'])) {
             if ($field['type'] == 'checkbox' || $field['type'] == 'radio' || $field['type'] == 'select') {
-                if (!$this->isArrayUnique(array_filter($field['values'], strlen(...)))) {
+                $values = is_array($field['values'] ?? null) ? $field['values'] : [];
+                $labels = is_array($field['labels'] ?? null) ? $field['labels'] : [];
+                if (!$this->isArrayUnique(array_filter($values, function($v): bool { return strlen((string)$v) > 0; }))) {
                     throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' values must be unique', null, 1597);
                 }
-                if (!$this->isArrayUnique(array_filter($field['labels'], strlen(...)))) {
+                if (!$this->isArrayUnique(array_filter($labels, function($v): bool { return strlen((string)$v) > 0; }))) {
                     throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' labels must be unique', null, 1598);
                 }
-                $field['options'] = array_combine($field['labels'], $field['values']);
-                $field['options'] = array_filter($field['options'], strlen(...));
+                $field['options'] = array_combine($labels, $values);
+                $field['options'] = array_filter($field['options'], function($k): bool { return strlen((string)$k) > 0; }, ARRAY_FILTER_USE_KEY);
                 $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
             }
             if ($field['type'] == 'textarea') {
@@ -240,10 +259,19 @@ class Service implements InjectionAwareInterface
     private function fieldsJsonDecode($fields)
     {
         foreach ($fields as $key => $r) {
+            if (!is_array($r)) {
+                $fields[$key] = [
+                    'options' => [],
+                    'default_value' => '',
+                ];
+                continue;
+            }
+
             $fields[$key]['options'] = json_decode($r['options'] ?? '', true) ?: [];
 
             if (!empty($r['default_value'])) {
-                $fields[$key]['default_value'] = json_decode($r['default_value'] ?? '', true) ?: $r['default_value'];
+                $decoded = json_decode($r['default_value'] ?? '', true);
+                $fields[$key]['default_value'] = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : $r['default_value'];
             } else {
                 $fields[$key]['default_value'] = '';
             }
@@ -284,8 +312,12 @@ class Service implements InjectionAwareInterface
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $result, null, 2575);
 
-        if (str_starts_with($result['options'], '{') || str_starts_with($result['options'], '[')) {
-            $result['options'] = json_decode($result['options'] ?? '');
+        $optionsRaw = $result['options'] ?? '';
+        if (is_string($optionsRaw) && (str_starts_with($optionsRaw, '{') || str_starts_with($optionsRaw, '['))) {
+            $decoded = json_decode($optionsRaw);
+            $result['options'] = (json_last_error() === JSON_ERROR_NONE) ? $decoded : $optionsRaw;
+        } else {
+            $result['options'] = is_array($optionsRaw) ? $optionsRaw : $optionsRaw;
         }
 
         return $result;

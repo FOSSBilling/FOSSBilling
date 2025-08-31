@@ -150,7 +150,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->quantity = $data['quantity'] ?? 1;
         $pi->unit = $data['unit'] ?? null;
         $pi->charged = $data['charged'] ?? 0;
-        $pi->price = (float) $data['price'] ?? 0;
+        $pi->price = isset($data['price']) ? (float) $data['price'] : 0.0;
         $pi->taxed = $data['taxed'] ?? false;
         $pi->created_at = date('Y-m-d H:i:s');
         $pi->updated_at = date('Y-m-d H:i:s');
@@ -181,7 +181,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function update(\Model_InvoiceItem $item, array $data)
     {
         $item->title = $data['title'] ?? $item->title;
-        $item->price = $data['price'] ?? $item->price;
+        if (isset($data['price'])) {
+            $item->price = (float) $data['price'];
+        } else {
+            $item->price = $item->price;
+        }
 
         $item_quantity = $data['quantity'] ?? 1;
 

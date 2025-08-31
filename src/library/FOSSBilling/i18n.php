@@ -63,9 +63,7 @@ class i18n
             $detectedLocale = '';
         }
 
-        if (empty($detectedLocale) || !$detectedLocale) {
-            $detectedLocale = '';
-        }
+        $detectedLocale = (!empty($detectedLocale)) ? $detectedLocale : '';
 
         try {
             $matchingLocale = \Locale::lookup(self::getLocales(), $detectedLocale, false, null);
@@ -208,7 +206,9 @@ class i18n
         $locales = iterator_to_array($finder);
         $locales = ($disabled) ? array_filter($locales, fn ($locale): bool => $filesystem->exists(Path::join($locale->getPathname(), '.disabled')))
                                : array_filter($locales, fn ($locale): bool => !$filesystem->exists(Path::join($locale->getPathname(), '.disabled')));
-        $locales = array_map(basename(...), $locales);
+        $locales = array_map(function ($locale) {
+            return basename($locale->getPathname());
+        }, $locales);
         sort($locales);
 
         return $locales;

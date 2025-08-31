@@ -157,8 +157,9 @@ class Guest extends \Api_Abstract
         $cart = $this->getService()->getSessionCart();
 
         $product = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        $isAddon = $product->is_addon ?? false;
 
-        if ($product->is_addon) {
+        if ($isAddon) {
             throw new \FOSSBilling\InformationException('Addon products cannot be added separately.');
         }
 

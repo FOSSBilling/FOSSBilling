@@ -36,7 +36,7 @@ class Config
     {
         $result = self::getConfig();
         foreach (explode('.', $property) as $segment) {
-            if (array_key_exists($segment, $result)) {
+            if (isset($result[$segment])) {
                 $result = $result[$segment];
             } else {
                 // Key not found, handle the error or set a default value
@@ -64,7 +64,7 @@ class Config
         $segments = explode('.', $property);
 
         foreach ($segments as $segment) {
-            if (!array_key_exists($segment, $temp) || !is_array($temp[$segment])) {
+            if (!isset($temp[$segment])) {
                 $temp[$segment] = [];
             }
             $temp = &$temp[$segment];

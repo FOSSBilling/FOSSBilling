@@ -29,7 +29,18 @@ class Admin extends \Api_Abstract
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
-            $staff = $this->di['db']->getExistingModelById('Admin', $item['id'], 'Admin is not found');
+            $id = null;
+            if (is_array($item)) {
+                $id = $item['id'] ?? null;
+            } elseif (is_int($item) || is_string($item)) {
+                $id = (int) $item;
+            }
+
+            if (is_null($id)) {
+                continue;
+            }
+
+            $staff = $this->di['db']->getExistingModelById('Admin', $id, 'Admin is not found');
             $pager['list'][$key] = $this->getService()->toModel_AdminApiArray($staff);
         }
 
@@ -75,7 +86,7 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        if (!is_null($data['email'])) {
+        if (isset($data['email']) && !is_null($data['email'])) {
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
         }
 
@@ -312,9 +323,12 @@ class Admin extends \Api_Abstract
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
-            $activity = $this->di['db']->getExistingModelById('ActivityAdminHistory', $item['id'], sprintf('Staff activity item #%s not found', $item['id']));
-            if ($activity) {
-                $pager['list'][$key] = $this->getService()->toActivityAdminHistoryApiArray($activity);
+            $activityId = is_array($item) && isset($item['id']) ? $item['id'] : null;
+            if ($activityId !== null) {
+                $activity = $this->di['db']->getExistingModelById('ActivityAdminHistory', $activityId, sprintf('Staff activity item #%s not found', $activityId));
+                if ($activity) {
+                    $pager['list'][$key] = $this->getService()->toActivityAdminHistoryApiArray($activity);
+                }
             }
         }
 

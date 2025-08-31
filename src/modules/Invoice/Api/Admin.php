@@ -31,7 +31,12 @@ class Admin extends \Api_Abstract
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
-            $invoice = $this->di['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
+            $id = $item['id'] ?? null;
+            if ($id === null) {
+                $pager['list'][$key] = [];
+                continue;
+            }
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $id, 'Invoice not found');
             $pager['list'][$key] = $this->getService()->toApiArray($invoice, true, $this->getIdentity());
         }
 
@@ -77,7 +82,9 @@ class Admin extends \Api_Abstract
         $charge = false;
 
         // Check if the payment type is "Custom Payment", Add the transaction and process it.
-        if ($payGateway['code'] == 'Custom' && $payGateway['enabled'] == 1) {
+        $payGatewayCode = $payGateway['code'] ?? '';
+        $payGatewayEnabled = $payGateway['enabled'] ?? 0;
+        if ($payGatewayCode == 'Custom' && $payGatewayEnabled == 1) {
             // create transaction
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
             $newtx = $transactionService->create([
@@ -85,7 +92,7 @@ class Admin extends \Api_Abstract
                 'gateway_id' => $invoice->gateway_id,
                 'currency' => $invoice->currency,
                 'status' => 'received',
-                'txn_id' => $data['transactionId'],
+                'txn_id' => $data['transactionId'] ?? null,
             ]);
 
             try {
@@ -601,7 +608,7 @@ class Admin extends \Api_Abstract
             'code' => 'Payment gateway code is missing',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        $code = $data['code'];
+        $code = $data['code'] ?? '';
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->install($code);

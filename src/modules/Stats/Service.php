@@ -307,7 +307,7 @@ class Service implements InjectionAwareInterface
 
     public function getClientCountries($data)
     {
-        $limit = (int) $data['limit'] ?? 10;
+        $limit = isset($data['limit']) ? (int) $data['limit'] : ($data['limit'] ?? 10);
         $q = "
             SELECT country, COUNT(id) as clients
             FROM `client`
@@ -324,7 +324,7 @@ class Service implements InjectionAwareInterface
 
     public function getSalesByCountry($data)
     {
-        $limit = (int) $data['limit'] ?? 10;
+        $limit = isset($data['limit']) ? (int) $data['limit'] : ($data['limit'] ?? 10);
         $q = "
             SELECT buyer_country, COUNT(id) as sales
             FROM `invoice`
@@ -402,7 +402,7 @@ class Service implements InjectionAwareInterface
         do {
             $time_from = strtotime('+1 day', $time_from);
             $dom = date('Y-m-d', $time_from);
-            $c = $results[$dom] ?? 0;
+            $c = isset($results[$dom]) ? $results[$dom] : 0;
             $data[] = [$time_from * 1000, (int) $c];
         } while ($time_to > $time_from);
         array_pop($data);

@@ -64,9 +64,7 @@ class Box_AppClient extends Box_App
         try {
             return $this->render($tpl, ['post' => $_POST], $ext);
         } catch (Exception $e) {
-            // @todo Improve error handling here.
-            // @phpstan-ignore-next-line (Debug-only logging)
-            if (DEBUG) {
+            if (defined('DEBUG')) {
                 error_log($e->getMessage());
             }
         }

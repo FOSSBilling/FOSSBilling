@@ -89,6 +89,7 @@ class generalCheck implements \FOSSBilling\Interfaces\SecurityCheckInterface
             0 => SecurityCheckResultEnum::PASS,
             1 => SecurityCheckResultEnum::WARN,
             2 => SecurityCheckResultEnum::FAIL,
+            default => SecurityCheckResultEnum::FAIL,
         };
 
         return new SecurityCheckResult($result, $message);

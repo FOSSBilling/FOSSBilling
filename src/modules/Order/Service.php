@@ -52,8 +52,8 @@ class Service implements InjectionAwareInterface
 
     public static function onAfterAdminOrderActivate(\Box_Event $event)
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
+        $params = $event->getParameters() ?? [];
+        $order_id = $params['id'] ?? null;
         $di = $event->getDi();
         $service = $di['mod_service']('order');
 
@@ -77,8 +77,8 @@ class Service implements InjectionAwareInterface
 
     public static function onAfterAdminOrderRenew(\Box_Event $event)
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
+        $params = $event->getParameters() ?? [];
+        $order_id = $params['id'] ?? null;
         $di = $event->getDi();
         $orderService = $di['mod_service']('order');
 
@@ -103,8 +103,8 @@ class Service implements InjectionAwareInterface
 
     public static function onAfterAdminOrderSuspend(\Box_Event $event)
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
+        $params = $event->getParameters() ?? [];
+        $order_id = $params['id'] ?? null;
         $di = $event->getDi();
         $service = $di['mod_service']('order');
 
@@ -129,8 +129,8 @@ class Service implements InjectionAwareInterface
 
     public static function onAfterAdminOrderUnsuspend(\Box_Event $event)
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
+        $params = $event->getParameters() ?? [];
+        $order_id = $params['id'] ?? null;
         $di = $event->getDi();
         $service = $di['mod_service']('order');
 
@@ -155,8 +155,8 @@ class Service implements InjectionAwareInterface
 
     public static function onAfterAdminOrderCancel(\Box_Event $event)
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
+        $params = $event->getParameters() ?? [];
+        $order_id = $params['id'] ?? null;
         $di = $event->getDi();
         $service = $di['mod_service']('order');
 
@@ -179,8 +179,8 @@ class Service implements InjectionAwareInterface
 
     public static function onAfterAdminOrderUncancel(\Box_Event $event)
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
+        $params = $event->getParameters() ?? [];
+        $order_id = $params['id'] ?? null;
         $di = $event->getDi();
         $service = $di['mod_service']('order');
 

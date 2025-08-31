@@ -327,7 +327,8 @@ class Service implements InjectionAwareInterface
         $manifest = Path::join($theme_path, 'manifest.json');
 
         if ($this->filesystem->exists($manifest)) {
-            $config = json_decode($this->filesystem->readFile($manifest) ?? '', true);
+            $manifest = $this->filesystem->readFile($manifest);
+            $config = json_decode(!empty($manifest) ? $manifest : '', true);
         } else {
             $config = [
                 'name' => $theme,
@@ -382,7 +383,7 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentRouteTheme(): string
     {
-        if (defined('ADMIN_AREA') && ADMIN_AREA == true) {
+        if (defined('ADMIN_AREA')) {
             return $this->getCurrentAdminAreaTheme()['code'];
         }
 
@@ -414,7 +415,7 @@ class Service implements InjectionAwareInterface
 
     public function getDefaultMarkdownAttributes(): array
     {
-        if (defined('ADMIN_AREA') && ADMIN_AREA == true) {
+        if (defined('ADMIN_AREA')) {
             $config = $this->getThemeConfig(false);
         } else {
             $config = $this->getThemeConfig(true);

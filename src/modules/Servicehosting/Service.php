@@ -119,7 +119,9 @@ class Service implements InjectionAwareInterface
         $serverManager = $this->_getServerMangerForOrder($model);
 
         // Generate a password for the service
-        $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
+        $length = method_exists($serverManager, 'getPasswordLength') ? (int) $serverManager->getPasswordLength() : 12;
+        $length = $length > 0 ? $length : 12;
+        $pass = $this->di['tools']->generatePassword($length, true);
 
         // If a password is already specified in the order's configuration, use that instead
         if (isset($config['password']) && !empty($config['password'])) {
@@ -448,8 +450,9 @@ class Service implements InjectionAwareInterface
         return $this->getServerManager($server);
     }
 
-    public function _getAM(\Model_ServiceHosting $model, ?\Model_ServiceHostingHp $hp = null): array
+    public function _getAM(\Model_ServiceHosting|\RedBeanPHP\SimpleModel $model, ?\Model_ServiceHostingHp $hp = null): array
     {
+        /** @var \Model_ServiceHosting $model */
         if (!$hp instanceof \Model_ServiceHostingHp) {
             $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
         }
@@ -457,7 +460,7 @@ class Service implements InjectionAwareInterface
         $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
         $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
 
-        $hp_config = $hp->config;
+        $hp_config = $hp->config ?? '';
 
         $server_client = new \Server_Client();
         $server_client
@@ -480,7 +483,7 @@ class Service implements InjectionAwareInterface
             ->setPackage($package)
             ->setUsername($model->username)
             ->setReseller($model->reseller)
-            ->setDomain($model->sld . $model->tld)
+            ->setDomain(($model->sld ?? '') . ($model->tld ?? ''))
             ->setPassword($model->pass)
             ->setNs1($server->ns1)
             ->setNs2($server->ns2)
@@ -510,7 +513,7 @@ class Service implements InjectionAwareInterface
             'ip' => $model->ip,
             'sld' => $model->sld,
             'tld' => $model->tld,
-            'domain' => $model->sld . $model->tld,
+            'domain' => ($model->sld ?? '') . ($model->tld ?? ''),
             'username' => $model->username,
             'reseller' => $model->reseller,
             'server' => $server,
@@ -749,7 +752,7 @@ class Service implements InjectionAwareInterface
         $model->password = $data['password'] ?? null;
         $model->accesshash = $data['accesshash'] ?? null;
         $model->port = $data['port'] ?? null;
-        $model->passwordLength = is_numeric($data['passwordLength']) ? intval($data['passwordLength']) : null;
+        $model->passwordLength = isset($data['passwordLength']) && is_numeric($data['passwordLength']) ? intval($data['passwordLength']) : null;
         $model->secure = $data['secure'] ?? 0;
 
         $model->created_at = date('Y-m-d H:i:s');
@@ -790,12 +793,12 @@ class Service implements InjectionAwareInterface
         $model->ns4 = $data['ns4'] ?? $model->ns4;
         $model->manager = $data['manager'] ?? $model->manager;
         $model->port = is_numeric($data['port']) ? $data['port'] : $model->port;
-        $model->config = json_encode($data['config']) ?? $model->config;
+        $model->config = isset($data['config']) ? json_encode($data['config']) : $model->config;
         $model->secure = $data['secure'] ?? $model->secure;
         $model->username = $data['username'] ?? $model->username;
         $model->password = $data['password'] ?? $model->password;
         $model->accesshash = $data['accesshash'] ?? $model->accesshash;
-        $model->passwordLength = is_numeric($data['passwordLength']) ? $data['passwordLength'] : $model->passwordLength;
+        $model->passwordLength = isset($data['passwordLength']) && is_numeric($data['passwordLength']) ? (int) $data['passwordLength'] : $model->passwordLength;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);

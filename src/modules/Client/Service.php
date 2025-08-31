@@ -60,7 +60,7 @@ class Service implements InjectionAwareInterface
     public static function onAfterClientSignUp(\Box_Event $event)
     {
         $di = $event->getDi();
-        $params = $event->getParameters();
+        $params = $event->getParameters() ?? [];
         $config = $di['mod_config']('client');
         $emailService = $di['mod_service']('email');
 
@@ -480,8 +480,8 @@ class Service implements InjectionAwareInterface
         $client = $this->di['db']->dispense('Client');
 
         $client->auth_type = $data['auth_type'] ?? null;
-        $client->email = strtolower(trim($data['email'] ?? null));
-        $client->first_name = ucwords($data['first_name'] ?? null);
+        $client->email = strtolower(trim((string) ($data['email'] ?? '')));
+        $client->first_name = ucwords((string) ($data['first_name'] ?? ''));
         $client->pass = $this->di['password']->hashIt($password);
 
         $system = $this->di['mod']('system');
