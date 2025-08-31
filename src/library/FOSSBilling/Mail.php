@@ -38,24 +38,34 @@ class Mail
      */
     public function __construct(array|string $from, array|string $to, string $subject, string $bodyHTML, ?string $transport, ?string $dsn = null)
     {
-        if (isset($from['email']) && isset($from['name'])) {
-            $fromAddress = new Address($from['email'], $from['name']);
-        } elseif (isset($from['email'])) {
-            $fromAddress = new Address($from['email']);
+        // Normalize $fromAddress
+        if (is_array($from)) {
+            if (isset($from['email']) && isset($from['name'])) {
+                $fromAddress = new Address($from['email'], $from['name']);
+            } elseif (isset($from['email'])) {
+                $fromAddress = new Address($from['email']);
+            } else {
+                throw new \InvalidArgumentException('Invalid from address');
+            }
         } else {
-            $fromAddress = $to;
+            $fromAddress = $from;
         }
 
-        if (isset($to['email']) && isset($to['name'])) {
-            $toAddress = new Address($to['email'], $to['name']);
-        } elseif (isset($to['email'])) {
-            $toAddress = new Address($to['email']);
+        // Normalize $toAddress
+        if (is_array($to)) {
+            if (isset($to['email']) && isset($to['name'])) {
+                $toAddress = new Address($to['email'], $to['name']);
+            } elseif (isset($to['email'])) {
+                $toAddress = new Address($to['email']);
+            } else {
+                throw new \InvalidArgumentException('Invalid to address');
+            }
         } else {
             $toAddress = $to;
         }
 
-        $this->email = (new Email())
-            ->from($fromAddress)
+        $this->email = new Email();
+        $this->email->from($fromAddress)
             ->to($toAddress)
             ->subject($subject)
             ->html($bodyHTML);
@@ -113,7 +123,7 @@ class Mail
      */
     public function setPriority(int $priority): void
     {
-        if (is_int($priority) && $priority >= Email::PRIORITY_HIGHEST && $priority <= Email::PRIORITY_LOWEST) {
+        if ($priority >= Email::PRIORITY_HIGHEST && $priority <= Email::PRIORITY_LOWEST) {
             $this->email->priority($priority);
         } else {
             throw new InformationException('Provided priority (:priority) is invalid. Please provide an integer between 1 and 5 or use the pre-defined symfony constants.', [':priority' => $priority]);

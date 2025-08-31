@@ -171,13 +171,12 @@ class ServiceTest extends \BBTestCase
     public function testtemplateExistsEmptyPaths(): void
     {
         $getThemeResults = ['paths' => []];
-        $systemServiceMock = $this->getMockBuilder('\\' . Service::class)->addMethods(['getThemeConfig'])->getMock();
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('getThemeConfig')
+        $themeServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->onlyMethods(['getThemeConfig'])->getMock();
+        $themeServiceMock->expects($this->atLeastOnce())->method('getThemeConfig')
             ->willReturn($getThemeResults);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $themeServiceMock);
         $this->service->setDi($di);
 
         $result = $this->service->templateExists('defaultFile.cp');

@@ -104,6 +104,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_support_tickets');
@@ -138,6 +139,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_public_tickets(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_support_public_tickets');
@@ -161,6 +163,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_helpdesks(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_support_helpdesks');
@@ -168,6 +171,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_canned_list(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_support_canned_responses');
@@ -194,6 +198,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     */
     public function get_kb_index(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_admin_logged'];
 
         return $app->render('mod_support_kb_index');

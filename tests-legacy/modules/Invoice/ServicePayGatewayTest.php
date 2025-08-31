@@ -301,7 +301,6 @@ class ServicePayGatewayTest extends \BBTestCase
         $expected = 'Payment_Adapter_Custom';
 
         $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
-            ->addMethods(['getConfig'])
             ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -334,7 +333,6 @@ class ServicePayGatewayTest extends \BBTestCase
         $invoiceModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
-            ->addMethods(['getConfig'])
             ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -365,7 +363,6 @@ class ServicePayGatewayTest extends \BBTestCase
 
         $expected = '\Payment_Adapter_Custom';
         $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
-            ->addMethods(['getConfig'])
             ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -384,7 +381,6 @@ class ServicePayGatewayTest extends \BBTestCase
 
         $expected = 'Payment_Adapter_ClassDoesNotExists';
         $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
-            ->addMethods(['getConfig'])
             ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -403,7 +399,6 @@ class ServicePayGatewayTest extends \BBTestCase
         $payGatewayModel->gateway = 'Unknown';
 
         $serviceMock = $this->getMockBuilder('\\' . ServicePayGateway::class)
-            ->addMethods(['getConfig'])
             ->onlyMethods(['getAdapterClassName'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())

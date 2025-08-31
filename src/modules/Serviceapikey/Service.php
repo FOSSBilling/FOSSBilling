@@ -52,10 +52,6 @@ class Service implements InjectionAwareInterface
     public function activate(OODBBean $order, OODBBean $model): bool
     {
         $config = json_decode($order->config ?? '', true);
-        if (!is_object($model)) {
-            throw new \FOSSBilling\Exception('Order does not exist.');
-        }
-
         $model->api_key = $this->generateKey($config);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -190,12 +186,9 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
-        try {
-            $this->di['is_client_logged'];
-            $client = $this->di['loggedin_client'];
-        } catch (\Exception) {
-            $client = null;
-        }
+        // @phpstan-ignore expr.resultUnused
+        $this->di['is_client_logged'];
+        $client = $this->di['loggedin_client'];
 
         if (!is_null($client) && $client->id !== $model->client_id) {
             throw new \FOSSBilling\Exception('API key does not exist');
