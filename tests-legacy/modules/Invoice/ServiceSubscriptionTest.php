@@ -100,7 +100,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->onConsecutiveCalls($clientModel, $gatewayModel));
+            ->willReturnOnConsecutiveCalls($clientModel, $gatewayModel);
 
         $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
             ->getMock();

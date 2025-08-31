@@ -137,15 +137,15 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testAddons(): void
     {
+        $order = new Model_ClientOrder();
+        $order->loadBean(new DummyBean());
+
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['getOrderAddonsList', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getOrderAddonsList')
-            ->willReturn([new Model_ClientOrder()]);
+            ->willReturn([$order]);
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);
-
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
