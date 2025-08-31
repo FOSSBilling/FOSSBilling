@@ -587,6 +587,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('batchSend')
             ->willReturn(null);
 
+        $isExtensionActiveReturn = false;
         $extension = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->getMock();
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')

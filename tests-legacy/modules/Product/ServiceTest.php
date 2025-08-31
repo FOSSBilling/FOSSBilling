@@ -94,7 +94,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->onConsecutiveCalls($modelProductPayment, $modelProductCategory));
+            ->willReturnOnConsecutiveCalls($modelProductPayment, $modelProductCategory);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -189,7 +189,7 @@ class ServiceTest extends \BBTestCase
 
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->onConsecutiveCalls($modelPayment, $modelProduct));
+            ->willReturnOnConsecutiveCalls($modelPayment, $modelProduct);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
@@ -414,7 +414,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($newProductId);
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->onConsecutiveCalls($modelPayment, $modelProduct));
+            ->willReturnOnConsecutiveCalls($modelPayment, $modelProduct);
 
         $toolMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolMock->expects($this->atLeastOnce())
