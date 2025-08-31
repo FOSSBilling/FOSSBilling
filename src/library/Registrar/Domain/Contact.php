@@ -131,7 +131,7 @@ class Registrar_Domain_Contact implements Stringable
             return $this->firstname;
         }
 
-        $bits = explode(' ', $this->name);
+        $bits = explode(' ', (string) $this->name);
 
         return $bits[0] ?? '';
     }
@@ -149,7 +149,7 @@ class Registrar_Domain_Contact implements Stringable
             return $this->lastname;
         }
 
-        $bits = explode(' ', $this->name);
+        $bits = explode(' ', (string) $this->name);
 
         return isset($bits[1]) ? str_replace($bits[0] . ' ', '', $this->name) : '';
     }

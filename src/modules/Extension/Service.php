@@ -169,11 +169,14 @@ class Service implements InjectionAwareInterface
                 continue;
             }
 
-            $manifest['version'] = $im['version'];
-            $manifest['status'] = $im['status'];
-            if ($im['type'] == 'mod' && $im['status'] == 'installed') {
+            $manifest['version'] = $im['version'] ?? null;
+            $manifest['status'] = $im['status'] ?? null;
+            if (($im['type'] ?? null) == 'mod' && ($im['status'] ?? null) == 'installed') {
                 $manifest['has_settings'] = $m->hasSettingsPage();
             }
+
+            $manifest['has_settings'] = $manifest['has_settings'] ?? false;
+            $manifest['icon_url'] = $manifest['icon_url'] ?? null;
 
             $result[] = $manifest;
         }
@@ -222,7 +225,7 @@ class Service implements InjectionAwareInterface
 
         foreach ($result as $key => $value) {
             $iconPath = 'assets/icons/cog.svg';
-            $icon_url = $value['icon_url'] ?? null;
+            $icon_url = is_array($value) && isset($value['icon_url']) ? $value['icon_url'] : null;
             if ($icon_url) {
                 $iconPath = SYSTEM_URL . $icon_url;
             }
@@ -230,11 +233,20 @@ class Service implements InjectionAwareInterface
         }
 
         foreach ($result as $key => $value) {
-            $icon_url = $value['icon_url'] ?? null;
+            $icon_url = is_array($value) && isset($value['icon_url']) ? $value['icon_url'] : null;
             if ($icon_url) {
-                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), basename($icon_url));
-                if ($this->filesystem->exists($iconPath)) {
-                    $result[$key]['icon_path'] = 'mod_' . ucfirst($value['id']) . '_' . basename($icon_url);
+                $modId = '';
+                if (is_array($value) && isset($value['id'])) {
+                    $modId = (string) $value['id'];
+                } elseif (is_array($value) && isset($value['name'])) {
+                    $modId = (string) $value['name'];
+                }
+                $base = basename($icon_url) ?: '';
+                if (!empty($modId) && !empty($base)) {
+                    $iconPath = Path::join(PATH_MODS, ucfirst($modId), $base);
+                    if ($this->filesystem->exists($iconPath)) {
+                        $result[$key]['icon_path'] = 'mod_' . ucfirst($modId) . '_' . $base;
+                    }
                 }
             }
         }
@@ -766,7 +778,7 @@ class Service implements InjectionAwareInterface
         $module_permissions = $this->getSpecificModulePermissions($module);
 
         // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
-        if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
+        if (isset($module_permissions['manage_settings']) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
             http_response_code(403);
             $e = new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
             if (!is_null($app)) {

@@ -52,10 +52,6 @@ class Service implements InjectionAwareInterface
     public function activate(OODBBean $order, OODBBean $model): bool
     {
         $config = json_decode($order->config ?? '', true);
-        if (!is_object($model)) {
-            throw new \FOSSBilling\Exception('Order does not exist.');
-        }
-
         $model->api_key = $this->generateKey($config);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);

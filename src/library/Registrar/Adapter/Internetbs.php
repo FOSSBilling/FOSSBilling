@@ -364,13 +364,12 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             $result[strtolower(trim($varName))] = trim($value);
         }
 
-        if (array_key_exists('status', $result)
-            && ($result['status'] == 'FAILURE')) {
+        if (isset($result['status']) && ($result['status'] == 'FAILURE')) {
             throw new Registrar_Exception($result['message']);
         }
 
         if ($this->isTestEnv()) {
-            error_log(print_r($result, 1));
+            error_log((string) print_r($result, true));
         }
 
         return $result;
@@ -407,14 +406,14 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         $name = '';
 
         // domain specific
-        if (array_key_exists($type . 'firstname', $result)) {
+        if (isset($result[$type . 'firstname'])) {
             $name = $result[$type . 'firstname'];
         }
-        if (array_key_exists($type . 'lastname', $result)) {
+        if (isset($result[$type . 'lastname'])) {
             $name .= ' ' . $result[$type . 'lastname'];
         }
 
-        if (!array_key_exists($type . 'organization', $result)) {
+        if (!isset($result[$type . 'organization'])) {
             $result[$type . 'organization'] = '';
         }
         if ($domain->getTld() == 'fr') {
@@ -454,7 +453,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         }
 
         $privacy = 0;
-        if (array_key_exists('privatewhois', $result)) {
+        if (isset($result['privatewhois'])) {
             $privacy = ($result['privatewhois'] == 'FULL')
                         || ($result['privatewhois'] == 'PARTIAL');
         }
@@ -472,6 +471,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
      *
      * @return bool
      */
+    // @phpstan-ignore-next-line - unused private helper
     private function _isPrivacyEnabled(Registrar_Domain $domain)
     {
         $params = [

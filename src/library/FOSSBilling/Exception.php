@@ -36,9 +36,7 @@ class Exception extends \Exception
             $message = strtr($message, $variables);
         }
 
-        // @todo Improve error handling here.
-        // @phpstan-ignore-next-line - (Debug-only logging)
-        if (DEBUG && $logStack) {
+        if (defined('DEBUG') && $logStack) {
             error_log("Exception: $message");
             error_log('Stack trace:');
             error_log($this->stackTrace($stackLength, $protected));

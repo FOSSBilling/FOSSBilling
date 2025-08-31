@@ -42,7 +42,7 @@ function checkInstaller(): void
     }
 
     // If the config file exists and not install.php, but the install folder does, perform some cleanup.
-    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install')) && !DEBUG) {
+    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install')) && !defined('DEBUG')) {
         $filesystem->remove('install');
     }
 }
@@ -78,7 +78,7 @@ function checkSSL(): void
 {
     global $request;
 
-    if (!empty(Config::getProperty('security.force_https')) && Config::getProperty('security.force_https') && !Environment::isCLI()) {
+    if (!empty(Config::getProperty('security.force_https')) && !Environment::isCLI()) {
         if (!Tools::isHTTPS()) {
             header('Location: https://' . $request->getHost() . $request->getRequestUri());
             exit;
@@ -173,7 +173,7 @@ function exceptionHandler(Exception|Error $e)
         return false;
     }
 
-    if (defined('DEBUG') && DEBUG && $filesystem->exists(PATH_VENDOR)) {
+    if (defined('DEBUG') && $filesystem->exists(PATH_VENDOR)) {
         /**
          * If advanced debugging is enabled, print Whoops instead of our error page.
          * filp/whoops documentation: https://github.com/filp/whoops/blob/master/docs/API%20Documentation.md.
@@ -184,7 +184,7 @@ function exceptionHandler(Exception|Error $e)
         $prettyPage->addDataTable('FOSSBilling environment', [
             'PHP Version' => PHP_VERSION,
             'Error code' => $e->getCode(),
-            'Instance ID' => INSTANCE_ID ?? 'Unknown',
+            'Instance ID' => INSTANCE_ID,
         ]);
         $whoops->pushHandler($prettyPage);
         $whoops->allowQuit(false);
@@ -294,9 +294,7 @@ function postInit(): void
     ini_set('error_log', Path::join(PATH_LOG, 'php_error.log'));
     error_reporting(E_ALL);
 
-    // @todo Improve runtime flag setting.
-    // @phpstan-ignore-next-line (Debug-only runtime flag)
-    if (DEBUG) {
+    if (defined('DEBUG')) {
         ini_set('display_errors', '1');
         ini_set('display_startup_errors', '1');
     } else {

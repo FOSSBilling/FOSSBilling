@@ -705,11 +705,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         if (is_numeric($result->getContent(false))) {
             return $data = $result->getContent(false);
         }
-        $json = $result->toArray(false);
-        if (!is_array($json)) {
-            return $data = $result->getContent(false);
-        }
 
+        $json = $result->toArray(false);
         if (isset($json['status']) && $json['status'] == 'ERROR') {
             error_log('ResellerClub error: ' . $json['message']);
             $placeholders = [':action:' => $url, ':type:' => 'ResellerClub'];
@@ -764,7 +761,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      *
      * @return array
      *
-     * @throws Registrar_Exception
      */
     private function _checkRequiredParams($required_params, $params)
     {

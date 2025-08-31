@@ -280,23 +280,28 @@ class Service implements InjectionAwareInterface
     private function deleteSessionIfMatching(array $session, string $type, int $id): void
     {
         // Decode the data for the current session and then verify it is for the selected type
-        $data = base64_decode($session['content']);
+        $decoded = base64_decode($session['content']);
+        if (!is_string($decoded)) {
+            return;
+        }
+
         $stringStart = ($type === 'admin') ? 'admin|' : 'client_id|';
-        if (!str_starts_with($data, $stringStart)) {
+        if (!str_starts_with($decoded, $stringStart)) {
             return;
         }
 
         // Now we strip off the starting portion so we can unserialize the data
-        $data = str_replace($stringStart, '', $data);
+        $stripped = str_replace($stringStart, '', $decoded);
 
         // Finally, perform the check depending on what type of session we are looking for and trash it if it's a match
         if ($type === 'admin') {
-            $dataArray = unserialize($data);
-            if ($dataArray['id'] === $id) {
+            $dataArray = @unserialize($stripped);
+            if (is_array($dataArray) && isset($dataArray['id']) && $dataArray['id'] === $id) {
                 $this->trashSessionByArray($session);
             }
         } else {
-            if (unserialize($data) === $id) {
+            $maybe = @unserialize($stripped);
+            if ($maybe === $id) {
                 $this->trashSessionByArray($session);
             }
         }

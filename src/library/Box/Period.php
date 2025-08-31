@@ -49,7 +49,7 @@ class Box_Period
         $units = $this->getUnits();
         $qty = (int) $qty;
         $unit = strtoupper($unit);
-        if (!array_key_exists($unit, $units)) {
+        if (!isset($units[$unit])) {
             throw new FOSSBilling\Exception('Period Error. Unit :unit is not defined', [':unit' => $unit]);
         }
 
