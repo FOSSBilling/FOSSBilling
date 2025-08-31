@@ -180,7 +180,7 @@ class Service implements InjectionAwareInterface
             $lines[] = $line;
         }
 
-        $current_invoice_tax_rate = isset($row['taxrate']) ? $row['taxrate'] : 0;
+        $current_invoice_tax_rate = $row['taxrate'] ?? 0;
         if ($current_invoice_tax_rate > 0 && $taxable_subtotal != 0) {
             $tax = round($taxable_subtotal * $current_invoice_tax_rate / 100, 2);
         } else {
@@ -264,7 +264,7 @@ class Service implements InjectionAwareInterface
         }
 
         $result['reminded_at'] = $row['reminded_at'] ?? null;
-        $result['approved'] = isset($row['approved']) ? (bool) $row['approved'] : false;
+        $result['approved'] = isset($row['approved']) && (bool) $row['approved'];
         $result['income'] = (float) (($row['base_income'] ?? 0) - ($row['base_refund'] ?? 0));
         $result['refund'] = isset($row['refund']) ? (float) $row['refund'] : 0.0;
         $result['credit'] = isset($row['credit']) ? (float) $row['credit'] : 0.0;

@@ -186,13 +186,9 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
-        try {
-            // @phpstan-ignore expr.resultUnused
-            $this->di['is_client_logged'];
-            $client = $this->di['loggedin_client'];
-        } catch (\Exception) {
-            $client = null;
-        }
+        // @phpstan-ignore expr.resultUnused
+        $this->di['is_client_logged'];
+        $client = $this->di['loggedin_client'];
 
         if (!is_null($client) && $client->id !== $model->client_id) {
             throw new \FOSSBilling\Exception('API key does not exist');

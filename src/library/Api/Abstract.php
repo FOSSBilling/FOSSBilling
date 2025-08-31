@@ -56,7 +56,7 @@ class Api_Abstract implements InjectionAwareInterface
      */
     public function getMod()
     {
-        if (!$this->mod) {
+        if ($this->mod === null) {
             throw new FOSSBilling\Exception('Mod object is not set for the service');
         }
 

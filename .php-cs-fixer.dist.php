@@ -21,6 +21,7 @@ return (new PhpCsFixer\Config())
         'protected_to_private' => false,
         'yoda_style' => ['equal' => false, 'identical' => false, 'less_and_greater' => false], // Enforce non-Yoda style.
         'blank_line_before_statement' => ['statements' => ['break', 'continue', 'return', 'throw', 'try']], // Removed 'declare' from the default list.
+        'phpdoc_to_comment' => ['ignored_tags' => ['var']],
         /* Risky */
         'get_class_to_class_keyword' => true, // Risky if the get_class function is overridden. In our case, it's not.
         'dir_constant' => true, // Risky when the function dirname is overridden. In our case, it's not.

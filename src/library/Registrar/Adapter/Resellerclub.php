@@ -760,7 +760,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      * @param array $params          - given params
      *
      * @return array
-     *
      */
     private function _checkRequiredParams($required_params, $params)
     {

@@ -2,7 +2,12 @@ includes:
 	- phpstan-baseline.neon
 
 parameters:
-	level: 3
+	level: 5
+	# Don't treat PHPDoc-only types as absolute truth. This reduces many false
+	# positives where PHPDoc types are more specific than runtime types (e.g.
+	# RedBean models). Set to false to let phpstan be less strict about phpdoc
+	# types until we can properly add native types or stubs.
+	treatPhpDocTypesAsCertain: false
 	paths:
 		- src
 	bootstrapFiles:
@@ -26,8 +31,6 @@ parameters:
 		- '#^Inner named functions are not supported by PHPStan\. Consider refactoring to an anonymous function, class method, or a top\-level\-defined function\. See issue \#165 \(https\://github\.com/phpstan/phpstan/issues/165\) for more details\.$#'
 		- message: '#^Result of function header \(void\) is used\.$#'
 		  path: src/modules/Custompages/Controller/Client.php
-		- message: '#^Variable \$ext_id on left side of \?\?\= is never defined\.$#'
-		  path: src/modules/Extension/Service.php
 		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$updated_at\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$pass\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$username\.$#'

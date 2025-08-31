@@ -41,6 +41,7 @@ class Service implements InjectionAwareInterface
     public function typeValidation($type)
     {
         $types = $this->getFormFieldsTypes();
+
         return isset($types[$type]);
     }
 
@@ -99,8 +100,7 @@ class Service implements InjectionAwareInterface
 
         $options = $field['options'] ?? '';
         $options = is_string($options) ? $options : '';
-        if ($options !== '' && (str_starts_with($options, '[') || str_starts_with($options, '{')))
-        {
+        if ($options !== '' && (str_starts_with($options, '[') || str_starts_with($options, '{'))) {
             $decoded = json_decode($options, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                 $options = $decoded;
@@ -187,14 +187,14 @@ class Service implements InjectionAwareInterface
             if ($field['type'] == 'checkbox' || $field['type'] == 'radio' || $field['type'] == 'select') {
                 $values = is_array($field['values'] ?? null) ? $field['values'] : [];
                 $labels = is_array($field['labels'] ?? null) ? $field['labels'] : [];
-                if (!$this->isArrayUnique(array_filter($values, function($v): bool { return strlen((string)$v) > 0; }))) {
+                if (!$this->isArrayUnique(array_filter($values, fn ($v): bool => strlen((string) $v) > 0))) {
                     throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' values must be unique', null, 1597);
                 }
-                if (!$this->isArrayUnique(array_filter($labels, function($v): bool { return strlen((string)$v) > 0; }))) {
+                if (!$this->isArrayUnique(array_filter($labels, fn ($v): bool => strlen((string) $v) > 0))) {
                     throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' labels must be unique', null, 1598);
                 }
                 $field['options'] = array_combine($labels, $values);
-                $field['options'] = array_filter($field['options'], function($k): bool { return strlen((string)$k) > 0; }, ARRAY_FILTER_USE_KEY);
+                $field['options'] = array_filter($field['options'], fn ($k): bool => strlen((string) $k) > 0, ARRAY_FILTER_USE_KEY);
                 $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
             }
             if ($field['type'] == 'textarea') {
@@ -264,6 +264,7 @@ class Service implements InjectionAwareInterface
                     'options' => [],
                     'default_value' => '',
                 ];
+
                 continue;
             }
 

@@ -369,7 +369,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         }
 
         if ($this->isTestEnv()) {
-            error_log((string) print_r($result, true));
+            error_log(print_r($result, true));
         }
 
         return $result;

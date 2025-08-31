@@ -413,12 +413,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        try {
-            $client = $this->di['loggedin_client'];
-        } catch (\Exception) {
-            $client = null;
-        }
-
+        $client = $this->di['loggedin_client'];
         if (is_null($client)) {
             return false;
         }
@@ -620,8 +615,8 @@ class Service implements InjectionAwareInterface
                 ];
             }
 
-            $item_setup_price = isset($item['setup_price']) ? $item['setup_price'] : 0;
-            $item_discount_setup = isset($item['discount_setup']) ? $item['discount_setup'] : 0;
+            $item_setup_price = $item['setup_price'] ?? 0;
+            $item_discount_setup = $item['discount_setup'] ?? 0;
             if ($item_setup_price > 0) {
                 $setup_price = ($item_setup_price * $currency->conversion_rate) - ($item_discount_setup * $currency->conversion_rate);
                 $invoice_items[] = [

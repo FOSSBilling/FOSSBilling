@@ -72,6 +72,7 @@ class PasswordManager
         if ($hash == false) {
             throw new \Exception("Password hashing failed with {$this->algo} and the following options: " . print_r($this->options, true));
         }
+
         return $hash;
     }
 

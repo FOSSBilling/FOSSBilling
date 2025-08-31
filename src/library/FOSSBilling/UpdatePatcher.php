@@ -412,9 +412,9 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             44 => function (): void {
                 // Add ipn_hash column to transaction table and index it for fast duplicate detection.
-                $q = "ALTER TABLE `transaction`
+                $q = 'ALTER TABLE `transaction`
                         ADD COLUMN `ipn_hash` VARCHAR(64) DEFAULT NULL,
-                        ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));";
+                        ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));';
                 $this->executeSql($q);
             },
         ];

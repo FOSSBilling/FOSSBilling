@@ -35,7 +35,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function getFilters()
     {
         return [
-            'trans' => new TwigFilter('trans', function (...$args) { return \__trans(...$args); }),
+            'trans' => new TwigFilter('trans', fn (...$args) => \__trans(...$args)),
 
             'alink' => new TwigFilter('alink', $this->twig_bb_admin_link_filter(...), ['is_safe' => ['html']]),
             'link' => new TwigFilter('link', $this->twig_bb_client_link_filter(...), ['is_safe' => ['html']]),
