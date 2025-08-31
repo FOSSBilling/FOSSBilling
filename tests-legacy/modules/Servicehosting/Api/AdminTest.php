@@ -247,6 +247,8 @@ class AdminTest extends \BBTestCase
             ->willReturn(['list' => []]);
 
         $di = new \Pimple\Container();
+        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $dbMock = $this->getMockBuilder('Box_Database')->getMock();
         $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
@@ -275,6 +277,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['pager'] = $pagerMock;
+        $dbMock = $this->getMockBuilder('Box_Database')->getMock();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
