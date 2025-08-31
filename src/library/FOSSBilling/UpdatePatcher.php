@@ -52,7 +52,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $currentConfig = Config::getConfig();
 
-        if (!is_array($currentConfig)) {
+        if (empty($currentConfig)) {
             throw new Exception('Unable to load existing configuration');
         }
 
@@ -80,8 +80,8 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['api']['CSRFPrevention'] ??= true;
         $newConfig['api']['rate_limit_whitelist'] ??= [];
         $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
-        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
-        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
+        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'];
+        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'];
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
 
         // Instance ID handling
@@ -409,6 +409,13 @@ class UpdatePatcher implements InjectionAwareInterface
                     Path::join(PATH_LIBRARY, 'GeoLite2-Country.mmdb') => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
+            },
+            44 => function (): void {
+                // Add ipn_hash column to transaction table and index it for fast duplicate detection.
+                $q = "ALTER TABLE `transaction`
+                        ADD COLUMN `ipn_hash` VARCHAR(64) DEFAULT NULL,
+                        ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));";
+                $this->executeSql($q);
             },
         ];
         ksort($patches, SORT_NATURAL);
