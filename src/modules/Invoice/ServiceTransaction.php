@@ -28,7 +28,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function processReceivedATransactions()
+    public function proccessReceivedATransactions(): bool
     {
         $this->di['logger']->info('Executed action to process received transactions');
         $received = $this->getReceived();
@@ -40,7 +40,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return true;
     }
 
-    public function update(\Model_Transaction $model, array $data)
+    public function update(\Model_Transaction $model, array $data): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionUpdate', 'params' => ['id' => $model->id]]);
 
@@ -116,7 +116,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $newId;
     }
 
-    public function delete(\Model_Transaction $model)
+    public function delete(\Model_Transaction $model): bool
     {
         $id = $model->id;
         $this->di['db']->trash($model);
@@ -161,7 +161,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $result;
     }
 
-    public function getSearchQuery(array $data)
+    public function getSearchQuery(array $data): array
     {
         $sql = 'SELECT m.*
                 FROM transaction as m
@@ -239,7 +239,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         if ($search) {
-            $sql .= ' AND m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn';
+            $sql .= ' AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)';
             $params['note'] = "%$search%";
             $params['search_invoice_id'] = "%$search%";
             $params['search_txn_id'] = "%$search%";
@@ -251,7 +251,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function counter()
+    public function counter(): array
     {
         $sql = 'SELECT status, count(id) as counter
             FROM transaction
@@ -271,7 +271,7 @@ class ServiceTransaction implements InjectionAwareInterface
         ];
     }
 
-    public function getStatusPairs()
+    public function getStatusPairs(): array
     {
         return [
             \Model_Transaction::STATUS_RECEIVED => 'Received',
@@ -281,7 +281,7 @@ class ServiceTransaction implements InjectionAwareInterface
         ];
     }
 
-    public function getStatuses()
+    public function getStatuses(): array
     {
         return [
             \Model_Transaction::STATUS_RECEIVED => 'Received',
@@ -291,7 +291,7 @@ class ServiceTransaction implements InjectionAwareInterface
         ];
     }
 
-    public function getGatewayStatuses()
+    public function getGatewayStatuses(): array
     {
         return [
             \Payment_Transaction::STATUS_PENDING => 'Pending validation',
@@ -300,7 +300,7 @@ class ServiceTransaction implements InjectionAwareInterface
         ];
     }
 
-    public function getTypes()
+    public function getTypes(): array
     {
         return [
             \Payment_Transaction::TXTYPE_PAYMENT => 'Payment',
@@ -378,7 +378,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $this->di['db']->getAll($sql, $params);
     }
 
-    public function process($tx)
+    public function process(\Model_Transaction $tx): \Model_Transaction
     {
         $transaction = $this->di['db']->load('Transaction', $tx->id);
 
@@ -414,7 +414,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $transaction;
     }
 
-    private function _isProcessed(\Model_Transaction $tx)
+    private function _isProcessed(\Model_Transaction $tx): bool
     {
         if ($tx->status == \Model_Transaction::STATUS_PROCESSED) {
             $tx->error = null;
@@ -438,7 +438,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return false;
     }
 
-    private function hasProcessedTransaction(\Model_Transaction $tx)
+    private function hasProcessedTransaction(\Model_Transaction $tx): bool
     {
         if (!$tx->txn_id) {
             return false;
@@ -449,7 +449,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return empty($res);
     }
 
-    private function _markAsProcessed(\Model_Transaction $tx)
+    private function _markAsProcessed(\Model_Transaction $tx): void
     {
         $tx->error = null;
         $tx->error_code = null;
@@ -458,7 +458,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['db']->store($tx);
     }
 
-    private function _parseIpnAndApprove(\Model_Transaction &$tx)
+    private function _parseIpnAndApprove(\Model_Transaction &$tx): \Model_Transaction
     {
         if ($tx->status == \Model_Transaction::STATUS_APPROVED) {
             return $tx;
@@ -466,6 +466,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+
         $ipn = json_decode($tx->ipn ?? '', true) ?? [];
 
         if (empty($tx->gateway_id)) {
@@ -569,7 +570,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
     }
 
-    private function _refund(\Model_Transaction $tx)
+    private function _refund(\Model_Transaction $tx): \Model_Transaction
     {
         if ($this->_isProcessed($tx)) {
             return $tx;
@@ -588,7 +589,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $tx;
     }
 
-    private function _subscribe(\Model_Transaction $tx)
+    private function _subscribe(\Model_Transaction $tx): \Model_Transaction
     {
         if ($this->_isProcessed($tx)) {
             return $tx;
@@ -623,7 +624,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $tx;
     }
 
-    private function _unsubscribe(\Model_Transaction $tx)
+    private function _unsubscribe(\Model_Transaction $tx): \Model_Transaction
     {
         if ($this->_isProcessed($tx)) {
             return $tx;
@@ -642,7 +643,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $tx;
     }
 
-    private function _validateApprovedTransaction(\Model_Transaction $tx)
+    private function _validateApprovedTransaction(\Model_Transaction $tx): void
     {
         if ($tx->status != \Model_Transaction::STATUS_APPROVED) {
             throw new \FOSSBilling\Exception('Only approved transaction can be processed');
@@ -665,7 +666,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
     }
 
-    public function debitTransaction(\Model_Transaction $tx)
+    public function debitTransaction(\Model_Transaction $tx): void
     {
         $proforma = $this->di['db']->load('Invoice', $tx->invoice_id);
         $client = $this->di['db']->load('Client', $proforma->client_id);
