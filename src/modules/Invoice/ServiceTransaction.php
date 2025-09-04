@@ -28,7 +28,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function proccessReceivedATransactions(): bool
+    public function processReceivedATransactions(): bool
     {
         $this->di['logger']->info('Executed action to process received transactions');
         $received = $this->getReceived();
