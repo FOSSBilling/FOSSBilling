@@ -139,8 +139,6 @@ class Service implements InjectionAwareInterface
 
     public function toApiArray(\Model_Invoice $invoice, $deep = true, $identity = null): array
     {
-        $this->checkInvoiceAuth($invoice->client_id);
-
         $row = $this->di['db']->toArray($invoice);
 
         $items = $this->di['db']->find('InvoiceItem', 'invoice_id = :iid', ['iid' => $row['id']]);
@@ -1238,9 +1236,12 @@ class Service implements InjectionAwareInterface
         $document_format = $systemService->getParamValue('invoice_document_format', 'Letter');
 
         $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', [':hash' => $hash]);
+
         if (!$invoice instanceof \Model_Invoice) {
             throw new \FOSSBilling\Exception('Invoice not found');
         }
+
+        $this->checkInvoiceAuth($invoice->client_id);
 
         if (isset($invoice->currency)) {
             $currencyCode = $invoice->currency;
@@ -1498,7 +1499,7 @@ class Service implements InjectionAwareInterface
         return $this->di['table_export_csv']('invoice', 'invoices.csv', $headers);
     }
 
-    private function checkInvoiceAuth(?int $invoiceClientId)
+    public function checkInvoiceAuth(?int $invoiceClientId)
     {
         if ($invoiceClientId === null) {
             return;
