@@ -35,7 +35,7 @@ class Guest extends \Api_Abstract
         if (!$model) {
             throw new \FOSSBilling\Exception('Invoice was not found');
         }
-        $service = $this->getService(); 
+        $service = $this->getService();
         $service->checkInvoiceAuth($model->client_id);
 
         return $service->toApiArray($model, true, $this->getIdentity());
