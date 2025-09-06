@@ -184,7 +184,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         $d = [
             'id' => $id,
             'error' => '',
-            'error_code' => '',
+            'error_code' => null,
             'status' => 'processed',
             'updated_at' => date('Y-m-d H:i:s'),
         ];
