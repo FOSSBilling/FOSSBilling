@@ -158,7 +158,7 @@ class ExtensionManager implements InjectionAwareInterface
     public function makeRequest(string $endpoint, array $params = []): array
     {
         $url = $this->_url . $endpoint;
-        $key = 'extension-manager-' . md5($endpoint . serialize($params));
+        $key = 'extension-manager-' . hash('sha256', $endpoint . serialize($params));
 
         return $this->di['cache']->get($key, function (ItemInterface $item) use ($url, $params) {
             $item->expiresAfter(60 * 60);
