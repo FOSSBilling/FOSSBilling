@@ -208,13 +208,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $emailSettings = $emailMod->getConfig();
 
         $customEmail = $emailSettings['from_email'] ?? '';
-        $customName  = $emailSettings['from_name'] ?? '';
+        $customName = $emailSettings['from_name'] ?? '';
 
         $companyEmail = $systemService->getParamValue('company_email');
-        $companyName  = $systemService->getParamValue('company_name');
+        $companyName = $systemService->getParamValue('company_name');
 
-        $from      = $data['from']      ?? (!empty($customEmail) ? $customEmail : $companyEmail);
-        $from_name = $data['from_name'] ?? (!empty($customName)  ? $customName  : $companyName);
+        $from = $data['from'] ?? (!empty($customEmail) ? $customEmail : $companyEmail);
+        $from_name = $data['from_name'] ?? (!empty($customName) ? $customName : $companyName);
 
         $sent = false;
 
