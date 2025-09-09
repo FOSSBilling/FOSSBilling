@@ -5,23 +5,22 @@
 			<h3 class="card-title">{{ 'Create a new client'|trans }}</h3>
 		</div>
 		<div class="card-body">
-			<div
-				class="row">
+			<div class="row">
 				<!-- Left column -->
 				<div class="col-md-6">
 					<div class="mb-3 row">
-                        <label class="col-3 col-form-label required">{{ 'Name'|trans }}</label>
-                        <div class="col">
-                            <div class="row">
-                                <div class="col">
-                                    <input type="text" name="first_name" class="form-control" placeholder="{{ 'First name'|trans }}" required>
-                                </div>
-                                <div class="col">
-                                    <input type="text" name="last_name" class="form-control" placeholder="{{ 'Last name'|trans }}">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+						<label class="col-3 col-form-label required">{{ 'Name'|trans }}</label>
+						<div class="col">
+							<div class="row">
+								<div class="col">
+									<input type="text" name="first_name" class="form-control" placeholder="{{ 'First name'|trans }}" required>
+								</div>
+								<div class="col">
+									<input type="text" name="last_name" class="form-control" placeholder="{{ 'Last name'|trans }}">
+								</div>
+							</div>
+						</div>
+					</div>
 					<div class="mb-3 row">
 						<label class="col-3 col-form-label required">{{ 'Email Address'|trans }}</label>
 						<div class="col">
@@ -31,7 +30,7 @@
 					<div class="mb-3 row">
 						<label class="col-3 col-form-label required">{{ 'Password'|trans }}</label>
 						<div class="col">
-                            <input type="password" name="password" class="form-control" required>
+							<input type="password" name="password" class="form-control" required>
 						</div>
 					</div>
 					<div class="mb-3 row">
@@ -39,7 +38,7 @@
 						<div class="col">
 							<select name="status" class="form-select">
 								<option value="active">{{ 'Active'|trans }}</option>
-                                <option value="suspended">{{ 'Suspended'|trans }}</option>
+								<option value="suspended">{{ 'Suspended'|trans }}</option>
 								<option value="canceled">{{ 'Canceled'|trans }}</option>
 							</select>
 						</div>
@@ -56,27 +55,25 @@
 							{{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'Select currency'|trans) }}
 						</div>
 					</div>
-                    <div class="mb-3 row">
+					<div class="mb-3 row">
 						<label class="col-3 col-form-label">{{ 'Language'|trans }}</label>
 						<div class="col">
 							{% set languages = guest.extension_languages(true) %}
-                            <div class="nav-item">
-                                <select name="lang" class="form-select js-language-selector">
-                                    <option value="">{{ 'System default'|trans }}</option>
-                                    {% for lang in languages %}
-                                        <option value="{{ lang.locale }}">{{ lang.title }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+							<select name="lang" class="form-select js-language-selector">
+								<option value="">{{ 'System default'|trans }}</option>
+								{% for lang in languages %}
+									<option value="{{ lang.locale }}">{{ lang.title }}</option>
+								{% endfor %}
+							</select>
 						</div>
 					</div>
-                    <div class="mb-3 row">
+					<div class="mb-3 row">
 						<label class="col-3 col-form-label">{{ 'Phone Number'|trans }}</label>
 						<div class="col">
 							<div class="input-group">
 								<span class="input-group-text">+</span>
-                                    <input class="form-control" type="text" name="phone_cc">
-                                    <input class="form-control w-50" type="text" name="phone">
+								<input class="form-control" type="text" name="phone_cc">
+								<input class="form-control w-50" type="text" name="phone">
 							</div>
 						</div>
 					</div>
@@ -84,20 +81,20 @@
 
 				<!-- Right column -->
 				<div class="col-md-6">
-                    <div class="mb-3 row">
+					<div class="mb-3 row">
 						<label class="col-3 col-form-label">{{ 'Company'|trans }}</label>
 						<div class="col">
 							<div class="row">
-                                <div class="col">
-                                    <input type="text" name="company" class="form-control" placeholder="{{ 'Name'|trans }}">
-                                </div>
-                                <div class="col">
-                                    <input type="text" name="company_number" class="form-control" placeholder="{{ 'Number'|trans }}">
-                                </div>
-                                <div class="col">
-                                    <input type="text" name="company_vat" class="form-control" placeholder="{{ 'VAT number'|trans }}">
-                                </div>
-                            </div>
+								<div class="col">
+									<input type="text" name="company" class="form-control" placeholder="{{ 'Name'|trans }}">
+								</div>
+								<div class="col">
+									<input type="text" name="company_number" class="form-control" placeholder="{{ 'Number'|trans }}">
+								</div>
+								<div class="col">
+									<input type="text" name="company_vat" class="form-control" placeholder="{{ 'VAT number'|trans }}">
+								</div>
+							</div>
 						</div>
 					</div>
 					<div class="mb-3 row">
@@ -139,7 +136,7 @@
 				</div>
 			</div>
 
-            <hr />
+			<hr/>
 
 			<!-- Notes -->
 			<div class="mb-4 row">
