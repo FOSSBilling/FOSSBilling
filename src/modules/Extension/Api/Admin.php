@@ -43,7 +43,9 @@ class Admin extends \Api_Abstract
 
         try {
             $list = $this->di['extension_manager']->getExtensionList($type);
-        } catch (\Exception) {
+        } catch (\Exception $e) {
+            $this->di['logger']->warn(sprintf('Failed to fetch extension list for type "%s": %s', $type ?? 'all', $e->getMessage()));
+
             $list = [];
         }
 
