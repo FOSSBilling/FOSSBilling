@@ -58,14 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
       searchField: ["label", "value"],
       load: (query, callback) => {
         let items;
-        let restUrl = new URL(
-          bb.restUrl(autocompleteSelectorEl.dataset.resturl)
-        );
+        let restUrl = new URL(bb.restUrl(autocompleteSelectorEl.dataset.resturl));
         restUrl.searchParams.append("search", query);
-        restUrl.searchParams.append(
-          "CSRFToken",
-          autocompleteSelectorEl.dataset.csrf
-        );
+        restUrl.searchParams.append("CSRFToken", Tools.getCSRFToken());
         restUrl.searchParams.append("per_page", 5);
         fetch(restUrl)
           .then((response) => response.json())
@@ -106,10 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bb.restUrl(cannedResponseSelectorEl.dataset.resturl)
       );
       restUrl.searchParams.append('id', value);
-      restUrl.searchParams.append(
-        'CSRFToken',
-        cannedResponseSelectorEl.dataset.csrf,
-      );
+      restUrl.searchParams.append('CSRFToken', Tools.getCSRFToken());
       fetch(restUrl)
         .then((response) => response.json())
         .then((json) => {
