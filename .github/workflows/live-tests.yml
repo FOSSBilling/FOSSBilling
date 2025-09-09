@@ -52,7 +52,7 @@ jobs:
 
       - name: 'Install Node.js and Enable Caching'
         if: steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
