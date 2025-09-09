@@ -12,7 +12,6 @@
         <div class="card-body">
             <h5>{{ 'Filter invoices'|trans }}</h5>
             <form method="get">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
                     <div class="col">
@@ -51,7 +50,7 @@
                     <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
                     <div class="col">
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" id="radioStatusAll" type="radio" name="status" value="0"{% if not request.status %} checked{% endif %}>
+                            <input class="form-check-input" id="radioStatusAll" type="radio" name="status" value=""{% if not request.status %} checked{% endif %}>
                             <label class="form-check-label" for="radioStatusAll">{{ 'All statuses'|trans }}</label>
                         </div>
                         <div class="form-check form-check-inline">
