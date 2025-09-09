@@ -133,7 +133,7 @@ class Service implements InjectionAwareInterface
 
     public function getSearchQuery($data)
     {
-        $sql = 'SELECT m.*, a.id as staff_id, a.email as staff_email, a.name as staff_name, CONCAT(c.first_name, " ", c.last_name) as client_name, c.email as client_email
+        $sql = 'SELECT m.*, a.id as staff_id, a.email as staff_email, a.name as staff_name, CONCAT_WS(" ", c.first_name, c.last_name) as client_name, c.email as client_email
                 FROM activity_system as m
                 left join admin as a on a.id = m.admin_id
                 left join client as c on c.id = m.client_id';
