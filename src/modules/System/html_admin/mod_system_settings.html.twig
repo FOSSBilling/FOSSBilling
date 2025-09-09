@@ -488,6 +488,26 @@ YE=Yemen
 ZM=Zambia
 ZW=Zimbabwe
 {% endset %}
+
+                            <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Default country for new users'|trans }}</label>
+                                <div class="col-md-6">
+                                    <select class="form-select" name="default_country">
+                                        <option value="" {% if new_params.default_country is not defined or new_params.default_country == '' %}selected{% endif %}>
+                                            {{ 'No default country'|trans }}
+                                        </option>
+                                        {% for line in (new_params.countries|default(default_countries))|split('\n') %}
+                                            {% set parts = line|split('=') %}
+                                            {% if parts|length == 2 %}
+                                                <option value="{{ parts[0] }}" {% if new_params.default_country is defined and new_params.default_country == parts[0] %}selected{% endif %}>
+                                                    {{ parts[1] }}
+                                                </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
                             <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'List of countries'|trans }}</label>
                                 <div class="col-md-6">

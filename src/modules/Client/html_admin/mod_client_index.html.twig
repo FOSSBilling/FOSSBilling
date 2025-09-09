@@ -367,7 +367,7 @@
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
                             <div class="col">
-                                {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Select country'|trans) }}
+                                {{ mf.selectbox('country', guest.system_countries, guest.system_default_country, 0, 'Select country'|trans) }}
                             </div>
                         </div>
                         <div class="form-group mb-3 row">
