@@ -862,10 +862,16 @@ class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($data['password']);
 
+        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock->expects($this->atLeastOnce())
+            ->method('getConfig')
+            ->willReturn([]);
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
+        $di['mod'] = $di->protect(fn () => $modMock);
         $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Client\Service();
