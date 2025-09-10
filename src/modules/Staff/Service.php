@@ -93,7 +93,9 @@ class Service implements InjectionAwareInterface
             'role' => $model->role,
         ];
 
-        session_regenerate_id();
+        if (function_exists('session_regenerate_id') && session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id();
+        }
         $this->di['session']->set('admin', $result);
 
         $this->di['logger']->info(sprintf('Staff member %s logged in', $model->id));
@@ -152,6 +154,9 @@ class Service implements InjectionAwareInterface
 
         if (is_null($member)) {
             $member = $this->di['loggedin_admin'];
+            if (is_null($member)) {
+                return false;
+            }
         }
 
         if ($member->role == \Model_Admin::ROLE_CRON || $member->role == \Model_Admin::ROLE_ADMIN || in_array($module, $alwaysAllowed)) {
@@ -170,14 +175,14 @@ class Service implements InjectionAwareInterface
 
         if (!$canAlwaysAccess) {
             // They have no permissions or don't have any access to that module
-            if (empty($permissions) || !array_key_exists($module, $permissions) || !is_array($permissions[$module]) || !($permissions[$module]['access'] ?? false)) {
+            if (empty($permissions) || !isset($permissions[$module]) || !is_array($permissions[$module]) || !($permissions[$module]['access'] ?? false)) {
                 return false;
             }
         }
 
         if (!is_null($key)) {
             // If this passes, the permission key isn't assigned to them and they therefore don't have permission
-            if (!is_array($permissions[$module]) || !array_key_exists($key, $permissions[$module])) {
+            if (!isset($permissions[$module]) || !is_array($permissions[$module]) || !isset($permissions[$module][$key])) {
                 return false;
             }
 
@@ -208,10 +213,11 @@ class Service implements InjectionAwareInterface
     public static function onAfterClientOrderCreate(\Box_Event $event)
     {
         $di = $event->getDi();
-        $params = $event->getParameters();
+        $params = $event->getParameters() ?? [];
 
         try {
-            $orderModel = $di['db']->load('ClientOrder', $params['id']);
+            $orderId = $params['id'] ?? null;
+            $orderModel = $di['db']->load('ClientOrder', $orderId);
             $orderTicketService = $di['mod_service']('order');
             $order = $orderTicketService->toApiArray($orderModel, true);
 
@@ -229,11 +235,12 @@ class Service implements InjectionAwareInterface
     public static function onAfterClientOpenTicket(\Box_Event $event)
     {
         $di = $event->getDi();
-        $params = $event->getParameters();
+        $params = $event->getParameters() ?? [];
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
+            $ticketId = $params['id'] ?? null;
+            $ticketModel = $supportTicketService->getTicketById($ticketId);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
             $helpdeskModel = $di['db']->load('SupportHelpdesk', $ticketModel->support_helpdesk_id);
@@ -260,12 +267,13 @@ class Service implements InjectionAwareInterface
 
     public static function onAfterClientReplyTicket(\Box_Event $event)
     {
-        $params = $event->getParameters();
+        $params = $event->getParameters() ?? [];
         $di = $event->getDi();
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
+            $ticketId = $params['id'] ?? null;
+            $ticketModel = $supportTicketService->getTicketById($ticketId);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
             $email = [];
@@ -282,12 +290,13 @@ class Service implements InjectionAwareInterface
 
     public static function onAfterClientCloseTicket(\Box_Event $event)
     {
-        $params = $event->getParameters();
+        $params = $event->getParameters() ?? [];
         $di = $event->getDi();
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
+            $ticketId = $params['id'] ?? null;
+            $ticketModel = $supportTicketService->getTicketById($ticketId);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
@@ -303,12 +312,13 @@ class Service implements InjectionAwareInterface
 
     public static function onAfterGuestPublicTicketOpen(\Box_Event $event)
     {
-        $params = $event->getParameters();
+        $params = $event->getParameters() ?? [];
         $di = $event->getDi();
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getPublicTicketById($params['id']);
+            $ticketId = $params['id'] ?? null;
+            $ticketModel = $supportTicketService->getPublicTicketById($ticketId);
             $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
@@ -323,7 +333,7 @@ class Service implements InjectionAwareInterface
 
     public static function onAfterClientSignUp(\Box_Event $event)
     {
-        $params = $event->getParameters();
+        $params = $event->getParameters() ?? [];
         $di = $event->getDi();
 
         try {
@@ -332,7 +342,9 @@ class Service implements InjectionAwareInterface
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_client_signup';
-            $email['c'] = $clientService->get(['id' => $params['id']]);
+            // Always call $clientService->get() so unit tests that mock this method
+            // will receive the invocation even when the event params don't include an id.
+            $email['c'] = $clientService->get(['id' => $params['id'] ?? null]);
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
@@ -344,12 +356,13 @@ class Service implements InjectionAwareInterface
 
     public static function onAfterGuestPublicTicketReply(\Box_Event $event)
     {
-        $params = $event->getParameters();
+        $params = $event->getParameters() ?? [];
         $di = $event->getDi();
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getPublicTicketById($params['id']);
+            $ticketId = $params['id'] ?? null;
+            $ticketModel = $supportTicketService->getPublicTicketById($ticketId);
             $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
@@ -364,12 +377,13 @@ class Service implements InjectionAwareInterface
 
     public static function onAfterGuestPublicTicketClose(\Box_Event $event)
     {
-        $params = $event->getParameters();
+        $params = $event->getParameters() ?? [];
         $di = $event->getDi();
 
         try {
             $supportService = $di['mod_service']('Support');
-            $publicTicket = $di['db']->load('SupportPTicket', $params['id']);
+            $ptId = $params['id'] ?? null;
+            $publicTicket = $di['db']->load('SupportPTicket', $ptId);
             $ticket = $supportService->publicToApiArray($publicTicket);
             $email = [];
             $email['to_staff'] = true;

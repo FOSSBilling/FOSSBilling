@@ -332,7 +332,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->onConsecutiveCalls($invoiceModel, $clientModel));
+            ->willReturnOnConsecutiveCalls($invoiceModel, $clientModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($clientBalanceModel);

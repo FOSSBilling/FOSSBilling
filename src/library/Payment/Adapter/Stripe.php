@@ -128,7 +128,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
-        if (DEBUG) {
+        if (defined('DEBUG')) {
             error_log(json_encode($e->getJsonBody()));
         }
 
@@ -192,6 +192,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             'succeeded' => 'processed',
             'pending' => 'received',
             'failed' => 'error',
+            default => 'unknown',
         };
 
         $tx->status = $paymentStatus;

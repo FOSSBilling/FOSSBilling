@@ -379,7 +379,7 @@ class Service implements InjectionAwareInterface
             $rates = $this->getCurrencyLayerRates($from, $validFor, $config['currencylayer_key']);
         } else {
             $key = $config['exchangerate_api_key'] ?? ''; // No key is OK here, we will just use the open API
-            if ($config['sync_rate'] ?? 'auto' === 'auto') {
+            if (($config['sync_rate'] ?? 'auto') === 'auto') {
                 $rates = $this->getExchangeRateAPIRates($from, 0, $key);
             } else {
                 $rates = $this->getExchangeRateAPIRates($from, $validFor, $key);
@@ -431,9 +431,10 @@ class Service implements InjectionAwareInterface
             return $array;
         });
 
-        // Their open access API endpoint has a specific param to inform of if it ever goes EOL, so let's monitor that and trigger an error to alert us if it's deprecated
-        if (array_key_exists('time_eol_unix', $result) && $result['time_eol_unix'] !== 0) {
-            trigger_error('ExchangeRate-API has deprecated their open endpoint. Investigate!', E_USER_DEPRECATED); // Should be sent via error reporting, making monitoring this easy
+        // Their open access API endpoint has a specific param to inform of if it ever goes EOL, so let's monitor that and trigger an error to alert us if it's deprecated.
+        if (($result['time_eol_unix'] ?? null) !== 0) {
+            // @todo: Should be sent via error reporting, making monitoring this easy.
+            trigger_error('ExchangeRate-API has deprecated their open endpoint. Investigate!', E_USER_DEPRECATED);
         }
 
         // Different array key between the open and authenticated endpoint, but otherwise it's the same structure.

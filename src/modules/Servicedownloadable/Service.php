@@ -248,6 +248,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    // @phpstan-ignore method.unused
     private function _error_message($error_code)
     {
         return match ($error_code) {

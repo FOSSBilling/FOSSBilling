@@ -2,6 +2,14 @@
 
 namespace Box\Tests\Mod\Email;
 
+class ServiceEmailTestDouble extends \Box\Mod\Email\Service
+{
+    public function template_render(...$args)
+    {
+        return '';
+    }
+}
+
 class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
@@ -527,6 +535,7 @@ class ServiceTest extends \BBTestCase
         ];
 
         $di['db'] = $db;
+        $isExtensionActiveReturn = false;
         $extension = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->getMock();
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')
@@ -732,7 +741,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = $id;
 
-        $emailServiceMock = $this->getMockBuilder(\Box\Mod\Email\Service::class)->addMethods(['template_render'])->getMock();
+        $emailServiceMock = $this->getMockBuilder(ServiceEmailTestDouble::class)->onlyMethods(['template_render'])->getMock();
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -956,6 +965,7 @@ class ServiceTest extends \BBTestCase
             ]);
 
         $extension = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->getMock();
+        $isExtensionActiveReturn = false;
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')
             ->willReturn($isExtensionActiveReturn);
@@ -1051,6 +1061,8 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $modMock = $this->getMockBuilder('\stdClass')->getMock();
+        $extension = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->getMock();
         $di['mod'] = $di->protect(fn () => $modMock);
         $di['mod_service'] = $di->protect(function ($name) use ($extension) {
             if ($name == 'system') {

@@ -22,7 +22,7 @@ class Box_UrlHelper
             $requestMethod = 'GET';
         }
 
-        if (strtoupper($method) == $requestMethod) {
+        if (strtoupper($this->method) == $requestMethod) {
             $paramNames = [];
             $paramValues = [];
 
@@ -43,7 +43,7 @@ class Box_UrlHelper
     private function regexValue($matches): string
     {
         $key = str_replace(':', '', $matches[0]);
-        if (array_key_exists($key, $this->conditions)) {
+        if (isset($this->conditions[$key])) {
             return '(' . $this->conditions[$key] . ')';
         } else {
             return '([a-zA-Z0-9_\-]+)';

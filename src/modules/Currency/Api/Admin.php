@@ -28,7 +28,18 @@ class Admin extends \Api_Abstract
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $pager = $this->di['pager']->getPaginatedResultSet($query, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
-            $currency = $this->di['db']->getExistingModelById('Currency', $item['id'], 'Currency not found');
+            $id = null;
+            if (is_array($item) && isset($item['id'])) {
+                $id = $item['id'];
+            } elseif (is_int($item) || is_string($item)) {
+                $id = $item;
+            }
+
+            if ($id === null) {
+                continue;
+            }
+
+            $currency = $this->di['db']->getExistingModelById('Currency', $id, 'Currency not found');
             $pager['list'][$key] = $this->getService()->toApiArray($currency);
         }
 
@@ -107,7 +118,8 @@ class Admin extends \Api_Abstract
             throw new \FOSSBilling\Exception('Currency already registered');
         }
 
-        if (!array_key_exists($data['code'] ?? null, $service->getAvailableCurrencies())) {
+        $available = $service->getAvailableCurrencies();
+        if (!isset($available[$data['code'] ?? null])) {
             throw new \FOSSBilling\Exception('Currency code is invalid');
         }
 
