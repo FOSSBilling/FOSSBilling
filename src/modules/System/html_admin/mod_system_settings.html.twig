@@ -667,6 +667,8 @@ ZW=Zimbabwe
 
 {% block js %}
 <script>
+    const bindTo = "{{ constant('BIND_TO') }}";
+
     function updateExternalIP() {
         API.admin.get('system/env', { ip: true }, function (ip) {
             const el = document.getElementById('external-ip');
@@ -689,7 +691,7 @@ ZW=Zimbabwe
                 const opt = document.createElement('option');
                 opt.value = interface;
                 opt.textContent = interface;
-                if (interface === "{{ constant('BIND_TO') }}") {
+                if (interface === bindTo) {
                     opt.selected = true;
                 }
                 select.appendChild(opt);
@@ -697,7 +699,6 @@ ZW=Zimbabwe
 
             // Handle custom interface
             const custom = document.getElementById('custom_interface');
-            const bindTo = "{{ constant('BIND_TO') }}";
             if (bindTo !== "0" && !interfaces.includes(bindTo)) {
                 custom.value = bindTo;
             }
