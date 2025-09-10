@@ -12,10 +12,14 @@
 namespace Box\Mod\Theme;
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private readonly Filesystem $filesystem;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -25,6 +29,11 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
     }
 
     public function getTheme($name)
@@ -154,7 +163,7 @@ class Service implements InjectionAwareInterface
             ['theme' => $theme->getName(), 'preset' => $preset]
         );
         if ($meta) {
-            return json_decode($meta->meta_value, 1);
+            return json_decode($meta->meta_value ?? '', true);
         } else {
             return $theme->getPresetFromSettingsDataFile($preset);
         }
@@ -194,31 +203,29 @@ class Service implements InjectionAwareInterface
         $settings['current'] = $this->getCurrentThemePreset($theme);
         $data_file = $theme->getPathSettingsDataFile();
 
-        file_put_contents($data_file, json_encode($settings));
+        $this->filesystem->dumpFile($data_file, json_encode($settings));
 
         return true;
     }
 
     public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset, $api_admin)
     {
-        $assets = $theme->getPathAssets() . DIRECTORY_SEPARATOR;
+        $assets = $theme->getPathAssets();
 
-        $css_files = glob($assets . '*.css.html.twig');
-        $js_files = glob($assets . '*.js.html.twig');
-        $files = array_merge($css_files, $js_files);
+        $finder = new Finder();
+        $finder->files()->in($assets)->name(['*.css.html.twig', '*.js.html.twig']);
 
-        foreach ($files as $file) {
+        foreach ($finder as $file) {
             $settings = $this->getThemeSettings($theme, $preset);
-            $real_file = pathinfo($file, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . pathinfo($file, PATHINFO_FILENAME);
+            $realFile = Path::join($file->getPath(), Path::getFilenameWithoutExtension($file->getRelativePathname(), '.html.twig'));
 
             $vars = [];
-
             $vars['settings'] = $settings;
-            $vars['_tpl'] = file_get_contents($file);
+            $vars['_tpl'] = $file->getContents();
             $systemService = $this->di['mod_service']('system');
             $data = $systemService->renderString($vars['_tpl'], false, $vars);
 
-            file_put_contents($real_file, $data);
+            $this->filesystem->dumpFile($realFile, $data);
         }
 
         return true;
@@ -232,11 +239,10 @@ class Service implements InjectionAwareInterface
                ';
         $default = 'admin_default';
         $theme = $this->di['db']->getCell($query, ['param' => 'admin_theme']);
-        $path = PATH_THEMES . DIRECTORY_SEPARATOR;
-        if ($theme == null || !file_exists($path . $theme)) {
+        if ($theme == null || !$this->filesystem->exists(Path::join(PATH_THEMES, $theme))) {
             $theme = $default;
         }
-        $url = SYSTEM_URL . 'themes' . DIRECTORY_SEPARATOR . $theme . DIRECTORY_SEPARATOR;
+        $url = SYSTEM_URL . "themes/{$theme}/";
 
         return ['code' => $theme, 'url' => $url];
     }
@@ -262,21 +268,20 @@ class Service implements InjectionAwareInterface
     {
         $list = [];
         $path = $this->getThemesPath();
-        if ($handle = opendir($path)) {
-            while (false !== ($file = readdir($handle))) {
-                if (is_dir($path . DIRECTORY_SEPARATOR . $file) && $file[0] != '.') {
-                    try {
-                        if (!$client && str_contains($file, 'admin')) {
-                            $list[] = $this->_loadTheme($file);
-                        }
 
-                        if ($client && !str_contains($file, 'admin')) {
-                            $list[] = $this->_loadTheme($file);
-                        }
-                    } catch (\Exception $e) {
-                        error_log($e->getMessage());
-                    }
+        $finder = new Finder();
+        $finder->directories()->in($path)->depth('== 0')->ignoreDotFiles(true);
+        foreach ($finder as $file) {
+            try {
+                if (!$client && str_contains($file->getFilename(), 'admin')) {
+                    $list[] = $this->_loadTheme($file->getFilename());
                 }
+
+                if ($client && !str_contains($file->getFilename(), 'admin')) {
+                    $list[] = $this->_loadTheme($file->getFilename());
+                }
+            } catch (\Exception $e) {
+                error_log($e->getMessage());
             }
         }
 
@@ -295,7 +300,7 @@ class Service implements InjectionAwareInterface
         }
 
         $path = $this->getThemesPath();
-        if (!file_exists($path . $theme)) {
+        if (!$this->filesystem->exists(Path::join($path, $theme))) {
             $theme = $default;
         }
 
@@ -309,20 +314,20 @@ class Service implements InjectionAwareInterface
 
     public function getThemesPath()
     {
-        return PATH_THEMES . DIRECTORY_SEPARATOR;
+        return PATH_THEMES;
     }
 
     private function _loadTheme($theme, $client = true, $mod = null): array
     {
-        $theme_path = $this->getThemesPath() . $theme;
+        $theme_path = Path::join($this->getThemesPath(), $theme);
 
-        if (!file_exists($theme_path)) {
+        if (!$this->filesystem->exists($theme_path)) {
             throw new \FOSSBilling\Exception('Theme was not found in path :path', [':path' => $theme_path]);
         }
-        $manifest = $theme_path . '/manifest.json';
+        $manifest = Path::join($theme_path, 'manifest.json');
 
-        if (file_exists($manifest)) {
-            $config = json_decode(file_get_contents($manifest), true);
+        if ($this->filesystem->exists($manifest)) {
+            $config = json_decode($this->filesystem->readFile($manifest) ?? '', true);
         } else {
             $config = [
                 'name' => $theme,
@@ -337,16 +342,16 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Unable to decode theme manifest file :file', [':file' => $manifest]);
         }
 
-        $paths = [$theme_path . '/html'];
+        $paths = [Path::join($theme_path, 'html')];
 
         if (isset($config['extends'])) {
             $ext = trim($config['extends'], '/');
             $ext = str_replace('.', '', $ext);
 
-            $config['url'] = SYSTEM_URL . 'themes/' . $ext . '/';
-            $paths[] = $this->getThemesPath() . $ext . '/html';
+            $config['url'] = SYSTEM_URL . "themes/{$ext}/";
+            $paths[] = Path::join($this->getThemesPath(), $ext, 'html');
         } else {
-            $config['url'] = SYSTEM_URL . 'themes/' . $theme . '/';
+            $config['url'] = SYSTEM_URL . "themes/{$theme}/";
         }
 
         // add installed modules paths
@@ -358,9 +363,8 @@ class Service implements InjectionAwareInterface
         }
         $list = array_unique($list);
         foreach ($list as $mod) {
-            $p = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR;
-            $p .= $client ? 'html_client' : 'html_admin';
-            if (file_exists($p)) {
+            $p = Path::join(PATH_MODS, ucfirst($mod), $client ? 'html_client' : 'html_admin');
+            if ($this->filesystem->exists($p)) {
                 $paths[] = $p;
             }
         }
@@ -369,7 +373,7 @@ class Service implements InjectionAwareInterface
         $config['paths'] = $paths;
         $config['hasSettings'] = false;
 
-        if (is_dir($theme_path . '/config')) {
+        if ($this->filesystem->exists(Path::join($theme_path, 'config'))) {
             $config['hasSettings'] = true;
         }
 
@@ -392,7 +396,7 @@ class Service implements InjectionAwareInterface
         $manifest = 'manifest';
         $encoreInfo['is_encore_theme'] = true;
 
-        if (!file_exists($this->getEncoreJsonPath($entrypoint)) && !file_exists($this->getEncoreJsonPath($manifest))) {
+        if (!$this->filesystem->exists($this->getEncoreJsonPath($entrypoint)) && !$this->filesystem->exists($this->getEncoreJsonPath($manifest))) {
             $encoreInfo['is_encore_theme'] = false;
         }
 
@@ -401,8 +405,8 @@ class Service implements InjectionAwareInterface
 
         if ($this->useAdminDefaultEncore()) {
             $encoreInfo['is_encore_theme'] = true;
-            $encoreInfo[$entrypoint] = $this->getThemesPath() . 'admin_default' . DIRECTORY_SEPARATOR . 'build' . DIRECTORY_SEPARATOR . "{$entrypoint}.json";
-            $encoreInfo[$manifest] = $this->getThemesPath() . 'admin_default' . DIRECTORY_SEPARATOR . 'build' . DIRECTORY_SEPARATOR . "{$manifest}.json";
+            $encoreInfo[$entrypoint] = Path::join($this->getThemesPath(), 'admin_default', 'build', "{$entrypoint}.json");
+            $encoreInfo[$manifest] = Path::join($this->getThemesPath(), 'admin_default', 'build', "{$manifest}.json");
         }
 
         return $encoreInfo;
@@ -432,7 +436,7 @@ class Service implements InjectionAwareInterface
 
     protected function getEncoreJsonPath($filename): string
     {
-        return $this->getThemesPath() . $this->getCurrentRouteTheme() . DIRECTORY_SEPARATOR . 'build' . DIRECTORY_SEPARATOR . "{$filename}.json";
+        return Path::join($this->getThemesPath(), $this->getCurrentRouteTheme(), 'build', "{$filename}.json");
     }
 
     protected function useAdminDefaultEncore()

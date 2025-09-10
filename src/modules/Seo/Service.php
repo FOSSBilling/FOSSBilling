@@ -12,6 +12,8 @@
 namespace Box\Mod\Seo;
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 
 class Service implements InjectionAwareInterface
 {
@@ -96,15 +98,13 @@ class Service implements InjectionAwareInterface
     private function _getEngines(): array
     {
         $engines = [];
-        $dir = __DIR__ . '/Engines';
-        $files = scandir($dir);
+        $finder = new Finder();
 
-        foreach ($files as $file) {
-            if (str_ends_with($file, '.php')) {
-                $engine = substr($file, 0, -4);
-                $class = 'Box\\Mod\\Seo\\Engines\\' . $engine;
-                $engines[$engine] = new $class();
-            }
+        $finder->files()->in(Path::join(__DIR__, 'Engines'))->name('*.php');
+        foreach ($finder as $file) {
+            $engine = $file->getFilenameWithoutExtension();
+            $class = "Box\\Mod\\Seo\\Engines\\{$engine}";
+            $engines[$engine] = new $class();
         }
 
         return $engines;

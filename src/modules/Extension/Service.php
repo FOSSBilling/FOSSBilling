@@ -13,11 +13,20 @@ namespace Box\Mod\Extension;
 
 use FOSSBilling\Config;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private readonly Filesystem $filesystem;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -75,7 +84,7 @@ class Service implements InjectionAwareInterface
         try {
             $extensionService->getExtensionsList([]);
         } catch (\Exception $e) {
-            error_log($e);
+            error_log($e->getMessage());
         }
 
         return true;
@@ -155,7 +164,7 @@ class Service implements InjectionAwareInterface
             try {
                 $manifest = $m->getManifest();
             } catch (\Exception $e) {
-                error_log('Error while decoding the manifest file for ' . $im['name'] . ' : ' . $e->getMessage());
+                error_log("Error while decoding the manifest file for {$im['name']} : {$e->getMessage()}.");
 
                 continue;
             }
@@ -223,8 +232,8 @@ class Service implements InjectionAwareInterface
         foreach ($result as $key => $value) {
             $icon_url = $value['icon_url'] ?? null;
             if ($icon_url) {
-                $iconPath = realpath(PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($value['id']) . DIRECTORY_SEPARATOR . basename($icon_url));
-                if (file_exists($iconPath)) {
+                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), basename($icon_url));
+                if ($this->filesystem->exists($iconPath)) {
                     $result[$key]['icon_path'] = 'mod_' . ucfirst($value['id']) . '_' . basename($icon_url);
                 }
             }
@@ -249,7 +258,7 @@ class Service implements InjectionAwareInterface
                 }
 
                 if (!$mod->hasManifest()) {
-                    error_log('Module ' . $m . ' manifest file is missing or is not readable.');
+                    error_log("Module {$m} manifest file is missing or is not readable.");
 
                     continue;
                 }
@@ -304,13 +313,13 @@ class Service implements InjectionAwareInterface
         $nav = $this->di['tools']->sortByOneKey($nav, 'index');
         foreach ($subpages as $page) {
             if (!isset($page['location'])) {
-                error_log('Invalid module menu item: ' . print_r($page, 1));
+                error_log('Invalid module menu item: ' . print_r($page, true));
 
                 continue;
             }
 
             if (!isset($nav[$page['location']])) {
-                error_log('Submenu item belongs to not existing location: ' . $page['location']);
+                error_log("Submenu item belongs to not existing location: {$page['location']}.");
 
                 continue;
             }
@@ -381,10 +390,10 @@ class Service implements InjectionAwareInterface
 
         switch ($ext->type) {
             case \FOSSBilling\ExtensionManager::TYPE_HOOK:
-                $file = ucfirst($ext->name) . '.php';
-                $destination = PATH_LIBRARY . '/Hook/' . $file;
-                if (file_exists($destination)) {
-                    unlink($destination);
+                $file = Path::changeExtension(ucfirst($ext->name), '.php');
+                $destination = Path::join(PATH_LIBRARY, 'Hook', $file);
+                if ($this->filesystem->exists($destination)) {
+                    $this->filesystem->remove($destination);
                 }
 
                 break;
@@ -448,11 +457,11 @@ class Service implements InjectionAwareInterface
             throw new \Exception('This extension is not compatible with your version of FOSSBilling. Please update FOSSBilling to the latest version and try again.');
         }
 
-        $extractedPath = PATH_CACHE . DIRECTORY_SEPARATOR . md5(uniqid());
-        $zipPath = PATH_CACHE . DIRECTORY_SEPARATOR . md5(uniqid()) . '.zip';
+        $extractedPath = Path::join(PATH_CACHE, md5(uniqid()));
+        $zipPath = Path::join(PATH_CACHE, md5(uniqid()) . '.zip');
 
         // Create a temporary directory to extract the extension
-        mkdir($extractedPath, 0o755, true);
+        $this->filesystem->mkdir($extractedPath, 0o755);
 
         // Download the extension archive and save it to the cache folder
         $fileHandler = fopen($zipPath, 'w');
@@ -483,39 +492,42 @@ class Service implements InjectionAwareInterface
 
         switch ($type) {
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
-                $destination = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($id);
+                $destination = Path::join(PATH_MODS, ucfirst($id));
 
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_THEME:
-                $destination = PATH_THEMES . DIRECTORY_SEPARATOR . $id;
+                $destination = Path::join(PATH_THEMES, $id);
 
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_TRANSLATION:
-                $destination = PATH_LANGS . DIRECTORY_SEPARATOR . $id . '/LC_MESSAGES';
+                $destination = Path::join(PATH_LANGS, $id, 'LC_MESSAGES');
 
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_PG:
-                $destination = PATH_LIBRARY . DIRECTORY_SEPARATOR . 'Payment' . DIRECTORY_SEPARATOR . 'Adapter' . DIRECTORY_SEPARATOR . ucfirst($id);
+                $destination = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', ucfirst($id));
 
                 break;
         }
 
         if (isset($destination)) {
-            if (file_exists($destination)) {
+            if ($this->filesystem->exists($destination)) {
                 throw new \FOSSBilling\InformationException('Extension :id seems to be already installed.', [':id' => $id], 436);
             }
-            if (!rename($extractedPath, $destination)) {
-                throw new \FOSSBilling\Exception('Failed to move extension to it\'s final destination. Please check permissions for the destination folder. (:destination)', [':destination' => $destination], 437);
+
+            try {
+                $this->filesystem->rename($extractedPath, $destination);
+            } catch (IOException) {
+                throw new \FOSSBilling\Exception("Failed to move extension to it's final destination. Please check permissions for the destination folder. (:destination)", [':destination' => $destination], 437);
             }
         } else {
             throw new \FOSSBilling\InformationException('Extension type (:type) cannot be automatically installed.', [':type' => $type]);
         }
 
-        if (file_exists($zipPath)) {
-            unlink($zipPath);
+        if ($this->filesystem->exists($zipPath)) {
+            $this->filesystem->remove($zipPath);
         }
 
-        $this->di['tools']->emptyFolder($extractedPath);
+        $this->filesystem->remove($extractedPath);
 
         return true;
     }
@@ -595,7 +607,7 @@ class Service implements InjectionAwareInterface
 
     public function getConfig($ext): array
     {
-        return $this->di['cache']->get("config_$ext", function (ItemInterface $item) use ($ext) {
+        return $this->di['cache']->get("config_{$ext}", function (ItemInterface $item) use ($ext) {
             $item->expiresAfter(60 * 60);
 
             $c = $this->di['db']->findOne('ExtensionMeta', 'extension = :ext AND meta_key = :key', [':ext' => $ext, ':key' => 'config']);
@@ -610,12 +622,7 @@ class Service implements InjectionAwareInterface
                 $config = [];
             } else {
                 $config = $this->di['crypt']->decrypt($c->meta_value, $this->_getSalt());
-
-                if (is_string($config) && json_validate($config)) {
-                    $config = json_decode($config, true);
-                } else {
-                    $config = [];
-                }
+                $config = is_string($config) ? json_decode($config, true) : [];
             }
 
             $config['ext'] = $ext;
@@ -648,8 +655,8 @@ class Service implements InjectionAwareInterface
         ];
         $this->di['db']->exec($sql, $params);
         $this->di['events_manager']->fire(['event' => 'onAfterAdminExtensionConfigSave', 'params' => $data]);
-        $this->di['logger']->info('Updated extension "%s" configuration', $ext);
-        $this->di['cache']->delete("config_$ext");
+        $this->di['logger']->info("Updated extension {$ext} configuration.");
+        $this->di['cache']->delete("config_{$ext}");
 
         return true;
     }

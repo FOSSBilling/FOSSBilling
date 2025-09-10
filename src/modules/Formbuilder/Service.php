@@ -218,7 +218,7 @@ class Service implements InjectionAwareInterface
         $formModel = $this->di['db']->getExistingModelById('Form', $formId);
         $result = $this->di['db']->toArray($formModel);
 
-        $result['style'] = json_decode($result['style'], true);
+        $result['style'] = json_decode($result['style'] ?? '', true);
         $result['fields'] = $this->getFormFields($result['id']);
         $result['fields'] = $this->fieldsJsonDecode($result['fields']);
 
@@ -240,14 +240,10 @@ class Service implements InjectionAwareInterface
     private function fieldsJsonDecode($fields)
     {
         foreach ($fields as $key => $r) {
-            if (!empty($r['options'])) {
-                $fields[$key]['options'] = json_decode($r['options'], true);
-            } else {
-                $fields[$key]['options'] = [];
-            }
+            $fields[$key]['options'] = json_decode($r['options'] ?? '', true) ?: [];
 
             if (!empty($r['default_value'])) {
-                $fields[$key]['default_value'] = (json_decode($r['default_value'])) ? (json_decode($r['default_value'], true)) : $r['default_value'];
+                $fields[$key]['default_value'] = json_decode($r['default_value'] ?? '', true) ?: $r['default_value'];
             } else {
                 $fields[$key]['default_value'] = '';
             }
@@ -289,7 +285,7 @@ class Service implements InjectionAwareInterface
         $this->di['validator']->checkRequiredParamsForArray($required, $result, null, 2575);
 
         if (str_starts_with($result['options'], '{') || str_starts_with($result['options'], '[')) {
-            $result['options'] = json_decode($result['options']);
+            $result['options'] = json_decode($result['options'] ?? '');
         }
 
         return $result;

@@ -16,12 +16,20 @@ use Egulias\EmailValidator\EmailValidator;
 use Egulias\EmailValidator\Validation\DNSCheckValidation;
 use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\RFCValidation;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\RetryableHttpClient;
 
 class Tools
 {
+    private readonly Filesystem $filesystem;
     protected ?\Pimple\Container $di = null;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -43,55 +51,6 @@ class Tools
         $link = trim($link, '/');
 
         return SYSTEM_URL . $link;
-    }
-
-    public function hasService($type)
-    {
-        $file = PATH_MODS . '/mod_' . $type . '/Service.php';
-
-        return file_exists($file);
-    }
-
-    public function getService($type)
-    {
-        $class = 'Box_Mod_' . ucfirst($type) . '_Service';
-        $file = PATH_MODS . '/mod_' . $type . '/Service.php';
-        if (!file_exists($file)) {
-            throw new Exception('Service class :class was not found in :path', [':class' => $class, ':path' => $file]);
-        }
-        require_once $file;
-
-        return new $class();
-    }
-
-    public function checkPerms($path, $perm = '0777')
-    {
-        clearstatcache();
-        $configmod = substr(sprintf('%o', fileperms($path)), -4);
-        $int = (int) $configmod;
-        if ($configmod == $perm) {
-            return true;
-        }
-
-        if ((int) $configmod < (int) $perm) {
-            return true;
-        }
-
-        return false;
-    }
-
-    public function emptyFolder($folder)
-    {
-        /* Original source for this lovely code snippet: https://stackoverflow.com/a/24563703
-         * With modification suggested from KeineMaster (replaced $file with$file->getRealPath())
-         */
-        if (file_exists($folder)) {
-            $di = new \RecursiveDirectoryIterator($folder, \FilesystemIterator::SKIP_DOTS);
-            $ri = new \RecursiveIteratorIterator($di, \RecursiveIteratorIterator::CHILD_FIRST);
-            foreach ($ri as $file) {
-                $file->isDir() ? rmdir($file->getRealPath()) : unlink($file->getRealPath());
-            }
-        }
     }
 
     /**
@@ -163,29 +122,6 @@ class Tools
         }
     }
 
-    public function autoLinkText($text)
-    {
-        $pattern = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
-        $callback = function ($matches) {
-            $url = array_shift($matches);
-            $url_parts = parse_url($url);
-            if (!isset($url_parts['scheme'])) {
-                $url = 'http://' . $url;
-            }
-
-            return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
-        };
-
-        return preg_replace_callback($pattern, $callback, $text);
-    }
-
-    public function getResponseCode($theURL)
-    {
-        $headers = get_headers($theURL);
-
-        return substr($headers[0], 9, 3);
-    }
-
     public function slug($str)
     {
         $str = strtolower(trim($str));
@@ -193,13 +129,6 @@ class Tools
         $str = preg_replace('/-+/', '-', $str);
 
         return trim($str, '-');
-    }
-
-    public function escape($string)
-    {
-        $string = htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
-
-        return stripslashes($string);
     }
 
     public function to_camel_case($str, $capitalize_first_char = false)
@@ -248,8 +177,8 @@ class Tools
     public function getTable($type)
     {
         $class = 'Model_' . ucfirst($type) . 'Table';
-        $file = PATH_LIBRARY . '/Model/' . $type . 'Table.php';
-        if (!file_exists($file)) {
+        $file = Path::join(PATH_LIBRARY, 'Model', "{$type}Table.php");
+        if (!$this->filesystem->exists($file)) {
             throw new Exception('Service class :class was not found in :path', [':class' => $class, ':path' => $file]);
         }
         require_once $file;

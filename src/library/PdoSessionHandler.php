@@ -82,7 +82,7 @@ class PdoSessionHandler implements SessionHandlerInterface
             $stmt->bindParam(':id', $id, PDO::PARAM_STR);
             $stmt->execute();
         } catch (PDOException $e) {
-            throw new RuntimeException(sprintf('PDOException was thrown when trying to manipulate session data: %s', $e->getMessage()), 0, $e);
+            throw new RuntimeException("PDOException was thrown when trying to manipulate session data: {$e->getMessage()}.", 0, $e);
         }
 
         return true;
@@ -104,7 +104,7 @@ class PdoSessionHandler implements SessionHandlerInterface
 
             return $stmt->rowCount();
         } catch (PDOException $e) {
-            throw new RuntimeException(sprintf('PDOException was thrown when trying to manipulate session data: %s', $e->getMessage()), 0, $e);
+            throw new RuntimeException("PDOException was thrown when trying to manipulate session data: {$e->getMessage()}.", 0, $e);
         }
 
         return false;
@@ -137,7 +137,7 @@ class PdoSessionHandler implements SessionHandlerInterface
 
             return '';
         } catch (PDOException $e) {
-            throw new RuntimeException(sprintf('PDOException was thrown when trying to read the session data: %s', $e->getMessage()), 0, $e);
+            throw new RuntimeException("PDOException was thrown when trying to read the session data: {$e->getMessage()}.", 0, $e);
         }
     }
 
@@ -189,7 +189,7 @@ class PdoSessionHandler implements SessionHandlerInterface
                 }
             }
         } catch (PDOException $e) {
-            throw new RuntimeException(sprintf('PDOException was thrown when trying to write the session data: %s', $e->getMessage()), 0, $e);
+            throw new RuntimeException("PDOException was thrown when trying to write the session data: {$e->getMessage()}.", 0, $e);
         }
 
         return true;

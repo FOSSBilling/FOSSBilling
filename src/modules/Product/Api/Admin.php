@@ -100,7 +100,7 @@ class Admin extends \Api_Abstract
 
         $types = $service->getTypes();
         if (!array_key_exists($data['type'], $types)) {
-            throw new \FOSSBilling\Exception('Product type :type is not registered', [':type' => $data['type']], 413);
+            throw new \FOSSBilling\Exception('Product type :type is not registered.', [':type' => $data['type']], 413);
         }
 
         $categoryId = $data['product_category_id'] ?? null;

@@ -12,10 +12,18 @@
 namespace Box\Mod\Servicecustom;
 
 use FOSSBilling\Environment;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private readonly Filesystem $filesystem;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -177,7 +185,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         try {
             $model = $this->_getOrderService($order);
         } catch (\Exception $e) {
-            error_log($e);
+            error_log($e->getMessage());
 
             return true;
         }
@@ -190,11 +198,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getConfig(\Model_ServiceCustom $model): array
     {
-        if (is_string($model->config) && json_validate($model->config)) {
-            return json_decode($model->config, true);
-        }
-
-        return [];
+        return json_decode($model->config ?? '', true) ?? [];
     }
 
     public function toApiArray(\Model_ServiceCustom $model): array
@@ -265,8 +269,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         // check if plugin exists. If plugin does not exist, do not throw error. Simply add to log
-        $file = sprintf('Plugin/%s/%s.php', $plugin, $plugin);
-        if (!Environment::isTesting() && !file_exists(PATH_LIBRARY . DIRECTORY_SEPARATOR . $file)) {
+        $file = Path::join('Plugin', $plugin, "{$plugin}.php");
+        if (!Environment::isTesting() && !$this->filesystem->exists(Path::join(PATH_LIBRARY, $file))) {
             $e = new \FOSSBilling\Exception('Plugin class file :file was not found', [':file' => $file], 3124);
             if (DEBUG) {
                 error_log($e->getMessage());
@@ -275,13 +279,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return null;
         }
 
-        require_once $file;
+        require_once Path::normalize($file);
 
-        if (is_string($model->plugin_config) && json_validate($model->plugin_config)) {
-            $config = json_decode($model->plugin_config, true);
-        } else {
-            $config = [];
-        }
+        $config = json_decode($model->plugin_config ?? '', true) ?? [];
 
         $adapter = new $plugin($config);
 

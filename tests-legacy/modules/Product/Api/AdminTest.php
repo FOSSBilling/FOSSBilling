@@ -162,7 +162,7 @@ class AdminTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(413);
-        $this->expectExceptionMessage(sprintf('Product type %s is not registered', $data['type']));
+        $this->expectExceptionMessage("Product type {$data['type']} is not registered.");
         $this->api->prepare($data);
     }
 

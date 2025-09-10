@@ -91,7 +91,7 @@ class Admin extends \Api_Abstract
             try {
                 return $transactionService->processTransaction($newtx);
             } catch (\Exception $e) {
-                $this->di['logger']->info('Error processing transaction: ' . $e->getMessage());
+                $this->di['logger']->info("Error processing transaction: {$e->getMessage()}.");
             }
         }
 
@@ -357,7 +357,7 @@ class Admin extends \Api_Abstract
     {
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
 
-        return $transactionService->proccessReceivedATransactions();
+        return $transactionService->processReceivedATransactions();
     }
 
     /**
@@ -416,7 +416,7 @@ class Admin extends \Api_Abstract
      * @optional array $get - $_GET data
      * @optional array $post - $_POST data
      * @optional array $server - $_SERVER data
-     * @optional array $http_raw_post_data - file_get_contents("php://input")
+     * @optional array $http_raw_post_data - php://input
      * @optional string $txn_id - transaction id on payment gateway
      * @optional bool $skip_validation - makes params invoice_id and gateway_id optional
      *

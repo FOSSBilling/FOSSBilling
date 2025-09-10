@@ -22,10 +22,10 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: 'PHP Build'
-        uses: FOSSBilling/.workflows/.github/actions/php-build@3e9ace8872ed7d0961a73e7677d19cd9f58846df
+        uses: FOSSBilling/.workflows/.github/actions/php-build@19dd41443d048b090a99b8ec22b09e84cba21a56
         with:
           cache-deps: 'true'
           composer-args: '--prefer-dist --optimize-autoloader'
@@ -52,11 +52,11 @@ jobs:
 
       - name: 'Install Node.js and Enable Caching'
         if: steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
-          node-version: 20
+          node-version: 22
 
       - name: 'Install Node.js Dependencies'
         if: steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
@@ -175,10 +175,16 @@ jobs:
       - name: Run the API test suite
         run: php ./src/vendor/bin/phpunit --configuration phpunit-live.xml
 
-      - name: Display the FOSSBilling PHP error log
+      - name: Display the FOSSBilling PHP error log, if it exists
         if: always()
-        run: cat /var/www/localhost/data/log/php_error.log
-
+        run: |
+          PHP_ERROR_LOG_PATH="/var/www/localhost/data/log/php_error.log"
+            
+          if [ -f "$PHP_ERROR_LOG_PATH" ]; then
+            cat "$PHP_ERROR_LOG_PATH"
+          else
+            echo "The PHP error log does not exist."
+          fi
       - name: Display the other FOSSBilling logs
         if: always()
         working-directory: /var/www/localhost/data/log/

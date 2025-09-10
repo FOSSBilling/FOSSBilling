@@ -21,21 +21,21 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@3e9ace8872ed7d0961a73e7677d19cd9f58846df
+        uses: FOSSBilling/.workflows/.github/actions/php-build@19dd41443d048b090a99b8ec22b09e84cba21a56
         with:
           cache-deps: 'false'
           composer-args: '--prefer-dist --no-dev --optimize-autoloader'
           php-version: 8.2
 
       - name: 'Install Node.js and Enable Caching'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
-          node-version: 20
+          node-version: 22
 
       - name: 'Install Node.js Dependencies'
         run: npm ci

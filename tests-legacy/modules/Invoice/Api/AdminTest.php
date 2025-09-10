@@ -549,7 +549,7 @@ class AdminTest extends \BBTestCase
     {
         $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
-            ->method('proccessReceivedATransactions')
+            ->method('processReceivedATransactions')
             ->willReturn(true);
 
         $di = new \Pimple\Container();

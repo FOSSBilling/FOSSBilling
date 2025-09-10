@@ -70,7 +70,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                             $orderService->activateOrder($order);
                         } catch (\Exception $e) {
                             error_log($e->getMessage());
-                            $orderService->saveStatusChange($order, 'Order could not be activated due to error: ' . $e->getMessage());
+                            $orderService->saveStatusChange($order, "Order could not be activated due to error: {$e->getMessage()}.");
                         }
                     }
 
@@ -87,7 +87,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                         $orderService->renewOrder($order);
                     } catch (\Exception $e) {
                         error_log($e->getMessage());
-                        $orderService->saveStatusChange($order, 'Order could not renew due to error: ' . $e->getMessage());
+                        $orderService->saveStatusChange($order, "Order could not renew due to error: {$e->getMessage()}.");
                     }
 
                     break;
@@ -102,7 +102,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         if ($item->type == \Model_InvoiceItem::TYPE_HOOK_CALL) {
             try {
-                $params = json_decode($item->rel_id);
+                $params = json_decode($item->rel_id ?? '');
                 $this->di['events_manager']->fire(['event' => $item->task, 'params' => $params]);
             } catch (\Exception $e) {
                 error_log($e->getMessage());

@@ -177,11 +177,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $row = $row->export();
         }
 
-        if ($row['filter']) {
-            $row['filter'] = json_decode($row['filter'], 1);
-        } else {
-            $row['filter'] = [];
-        }
+        $row['filter'] = json_decode($row['filter'] ?? '', true) ?? [];
 
         return $row;
     }

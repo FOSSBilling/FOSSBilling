@@ -130,7 +130,7 @@ class Service implements InjectionAwareInterface
         $stmt = $pdo->prepare($sql);
         $stmt->execute(['id' => $member_id]);
         $json = $stmt->fetchColumn() ?? '';
-        $permissions = json_decode($json, 1);
+        $permissions = json_decode($json, true);
         if (!$permissions) {
             return [];
         }
@@ -584,7 +584,7 @@ class Service implements InjectionAwareInterface
         try {
             $newId = $this->di['db']->store($model);
         } catch (\RedBeanPHP\RedException) {
-            throw new \FOSSBilling\InformationException('Staff member with email :email is already registered', [':email' => $data['email']], 788954);
+            throw new \FOSSBilling\InformationException('Staff member with email :email is already registered.', [':email' => $data['email']], 788954);
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);

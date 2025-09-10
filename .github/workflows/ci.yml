@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: 'Perform Spellcheck'
         uses: streetsidesoftware/cspell-action@v7
@@ -31,10 +31,10 @@ jobs:
       matrix:
         php: [8.2, 8.3, 8.4]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@3e9ace8872ed7d0961a73e7677d19cd9f58846df
+        uses: FOSSBilling/.workflows/.github/actions/php-build@19dd41443d048b090a99b8ec22b09e84cba21a56
         with:
           php-version: ${{ matrix.php }}
 
@@ -45,7 +45,7 @@ jobs:
           echo APP_ENV=test >> $GITHUB_ENV
         
       - name: 'PHP Tests (PHPStan and PHPUnit)'
-        uses: FOSSBilling/.workflows/.github/actions/php-test@3e9ace8872ed7d0961a73e7677d19cd9f58846df
+        uses: FOSSBilling/.workflows/.github/actions/php-test@19dd41443d048b090a99b8ec22b09e84cba21a56
         with:
           php-version: ${{ matrix.php }}
           phpstan-enable: 'true'
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'Download Preview Release Archive'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: preview-build
           path: '/tmp'
@@ -121,7 +121,7 @@ jobs:
       actions: write
     needs: [ preview-build ]
     if: ${{ github.ref == 'refs/heads/main' }}
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@3e9ace8872ed7d0961a73e7677d19cd9f58846df
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@19dd41443d048b090a99b8ec22b09e84cba21a56
     secrets:
       dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}

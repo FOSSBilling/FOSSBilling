@@ -28,7 +28,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function proccessReceivedATransactions()
+    public function processReceivedATransactions()
     {
         $this->di['logger']->info('Executed action to process received transactions');
         $received = $this->getReceived();
@@ -155,7 +155,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'updated_at' => $model->updated_at,
         ];
         if ($deep) {
-            $result['ipn'] = json_decode($model->ipn, true);
+            $result['ipn'] = json_decode($model->ipn ?? '', true);
         }
 
         return $result;
@@ -363,7 +363,7 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->name, ':action' => 'processTransaction'], 705);
         }
 
-        $ipn = json_decode($tx->ipn, 1);
+        $ipn = json_decode($tx->ipn ?? '', true);
 
         return $adapter->processTransaction($this->di['api_system'], $id, $ipn, $tx->gateway_id);
     }
@@ -466,12 +466,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
-
-        if (is_string($tx->ipn) && json_validate($tx->ipn)) {
-            $ipn = json_decode($tx->ipn, true);
-        } else {
-            $ipn = [];
-        }
+        $ipn = json_decode($tx->ipn ?? '', true) ?? [];
 
         if (empty($tx->gateway_id)) {
             throw new \FOSSBilling\Exception('Could not determine transaction origin. Transaction payment gateway is unknown.', null, 701);

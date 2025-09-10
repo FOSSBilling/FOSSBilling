@@ -8,9 +8,15 @@
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-require_once __DIR__ . '/load.php';
-$di = include __DIR__ . '/di.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
+
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+
+$di = include Path::join(PATH_ROOT, 'di.php');
 $di['translate']();
+
+$filesystem = new Filesystem();
 
 $invoiceID = $_POST['invoice_id'] ?? $_GET['invoice_id'] ?? $_POST['bb_invoice_id'] ?? $_GET['bb_invoice_id'] ?? null;
 
@@ -26,7 +32,7 @@ $ipn = [
     'get' => $_GET,
     'post' => $_POST,
     'server' => $_SERVER,
-    'http_raw_post_data' => file_get_contents('php://input'),
+    'http_raw_post_data' => $filesystem->readFile('php://input'),
 ];
 
 try {

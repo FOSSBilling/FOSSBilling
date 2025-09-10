@@ -64,16 +64,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $service->updateSettings($t, $preset, $_POST);
             $service->regenerateThemeCssAndJsFiles($t, $preset, $api);
         } catch (\Exception $e) {
-            error_log($e);
-            $error = $e->getMessage();
+            error_log($e->getMessage());
         }
 
         // optional data file
         try {
             $service->regenerateThemeSettingsDataFile($t);
         } catch (\Exception $e) {
-            error_log($e);
-            $error = $e->getMessage();
+            error_log($e->getMessage());
         }
 
         $red_url = '/theme/' . $theme;
@@ -111,7 +109,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'settings' => $service->getThemeSettings($t, $preset),
             'current_preset' => $preset,
             'presets' => $service->getThemePresets($t),
-            'snippets' => $t->getSnippets(),
         ];
 
         return $app->render('mod_theme_preset', $data);

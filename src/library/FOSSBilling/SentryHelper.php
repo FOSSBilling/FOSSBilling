@@ -18,6 +18,7 @@ use Sentry\HttpClient\HttpClientInterface;
 use Sentry\HttpClient\Request;
 use Sentry\HttpClient\Response;
 use Sentry\Options;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 
 class SentryHelper
@@ -67,7 +68,6 @@ class SentryHelper
         'servicehosting',
         'servicelicense',
         'servicemembership',
-        // 'serviceproxmox',
         'spamchecker',
         'staff',
         'stats',
@@ -85,6 +85,8 @@ class SentryHelper
 
     // Array containing instance IDs that are blacklisted from error reporting and a timestamp of when their blacklist expires.
     private static array $blacklistedInstances = [
+        '49f78ad3-9e99-492d-aa86-09ba959b16ee' => '2025-08-21',
+        '40ea07d8-84db-49a0-8dcc-7ef53f9a38be' => '2025-12-01',
     ];
 
     private static string $placeholderFirstHalf = '--replace--this--';
@@ -220,7 +222,7 @@ class SentryHelper
 
     private static function getLibrary(string $exceptionPath)
     {
-        return pathinfo($exceptionPath, PATHINFO_FILENAME);
+        return Path::getFilenameWithoutExtension($exceptionPath);
     }
 
     /**
