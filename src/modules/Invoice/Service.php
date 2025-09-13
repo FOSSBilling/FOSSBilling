@@ -94,12 +94,12 @@ class Service implements InjectionAwareInterface
             $params['currency'] = $currency;
         }
 
-        if ($client_id !== null) {
+        if ($client_id) {
             $sql .= ' AND p.client_id = :client_id';
             $params['client_id'] = $client_id;
         }
 
-        if ($client !== null) {
+        if ($client) {
             $sql .= ' AND (cl.first_name LIKE :client_search OR cl.last_name LIKE :client_search OR cl.id = :client OR cl.email = :client)';
             $params['client_search'] = $client . '%';
             $params['client'] = $client;
