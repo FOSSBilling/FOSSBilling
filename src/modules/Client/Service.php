@@ -484,6 +484,9 @@ class Service implements InjectionAwareInterface
         $client->first_name = ucwords($data['first_name'] ?? null);
         $client->pass = $this->di['password']->hashIt($password);
 
+        $system = $this->di['mod']('system');
+        $systemCfg = $system->getConfig();
+
         $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
         if (!empty($phoneCC)) {
             $client->phone_cc = intval($phoneCC);
@@ -505,7 +508,7 @@ class Service implements InjectionAwareInterface
         $client->city = $data['city'] ?? null;
         $client->state = $data['state'] ?? null;
         $client->postcode = $data['postcode'] ?? null;
-        $client->country = $data['country'] ?? null;
+        $client->country = !empty($data['country']) ? $data['country'] : (!empty($systemCfg['default_country']) ? $systemCfg['default_country'] : null);
         $client->document_type = $data['document_type'] ?? null;
         $client->document_nr = $data['document_nr'] ?? null;
         $client->notes = $data['notes'] ?? null;

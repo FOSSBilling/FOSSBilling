@@ -108,6 +108,19 @@ class Guest extends \Api_Abstract
     }
 
     /**
+     * Return the code of the default country, if set.
+     * 
+     * @return string|null
+     */
+    public function default_country(): ?string
+    {
+        $mod = $this->di['mod']('system');
+        $cfg = $mod->getConfig();
+
+        return $cfg['default_country'];
+    }
+
+    /**
      * Returns system parameter by key.
      *
      * @return string
