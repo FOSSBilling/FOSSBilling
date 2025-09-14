@@ -687,10 +687,13 @@ ZW=Zimbabwe
     }
 
     function loadInterfaceIPs() {
+        const select = document.getElementById('interface');
+        // Show loading state first
+        select.innerHTML = `<option disabled selected>{{ "Loading interfaces..."|trans }}</option>`;
+
         API.admin.get('system/get_interface_ips', {}, function (interfaces) {
-            const select = document.getElementById('interface');
             select.innerHTML = `<option value="0">{{ 'None (Default PHP Behavior)'|trans }}</option>`;
-            
+
             interfaces.forEach(interface => {
                 const opt = document.createElement('option');
                 opt.value = interface;
