@@ -1,0 +1,155 @@
+{% import 'macro_functions.html.twig' as mf %}
+<form method="post" action="{{ 'api/admin/client/create'|link }}" class="api-form save" data-api-redirect="{{ 'client'|alink }}">
+	<div class="card">
+		<div class="card-header">
+			<h3 class="card-title">{{ 'Create a new client'|trans }}</h3>
+		</div>
+		<div class="card-body">
+			<div class="row">
+				<!-- Left column -->
+				<div class="col-md-6">
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label required">{{ 'Name'|trans }}</label>
+						<div class="col">
+							<div class="row">
+								<div class="col">
+									<input type="text" name="first_name" class="form-control" placeholder="{{ 'First name'|trans }}" required>
+								</div>
+								<div class="col">
+									<input type="text" name="last_name" class="form-control" placeholder="{{ 'Last name'|trans }}">
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label required">{{ 'Email Address'|trans }}</label>
+						<div class="col">
+							<input type="email" name="email" class="form-control" placeholder="client@fossbilling.org" required>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label required">{{ 'Password'|trans }}</label>
+						<div class="col">
+							<input type="password" name="password" class="form-control" required>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Status'|trans }}</label>
+						<div class="col">
+							<select name="status" class="form-select">
+								<option value="active">{{ 'Active'|trans }}</option>
+								<option value="suspended">{{ 'Suspended'|trans }}</option>
+								<option value="canceled">{{ 'Canceled'|trans }}</option>
+							</select>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Group'|trans }}</label>
+						<div class="col">
+							{{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select group'|trans) }}
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Currency'|trans }}</label>
+						<div class="col">
+							{{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'Select currency'|trans) }}
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Language'|trans }}</label>
+						<div class="col">
+							{% set languages = guest.extension_languages(true) %}
+							<select name="lang" class="form-select js-language-selector">
+								<option value="">{{ 'System default'|trans }}</option>
+								{% for lang in languages %}
+									<option value="{{ lang.locale }}">{{ lang.title }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Phone Number'|trans }}</label>
+						<div class="col">
+							<div class="input-group">
+								<span class="input-group-text">+</span>
+								<input class="form-control" type="text" name="phone_cc">
+								<input class="form-control w-50" type="text" name="phone">
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Right column -->
+				<div class="col-md-6">
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Company'|trans }}</label>
+						<div class="col">
+							<div class="row">
+								<div class="col">
+									<input type="text" name="company" class="form-control" placeholder="{{ 'Name'|trans }}">
+								</div>
+								<div class="col">
+									<input type="text" name="company_number" class="form-control" placeholder="{{ 'Number'|trans }}">
+								</div>
+								<div class="col">
+									<input type="text" name="company_vat" class="form-control" placeholder="{{ 'VAT number'|trans }}">
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Address 1'|trans }}</label>
+						<div class="col">
+							<input type="text" name="address_1" class="form-control">
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Address 2'|trans }}</label>
+						<div class="col">
+							<input type="text" name="address_2" class="form-control">
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'City'|trans }}</label>
+						<div class="col">
+							<input type="text" name="city" class="form-control">
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'State/Region'|trans }}</label>
+						<div class="col">
+							<input type="text" name="state" class="form-control">
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Postcode'|trans }}</label>
+						<div class="col">
+							<input type="text" name="postcode" class="form-control">
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Country'|trans }}</label>
+						<div class="col">
+							{{ mf.selectbox('country', guest.system_countries, guest.system_default_country, 0, 'Select country'|trans) }}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<hr/>
+
+			<!-- Notes -->
+			<div class="mb-4 row">
+				<label class="col-3 col-form-label">{{ 'Admin Notes'|trans }}</label>
+				<div class="col">
+					<textarea name="notes" class="form-control" rows="3"></textarea>
+				</div>
+			</div>
+		</div>
+
+		<!-- Footer -->
+		<div class="card-footer text-end">
+			<button type="submit" class="btn btn-primary ms-2">{{ 'Create client'|trans }}</button>
+		</div>
+	</div>
+</form>
