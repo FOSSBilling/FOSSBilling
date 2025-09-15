@@ -73,6 +73,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['extension_manager'] = $extensionMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
         $this->api->setDi($di);
         $result = $this->api->get_latest($data);
