@@ -139,7 +139,7 @@ $di['db'] = function () use ($di) {
     return $db;
 };
 
-$di['em'] = function () use ($di): EntityManager {
+$di['em'] = function (): EntityManager {
     return EntityManagerFactory::create();
 };
 
