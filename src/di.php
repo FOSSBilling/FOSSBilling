@@ -9,8 +9,10 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Doctrine\ORM\EntityManager;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
 use Lcharette\WebpackEncoreTwig\JsonManifest;
 use Lcharette\WebpackEncoreTwig\TagRenderer;
@@ -135,6 +137,10 @@ $di['db'] = function () use ($di) {
     $db->setDataMapper($mapper);
 
     return $db;
+};
+
+$di['em'] = function () use ($di): EntityManager {
+    return EntityManagerFactory::create();
 };
 
 /*
