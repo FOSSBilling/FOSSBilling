@@ -339,7 +339,7 @@ class ServicePayGatewayTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterClassName')
-            ->willReturn(null);
+            ->willReturn('');
 
         $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
         $urlMock->expects($this->atLeastOnce())
