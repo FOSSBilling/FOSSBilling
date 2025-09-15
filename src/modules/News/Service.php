@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -33,10 +34,9 @@ class Service
      * Generate a placeholder meta description from given string.
      *
      * @param string $content - string to generate description from
-     *
-     * @return string
+     * @return string Placeholder meta description
      */
-    public function generateDescriptionFromContent($content)
+    public function generateDescriptionFromContent(string $content): string
     {
         $desc = mb_convert_encoding($content, 'UTF-8');
         $desc = strip_tags($desc);

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -72,8 +73,7 @@ class Admin extends \Api_Abstract
      * Update news item.
      *
      * @param array $data
-     *
-     * @return Post Updated Post entity
+     * @return bool
      */
     public function update($data): bool
     {
@@ -120,7 +120,6 @@ class Admin extends \Api_Abstract
      * Create new news item.
      *
      * @param array $data
-     *
      * @return int New post ID
      */
     public function create($data): int

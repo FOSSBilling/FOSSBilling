@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -25,18 +26,18 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->get('/news', 'get_news', [], static::class);
         $app->get('/news/:slug', 'get_news_item', ['slug' => '[a-z0-9-]+'], static::class);
     }
 
-    public function get_news(\Box_App $app)
+    public function get_news(\Box_App $app): string
     {
         return $app->render('mod_news_index');
     }
 
-    public function get_news_item(\Box_App $app, $slug)
+    public function get_news_item(\Box_App $app, $slug): string
     {
         $post = $this->di['api_guest']->news_get(['slug' => $slug]);
 
