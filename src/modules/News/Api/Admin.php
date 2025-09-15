@@ -66,7 +66,9 @@ class Admin extends \Api_Abstract
         // @TODO Doctrine: Replace with actual Admin entity once it's migrated to Doctrine
         $admin = $this->di['db']->getRow('SELECT name FROM admin WHERE id = :id', ['id' => $post->getAdminId()]);
         
-        return $post->toApiArray(adminData: $admin);
+        $post->setAdminData($admin);
+
+        return $post->toApiArray();
     }
 
     /**

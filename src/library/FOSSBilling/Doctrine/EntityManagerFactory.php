@@ -23,7 +23,7 @@ class EntityManagerFactory
     public static function create(): EntityManager
     {
         $dbc = Config::getProperty('db');
-        $moduleEntityPaths = glob(__DIR__ . '/../modules/*/Entity', GLOB_ONLYDIR);
+        $moduleEntityPaths = glob(__DIR__ . '/../../modules/*/Entity', GLOB_ONLYDIR);
         
         $config = ORMSetup::createAttributeMetadataConfiguration(
             paths: $moduleEntityPaths,

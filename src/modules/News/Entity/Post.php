@@ -58,13 +58,23 @@ class Post implements ApiArrayInterface
     #[ORM\Column(type: "datetime")]
     private \DateTime $updatedAt;
 
+    // Temporary until Admin entity is migrated
+    private array $adminData = [];
+
     public function __construct(string $title, string $slug)
     {
         $this->title = $title;
         $this->slug = $slug;
     }
 
-    public function toApiArray(array $adminData = []): array
+    // Temporary until Admin entity is migrated
+    public function setAdminData(array $adminData): self
+    {
+        $this->adminData = $adminData;
+        return $this;
+    }
+
+    public function toApiArray(): array
     {
         // Remove <!--more--> from content
         $content = str_replace('<!--more-->', '', $this->getContent() ?? '');
@@ -82,7 +92,7 @@ class Post implements ApiArrayInterface
             'section'     => $this->getSection(),
             'created_at'  => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at'  => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
-            'author'      => $adminData, // @TODO Doctrine: Replace with actual Admin entity and remove $adminData once it's migrated to Doctrine
+            'author'      => $this->adminData, // @TODO Doctrine: Replace with actual Admin entity and remove $adminData once it's migrated to Doctrine
             'excerpt'     => $excerpt,
         ];
 

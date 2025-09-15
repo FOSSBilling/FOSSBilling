@@ -66,7 +66,7 @@ class PostRepository extends EntityRepository
 
     /**
      * Find an active post by its ID
-     * @param string $id
+     * @param int $id
      * @return Post|null
      */
     public function findOneActiveById(int $id): ?Post

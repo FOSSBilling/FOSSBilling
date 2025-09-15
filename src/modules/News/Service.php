@@ -23,7 +23,7 @@ class Service
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        $this->postRepository = $this->di['em']->getRepository(Post::class);;
+        $this->postRepository = $this->di['em']->getRepository(Post::class);
     }
 
     public function getPostRepository(): PostRepository {
