@@ -239,7 +239,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         if ($search) {
-            $sql .= ' AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)';
+            $sql .= ' AND m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn';
             $params['note'] = "%$search%";
             $params['search_invoice_id'] = "%$search%";
             $params['search_txn_id'] = "%$search%";
