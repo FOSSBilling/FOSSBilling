@@ -338,8 +338,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    protected function syncWhois(\Model_ServiceDomain $model, \Model_ClientOrder $order)
+    protected function syncWhois(\Model_ServiceDomain|\RedBeanPHP\SimpleModel $model, \Model_ClientOrder $order)
     {
+        /** @var \Model_ServiceDomain $model */
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
 
@@ -367,7 +368,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->contact_phone_cc = $contact->getTelCc();
         $model->contact_phone = $contact->getTel();
 
-        $model->details = serialize($whois);
+        $model->details = unserialize(serialize($whois));
         $model->expires_at = date('Y-m-d H:i:s', $whois->getExpirationTime());
         $model->registered_at = date('Y-m-d H:i:s', $whois->getRegistrationTime());
         $model->updated_at = date('Y-m-d H:i:s');
@@ -649,19 +650,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$sld, $tld];
     }
 
-    protected function _getD(\Model_ServiceDomain $model)
+    protected function _getD(\Model_ServiceDomain|\RedBeanPHP\SimpleModel $model)
     {
+        /** @var \Model_ServiceDomain $model */
         $orderService = $this->di['mod_service']('order');
         $order = $orderService->getServiceOrder($model);
 
         $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
-
         if ($order instanceof \Model_ClientOrder) {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar, $order);
         } else {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
         }
-
         $d = new \Registrar_Domain();
 
         $d->setLocked($model->locked);
@@ -928,7 +928,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $finder->files()->in(Path::join(PATH_LIBRARY, 'Registrar', 'Adapter'))->name('*.php');
         foreach ($finder as $file) {
             $adapter = $file->getFilenameWithoutExtension();
-            if (!array_key_exists($adapter, $exists)) {
+            if (!isset($exists[$adapter])) {
                 $adapters[] = $adapter;
             }
         }
@@ -1078,7 +1078,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $s->ns3 = $data['ns3'] ?? $s->ns3;
         $s->ns4 = $data['ns4'] ?? $s->ns4;
 
-        $s->period = (int) $data['period'] ?? $s->period;
+        $s->period = is_int($data['period']) ? $data['period'] : (int) $s->period;
         $s->privacy = (bool) ($data['privacy'] ?? $s->privacy);
         $s->locked = (bool) ($data['locked'] ?? $s->locked);
         $s->transfer_code = $data['transfer_code'] ?? $s->transfer_code;

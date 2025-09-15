@@ -33,6 +33,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_emails(\Box_App $app)
     {
+        // @phpstan-ignore expr.resultUnused
         $this->di['is_client_logged'];
 
         return $app->render('mod_email_index');

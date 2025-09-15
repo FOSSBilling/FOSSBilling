@@ -11,7 +11,9 @@ abstract class BBDbApiTestCase extends BBDatabaseTestCase
 
     public function setBoxUpdateMock()
     {
-        $updatedMock = $this->getMockBuilder('Box_Update')->getMock();
+        $updatedMock = $this->getMockBuilder('Box_Update')
+            ->onlyMethods(['isUpdateAvailable', 'getLatestVersion', 'performUpdate'])
+            ->getMock();
         $updatedMock->expects($this->any())
             ->method('isUpdateAvailable')
             ->willReturn(true);

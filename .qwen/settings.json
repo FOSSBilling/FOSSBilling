@@ -1,0 +1,6 @@
+{
+  "contextFileName": "AGENTS.md",
+  "bugCommand": {
+    "urlTemplate": "https://github.com/FOSSBilling/FOSSBilling/issues/new?template=BUG-REPORT.yml&title={title}&info={info}"
+  }
+}

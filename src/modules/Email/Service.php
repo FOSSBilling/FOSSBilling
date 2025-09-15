@@ -351,7 +351,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (Environment::isTesting()) {
-            if (DEBUG) {
+            if (defined('DEBUG')) {
                 $this->di['logger']->setChannel('email')->info('Skipping email sending in test environment');
             }
 

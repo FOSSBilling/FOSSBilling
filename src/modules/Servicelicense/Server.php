@@ -33,10 +33,6 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function __construct(private readonly \Box_Log $_log)
-    {
-    }
-
     /**
      * @param string $key
      */

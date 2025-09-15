@@ -17,6 +17,7 @@ class ServiceTest extends \BBTestCase
     public function testgetDi(): void
     {
         $di = new \Pimple\Container();
+        $itemInvoiceServiceMock = null;
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -216,6 +217,7 @@ class ServiceTest extends \BBTestCase
             ->method('getQty');
 
         $di = new \Pimple\Container();
+        $itemInvoiceServiceMock = null;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($itemInvoiceServiceMock, $systemService, $subscriptionServiceMock) {
             $service = null;
@@ -783,7 +785,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->onConsecutiveCalls($invoiceModel, $invoiceItemModel));
+            ->willReturnOnConsecutiveCalls($invoiceModel, $invoiceItemModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
         $dbMock->expects($this->atLeastOnce())
@@ -1396,7 +1398,7 @@ class ServiceTest extends \BBTestCase
         $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
-            ->will($this->onConsecutiveCalls($minAmount, $maxAmount));
+            ->willReturnOnConsecutiveCalls($minAmount, $maxAmount);
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn () => $systemService);
@@ -1421,7 +1423,7 @@ class ServiceTest extends \BBTestCase
         $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
-            ->will($this->onConsecutiveCalls($minAmount, $maxAmount));
+            ->willReturnOnConsecutiveCalls($minAmount, $maxAmount);
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn () => $systemService);
@@ -1456,7 +1458,7 @@ class ServiceTest extends \BBTestCase
         $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
-            ->will($this->onConsecutiveCalls($minAmount, $maxAmount, true));
+            ->willReturnOnConsecutiveCalls($minAmount, $maxAmount, true);
 
         $itemInvoiceServiceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)->getMock();
         $itemInvoiceServiceMock->expects($this->atLeastOnce())

@@ -36,7 +36,7 @@ class Exception extends \Exception
             $message = strtr($message, $variables);
         }
 
-        if (DEBUG && $logStack) {
+        if (defined('DEBUG') && $logStack) {
             error_log("Exception: $message");
             error_log('Stack trace:');
             error_log($this->stackTrace($stackLength, $protected));
@@ -78,11 +78,11 @@ class Exception extends \Exception
             $func .= ')';
 
             $entry_file = 'NO_FILE';
-            if (array_key_exists('file', $entry)) {
+            if (isset($entry['file'])) {
                 $entry_file = str_replace(PATH_ROOT, '', $entry['file']);
             }
             $entry_line = 'NO_LINE';
-            if (array_key_exists('line', $entry)) {
+            if (isset($entry['line'])) {
                 $entry_line = $entry['line'];
             }
             $output .= $entry_file . ':' . $entry_line . ' - ' . $func . PHP_EOL;

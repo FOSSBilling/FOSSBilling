@@ -570,7 +570,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findExtension')
-            ->will($this->onConsecutiveCalls(null, $model));
+            ->willReturnOnConsecutiveCalls(null, $model);
         $serviceMock->expects($this->atLeastOnce())
             ->method('activate')
             ->willReturn([]);

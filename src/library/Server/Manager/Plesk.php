@@ -146,7 +146,7 @@ class Server_Manager_Plesk extends Server_Manager
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
-        $client->setId((string) $id);
+        $client->setId((int) $id);
 
         $this->setSubscription($account);
 
@@ -249,6 +249,8 @@ class Server_Manager_Plesk extends Server_Manager
         $this->updateSubscription($account);
 
         if ($account->getReseller()) {
+            // @todo Check and handle the result
+            // @phpstan-ignore method.resultUnused
             $this->addNs($account, $domainId);
         }
 
@@ -392,6 +394,9 @@ class Server_Manager_Plesk extends Server_Manager
      *
      * @param Server_Account $account the account for which the IP should be set
      * @param string         $newIp   the new IP address
+     */
+    /**
+     * @phpstan-ignore-next-line method.unused
      */
     private function setIp(Server_Account $account, string $newIp): void
     {
@@ -644,11 +649,11 @@ class Server_Manager_Plesk extends Server_Manager
      * This method is not yet implemented and currently always returns true.
      *
      * @param Server_Account $account  the account for which the NS record should be added
-     * @param string         $domainId the ID of the domain for which the NS record should be added
+     * @param string|null    $domainId the ID of the domain for which the NS record should be added
      *
      * @return bool always returns true
      */
-    private function addNs(Server_Account $account, string $domainId): bool
+    private function addNs(Server_Account $account, ?string $domainId): bool
     {
         // Will be done in the future
         return true;
@@ -663,6 +668,9 @@ class Server_Manager_Plesk extends Server_Manager
      * @param string         $domainId the ID of the domain for which the NS records should be retrieved
      *
      * @return array the array of NS record IDs
+     */
+    /**
+     * @phpstan-ignore-next-line method.unused
      */
     private function getNs(Server_Account $account, string $domainId): array
     {
@@ -689,6 +697,9 @@ class Server_Manager_Plesk extends Server_Manager
      * @return bool returns true after the DNS records have been removed
      *
      * @throws Exception
+     */
+    /**
+     * @phpstan-ignore-next-line method.unused
      */
     private function removeDns(array $ns): bool
     {
@@ -718,6 +729,9 @@ class Server_Manager_Plesk extends Server_Manager
      * @param Server_Account $account the account for which the IP type should be changed
      *
      * @return bool returns true if the IP type was successfully changed to 'shared', false otherwise
+     */
+    /**
+     * @phpstan-ignore-next-line method.unused
      */
     private function changeIpType(Server_Account $account): bool
     {

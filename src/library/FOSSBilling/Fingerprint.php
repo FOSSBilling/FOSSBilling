@@ -96,7 +96,7 @@ class Fingerprint
 
         foreach ($this->fingerprintProperties as $name => $properties) {
             if (!empty($properties['source'])) {
-                $fingerprint[$name] = hash('md5', (string) $properties['source']);
+                $fingerprint[$name] = hash('xxh3', (string) $properties['source']);
             }
         }
 
@@ -122,16 +122,20 @@ class Fingerprint
             $exitsInFingerprint = array_key_exists($name, $fingerprint);
             $exitsInCurrentFingerprint = !empty($properties['source']);
 
-            if ((!$exitsInFingerprint && $exitsInCurrentFingerprint) || ($exitsInFingerprint && !$exitsInCurrentFingerprint)) {
-                // The property exists in one fingerprint and not the other, so we increment the total count and deduct from the score.
-                ++$itemCount;
+            // Skip if the property isn't in either fingerprint.
+            if (!$exitsInFingerprint && !$exitsInCurrentFingerprint) {
+                continue;
+            }
+
+            ++$itemCount;
+
+            if ($exitsInFingerprint !== $exitsInCurrentFingerprint) {
+                // The property exists in one fingerprint and not the other, so we deduct from the score.
                 $scoreSubtract += $properties['weight'];
                 $differing[] = $name;
-            } elseif (!$exitsInFingerprint && !$exitsInCurrentFingerprint) {
-                // Do nothing in this case, as the property isn't in either fingerprint.
             } else {
-                ++$itemCount;
-                $hashedData = hash('md5', (string) $properties['source']);
+                // Both fingerprints have this property, so compare the hashed values.
+                $hashedData = hash('xxh3', (string) $properties['source']);
 
                 if ($fingerprint[$name] !== $hashedData) {
                     $scoreSubtract += $properties['weight'];

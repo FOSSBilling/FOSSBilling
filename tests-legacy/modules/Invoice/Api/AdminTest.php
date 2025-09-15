@@ -1096,7 +1096,7 @@ class AdminTest extends \BBTestCase
 
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->onConsecutiveCalls($client, $model));
+            ->willReturnOnConsecutiveCalls($client, $model);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -1131,7 +1131,7 @@ class AdminTest extends \BBTestCase
 
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->onConsecutiveCalls($client, $model));
+            ->willReturnOnConsecutiveCalls($client, $model);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
