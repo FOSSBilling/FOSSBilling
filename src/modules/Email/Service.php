@@ -203,8 +203,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
 
         [$subject, $content] = $this->_parse($t, $vars);
-        $from = $data['from'] ?? $systemService->getParamValue('company_email');
-        $from_name = $data['from_name'] ?? $systemService->getParamValue('company_name');
+        
+        $emailMod = $this->di['mod']('email');
+        $emailSettings = $emailMod->getConfig();
+
+        $customEmail = $emailSettings['from_email'] ?? '';
+        $customName = $emailSettings['from_name'] ?? '';
+
+        $companyEmail = $systemService->getParamValue('company_email');
+        $companyName = $systemService->getParamValue('company_name');
+
+        $from = $data['from'] ?? (!empty($customEmail) ? $customEmail : $companyEmail);
+        $from_name = $data['from_name'] ?? (!empty($customName) ? $customName : $companyName);
+
         $sent = false;
 
         if (!$from) {
