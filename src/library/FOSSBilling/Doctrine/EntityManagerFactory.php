@@ -17,6 +17,7 @@ use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\DBAL\DriverManager;
 use FOSSBilling\Config;
+use FOSSBilling\Environment;
 
 class EntityManagerFactory
 {
@@ -27,7 +28,7 @@ class EntityManagerFactory
         
         $config = ORMSetup::createAttributeMetadataConfiguration(
             paths: $moduleEntityPaths,
-            isDevMode: true, // @TODO Doctrine: set to false in production
+            isDevMode: Environment::isDevelopment()
         );
 
         $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER)); // Consistency with already existing RedBean tables
