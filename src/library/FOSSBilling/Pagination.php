@@ -12,6 +12,12 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
+use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Interfaces\ApiArrayInterface;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
+
 class Pagination implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
@@ -38,6 +44,73 @@ class Pagination implements InjectionAwareInterface
     }
 
     /**
+     * Paginate results from a Doctrine QueryBuilder.
+     *
+     * Applies pagination to a Doctrine QueryBuilder and returns metadata and normalized entities.
+     * Entities implementing `ApiArrayInterface` will use `toApiArray()`, others will be normalized
+     * using Symfony's ObjectNormalizer.
+     *
+     * @param QueryBuilder $qb           The Doctrine QueryBuilder instance to paginate.
+     * @param int|null     $perPage      Optional number of items per page. (defaults to 100)
+     * @param int|null     $page         Optional current page number. (grabbed from query parameters by default)
+     * @param string       $pageParam    query parameter key for the page number (default: "page")
+     * @param string       $perPageParam query parameter key for the per-page count (default: "per_page")
+     *
+     * @return array{
+     *     pages: int,      // Total number of pages
+     *     page: int,       // Current page number
+     *     per_page: int,   // Items per page
+     *     total: int,      // Total number of items
+     *     list: array      // List of paginated items as arrays
+     * }
+     *
+     * @throws InformationException if the page or per-page value is invalid.
+     */
+    public function paginateDoctrineQuery(QueryBuilder $qb, ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
+    {
+        $request = $this->di['request'];
+        $serializer = new Serializer([new ObjectNormalizer()]);
+        $paginator = new DoctrinePaginator($qb, true);
+
+        $page ??= filter_var($request->query->get($pageParam), FILTER_VALIDATE_INT, ['options' => ['default' => 1]]);
+        $perPage ??= filter_var($request->query->get($perPageParam), FILTER_VALIDATE_INT, ['options' => ['default' => $this->getDefaultPerPage()]]);
+
+        if ($page < 1) {
+            throw new InformationException("Page number ($pageParam) must be a positive integer.");
+        }
+        if ($perPage < 1) {
+            throw new InformationException("The number of items per page ($perPageParam) must be a positive integer.");
+        }
+        if ($perPage > self::MAX_PER_PAGE) {
+            throw new InformationException("The number of items per page ($perPageParam) must be below the maximum allowed amount (" . self::MAX_PER_PAGE . ').');
+        }
+
+        $offset = ($page - 1) * $perPage;
+        $qb->setFirstResult($offset)
+           ->setMaxResults($perPage);
+
+        $total = count($paginator);
+
+        $list = [];
+        foreach ($paginator as $entity) {
+            if ($entity instanceof ApiArrayInterface) {
+                $list[] = $entity->toApiArray();
+            } else {
+                // fallback: use serializer to normalize entity
+                $list[] = $serializer->normalize($entity);
+            }
+        }
+
+        return [
+            'pages'      => $total > 0 ? (int) ceil($total / $perPage) : 0,
+            'page'       => $page,
+            'per_page'   => $perPage,
+            'total'      => $total,
+            'list'       => $list,
+        ];
+    }
+
+    /**
      * Paginate a SQL query using a simple LIMIT clause and a secondary count query.
      *
      * @param string   $query        the base SQL query without LIMIT
@@ -48,11 +121,11 @@ class Pagination implements InjectionAwareInterface
      * @param string   $perPageParam query parameter key for the per-page count (default: "per_page")
      *
      * @return array{
-     *     pages: int,
-     *     page: int,
-     *     per_page: int,
-     *     total: int,
-     *     list: array
+     *     pages: int,      // Total number of pages
+     *     page: int,       // Current page number
+     *     per_page: int,   // Items per page
+     *     total: int,      // Total number of items
+     *     list: array      // List of paginated items as arrays
      * }
      *
      * @throws InformationException if the page/per-page value or the SQL query is invalid
