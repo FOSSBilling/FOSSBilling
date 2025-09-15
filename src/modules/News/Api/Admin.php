@@ -77,7 +77,7 @@ class Admin extends \Api_Abstract
      * @param array $data
      * @return bool
      */
-    public function update($data): bool
+    public function update(array $data): bool
     {
         $this->di['validator']->checkRequiredParamsForArray(['id' => 'Post ID not passed'], $data);
 
@@ -124,7 +124,7 @@ class Admin extends \Api_Abstract
      * @param array $data
      * @return int New post ID
      */
-    public function create($data): int
+    public function create(array $data): int
     {
         $this->di['validator']->checkRequiredParamsForArray(['title' => 'Post title not passed'], $data);
 
