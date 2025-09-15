@@ -25,7 +25,6 @@
         "ext-zlib": "*",
         "antcms/antloader": "^2.0.2",
         "doctrine/dbal": "^4.3",
-        "doctrine/migrations": "^3.9",
         "doctrine/orm": "^3.5",
         "dompdf/dompdf": "^3.0.0",
         "egulias/email-validator": "^4.0",
