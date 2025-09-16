@@ -363,7 +363,7 @@ class ServiceTest extends \BBTestCase
             ->method('getConfig')
             ->willReturn([
                 'from_name' => '',
-                'from_email' => ''
+                'from_email' => '',
             ]);
 
         $di['db'] = $db;
@@ -503,7 +503,7 @@ class ServiceTest extends \BBTestCase
             ->method('getConfig')
             ->willReturn([
                 'from_name' => '',
-                'from_email' => ''
+                'from_email' => '',
             ]);
 
         $di['mod'] = $di->protect(fn () => $modMock);
