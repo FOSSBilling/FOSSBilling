@@ -14,11 +14,12 @@ namespace Box\Mod\News\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Interfaces\TimestampableInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\News\Repository\PostRepository::class)]
 #[ORM\Table(name: "post")]
 #[ORM\HasLifecycleCallbacks]
-class Post implements ApiArrayInterface
+class Post implements ApiArrayInterface, TimestampableInterface
 {
     public const STATUS_ACTIVE = 'active';
     public const STATUS_DRAFT = 'draft';
@@ -224,15 +225,13 @@ class Post implements ApiArrayInterface
         return $this;
     }
 
-    public function setCreatedAt(\DateTime $createdAt): self
+    public function setCreatedAt(\DateTime $createdAt): void
     {
         $this->createdAt = $createdAt;
-        return $this;
     }
 
-    public function setUpdatedAt(\DateTime $updatedAt): self
+    public function setUpdatedAt(\DateTime $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
-        return $this;
     }
 }
