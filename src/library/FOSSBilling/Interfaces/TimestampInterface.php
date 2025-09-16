@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Interfaces;
 
-interface TimestampableInterface
+interface TimestampInterface
 {
     public function setCreatedAt(\DateTime $createdAt): void;
     public function setUpdatedAt(\DateTime $updatedAt): void;

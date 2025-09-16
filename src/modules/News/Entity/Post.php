@@ -14,12 +14,12 @@ namespace Box\Mod\News\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampableInterface;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\News\Repository\PostRepository::class)]
 #[ORM\Table(name: "post")]
 #[ORM\HasLifecycleCallbacks]
-class Post implements ApiArrayInterface, TimestampableInterface
+class Post implements ApiArrayInterface, TimestampInterface
 {
     public const STATUS_ACTIVE = 'active';
     public const STATUS_DRAFT = 'draft';

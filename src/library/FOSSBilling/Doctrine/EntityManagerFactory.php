@@ -33,6 +33,10 @@ class EntityManagerFactory
 
         $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER)); // Consistency with already existing RedBean tables
 
+        $config->setProxyDir(PATH_CACHE . '/doctrine/proxies');
+        $config->setProxyNamespace('FOSSBilling\Doctrine\Proxies');
+        $config->setAutoGenerateProxyClasses(true);
+
         $connectionParams = [
             'driver'   => 'pdo_mysql',
             'host'     => $dbc['host'],
