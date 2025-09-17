@@ -109,8 +109,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Return the code of the default country, if set.
-     * 
-     * @return string|null
      */
     public function default_country(): ?string
     {

@@ -203,7 +203,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
 
         [$subject, $content] = $this->_parse($t, $vars);
-        
+
         $emailMod = $this->di['mod']('email');
         $emailSettings = $emailMod->getConfig();
 
