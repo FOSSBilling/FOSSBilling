@@ -11,11 +11,11 @@
 
 use Box\Mod\Email\Service;
 use FOSSBilling\Environment;
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Uid\Uuid;
 use Twig\Loader\FilesystemLoader;
 
 date_default_timezone_set('UTC');
@@ -446,7 +446,7 @@ final class FOSSBilling_Installer
         $data['debug_and_monitoring']['report_errors'] = (bool) $this->session->get('error_reporting');
         $data['debug_and_monitoring']['debug'] = $this->isDebug;
         $data['update_branch'] = $updateBranch;
-        $data['info']['instance_id'] = Uuid::uuid4()->toString();
+        $data['info']['instance_id'] = Uuid::v4()->toString();
         $data['url'] = str_replace(['https://', 'http://'], '', SYSTEM_URL);
         $data['path_data'] = Path::join(PATH_ROOT, 'data');
         $data['db'] = [
