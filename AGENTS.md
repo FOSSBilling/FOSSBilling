@@ -13,7 +13,7 @@ FOSSBilling is a free and open-source billing and client management solution des
   * [Monolog](https://github.com/Seldaek/monolog): Logging framework
   * [dompdf](https://github.com/dompdf/dompdf): PDF generation for invoices and documents
   * [Pimple](https://github.com/silexphp/Pimple): Dependency injection container
-  * [Ramsey UUID](https://github.com/ramsey/uuid): UUID generation
+  * [Symfony UID Component](https://symfony.com/doc/current/components/uid.html): UUID generation
 * **Frontend:** Modern JavaScript and CSS with npm package management. Key dependencies include:
   * [Tabler.io](https://tabler.io): CSS framework for responsive design, based on [Bootstrap 5](https://getbootstrap.com/)
   * [Tom Select](https://tom-select.js.org/): Enhanced select boxes with search and tagging
