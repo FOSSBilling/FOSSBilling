@@ -85,7 +85,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
 
         // Instance ID handling
-        if (!class_exists('Uuid')) {
+        if (!class_exists(Uuid::class)) {
             $this->registerFallbackAutoloader();
         }
         $newConfig['info']['instance_id'] ??= Uuid::v4()->toString();
