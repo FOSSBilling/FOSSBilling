@@ -69,7 +69,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
 
     public function process($data)
     {
-        $data = (!is_array($data)) ? json_decode($data ?? '', true) : [];
+        $data = is_array($data) ? $data : (json_decode($data, true) ?: []);
 
         if (empty($data)) {
             throw new \LogicException('Invalid request. Parameters missing?', 1000);
