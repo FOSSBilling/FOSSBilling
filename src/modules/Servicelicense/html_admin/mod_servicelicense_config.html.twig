@@ -2,7 +2,6 @@
 <div class="card-body">
     <h5>{{ 'License settings'|trans }}</h5>
     <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="api-form save" data-api-msg="{{ 'License settings updated'|trans }}">
-        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Prefix'|trans }}:</label>
             <div class="col">
@@ -79,13 +78,13 @@
     <hr>
     <div>
         <h1>{{ 'License plugins'|trans }}</h1>
-        <p>{{ 'FOSSBilling gives you the ability to provide your own license generation script. Follow the instructions below to install new license plugin'|trans }}</p>
+        <p>{{ 'You can create your own license generation plugins for FOSSBilling. Follow these steps to add a new one:'|trans }}</p>
         <ul>
-            <li>{{ 'License plugin is PHP class "License_PluginName" with one method'|trans }} <strong>generate</strong></li>
-            <li>{{ 'Take a look at default plugin at'|trans }} <strong>src/modules/Servicelicense/Plugin/Simple.php</strong></li>
-            <li>{{ 'Create your plugin and place it to'|trans }} <strong>src/modules/Servicelicense/Plugin/PluginName.php</strong></li>
-            <li>{{ 'FOSSBilling will automatically detect new plugin'|trans }}</li>
-            <li>{{ 'Read'|trans }} <a href="https://fossbilling.org/docs" target="_blank">{{ 'FOSSBilling documentation'|trans }}</a> {{ 'for more information.'|trans }}</li>
+            <li>{{ 'A license plugin is a PHP class named'|trans }} <strong>License_PluginName</strong> {{ 'that must include a'|trans }} <code>generate</code> {{ 'method.'|trans }}</li>
+            <li>{{ 'See the default example plugin at'|trans }} <strong>/modules/Servicelicense/Plugin/Simple.php</strong></li>
+            <li>{{ 'Save your custom plugin in'|trans }} <strong>/modules/Servicelicense/Plugin/PluginName.php</strong></li>
+            <li>{{ 'FOSSBilling will automatically detect your new plugin.'|trans }}</li>
+            <li><a href="https://fossbilling.org/docs/product-types/license#custom-plugins" target="_blank">{{ 'Read the documentation'|trans }}</a> {{ 'for more details.'|trans }}</li>
         </ul>
     </div>
 </div>
