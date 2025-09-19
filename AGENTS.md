@@ -181,7 +181,7 @@ tests-legacy/                  # Legacy PHPUnit tests
 
 ### Interacting with the FOSSBilling API
 * API is injected directly into the Twig templates. You do not need to use fetch/AJAX to read from the API.
-  * When applicable, APIs are injected as Twig parameters `admin`, `client` and `guest`.
+  * When applicable, APIs are injected as Twig parameters `admin`, `client`, and `guest`.
   * Guest API is always available. Admin and client APIs are injected if an admin or a client is logged in.
   * To access data, use this format: `{{ role.module_endpoint(optional_parameters) }}`. A few examples:
     * `{{ admin.support_ticket_get_list({ 'status': 'active' }) }}` => Reads into /api/admin/support/ticket_get_list?status=active
