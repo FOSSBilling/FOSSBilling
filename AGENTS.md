@@ -171,13 +171,14 @@ tests/                         # Modern test structure
 tests-legacy/                  # Legacy PHPUnit tests
 ```
 
-### Front-end preferences
+### Front-end Guidelines
 * Reuse svg files in the `admin_default` theme. Icons are compiled from the `src/themes/admin_default/assets/icons` directory and can be referenced from within the Twig template like so:
   ```html
   <svg class="icon">
     <use xlink:href="#icon-name" />
   </svg>
   ```
+* Check the available Twig filters and functions in `src/library/Box/TwigExtensions.php`. Use these where applicable.
 
 ### Interacting with the FOSSBilling API
 * API is injected directly into the Twig templates. You do not need to use fetch/AJAX to read from the API.
