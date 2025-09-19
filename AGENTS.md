@@ -10,7 +10,7 @@ FOSSBilling is a free and open-source billing and client management solution des
   * [Symfony Components](https://symfony.com/): Console, cache, filesystem, HTTP client, and other core functionalities. See `composer.json` for a list of imported components.
     * Prefer Symfony components wherever you can. 
   * [Twig](https://twig.symfony.com/): Template engine for rendering views
-    * API endpoints is injected as parameters to Twig. See the "Interacting with the FOSSBilling API" section.
+    * API endpoints are injected as parameters to Twig. See the "Interacting with the FOSSBilling API" section.
   * [RedBeanPHP](https://redbeanphp.com/): ORM for database interactions in legacy modules.
   * [Doctrine DBAL/ORM](https://doctrine-project.org/): ORM and DBAL for modern modules.
     * FOSSBilling is in the process of migrating modules and core parts from RedBeanPHP to Doctrine one by one.
