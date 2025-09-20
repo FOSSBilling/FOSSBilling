@@ -19,6 +19,7 @@ FOSSBilling is a free and open-source billing and client management solution des
     * The FOSSBilling project is in the process of gradually phasing out RedBeanPHP in favor of Doctrine ORM.
     * When writing new pieces of code, avoid RedBeanPHP.
     * If you are assisting with the migration from RedBeanPHP to Doctrine, do your best to keep compatibility with the existing table structure.
+    * When refactoring API endpoints, check how the `$di['pager']` works in `src/library/FOSSBilling/Pagination.php`. `paginateDoctrineQuery()` is the replacement for `getPaginatedResultSet()`.
   * [Monolog](https://github.com/Seldaek/monolog): Logging framework. Used via `$di['logger']` (`/src/library/FOSSBilling/Monolog.php`).
   * [dompdf](https://github.com/dompdf/dompdf): PDF generation for invoices and documents
   * [Pimple](https://github.com/silexphp/Pimple): Dependency injection container, see `/src/di.php`.
