@@ -48,6 +48,7 @@ class Box_Mod
         'system',
         'theme',
         'orderbutton',
+        'widgets',
         'formbuilder',
     ];
     private readonly Filesystem $filesystem;
