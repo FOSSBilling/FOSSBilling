@@ -53,6 +53,15 @@ class Post implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: "string", length: 20)]
     private string $status = self::STATUS_ACTIVE;
 
+    #[ORM\Column(type: "datetime", nullable: true)]
+    private ?\DateTime $publishAt = null;
+
+    #[ORM\Column(type: "datetime", nullable: true)]
+    private ?\DateTime $publishedAt = null;
+
+    #[ORM\Column(type: "datetime", nullable: true)]
+    private ?\DateTime $expiresAt = null;
+
     #[ORM\Column(type: "datetime")]
     private \DateTime $createdAt;
 
@@ -91,6 +100,9 @@ class Post implements ApiArrayInterface, TimestampInterface
             'slug'        => $this->getSlug(),
             'image'       => $this->getImage(),
             'section'     => $this->getSection(),
+            'publish_at'  => $this->getPublishAt()?->format('Y-m-d H:i:s'),
+            'published_at'=> $this->getPublishedAt()?->format('Y-m-d H:i:s'),
+            'expires_at'  => $this->getExpiresAt()?->format('Y-m-d H:i:s'),
             'created_at'  => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at'  => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
             'author'      => $this->adminData, // @TODO Doctrine: Replace with actual Admin entity and remove $adminData once it's migrated to Doctrine
@@ -170,6 +182,21 @@ class Post implements ApiArrayInterface, TimestampInterface
         return $this->updatedAt;
     }
 
+    public function getPublishAt(): ?\DateTime
+    {
+        return $this->publishAt;
+    }
+
+    public function getPublishedAt(): ?\DateTime
+    {
+        return $this->publishedAt;
+    }
+
+    public function getExpiresAt(): ?\DateTime
+    {
+        return $this->expiresAt;
+    }
+
     // --- Setters ---
     public function setAdminId(int $adminId): self
     {
@@ -220,7 +247,7 @@ class Post implements ApiArrayInterface, TimestampInterface
         if (!in_array($status, $allowedStatuses, true)) {
             throw new \InvalidArgumentException(sprintf('Invalid status "%s". Allowed values: %s', $status, implode(', ', $allowedStatuses)));
         }
-        
+
         $this->status = $status;
         return $this;
     }
@@ -233,5 +260,23 @@ class Post implements ApiArrayInterface, TimestampInterface
     public function setUpdatedAt(\DateTime $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
+    }
+
+    public function setPublishAt(?\DateTime $publishAt): self
+    {
+        $this->publishAt = $publishAt;
+        return $this;
+    }
+
+    public function setPublishedAt(?\DateTime $publishedAt): self
+    {
+        $this->publishedAt = $publishedAt;
+        return $this;
+    }
+
+    public function setExpiresAt(?\DateTime $expiresAt): self
+    {
+        $this->expiresAt = $expiresAt;
+        return $this;
     }
 }
