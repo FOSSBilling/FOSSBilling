@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\News\Api;
 
 use \Box\Mod\News\Entity\Post;
+use \Doctrine\ORM\EntityRepository;
 
 class Guest extends \Api_Abstract
 {
@@ -25,7 +26,7 @@ class Guest extends \Api_Abstract
     public function get_list(array $data): array
     {
         $data['status'] = Post::STATUS_ACTIVE;
-        
+
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
 
@@ -67,7 +68,7 @@ class Guest extends \Api_Abstract
 
         // @TODO Doctrine: Replace with actual Admin entity once it's migrated to Doctrine
         $admin = $this->di['db']->getRow('SELECT name FROM admin WHERE id = :id', ['id' => $post->getAdminId()]);
-        
+
         $post->setAdminData($admin);
 
         return $post->toApiArray();
