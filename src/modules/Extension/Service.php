@@ -250,7 +250,6 @@ class Service implements InjectionAwareInterface
         $mods = [];
         $handle = opendir(PATH_MODS);
         while ($name = readdir($handle)) {
-            /* @phpstan-ignore arguments.count */
             if (ctype_alnum($name)) {
                 $m = $name;
                 $mod = $this->di['mod']($m);
