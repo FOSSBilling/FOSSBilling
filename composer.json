@@ -24,6 +24,7 @@
         "ext-pdo": "*",
         "ext-zlib": "*",
         "antcms/antloader": "^2.0.2",
+        "doctrine/orm": "^3.5",
         "dompdf/dompdf": "^3.0.0",
         "egulias/email-validator": "^4.0",
         "filp/whoops": "^2.14",
