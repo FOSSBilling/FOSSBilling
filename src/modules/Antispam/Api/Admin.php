@@ -60,14 +60,6 @@ class Admin extends \Api_Abstract
 
     private function stringifyList(array $list)
     {
-        foreach ($list as $entry) {
-            if (isset($result)) {
-                $result = $result . PHP_EOL . $entry;
-            } else {
-                $result = $entry;
-            }
-        }
-
-        return $result ?? '';
+        return implode(PHP_EOL, $list);
     }
 }
