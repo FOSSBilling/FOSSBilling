@@ -12,10 +12,10 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Uid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
 {
@@ -85,10 +85,10 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
 
         // Instance ID handling
-        if (!class_exists('Uuid')) {
+        if (!class_exists(Uuid::class)) {
             $this->registerFallbackAutoloader();
         }
-        $newConfig['info']['instance_id'] ??= Uuid::uuid4()->toString();
+        $newConfig['info']['instance_id'] ??= Uuid::v4()->toString();
         $newConfig['info']['salt'] ??= $newConfig['salt'];
 
         // Remove the hardcoded protocol

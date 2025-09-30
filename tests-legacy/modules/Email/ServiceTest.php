@@ -357,9 +357,19 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
+
+        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock->expects($this->atLeastOnce())
+            ->method('getConfig')
+            ->willReturn([
+                'from_name' => '',
+                'from_email' => '',
+            ]);
+
         $di['db'] = $db;
         $di['crypt'] = $cryptMock;
         $di['twig'] = $twig;
+        $di['mod'] = $di->protect(fn () => $modMock);
         $di['mod_service'] = $di->protect(fn () => $systemService);
         $di['tools'] = new \FOSSBilling\Tools();
 
@@ -488,6 +498,15 @@ class ServiceTest extends \BBTestCase
             ->willReturn(null);
         $di['validator'] = $validatorMock;
 
+        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock->expects($this->atLeastOnce())
+            ->method('getConfig')
+            ->willReturn([
+                'from_name' => '',
+                'from_email' => '',
+            ]);
+
+        $di['mod'] = $di->protect(fn () => $modMock);
         $di['db'] = $db;
         $di['twig'] = $twig;
         $di['crypt'] = $cryptMock;

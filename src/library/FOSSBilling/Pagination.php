@@ -170,35 +170,4 @@ class Pagination implements InjectionAwareInterface
             'list' => $result,
         ];
     }
-
-    /* Deprecated functions */
-    /**
-     * @deprecated 0.7.0, you should use getPaginatedResultSet() instead which is a drop in replacement.
-     */
-    public function getAdvancedResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
-    {
-        trigger_error('getAdvancedResultSet() is deprecated and will be removed in a future version of FOSSBilling. Please use getPaginatedResultSet() instead.', E_USER_DEPRECATED);
-
-        return $this->getPaginatedResultSet($query, $params, $perPage, $page, $pageParam, $perPageParam);
-    }
-
-    /**
-     * @deprecated 0.7.0, you should use getPaginatedResultSet() instead which is a drop in replacement.
-     */
-    public function getSimpleResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
-    {
-        trigger_error('getSimpleResultSet() is deprecated and will be removed in a future version of FOSSBilling. Please use getPaginatedResultSet() instead.', E_USER_DEPRECATED);
-
-        return $this->getPaginatedResultSet($query, $params, $perPage, $page, $pageParam, $perPageParam);
-    }
-
-    /**
-     * @deprecated 0.7.0, you should use getDefaultPerPage() instead which is a drop in replacement.
-     */
-    public function getPer_page(): int
-    {
-        trigger_error('getPer_page() is deprecated and will be removed in a future version of FOSSBilling. Please use getDefaultPerPage() instead.', E_USER_DEPRECATED);
-
-        return $this->getDefaultPerPage();
-    }
 }
