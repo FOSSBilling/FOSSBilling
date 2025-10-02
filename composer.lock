@@ -2147,16 +2147,16 @@
         },
         {
             "name": "prinsfrank/standards",
-            "version": "v3.13.2",
+            "version": "v3.13.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PrinsFrank/standards.git",
-                "reference": "ff8e9727ccb1330bda6873deeaf342bd062769bf"
+                "reference": "d96a868d759dbbab3811bce7fd1a742d6a6a6364"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PrinsFrank/standards/zipball/ff8e9727ccb1330bda6873deeaf342bd062769bf",
-                "reference": "ff8e9727ccb1330bda6873deeaf342bd062769bf",
+                "url": "https://api.github.com/repos/PrinsFrank/standards/zipball/d96a868d759dbbab3811bce7fd1a742d6a6a6364",
+                "reference": "d96a868d759dbbab3811bce7fd1a742d6a6a6364",
                 "shasum": ""
             },
             "require": {
@@ -2196,7 +2196,7 @@
             "description": "A collection of standards as PHP Enums: ISO3166, ISO4217, ISO639...",
             "support": {
                 "issues": "https://github.com/PrinsFrank/standards/issues",
-                "source": "https://github.com/PrinsFrank/standards/tree/v3.13.2"
+                "source": "https://github.com/PrinsFrank/standards/tree/v3.13.3"
             },
             "funding": [
                 {
@@ -2204,7 +2204,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-09-19T14:38:13+00:00"
+            "time": "2025-10-01T18:36:12+00:00"
         },
         {
             "name": "psr/cache",
