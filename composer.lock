@@ -1854,16 +1854,16 @@
         },
         {
             "name": "league/csv",
-            "version": "9.25.0",
+            "version": "9.26.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/csv.git",
-                "reference": "f856f532866369fb1debe4e7c5a1db185f40ef86"
+                "reference": "7fce732754d043f3938899e5183e2d0f3d31b571"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/csv/zipball/f856f532866369fb1debe4e7c5a1db185f40ef86",
-                "reference": "f856f532866369fb1debe4e7c5a1db185f40ef86",
+                "url": "https://api.github.com/repos/thephpleague/csv/zipball/7fce732754d043f3938899e5183e2d0f3d31b571",
+                "reference": "7fce732754d043f3938899e5183e2d0f3d31b571",
                 "shasum": ""
             },
             "require": {
@@ -1941,7 +1941,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-09-11T08:29:08+00:00"
+            "time": "2025-10-01T11:24:54+00:00"
         },
         {
             "name": "liborm85/composer-vendor-cleaner",
@@ -2821,16 +2821,16 @@
         },
         {
             "name": "prinsfrank/standards",
-            "version": "v3.13.2",
+            "version": "v3.13.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PrinsFrank/standards.git",
-                "reference": "ff8e9727ccb1330bda6873deeaf342bd062769bf"
+                "reference": "d96a868d759dbbab3811bce7fd1a742d6a6a6364"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PrinsFrank/standards/zipball/ff8e9727ccb1330bda6873deeaf342bd062769bf",
-                "reference": "ff8e9727ccb1330bda6873deeaf342bd062769bf",
+                "url": "https://api.github.com/repos/PrinsFrank/standards/zipball/d96a868d759dbbab3811bce7fd1a742d6a6a6364",
+                "reference": "d96a868d759dbbab3811bce7fd1a742d6a6a6364",
                 "shasum": ""
             },
             "require": {
@@ -2870,7 +2870,7 @@
             "description": "A collection of standards as PHP Enums: ISO3166, ISO4217, ISO639...",
             "support": {
                 "issues": "https://github.com/PrinsFrank/standards/issues",
-                "source": "https://github.com/PrinsFrank/standards/tree/v3.13.2"
+                "source": "https://github.com/PrinsFrank/standards/tree/v3.13.3"
             },
             "funding": [
                 {
@@ -2878,7 +2878,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-09-19T14:38:13+00:00"
+            "time": "2025-10-01T18:36:12+00:00"
         },
         {
             "name": "psr/cache",
@@ -7532,16 +7532,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.1.29",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/phpstan/phpstan-phar-composer-source.git",
-                "reference": "git"
-            },
+            "version": "2.1.30",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/d618573eed4a1b6b75e37b2e0b65ac65c885d88e",
-                "reference": "d618573eed4a1b6b75e37b2e0b65ac65c885d88e",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/a4a7f159927983dd4f7c8020ed227d80b7f39d7d",
+                "reference": "a4a7f159927983dd4f7c8020ed227d80b7f39d7d",
                 "shasum": ""
             },
             "require": {
@@ -7586,7 +7581,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-09-25T06:58:18+00:00"
+            "time": "2025-10-02T16:07:52+00:00"
         },
         {
             "name": "phpstan/phpstan-deprecation-rules",
