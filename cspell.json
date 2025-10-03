@@ -40,7 +40,9 @@
         "ICANN",
         "failovers",
         "Autosize",
-        "analyse"
+        "analyse",
+        "triaging",
+        "hostable"
     ],
 
     "ignoreWords": [
