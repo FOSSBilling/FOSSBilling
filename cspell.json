@@ -40,7 +40,8 @@
         "ICANN",
         "failovers",
         "Autosize",
-        "analyse"
+        "analyse",
+        "cooldown"
     ],
 
     "ignoreWords": [
