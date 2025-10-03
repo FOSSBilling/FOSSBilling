@@ -1,6 +1,6 @@
 # Project Governance
 
-*Last updated: 03 October 2025.*
+*Last updated: 04 October 2025*
 *Version: 1.1*
 
 ## Overview
@@ -15,12 +15,12 @@ There are no barriers to participation. Whether you're a developer, a user, or s
 
 The FOSSBilling community includes anyone who uses, contributes to, or supports the project, whether occasionally or regularly. The core FOSSBilling software is licensed under the [Apache License Version 2.0](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE) and is **free to use, modify, and distribute**, now and forever. No fees, registration, or special permissions are required for basic usage.
 
-We encourage, but do not require, creators of third-party modules, themes, or integrations to share their work with the community (e.g., via GitHub or Discord) so it can be included in the extension directory. However, all use of the **FOSSBilling name, logo, or branding** must comply with the [FOSSBilling Branding Guidelines](https://github.com/FOSSBilling/branding#readme). Any use beyond what is explicitly permitted requires prior written permission from the Steering Committee.
+We encourage, but do not require, creators of third-party modules, themes, or integrations to share their work with the community (e.g., via GitHub, Discord, the Forum) so it can be included in the extension directory. However, all use of the **FOSSBilling name, logo, or branding** must comply with the [FOSSBilling Branding Guidelines](https://github.com/FOSSBilling/branding#readme). Any use beyond what is explicitly permitted requires prior written permission from the Steering Committee.
 
 To get involved:
 
 - Explore the code and report issues on [GitHub](https://github.com/FOSSBilling/FOSSBilling)
-- Join real-time discussions on [Discord](https://discord.gg/fossbilling)
+- Join real-time discussions on [Discord](https://discord.gg/fossbilling) or engage in discussions on the [Forum](https://forum.fossbilling.org/)
 - Contribute via [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or [Open Collective](https://opencollective.com/FOSSBilling)
 
 ## Maintainers
@@ -54,7 +54,7 @@ Removal (except for resignation) requires discussion and majority consensus of t
 
 ### Defining Activity
 
-To ensure clarity, "activity" is defined as meaningful participation in the project. This includes, but is not limited to: committing code, reviewing pull requests, triaging issues, contributing to documentation, or actively participating in project discussions on GitHub or Discord.
+To ensure clarity, "activity" is defined as meaningful participation in the project. This includes, but is not limited to: committing code, reviewing pull requests, triaging issues, contributing to documentation, or actively participating in project discussions on GitHub, Discord, or the Forum.
 
 ## Steering Committee
 
@@ -101,7 +101,7 @@ For significant or contentious matters, decisions follow this process:
 
 ### Scope of Public Discussion
 
-All non-sensitive discussions occur in public (GitHub issues, public Discord channels). Exceptions include:
+All non-sensitive discussions occur in public (GitHub issues, public Discord channels, Forum threads). Exceptions include:
 
 - Security vulnerabilities (handled via private channels)
 - Personal or personnel matters (e.g., Code of Conduct violations)
