@@ -1,7 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
+    "config:best-practices",
+    "security:minimumReleaseAgeNpm",
     "schedule:daily",
     ":automergeBranch",
     ":automergeDigest",
@@ -9,7 +10,9 @@
     ":automergePatch",
     ":automergeRequireAllStatusChecks",
     ":automergeTesters",
+    ":automergeTypes",
     ":maintainLockFilesWeekly",
+    ":npm",
     ":rebaseStalePrs"
   ],
   "automergeSchedule": [
@@ -27,5 +30,9 @@
         "/^@ckeditor/ckeditor-dev-/"
       ]
     }
+  ],
+  "postUpdateOptions": [
+    "npmDedupe",
+    "npmInstallTwice"
   ]
 }
