@@ -55,7 +55,7 @@
   },
   "overrides": {
     "@ckeditor/ckeditor5-dev-utils": {
-      "serialize-javascript": "^6.0.2"
+      "serialize-javascript": "^7.0.0"
     },
     "@melloware/coloris": "^0.25.0",
     "@tabler/core": {
