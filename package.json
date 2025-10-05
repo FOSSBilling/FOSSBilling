@@ -54,9 +54,6 @@
     "npm": ">=10"
   },
   "overrides": {
-    "@ckeditor/ckeditor5-dev-utils": {
-      "serialize-javascript": "^7.0.0"
-    },
     "@melloware/coloris": "^0.25.0",
     "@tabler/core": {
       "apexcharts": "^5.0.0"
