@@ -42,6 +42,7 @@
         "Autosize",
         "analyse",
         "ONLYDIR"
+        "cooldown"
     ],
 
     "ignoreWords": [
