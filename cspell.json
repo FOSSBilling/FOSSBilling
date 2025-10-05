@@ -42,7 +42,8 @@
         "Autosize",
         "analyse",
         "triaging",
-        "hostable"
+        "hostable",
+        "cooldown"
     ],
 
     "ignoreWords": [
