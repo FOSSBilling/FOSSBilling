@@ -46,7 +46,7 @@ If you need more reasons than that though, then because...
 
 First off, no matter how you plan to take part, please take a couple of minutes to read our code of conduct before contributing anything.
 
-This project and everyone participating in it are governed by the [FOSSBilling Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the moderators on our [Discord](https://fossbilling.org/discord) server.
+This project and everyone participating in it are governed by the [FOSSBilling Code of Conduct](.github/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the moderators on our [Discord](https://fossbilling.org/discord) server.
 
 ### Understanding the structure of FOSSBilling
 
