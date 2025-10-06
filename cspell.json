@@ -41,7 +41,8 @@
         "failovers",
         "Autosize",
         "analyse",
-        "ONLYDIR"
+        "triaging",
+        "hostable",
         "cooldown"
     ],
 
