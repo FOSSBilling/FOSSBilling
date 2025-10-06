@@ -73,7 +73,7 @@ As of this writing, the SC consists of the following individuals (listed by GitH
 ### Appointments and Removals
 
 - New SC members may be nominated by existing members or recommended by Maintainers.
-- Appointments require discussion and **consensus** (ideally unanimous, or at minimum a two-thirds majority) among current SC members.
+- Appointments require discussion and at least a two-thirds majority of current SC members (unanimity preferred).
 - A member may resign at any time.
 - Removal for inactivity (6+ months, as defined under the Maintainer section) or disruptive conduct follows the same process as Maintainer removal, with the affected member recused from voting.
 
