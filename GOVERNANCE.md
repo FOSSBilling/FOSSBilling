@@ -50,7 +50,7 @@ Maintainer status may be removed if a person:
 - Is inactive for **six consecutive months** without prior notice; or
 - Engages in behavior that violates the project's [Code of Conduct](https://github.com/FOSSBilling/FOSSBilling/blob/main/CODE_OF_CONDUCT.md) or disrupts the community.
 
-Removal (except for resignation) requires discussion and majority consensus of the SC. A grace period or warning may be offered in cases of inactivity.
+Removal (except for resignation) requires discussion and a majority vote of the SC. A grace period or warning may be offered in cases of inactivity.
 
 ### Defining Activity
 
