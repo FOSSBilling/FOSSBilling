@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Rector\Php54\Rector\Array_\LongArrayToShortArrayRector;
-use Rector\Php73\Rector\FuncCall\JsonThrowOnErrorRector;
 use Rector\Config\RectorConfig;
 use Rector\PHPUnit\Set\PHPUnitSetList;
 use Rector\Php81\Rector\FuncCall\NullToStrictStringFuncCallArgRector;
