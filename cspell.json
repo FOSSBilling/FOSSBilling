@@ -41,6 +41,8 @@
         "failovers",
         "Autosize",
         "analyse",
+        "triaging",
+        "hostable",
         "cooldown"
     ],
 
