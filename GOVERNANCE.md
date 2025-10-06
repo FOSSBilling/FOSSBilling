@@ -29,7 +29,7 @@ Maintainers are trusted contributors who have demonstrated consistent, high-qual
 
 ### Becoming a Maintainer
 
-- Nominations may be made by existing maintainers or Steering Committee (SC) members. The SC evaluates nominees based on the quality, consistency, and collaborative nature of their contributions.
+- Nominations may be made by existing Maintainers or Steering Committee (SC) members. The SC evaluates nominees based on the quality, consistency, and collaborative nature of their contributions.
 - New Maintainers are granted **provisional status for one month**, during which their engagement is observed.
 - After this period, status is made permanent unless concerns are raised.
 
