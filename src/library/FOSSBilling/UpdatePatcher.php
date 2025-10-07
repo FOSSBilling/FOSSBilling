@@ -3,8 +3,7 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
- * SPDX-License-Identifier: Apache-2.0.
+ * SPDX-License-Identifier: Apache-2.0
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -52,7 +51,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $currentConfig = Config::getConfig();
 
-        if (!is_array($currentConfig)) {
+        if (empty($currentConfig)) {
             throw new Exception('Unable to load existing configuration');
         }
 
@@ -80,8 +79,8 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['api']['CSRFPrevention'] ??= true;
         $newConfig['api']['rate_limit_whitelist'] ??= [];
         $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
-        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
-        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
+        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'];
+        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'];
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
 
         // Instance ID handling
@@ -409,6 +408,13 @@ class UpdatePatcher implements InjectionAwareInterface
                     Path::join(PATH_LIBRARY, 'GeoLite2-Country.mmdb') => 'unlink',
                 ];
                 $this->executeFileActions($fileActions);
+            },
+            44 => function (): void {
+                // Add ipn_hash column to transaction table and index it for fast duplicate detection.
+                $q = "ALTER TABLE `transaction`
+                        ADD COLUMN `ipn_hash` VARCHAR(64) DEFAULT NULL,
+                        ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));";
+                $this->executeSql($q);
             },
         ];
         ksort($patches, SORT_NATURAL);
