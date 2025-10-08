@@ -30,7 +30,7 @@ class Post implements ApiArrayInterface, TimestampInterface
     private int $id;
 
     #[ORM\Column(type: "integer")]
-    private int $admin_id; // @TODO Doctrine: Replace with actual Admin entity once it's migrated to Doctrine
+    private int $admin_id; /** @todo Doctrine: Replace with actual Admin entity once it's migrated to Doctrine. */
 
     #[ORM\Column(type: "string", length: 255)]
     private string $title;
@@ -68,7 +68,7 @@ class Post implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: "datetime")]
     private \DateTime $updatedAt;
 
-    // Temporary until Admin entity is migrated
+    /** @todo Temporary until Admin entity is migrated */
     private array $adminData = [];
 
     public function __construct(string $title, string $slug)
@@ -77,7 +77,7 @@ class Post implements ApiArrayInterface, TimestampInterface
         $this->slug = $slug;
     }
 
-    // Temporary until Admin entity is migrated
+    /** @todo Temporary until Admin entity is migrated */
     public function setAdminData(array $adminData): self
     {
         $this->adminData = $adminData;
@@ -105,7 +105,7 @@ class Post implements ApiArrayInterface, TimestampInterface
             'expires_at'  => $this->getExpiresAt()?->format('Y-m-d H:i:s'),
             'created_at'  => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at'  => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
-            'author'      => $this->adminData, // @TODO Doctrine: Replace with actual Admin entity and remove $adminData once it's migrated to Doctrine
+            'author'      => $this->adminData, /** @todo Doctrine: Replace with actual Admin entity and remove $adminData once it's migrated to Doctrine. */
             'excerpt'     => $excerpt,
         ];
 

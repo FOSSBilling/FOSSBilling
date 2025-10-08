@@ -15,16 +15,21 @@ namespace FOSSBilling\Doctrine;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
+use Doctrine\ORM\Proxy\ProxyFactory;
 use Doctrine\DBAL\DriverManager;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 
 class EntityManagerFactory
 {
     public static function create(): EntityManager
     {
         $dbc = Config::getProperty('db');
-        $moduleEntityPaths = glob(PATH_MODS . '/*/Entity', GLOB_ONLYDIR);
+        $finder = new Finder();
+        $finder->directories()->in(PATH_MODS . '/*/Entity')->depth('== 0');
+        $moduleEntityPaths = iterator_to_array($finder);
         
         $config = ORMSetup::createAttributeMetadataConfiguration(
             paths: $moduleEntityPaths,
@@ -33,9 +38,19 @@ class EntityManagerFactory
 
         $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER)); // Consistency with already existing RedBean tables
 
-        $config->setProxyDir(PATH_CACHE . '/doctrine/proxies');
-        $config->setProxyNamespace('FOSSBilling\Doctrine\Proxies');
-        $config->setAutoGenerateProxyClasses(true);
+        // Enable native lazy loading if PHP version supports it (8.4+).
+        if (PHP_VERSION_ID > 80400) {
+            $config->enableNativeLazyObjects(true);
+        } else {
+            $config->setProxyDir(Path::join(PATH_CACHE, 'doctrine', 'proxies'));
+            $config->setProxyNamespace('FOSSBilling\Doctrine\Proxies');
+
+            if (Environment::isDevelopment()) {
+                $config->setAutoGenerateProxyClasses(true);
+            } else {
+                $config->setAutoGenerateProxyClasses(ProxyFactory::AUTOGENERATE_FILE_NOT_EXISTS);
+            }
+        }
 
         $connectionParams = [
             'driver'   => 'pdo_mysql',

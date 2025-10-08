@@ -66,7 +66,7 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\Exception('News item not found.');
         }
 
-        // @TODO Doctrine: Replace with actual Admin entity once it's migrated to Doctrine
+        /**@todo Doctrine: Replace with actual Admin entity once it's migrated to Doctrine. */
         $admin = $this->di['db']->getRow('SELECT name FROM admin WHERE id = :id', ['id' => $post->getAdminId()]);
 
         $post->setAdminData($admin);
