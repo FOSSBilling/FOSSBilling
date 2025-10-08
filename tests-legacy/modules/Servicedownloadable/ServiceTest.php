@@ -91,7 +91,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
         $this->service->action_delete($clientOrderModel);

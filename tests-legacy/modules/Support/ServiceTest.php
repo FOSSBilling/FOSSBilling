@@ -751,7 +751,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->exactly(2))
             ->method('find')
-            ->willReturnCallback(fn (...$args) => match ($args[0]) {
+            ->willReturnCallback(fn (...$args): \Model_SupportTicketNote|\Model_SupportTicketMessage => match ($args[0]) {
                 'SupportTicketNote' => new \Model_SupportTicketNote(),
                 'SupportTicketMessage' => new \Model_SupportTicketMessage(),
             });
@@ -785,7 +785,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($supportTicketMessageModel);
         $dbMock->expects($this->atleastOnce())
             ->method('load')
-            ->willReturnCallback(fn (...$args) => match ($args[0]) {
+            ->willReturnCallback(fn (...$args): \Model_SupportHelpdesk|\Model_Client => match ($args[0]) {
                 'SupportHelpdesk' => $helpdesk,
                 'Client' => new \Model_Client(),
             });
@@ -900,7 +900,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
@@ -926,7 +926,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
@@ -1421,8 +1421,8 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['request'] = $this->getMockBuilder('\\' . \FOSSBilling\Request::class)->getMock();
         $di['events_manager'] = $eventMock;
-        $di['mod'] = $di->protect(fn () => $supportModMock);
-        $di['mod_service'] = $di->protect(fn () => $staffServiceMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $supportModMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffServiceMock);
 
         $serviceMock->setDi($di);
 
@@ -2325,7 +2325,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['db'] = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
@@ -2933,7 +2933,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertEquals(trim(preg_replace('/\s+/', '', str_replace("\n", ' ', $result[0]))), trim(preg_replace('/\s+/', '', str_replace("\n", ' ', $query))));
+        $this->assertEquals(trim((string) preg_replace('/\s+/', '', str_replace("\n", ' ', $result[0]))), trim(preg_replace('/\s+/', '', str_replace("\n", ' ', $query))));
         $this->assertEquals($result[1], $bindings);
     }
 
@@ -3051,7 +3051,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $di['tools'] = $tools;
         $di['logger'] = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $service->setDi($di);
 
         $result = $service->kbCreateCategory('Title', 'Description');

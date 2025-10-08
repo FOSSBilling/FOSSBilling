@@ -53,7 +53,7 @@ class Box_Authorization
 
     public function passwordBackwardCompatibility($user, $plainTextPassword)
     {
-        if (sha1($plainTextPassword) == $user->pass) {
+        if (sha1((string) $plainTextPassword) == $user->pass) {
             $user->pass = $this->di['password']->hashIt($plainTextPassword);
             $this->di['db']->store($user);
         }

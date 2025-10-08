@@ -274,7 +274,7 @@ class Service implements InjectionAwareInterface
 
     public function validateCurrencyFormat($format)
     {
-        if (!str_contains($format, '{{price}}')) {
+        if (!str_contains((string) $format, '{{price}}')) {
             throw new \Exception('Currency format must include {{price}} tag', 3569);
         }
     }
@@ -525,7 +525,7 @@ class Service implements InjectionAwareInterface
                 continue;
             }
             // All values are prefixed with our 'from' currency (EX: 'USDAUD'), so strip that off before storing it.
-            $strippedName = substr($key, $prefixLen);
+            $strippedName = substr((string) $key, $prefixLen);
             $rates[$strippedName] = $rate;
         }
 

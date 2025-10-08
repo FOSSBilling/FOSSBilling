@@ -270,7 +270,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         ];
         $result = $this->_makeRequest('domains/delete', $required_params, 'POST');
 
-        return strtolower($result['status']) == 'success';
+        return strtolower((string) $result['status']) == 'success';
     }
 
     public function registerDomain(Registrar_Domain $domain)
@@ -320,7 +320,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         if ($tld == '.au' || $tld == '.net.au' || $tld == '.com.au') {
             $contact = $domain->getContactRegistrar();
 
-            if (strlen(trim($contact->getCompanyNumber())) == 0) {
+            if (strlen(trim((string) $contact->getCompanyNumber())) == 0) {
                 throw new Registrar_Exception('A valid contact company number is mandatory for registering an .AU domain name');
             }
             $params['attr-name1'] = 'id-type';
@@ -363,7 +363,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest('domains/modify-privacy-protection', $params, 'POST');
 
-        return strtolower($result['actionstatus']) == 'success';
+        return strtolower((string) $result['actionstatus']) == 'success';
     }
 
     public function disablePrivacyProtection(Registrar_Domain $domain)
@@ -377,7 +377,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest('domains/modify-privacy-protection', $params, 'POST');
 
-        return strtolower($result['actionstatus']) == 'success';
+        return strtolower((string) $result['actionstatus']) == 'success';
     }
 
     public function getEpp(Registrar_Domain $domain)
@@ -403,7 +403,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         ];
         $result = $this->_makeRequest('domains/enable-theft-protection', $params, 'POST');
 
-        return strtolower($result['status']) == 'success';
+        return strtolower((string) $result['status']) == 'success';
     }
 
     public function unlock(Registrar_Domain $domain)
@@ -413,7 +413,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         ];
         $result = $this->_makeRequest('domains/disable-theft-protection', $params, 'POST');
 
-        return strtolower($result['status']) == 'success';
+        return strtolower((string) $result['status']) == 'success';
     }
 
     private function _getCustomerDetails(Registrar_Domain $domain)
@@ -441,7 +441,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $company = 'N/A';
         }
         $phoneNum = $c->getTel();
-        $phoneNum = preg_replace('/[^0-9]/', '', $phoneNum);
+        $phoneNum = preg_replace('/[^0-9]/', '', (string) $phoneNum);
         $phoneNum = substr($phoneNum, 0, 12);
         $params = [
             'username' => $c->getEmail(),
@@ -796,7 +796,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'country' => $client->getCountry(),
             'zipcode' => $client->getZip(),
             'phone-cc' => $client->getTelCc(),
-            'phone' => substr($client->getTel(), 0, 12), // phone must be 4-12 digits
+            'phone' => substr((string) $client->getTel(), 0, 12), // phone must be 4-12 digits
         ];
 
         // @see http://manage.resellerclub.com/kb/answer/790 for us contact details
@@ -847,7 +847,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         if ($tld == '.es') {
-            if (strlen(trim($client->getDocumentNr())) == 0) {
+            if (strlen(trim((string) $client->getDocumentNr())) == 0) {
                 throw new Registrar_Exception('Valid contact passport information is required while registering ES domain name');
             }
 
@@ -861,12 +861,12 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $contact['attr-value3'] = $client->getDocumentNr();
         }
 
-        if ($tld == '.co' || str_ends_with($tld, '.co')) {
+        if ($tld == '.co' || str_ends_with((string) $tld, '.co')) {
             $contact['type'] = 'CoContact';
         }
 
         if ($tld == '.asia') {
-            if (strlen(trim($client->getDocumentNr())) == 0) {
+            if (strlen(trim((string) $client->getDocumentNr())) == 0) {
                 throw new Registrar_Exception('Valid contact passport information is required while registering ASIA domain name');
             }
 
@@ -894,11 +894,11 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 throw new Registrar_Exception('Valid contact birthdate is required while registering RU domain name');
             }
 
-            if (strlen(trim($client->getDocumentNr())) === 0) {
+            if (strlen(trim((string) $client->getDocumentNr())) === 0) {
                 throw new Registrar_Exception('Valid contact passport information is required while registering RU domain name');
             }
 
-            if (str_word_count($contact['company']) < 2) {
+            if (str_word_count((string) $contact['company']) < 2) {
                 $contact['company'] .= ' Inc';
             }
 

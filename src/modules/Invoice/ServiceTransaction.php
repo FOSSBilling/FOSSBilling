@@ -255,12 +255,12 @@ class ServiceTransaction implements InjectionAwareInterface
 
         if ($date_from) {
             $sql .= ' AND UNIX_TIMESTAMP(m.created_at) >= :date_from';
-            $params['date_from'] = strtotime($date_from);
+            $params['date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $sql .= ' AND UNIX_TIMESTAMP(m.created_at) <= :date_to';
-            $params['date_to'] = strtotime($date_to);
+            $params['date_to'] = strtotime((string) $date_to);
         }
 
         if ($search) {
@@ -507,7 +507,7 @@ class ServiceTransaction implements InjectionAwareInterface
             return null;
         }
 
-        return hash('sha256', $norm);
+        return hash('sha256', (string) $norm);
     }
 
     private function hasProcessedTransaction(\Model_Transaction $tx)

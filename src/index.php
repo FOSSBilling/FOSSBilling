@@ -27,10 +27,10 @@ $configCollector->useHtmlVarDumper();
 $debugBar->addCollector($configCollector);
 
 // Get the request URL
-$url = $_GET['_url'] ?? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$url = $_GET['_url'] ?? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 // Rewrite for custom pages
-if (str_starts_with($url, '/page/')) {
+if (str_starts_with((string) $url, '/page/')) {
     $url = substr_replace($url, '/custompages/', 0, 6);
 }
 
@@ -51,9 +51,9 @@ if (!empty($_GET['restore_session'])) {
 $di['session'];
 $debugBar['time']->stopMeasure('session_start');
 
-if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
+if (strncasecmp((string) $url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     define('ADMIN_AREA', true);
-    $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $url));
+    $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', (string) $url));
     $app = new Box_AppAdmin([], $debugBar);
 } else {
     define('ADMIN_AREA', false);

@@ -275,8 +275,8 @@ $di['twig'] = $di->factory(function () use ($di) {
     // missing required settings.
     $locale = FOSSBilling\i18n::getActiveLocale();
     $timezone = Config::getProperty('i18n.timezone', 'UTC');
-    $date_format = strtoupper(Config::getProperty('i18n.date_format', 'MEDIUM'));
-    $time_format = strtoupper(Config::getProperty('i18n.time_format', 'SHORT'));
+    $date_format = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
+    $time_format = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
     $datetime_pattern = Config::getProperty('i18n.datetime_pattern');
 
     $loader = new Twig\Loader\ArrayLoader();
@@ -343,7 +343,7 @@ $di['is_client_logged'] = function () use ($di) {
         $api_str = '/api/';
         $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
 
-        if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+        if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Client is not logged in');
         } else {
@@ -384,7 +384,7 @@ $di['is_admin_logged'] = function () use ($di) {
     if (!$di['auth']->isAdminLoggedIn()) {
         $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
 
-        if (str_starts_with($url, '/api/')) {
+        if (str_starts_with((string) $url, '/api/')) {
             throw new Exception('Admin is not logged in');
         }
 
@@ -417,7 +417,7 @@ $di['loggedin_client'] = function () use ($di) {
         // Then either give an appropriate API response or redirect to the login page.
         $api_str = '/api/';
         $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
-        if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+        if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Client is not logged in');
         } else {
@@ -455,7 +455,7 @@ $di['loggedin_admin'] = function () use ($di) {
         // Then either give an appropriate API response or redirect to the login page.
         $api_str = '/api/';
         $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
-        if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+        if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Admin is not logged in');
         } else {
@@ -471,8 +471,8 @@ $di['set_return_uri'] = function () use ($di): void {
     $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
     unset($_GET['_url']);
 
-    if (str_starts_with($url, ADMIN_PREFIX)) {
-        $url = substr($url, strlen(ADMIN_PREFIX));
+    if (str_starts_with((string) $url, ADMIN_PREFIX)) {
+        $url = substr((string) $url, strlen(ADMIN_PREFIX));
     }
 
     if ($_GET) {
@@ -505,11 +505,11 @@ $di['api'] = $di->protect(function ($role) use ($di) {
         $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
 
         // If it's an API request, only allow requests to the "client" and "profile" modules so they can change their email address or resend the confirmation email.
-        if (strncasecmp($url, '/api/', strlen('/api/')) === 0) {
-            if (strncasecmp($url, '/api/client/client/', strlen('/api/client/client/')) !== 0 && strncasecmp($url, '/api/client/profile/', strlen('/api/client/profile/')) !== 0) {
+        if (strncasecmp((string) $url, '/api/', strlen('/api/')) === 0) {
+            if (strncasecmp((string) $url, '/api/client/client/', strlen('/api/client/client/')) !== 0 && strncasecmp((string) $url, '/api/client/profile/', strlen('/api/client/profile/')) !== 0) {
                 throw new Exception('Please check your mailbox and confirm your email address.');
             }
-        } elseif (strncasecmp($url, '/client', strlen('/client')) !== 0) {
+        } elseif (strncasecmp((string) $url, '/client', strlen('/client')) !== 0) {
             // If they aren't attempting to access their profile, redirect them to it.
             $login_url = $di['url']->link('client/profile');
             header("Location: $login_url");
@@ -623,7 +623,7 @@ $di['updater'] = function () use ($di) {
  * @return \Server_Manager The new server manager object that was just created.
  */
 $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
-    $class = sprintf('Server_Manager_%s', ucfirst($manager));
+    $class = sprintf('Server_Manager_%s', ucfirst((string) $manager));
 
     $s = new $class($config);
     $s->setLog($di['logger']);

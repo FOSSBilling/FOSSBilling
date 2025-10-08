@@ -89,7 +89,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     public function isDomainAvailable(Registrar_Domain $domain)
     {
         $params = [
-            'DomainList' => strtolower($domain->getSld()) . $domain->getTld(),
+            'DomainList' => strtolower((string) $domain->getSld()) . $domain->getTld(),
             'Command' => 'namecheap.domains.check',
         ];
 
@@ -253,7 +253,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     {
         $params = [
             'Command' => 'namecheap.domains.setContacts',
-            'DomainName' => strtolower($domain->getSld()) . $domain->getTld(),
+            'DomainName' => strtolower((string) $domain->getSld()) . $domain->getTld(),
         ];
 
         // Set contact data
@@ -437,7 +437,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     {
         $params = [
             'Command' => 'namecheap.domains.create',
-            'DomainName' => strtolower($domain->getSld()) . $domain->getTld(),
+            'DomainName' => strtolower((string) $domain->getSld()) . $domain->getTld(),
             'Years' => $domain->getRegistrationPeriod(),
         ];
 

@@ -142,7 +142,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertTrue(str_contains($result[0], $expectedStr), $result[0]);
+        $this->assertTrue(str_contains($result[0], (string) $expectedStr), $result[0]);
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == []);
     }
 
@@ -233,7 +233,7 @@ class ServiceTest extends \BBTestCase
 
             return $service;
         });
-        $di['period'] = $di->protect(fn () => $periodMock);
+        $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
 
         $this->service->setDi($di);
 
@@ -366,7 +366,7 @@ class ServiceTest extends \BBTestCase
             ->method('exec');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -510,7 +510,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $currencyService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyService);
 
         $serviceMock->setDi($di);
         $serviceMock->countIncome($invoiceModel);
@@ -738,7 +738,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $itemInvoiceServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $itemInvoiceServiceMock);
 
         $this->service->setDi($di);
         $result = $this->service->getTotal($invoiceModel);
@@ -794,7 +794,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
@@ -863,7 +863,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $itemInvoiceServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $itemInvoiceServiceMock);
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
@@ -1129,7 +1129,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $invoiceItemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $invoiceItemServiceMock);
 
         $serviceMock->setDi($di);
         $result = $serviceMock->generateForOrder($orderModel);
@@ -1155,7 +1155,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
 
         $this->service->setDi($di);
         $result = $this->service->generateInvoicesForExpiringOrders();
@@ -1194,7 +1194,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($clientOrder);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
@@ -1223,7 +1223,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($invoiceItemModel);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $itemInvoiceServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $itemInvoiceServiceMock);
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
@@ -1253,7 +1253,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($invoiceItemModel);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $itemInvoiceServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $itemInvoiceServiceMock);
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
@@ -1311,7 +1311,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -1401,7 +1401,7 @@ class ServiceTest extends \BBTestCase
             ->willReturnOnConsecutiveCalls($minAmount, $maxAmount);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
 
         $this->service->setDi($di);
 
@@ -1426,7 +1426,7 @@ class ServiceTest extends \BBTestCase
             ->willReturnOnConsecutiveCalls($minAmount, $maxAmount);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
 
         $this->service->setDi($di);
 

@@ -85,7 +85,7 @@ class Guest extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $sld = htmlspecialchars($data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $sld = htmlspecialchars((string) $data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
             throw new \FOSSBilling\InformationException('Domain :domain is invalid', [':domain' => $sld]);

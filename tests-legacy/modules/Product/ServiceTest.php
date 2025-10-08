@@ -98,7 +98,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
         $model->setDi($di);
         $serviceMock->setDi($di);
@@ -129,7 +129,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($modArray);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $extensionServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extensionServiceMock);
 
         $this->service->setDi($di);
         $result = $this->service->getTypes();
@@ -200,7 +200,7 @@ class ServiceTest extends \BBTestCase
             ->method('slug');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['db'] = $dbMock;
         $di['tools'] = $toolMock;
         $di['logger'] = new \Box_Log();
@@ -442,7 +442,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
 
@@ -521,7 +521,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -620,7 +620,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);

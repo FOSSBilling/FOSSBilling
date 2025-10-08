@@ -154,7 +154,7 @@ class Registrar_Domain implements Stringable
     public function getTld($with_dot = true)
     {
         if ($with_dot === false && $this->_tld[0] == '.') {
-            return ltrim($this->_tld, '.');
+            return ltrim((string) $this->_tld, '.');
         }
 
         return $this->_tld;

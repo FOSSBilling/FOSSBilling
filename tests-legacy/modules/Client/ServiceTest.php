@@ -95,8 +95,8 @@ class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $service);
-        $di['mod_config'] = $di->protect(fn ($name) => ['require_email_confirmation' => false]);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
+        $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => false]);
 
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
@@ -139,7 +139,7 @@ class ServiceTest extends \BBTestCase
                 return $clientServiceMock;
             }
         });
-        $di['mod_config'] = $di->protect(fn ($name) => ['require_email_confirmation' => true]);
+        $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => true]);
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
             ->willReturn($di);
@@ -166,7 +166,7 @@ class ServiceTest extends \BBTestCase
             method('sendTemplate')->will($this->throwException(new \Exception('exception created in unit test')));
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $service);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
         $di['mod_config'] = $di->protect(function ($name): void {
             ['require_email_confirmation' => false];
         });
@@ -256,7 +256,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertTrue(str_contains($result[0], $expectedStr), $result[0]);
+        $this->assertTrue(str_contains($result[0], (string) $expectedStr), $result[0]);
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == []);
     }
 
@@ -486,7 +486,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($sql);
         $this->assertIsArray($params);
 
-        $this->assertTrue(str_contains($sql, $expectedStr), $sql);
+        $this->assertTrue(str_contains($sql, (string) $expectedStr), $sql);
         $this->assertTrue(array_diff_key($params, $expectedParams) == []);
     }
 
@@ -612,7 +612,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($sql);
         $this->assertIsArray($params);
 
-        $this->assertTrue(str_contains($sql, $expectedStr), $sql);
+        $this->assertTrue(str_contains($sql, (string) $expectedStr), $sql);
         $this->assertTrue(array_diff_key($params, $expectedParams) == []);
     }
 
@@ -821,7 +821,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($getParamValueReturn);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $service);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -857,7 +857,7 @@ class ServiceTest extends \BBTestCase
         $eventManagerMock->expects($this->exactly(2))
             ->method('fire');
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
+        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);
@@ -871,7 +871,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Client\Service();
@@ -974,7 +974,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['auth'] = $authMock;
-        $di['mod_config'] = $di->protect(fn ($name) => ['require_email_confirmation' => false]);
+        $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => false]);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -1006,7 +1006,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['auth'] = $authMock;
-        $di['mod_config'] = $di->protect(fn ($name) => ['require_email_confirmation' => true]);
+        $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => true]);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -1025,7 +1025,7 @@ class ServiceTest extends \BBTestCase
         ];
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($modName) => $config);
+        $di['mod_config'] = $di->protect(fn ($modName): array => $config);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -1046,7 +1046,7 @@ class ServiceTest extends \BBTestCase
         ];
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($modName) => $config);
+        $di['mod_config'] = $di->protect(fn ($modName): array => $config);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -1063,7 +1063,7 @@ class ServiceTest extends \BBTestCase
         $config = [];
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($modName) => $config);
+        $di['mod_config'] = $di->protect(fn ($modName): array => $config);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -1082,7 +1082,7 @@ class ServiceTest extends \BBTestCase
         ];
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($modName) => $config);
+        $di['mod_config'] = $di->protect(fn ($modName): array => $config);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -1098,7 +1098,7 @@ class ServiceTest extends \BBTestCase
 
         $config['required'] = $required;
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($modName) => $config);
+        $di['mod_config'] = $di->protect(fn ($modName): array => $config);
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -1118,7 +1118,7 @@ class ServiceTest extends \BBTestCase
         ];
         $config['custom_fields'] = $custom_field;
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($modName) => $config);
+        $di['mod_config'] = $di->protect(fn ($modName): array => $config);
 
         $data = [];
         $service = new \Box\Mod\Client\Service();
@@ -1139,7 +1139,7 @@ class ServiceTest extends \BBTestCase
         ];
         $config['custom_fields'] = $custom_field;
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($modName) => $config);
+        $di['mod_config'] = $di->protect(fn ($modName): array => $config);
 
         $data = [];
         $service = new \Box\Mod\Client\Service();

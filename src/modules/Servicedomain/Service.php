@@ -76,7 +76,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$validator->isSldValid($data['owndomain_sld'])) {
-                $safe_dom = htmlspecialchars($data['owndomain_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $safe_dom = htmlspecialchars((string) $data['owndomain_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
                 throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
@@ -94,7 +94,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$validator->isSldValid($data['transfer_sld'])) {
-                $safe_dom = htmlspecialchars($data['transfer_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $safe_dom = htmlspecialchars((string) $data['transfer_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
                 throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
@@ -123,7 +123,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$validator->isSldValid($data['register_sld'])) {
-                $safe_dom = htmlspecialchars($data['register_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $safe_dom = htmlspecialchars((string) $data['register_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
                 throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
@@ -560,7 +560,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
-            $safe_dom = htmlspecialchars($sld, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $safe_dom = htmlspecialchars((string) $sld, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
             throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
         }
@@ -633,7 +633,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($action == 'owndomain') {
             $sld = $data['owndomain_sld'];
-            $tld = str_contains($data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
+            $tld = str_contains((string) $data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
         }
 
         if ($action == 'transfer') {
@@ -747,7 +747,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $ss = $this->di['mod_service']('system');
         $last_time = $ss->getParamValue($key);
-        if ($last_time && (time() - strtotime($last_time)) < 86400 * 30) {
+        if ($last_time && (time() - strtotime((string) $last_time)) < 86400 * 30) {
             return false;
         }
 

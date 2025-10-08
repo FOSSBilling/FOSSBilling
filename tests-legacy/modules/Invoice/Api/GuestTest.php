@@ -172,7 +172,7 @@ class GuestTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $gatewayServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayServiceMock);
 
         $this->api->setDi($di);
 

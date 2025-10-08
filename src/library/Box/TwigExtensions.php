@@ -169,7 +169,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_mod_asset_url($asset, $mod)
     {
-        return SYSTEM_URL . 'modules/' . ucfirst($mod) . '/assets/' . $asset;
+        return SYSTEM_URL . 'modules/' . ucfirst((string) $mod) . '/assets/' . $asset;
     }
 
     public function twig_asset_url(Twig\Environment $env, $asset)
@@ -186,9 +186,9 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_img_tag($path, $alt = null)
     {
-        $alt = is_null($alt) ? pathinfo($path, PATHINFO_BASENAME) : $alt;
+        $alt = is_null($alt) ? pathinfo((string) $path, PATHINFO_BASENAME) : $alt;
 
-        return sprintf('<img src="%s" alt="%s" title="%s"/>', htmlspecialchars($path), htmlspecialchars($alt), htmlspecialchars($alt));
+        return sprintf('<img src="%s" alt="%s" title="%s"/>', htmlspecialchars((string) $path), htmlspecialchars($alt), htmlspecialchars($alt));
     }
 
     public function twig_script_tag($path)
@@ -208,7 +208,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         $url = 'https://www.gravatar.com/avatar/';
-        $url .= md5(strtolower(trim($email)));
+        $url .= md5(strtolower(trim((string) $email)));
 
         return $url . "?s=$size&d=mp&r=g";
     }
@@ -228,7 +228,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
         };
 
-        return preg_replace_callback($pattern, $callback, $text);
+        return preg_replace_callback($pattern, $callback, (string) $text);
     }
 
     public function twig_number_filter($number, $decimals = 2, $dec_point = '.', $thousands_sep = '')
@@ -242,7 +242,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_daysleft_filter($iso8601)
     {
-        $timediff = strtotime($iso8601) - time();
+        $timediff = strtotime((string) $iso8601) - time();
 
         return intval($timediff / 86400);
     }
@@ -250,7 +250,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function twig_timeago_filter($iso8601)
     {
         $cur_tm = time();
-        $dif = $cur_tm - strtotime($iso8601);
+        $dif = $cur_tm - strtotime((string) $iso8601);
         $pds = [__trans('second'), __trans('minute'), __trans('hour'), __trans('day'), __trans('week'), __trans('month'), __trans('year'), __trans('decade')];
         $lngh = [1, 60, 3600, 86400, 604800, 2_630_880, 31_570_560, 315_705_600];
         $no = 0;

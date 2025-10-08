@@ -301,7 +301,7 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Account username is missing or is invalid');
         }
 
-        $u = strtolower($data['username']);
+        $u = strtolower((string) $data['username']);
 
         if ($this->_performOnService($order)) {
             [$adapter, $account] = $this->_getAM($model);
@@ -593,7 +593,7 @@ class Service implements InjectionAwareInterface
 
         if ($data['domain']['action'] == 'owndomain') {
             $sld = $data['domain']['owndomain_sld'];
-            $tld = str_contains($data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
+            $tld = str_contains((string) $data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
         }
 
         if ($data['domain']['action'] == 'register') {

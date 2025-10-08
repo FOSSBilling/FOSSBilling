@@ -82,6 +82,6 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
             $pass = Config::getProperty('info.salt');
         }
 
-        return pack('H*', hash('md5', $pass));
+        return pack('H*', hash('md5', (string) $pass));
     }
 }

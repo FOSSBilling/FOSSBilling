@@ -449,7 +449,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $service->setDi($di);
 
         $result = $service->createCurrency($code, $format, 'Euros', 0.6);

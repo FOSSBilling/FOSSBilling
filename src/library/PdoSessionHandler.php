@@ -129,7 +129,7 @@ class PdoSessionHandler implements SessionHandlerInterface
             $sessionRows = $stmt->fetchAll(PDO::FETCH_NUM);
 
             if (count($sessionRows) == 1) {
-                return base64_decode($sessionRows[0][0]);
+                return base64_decode((string) $sessionRows[0][0]);
             }
 
             // session does not exist, create it

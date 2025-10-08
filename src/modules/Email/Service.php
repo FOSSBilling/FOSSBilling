@@ -266,7 +266,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $description = $data['default_description'] ?? null;
 
         $matches = [];
-        preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', $code, $matches);
+        preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', (string) $code, $matches);
         $mod = $matches[1];
 
         $path = Path::join(PATH_MODS, ucfirst($mod), 'html_email', "{$code}.html.twig");

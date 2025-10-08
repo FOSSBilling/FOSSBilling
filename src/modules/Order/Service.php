@@ -236,7 +236,7 @@ class Service implements InjectionAwareInterface
     {
         $s = $this->di['tools']->to_camel_case($order->service_type, true);
 
-        return 'Service' . ucfirst($s);
+        return 'Service' . ucfirst((string) $s);
     }
 
     public function getServiceOrder($service)
@@ -436,17 +436,17 @@ class Service implements InjectionAwareInterface
 
         if ($created_at) {
             $where[] = "DATE_FORMAT(co.created_at, '%Y-%m-%d') = :created_at";
-            $bindings[':created_at'] = date('Y-m-d', strtotime($created_at));
+            $bindings[':created_at'] = date('Y-m-d', strtotime((string) $created_at));
         }
 
         if ($date_from) {
             $where[] = 'UNIX_TIMESTAMP(co.created_at) >= :date_from';
-            $bindings[':date_from'] = strtotime($date_from);
+            $bindings[':date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $where[] = 'UNIX_TIMESTAMP(co.created_at) <= :date_to';
-            $bindings[':date_to'] = strtotime($date_to);
+            $bindings[':date_to'] = strtotime((string) $date_to);
         }
 
         // smartSearch
@@ -875,17 +875,17 @@ class Service implements InjectionAwareInterface
 
         $created_at = $data['created_at'] ?? '';
         if (!empty($created_at)) {
-            $order->created_at = date('Y-m-d H:i:s', strtotime($created_at));
+            $order->created_at = date('Y-m-d H:i:s', strtotime((string) $created_at));
         }
 
         $activated_at = $data['activated_at'] ?? null;
         if (!empty($activated_at)) {
-            $order->activated_at = date('Y-m-d H:i:s', strtotime($activated_at));
+            $order->activated_at = date('Y-m-d H:i:s', strtotime((string) $activated_at));
         }
 
         $expires_at = $data['expires_at'] ?? null;
         if (!empty($expires_at)) {
-            $order->expires_at = date('Y-m-d H:i:s', strtotime($expires_at));
+            $order->expires_at = date('Y-m-d H:i:s', strtotime((string) $expires_at));
         }
         if (empty($expires_at) && !is_null($expires_at)) {
             $order->expires_at = null;

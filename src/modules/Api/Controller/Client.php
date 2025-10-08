@@ -139,7 +139,7 @@ class Client implements InjectionAwareInterface
         $check_referer_header = isset($this->_api_config['require_referrer_header']) && (bool) $this->_api_config['require_referrer_header'];
         if ($check_referer_header) {
             $url = strtolower(SYSTEM_URL);
-            $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower($_SERVER['HTTP_REFERER']) : null;
+            $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower((string) $_SERVER['HTTP_REFERER']) : null;
             if (!$referer || !str_starts_with($referer, $url)) {
                 throw new \FOSSBilling\InformationException('Invalid request. Make sure request origin is :from', [':from' => SYSTEM_URL], 1004);
             }
@@ -200,7 +200,7 @@ class Client implements InjectionAwareInterface
     private function getAuth()
     {
         if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            $auth_params = explode(':', base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
+            $auth_params = explode(':', base64_decode(substr((string) $_SERVER['HTTP_AUTHORIZATION'], 6)));
             $_SERVER['PHP_AUTH_USER'] = $auth_params[0];
             unset($auth_params[0]);
             $_SERVER['PHP_AUTH_PW'] = implode('', $auth_params);
@@ -331,7 +331,7 @@ class Client implements InjectionAwareInterface
 
         $token = $data->CSRFToken ?? $_POST['CSRFToken'] ?? $_GET['CSRFToken'] ?? null;
         if (session_status() !== PHP_SESSION_ACTIVE) {
-            $expectedToken = (!is_null($_COOKIE['PHPSESSID'])) ? hash('md5', $_COOKIE['PHPSESSID']) : null;
+            $expectedToken = (!is_null($_COOKIE['PHPSESSID'])) ? hash('md5', (string) $_COOKIE['PHPSESSID']) : null;
         } else {
             $expectedToken = hash('md5', session_id());
         }
@@ -339,7 +339,7 @@ class Client implements InjectionAwareInterface
         /* Due to the way the cart works, it creates a new session which causes issues with the CSRF token system.
          * Due to this, we whitelist the checkout URL.
          */
-        if (str_contains($_SERVER['REQUEST_URI'], '/api/client/cart/checkout')) {
+        if (str_contains((string) $_SERVER['REQUEST_URI'], '/api/client/cart/checkout')) {
             return true;
         }
 

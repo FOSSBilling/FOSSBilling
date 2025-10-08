@@ -122,7 +122,7 @@ class Service implements InjectionAwareInterface
     private function slugify($text)
     {
         // replace non letter or digits by _
-        $text = preg_replace('~[^\\pL\d]+~u', '_', $text);
+        $text = preg_replace('~[^\\pL\d]+~u', '_', (string) $text);
 
         // trim
         $text = trim($text, '_');
@@ -136,7 +136,7 @@ class Service implements InjectionAwareInterface
         // remove unwanted characters
         $text = preg_replace('~[^\-\w]+~', '', $text);
 
-        if (is_numeric(substr($text, 0, 1))) {
+        if (is_numeric(substr((string) $text, 0, 1))) {
             throw new \FOSSBilling\InformationException('Field name cannot start with number.', null, 1649);
         }
 
@@ -284,7 +284,7 @@ class Service implements InjectionAwareInterface
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $result, null, 2575);
 
-        if (str_starts_with($result['options'], '{') || str_starts_with($result['options'], '[')) {
+        if (str_starts_with((string) $result['options'], '{') || str_starts_with((string) $result['options'], '[')) {
             $result['options'] = json_decode($result['options'] ?? '');
         }
 
