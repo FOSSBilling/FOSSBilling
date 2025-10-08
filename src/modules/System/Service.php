@@ -302,7 +302,7 @@ class Service
             $cronUrl = $this->di['url']->adminLink('extension/settings/cron');
 
             // Perform the fallback behavior if enabled
-            if (!$disableAutoCron && (!$last_exec || (time() - strtotime($last_exec)) / 60 >= 15)) {
+            if (!$disableAutoCron && (!$last_exec || (time() - strtotime((string) $last_exec)) / 60 >= 15)) {
                 $cronService->runCrons();
             }
 
@@ -312,7 +312,7 @@ class Service
                     'text' => __trans('Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly.'),
                     'url' => $cronUrl,
                 ];
-            } elseif ((time() - strtotime($last_exec)) / 60 >= 15) {
+            } elseif ((time() - strtotime((string) $last_exec)) / 60 >= 15) {
                 $msgs['danger'][] = [
                     'text' => __trans("FOSSBilling has detected that cron hasn't been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes."),
                     'url' => $cronUrl,
@@ -504,8 +504,8 @@ class Service
         }
 
         $this_page = $_SERVER['REQUEST_URI'] ?? '';
-        if (str_contains($this_page, '?')) {
-            $a = explode('?', $this_page);
+        if (str_contains((string) $this_page, '?')) {
+            $a = explode('?', (string) $this_page);
             $this_page = reset($a);
         }
 

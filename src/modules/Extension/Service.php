@@ -213,7 +213,7 @@ class Service implements InjectionAwareInterface
 
         if (!empty($search)) {
             foreach ($result as $idx => $mod) {
-                if (!str_contains(strtolower($mod['name']), $search)) {
+                if (!str_contains(strtolower((string) $mod['name']), $search)) {
                     unset($result[$idx]);
                 }
             }
@@ -232,9 +232,9 @@ class Service implements InjectionAwareInterface
         foreach ($result as $key => $value) {
             $icon_url = $value['icon_url'] ?? null;
             if ($icon_url) {
-                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), basename($icon_url));
+                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), basename((string) $icon_url));
                 if ($this->filesystem->exists($iconPath)) {
-                    $result[$key]['icon_path'] = 'mod_' . ucfirst($value['id']) . '_' . basename($icon_url);
+                    $result[$key]['icon_path'] = 'mod_' . ucfirst((string) $value['id']) . '_' . basename((string) $icon_url);
                 }
             }
         }
@@ -492,7 +492,7 @@ class Service implements InjectionAwareInterface
 
         switch ($type) {
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
-                $destination = Path::join(PATH_MODS, ucfirst($id));
+                $destination = Path::join(PATH_MODS, ucfirst((string) $id));
 
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_THEME:
@@ -504,7 +504,7 @@ class Service implements InjectionAwareInterface
 
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_PG:
-                $destination = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', ucfirst($id));
+                $destination = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', ucfirst((string) $id));
 
                 break;
         }

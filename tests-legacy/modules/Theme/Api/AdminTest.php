@@ -89,7 +89,7 @@ class AdminTest extends \BBTestCase
         $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['logger'] = $loggerMock;
         $di['validator'] = $validatorMock;
 
@@ -129,7 +129,7 @@ class AdminTest extends \BBTestCase
         $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['logger'] = $loggerMock;
         $di['validator'] = $validatorMock;
 

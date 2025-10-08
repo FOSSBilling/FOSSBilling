@@ -107,27 +107,27 @@ class Service implements InjectionAwareInterface
 
         if ($created_at) {
             $sql .= " AND DATE_FORMAT(p.created_at, '%Y-%m-%d') = :created_at";
-            $params['created_at'] = date('Y-m-d', (int) strtotime($created_at));
+            $params['created_at'] = date('Y-m-d', (int) strtotime((string) $created_at));
         }
 
         if ($date_from) {
             $sql .= ' AND UNIX_TIMESTAMP(p.created_at) >= :date_from';
-            $params['date_from'] = strtotime($date_from);
+            $params['date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $sql .= ' AND UNIX_TIMESTAMP(p.created_at) <= :date_to';
-            $params['date_to'] = strtotime($date_to);
+            $params['date_to'] = strtotime((string) $date_to);
         }
 
         if ($paid_at) {
             $sql .= " AND DATE_FORMAT(p.paid_at, '%Y-%m-%d') = :paid_at";
-            $params['paid_at'] = date('Y-m-d', (int) strtotime($paid_at));
+            $params['paid_at'] = date('Y-m-d', (int) strtotime((string) $paid_at));
         }
 
         if ($search) {
             $sql .= ' AND (p.id = :int OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)';
-            $params['int'] = (int) preg_replace('/[^0-9]/', '', $search);
+            $params['int'] = (int) preg_replace('/[^0-9]/', '', (string) $search);
             $params['search_like'] = '%' . $search . '%';
             $params['search'] = $search;
         }
@@ -815,14 +815,14 @@ class Service implements InjectionAwareInterface
         if (empty($paid_at)) {
             $model->paid_at = null;
         } else {
-            $model->paid_at = date('Y-m-d H:i:s', strtotime($paid_at));
+            $model->paid_at = date('Y-m-d H:i:s', strtotime((string) $paid_at));
         }
 
         $due_at = $data['due_at'] ?? $model->due_at;
         if (empty($due_at)) {
             $model->due_at = null;
         } else {
-            $model->due_at = date('Y-m-d H:i:s', strtotime($due_at));
+            $model->due_at = date('Y-m-d H:i:s', strtotime((string) $due_at));
         }
 
         $model->serie = $data['serie'] ?? (empty($model->serie) ? null : $model->serie);
@@ -835,7 +835,7 @@ class Service implements InjectionAwareInterface
 
         $created_at = $data['created_at'] ?? '';
         if (!empty($created_at)) {
-            $model->created_at = date('Y-m-d H:i:s', strtotime($created_at));
+            $model->created_at = date('Y-m-d H:i:s', strtotime((string) $created_at));
         }
 
         $ni = $data['new_item'] ?? [];
@@ -1065,7 +1065,7 @@ class Service implements InjectionAwareInterface
         // do not use api call to get system param to avoid invoking system module event hooks
         $ss = $this->di['mod_service']('System');
         $last_time = $ss->getParamValue($key);
-        if ($once_per_day && $last_time && (time() - strtotime($last_time)) < 86400) {
+        if ($once_per_day && $last_time && (time() - strtotime((string) $last_time)) < 86400) {
             // error_log('Already executed today.');
             return false;
         }
@@ -1515,7 +1515,7 @@ class Service implements InjectionAwareInterface
                 // Then either give an appropriate API response or redirect to the login page.
                 $api_str = '/api/';
                 $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
-                if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+                if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
                     // Throw Exception if api request
                     throw new InformationException('You do not have permission to perform this action', [], 403);
                 } else {

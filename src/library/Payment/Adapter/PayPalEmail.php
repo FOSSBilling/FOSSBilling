@@ -203,7 +203,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
     private function _isIpnValid($data)
     {
         // use http_raw_post_data instead of post due to encoding
-        parse_str($data['http_raw_post_data'], $post);
+        parse_str((string) $data['http_raw_post_data'], $post);
         $req = 'cmd=_notify-validate';
         foreach ($post as $key => $value) {
             $value = urlencode(stripslashes($value));
@@ -234,7 +234,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         if ($post_vars) {
             if (is_array($post_vars)) {
                 foreach ($post_vars as $key => $val) {
-                    $post_contents .= ($post_contents ? '&' : '') . urlencode($key) . '=' . urlencode($val);
+                    $post_contents .= ($post_contents ? '&' : '') . urlencode((string) $key) . '=' . urlencode((string) $val);
                 }
             } else {
                 $post_contents = $post_vars;

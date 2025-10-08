@@ -62,8 +62,8 @@ class Admin extends \Api_Abstract
 
         $bean = $this->di['db']->dispense('extension_meta');
         $bean->extension = 'mod_redirect';
-        $bean->meta_key = trim(htmlspecialchars($data['path'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
-        $bean->meta_value = trim(htmlspecialchars($data['target'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
+        $bean->meta_key = trim(htmlspecialchars((string) $data['path'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
+        $bean->meta_value = trim(htmlspecialchars((string) $data['target'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
         $bean->created_at = date('Y-m-d H:i:s');
         $bean->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($bean);

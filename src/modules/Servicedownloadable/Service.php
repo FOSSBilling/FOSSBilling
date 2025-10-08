@@ -175,7 +175,7 @@ class Service implements InjectionAwareInterface
         }
         $file = $request->files->get('file_data');
         $fileName = $file->getClientOriginalName();
-        $fileNameHash = md5($fileName);
+        $fileNameHash = md5((string) $fileName);
         $fileSavePath = PATH_UPLOADS;
         $file->move($fileSavePath, $fileNameHash);
 
@@ -183,7 +183,7 @@ class Service implements InjectionAwareInterface
 
         // Remove old file.
         if (isset($config['filename'])) {
-            $oldFilePath = Path::join(PATH_UPLOADS, md5($config['filename']));
+            $oldFilePath = Path::join(PATH_UPLOADS, md5((string) $config['filename']));
             if ($this->filesystem->exists($oldFilePath)) {
                 $this->filesystem->remove($oldFilePath);
             }
@@ -235,7 +235,7 @@ class Service implements InjectionAwareInterface
         }
         $file = $request->files->get('file_data');
         $fileName = $file->getClientOriginalName();
-        $fileNameHash = md5($fileName);
+        $fileNameHash = md5((string) $fileName);
         $fileSavePath = PATH_UPLOADS;
         $file->move($fileSavePath, $fileNameHash);
 

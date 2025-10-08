@@ -32,7 +32,7 @@ class Guest extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        if (strlen($data['message']) < 4) {
+        if (strlen((string) $data['message']) < 4) {
             throw new \FOSSBilling\InformationException('Please enter your message');
         }
 

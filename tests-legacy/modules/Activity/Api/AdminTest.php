@@ -35,7 +35,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $service);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -78,7 +78,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $service);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -136,7 +136,7 @@ class AdminTest extends \BBTestCase
         $databaseMock->expects($this->atLeastOnce())->
             method('trash');
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->onlyMethods(['hasPermission'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)->onlyMethods(['hasPermission'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')
             ->willReturn(true);
@@ -148,7 +148,7 @@ class AdminTest extends \BBTestCase
             ->willReturn(null);
         $di['validator'] = $validatorMock;
 
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);

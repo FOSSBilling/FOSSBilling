@@ -33,7 +33,7 @@ class Theme
 
     public function isAdminAreaTheme()
     {
-        return str_contains($this->name, 'admin_');
+        return str_contains((string) $this->name, 'admin_');
     }
 
     public function isAssetsPathWritable()
@@ -99,7 +99,7 @@ class Theme
         $settings_page = $this->strip_tags_content($settings_page, '<script><style>');
 
         // remove style attributes
-        $settings_page = preg_replace('/(<[^>]+) style=".*?"/i', '$1', $settings_page);
+        $settings_page = preg_replace('/(<[^>]+) style=".*?"/i', '$1', (string) $settings_page);
 
         // fix unclosed text area
         $settings_page = preg_replace('/<textarea (.*)\/>/i', '<textarea $1></textarea>', $settings_page);
@@ -175,7 +175,7 @@ class Theme
      */
     private function strip_tags_content($text, $tags = '', $invert = true)
     {
-        preg_match_all('/<(.+?)[\s]*\/?[\s]*>/si', trim($tags), $tags);
+        preg_match_all('/<(.+?)[\s]*\/?[\s]*>/si', trim((string) $tags), $tags);
         $tags = array_unique($tags[1]);
 
         if (!empty($tags)) {

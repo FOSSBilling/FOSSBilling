@@ -220,7 +220,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertIsArray($result[1]);
 
         $this->assertEquals($expectedParams, $result[1]);
-        $this->assertTrue(str_contains($result[0], $expectedSqlPart));
+        $this->assertTrue(str_contains($result[0], (string) $expectedSqlPart));
     }
 
     public function testisSubscribableisNotSusbcribable(): void

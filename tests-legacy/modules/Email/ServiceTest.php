@@ -377,8 +377,8 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $di['crypt'] = $cryptMock;
         $di['twig'] = $twig;
-        $di['mod'] = $di->protect(fn () => $modMock);
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $di['tools'] = new \FOSSBilling\Tools();
 
         $serviceMock->setDi($di);
@@ -514,7 +514,7 @@ class ServiceTest extends \BBTestCase
                 'from_email' => '',
             ]);
 
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['db'] = $db;
         $di['twig'] = $twig;
         $di['crypt'] = $cryptMock;
@@ -561,8 +561,8 @@ class ServiceTest extends \BBTestCase
             ->willReturn($isExtensionActiveReturn);
 
         $config = [];
-        $di['mod_config'] = $di->protect(fn ($modName) => $config);
-        $di['mod_service'] = $di->protect(fn () => $extension);
+        $di['mod_config'] = $di->protect(fn ($modName): array => $config);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extension);
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
         $service->setDi($di);
@@ -784,7 +784,7 @@ class ServiceTest extends \BBTestCase
 
         $systemServiceMock = $this->getMockBuilder(\Box\Mod\System\Service::class)->getMock();
 
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $emailServiceMock->setDi($di);
 
@@ -906,7 +906,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service'] = $di->protect(fn () => $extension);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extension);
 
         $service->setDi($di);
 
@@ -997,7 +997,7 @@ class ServiceTest extends \BBTestCase
                 return $extension;
             }
         });
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $service->setDi($di);
 
@@ -1036,7 +1036,7 @@ class ServiceTest extends \BBTestCase
 
         $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->getMock();
 
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
 
         $service->setDi($di);
 

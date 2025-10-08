@@ -403,7 +403,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
     private function _createDomainObj($result, Registrar_Domain $domain)
     {
         $type = 'contacts_registrant_';
-        $tel = explode('.', $result[$type . 'phonenumber']);
+        $tel = explode('.', (string) $result[$type . 'phonenumber']);
         $name = '';
 
         // domain specific
@@ -459,7 +459,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
                         || ($result['privatewhois'] == 'PARTIAL');
         }
 
-        $domain->setExpirationTime(strtotime($result['expirationdate']));
+        $domain->setExpirationTime(strtotime((string) $result['expirationdate']));
         $domain->setPrivacyEnabled($privacy);
         $domain->setEpp($result['transferauthinfo']);
         $domain->setContactRegistrar($c);

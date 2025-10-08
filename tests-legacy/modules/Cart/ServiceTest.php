@@ -134,7 +134,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['session'] = $sessionMock;
-        $di['mod_service'] = $di->protect(fn () => $currencyServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyServiceMock);
         $service->setDi($di);
 
         $result = $service->getSessionCart();
@@ -796,7 +796,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
@@ -839,7 +839,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
@@ -882,7 +882,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
 
         $serviceMock->setDi($di);
         $productModel->setDi($di);
@@ -933,7 +933,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -986,7 +986,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceLicenseServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceLicenseServiceMock);
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
@@ -1041,7 +1041,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceCustomServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceCustomServiceMock);
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
@@ -1089,7 +1089,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $currencyService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyService);
 
         $serviceMock->setDi($di);
 

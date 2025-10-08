@@ -39,7 +39,7 @@ class Payment_Adapter_Dummy
         $tx = new Payment_Transaction();
         $tx->setAmount($invoice->getTotal());
         $tx->setCurrency($invoice->getCurrency());
-        $tx->setId(md5(uniqid($invoice->getNumber())));
+        $tx->setId(md5(uniqid((string) $invoice->getNumber())));
         $tx->setIsValid(true);
         $tx->setStatus(Payment_Transaction::STATUS_COMPLETE);
         $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);

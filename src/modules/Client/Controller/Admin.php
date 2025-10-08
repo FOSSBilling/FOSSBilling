@@ -113,7 +113,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $query = $_GET['r'] ?? null;
         if ($query) {
             $r = $query;
-            $redirect_to = '/' . trim($r, '/');
+            $redirect_to = '/' . trim((string) $r, '/');
         }
 
         header('HTTP/1.1 301 Moved Permanently');

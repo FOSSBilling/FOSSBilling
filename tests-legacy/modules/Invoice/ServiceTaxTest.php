@@ -45,7 +45,7 @@ class ServiceTaxTest extends \BBTestCase
             ->willReturn($taxModel);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -77,7 +77,7 @@ class ServiceTaxTest extends \BBTestCase
             ->willReturnOnConsecutiveCalls(null, $taxModel);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -109,7 +109,7 @@ class ServiceTaxTest extends \BBTestCase
             ->willReturnOnConsecutiveCalls(null, null, $taxModel);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -136,7 +136,7 @@ class ServiceTaxTest extends \BBTestCase
             ->willReturnOnConsecutiveCalls(null, null, null);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -161,7 +161,7 @@ class ServiceTaxTest extends \BBTestCase
         $taxModel->loadBean(new \DummyBean());
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
         $this->service->setDi($di);
 
         $taxRateExpected = 0;
@@ -202,7 +202,7 @@ class ServiceTaxTest extends \BBTestCase
             ->willReturn(21);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $invoiceItemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $invoiceItemService);
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -248,7 +248,7 @@ class ServiceTaxTest extends \BBTestCase
             ->willReturn($newId);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $this->service->setDi($di);

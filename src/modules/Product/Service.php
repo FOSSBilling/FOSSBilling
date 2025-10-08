@@ -140,8 +140,8 @@ class Service implements InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $list = $extensionService->getInstalledMods();
         foreach ($list as $mod) {
-            if (str_starts_with($mod, 'service')) {
-                $n = substr($mod, strlen('service'));
+            if (str_starts_with((string) $mod, 'service')) {
+                $n = substr((string) $mod, strlen('service'));
                 $data[$n] = ucfirst($n);
             }
         }
@@ -887,8 +887,8 @@ class Service implements InjectionAwareInterface
         $model->once_per_client = (bool) ($data['once_per_client'] ?? 0);
         $model->recurring = (bool) ($data['recurring'] ?? 0);
         $model->maxuses = (int) $data['maxuses'] ?? null;
-        $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime($data['start_at'])) : null;
-        $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime($data['end_at'])) : null;
+        $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['start_at'])) : null;
+        $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['end_at'])) : null;
         $model->products = json_encode($products);
         $model->periods = json_encode($periods);
         $model->client_groups = json_encode($clientGroups);
@@ -926,8 +926,8 @@ class Service implements InjectionAwareInterface
         $model->once_per_client = $data['once_per_client'] ?? $model->once_per_client;
         $model->recurring = $data['recurring'] ?? $model->recurring;
         $model->used = $data['used'] ?? $model->used;
-        $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime($data['start_at'])) : null;
-        $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime($data['end_at'])) : null;
+        $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['start_at'])) : null;
+        $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['end_at'])) : null;
         $model->maxuses = (int) $data['maxuses'] ?? $model->maxuses;
 
         if (!is_array($data['products'] ?? null)) {

@@ -191,7 +191,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
             return true;
         }
 
-        mail($this->config['email'], $params['subject'], $c);
+        mail((string) $this->config['email'], (string) $params['subject'], $c);
         $log->info('Email sent: ' . $params['subject']);
 
         return true;

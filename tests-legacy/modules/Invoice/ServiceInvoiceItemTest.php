@@ -54,7 +54,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $serviceMock->setDi($di);
 
         $serviceMock->markAsPaid($invoiceItemModel);
@@ -345,7 +345,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $invoiceServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $invoiceServiceMock);
 
         $serviceMock->setDi($di);
         $serviceMock->creditInvoiceItem($invoiceItemModel);

@@ -325,17 +325,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($created_at) {
             $where[] = "DATE_FORMAT(st.created_at, '%Y-%m-%d') = :created_at";
-            $bindings[':created_at'] = date('Y-m-d', strtotime($created_at));
+            $bindings[':created_at'] = date('Y-m-d', strtotime((string) $created_at));
         }
 
         if ($date_from) {
             $where[] = 'UNIX_TIMESTAMP(st.created_at) >= :date_from';
-            $bindings[':date_from'] = strtotime($date_from);
+            $bindings[':date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $where[] = 'UNIX_TIMESTAMP(st.created_at) <= :date_to';
-            $bindings[':date_to'] = strtotime($date_to);
+            $bindings[':date_to'] = strtotime((string) $date_to);
         }
         // smartSearch
         if ($search) {

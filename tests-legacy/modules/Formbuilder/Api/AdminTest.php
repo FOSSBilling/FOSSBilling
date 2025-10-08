@@ -14,7 +14,7 @@ class AdminTest extends \BBTestCase
      */
     protected $api;
 
-    public function getServiceMock()
+    public function getServiceMock(): \PHPUnit\Framework\MockObject\MockObject
     {
         return $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
     }

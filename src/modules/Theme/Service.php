@@ -345,7 +345,7 @@ class Service implements InjectionAwareInterface
         $paths = [Path::join($theme_path, 'html')];
 
         if (isset($config['extends'])) {
-            $ext = trim($config['extends'], '/');
+            $ext = trim((string) $config['extends'], '/');
             $ext = str_replace('.', '', $ext);
 
             $config['url'] = SYSTEM_URL . "themes/{$ext}/";
@@ -363,7 +363,7 @@ class Service implements InjectionAwareInterface
         }
         $list = array_unique($list);
         foreach ($list as $mod) {
-            $p = Path::join(PATH_MODS, ucfirst($mod), $client ? 'html_client' : 'html_admin');
+            $p = Path::join(PATH_MODS, ucfirst((string) $mod), $client ? 'html_client' : 'html_admin');
             if ($this->filesystem->exists($p)) {
                 $paths[] = $p;
             }

@@ -37,7 +37,7 @@ class Service implements InjectionAwareInterface
         $last_time = $systemService->getParamValue($key);
 
         // Make sure we don't ping more than once a day
-        if ($last_time && (time() - strtotime($last_time)) < 24 * 60 * 60 && !$forced) {
+        if ($last_time && (time() - strtotime((string) $last_time)) < 24 * 60 * 60 && !$forced) {
             return false;
         }
 

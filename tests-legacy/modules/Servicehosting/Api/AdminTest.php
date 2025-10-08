@@ -669,7 +669,7 @@ class AdminTest extends \BBTestCase
             ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -705,7 +705,7 @@ class AdminTest extends \BBTestCase
             ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
 

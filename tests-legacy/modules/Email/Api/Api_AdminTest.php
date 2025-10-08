@@ -594,7 +594,7 @@ class Api_AdminTest extends \BBTestCase
             ->willReturn($isExtensionActiveReturn);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $extension);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extension);
 
         $adminApi->setService($emailService);
         $adminApi->setDi($di);
@@ -652,7 +652,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('renderString')
             ->willReturn('rendered');
 
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
 
         $adminApi->setDi($di);
 

@@ -67,7 +67,7 @@ class GuestTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['mod_service'] = $di->protect(fn () => $currencyServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyServiceMock);
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -101,7 +101,7 @@ class GuestTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['mod_service'] = $di->protect(fn () => $currencyServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyServiceMock);
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -141,7 +141,7 @@ class GuestTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $currencyServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyServiceMock);
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -179,7 +179,7 @@ class GuestTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $currencyServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyServiceMock);
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);

@@ -242,7 +242,7 @@ class ServiceTransactionTest extends \BBTestCase
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertTrue(str_contains($result[0], $expectedStringPart));
+        $this->assertTrue(str_contains($result[0], (string) $expectedStringPart));
         $this->assertEquals($expectedParams, $result[1]);
     }
 
@@ -416,7 +416,7 @@ class ServiceTransactionTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $payGatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $payGatewayService);
         $di['api_system'] = new \Api_Handler(new \Model_Admin());
         $this->service->setDi($di);
 

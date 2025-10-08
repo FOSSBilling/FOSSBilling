@@ -127,12 +127,12 @@ class PhpConsole
             return;
         }
         $message = [];
-        $message['type'] = str_starts_with($event->tags, 'error,') ? 'error' : 'debug';
+        $message['type'] = str_starts_with((string) $event->tags, 'error,') ? 'error' : 'debug';
         $message['subject'] = $event->type;
-        $message['text'] = substr($event->message, 0, self::messageLengthLimit);
+        $message['text'] = substr((string) $event->message, 0, self::messageLengthLimit);
 
         if ($event->file) {
-            $message['source'] = ($this->sourceBasePath ? preg_replace('!^' . preg_quote($this->sourceBasePath, '!') . '!', '', $event->file) : $event->file) . ($event->line ? ':' . $event->line : '');
+            $message['source'] = ($this->sourceBasePath ? preg_replace('!^' . preg_quote((string) $this->sourceBasePath, '!') . '!', '', (string) $event->file) : $event->file) . ($event->line ? ':' . $event->line : '');
         }
         if ($event->trace) {
             $traceArray = $this->convertTraceToArray($event->trace, $event->file, $event->line);
@@ -143,7 +143,7 @@ class PhpConsole
 
         self::pushMessageToBuffer($message);
 
-        if (strpos($event->tags, ',fatal')) {
+        if (strpos((string) $event->tags, ',fatal')) {
             self::flushMessagesBuffer();
         }
     }
@@ -166,12 +166,12 @@ class PhpConsole
                         $args[] = 'Array';
                     } else {
                         $arg = var_export($arg, 1);
-                        $args[] = strlen($arg) > 12 ? substr($arg, 0, 8) . '...\'' : $arg;
+                        $args[] = strlen((string) $arg) > 12 ? substr((string) $arg, 0, 8) . '...\'' : $arg;
                     }
                 }
             }
             if (isset($call['file']) && $this->sourceBasePath) {
-                $call['file'] = preg_replace('!^' . preg_quote($this->sourceBasePath, '!') . '!', '', $call['file']);
+                $call['file'] = preg_replace('!^' . preg_quote((string) $this->sourceBasePath, '!') . '!', '', $call['file']);
             }
             $trace[] = (isset($call['file']) ? ($call['file'] . ':' . $call['line']) : '[internal call]') . ' - ' . (isset($call['class']) ? $call['class'] . $call['type'] : '') . $call['function'] . '(' . implode(', ', $args) . ')';
         }
@@ -219,7 +219,7 @@ class PhpConsole
         if (headers_sent($file, $line)) {
             exit('PhpConsole ERROR: setcookie() failed because haders are sent (' . $file . ':' . $line . '). Try to use ob_start()');
         }
-        setcookie($name, $value, ['expires' => null, 'path' => '/']);
+        setcookie($name, (string) $value, ['expires' => null, 'path' => '/']);
     }
 
     protected static function sendMessages($messages)
