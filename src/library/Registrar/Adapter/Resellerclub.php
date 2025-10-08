@@ -320,7 +320,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         if ($tld == '.au' || $tld == '.net.au' || $tld == '.com.au') {
             $contact = $domain->getContactRegistrar();
 
-            if (strlen(trim((string) $contact->getCompanyNumber())) == 0) {
+            if (strlen(trim($contact->getCompanyNumber())) == 0) {
                 throw new Registrar_Exception('A valid contact company number is mandatory for registering an .AU domain name');
             }
             $params['attr-name1'] = 'id-type';

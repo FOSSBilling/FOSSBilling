@@ -40,12 +40,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $this->di['db']->store($item);
 
         $oid = $this->getOrderId($item);
-        if ($oid !== null) {
-            $orderService = $this->di['mod_service']('Order');
-            $order = $this->di['db']->load('ClientOrder', $oid);
-            if ($order instanceof \Model_ClientOrder) {
-                $orderService->unsetUnpaidInvoice($order);
-            }
+        $orderService = $this->di['mod_service']('Order');
+        $order = $this->di['db']->load('ClientOrder', $oid);
+        if ($order instanceof \Model_ClientOrder) {
+            $orderService->unsetUnpaidInvoice($order);
         }
     }
 
