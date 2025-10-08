@@ -33,7 +33,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         $this->config['from'] = $this->config['email'];
     }
 
-    public static function getConfig()
+    public static function getConfig(): array
     {
         return [
             'label' => 'This registrar type sends notifications to the given email about domain management events. For example, when client registers a new domain an email with domain details will be sent to you. It is then your responsibility to register domain on real registrar.',
@@ -147,7 +147,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         return $this->sendEmail($domain, $params);
     }
 
-    public function getEpp(Registrar_Domain $domain)
+    public function getEpp(Registrar_Domain $domain): bool
     {
         $params = [];
         $params['subject'] = 'Request for Epp code was received';
@@ -174,7 +174,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         return $this->sendEmail($domain, $params);
     }
 
-    private function sendEmail(Registrar_Domain $domain, array $params)
+    private function sendEmail(Registrar_Domain $domain, array $params): bool
     {
         $c = $params['content'];
         $c .= PHP_EOL;

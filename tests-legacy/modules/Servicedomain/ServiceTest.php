@@ -22,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public static function getCartProductTitleProvider()
+    public static function getCartProductTitleProvider(): array
     {
         return [
             [
@@ -49,7 +49,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getCartProductTitleProvider')]
-    public function testGetCartProductTitle($data, $expected): void
+    public function testGetCartProductTitle(array $data, string $expected): void
     {
         $product = new \Model_CartProduct();
         $product->loadBean(new \DummyBean());
@@ -60,7 +60,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $expected);
     }
 
-    public static function validateOrderDataExceptionsProvider()
+    public static function validateOrderDataExceptionsProvider(): array
     {
         return [
             [
@@ -72,7 +72,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('validateOrderDataExceptionsProvider')]
-    public function testValidateOrderDataExceptions($data): void
+    public function testValidateOrderDataExceptions(array $data): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
 
@@ -85,7 +85,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public static function validateOrderDateTransferExceptionsProvider()
+    public static function validateOrderDateTransferExceptionsProvider(): array
     {
         $self = new ServiceTest('ServiceTest');
 
@@ -136,7 +136,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('validateOrderDateTransferExceptionsProvider')]
-    public function testValidateOrderDateTransferExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBeTransferred): void
+    public function testValidateOrderDateTransferExceptions(array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $canBeTransferred): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
@@ -160,7 +160,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public static function validateOrderDateRegisterExceptionsProvider()
+    public static function validateOrderDateRegisterExceptionsProvider(): array
     {
         $self = new ServiceTest('ServiceTest');
 
@@ -234,7 +234,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('validateOrderDateRegisterExceptionsProvider')]
-    public function testValidateOrderDateRegisterExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBeTransferred): void
+    public function testValidateOrderDateRegisterExceptions(array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $canBeTransferred): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
@@ -385,7 +385,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->action_create($order);
     }
 
-    public static function actionActivateProvider()
+    public static function actionActivateProvider(): array
     {
         $self = new ServiceTest('ServiceTest');
 
@@ -404,7 +404,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('actionActivateProvider')]
-    public function testActionActivate($action, $registerDomainCalled, $transferDomainCalled): void
+    public function testActionActivate(string $action, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $registerDomainCalled, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $transferDomainCalled): void
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
@@ -716,7 +716,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function updateNameserversExceptionProvider()
+    public static function updateNameserversExceptionProvider(): array
     {
         return [
             [
@@ -729,7 +729,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('updateNameserversExceptionProvider')]
-    public function testUpdateNameserversException($data): void
+    public function testUpdateNameserversException(array $data): void
     {
         $serviceDomainModel = new \Model_ServiceDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
@@ -1069,7 +1069,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public static function toApiArrayProvider()
+    public static function toApiArrayProvider(): array
     {
         $self = new ServiceTest('ServiceTest');
 
@@ -1089,7 +1089,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('toApiArrayProvider')]
-    public function testToApiArray($identity, $dbLoadCalled): void
+    public function testToApiArray(?\Model_Admin $identity, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $dbLoadCalled): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -1281,7 +1281,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public static function tldGetSearchQueryProvider()
+    public static function tldGetSearchQueryProvider(): array
     {
         return [
             [
@@ -1323,7 +1323,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('tldGetSearchQueryProvider')]
-    public function testTldGetSearchQuery($data, $expectedQuery, $expectedBindings): void
+    public function testTldGetSearchQuery(array $data, string $expectedQuery, array $expectedBindings): void
     {
         $di = new \Pimple\Container();
 

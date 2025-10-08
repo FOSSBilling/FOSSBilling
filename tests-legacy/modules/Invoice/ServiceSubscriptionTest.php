@@ -171,7 +171,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function searchQueryData()
+    public static function searchQueryData(): array
     {
         return [
             [
@@ -208,7 +208,7 @@ class ServiceSubscriptionTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery($data, $expectedSqlPart, $expectedParams): void
+    public function testgetSearchQuery(array $data, string $expectedSqlPart, array $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -220,7 +220,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertIsArray($result[1]);
 
         $this->assertEquals($expectedParams, $result[1]);
-        $this->assertTrue(str_contains($result[0], (string) $expectedSqlPart));
+        $this->assertTrue(str_contains($result[0], $expectedSqlPart));
     }
 
     public function testisSubscribableisNotSusbcribable(): void

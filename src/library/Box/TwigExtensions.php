@@ -85,7 +85,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
      *
      * @return string The extension name
      */
-    public function getName()
+    public function getName(): string
     {
         return 'bb';
     }
@@ -167,41 +167,41 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => false, 'without_currency' => true]);
     }
 
-    public function twig_mod_asset_url($asset, $mod)
+    public function twig_mod_asset_url($asset, $mod): string
     {
         return SYSTEM_URL . 'modules/' . ucfirst((string) $mod) . '/assets/' . $asset;
     }
 
-    public function twig_asset_url(Twig\Environment $env, $asset)
+    public function twig_asset_url(Twig\Environment $env, $asset): string
     {
         $globals = $env->getGlobals();
 
         return SYSTEM_URL . 'themes/' . $globals['current_theme'] . '/assets/' . $asset;
     }
 
-    public function twig_library_url($path)
+    public function twig_library_url($path): string
     {
         return SYSTEM_URL . 'library/' . $path;
     }
 
-    public function twig_img_tag($path, $alt = null)
+    public function twig_img_tag($path, $alt = null): string
     {
         $alt = is_null($alt) ? pathinfo((string) $path, PATHINFO_BASENAME) : $alt;
 
         return sprintf('<img src="%s" alt="%s" title="%s"/>', htmlspecialchars((string) $path), htmlspecialchars($alt), htmlspecialchars($alt));
     }
 
-    public function twig_script_tag($path)
+    public function twig_script_tag($path): string
     {
         return sprintf('<script type="text/javascript" src="%s?%s"></script>', $path, FOSSBilling\Version::VERSION);
     }
 
-    public function twig_stylesheet_tag($path, $media = 'screen')
+    public function twig_stylesheet_tag($path, $media = 'screen'): string
     {
         return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, FOSSBilling\Version::VERSION, $media);
     }
 
-    public function twig_gravatar_filter($email, $size = 20)
+    public function twig_gravatar_filter($email, $size = 20): string
     {
         if (empty($email)) {
             return '';
@@ -213,7 +213,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $url . "?s=$size&d=mp&r=g";
     }
 
-    public function twig_autolink_filter($text)
+    public function twig_autolink_filter($text): ?string
     {
         $pattern = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
 
@@ -231,7 +231,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return preg_replace_callback($pattern, $callback, (string) $text);
     }
 
-    public function twig_number_filter($number, $decimals = 2, $dec_point = '.', $thousands_sep = '')
+    public function twig_number_filter($number, $decimals = 2, $dec_point = '.', $thousands_sep = ''): string
     {
         if (is_null($number)) {
             $number = '0';
@@ -240,14 +240,14 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return number_format(floatval($number), $decimals, $dec_point, $thousands_sep);
     }
 
-    public function twig_daysleft_filter($iso8601)
+    public function twig_daysleft_filter($iso8601): int
     {
         $timediff = strtotime((string) $iso8601) - time();
 
         return intval($timediff / 86400);
     }
 
-    public function twig_timeago_filter($iso8601)
+    public function twig_timeago_filter($iso8601): string
     {
         $cur_tm = time();
         $dif = $cur_tm - strtotime((string) $iso8601);
@@ -361,7 +361,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $array;
     }
 
-    public function ipLookupLink(?string $ip)
+    public function ipLookupLink(?string $ip): string
     {
         if ($ip === null || $ip === '') {
             return '';

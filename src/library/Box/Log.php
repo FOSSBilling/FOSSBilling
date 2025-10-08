@@ -161,7 +161,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         }
     }
 
-    protected function _packEvent($message, $priority)
+    protected function _packEvent($message, $priority): array
     {
         return ['timestamp' => date('Y-m-d H:i:s'), 'message' => $message, 'priority' => $priority, 'priorityName' => $this->_priorities[$priority], ...$this->_extras];
     }

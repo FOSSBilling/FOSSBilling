@@ -170,7 +170,7 @@ class Validate
      *
      * @throws InformationException
      */
-    public function checkRequiredParamsForArray(array $required, array $data, ?array $variables = null, $code = 0)
+    public function checkRequiredParamsForArray(array $required, array $data, ?array $variables = null, $code = 0): void
     {
         foreach ($required as $key => $msg) {
             if (!isset($data[$key])) {
@@ -187,7 +187,7 @@ class Validate
         }
     }
 
-    public function isBirthdayValid($birthday = '')
+    public function isBirthdayValid($birthday = ''): bool
     {
         if (strlen(trim((string) $birthday)) > 0 && strtotime((string) $birthday) === false) {
             $friendlyName = ucfirst(__trans('Birthdate'));

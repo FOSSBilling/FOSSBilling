@@ -427,7 +427,7 @@ class UpdatePatcher implements InjectionAwareInterface
      * As a workaround, we can register AntLoader and point it at the Vendor folder which will then act as fallback to find the needed classes.
      * This isn't particularly fast though as it'll scan the entire vendor, so only use it if we know a needed class is missing.
      */
-    private function registerFallbackAutoloader()
+    private function registerFallbackAutoloader(): void
     {
         $loader = new \AntCMS\AntLoader([
             'mode' => 'filesystem',

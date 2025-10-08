@@ -26,7 +26,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public static function getSearchQueryProvider()
+    public static function getSearchQueryProvider(): array
     {
         return [
             [
@@ -75,7 +75,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getSearchQueryProvider')]
-    public function testGetSearchQuery($data, $query, $bindings): void
+    public function testGetSearchQuery(array $data, string $query, array $bindings): void
     {
         $service = new \Box\Mod\Email\Service();
         $di = new \Pimple\Container();
@@ -388,7 +388,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function sendTemplateExistsStaffProvider()
+    public static function sendTemplateExistsStaffProvider(): array
     {
         $self = new ServiceTest('ServiceTest');
 
@@ -421,7 +421,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('sendTemplateExistsStaffProvider')]
-    public function testSendTemplateExistsStaff($data, $clientGetExpects, $staffgetListExpects): void
+    public function testSendTemplateExistsStaff(array $data, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $clientGetExpects, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $staffgetListExpects): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
             ->onlyMethods(['sendMail'])
@@ -581,7 +581,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function templateGetSearchQueryProvider()
+    public static function templateGetSearchQueryProvider(): array
     {
         return [
             [
@@ -626,7 +626,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('templateGetSearchQueryProvider')]
-    public function testTemplateGetSearchQuery($data, $query, $bindings): void
+    public function testTemplateGetSearchQuery(array $data, string $query, array $bindings): void
     {
         $service = new \Box\Mod\Email\Service();
         $di = new \Pimple\Container();
@@ -724,7 +724,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $expected);
     }
 
-    public static function template_updateProvider()
+    public static function template_updateProvider(): array
     {
         $self = new ServiceTest('ServiceTest');
 
@@ -753,7 +753,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('template_updateProvider')]
-    public function testTemplateUpdate($data, $templateRenderExpects): void
+    public function testTemplateUpdate(array $data, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $templateRenderExpects): void
     {
         $id = random_int(1, 100);
         $model = new \Model_EmailTemplate();
@@ -871,7 +871,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($emailTemplateModel, $result);
     }
 
-    public static function batchTemplateGenerateProvider()
+    public static function batchTemplateGenerateProvider(): array
     {
         $self = new ServiceTest('ServiceTest');
 
@@ -883,7 +883,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('batchTemplateGenerateProvider')]
-    public function testBatchTemplateGenerate($findOneReturn, $isExtensionActiveReturn, $findOneExpects, $dispenseExpects): void
+    public function testBatchTemplateGenerate(bool $findOneReturn, bool $isExtensionActiveReturn, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $findOneExpects, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $dispenseExpects): void
     {
         $service = new \Box\Mod\Email\Service();
 

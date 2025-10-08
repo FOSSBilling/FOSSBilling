@@ -36,7 +36,7 @@ class Example
     {
     }
 
-    public function get_config()
+    public function get_config(): ?array
     {
         return $this->config;
     }

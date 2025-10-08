@@ -103,7 +103,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result > 0);
     }
 
-    public static function searchQueryData()
+    public static function searchQueryData(): array
     {
         return [
             [[], 'SELECT * FROM extension', []],
@@ -113,7 +113,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery($data, $expectedStr, $expectedParams): void
+    public function testgetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -123,7 +123,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($sql);
         $this->assertIsArray($params);
 
-        $this->assertTrue(str_contains($sql, (string) $expectedStr), $sql);
+        $this->assertTrue(str_contains($sql, $expectedStr), $sql);
         $this->assertTrue(array_diff_key($params, $expectedParams) == []);
     }
 

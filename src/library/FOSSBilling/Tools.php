@@ -43,10 +43,8 @@ class Tools
 
     /**
      * Return site url.
-     *
-     * @return string
      */
-    public function url($link = null)
+    public function url($link = null): string
     {
         $link = trim((string) $link, '/');
 
@@ -122,7 +120,7 @@ class Tools
         }
     }
 
-    public function slug($str)
+    public function slug($str): string
     {
         $str = strtolower(trim((string) $str));
         $str = preg_replace('/[^a-z0-9-]/', '-', $str);
@@ -131,7 +129,7 @@ class Tools
         return trim((string) $str, '-');
     }
 
-    public function to_camel_case($str, $capitalize_first_char = false)
+    public function to_camel_case($str, $capitalize_first_char = false): ?string
     {
         if ($capitalize_first_char) {
             $str[0] = strtoupper((string) $str[0]);
@@ -141,7 +139,7 @@ class Tools
         return preg_replace_callback('/-([a-z])/', $func, (string) $str);
     }
 
-    public function from_camel_case($str)
+    public function from_camel_case($str): ?string
     {
         $str[0] = strtolower((string) $str[0]);
         $func = fn ($c): string => '-' . strtolower((string) $c[1]);

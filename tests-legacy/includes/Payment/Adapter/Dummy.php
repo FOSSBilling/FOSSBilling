@@ -9,7 +9,7 @@ class Payment_Adapter_Dummy
         $this->di = $di;
     }
 
-    public function getConfig()
+    public function getConfig(): array
     {
         return [];
     }
@@ -19,22 +19,22 @@ class Payment_Adapter_Dummy
         return self::TYPE_FORM;
     }
 
-    public function getServiceUrl()
+    public function getServiceUrl(): string
     {
         return 'https://www.google.com/?q=dummy';
     }
 
-    public function singlePayment(Payment_Invoice $invoice)
+    public function singlePayment(Payment_Invoice $invoice): array
     {
         return [];
     }
 
-    public function recurrentPayment(Payment_Invoice $invoice)
+    public function recurrentPayment(Payment_Invoice $invoice): array
     {
         return [];
     }
 
-    public function ipn($data, Payment_Invoice $invoice)
+    public function ipn($data, Payment_Invoice $invoice): \Payment_Transaction
     {
         $tx = new Payment_Transaction();
         $tx->setAmount($invoice->getTotal());

@@ -54,7 +54,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $product->title;
     }
 
-    public function validateOrderData(&$data)
+    public function validateOrderData(&$data): void
     {
         $validator = $this->di['validator'];
 
@@ -255,10 +255,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model;
     }
 
-    /**
-     * @return bool
-     */
-    public function action_renew(\Model_ClientOrder $order)
+    public function action_renew(\Model_ClientOrder $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -276,28 +273,21 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * @todo
-     *
-     * @return bool
      */
-    public function action_suspend(\Model_ClientOrder $order)
+    public function action_suspend(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
     /**
      * @todo
-     *
-     * @return bool
      */
-    public function action_unsuspend(\Model_ClientOrder $order)
+    public function action_unsuspend(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
-    /**
-     * @return bool
-     */
-    public function action_cancel(\Model_ClientOrder $order)
+    public function action_cancel(\Model_ClientOrder $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -311,20 +301,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return bool
-     */
-    public function action_uncancel(\Model_ClientOrder $order)
+    public function action_uncancel(\Model_ClientOrder $order): bool
     {
         $this->action_activate($order);
 
         return true;
     }
 
-    /**
-     * @return void
-     */
-    public function action_delete(\Model_ClientOrder $order)
+    public function action_delete(\Model_ClientOrder $order): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
@@ -375,7 +359,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($model);
     }
 
-    public function updateNameservers(\Model_ServiceDomain $model, $data)
+    public function updateNameservers(\Model_ServiceDomain $model, $data): bool
     {
         if (!isset($data['ns1'])) {
             throw new \FOSSBilling\InformationException('Nameserver 1 is required');
@@ -410,7 +394,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function updateContacts(\Model_ServiceDomain $model, $data)
+    public function updateContacts(\Model_ServiceDomain $model, $data): bool
     {
         $required = [
             'contact' => 'Required field contact is missing',
@@ -467,7 +451,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $adapter->getEpp($domain);
     }
 
-    public function lock(\Model_ServiceDomain $model)
+    public function lock(\Model_ServiceDomain $model): bool
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -483,7 +467,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function unlock(\Model_ServiceDomain $model)
+    public function unlock(\Model_ServiceDomain $model): bool
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -499,7 +483,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function enablePrivacyProtection(\Model_ServiceDomain $model)
+    public function enablePrivacyProtection(\Model_ServiceDomain $model): bool
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -515,7 +499,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function disablePrivacyProtection(\Model_ServiceDomain $model)
+    public function disablePrivacyProtection(\Model_ServiceDomain $model): bool
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -580,7 +564,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $adapter->isDomainAvailable($domain);
     }
 
-    public function syncExpirationDate($model)
+    public function syncExpirationDate($model): void
     {
         // @todo
     }
@@ -626,7 +610,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
-    private function _getTuple($data)
+    private function _getTuple($data): array
     {
         $action = $data['action'];
         [$sld, $tld] = [null, null];
@@ -649,7 +633,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$sld, $tld];
     }
 
-    protected function _getD(\Model_ServiceDomain $model)
+    protected function _getD(\Model_ServiceDomain $model): array
     {
         $orderService = $this->di['mod_service']('order');
         $order = $orderService->getServiceOrder($model);
@@ -728,7 +712,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$d, $adapter];
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event)
+    public static function onBeforeAdminCronRun(\Box_Event $event): bool
     {
         try {
             $di = $event->getDi();
@@ -741,7 +725,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function batchSyncExpirationDates()
+    public function batchSyncExpirationDates(): bool
     {
         $key = 'servicedomain_last_sync';
 
@@ -789,7 +773,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $id;
     }
 
-    public function tldUpdate(\Model_Tld $model, $data)
+    public function tldUpdate(\Model_Tld $model, $data): bool
     {
         $model->tld_registrar_id = $data['tld_registrar_id'] ?? $model->tld_registrar_id;
         $model->price_registration = $data['price_registration'] ?? $model->price_registration;
@@ -808,7 +792,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function tldGetSearchQuery($data)
+    public function tldGetSearchQuery($data): array
     {
         $query = 'SELECT * FROM tld';
 
@@ -855,14 +839,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->getAssoc('SELECT id, tld from tld WHERE active = 1 ORDER by id ASC');
     }
 
-    public function tldAlreadyRegistered($tld)
+    public function tldAlreadyRegistered($tld): bool
     {
         $tld = $this->di['db']->findOne('Tld', 'tld = :tld ORDER by id ASC', [':tld' => $tld]);
 
         return $tld instanceof \Model_Tld;
     }
 
-    public function tldRm(\Model_Tld $model)
+    public function tldRm(\Model_Tld $model): bool
     {
         $id = $model->id;
         $this->di['db']->trash($model);
@@ -871,7 +855,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function tldToApiArray(\Model_Tld $model)
+    public function tldToApiArray(\Model_Tld $model): array
     {
         $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
 
@@ -905,7 +889,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->findOne('Tld', 'id = :id ORDER by id ASC', [':id' => $id]);
     }
 
-    public function registrarGetSearchQuery($data)
+    public function registrarGetSearchQuery($data): array
     {
         $query = 'SELECT * FROM tld_registrar ORDER BY name ASC';
         $bindings = [];
@@ -960,7 +944,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return call_user_func([$class, 'getConfig']);
     }
 
-    private function registrarGetRegistrarAdapterClassName(\Model_TldRegistrar $model)
+    private function registrarGetRegistrarAdapterClassName(\Model_TldRegistrar $model): string
     {
         if (!$this->filesystem->exists(Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', "{$model->registrar}.php"))) {
             throw new \FOSSBilling\Exception('Domain registrar :adapter was not found', [':adapter' => $model->registrar]);
@@ -996,7 +980,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $registrar;
     }
 
-    public function registrarCreate($code)
+    public function registrarCreate($code): bool
     {
         $model = $this->di['db']->dispense('TldRegistrar');
         $model->name = $code;
@@ -1024,7 +1008,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $id;
     }
 
-    public function registrarUpdate(\Model_TldRegistrar $model, $data)
+    public function registrarUpdate(\Model_TldRegistrar $model, $data): bool
     {
         $model->name = $data['title'] ?? $model->name;
         $model->test_mode = $data['test_mode'] ?? $model->test_mode;
@@ -1039,7 +1023,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function registrarRm(\Model_TldRegistrar $model)
+    public function registrarRm(\Model_TldRegistrar $model): bool
     {
         $domains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = :registrar_id', [':registrar_id' => $model->id]);
         $count = is_countable($domains) ? count($domains) : 0;
@@ -1057,7 +1041,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function registrarToApiArray(\Model_TldRegistrar $model)
+    public function registrarToApiArray(\Model_TldRegistrar $model): array
     {
         $c = $this->registrarGetRegistrarAdapterConfig($model);
 
@@ -1071,7 +1055,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function updateDomain(\Model_ServiceDomain $s, $data)
+    public function updateDomain(\Model_ServiceDomain $s, $data): bool
     {
         $s->ns1 = $data['ns1'] ?? $s->ns1;
         $s->ns2 = $data['ns2'] ?? $s->ns2;

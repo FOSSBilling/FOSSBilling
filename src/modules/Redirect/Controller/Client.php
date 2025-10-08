@@ -25,7 +25,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->get('/me', 'get_profile', [], '\\' . \Box\Mod\Client\Controller\Client::class);
         $app->get('/balance', 'get_balance', [], '\\' . \Box\Mod\Client\Controller\Client::class);

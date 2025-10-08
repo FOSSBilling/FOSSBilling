@@ -23,7 +23,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public static function dataForSearchQuery()
+    public static function dataForSearchQuery(): array
     {
         return [
             [[], 'FROM invoice p', []],
@@ -133,7 +133,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('dataForSearchQuery')]
-    public function testgetSearchQuery($data, $expectedStr, $expectedParams): void
+    public function testgetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -142,7 +142,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertTrue(str_contains($result[0], (string) $expectedStr), $result[0]);
+        $this->assertTrue(str_contains($result[0], $expectedStr), $result[0]);
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == []);
     }
 

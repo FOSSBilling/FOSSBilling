@@ -50,7 +50,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public static function getConfig()
+    public static function getConfig(): array
     {
         return [
             'supports_one_time_payments' => true,
@@ -87,7 +87,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function getHtml($api_admin, $invoice_id, $subscription)
+    public function getHtml($api_admin, $invoice_id, $subscription): string
     {
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
 
@@ -118,7 +118,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $title;
     }
 
-    public function logError($e, Model_Transaction $tx)
+    public function logError($e, Model_Transaction $tx): void
     {
         $body = $e->getJsonBody();
         $err = $body['error'];
@@ -135,7 +135,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         throw new Exception($tx->error);
     }
 
-    public function processTransaction($api_admin, $id, $data, $gateway_id)
+    public function processTransaction($api_admin, $id, $data, $gateway_id): void
     {
         $tx = $this->di['db']->getExistingModelById('Transaction', $id);
 

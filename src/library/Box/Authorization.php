@@ -17,12 +17,12 @@ class Box_Authorization
         $this->session = $di['session'];
     }
 
-    public function isClientLoggedIn()
+    public function isClientLoggedIn(): bool
     {
         return (bool) $this->session->get('client_id');
     }
 
-    public function isAdminLoggedIn()
+    public function isAdminLoggedIn(): bool
     {
         return (bool) $this->session->get('admin');
     }

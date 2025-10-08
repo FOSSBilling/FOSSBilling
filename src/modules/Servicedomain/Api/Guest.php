@@ -77,7 +77,7 @@ class Guest extends \Api_Abstract
      *
      * @return true
      */
-    public function check($data)
+    public function check($data): bool
     {
         $required = [
             'tld' => 'TLD is missing',
@@ -109,7 +109,7 @@ class Guest extends \Api_Abstract
      *
      * @return true
      */
-    public function can_be_transferred($data)
+    public function can_be_transferred($data): bool
     {
         $required = [
             'tld' => 'TLD is missing',

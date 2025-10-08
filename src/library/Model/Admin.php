@@ -22,7 +22,7 @@ class Model_Admin extends RedBeanPHP\SimpleModel
         return $this->name;
     }
 
-    public function getStatus($status = '')
+    public function getStatus($status = ''): string
     {
         $statusArray = [
             self::STATUS_ACTIVE,

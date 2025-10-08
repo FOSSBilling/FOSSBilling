@@ -22,7 +22,7 @@ class Model_ApiRequestTable implements FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function logRequest($request, $ip)
+    public function logRequest($request, $ip): void
     {
         $r = $this->di['db']->dispense('ApiRequest');
         $r->ip = $ip;

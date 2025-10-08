@@ -9,7 +9,7 @@ abstract class BBDbApiTestCase extends BBDatabaseTestCase
     protected $api_admin;
     protected $api_system;
 
-    public function setBoxUpdateMock()
+    public function setBoxUpdateMock(): void
     {
         $updatedMock = $this->getMockBuilder('Box_Update')
             ->onlyMethods(['isUpdateAvailable', 'getLatestVersion', 'performUpdate'])

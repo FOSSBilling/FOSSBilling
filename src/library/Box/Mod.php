@@ -121,7 +121,7 @@ class Box_Mod
         return $this->filesystem->exists(Path::join($this->_getModPath(), $filename));
     }
 
-    public function getService($sub = '')
+    public function getService($sub = ''): object
     {
         if (!$this->hasService($sub)) {
             throw new FOSSBilling\Exception('Module :mod does not have service class', [':mod' => $this->mod], 5898);
@@ -140,7 +140,7 @@ class Box_Mod
         return $this->filesystem->exists(Path::join($this->_getModPath(), 'Controller', 'Client.php'));
     }
 
-    public function getClientController()
+    public function getClientController(): object
     {
         if (!$this->hasClientController()) {
             throw new FOSSBilling\Exception('Module :mod Client controller class was not found', [':mod' => $this->mod]);
@@ -165,7 +165,7 @@ class Box_Mod
         return $this->filesystem->exists(Path::join($this->_getModPath(), 'Controller', 'Admin.php'));
     }
 
-    public function getAdminController()
+    public function getAdminController(): ?object
     {
         if (!$this->hasAdminController()) {
             return null;
@@ -179,7 +179,7 @@ class Box_Mod
         return $service;
     }
 
-    public function install()
+    public function install(): bool
     {
         if ($this->isCore()) {
             return true;
@@ -197,7 +197,7 @@ class Box_Mod
         return false;
     }
 
-    public function uninstall()
+    public function uninstall(): bool
     {
         if ($this->isCore()) {
             return true;
@@ -215,7 +215,7 @@ class Box_Mod
         return false;
     }
 
-    public function update()
+    public function update(): bool
     {
         if ($this->isCore()) {
             throw new FOSSBilling\InformationException('Core modules cannot be updated');
@@ -234,12 +234,12 @@ class Box_Mod
         return false;
     }
 
-    public function getCoreModules()
+    public function getCoreModules(): array
     {
         return $this->core;
     }
 
-    public function isCore()
+    public function isCore(): bool
     {
         return in_array($this->mod, $this->core);
     }
@@ -259,12 +259,12 @@ class Box_Mod
         return $config;
     }
 
-    public function getName()
+    public function getName(): ?string
     {
         return $this->mod;
     }
 
-    public function registerClientRoutes(Box_App &$app)
+    public function registerClientRoutes(Box_App &$app): bool
     {
         if ($this->hasClientController()) {
             $cc = $this->getClientController();
@@ -278,7 +278,7 @@ class Box_Mod
         return false;
     }
 
-    private function _getModPath()
+    private function _getModPath(): string
     {
         return Path::join(PATH_MODS, ucfirst((string) $this->mod));
     }

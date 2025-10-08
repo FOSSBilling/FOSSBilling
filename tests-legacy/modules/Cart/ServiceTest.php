@@ -71,7 +71,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result->session_id, $session_id);
     }
 
-    public static function getSessionCartDoesNotExistProvider()
+    public static function getSessionCartDoesNotExistProvider(): array
     {
         $self = new ServiceTest('ServiceTest');
 
@@ -90,7 +90,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getSessionCartDoesNotExistProvider')]
-    public function testGetSessionCartDoesNotExist($sessionGetWillReturn, $getCurrencyByClientIdExpects, $getDefaultExpects): void
+    public function testGetSessionCartDoesNotExist(?int $sessionGetWillReturn, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $getCurrencyByClientIdExpects, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $getDefaultExpects): void
     {
         $service = new \Box\Mod\Cart\Service();
 
@@ -558,7 +558,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public static function promoCanBeAppliedProvider()
+    public static function promoCanBeAppliedProvider(): array
     {
         $promo1 = new \Model_Promo();
         $promo1->loadBean(new \DummyBean());
@@ -603,7 +603,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('promoCanBeAppliedProvider')]
-    public function testPromoCanBeApplied($promo, $expectedResult): void
+    public function testPromoCanBeApplied(\Model_Promo $promo, bool $expectedResult): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
@@ -1238,7 +1238,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($discountSetup, $result[1]);
     }
 
-    public static function isPromoAvailableForClientGroupProvider()
+    public static function isPromoAvailableForClientGroupProvider(): array
     {
         $promo1 = new \Model_Promo();
         $promo1->loadBean(new \DummyBean());
@@ -1294,7 +1294,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('isPromoAvailableForClientGroupProvider')]
-    public function testIsPromoAvailableForClientGroup(\Model_Promo $promo, $client, $expectedResult): void
+    public function testIsPromoAvailableForClientGroup(\Model_Promo $promo, ?\Model_Client $client, bool $expectedResult): void
     {
         $di = new \Pimple\Container();
         $di['loggedin_client'] = $client;

@@ -201,7 +201,7 @@ class SentryHelper
         \Sentry\init($options);
     }
 
-    private static function extractName(string $exceptionPath, string $path)
+    private static function extractName(string $exceptionPath, string $path): string
     {
         $strippedPath = str_replace($path, '', $exceptionPath);
         $level = 0;
@@ -219,7 +219,7 @@ class SentryHelper
         return $name;
     }
 
-    private static function getLibrary(string $exceptionPath)
+    private static function getLibrary(string $exceptionPath): string
     {
         return Path::getFilenameWithoutExtension($exceptionPath);
     }

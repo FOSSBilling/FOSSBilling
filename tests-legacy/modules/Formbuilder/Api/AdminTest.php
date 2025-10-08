@@ -379,7 +379,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function form_settings_data()
+    public static function form_settings_data(): array
     {
         return [
             ['form_id', 'Form id was not passed', 1654],
@@ -390,7 +390,7 @@ class AdminTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('form_settings_data')]
-    public function testupdateFormSettingsExceptions($missingField, $exceptionMessage, $exceptionCode): void
+    public function testupdateFormSettingsExceptions(string $missingField, string $exceptionMessage, int $exceptionCode): void
     {
         $data = [
             'form_id' => 1,

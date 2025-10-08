@@ -43,7 +43,7 @@ class PhpConsole
         $this->initClient();
     }
 
-    public static function start($handleErrors = true, $handleExceptions = true, $sourceBasePath = null)
+    public static function start($handleErrors = true, $handleExceptions = true, $sourceBasePath = null): void
     {
         if (self::$instance) {
             exit('PhpConsole already started');
@@ -109,7 +109,7 @@ class PhpConsole
         }
     }
 
-    protected static function isEnabledOnClient()
+    protected static function isEnabledOnClient(): bool
     {
         return isset($_COOKIE[self::clientProtocolCookie]) && $_COOKIE[self::clientProtocolCookie] == self::serverProtocol;
     }
@@ -148,7 +148,10 @@ class PhpConsole
         }
     }
 
-    protected function convertTraceToArray($traceData, $eventFile = null, $eventLine = null)
+    /**
+     * @return mixed[]
+     */
+    protected function convertTraceToArray($traceData, $eventFile = null, $eventLine = null): array
     {
         $trace = [];
         foreach ($traceData as $call) {
@@ -198,7 +201,7 @@ class PhpConsole
         return substr(number_format(microtime(1), 3, '', ''), -6) + self::$index++;
     }
 
-    public static function flushMessagesBuffer()
+    public static function flushMessagesBuffer(): void
     {
         if (self::$messagesBuffer) {
             self::sendMessages(self::$messagesBuffer);
@@ -254,7 +257,7 @@ class PhpConsole
         register_shutdown_function([$this, 'checkFatalError']);
     }
 
-    public function checkFatalError()
+    public function checkFatalError(): void
     {
         $error = error_get_last();
         if ($error) {
@@ -262,7 +265,7 @@ class PhpConsole
         }
     }
 
-    public function handleError($code = null, $message = null, $file = null, $line = null)
+    public function handleError($code = null, $message = null, $file = null, $line = null): void
     {
         if (error_reporting() == 0) { // if error has been supressed with an @
             return;
@@ -297,7 +300,7 @@ class PhpConsole
         $this->oldExceptionsHandler = set_exception_handler($this->handleException(...));
     }
 
-    public function handleException(Throwable $exception)
+    public function handleException(Throwable $exception): void
     {
         $event = new PhpConsoleEvent();
         $event->message = $exception->getMessage();
@@ -319,7 +322,7 @@ class PhpConsole
     DEBUG
      **************************************************************/
 
-    public static function debug($message, $tags = 'debug')
+    public static function debug($message, $tags = 'debug'): void
     {
         if (self::$instance) {
             $event = new PhpConsoleEvent();

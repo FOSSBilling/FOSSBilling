@@ -298,7 +298,7 @@ class Box_App
                     $apiController = new Box\Mod\Api\Controller\Client();
                     $apiController->setDi($this->di);
 
-                    return $apiController->renderJson(null, $exc);
+                    return (string) $apiController->renderJson(null, $exc);
                 } else {
                     return $this->render('mod_system_maintenance');
                 }

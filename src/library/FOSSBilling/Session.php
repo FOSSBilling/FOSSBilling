@@ -29,7 +29,7 @@ class Session implements InjectionAwareInterface
     {
     }
 
-    public function setupSession()
+    public function setupSession(): void
     {
         if (Environment::isCLI()) {
             return;

@@ -185,10 +185,8 @@ class Admin extends \Api_Abstract
      * time defined in helpdesk.
      *
      * Run by cron job
-     *
-     * @return bool
      */
-    public function batch_ticket_auto_close($data)
+    public function batch_ticket_auto_close($data): bool
     {
         // Auto close support tickets
         $expiredArr = $this->getService()->getExpired();
@@ -208,10 +206,8 @@ class Admin extends \Api_Abstract
      * time defined in helpdesk.
      *
      * Run by cron job
-     *
-     * @return bool
      */
-    public function batch_public_ticket_auto_close($data)
+    public function batch_public_ticket_auto_close($data): bool
     {
         // Auto close public tickets
         $expired = $this->getService()->publicGetExpired();
@@ -758,10 +754,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes tickets with given IDs.
-     *
-     * @return bool
      */
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         $required = [
             'ids' => 'IDs not passed',
@@ -777,10 +771,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes tickets with given IDs.
-     *
-     * @return bool
      */
-    public function batch_delete_public($data)
+    public function batch_delete_public($data): bool
     {
         $required = [
             'ids' => 'IDs not passed',
@@ -895,10 +887,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete knowledge base article.
-     *
-     * @return bool
      */
-    public function kb_article_delete($data)
+    public function kb_article_delete($data): bool
     {
         $required = [
             'id' => 'Article ID not passed',

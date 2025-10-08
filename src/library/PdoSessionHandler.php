@@ -203,7 +203,7 @@ class PdoSessionHandler implements SessionHandlerInterface
      *
      * @return bool true
      */
-    private function createNewSession($id, $data = '')
+    private function createNewSession($id, $data = ''): bool
     {
         // get table/column
         $dbTable = $this->dbOptions['db_table'];
@@ -226,10 +226,8 @@ class PdoSessionHandler implements SessionHandlerInterface
 
     /**
      * Return a PDO instance.
-     *
-     * @return PDO
      */
-    protected function getConnection()
+    protected function getConnection(): \PDO
     {
         return $this->pdo;
     }

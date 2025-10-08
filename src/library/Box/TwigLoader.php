@@ -14,7 +14,7 @@ use Symfony\Component\Filesystem\Path;
 
 class Box_TwigLoader extends Twig\Loader\FilesystemLoader
 {
-    protected $options = [];
+    protected array $options;
     private readonly Filesystem $filesystem;
 
     /**

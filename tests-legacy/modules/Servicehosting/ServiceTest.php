@@ -22,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public static function validateOrdertDataProvider()
+    public static function validateOrdertDataProvider(): array
     {
         return [
             ['server_id', 'Hosting product is not configured completely. Configure server for hosting product.', 701],
@@ -33,7 +33,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('validateOrdertDataProvider')]
-    public function testvalidateOrderData($field, $exceptionMessage, $excCode): void
+    public function testvalidateOrderData(string $field, string $exceptionMessage, int $excCode): void
     {
         $data = [
             'server_id' => 1,

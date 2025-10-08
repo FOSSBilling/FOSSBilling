@@ -340,7 +340,7 @@ class Service implements InjectionAwareInterface
         return $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
     }
 
-    private function _getDateInterval($data)
+    private function _getDateInterval($data): array
     {
         $time_from = strtotime('-1 month');
         $time_to = strtotime('+1 day');

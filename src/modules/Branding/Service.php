@@ -32,7 +32,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function uninstall()
+    public function uninstall(): bool
     {
         return true;
     }
