@@ -27,7 +27,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function markAsPaid(\Model_InvoiceItem $item, $charge = true)
+    public function markAsPaid(\Model_InvoiceItem $item, $charge = true): void
     {
         if ($charge && !$item->charged) {
             $this->creditInvoiceItem($item);
@@ -122,7 +122,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
     }
 
-    public function addNew(\Model_Invoice $proforma, array $data)
+    public function addNew(\Model_Invoice $proforma, array $data): int
     {
         $title = $data['title'] ?? '';
         if (empty($title)) {
@@ -159,7 +159,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return (int) $itemId;
     }
 
-    public function getTotal(\Model_InvoiceItem $item)
+    public function getTotal(\Model_InvoiceItem $item): float
     {
         return floatval($item->price * $item->quantity);
     }
@@ -178,7 +178,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return round($item->price * $rate / 100, 2);
     }
 
-    public function update(\Model_InvoiceItem $item, array $data)
+    public function update(\Model_InvoiceItem $item, array $data): void
     {
         $item->title = $data['title'] ?? $item->title;
         $item->price = $data['price'] ?? $item->price;
@@ -199,7 +199,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $this->di['db']->store($item);
     }
 
-    public function remove(\Model_InvoiceItem $model)
+    public function remove(\Model_InvoiceItem $model): bool
     {
         $id = $model->id;
         $this->di['db']->trash($model);
@@ -208,7 +208,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return true;
     }
 
-    public function generateForAddFunds(\Model_Invoice $proforma, $amount)
+    public function generateForAddFunds(\Model_Invoice $proforma, $amount): void
     {
         $pi = $this->di['db']->dispense('InvoiceItem');
         $pi->invoice_id = $proforma->id;
@@ -228,7 +228,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $this->di['db']->store($pi);
     }
 
-    public function creditInvoiceItem(\Model_InvoiceItem $item)
+    public function creditInvoiceItem(\Model_InvoiceItem $item): void
     {
         $total = $this->getTotalWithTax($item);
 
@@ -249,12 +249,12 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $invoiceService->addNote($invoice, sprintf('Charged clients balance with %s %s for %s', $total, $invoice->currency, $item->title));
     }
 
-    public function getTotalWithTax(\Model_InvoiceItem $item)
+    public function getTotalWithTax(\Model_InvoiceItem $item): float
     {
         return $this->getTotal($item) + $this->getTax($item) * $item->quantity;
     }
 
-    public function getOrderId(\Model_InvoiceItem $item)
+    public function getOrderId(\Model_InvoiceItem $item): int
     {
         if ($item->type == \Model_InvoiceItem::TYPE_ORDER) {
             return (int) $item->rel_id;
@@ -270,7 +270,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $this->di['db']->store($item);
     }
 
-    public function generateFromOrder(\Model_Invoice $proforma, \Model_ClientOrder $order, $task, $price)
+    public function generateFromOrder(\Model_Invoice $proforma, \Model_ClientOrder $order, $task, $price): void
     {
         $corderService = $this->di['mod_service']('Order');
 

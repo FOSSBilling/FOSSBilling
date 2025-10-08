@@ -263,10 +263,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return void
-     */
-    public function action_delete(\Model_ClientOrder $order)
+    public function action_delete(\Model_ClientOrder $order): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
@@ -279,7 +276,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function changeAccountPlan(\Model_ClientOrder $order, \Model_ServiceHosting $model, \Model_ServiceHostingHp $hp)
+    public function changeAccountPlan(\Model_ClientOrder $order, \Model_ServiceHosting $model, \Model_ServiceHostingHp $hp): bool
     {
         $model->service_hosting_hp_id = $hp->id;
         if ($this->_performOnService($order)) {
@@ -295,7 +292,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
+    public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data): bool
     {
         if (!isset($data['username']) || empty($data['username'])) {
             throw new InformationException('Account username is missing or is invalid');
@@ -317,7 +314,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
+    public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data): bool
     {
         if (!isset($data['ip']) || empty($data['ip'])) {
             throw new InformationException('Account IP address is missing or is invalid');
@@ -338,7 +335,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeAccountDomain(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
+    public function changeAccountDomain(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data): bool
     {
         if (
             !isset($data['tld']) || empty($data['tld'])
@@ -364,7 +361,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeAccountPassword(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
+    public function changeAccountPassword(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data): bool
     {
         if (
             !isset($data['password']) || !isset($data['password_confirm'])
@@ -388,7 +385,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function sync(\Model_ClientOrder $order, \Model_ServiceHosting $model)
+    public function sync(\Model_ClientOrder $order, \Model_ServiceHosting $model): bool
     {
         [$adapter, $account] = $this->_getAM($model);
         $updated = $adapter->synchronizeAccount($account);
@@ -499,7 +496,7 @@ class Service implements InjectionAwareInterface
         return [$adapter, $server_account];
     }
 
-    public function toApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null): array
     {
         $serviceHostingServerModel = $this->di['db']->load('ServiceHostingServer', $model->service_hosting_server_id);
         $serviceHostingHpModel = $this->di['db']->load('ServiceHostingHp', $model->service_hosting_hp_id);
@@ -977,7 +974,7 @@ class Service implements InjectionAwareInterface
         return $newId;
     }
 
-    public function getServerPackage(\Model_ServiceHostingHp $model)
+    public function getServerPackage(\Model_ServiceHostingHp $model): \Server_Package
     {
         $config = json_decode($model->config ?? '', true);
         if (!is_array($config)) {

@@ -32,12 +32,12 @@ class Client implements \FOSSBilling\InjectionAwareInterface
      *
      * @param \Box_App $app - returned by reference
      */
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->get('/embed/:what', 'get_object', ['what' => '[a-z0-9-]+'], static::class);
     }
 
-    public function get_object(\Box_App $app, $what)
+    public function get_object(\Box_App $app, $what): string
     {
         $tpl = 'mod_embed_' . $what;
 

@@ -23,7 +23,7 @@ return RectorConfig::configure()
         DoctrineSetList::DOCTRINE_CODE_QUALITY,
         PHPUnitSetList::PHPUNIT_110,
     ])
-    ->withTypeCoverageLevel(5)
-    ->withDeadCodeLevel(25)
+    ->withTypeCoverageLevel(30)
+    ->withDeadCodeLevel(30)
     ->withCache('./cache/rector', FileCacheStorage::class)
     ->withParallel(120, 8, 10);

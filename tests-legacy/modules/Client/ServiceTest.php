@@ -181,7 +181,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function searchQueryData()
+    public static function searchQueryData(): array
     {
         return [
             [[], 'SELECT c.*', []],
@@ -249,14 +249,14 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery($data, $expectedStr, $expectedParams): void
+    public function testgetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $clientService = new \Box\Mod\Client\Service();
         $result = $clientService->getSearchQuery($data);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertTrue(str_contains($result[0], (string) $expectedStr), $result[0]);
+        $this->assertTrue(str_contains($result[0], $expectedStr), $result[0]);
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == []);
     }
 
@@ -447,7 +447,7 @@ class ServiceTest extends \BBTestCase
     }
     */
 
-    public static function searchBalanceQueryData()
+    public static function searchBalanceQueryData(): array
     {
         return [
             [[], 'FROM client_balance as m', []],
@@ -475,7 +475,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchBalanceQueryData')]
-    public function testgetBalanceSearchQuery($data, $expectedStr, $expectedParams): void
+    public function testgetBalanceSearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -486,7 +486,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($sql);
         $this->assertIsArray($params);
 
-        $this->assertTrue(str_contains($sql, (string) $expectedStr), $sql);
+        $this->assertTrue(str_contains($sql, $expectedStr), $sql);
         $this->assertTrue(array_diff_key($params, $expectedParams) == []);
     }
 
@@ -580,7 +580,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public static function searchHistoryQueryData()
+    public static function searchHistoryQueryData(): array
     {
         return [
             [[], 'SELECT ach.*, c.first_name, c.last_name, c.email', []],
@@ -601,7 +601,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchHistoryQueryData')]
-    public function testgetHistorySearchQuery($data, $expectedStr, $expectedParams): void
+    public function testgetHistorySearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $clientService = new \Box\Mod\Client\Service();
         $di = new \Pimple\Container();
@@ -612,7 +612,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($sql);
         $this->assertIsArray($params);
 
-        $this->assertTrue(str_contains($sql, (string) $expectedStr), $sql);
+        $this->assertTrue(str_contains($sql, $expectedStr), $sql);
         $this->assertTrue(array_diff_key($params, $expectedParams) == []);
     }
 
@@ -691,7 +691,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Client', $result);
     }
 
-    public static function getProvider()
+    public static function getProvider(): array
     {
         return [
             ['id', 1],
@@ -700,7 +700,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getProvider')]
-    public function testget($fieldName, $fieldValue): void
+    public function testget(string $fieldName, int|string $fieldValue): void
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -788,7 +788,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public static function isClientTaxableProvider()
+    public static function isClientTaxableProvider(): array
     {
         $self = new ServiceTest('ServiceTest');
         $self->assertTrue(true);
@@ -813,7 +813,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('isClientTaxableProvider')]
-    public function testIsClientTaxable($getParamValueReturn, $tax_exempt, $expected): void
+    public function testIsClientTaxable(bool $getParamValueReturn, bool $tax_exempt, bool $expected): void
     {
         $service = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $service->expects($this->atLeastOnce())

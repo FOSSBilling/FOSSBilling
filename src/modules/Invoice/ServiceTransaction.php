@@ -500,7 +500,7 @@ class ServiceTransaction implements InjectionAwareInterface
     /**
      * Compute SHA-256 hash of normalized IPN payload.
      */
-    private function ipnHash($ipn)
+    private function ipnHash($ipn): ?string
     {
         $norm = $this->normalizeIpn($ipn);
         if (empty($norm)) {

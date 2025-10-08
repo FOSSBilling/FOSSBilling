@@ -190,7 +190,7 @@ class ServiceTransactionTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public static function searchQueryData()
+    public static function searchQueryData(): array
     {
         return [
             [
@@ -233,7 +233,7 @@ class ServiceTransactionTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery($data, $expectedParams, $expectedStringPart): void
+    public function testgetSearchQuery(array $data, array $expectedParams, string $expectedStringPart): void
     {
         $di = new \Pimple\Container();
 
@@ -242,7 +242,7 @@ class ServiceTransactionTest extends \BBTestCase
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertTrue(str_contains($result[0], (string) $expectedStringPart));
+        $this->assertTrue(str_contains($result[0], $expectedStringPart));
         $this->assertEquals($expectedParams, $result[1]);
     }
 
@@ -378,7 +378,7 @@ class ServiceTransactionTest extends \BBTestCase
         $serviceMock->preProcessTransaction($transactionModel);
     }
 
-    public static function paymentsAdapterProvider_withprocessTransaction()
+    public static function paymentsAdapterProvider_withprocessTransaction(): array
     {
         return [
             ['\Payment_Adapter_PayPalEmail'],
@@ -386,7 +386,7 @@ class ServiceTransactionTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('paymentsAdapterProvider_withprocessTransaction')]
-    public function testprocessTransactionSupportProcessTransaction($adapter): void
+    public function testprocessTransactionSupportProcessTransaction(string $adapter): void
     {
         $id = 1;
         $transactionModel = new \Model_Transaction();
@@ -423,7 +423,7 @@ class ServiceTransactionTest extends \BBTestCase
         $this->service->processTransaction($id);
     }
 
-    public function getReceived()
+    public function getReceived(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . ServiceTransaction::class)
             ->onlyMethods(['getSearchQuery'])

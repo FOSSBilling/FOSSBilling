@@ -32,10 +32,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete custom page.
-     *
-     * @return bool
      */
-    public function delete($data)
+    public function delete($data): bool
     {
         $required = [
             'id' => 'Custom Page ID not passed',
@@ -49,10 +47,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete custom pages.
-     *
-     * @return bool
      */
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         $required = [
             'ids' => 'Custom Page IDs not passed',

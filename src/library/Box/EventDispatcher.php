@@ -18,7 +18,7 @@ class Box_EventDispatcher
      * @param string $name     An event name
      * @param mixed  $listener A PHP callable
      */
-    public function connect($name, mixed $listener)
+    public function connect($name, mixed $listener): void
     {
         if (!isset($this->listeners[$name])) {
             $this->listeners[$name] = [];
@@ -69,7 +69,7 @@ class Box_EventDispatcher
      *
      * @return bool true if some listeners are connected, false otherwise
      */
-    public function hasListeners($name)
+    public function hasListeners($name): bool
     {
         if (!isset($this->listeners[$name])) {
             $this->listeners[$name] = [];

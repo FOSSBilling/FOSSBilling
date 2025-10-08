@@ -43,7 +43,7 @@ class Client implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->post('/api/:role/:class/:method', 'post_method', ['role', 'class', 'method'], static::class);
         $app->get('/api/:role/:class/:method', 'get_method', ['role', 'class', 'method'], static::class);
@@ -85,7 +85,7 @@ class Client implements InjectionAwareInterface
     /**
      * @param string $call
      */
-    private function tryCall($role, $call, $p)
+    private function tryCall($role, $call, $p): void
     {
         try {
             $this->_apiCall($role, $call, $p);
@@ -96,14 +96,14 @@ class Client implements InjectionAwareInterface
         }
     }
 
-    private function _loadConfig()
+    private function _loadConfig(): void
     {
         if (is_null($this->_api_config)) {
             $this->_api_config = Config::getProperty('api', []);
         }
     }
 
-    private function checkRateLimit($method = null)
+    private function checkRateLimit($method = null): bool
     {
         if (in_array($this->_getIp(), $this->_api_config['rate_limit_whitelist'])) {
             return true;
@@ -133,7 +133,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function checkHttpReferer()
+    private function checkHttpReferer(): bool
     {
         // snake oil: check request is from the same domain as FOSSBilling is installed if present
         $check_referer_header = isset($this->_api_config['require_referrer_header']) && (bool) $this->_api_config['require_referrer_header'];
@@ -148,7 +148,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function checkAllowedIps()
+    private function checkAllowedIps(): bool
     {
         $ips = $this->_api_config['allowed_ips'];
         if (!empty($ips) && !in_array($this->_getIp(), $ips)) {
@@ -158,7 +158,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function isRoleLoggedIn($role)
+    private function isRoleLoggedIn($role): bool
     {
         if ($role == 'client') {
             $this->di['is_client_logged'];
@@ -197,7 +197,7 @@ class Client implements InjectionAwareInterface
         return $this->renderJson($result);
     }
 
-    private function getAuth()
+    private function getAuth(): array
     {
         if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
             $auth_params = explode(':', base64_decode(substr((string) $_SERVER['HTTP_AUTHORIZATION'], 6)));
@@ -221,7 +221,7 @@ class Client implements InjectionAwareInterface
         return [$_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']];
     }
 
-    private function _tryTokenLogin()
+    private function _tryTokenLogin(): void
     {
         [$username, $password] = $this->getAuth();
 
@@ -261,7 +261,7 @@ class Client implements InjectionAwareInterface
      *
      * @throws \FOSSBilling\Exception
      */
-    private function isRoleAllowed($role)
+    private function isRoleAllowed($role): bool
     {
         $allowed = ['guest', 'client', 'admin'];
         if (!in_array($role, $allowed)) {
@@ -271,7 +271,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    public function renderJson($data = null, ?\Exception $e = null)
+    public function renderJson($data = null, ?\Exception $e = null): void
     {
         // do not emit response if headers already sent
         if (headers_sent()) {

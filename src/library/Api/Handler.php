@@ -13,7 +13,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 final class Api_Handler implements InjectionAwareInterface
 {
-    protected $type;
+    protected string|array $type;
     protected $ip;
     protected ?Pimple\Container $di = null;
 

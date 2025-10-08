@@ -16,7 +16,7 @@ class Box_Database implements InjectionAwareInterface
     protected ?Pimple\Container $di = null;
     protected $orm;
 
-    public function setDataMapper($orm)
+    public function setDataMapper($orm): void
     {
         $this->orm = $orm;
     }

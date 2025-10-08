@@ -100,10 +100,8 @@ class Client extends \Api_Abstract
 
     /**
      * Add new conversation message to ticket. Ticket will be reopened if closed.
-     *
-     * @return bool
      */
-    public function ticket_reply($data)
+    public function ticket_reply($data): bool
     {
         $required = [
             'id' => 'Ticket ID required',

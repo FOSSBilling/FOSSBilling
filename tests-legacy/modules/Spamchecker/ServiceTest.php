@@ -109,7 +109,7 @@ class ServiceTest extends \BBTestCase
         $this->service->isBlockedIp($boxEventMock);
     }
 
-    public function dataProviderSpamResponses()
+    public function dataProviderSpamResponses(): array
     {
         return [
             [

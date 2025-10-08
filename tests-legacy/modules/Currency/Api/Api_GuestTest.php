@@ -27,7 +27,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertArrayHasKey('USD', $result);
     }
 
-    public static function getProvider()
+    public static function getProvider(): array
     {
         $self = new Api_GuestTest('Api_GuestTest');
 
@@ -52,7 +52,7 @@ class Api_GuestTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getProvider')]
-    public function testGet($data, $model, $expectsGetByCode, $expectsGetDefault): void
+    public function testGet(array $data, \Model_Currency $model, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $expectsGetByCode, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $expectsGetDefault): void
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
 
@@ -112,7 +112,7 @@ class Api_GuestTest extends \BBTestCase
         $result = $guestApi->get([]); // Expecting \FOSSBilling\Exception
     }
 
-    public static function formatPriceFormatProvider()
+    public static function formatPriceFormatProvider(): array
     {
         return [
             [
@@ -139,7 +139,7 @@ class Api_GuestTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('formatPriceFormatProvider')]
-    public function testFormatPriceFormat($price_format, $expectedResult): void
+    public function testFormatPriceFormat(int $price_format, string $expectedResult): void
     {
         $willReturn = [
             'code' => 'EUR',
@@ -171,7 +171,7 @@ class Api_GuestTest extends \BBTestCase
         $this->assertEquals($result, $expectedResult);
     }
 
-    public static function formatProvider()
+    public static function formatProvider(): array
     {
         return [
             [
@@ -200,7 +200,7 @@ class Api_GuestTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('formatProvider')]
-    public function testFormat($data, $expectedResult): void
+    public function testFormat(array $data, string $expectedResult): void
     {
         $willReturn = [
             'code' => 'EUR',

@@ -174,7 +174,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function deactivate($data)
+    public function deactivate($data): bool
     {
         $ext = $this->_getExtension($data);
 
@@ -192,10 +192,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Completely remove extension from FOSSBilling.
-     *
-     * @return bool
      */
-    public function uninstall($data)
+    public function uninstall($data): bool
     {
         $ext = $this->_getExtension($data);
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminUninstallExtension', 'params' => ['id' => $ext->id]]);
@@ -211,11 +209,10 @@ class Admin extends \Api_Abstract
     /**
      * Install new extension from extensions site.
      *
-     * @return array
      *
      * @throws \FOSSBilling\Exception
      */
-    public function install($data)
+    public function install($data): array
     {
         $required = [
             'id' => 'Extension ID was not passed',

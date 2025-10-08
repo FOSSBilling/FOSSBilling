@@ -640,7 +640,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newPromoId, $result);
     }
 
-    public function promo_getMissingId()
+    public function promo_getMissingId(): void
     {
         $data = [];
 

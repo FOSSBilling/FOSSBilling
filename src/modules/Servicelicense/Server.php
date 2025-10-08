@@ -49,7 +49,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         return $_SERVER[$key] ?? $default;
     }
 
-    public function process($data)
+    public function process($data): array
     {
         $data = is_array($data) ? $data : (json_decode($data ?? '', true) ?: []);
 

@@ -202,10 +202,8 @@ class Guest extends \Api_Abstract
 
     /**
      * Get current client locale.
-     *
-     * @return string
      */
-    public function locale()
+    public function locale(): string
     {
         return i18n::getActiveLocale();
     }

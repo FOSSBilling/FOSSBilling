@@ -19,10 +19,8 @@ class Guest extends \Api_Abstract
 {
     /**
      * Returns recaptcha configuration info.
-     *
-     * @return array
      */
-    public function recaptcha($data)
+    public function recaptcha($data): array
     {
         $config = $this->di['mod_config']('Spamchecker');
 

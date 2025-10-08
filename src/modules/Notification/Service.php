@@ -27,7 +27,7 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getSearchQuery($filter)
+    public function getSearchQuery($filter): array
     {
         $q = "SELECT *
             FROM extension_meta

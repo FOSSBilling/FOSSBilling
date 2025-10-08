@@ -902,7 +902,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public static function productHasOrdersProvider()
+    public static function productHasOrdersProvider(): array
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -914,7 +914,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('productHasOrdersProvider')]
-    public function testProductHasOrders($order, $expectedResult): void
+    public function testProductHasOrders(?\Model_ClientOrder $order, bool $expectedResult): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1166,7 +1166,7 @@ class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey('client', $result);
     }
 
-    public static function searchQueryData()
+    public static function searchQueryData(): array
     {
         return [
             [[], 'SELECT co.* from client_order co', []],
@@ -1262,7 +1262,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery($data, $expectedStr, $expectedParams): void
+    public function testgetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -1272,7 +1272,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertTrue(str_contains($result[0], (string) $expectedStr), $result[0]);
+        $this->assertTrue(str_contains($result[0], $expectedStr), $result[0]);
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == []);
     }
 
