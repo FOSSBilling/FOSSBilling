@@ -170,10 +170,14 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function getPatchLevel(): ?int
     {
-        $sql = 'SELECT value FROM setting WHERE param = :param';
-        $sqlStatement = $this->di['pdo']->prepare($sql);
-        $sqlStatement->execute(['param' => 'last_patch']);
-        $result = $sqlStatement->fetchColumn();
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('value')
+            ->from('setting')
+            ->where('param = :param')
+            ->setParameter('param', 'last_patch')
+            ->executeQuery();
+        $result = $query->fetchOne();
 
         return intval($result) ?: null;
     }
@@ -185,15 +189,34 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function setPatchLevel(int $patchLevel): void
     {
+        $query = $this->di['dbal']->createQueryBuilder();
+
         if (is_null($this->getPatchLevel())) {
-            $sql = 'INSERT INTO setting (param, value, public, updated_at, created_at) VALUES ("last_patch", :value, 1, :u, :c)';
-            $sqlStatement = $this->di['pdo']->prepare($sql);
-            $sqlStatement->execute(['value' => $patchLevel, 'c' => date('Y-m-d H:i:s'), 'u' => date('Y-m-d H:i:s')]);
+            $query
+                ->insert('setting')
+                ->values([
+                    'param' => ':param',
+                    'value' => ':value',
+                    'public' => '1',
+                    'created_at' => ':created_at',
+                    'updated_at' => ':updated_at',
+                ])
+                ->setParameter('param', 'last_patch')
+                ->setParameter('value', $patchLevel)
+                ->setParameter('created_at', date('Y-m-d H:i:s'))
+                ->setParameter('updated_at', date('Y-m-d H:i:s'));
         } else {
-            $sql = 'UPDATE setting SET value = :value, updated_at = :u WHERE param = :param';
-            $sqlStatement = $this->di['pdo']->prepare($sql);
-            $sqlStatement->execute(['param' => 'last_patch', 'value' => $patchLevel, 'u' => date('Y-m-d H:i:s')]);
+            $query
+                ->update('setting')
+                ->set('value', ':value')
+                ->set('updated_at', ':updated_at')
+                ->where('param = :param')
+                ->setParameter('param', 'last_patch')
+                ->setParameter('value', $patchLevel)
+                ->setParameter('updated_at', date('Y-m-d H:i:s'));
         }
+
+        $query->executeStatement();
     }
 
     /**
@@ -208,16 +231,34 @@ class UpdatePatcher implements InjectionAwareInterface
         $patches = [
             25 => function (): void {
                 // Migrate email templates to be compatible with Twig 3.x.
-                $q = "UPDATE email_template SET content = REPLACE(content, '{% filter markdown %}', '{% apply markdown %}')";
-                $this->executeSql($q);
+                $this->di['dbal']->getQueryBuilder()
+                    ->update('email_template')
+                    ->set('content', 'REPLACE(content, \'{% filter markdown %}\', \'{% apply markdown %}\')')
+                    ->executeStatement();
 
-                $q = "UPDATE email_template SET content = REPLACE(content, '{% endfilter %}', '{% endapply %}')";
-                $this->executeSql($q);
+                $this->di['dbal']->getQueryBuilder()
+                    ->update('email_template')
+                    ->set('content', 'REPLACE(content, \'{% endfilter %}\', \'{% endapply %}\')')
+                    ->executeStatement();
             },
             26 => function (): void {
                 // Migration steps from BoxBilling to FOSSBilling - added favicon settings.
-                $q = "INSERT INTO setting (param, value, public, category, hash, created_at, updated_at) VALUES ('company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
-                $this->executeSql($q);
+                $this->di['dbal']->getQueryBuilder()
+                    ->insert('setting')
+                    ->values([
+                        'param' => ':param',
+                        'value' => ':value',
+                        'public' => '0',
+                        'category' => NULL,
+                        'hash' => NULL,
+                        'created_at' => ':created_at',
+                        'updated_at' => ':updated_at',
+                    ])
+                    ->setParameter('param', 'company_favicon')
+                    ->setParameter('value', 'themes/huraga/assets/favicon.ico')
+                    ->setParameter('created_at', '2023-01-08 12:00:00')
+                    ->setParameter('updated_at', '2023-01-08 12:00:00')
+                    ->executeStatement();
             },
             27 => function (): void {
                 // Migration steps to create table to allow admin users to do password reset.
@@ -227,17 +268,24 @@ class UpdatePatcher implements InjectionAwareInterface
             28 => function (): void {
                 // Patch to remove .html from email templates action code.
                 // @see https://github.com/FOSSBilling/FOSSBilling/issues/863
-                $q = "UPDATE email_template SET action_code = REPLACE(action_code, '.html', '')";
-                $this->executeSql($q);
+                $this->di['dbal']->getQueryBuilder()
+                    ->update('email_template')
+                    ->set('action_code', 'REPLACE(action_code, \'.html\', \'\')')
+                    ->executeStatement();
             },
             29 => function (): void {
                 // Patch to update email templates to use format_date/format_datetime filters
                 // instead of removed bb_date/bb_datetime filters.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/948
-                $q = "UPDATE email_template SET content = REPLACE(content, 'bb_date', 'format_date')";
-                $this->executeSql($q);
-                $q = "UPDATE email_template SET content = REPLACE(content, 'bb_datetime', 'format_datetime')";
-                $this->executeSql($q);
+                $this->di['dbal']->getQueryBuilder()
+                    ->update('email_template')
+                    ->set('content', 'REPLACE(content, \'bb_date\', \'format_date\')')
+                    ->executeStatement();
+
+                $this->di['dbal']->getQueryBuilder()
+                    ->update('email_template')
+                    ->set('content', 'REPLACE(content, \'bb_datetime\', \'format_datetime\')')
+                    ->executeStatement();
             },
             30 => function (): void {
                 // Patch to remove the old guzzlehttp package, as we no longer
@@ -381,9 +429,15 @@ class UpdatePatcher implements InjectionAwareInterface
                 // This patch will migrate previous currency exchange rate data provider settings to the new ones
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/2189
                 $ext_service = $this->di['mod_service']('extension');
-                $pairs = $this->di['db']->getAssoc('SELECT `param`, `value` FROM setting');
-                $config = $ext_service->getConfig('mod_currency');
 
+                $query = $this->di['dbal']->getQueryBuilder()
+                    ->select('param', 'value')
+                    ->from('setting')
+                    ->executeQuery();
+
+                $pairs = $query->fetchAllAssociative();
+
+                $config = $ext_service->getConfig('mod_currency');
                 $config['ext'] = 'mod_currency'; // This should automatically be set, but some appear to be having cache issues that causes it to not be
 
                 // Migrate the old currency exchange rate sync settings
