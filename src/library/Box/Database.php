@@ -157,16 +157,6 @@ class Box_Database implements InjectionAwareInterface
         return $this->orm->trash($bean);
     }
 
-    public function getInsertID()
-    {
-        return $this->di['pdo']->lastInsertId();
-    }
-
-    public function getColumns($table)
-    {
-        return $this->orm->getColumns($table);
-    }
-
     public function toArray($modelOrBean)
     {
         if ($modelOrBean instanceof RedBeanPHP\SimpleModel) {
