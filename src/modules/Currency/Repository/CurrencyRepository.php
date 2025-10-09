@@ -118,20 +118,22 @@ class CurrencyRepository extends EntityRepository
 
     /**
      * Get conversion rate by currency code.
-     * Returns the raw rate value or null if currency not found.
+     * Returns the rate as a float for calculations, or null if currency not found.
      *
      * @param string $code Currency code
-     * @return string|null The conversion rate as a string, or null if not found
+     * @return float|null The conversion rate as a float, or null if not found
      */
-    public function getRateByCode(string $code): ?string
+    public function getRateByCode(string $code): ?float
     {
         try {
-            return $this->createQueryBuilder('c')
+            $rate = $this->createQueryBuilder('c')
                 ->select('c.conversionRate')
                 ->where('c.code = :code')
                 ->setParameter('code', $code)
                 ->getQuery()
                 ->getSingleScalarResult();
+
+            return $rate !== null ? (float) $rate : null;
         } catch (\Doctrine\ORM\NoResultException) {
             return null;
         }
