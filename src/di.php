@@ -94,7 +94,7 @@ $di['pdo'] = function () {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
     }
 
-    if ($dbConfig['type'] === 'mysql') {
+    if ($dbConfig['driver'] === 'pdo_mysql') {
         $pdo->exec('SET NAMES "utf8"');
         $pdo->exec('SET CHARACTER SET utf8');
         $pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');

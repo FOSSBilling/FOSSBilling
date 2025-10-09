@@ -72,6 +72,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['i18n']['timezone'] ??= $currentConfig['timezone'] ?? 'UTC';
         $newConfig['i18n']['date_format'] ??= 'medium';
         $newConfig['i18n']['time_format'] ??= 'short';
+        $newConfig['db']['driver'] ??= $currentConfig['db']['type'] ?? 'pdo_mysql';
         $newConfig['db']['port'] ??= '3306';
         $newConfig['api']['throttle_delay'] ??= 2;
         $newConfig['api']['rate_span_login'] ??= 60;
@@ -97,6 +98,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];
         $depreciatedConfigSubkeys = [
             'security' => 'cookie_lifespan',
+            'db' => 'type'
         ];
         $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
         foreach ($depreciatedConfigSubkeys as $key => $subkey) {
