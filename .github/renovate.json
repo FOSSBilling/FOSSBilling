@@ -3,7 +3,7 @@
   "extends": [
     "config:best-practices",
     "schedule:daily",
-    "npm:unpublishSafe",
+    "security:minimumReleaseAgeNpm",
     ":automergeBranch",
     ":automergeDigest",
     ":automergeLinters",
