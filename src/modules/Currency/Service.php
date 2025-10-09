@@ -261,9 +261,12 @@ class Service implements InjectionAwareInterface
 
         // Automatically set the correct conversion rate if it's not specified
         if ($conversionRate === null || $conversionRate === 0.0) {
-            $conversionRate = $this->_getRate(null, $code);
-            if ($conversionRate === false) {
+            try {
+                $conversionRate = $this->_getRate(null, $code);
+            } catch (\Exception $e) {
+                // If rate fetch fails, default to 1.0
                 $conversionRate = 1.0;
+                $this->di['logger']->warning('Failed to fetch conversion rate for %s: %s', $code, $e->getMessage());
             }
         }
 
@@ -388,11 +391,11 @@ class Service implements InjectionAwareInterface
      *
      * @param string|null $from The source currency code (null for default)
      * @param string $to The target currency code
-     * @return float|false The conversion rate, or false if unavailable
+     * @return float The conversion rate
      * @throws \FOSSBilling\Exception If default currency cannot be found
-     * @throws InformationException If API configuration is invalid
+     * @throws InformationException If API configuration is invalid, or unable to fetch conversion rate.
      */
-    protected function _getRate(?string $from, string $to): float|false
+    protected function _getRate(?string $from, string $to): float
     {
         // Automatically select the default currency if the from currency is not specified
         if ($from === null || $from === '') {
@@ -436,9 +439,9 @@ class Service implements InjectionAwareInterface
 
         if (isset($rates[$to]) && is_numeric($rates[$to])) {
             return floatval($rates[$to]);
-        } else {
-            return false;
         }
+        
+        throw new \FOSSBilling\Exception("Unable to fetch conversion rate for currency: {$to}");
     }
 
     /**
@@ -497,7 +500,7 @@ class Service implements InjectionAwareInterface
      * Fetches a complete list off currencies and then caches that result for the specified period.
      * Normalizes the return array.
      */
-    protected function getCurrencyDataRates(string $from, int $validFor, string $key)
+    protected function getCurrencyDataRates(string $from, int $validFor, string $key): array
     {
         $result = $this->di['cache']->get("currency.data.api.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key): array {
             $item->expiresAfter($validFor);
@@ -533,7 +536,7 @@ class Service implements InjectionAwareInterface
      * Fetches a complete list off currencies and then caches that result for the specified period.
      * Normalizes the return array.
      */
-    protected function getCurrencyLayerRates(string $from, int $validFor, string $key)
+    protected function getCurrencyLayerRates(string $from, int $validFor, string $key): array
     {
         $result = $this->di['cache']->get("currencylayer.$from.$key.$validFor", function (ItemInterface $item) use ($from, $validFor, $key): array {
             $item->expiresAfter($validFor);
@@ -612,7 +615,7 @@ class Service implements InjectionAwareInterface
     /**
      * If enabled, automatically call _getRate to fetch exchange rates whenever CRON jobs are run.
      */
-    public static function onBeforeAdminCronRun(\Box_Event $event)
+    public static function onBeforeAdminCronRun(\Box_Event $event): bool
     {
         $di = $event->getDi();
         $currencyService = $di['mod_service']('currency');
