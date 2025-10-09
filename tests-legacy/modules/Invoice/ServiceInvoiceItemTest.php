@@ -353,7 +353,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
     public function testgetTotalWithTax(): void
     {
-        $total = 5;
+        $total = 5.0;
         $tax = 0.5;
         $quantity = 3;
         $invoiceItemModel = new \Model_InvoiceItem();

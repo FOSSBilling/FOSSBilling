@@ -912,7 +912,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getStartingDomainPrice')
-            ->willReturn('10.00');
+            ->willReturn(10.00);
         $serviceMock->expects($this->never())
             ->method('getStartingPrice');
 

@@ -631,8 +631,7 @@ class ServiceTest extends \BBTestCase
             ->method('getByCode')
             ->willReturn($model);
         $service->expects($this->atLeastOnce())
-            ->method('rm')
-            ->willReturn($model);
+            ->method('rm');
 
         $manager = $this->getMockBuilder('Box_EventManager')->getMock();
         $manager->expects($this->atLeastOnce())
