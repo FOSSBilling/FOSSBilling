@@ -147,13 +147,13 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         return $this->sendEmail($domain, $params);
     }
 
-    public function getEpp(Registrar_Domain $domain): bool
+    public function getEpp(Registrar_Domain $domain): string
     {
         $params = [];
         $params['subject'] = 'Request for Epp code was received';
         $params['content'] = 'A request for Domain Transfer code was received.';
-
-        return $this->sendEmail($domain, $params);
+        $this->sendEmail($domain, $params);
+        return '';
     }
 
     public function lock(Registrar_Domain $domain)
