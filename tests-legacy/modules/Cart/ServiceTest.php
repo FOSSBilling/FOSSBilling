@@ -842,8 +842,7 @@ class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);
@@ -1014,8 +1013,7 @@ class ServiceTest extends \BBTestCase
 
         $serviceCustomServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicecustom\Service::class)->getMock();
         $serviceCustomServiceMock->expects($this->atLeastOnce())
-            ->method('validateCustomForm')
-            ->willReturn([]);
+            ->method('validateCustomForm');
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isStockAvailable'])

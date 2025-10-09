@@ -694,7 +694,7 @@ class ServiceTest extends \BBTestCase
 
     public function testgetTotalWithTax(): void
     {
-        $total = 10;
+        $total = 10.0;
         $tax = 2.2;
         $expected = $total + $tax;
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
@@ -731,7 +731,7 @@ class ServiceTest extends \BBTestCase
 
         $itemInvoiceServiceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)->getMock();
 
-        $itemTotal = 10;
+        $itemTotal = 10.0;
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
             ->method('getTotal')
             ->willReturn($itemTotal);
@@ -749,7 +749,7 @@ class ServiceTest extends \BBTestCase
     public function testrefundInvoiceWithNegativeInvoiceLogic(): void
     {
         $newId = 1;
-        $total = 10;
+        $total = 10.0;
         $tax = 2.2;
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['getTotal', 'getTax', 'countIncome', 'addNote'])

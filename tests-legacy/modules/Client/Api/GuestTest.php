@@ -196,8 +196,7 @@ class GuestTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
@@ -250,7 +249,7 @@ class GuestTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->once())
-            ->method('checkRequiredParamsForArray')->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -283,8 +282,7 @@ class GuestTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
@@ -339,8 +337,7 @@ class GuestTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->once())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
         $emailServiceMock->expects($this->once())
@@ -382,8 +379,7 @@ class GuestTest extends \BBTestCase
         // Mock for the validator
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->once())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         // Dependency injection container setup
         $di = new \Pimple\Container();
