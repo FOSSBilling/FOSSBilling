@@ -57,14 +57,16 @@ class Client implements InjectionAwareInterface
     {
         $exc = new \FOSSBilling\Exception('Unknown API call :call', [':call' => $page], 879);
 
-        return $this->renderJson(null, $exc);
+        $this->renderJson(null, $exc);
+        return null;
     }
 
     public function get_method(\Box_App $app, $role, $class, $method)
     {
         $call = $class . '_' . $method;
 
-        return $this->tryCall($role, $call, $_GET);
+        $this->tryCall($role, $call, $_GET);
+        return null;
     }
 
     public function post_method(\Box_App $app, $role, $class, $method)
@@ -79,7 +81,8 @@ class Client implements InjectionAwareInterface
 
         $call = $class . '_' . $method;
 
-        return $this->tryCall($role, $call, $p);
+        $this->tryCall($role, $call, $p);
+        return null;
     }
 
     /**
@@ -194,7 +197,8 @@ class Client implements InjectionAwareInterface
         unset($params['CSRFToken']);
         $result = $api->$method($params);
 
-        return $this->renderJson($result);
+        $this->renderJson($result);
+        return null;
     }
 
     private function getAuth(): array
