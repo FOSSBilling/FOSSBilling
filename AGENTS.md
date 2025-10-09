@@ -12,6 +12,14 @@ FOSSBilling is a free and open-source billing and client management solution des
   * [Twig](https://twig.symfony.com/): Template engine for rendering views
     * API endpoints are injected as parameters to Twig. See the "Interacting with the FOSSBilling API" section.
   * [RedBeanPHP](https://redbeanphp.com/): ORM for database interactions in legacy modules.
+  * [Doctrine DBAL/ORM](https://doctrine-project.org/): ORM and DBAL for modern modules.
+    * FOSSBilling is in the process of migrating modules and core parts from RedBeanPHP to Doctrine one by one.
+    * The entity manager is available as `$di['em']`. It comes from the EntityManagerFactory in `/src/library/FOSSBilling/Doctrine/EntityManagerFactory.php`.
+    * Entities and repositories reside under `/src/modules/*/Entity/{Entity}.php` and `/src/modules/*/Repository/{EntityRepository}.php`.
+    * The FOSSBilling project is in the process of gradually phasing out RedBeanPHP in favor of Doctrine ORM.
+    * When writing new pieces of code, avoid RedBeanPHP.
+    * If you are assisting with the migration from RedBeanPHP to Doctrine, do your best to keep compatibility with the existing table structure.
+    * When refactoring API endpoints, check how the `$di['pager']` works in `src/library/FOSSBilling/Pagination.php`. `paginateDoctrineQuery()` is the replacement for `getPaginatedResultSet()`.
   * [Monolog](https://github.com/Seldaek/monolog): Logging framework. Used via `$di['logger']` (`/src/library/FOSSBilling/Monolog.php`).
   * [dompdf](https://github.com/dompdf/dompdf): PDF generation for invoices and documents
   * [Pimple](https://github.com/silexphp/Pimple): Dependency injection container, see `/src/di.php`.
