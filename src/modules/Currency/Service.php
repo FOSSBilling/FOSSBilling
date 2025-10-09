@@ -55,7 +55,7 @@ class Service implements InjectionAwareInterface
     {
         $default = $this->currencyRepository->findDefault();
 
-        if ($default->getCode() == $foreign_code) {
+        if ($default->getCode() === $foreign_code) {
             return $amount;
         }
 
@@ -64,10 +64,23 @@ class Service implements InjectionAwareInterface
         return $amount * $rate;
     }
 
-    public function getBaseCurrencyRate($foreign_code)
+    /**
+     * Get the base currency rate for a foreign currency.
+     * This is the inverse of the conversion rate (1 / rate).
+     *
+     * @param string $foreign_code Currency code to get the rate for
+     * @return float The base currency rate
+     * @throws InformationException If currency not found or rate is zero
+     */
+    public function getBaseCurrencyRate(string $foreign_code): float
     {
         $f_rate = $this->currencyRepository->getRateByCode($foreign_code);
-        
+
+        // Fallback to 1 if currency not found
+        if ($f_rate === null) {
+            $f_rate = 1;
+        }
+
         if ($f_rate == 0) {
             throw new InformationException('Currency conversion rate cannot be zero');
         }
@@ -95,7 +108,14 @@ class Service implements InjectionAwareInterface
         return $this->currencyRepository->findDefault();
     }
 
-    public function setAsDefault(Currency $currency)
+    /**
+     * Set a currency as the default currency for the system.
+     *
+     * @param Currency $currency The currency to set as default
+     * @return bool
+     * @throws \FOSSBilling\Exception If currency code is not provided
+     */
+    public function setAsDefault(Currency $currency): bool
     {
         if ($currency->isDefault()) {
             return true;
@@ -114,6 +134,9 @@ class Service implements InjectionAwareInterface
         $currency->setIsDefault(true);
         $em->persist($currency);
         $em->flush();
+
+        // Invalidate default currency cache
+        $this->currencyRepository->invalidateDefaultCache();
 
         $this->di['logger']->info('Set currency %s as default', $currency->getCode());
 
@@ -190,7 +213,7 @@ class Service implements InjectionAwareInterface
     public function createCurrency(string $code, string $format, ?string $title = null, string|float|null $conversionRate = 1): string
     {
         $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_Currency', 2);
+        $systemService->checkLimits('Currency', 2);
 
         $this->validateCurrencyFormat($format);
         $defaults = $this->getCurrencyDefaults($code);
@@ -264,12 +287,19 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateCurrencyRates()
+    /**
+     * Update all currency conversion rates from the configured exchange rate provider.
+     * Uses batch processing for optimal performance.
+     *
+     * @return bool
+     */
+    public function updateCurrencyRates(): bool
     {
         $dc = $this->currencyRepository->findDefault();
         $em = $this->di['em'];
 
         $all = $this->currencyRepository->findAll();
+        $updatedCount = 0;
 
         foreach ($all as $currency) {
             if ($currency->isDefault()) {
@@ -283,12 +313,12 @@ class Service implements InjectionAwareInterface
             }
 
             $currency->setConversionRate($rate);
-            $em->persist($currency);
+            $updatedCount++;
         }
 
         $em->flush();
 
-        $this->di['logger']->info('Updated currency rates');
+        $this->di['logger']->info('Updated %d currency rates', $updatedCount);
 
         return true;
     }

