@@ -87,9 +87,10 @@ class Post implements ApiArrayInterface, TimestampInterface
     public function toApiArray(): array
     {
         // Remove <!--more--> from content
-        $content = str_replace('<!--more-->', '', $this->getContent() ?? '');
-        $pos = strpos($this->getContent() ?? '', '<!--more-->');
-        $excerpt = $pos !== false ? substr($this->getContent(), 0, $pos) : null;
+        $contentRaw = $this->getContent() ?? '';
+        $content = str_replace('<!--more-->', '', $contentRaw);
+        $pos = strpos($contentRaw, '<!--more-->');
+        $excerpt = $pos !== false ? substr($contentRaw, 0, $pos) : null;
 
         $data = [
             'id'          => $this->getId(),
