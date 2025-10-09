@@ -9,30 +9,26 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-/**
- * Currency management.
- */
-
 namespace Box\Mod\Currency\Api;
+
+use Box\Mod\Currency\Entity\Currency;
 
 class Admin extends \Api_Abstract
 {
     /**
-     * Get list of available currencies on system.
+     * Get a list of available currencies on the system.
      *
-     * @return array
+     * @param array $data Filtering and pagination parameters
+     * @return array Paginated list of currencies
      */
-    public function get_list($data)
+    public function get_list(array $data): array
     {
-        [$query, $params] = $this->getService()->getSearchQuery();
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($query, $params, $per_page);
-        foreach ($pager['list'] as $key => $item) {
-            $currency = $this->di['db']->getExistingModelById('Currency', $item['id'], 'Currency not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($currency);
-        }
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
+        $repo = $this->getService()->getCurrencyRepository();
 
-        return $pager;
+        $qb = $repo->getSearchQueryBuilder($data);
+
+        return $this->di['pager']->paginateDoctrineQuery($qb);
     }
 
     /**
@@ -61,14 +57,16 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $service = $this->getService();
-        $model = $service->getByCode($data['code']);
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
+        $repo = $this->getService()->getCurrencyRepository();
 
-        if (!$model instanceof \Model_Currency) {
+        $model = $repo->findOneByCode($data['code']);
+
+        if (!$model instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found');
         }
 
-        return $service->toApiArray($model);
+        return $model->toApiArray();
     }
 
     /**
@@ -78,10 +76,12 @@ class Admin extends \Api_Abstract
      */
     public function get_default($data)
     {
-        $service = $this->getService();
-        $currency = $service->getDefault();
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
+        $repo = $this->getService()->getCurrencyRepository();
 
-        return $service->toApiArray($currency);
+        $default = $repo->findDefault();
+
+        return $default->toApiArray();
     }
 
     /**
@@ -103,7 +103,10 @@ class Admin extends \Api_Abstract
 
         $service = $this->getService();
 
-        if ($service->getByCode($data['code'] ?? null)) {
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
+        $repo = $service->getCurrencyRepository();
+
+        if ($repo->findOneByCode($data['code'] ?? null)) {
             throw new \FOSSBilling\Exception('Currency already registered');
         }
 
@@ -194,8 +197,12 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();
-        $model = $service->getByCode($data['code']);
-        if (!$model instanceof \Model_Currency) {
+
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
+        $repo = $service->getCurrencyRepository();
+        
+        $model = $repo->findOneByCode($data['code']);
+        if (!$model instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found');
         }
 

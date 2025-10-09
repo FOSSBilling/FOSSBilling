@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Currency;
 
+use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Currency\Repository\CurrencyRepository;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use PrinsFrank\Standards\Currency\CurrencyAlpha3;
@@ -20,15 +22,22 @@ use Symfony\Contracts\Cache\ItemInterface;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    protected CurrencyRepository $currencyRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->currencyRepository = $this->di['em']->getRepository(Currency::class);
     }
 
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getCurrencyRepository(): CurrencyRepository
+    {
+        return $this->currencyRepository;
     }
 
     public function getModulePermissions(): array
@@ -39,22 +48,14 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function getSearchQuery()
-    {
-        $sql = 'SELECT * FROM currency WHERE 1';
-        $filter = [];
-
-        return [$sql, $filter];
-    }
-
     /**
      * Convert foreign price back to default currency.
      */
     public function toBaseCurrency($foreign_code, $amount)
     {
-        $default = $this->getDefault();
+        $default = $this->currencyRepository->findDefault();
 
-        if ($default->code == $foreign_code) {
+        if ($default->getCode() == $foreign_code) {
             return $amount;
         }
 
@@ -65,7 +66,8 @@ class Service implements InjectionAwareInterface
 
     public function getBaseCurrencyRate($foreign_code)
     {
-        $f_rate = $this->getRateByCode($foreign_code);
+        $f_rate = $this->currencyRepository->getRateByCode($foreign_code);
+        
         if ($f_rate == 0) {
             throw new InformationException('Currency conversion rate cannot be zero');
         }
@@ -82,78 +84,40 @@ class Service implements InjectionAwareInterface
         $currency = $db->getCell($sql, $values);
 
         if ($currency === null) {
-            return $this->getDefault();
+            return $this->currencyRepository->findDefault();
         }
 
-        $currency = $this->getByCode($currency);
-        if ($currency instanceof \Model_Currency) {
+        $currency = $this->currencyRepository->findOneByCode($currency);
+        if ($currency instanceof Currency) {
             return $currency;
         }
 
-        return $this->getDefault();
+        return $this->currencyRepository->findDefault();
     }
 
-    /**
-     * @return \Model_Currency
-     */
-    public function getByCode($code)
+    public function setAsDefault(Currency $currency)
     {
-        return $this->di['db']->findOne('Currency', 'code = :code', [':code' => $code]);
-    }
-
-    public function getRateByCode($code)
-    {
-        $sql = 'SELECT conversion_rate FROM currency WHERE code = :code';
-        $values = [':code' => $code];
-
-        $db = $this->di['db'];
-        $rate = $db->getCell($sql, $values);
-
-        return is_numeric($rate) ? $rate : 1;
-    }
-
-    public function getDefault()
-    {
-        $db = $this->di['db'];
-        $default = $db->findOne('Currency', 'is_default = 1');
-
-        if (is_array($default) && count($default) == 0) {
-            $default = $db->load('Currency', '1');
-        }
-
-        return $default;
-    }
-
-    public function setAsDefault(\Model_Currency $currency)
-    {
-        $db = $this->di['db'];
-
-        if ($currency->is_default) {
+        if ($currency->isDefault()) {
             return true;
         }
 
-        if ($currency->code === null || empty($currency->code)) {
+        if ($currency->getCode() === null || empty($currency->getCode())) {
             throw new \FOSSBilling\Exception('Currency code not provided');
         }
 
-        $sql1 = 'UPDATE currency SET is_default = 0 WHERE 1';
-        $sql2 = 'UPDATE currency SET is_default = 1 WHERE code = :code';
-        $values2 = [':code' => $currency->code];
+        $em = $this->di['em'];
 
-        $db->exec($sql1);
-        $db->exec($sql2, $values2);
+        // Clear all default flags
+        $this->currencyRepository->clearDefaultFlags();
 
-        $this->di['logger']->info('Set currency %s as default', $currency->code);
+        // Set this currency as default
+        $currency->setIsDefault(true);
+        $em->persist($currency);
+        $em->flush();
+
+        $this->di['logger']->info('Set currency %s as default', $currency->getCode());
 
         return true;
-    }
-
-    public function getPairs()
-    {
-        $sql = 'SELECT code, title FROM currency';
-        $db = $this->di['db'];
-
-        return $db->getAssoc($sql);
     }
 
     /**
@@ -198,21 +162,19 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function rm(\Model_Currency $model)
+    public function rm(Currency $model)
     {
-        if ($model->is_default) {
+        if ($model->isDefault()) {
             throw new InformationException('Cannot remove default currency');
         }
 
-        if ($model->code === null || empty($model->code)) {
+        if ($model->getCode() === null || empty($model->getCode())) {
             throw new \FOSSBilling\Exception('Currency not found');
         }
 
-        $sql = 'DELETE FROM currency WHERE code = :code';
-        $values = [':code' => $model->code];
-
-        $db = $this->di['db'];
-        $db->exec($sql, $values);
+        $em = $this->di['em'];
+        $em->remove($model);
+        $em->flush();
     }
 
     /**
@@ -223,18 +185,6 @@ class Service implements InjectionAwareInterface
         $config = $this->di['mod_config']('currency');
 
         return ($config['sync_rate'] ?? 'auto') !== 'never';
-    }
-
-    public function toApiArray(\Model_Currency $model)
-    {
-        return [
-            'code' => $model->code,
-            'title' => $model->title,
-            'conversion_rate' => (float) $model->conversion_rate,
-            'format' => $model->format,
-            'price_format' => $model->price_format,
-            'default' => $model->is_default,
-        ];
     }
 
     public function createCurrency(string $code, string $format, ?string $title = null, string|float|null $conversionRate = 1): string
@@ -258,18 +208,17 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $model = $this->di['db']->dispense('Currency');
-        $model->code = $code;
-        $model->title = $title;
-        $model->format = $format;
-        $model->conversion_rate = $conversionRate;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $model = new Currency($code, $format);
+        $model->setTitle($title);
+        $model->setConversionRate($conversionRate);
 
-        $this->di['logger']->info('Added new currency %s', $model->code);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
 
-        return $model->code;
+        $this->di['logger']->info('Added new currency %s', $model->getCode());
+
+        return $model->getCode();
     }
 
     public function validateCurrencyFormat($format)
@@ -281,63 +230,63 @@ class Service implements InjectionAwareInterface
 
     public function updateCurrency($code, $format = null, $title = null, $priceFormat = null, $conversionRate = null)
     {
-        $db = $this->di['db'];
-
-        $model = $this->getByCode($code);
-        if (!$model instanceof \Model_Currency) {
+        $model = $this->currencyRepository->findOneByCode($code);
+        if (!$model instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found');
         }
 
         if (isset($title)) {
-            $model->title = $title;
+            $model->setTitle($title);
         }
 
         if (isset($format)) {
             $this->validateCurrencyFormat($format);
-            $model->format = $format;
+            $model->setFormat($format);
         }
 
         if (isset($priceFormat)) {
-            $model->price_format = $priceFormat;
+            $model->setPriceFormat($priceFormat);
         }
 
         if (isset($conversionRate)) {
             if (!is_numeric($conversionRate) || $conversionRate <= 0) {
                 throw new InformationException('Currency rate is invalid', null, 151);
             }
-            $model->conversion_rate = $conversionRate;
+            $model->setConversionRate($conversionRate);
         }
 
-        $model->updated_at = date('Y-m-d H:i:s');
-        $db->store($model);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
 
-        $this->di['logger']->info('Updated currency %s', $model->code);
+        $this->di['logger']->info('Updated currency %s', $model->getCode());
 
         return true;
     }
 
     public function updateCurrencyRates()
     {
-        $dc = $this->getDefault();
+        $dc = $this->currencyRepository->findDefault();
+        $em = $this->di['em'];
 
-        $db = $this->di['db'];
-
-        $all = $db->find('Currency'); // should return Array of beans
+        $all = $this->currencyRepository->findAll();
 
         foreach ($all as $currency) {
-            if ($currency->is_default) {
+            if ($currency->isDefault()) {
                 $rate = 1;
             } else {
-                $rate = $this->_getRate($dc->code, $currency->code);
+                $rate = $this->_getRate($dc->getCode(), $currency->getCode());
             }
 
             if (!is_numeric($rate)) {
                 continue;
             }
 
-            $currency->conversion_rate = $rate;
-            $db->store($currency);
+            $currency->setConversionRate($rate);
+            $em->persist($currency);
         }
+
+        $em->flush();
 
         $this->di['logger']->info('Updated currency rates');
 
@@ -352,7 +301,7 @@ class Service implements InjectionAwareInterface
     {
         // Automatically select the default currency if the from currency is not specified
         if ($from === null || $from === '') {
-            $from = $this->getDefault()->code;
+            $from = $this->currencyRepository->findDefault()->getCode();
         }
 
         $config = $this->di['mod_config']('currency');
@@ -534,12 +483,12 @@ class Service implements InjectionAwareInterface
 
     public function deleteCurrencyByCode($code)
     {
-        $model = $this->getByCode($code);
+        $model = $this->currencyRepository->findOneByCode($code);
 
-        if (!$model instanceof \Model_Currency) {
+        if (!$model instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found');
         }
-        $code = $model->code;
+        $code = $model->getCode();
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminDeleteCurrency', 'params' => ['code' => $code]]);
 
