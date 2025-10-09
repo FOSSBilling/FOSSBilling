@@ -49,12 +49,19 @@ foreach ($modules as $module) {
     // Our manifests declare the names in lowercase, but the module directories start with an uppercase letter.
     $cap = ucfirst($module);
 
+    $commandsPath = Path::join(PATH_ROOT, 'modules', $cap, 'Commands');
+
+    // Skip if Commands directory doesn't exist
+    if (!$filesystem->exists($commandsPath)) {
+        continue;
+    }
+
     $finder = new Finder();
-    $finder->files()->in(Path::join(PATH_ROOT, 'modules', $cap, 'Commands'))->name('*.php');
+    $finder->files()->in($commandsPath)->name('*.php');
 
     foreach ($finder as $file) {
         $command = $file->getFilenameWithoutExtension();
-        $class = 'Box\\Mod\\' . $cap . '\\Commands\\' . $command;
+        $class = "Box\\Mod\\{$cap}\\Commands\\{$command}";
 
         $command = new $class();
         $command->setDi($di);
