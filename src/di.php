@@ -9,9 +9,11 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
 use Lcharette\WebpackEncoreTwig\JsonManifest;
@@ -79,24 +81,19 @@ $di['crypt'] = function () use ($di) {
  * @return PDO The PDO object used for database connections
  */
 $di['pdo'] = function () {
-    $config = Config::getProperty('db');
+    $dbConfig = Config::getProperty('db');
+    $driverOptions = [
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ];
 
-    $pdo = new PDO(
-        $config['type'] . ':host=' . $config['host'] . ';port=' . $config['port'] . ';dbname=' . $config['name'],
-        $config['user'],
-        $config['password'],
-        [
-            PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]
-    );
+    $connection = DriverManagerFactory::getConnection($driverOptions);
+    $pdo = $connection->getNativeConnection();
 
     if (isset($config['debug']) && $config['debug']) {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
     }
 
-    if ($config['type'] === 'mysql') {
+    if ($dbConfig['type'] === 'mysql') {
         $pdo->exec('SET NAMES "utf8"');
         $pdo->exec('SET CHARACTER SET utf8');
         $pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
