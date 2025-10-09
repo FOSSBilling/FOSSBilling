@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
@@ -81,15 +81,16 @@ $di['crypt'] = function () use ($di) {
  * @return PDO The PDO object used for database connections
  */
 $di['pdo'] = function () {
+    $debugConfig = Config::getProperty('debug_and_monitoring', []);
     $dbConfig = Config::getProperty('db');
     $driverOptions = [
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ];
 
     $connection = DriverManagerFactory::getConnection($driverOptions);
-    $pdo = $connection->getNativeConnection();
+    $pdo = (object) $connection->getNativeConnection();
 
-    if (isset($config['debug']) && $config['debug']) {
+    if (isset($debugConfig['debug']) && $debugConfig['debug']) {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
     }
 
@@ -136,6 +137,24 @@ $di['db'] = function () use ($di) {
     return $db;
 };
 
+/*
+ * Creates and returns a Doctrine DBAL connection instance.
+ *
+ * @param array $driverOptions Optional driver-specific options.
+ *
+ * @return Connection The Doctrine DBAL connection instance.
+ */
+$di['dbal'] = function ($driverOptions): Connection {
+    return DriverManagerFactory::getConnection($driverOptions);
+};
+
+/*
+ * Creates and returns a Doctrine ORM EntityManager instance.
+ *
+ * @param void
+ *
+ * @return EntityManager The Doctrine ORM EntityManager instance.
+ */
 $di['em'] = function (): EntityManager {
     return EntityManagerFactory::create();
 };
