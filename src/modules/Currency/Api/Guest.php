@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -20,7 +21,7 @@ class Guest extends \Api_Abstract
      *
      * @return array
      */
-    public function get_pairs($data)
+    public function get_pairs(array $data): array
     {
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
@@ -33,7 +34,7 @@ class Guest extends \Api_Abstract
      *
      * @return array
      */
-    public function get($data)
+    public function get(array $data): array
     {
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
@@ -73,7 +74,7 @@ class Guest extends \Api_Abstract
      *
      * @return string - formatted string
      */
-    public function format($data = [])
+    public function format(array $data): string
     {
         $c = $this->get($data);
 
@@ -101,7 +102,7 @@ class Guest extends \Api_Abstract
         return str_replace('{{price}}', $p, $c['format']);
     }
 
-    private function select_format($p, $format)
+    private function select_format($p, $format): string
     {
         return match (intval($format)) {
             2 => number_format($p, 2, '.', ','),

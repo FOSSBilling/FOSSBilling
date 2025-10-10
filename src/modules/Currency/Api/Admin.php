@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -36,7 +37,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function get_pairs()
+    public function get_pairs(): array
     {
         $service = $this->getService();
 
@@ -50,7 +51,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function get($data)
+    public function get(array $data): array
     {
         $required = [
             'code' => 'Currency code is missing',
@@ -74,7 +75,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function get_default($data)
+    public function get_default(array $data): array
     {
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
@@ -93,7 +94,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function create($data = [])
+    public function create(array $data): string
     {
         $required = [
             'code' => 'Currency code is missing',
@@ -131,7 +132,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function update($data)
+    public function update(array $data): bool
     {
         $required = [
             'code' => 'Currency code is missing',
@@ -149,7 +150,7 @@ class Admin extends \Api_Abstract
     /**
      * See if CRON jobs are enabled for currency rates.
      */
-    public function is_cron_enabled($data): bool
+    public function is_cron_enabled(array $data): bool
     {
         return $this->getService()->isCronEnabled();
     }
@@ -159,19 +160,19 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
-    public function update_rates($data)
+    public function update_rates(array $data): bool
     {
         return $this->service->updateCurrencyRates($data);
     }
 
     /**
-     * Remove currency. Default currency cannot be removed.
+     * Remove a currency. Default currency cannot be removed.
      *
      * @return bool
      *
      * @throws \FOSSBilling\Exception
      */
-    public function delete($data)
+    public function delete(array $data): bool
     {
         $required = [
             'code' => 'Currency code is missing',
@@ -189,7 +190,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function set_default($data)
+    public function set_default(array $data): bool
     {
         $required = [
             'code' => 'Currency code is missing',

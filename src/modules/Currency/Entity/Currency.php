@@ -32,22 +32,22 @@ class Currency implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: "string", length: 3, nullable: true)]
     private ?string $code = null;
 
-    #[ORM\Column(name: "is_default", type: "boolean", options: ["default" => false])]
+    #[ORM\Column(type: "boolean", options: ["default" => false])]
     private bool $isDefault = false;
 
-    #[ORM\Column(name: "conversion_rate", type: "decimal", precision: 13, scale: 6, options: ["default" => "1.000000"])]
+    #[ORM\Column(type: "decimal", precision: 13, scale: 6, options: ["default" => "1.000000"])]
     private string $conversionRate = "1.000000";
 
     #[ORM\Column(type: "string", length: 30, nullable: true)]
     private ?string $format = null;
 
-    #[ORM\Column(name: "price_format", type: "string", length: 50, nullable: true, options: ["default" => "1"])]
-    private ?string $priceFormat = "1";
+    #[ORM\Column(type: "string", length: 50, nullable: true, options: ["default" => '${{price}}'])]
+    private ?string $priceFormat = '${{price}}';
 
-    #[ORM\Column(name: "created_at", type: "datetime", nullable: true)]
+    #[ORM\Column(type: "datetime", nullable: true)]
     private ?\DateTime $createdAt = null;
 
-    #[ORM\Column(name: "updated_at", type: "datetime", nullable: true)]
+    #[ORM\Column(type: "datetime", nullable: true)]
     private ?\DateTime $updatedAt = null;
 
     public function __construct(string $code, string $format)
