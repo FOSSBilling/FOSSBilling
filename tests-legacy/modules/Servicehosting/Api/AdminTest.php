@@ -62,6 +62,12 @@ class AdminTest extends \BBTestCase
     {
         $data = [];
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+
+        $di = new \Pimple\Container();
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('plan_id is missing');
         $this->api->change_plan($data);
@@ -602,10 +608,16 @@ class AdminTest extends \BBTestCase
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
         $di['db'] = $dbMock;
+        $di['validator'] = $validatorMock;
+
         $this->api->setDi($di);
 
         $result = $this->api->_getService($data);
@@ -632,10 +644,12 @@ class AdminTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($model);
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
         $di['db'] = $dbMock;
+        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);

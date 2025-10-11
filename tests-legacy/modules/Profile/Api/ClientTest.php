@@ -79,7 +79,13 @@ class ClientTest extends \BBTestCase
             ->method('changeClientPassword')
             ->willReturn(true);
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('isPasswordStrong')
+            ->willReturn(null);
+
         $di = new \Pimple\Container();
+        $di['validator'] = $validatorMock;
         $di['password'] = new \FOSSBilling\PasswordManager();
 
         $model = new \Model_Client();
