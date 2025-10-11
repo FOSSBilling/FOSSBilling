@@ -141,10 +141,6 @@ class AdminTest extends \BBTestCase
             ->method('hasPermission')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
@@ -154,9 +150,6 @@ class AdminTest extends \BBTestCase
 
             return false;
         });
-
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
 
         $result = $this->api->is_allowed($data);

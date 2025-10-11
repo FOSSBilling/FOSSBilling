@@ -280,11 +280,6 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testGetOrder(): void
     {
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
@@ -302,7 +297,6 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $client->loadBean(new DummyBean());
 
         $di = new Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -316,11 +310,6 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testGetOrderNotFoundException(): void
     {
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['findForClientById', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findForClientById')
@@ -335,7 +324,6 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $client->loadBean(new DummyBean());
 
         $di = new Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);

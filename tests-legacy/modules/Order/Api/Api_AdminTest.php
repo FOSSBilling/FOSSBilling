@@ -85,18 +85,12 @@ class Api_AdminTest extends BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('createOrder')
             ->willReturn(random_int(1, 100));
 
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->exactly(2))
             ->method('getExistingModelById')
             ->will($this->onConsecutiveCalls(new Model_Client(), new Model_Product()));
 
         $di = new Pimple\Container();
-        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -557,11 +551,6 @@ class Api_AdminTest extends BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('orderStatusAdd')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
@@ -571,8 +560,6 @@ class Api_AdminTest extends BBTestCase
             ->willReturn($order);
 
         $di = new Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $apiMock->setDi($di);
         $apiMock->setService($serviceMock);
 
@@ -591,16 +578,10 @@ class Api_AdminTest extends BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('orderStatusRm')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
         $di = new Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -667,11 +648,6 @@ class Api_AdminTest extends BBTestCase
 
     public function testGetOrder(): void
     {
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
@@ -686,7 +662,6 @@ class Api_AdminTest extends BBTestCase
             ->willReturn($order);
 
         $di = new Pimple\Container();
-        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $this->api->setDi($di);
 
@@ -701,16 +676,11 @@ class Api_AdminTest extends BBTestCase
     public function testBatchDelete(): void
     {
         $activityMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['delete'])->getMock();
-        $activityMock->expects($this->atLeastOnce())->
-        method('delete')->
-        willReturn(true);
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $activityMock->expects($this->atLeastOnce())
+            ->method('delete')
+            ->willReturn(true);
 
         $di = new Pimple\Container();
-        $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 
         $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);

@@ -17,12 +17,6 @@ class GuestTest extends \BBTestCase
     public function testfreeTlds(): void
     {
         $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
-        $di['validator'] = $validatorMock;
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
@@ -49,13 +43,7 @@ class GuestTest extends \BBTestCase
     public function testfreeTldsProductTypeIsNotHosting(): void
     {
         $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
-        $di['validator'] = $validatorMock;
-
+        
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();

@@ -72,13 +72,8 @@ class Api_ClientTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
@@ -117,10 +112,6 @@ class Api_ClientTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForClient')
             ->willReturn(random_int(1, 100));
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -128,7 +119,6 @@ class Api_ClientTest extends \BBTestCase
             ->willReturn(new \Model_SupportHelpdesk());
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $this->clientApi->setDi($di);
 
@@ -158,10 +148,6 @@ class Api_ClientTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
             ->willReturn(random_int(1, 100));
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -169,7 +155,6 @@ class Api_ClientTest extends \BBTestCase
             ->willReturn(new \Model_SupportTicket());
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $this->clientApi->setDi($di);
 
@@ -199,10 +184,6 @@ class Api_ClientTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('ticketReply')
             ->willReturn(random_int(1, 100));
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -210,7 +191,6 @@ class Api_ClientTest extends \BBTestCase
             ->willReturn(new \Model_SupportTicket());
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $this->clientApi->setDi($di);
 
@@ -240,13 +220,8 @@ class Api_ClientTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('closeTicket')
             ->willReturn(random_int(1, 100));
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
