@@ -106,7 +106,9 @@ final class Api_Handler implements InjectionAwareInterface
         }
 
         // Validate required parameters using attributes
-        $this->validateRequiredParams($api, $method_name, $arguments);
+        $data = is_array($arguments) ? $arguments : [];
+
+        $this->validateRequiredParams($api, $method_name, $data);
 
         return $api->{$method_name}($arguments);
     }
