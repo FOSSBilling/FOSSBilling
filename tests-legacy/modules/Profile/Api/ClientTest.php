@@ -82,7 +82,7 @@ class ClientTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('isPasswordStrong')
-            ->willReturn(null);
+            ->willReturn(true);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;

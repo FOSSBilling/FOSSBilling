@@ -213,7 +213,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
-    #[RequiredParams(['id' => 'Id required'])]
+    #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function update($data = [])
     {
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');

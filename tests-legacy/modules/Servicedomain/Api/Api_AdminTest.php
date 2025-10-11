@@ -796,7 +796,9 @@ class Api_AdminTest extends \BBTestCase
             ->willReturn(new \Model_ServiceDomain());
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-
+        $validatorMock->expects($this->atLeastOnce())
+            ->willThrowException(new \FOSSBilling\Exception('Registrar ID is missing'));
+        
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn () => $orderService);
