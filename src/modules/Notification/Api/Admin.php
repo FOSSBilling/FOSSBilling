@@ -20,6 +20,8 @@
 
 namespace Box\Mod\Notification\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -42,13 +44,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Notification ID was not passed'])]
     public function get($data)
     {
-        $required = [
-            'id' => 'Notification ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $meta = $this->di['db']->load('extension_meta', $data['id']);
         if ($meta->extension != 'mod_notification' || $meta->meta_key != 'message') {
             throw new \FOSSBilling\Exception('Notification message was not found');
@@ -80,13 +78,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Notification ID was not passed'])]
     public function delete($data)
     {
-        $required = [
-            'id' => 'Notification ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $meta = $this->di['db']->load('extension_meta', $data['id']);
         if ($meta->extension != 'mod_notification' || $meta->meta_key != 'message') {
             throw new \FOSSBilling\Exception('Notification message was not found');

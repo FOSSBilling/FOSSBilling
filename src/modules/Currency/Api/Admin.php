@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Currency\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -54,13 +56,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['code' => 'Currency code is missing'])]
     public function get($data)
     {
-        $required = [
-            'code' => 'Currency code is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $service = $this->getService();
         $model = $service->getByCode($data['code']);
 
@@ -93,14 +91,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['code' => 'Currency code is missing', 'format' => 'Currency format is missing'])]
     public function create($data = [])
     {
-        $required = [
-            'code' => 'Currency code is missing',
-            'format' => 'Currency format is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $service = $this->getService();
 
         if ($service->getByCode($data['code'] ?? null)) {
@@ -128,13 +121,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['code' => 'Currency code is missing'])]
     public function update($data)
     {
-        $required = [
-            'code' => 'Currency code is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $format = $data['format'] ?? null;
         $title = $data['title'] ?? null;
         $priceFormat = $data['price_format'] ?? null;
@@ -168,13 +157,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['code' => 'Currency code is missing'])]
     public function delete($data)
     {
-        $required = [
-            'code' => 'Currency code is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         return $this->getService()->deleteCurrencyByCode($data['code']);
     }
 
@@ -186,13 +171,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['code' => 'Currency code is missing'])]
     public function set_default($data)
     {
-        $required = [
-            'code' => 'Currency code is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $service = $this->getService();
         $model = $service->getByCode($data['code']);
         if (!$model instanceof \Model_Currency) {

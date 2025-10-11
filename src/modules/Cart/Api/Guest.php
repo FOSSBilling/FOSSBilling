@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Cart\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 /**
  * Shopping cart management.
  */
@@ -45,13 +47,9 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['currency' => 'Currency code was not passed'])]
     public function set_currency($data)
     {
-        $required = [
-            'currency' => 'Currency code not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $currencyService = $this->di['mod_service']('currency');
         $currency = $currencyService->getByCode($data['currency']);
         if (!$currency instanceof \Model_Currency) {
@@ -85,13 +83,9 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['promocode' => 'Promo code was not passed'])]
     public function apply_promo($data)
     {
-        $required = [
-            'promocode' => 'Promo code not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $promo = $this->getService()->findActivePromoByCode($data['promocode']);
         if (!$promo instanceof \Model_Promo) {
             throw new \FOSSBilling\InformationException('The promo code has expired or does not exist');
@@ -127,13 +121,9 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Cart item ID was not passed'])]
     public function remove_item($data)
     {
-        $required = [
-            'id' => 'Cart item id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $cart = $this->getService()->getSessionCart();
 
         return $this->getService()->removeProduct($cart, $data['id'], true);
@@ -146,14 +136,9 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function add_item($data)
     {
-        $required = [
-            'id' => 'Product id not passed',
-        ];
-
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $cart = $this->getService()->getSessionCart();
 
         $product = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');

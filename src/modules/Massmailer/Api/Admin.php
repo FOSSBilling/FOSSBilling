@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Massmailer\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -96,13 +98,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['subject' => 'Message subject was not passed'])]
     public function create($data)
     {
-        $required = [
-            'subject' => 'Message subject not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $default_content = '{% apply markdown %}
 Hi {{ c.first_name }} {{ c.last_name }},
 
@@ -305,13 +303,9 @@ Order our services at {{ "order"|link }}
         return (int) $c['test_client_id'];
     }
 
+    #[RequiredParams(['id' => 'Message ID was not passed'])]
     private function _getMessage($data)
     {
-        $required = [
-            'id' => 'Message ID not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         return $this->di['db']->getExistingModelById('mod_massmailer', $data['id'], 'Message not found');
     }
 }

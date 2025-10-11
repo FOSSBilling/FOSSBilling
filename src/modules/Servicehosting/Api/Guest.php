@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Servicehosting\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 /**
  * Hosting service management.
  */
@@ -23,13 +25,9 @@ class Guest extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['product_id' => 'Product ID is missing'])]
     public function free_tlds($data = [])
     {
-        $required = [
-            'product_id' => 'Product id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $product_id = $data['product_id'] ?? 0;
         $product = $this->di['db']->getExistingModelById('Product', $product_id, 'Product was not found');
 

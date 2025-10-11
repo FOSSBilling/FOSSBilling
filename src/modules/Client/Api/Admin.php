@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Client\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -72,13 +74,9 @@ class Admin extends \Api_Abstract
      *
      * @return array - client details
      */
+    #[RequiredParams(['id' => 'ID required'])]
     public function login($data)
     {
-        $required = [
-            'id' => 'ID required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
         $service = $this->di['mod_service']('client');
@@ -134,14 +132,9 @@ class Admin extends \Api_Abstract
      *
      * @return int - client id
      */
+    #[RequiredParams(['email' => 'Email required', 'first_name' => 'First name is required'])]
     public function create($data)
     {
-        $required = [
-            'email' => 'Email required',
-            'first_name' => 'First name is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $validator = $this->di['validator'];
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
@@ -164,13 +157,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Client ID is missing'])]
     public function delete($data)
     {
-        $required = [
-            'id' => 'Client id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $model->id]]);
@@ -224,11 +213,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Id required'])]
     public function update($data = [])
     {
-        $required = ['id' => 'Id required'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
         $service = $this->di['mod_service']('client');
@@ -311,15 +298,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'ID required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function change_password($data)
     {
-        $required = [
-            'id' => 'ID required',
-            'password' => 'Password required',
-            'password_confirm' => 'Password confirmation required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         if ($data['password'] != $data['password_confirm']) {
             throw new \FOSSBilling\InformationException('Passwords do not match');
         }
@@ -374,13 +355,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function balance_delete($data)
     {
-        $required = [
-            'id' => 'Client ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ClientBalance', $data['id'], 'Balance line not found');
 
         $id = $model->id;
@@ -402,15 +379,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Client ID required', 'amount' => 'Amount is required', 'description' => 'Description is required'])]
     public function balance_add_funds($data)
     {
-        $required = [
-            'id' => 'Client ID required',
-            'amount' => 'Amount is required',
-            'description' => 'Description is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
         $service = $this->di['mod_service']('client');
@@ -472,12 +443,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'ID was not passed'])]
     public function login_history_delete($data)
     {
-        $required = [
-            'id' => 'Id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $model = $this->di['db']->getExistingModelById('ActivityClientHistory', $data['id']);
 
         if (!$model instanceof \Model_ActivityClientHistory) {
@@ -517,13 +485,9 @@ class Admin extends \Api_Abstract
      *
      * @return int $id - newly created group id
      */
+    #[RequiredParams(['title' => 'Group title is missing'])]
     public function group_create($data)
     {
-        $required = [
-            'title' => 'Group title is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         return $this->getService()->createGroup($data);
     }
 
@@ -532,13 +496,9 @@ class Admin extends \Api_Abstract
      *
      * @optional string $title - new group title
      */
+    #[RequiredParams(['id' => 'Group ID is missing'])]
     public function group_update($data)
     {
-        $required = [
-            'id' => 'Group id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
         $model->title = $data['title'] ?? $model->title;
@@ -553,13 +513,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Group ID is missing'])]
     public function group_delete($data)
     {
-        $required = [
-            'id' => 'Group id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
         $clients = $this->di['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
@@ -576,13 +532,9 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
+    #[RequiredParams(['id' => 'Group ID is missing'])]
     public function group_get($data)
     {
-        $required = [
-            'id' => 'Group id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
         return $this->di['db']->toArray($model);
@@ -593,13 +545,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data)
     {
-        $required = [
-            'ids' => 'IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id]);
         }
@@ -612,13 +560,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete_log($data)
     {
-        $required = [
-            'ids' => 'IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         foreach ($data['ids'] as $id) {
             $this->login_history_delete(['id' => $id]);
         }
