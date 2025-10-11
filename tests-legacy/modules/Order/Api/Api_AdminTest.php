@@ -648,6 +648,11 @@ class Api_AdminTest extends BBTestCase
 
     public function testGetOrder(): void
     {
+        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willReturn(null);
+
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
@@ -662,6 +667,7 @@ class Api_AdminTest extends BBTestCase
             ->willReturn($order);
 
         $di = new Pimple\Container();
+        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $this->api->setDi($di);
 

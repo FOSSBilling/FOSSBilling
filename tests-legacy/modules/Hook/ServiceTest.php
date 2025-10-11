@@ -186,6 +186,11 @@ class ServiceTest extends \BBTestCase
                 return $extensionServiceMock;
             }
         });
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willReturn(null);
+        $di['validator'] = $validatorMock;
         $this->service->setDi($di);
         $result = $this->service->batchConnect($mod);
         $this->assertTrue($result);

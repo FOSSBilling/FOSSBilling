@@ -190,6 +190,12 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willReturn(null);
+        $di['validator'] = $validatorMock;
+
         $this->service->setDi($di);
 
         $result = $this->service->updateField($data);
@@ -422,6 +428,11 @@ class ServiceTest extends \BBTestCase
             ->willReturn($modelArray);
 
         $di = new \Pimple\Container();
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willReturn(null);
+        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);

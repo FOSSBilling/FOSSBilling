@@ -149,10 +149,14 @@ class AdminTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
+
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();
+        $di['validator'] = $validatorMock;
         $di['events_manager'] = $eventMock;
         $di['tools'] = $toolsMock;
 
@@ -179,8 +183,11 @@ class AdminTest extends \BBTestCase
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+
         $di = new \Pimple\Container();
         $di['tools'] = $toolsMock;
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -287,6 +294,10 @@ class AdminTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('isBirthdayValid');
+
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
@@ -294,7 +305,9 @@ class AdminTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
         $di['events_manager'] = $eventMock;
+        $di['validator'] = $validatorMock;
         $di['logger'] = new \Box_Log();
+
         $di['tools'] = $toolsMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -430,6 +443,11 @@ class AdminTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['password'] = $passwordMock;
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('isPasswordStrong')
+            ->willReturn(true);
+        $di['validator'] = $validatorMock;
         $di['mod_service'] = $di->protect(fn () => $profileService);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();

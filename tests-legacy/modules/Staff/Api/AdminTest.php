@@ -147,7 +147,8 @@ class AdminTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('isPasswordStrong');
+            ->method('isPasswordStrong')
+            ->willReturn(true);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -160,6 +161,7 @@ class AdminTest extends \BBTestCase
             ->willReturn(new \Model_Admin());
 
         $di = new \Pimple\Container();
+        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -200,7 +202,14 @@ class AdminTest extends \BBTestCase
             ->method('create')
             ->willReturn($newStaffId);
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('isPasswordStrong')
+            ->willReturn(true);
+
         $di = new \Pimple\Container();
+        $di['validator'] = $validatorMock;
+
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;

@@ -110,7 +110,12 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ClientOrder());
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
         $di = new \Pimple\Container();
+        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
@@ -134,9 +139,12 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ClientOrder());
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 

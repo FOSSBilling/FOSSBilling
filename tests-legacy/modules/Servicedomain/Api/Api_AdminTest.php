@@ -531,8 +531,11 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('registrarRm')
             ->willReturn(true);
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->adminApi->setDi($di);
 
@@ -589,9 +592,12 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('registrarCopy')
             ->willReturn(true);
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        
+        $di['validator'] = $validatorMock;
+
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -647,9 +653,12 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('registrarToApiArray')
             ->willReturn(true);
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        
+        $di['validator'] = $validatorMock;
+
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -718,9 +727,12 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('registrarUpdate')
             ->willReturn(true);
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        
+        $di['validator'] = $validatorMock;
+
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -783,10 +795,13 @@ class Api_AdminTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceDomain());
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn () => $orderService);
-        
+        $di['validator'] = $validatorMock;
+
         $this->adminApi->setDi($di);
 
         $data = [];

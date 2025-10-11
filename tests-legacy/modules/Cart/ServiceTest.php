@@ -797,6 +797,11 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willThrowException(new \FOSSBilling\Exception('Period parameter not passed'));
+        $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
@@ -835,6 +840,11 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willReturn(null);
+        $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
