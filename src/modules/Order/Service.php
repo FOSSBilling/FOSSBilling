@@ -1370,11 +1370,12 @@ class Service implements InjectionAwareInterface
 
     public function rmByClient(\Model_Client $client)
     {
-        $sql = 'DELETE FROM client_order WHERE  client_id = :id';
-
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute(['id' => $client->id]);
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->delete('client_order')
+            ->where('client_id = :id')
+            ->setParameter('id', $client->id)
+            ->executeStatement();
     }
 
     public function exportCSV(array $headers)

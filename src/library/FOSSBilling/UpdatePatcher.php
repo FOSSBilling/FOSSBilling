@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Doctrine\DBAL\QueryBuilder;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -72,6 +73,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['i18n']['timezone'] ??= $currentConfig['timezone'] ?? 'UTC';
         $newConfig['i18n']['date_format'] ??= 'medium';
         $newConfig['i18n']['time_format'] ??= 'short';
+        $newConfig['db']['driver'] ??= $currentConfig['db']['type'] ?? 'en_US';
         $newConfig['db']['port'] ??= '3306';
         $newConfig['api']['throttle_delay'] ??= 2;
         $newConfig['api']['rate_span_login'] ??= 60;
@@ -97,6 +99,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];
         $depreciatedConfigSubkeys = [
             'security' => 'cookie_lifespan',
+            'db' => 'type'
         ];
         $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
         foreach ($depreciatedConfigSubkeys as $key => $subkey) {
@@ -170,10 +173,14 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function getPatchLevel(): ?int
     {
-        $sql = 'SELECT value FROM setting WHERE param = :param';
-        $sqlStatement = $this->di['pdo']->prepare($sql);
-        $sqlStatement->execute(['param' => 'last_patch']);
-        $result = $sqlStatement->fetchColumn();
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('value')
+            ->from('setting')
+            ->where('param = :param')
+            ->setParameter('param', 'last_patch')
+            ->executeQuery();
+        $result = $query->fetchOne();
 
         return intval($result) ?: null;
     }
@@ -185,15 +192,34 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function setPatchLevel(int $patchLevel): void
     {
+        $query = $this->di['dbal']->createQueryBuilder();
+
         if (is_null($this->getPatchLevel())) {
-            $sql = 'INSERT INTO setting (param, value, public, updated_at, created_at) VALUES ("last_patch", :value, 1, :u, :c)';
-            $sqlStatement = $this->di['pdo']->prepare($sql);
-            $sqlStatement->execute(['value' => $patchLevel, 'c' => date('Y-m-d H:i:s'), 'u' => date('Y-m-d H:i:s')]);
+            $query
+                ->insert('setting')
+                ->values([
+                    'param' => ':param',
+                    'value' => ':value',
+                    'public' => '1',
+                    'created_at' => ':created_at',
+                    'updated_at' => ':updated_at',
+                ])
+                ->setParameter('param', 'last_patch')
+                ->setParameter('value', $patchLevel)
+                ->setParameter('created_at', date('Y-m-d H:i:s'))
+                ->setParameter('updated_at', date('Y-m-d H:i:s'));
         } else {
-            $sql = 'UPDATE setting SET value = :value, updated_at = :u WHERE param = :param';
-            $sqlStatement = $this->di['pdo']->prepare($sql);
-            $sqlStatement->execute(['param' => 'last_patch', 'value' => $patchLevel, 'u' => date('Y-m-d H:i:s')]);
+            $query
+                ->update('setting')
+                ->set('value', ':value')
+                ->set('updated_at', ':updated_at')
+                ->where('param = :param')
+                ->setParameter('param', 'last_patch')
+                ->setParameter('value', $patchLevel)
+                ->setParameter('updated_at', date('Y-m-d H:i:s'));
         }
+
+        $query->executeStatement();
     }
 
     /**

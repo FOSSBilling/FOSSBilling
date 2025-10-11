@@ -188,7 +188,7 @@ class Model_ProductDomainTable extends Model_ProductTable
             WHERE t.active = 1
             ORDER BY t.id ASC
         ';
-        $stmt = $this->di['pdo']->prepare($sql);
+        $stmt = $this->di['']->prepare($sql);
         $stmt->execute();
 
         foreach ($stmt->fetchAll() as $tld) {
