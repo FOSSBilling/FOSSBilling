@@ -19,10 +19,8 @@ class Client extends \Api_Abstract
     /**
      * Use GET to call this method. Sends file attached to order.
      * Sends file as attachment.
-     *
-     * @return bool
      */
-    public function send_file($data)
+    public function send_file($data): bool
     {
         if (!isset($data['order_id'])) {
             throw new \FOSSBilling\Exception('Order ID is required');

@@ -55,7 +55,7 @@ class Paginator
         $this->calculateRange();
     }
 
-    private function calculateRange()
+    private function calculateRange(): void
     {
         $startRange = $this->currentPage - floor($this->midRange / 2);
         $endRange = $this->currentPage + floor($this->midRange / 2);
@@ -73,7 +73,7 @@ class Paginator
         $this->range = range($startRange, $endRange);
     }
 
-    private function setDefaults()
+    private function setDefaults(): void
     {
         // If currentPage is set to null or is set to 0 or less
         // set it to default (1)
@@ -90,7 +90,7 @@ class Paginator
         }
     }
 
-    private function getInternalNumPages()
+    private function getInternalNumPages(): void
     {
         // If limit is set to 0 or set to number bigger then total items count
         // display all in one page
@@ -106,7 +106,7 @@ class Paginator
         }
     }
 
-    private function calculateOffset()
+    private function calculateOffset(): void
     {
         // Calculet offset for items based on current page number
         $this->offset = ($this->currentPage - 1) * $this->limit;
@@ -182,7 +182,7 @@ class Paginator
         return end($arr);
     }
 
-    public function toArray()
+    public function toArray(): array
     {
         return [
             'currentpage' => $this->getCurrentPage(),

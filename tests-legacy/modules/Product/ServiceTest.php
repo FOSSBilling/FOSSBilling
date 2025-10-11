@@ -94,11 +94,11 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->onConsecutiveCalls($modelProductPayment, $modelProductCategory));
+            ->willReturnOnConsecutiveCalls($modelProductPayment, $modelProductCategory);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
         $model->setDi($di);
         $serviceMock->setDi($di);
@@ -129,7 +129,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($modArray);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $extensionServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extensionServiceMock);
 
         $this->service->setDi($di);
         $result = $this->service->getTypes();
@@ -189,7 +189,7 @@ class ServiceTest extends \BBTestCase
 
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->onConsecutiveCalls($modelPayment, $modelProduct));
+            ->willReturnOnConsecutiveCalls($modelPayment, $modelProduct);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
@@ -200,7 +200,7 @@ class ServiceTest extends \BBTestCase
             ->method('slug');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['db'] = $dbMock;
         $di['tools'] = $toolMock;
         $di['logger'] = new \Box_Log();
@@ -414,7 +414,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($newProductId);
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
-            ->will($this->onConsecutiveCalls($modelPayment, $modelProduct));
+            ->willReturnOnConsecutiveCalls($modelPayment, $modelProduct);
 
         $toolMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolMock->expects($this->atLeastOnce())
@@ -442,7 +442,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
 
@@ -521,7 +521,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -620,7 +620,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -912,7 +912,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getStartingDomainPrice')
-            ->willReturn('10.00');
+            ->willReturn(10.00);
         $serviceMock->expects($this->never())
             ->method('getStartingPrice');
 

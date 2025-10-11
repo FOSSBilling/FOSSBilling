@@ -15,10 +15,8 @@ class Admin extends \Api_Abstract
 {
     /**
      * Get list of available client area themes.
-     *
-     * @return array
      */
-    public function get_list($data)
+    public function get_list($data): array
     {
         $themes = $this->getService()->getThemes();
 
@@ -27,10 +25,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Get list of available admin area themes.
-     *
-     * @return array
      */
-    public function get_admin_list($data)
+    public function get_admin_list($data): array
     {
         $themes = $this->getService()->getThemes(false);
 
@@ -54,10 +50,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Set new theme as default.
-     *
-     * @return bool
      */
-    public function select($data)
+    public function select($data): bool
     {
         $required = [
             'code' => 'Theme code is missing',
@@ -80,10 +74,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete theme preset.
-     *
-     * @return bool
      */
-    public function preset_delete($data)
+    public function preset_delete($data): bool
     {
         $required = [
             'code' => 'Theme code is missing',
@@ -101,10 +93,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Select new theme preset.
-     *
-     * @return bool
      */
-    public function preset_select($data)
+    public function preset_select($data): bool
     {
         $required = [
             'code' => 'Theme code is missing',

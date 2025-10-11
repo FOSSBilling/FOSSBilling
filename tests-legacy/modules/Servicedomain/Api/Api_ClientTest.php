@@ -200,7 +200,7 @@ class Api_ClientTest extends \BBTestCase
             ->willReturn(new \Model_ServiceDomain());
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $this->clientApi->setDi($di);
 
         $this->clientApi->setIdentity(new \Model_Client());
@@ -230,7 +230,7 @@ class Api_ClientTest extends \BBTestCase
             ->willReturn(new \Model_ServiceDomain());
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $this->clientApi->setDi($di);
 
         $this->clientApi->setIdentity(new \Model_Client());
@@ -260,7 +260,7 @@ class Api_ClientTest extends \BBTestCase
             ->willReturn(new \Model_ServiceDomain());
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $this->clientApi->setDi($di);
 
         $this->clientApi->setIdentity(new \Model_Client());
@@ -292,7 +292,7 @@ class Api_ClientTest extends \BBTestCase
             ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $this->clientApi->setDi($di);
 
         $this->clientApi->setIdentity(new \Model_Client());

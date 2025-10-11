@@ -126,7 +126,7 @@ abstract class Payment_AdapterAbstract
         return $data['invoice_id'] ?? null;
     }
 
-    public function setLog(Box_Log $log)
+    public function setLog(Box_Log $log): void
     {
         $this->_log = $log;
     }

@@ -25,7 +25,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function fetchNavigation()
+    public function fetchNavigation(): array
     {
         return [
             'subpages' => [
@@ -40,20 +40,20 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->get('/custompages', 'get_index', [], static::class);
         $app->get('/custompages/:id', 'get_page', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\Box_App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_custompages_index');
     }
 
-    public function get_page(\Box_App $app, $id)
+    public function get_page(\Box_App $app, $id): string
     {
         return $app->render('mod_custompages_page', ['page_id' => $id]);
     }

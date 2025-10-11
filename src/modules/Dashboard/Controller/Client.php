@@ -25,12 +25,12 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->get('/dashboard', 'get_dashboard_index', [], static::class);
     }
 
-    public function get_dashboard_index(\Box_App $app)
+    public function get_dashboard_index(\Box_App $app): string
     {
         $this->di['is_client_logged'];
 

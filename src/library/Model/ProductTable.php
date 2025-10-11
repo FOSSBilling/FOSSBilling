@@ -40,10 +40,7 @@ class Model_ProductTable implements FOSSBilling\InjectionAwareInterface
         return $model->unit;
     }
 
-    /**
-     * @return string
-     */
-    private function _getPeriodKey(Box_Period $period)
+    private function _getPeriodKey(Box_Period $period): string
     {
         $code = $period->getCode();
 

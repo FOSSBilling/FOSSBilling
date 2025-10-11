@@ -27,7 +27,7 @@ class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientTotalAmount = 25;
+        $clientTotalAmount = 25.0;
 
         $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
@@ -62,7 +62,7 @@ class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientTotalAmount = 0;
+        $clientTotalAmount = 0.0;
 
         $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
@@ -99,7 +99,7 @@ class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientTotalAmount = 4;
+        $clientTotalAmount = 4.0;
 
         $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
@@ -134,7 +134,7 @@ class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $clientTotalAmount = 4;
+        $clientTotalAmount = 4.0;
 
         $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
         $clientBalanceMock->expects($this->atLeastOnce())
@@ -332,7 +332,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->willReturnCallback(fn (...$args) => match ($args[0]) {
+            ->willReturnCallback(fn (...$args): \Model_SupportTicket|\Model_Client => match ($args[0]) {
                 'SupportTicket' => $supportTicketModel,
                 'Client' => $clientModel,
             });
@@ -389,7 +389,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->willReturnCallback(fn (...$args) => match ($args[0]) {
+            ->willReturnCallback(fn (...$args): \Model_SupportTicket|\Model_Client => match ($args[0]) {
                 'SupportTicket' => $supportTicketModel,
                 'Client' => $clientModel,
             });

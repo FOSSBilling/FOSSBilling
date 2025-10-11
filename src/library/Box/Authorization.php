@@ -17,12 +17,12 @@ class Box_Authorization
         $this->session = $di['session'];
     }
 
-    public function isClientLoggedIn()
+    public function isClientLoggedIn(): bool
     {
         return (bool) $this->session->get('client_id');
     }
 
-    public function isAdminLoggedIn()
+    public function isAdminLoggedIn(): bool
     {
         return (bool) $this->session->get('admin');
     }
@@ -53,7 +53,7 @@ class Box_Authorization
 
     public function passwordBackwardCompatibility($user, $plainTextPassword)
     {
-        if (sha1($plainTextPassword) == $user->pass) {
+        if (sha1((string) $plainTextPassword) == $user->pass) {
             $user->pass = $this->di['password']->hashIt($plainTextPassword);
             $this->di['db']->store($user);
         }

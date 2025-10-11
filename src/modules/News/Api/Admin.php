@@ -65,7 +65,7 @@ class Admin extends \Api_Abstract
 
         /** @todo Doctrine: Replace with actual Admin entity once it's migrated to Doctrine. */
         $admin = $this->di['db']->getRow('SELECT name FROM admin WHERE id = :id', ['id' => $post->getAdminId()]);
-        
+
         $post->setAdminData($admin);
 
         return $post->toApiArray();
@@ -83,7 +83,7 @@ class Admin extends \Api_Abstract
 
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
-        
+
         $post = $repo->find($data['id']);
 
         if (!$post instanceof Post) {
@@ -129,7 +129,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray(['title' => 'Post title not passed'], $data);
 
         $post = new Post($data['title'], $this->di['tools']->slug($data['title']));
-        
+
         $post->setAdminId($this->getIdentity()->id)
              ->setContent($data['content'] ?? null)
              ->setStatus($data['status'] ?? Post::STATUS_ACTIVE)
@@ -155,7 +155,7 @@ class Admin extends \Api_Abstract
 
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
-        
+
         $post = $repo->find($data['id']);
 
         if (!$post instanceof Post) {
@@ -182,7 +182,7 @@ class Admin extends \Api_Abstract
 
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
-        
+
         $count = $repo->deleteByIds($data['ids']);
 
         $this->di['logger']->info('Removed %s news items', $count);

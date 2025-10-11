@@ -79,8 +79,8 @@ class CentralAlerts implements InjectionAwareInterface
                 $alerts = array_filter($alerts, fn ($alert) => $alert['include_preview_branch']);
             } else {
                 $alerts = array_filter($alerts, function ($alert) use ($version) {
-                    $overThanTheMinimum = version_compare(strtolower($version), strtolower($alert['min_fossbilling_version']), '>=');
-                    $lessThanTheMaximum = version_compare(strtolower($version), strtolower($alert['max_fossbilling_version']), '<=');
+                    $overThanTheMinimum = version_compare(strtolower($version), strtolower((string) $alert['min_fossbilling_version']), '>=');
+                    $lessThanTheMaximum = version_compare(strtolower($version), strtolower((string) $alert['max_fossbilling_version']), '<=');
 
                     return $overThanTheMinimum && $lessThanTheMaximum;
                 });

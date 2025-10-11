@@ -36,10 +36,7 @@ class Registrar_Domain_Contact implements Stringable
     private string $birthday = '';
     private string $idn_language_code = '';
 
-    /**
-     * @return string
-     */
-    public function getCompanyNumber()
+    public function getCompanyNumber(): string
     {
         return $this->company_number;
     }
@@ -54,10 +51,7 @@ class Registrar_Domain_Contact implements Stringable
         return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getIdnLanguageCode()
+    public function getIdnLanguageCode(): string
     {
         return $this->idn_language_code;
     }
@@ -72,10 +66,7 @@ class Registrar_Domain_Contact implements Stringable
         return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getBirthday()
+    public function getBirthday(): string
     {
         return $this->birthday;
     }
@@ -131,7 +122,7 @@ class Registrar_Domain_Contact implements Stringable
             return $this->firstname;
         }
 
-        $bits = explode(' ', $this->name);
+        $bits = explode(' ', (string) $this->name);
 
         return $bits[0] ?? '';
     }
@@ -149,7 +140,7 @@ class Registrar_Domain_Contact implements Stringable
             return $this->lastname;
         }
 
-        $bits = explode(' ', $this->name);
+        $bits = explode(' ', (string) $this->name);
 
         return isset($bits[1]) ? str_replace($bits[0] . ' ', '', $this->name) : '';
     }
@@ -370,7 +361,7 @@ class Registrar_Domain_Contact implements Stringable
         return $this->job_title;
     }
 
-    public function getAddress()
+    public function getAddress(): string
     {
         $data = [
             $this->getAddress1(),
@@ -406,7 +397,7 @@ class Registrar_Domain_Contact implements Stringable
         return $c . (sprintf('Document nr: %s', $this->getDocumentNr()) . PHP_EOL);
     }
 
-    public function toArray()
+    public function toArray(): array
     {
         return get_object_vars($this);
     }

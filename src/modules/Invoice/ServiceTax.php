@@ -78,7 +78,7 @@ class ServiceTax implements InjectionAwareInterface
         return $tax;
     }
 
-    public function delete(\Model_Tax $model)
+    public function delete(\Model_Tax $model): bool
     {
         $name = $model->name;
         $this->di['db']->trash($model);
@@ -106,7 +106,7 @@ class ServiceTax implements InjectionAwareInterface
         return $newId;
     }
 
-    public function update(\Model_Tax $model, array $data)
+    public function update(\Model_Tax $model, array $data): bool
     {
         $model->name = $data['name'];
         $model->country = (!isset($data['country']) || empty($data['country'])) ? null : $data['country'];
@@ -121,7 +121,7 @@ class ServiceTax implements InjectionAwareInterface
         return true;
     }
 
-    public function getSearchQuery($data)
+    public function getSearchQuery($data): array
     {
         $sql = 'SELECT *
             FROM tax

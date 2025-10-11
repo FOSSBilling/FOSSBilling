@@ -43,12 +43,10 @@ class Tools
 
     /**
      * Return site url.
-     *
-     * @return string
      */
-    public function url($link = null)
+    public function url($link = null): string
     {
-        $link = trim($link, '/');
+        $link = trim((string) $link, '/');
 
         return SYSTEM_URL . $link;
     }
@@ -122,31 +120,31 @@ class Tools
         }
     }
 
-    public function slug($str)
+    public function slug($str): string
     {
-        $str = strtolower(trim($str));
+        $str = strtolower(trim((string) $str));
         $str = preg_replace('/[^a-z0-9-]/', '-', $str);
-        $str = preg_replace('/-+/', '-', $str);
+        $str = preg_replace('/-+/', '-', (string) $str);
 
-        return trim($str, '-');
+        return trim((string) $str, '-');
     }
 
-    public function to_camel_case($str, $capitalize_first_char = false)
+    public function to_camel_case($str, $capitalize_first_char = false): ?string
     {
         if ($capitalize_first_char) {
-            $str[0] = strtoupper($str[0]);
+            $str[0] = strtoupper((string) $str[0]);
         }
-        $func = fn ($c): string => strtoupper($c[1]);
+        $func = fn ($c): string => strtoupper((string) $c[1]);
 
-        return preg_replace_callback('/-([a-z])/', $func, $str);
+        return preg_replace_callback('/-([a-z])/', $func, (string) $str);
     }
 
-    public function from_camel_case($str)
+    public function from_camel_case($str): ?string
     {
-        $str[0] = strtolower($str[0]);
-        $func = fn ($c): string => '-' . strtolower($c[1]);
+        $str[0] = strtolower((string) $str[0]);
+        $func = fn ($c): string => '-' . strtolower((string) $c[1]);
 
-        return preg_replace_callback('/([A-Z])/', $func, $str);
+        return preg_replace_callback('/([A-Z])/', $func, (string) $str);
     }
 
     /**
@@ -176,7 +174,7 @@ class Tools
 
     public function getTable($type)
     {
-        $class = 'Model_' . ucfirst($type) . 'Table';
+        $class = 'Model_' . ucfirst((string) $type) . 'Table';
         $file = Path::join(PATH_LIBRARY, 'Model', "{$type}Table.php");
         if (!$this->filesystem->exists($file)) {
             throw new Exception('Service class :class was not found in :path', [':class' => $class, ':path' => $file]);
@@ -244,7 +242,7 @@ class Tools
         $protocol = $_SERVER['HTTPS'] ?? $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
 
         // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and the others to will be set to `https`, so either one means we are connected via HTTPS.
-        return strcasecmp($protocol, 'on') === 0 || strcasecmp($protocol, 'https') === 0;
+        return strcasecmp((string) $protocol, 'on') === 0 || strcasecmp((string) $protocol, 'https') === 0;
     }
 
     /**

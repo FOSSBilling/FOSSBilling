@@ -89,7 +89,7 @@ class Client extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', $data['content']);
+        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', (string) $data['content']);
 
         $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
 
@@ -100,10 +100,8 @@ class Client extends \Api_Abstract
 
     /**
      * Add new conversation message to ticket. Ticket will be reopened if closed.
-     *
-     * @return bool
      */
-    public function ticket_reply($data)
+    public function ticket_reply($data): bool
     {
         $required = [
             'id' => 'Ticket ID required',
@@ -111,7 +109,7 @@ class Client extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', $data['content']);
+        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', (string) $data['content']);
 
         $client = $this->getIdentity();
 

@@ -100,7 +100,7 @@ class Guest extends \Api_Abstract
         return str_replace('{{price}}', $p, $c['format']);
     }
 
-    private function select_format($p, $format)
+    private function select_format($p, $format): string
     {
         return match (intval($format)) {
             2 => number_format($p, 2, '.', ','),

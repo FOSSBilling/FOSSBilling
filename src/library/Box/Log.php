@@ -73,7 +73,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         foreach ($params as $key => $value) {
             if (is_array($value)) {
                 $params[$key] = $this->maskParams($value, $depthLimit - 1);
-            } elseif (in_array(strtolower($key), $this->_maskedKeys)) {
+            } elseif (in_array(strtolower((string) $key), $this->_maskedKeys)) {
                 $params[$key] = '********';
             }
         }
@@ -86,7 +86,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
      */
     public function __call($method, $params): void
     {
-        $priority = strtoupper($method);
+        $priority = strtoupper((string) $method);
         $params = $this->maskParams($params);
         if (($priority = array_search($priority, $this->_priorities)) !== false) {
             switch (is_countable($params) ? count($params) : 0) {
@@ -161,7 +161,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         }
     }
 
-    protected function _packEvent($message, $priority)
+    protected function _packEvent($message, $priority): array
     {
         return ['timestamp' => date('Y-m-d H:i:s'), 'message' => $message, 'priority' => $priority, 'priorityName' => $this->_priorities[$priority], ...$this->_extras];
     }

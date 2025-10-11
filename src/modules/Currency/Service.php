@@ -39,7 +39,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function getSearchQuery()
+    public function getSearchQuery(): array
     {
         $sql = 'SELECT * FROM currency WHERE 1';
         $filter = [];
@@ -124,7 +124,7 @@ class Service implements InjectionAwareInterface
         return $default;
     }
 
-    public function setAsDefault(\Model_Currency $currency)
+    public function setAsDefault(\Model_Currency $currency): bool
     {
         $db = $this->di['db'];
 
@@ -198,7 +198,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function rm(\Model_Currency $model)
+    public function rm(\Model_Currency $model): void
     {
         if ($model->is_default) {
             throw new InformationException('Cannot remove default currency');
@@ -225,7 +225,7 @@ class Service implements InjectionAwareInterface
         return ($config['sync_rate'] ?? 'auto') !== 'never';
     }
 
-    public function toApiArray(\Model_Currency $model)
+    public function toApiArray(\Model_Currency $model): array
     {
         return [
             'code' => $model->code,
@@ -272,14 +272,14 @@ class Service implements InjectionAwareInterface
         return $model->code;
     }
 
-    public function validateCurrencyFormat($format)
+    public function validateCurrencyFormat($format): void
     {
-        if (!str_contains($format, '{{price}}')) {
+        if (!str_contains((string) $format, '{{price}}')) {
             throw new \Exception('Currency format must include {{price}} tag', 3569);
         }
     }
 
-    public function updateCurrency($code, $format = null, $title = null, $priceFormat = null, $conversionRate = null)
+    public function updateCurrency($code, $format = null, $title = null, $priceFormat = null, $conversionRate = null): bool
     {
         $db = $this->di['db'];
 
@@ -316,7 +316,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateCurrencyRates()
+    public function updateCurrencyRates(): bool
     {
         $dc = $this->getDefault();
 
@@ -525,14 +525,14 @@ class Service implements InjectionAwareInterface
                 continue;
             }
             // All values are prefixed with our 'from' currency (EX: 'USDAUD'), so strip that off before storing it.
-            $strippedName = substr($key, $prefixLen);
+            $strippedName = substr((string) $key, $prefixLen);
             $rates[$strippedName] = $rate;
         }
 
         return $rates;
     }
 
-    public function deleteCurrencyByCode($code)
+    public function deleteCurrencyByCode($code): bool
     {
         $model = $this->getByCode($code);
 
@@ -555,7 +555,7 @@ class Service implements InjectionAwareInterface
     /**
      * If enabled, automatically call _getRate to fetch exchange rates whenever CRON jobs are run.
      */
-    public static function onBeforeAdminCronRun(\Box_Event $event)
+    public static function onBeforeAdminCronRun(\Box_Event $event): bool
     {
         $di = $event->getDi();
         $currencyService = $di['mod_service']('currency');

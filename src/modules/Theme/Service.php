@@ -36,7 +36,7 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
-    public function getTheme($name)
+    public function getTheme($name): \Box\Mod\Theme\Model\Theme
     {
         return new Model\Theme($name);
     }
@@ -61,7 +61,7 @@ class Service implements InjectionAwareInterface
         return $current;
     }
 
-    public function setCurrentThemePreset(Model\Theme $theme, $preset)
+    public function setCurrentThemePreset(Model\Theme $theme, $preset): bool
     {
         $params = ['theme' => $theme->getName(), 'preset' => $preset];
         $updated = $this->di['db']->exec("
@@ -101,7 +101,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function deletePreset(Model\Theme $theme, $preset)
+    public function deletePreset(Model\Theme $theme, $preset): bool
     {
         // delete settings
         $this->di['db']->exec(
@@ -169,7 +169,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function updateSettings(Model\Theme $theme, $preset, array $params)
+    public function updateSettings(Model\Theme $theme, $preset, array $params): bool
     {
         $meta = $this->di['db']->findOne(
             'ExtensionMeta',
@@ -193,7 +193,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function regenerateThemeSettingsDataFile(Model\Theme $theme)
+    public function regenerateThemeSettingsDataFile(Model\Theme $theme): bool
     {
         $settings = [];
         $presets = $this->getThemePresets($theme);
@@ -208,7 +208,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset, $api_admin)
+    public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset, $api_admin): bool
     {
         $assets = $theme->getPathAssets();
 
@@ -231,7 +231,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getCurrentAdminAreaTheme()
+    public function getCurrentAdminAreaTheme(): array
     {
         $query = 'SELECT value
                 FROM setting
@@ -345,7 +345,7 @@ class Service implements InjectionAwareInterface
         $paths = [Path::join($theme_path, 'html')];
 
         if (isset($config['extends'])) {
-            $ext = trim($config['extends'], '/');
+            $ext = trim((string) $config['extends'], '/');
             $ext = str_replace('.', '', $ext);
 
             $config['url'] = SYSTEM_URL . "themes/{$ext}/";
@@ -363,7 +363,7 @@ class Service implements InjectionAwareInterface
         }
         $list = array_unique($list);
         foreach ($list as $mod) {
-            $p = Path::join(PATH_MODS, ucfirst($mod), $client ? 'html_client' : 'html_admin');
+            $p = Path::join(PATH_MODS, ucfirst((string) $mod), $client ? 'html_client' : 'html_admin');
             if ($this->filesystem->exists($p)) {
                 $paths[] = $p;
             }

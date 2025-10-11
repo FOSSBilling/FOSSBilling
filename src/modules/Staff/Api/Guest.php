@@ -23,10 +23,8 @@ class Guest extends \Api_Abstract
      * Database structure must be installed before calling this action.
      * config.php file must already be present and configured.
      * Used by automated FOSSBilling installer.
-     *
-     * @return bool
      */
-    public function create($data)
+    public function create($data): bool
     {
         $allow = (!is_countable($this->di['db']->findOne('Admin', '1=1')) || count($this->di['db']->findOne('Admin', '1=1')) == 0);
         if (!$allow) {
@@ -73,7 +71,7 @@ class Guest extends \Api_Abstract
 
         // check ip
         if (!empty($config['allowed_ips']) && isset($config['check_ip']) && $config['check_ip']) {
-            $allowed_ips = explode(PHP_EOL, $config['allowed_ips']);
+            $allowed_ips = explode(PHP_EOL, (string) $config['allowed_ips']);
             if ($allowed_ips) {
                 $allowed_ips = array_map(trim(...), $allowed_ips);
                 if (!in_array($this->getIp(), $allowed_ips)) {
@@ -88,7 +86,7 @@ class Guest extends \Api_Abstract
         return $result;
     }
 
-    public function update_password($data)
+    public function update_password($data): void
     {
         $config = $this->getMod()->getConfig();
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {

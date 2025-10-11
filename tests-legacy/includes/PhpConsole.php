@@ -43,7 +43,7 @@ class PhpConsole
         $this->initClient();
     }
 
-    public static function start($handleErrors = true, $handleExceptions = true, $sourceBasePath = null)
+    public static function start($handleErrors = true, $handleExceptions = true, $sourceBasePath = null): void
     {
         if (self::$instance) {
             exit('PhpConsole already started');
@@ -109,7 +109,7 @@ class PhpConsole
         }
     }
 
-    protected static function isEnabledOnClient()
+    protected static function isEnabledOnClient(): bool
     {
         return isset($_COOKIE[self::clientProtocolCookie]) && $_COOKIE[self::clientProtocolCookie] == self::serverProtocol;
     }
@@ -127,12 +127,12 @@ class PhpConsole
             return;
         }
         $message = [];
-        $message['type'] = str_starts_with($event->tags, 'error,') ? 'error' : 'debug';
+        $message['type'] = str_starts_with((string) $event->tags, 'error,') ? 'error' : 'debug';
         $message['subject'] = $event->type;
-        $message['text'] = substr($event->message, 0, self::messageLengthLimit);
+        $message['text'] = substr((string) $event->message, 0, self::messageLengthLimit);
 
         if ($event->file) {
-            $message['source'] = ($this->sourceBasePath ? preg_replace('!^' . preg_quote($this->sourceBasePath, '!') . '!', '', $event->file) : $event->file) . ($event->line ? ':' . $event->line : '');
+            $message['source'] = ($this->sourceBasePath ? preg_replace('!^' . preg_quote((string) $this->sourceBasePath, '!') . '!', '', (string) $event->file) : $event->file) . ($event->line ? ':' . $event->line : '');
         }
         if ($event->trace) {
             $traceArray = $this->convertTraceToArray($event->trace, $event->file, $event->line);
@@ -143,12 +143,15 @@ class PhpConsole
 
         self::pushMessageToBuffer($message);
 
-        if (strpos($event->tags, ',fatal')) {
+        if (strpos((string) $event->tags, ',fatal')) {
             self::flushMessagesBuffer();
         }
     }
 
-    protected function convertTraceToArray($traceData, $eventFile = null, $eventLine = null)
+    /**
+     * @return mixed[]
+     */
+    protected function convertTraceToArray($traceData, $eventFile = null, $eventLine = null): array
     {
         $trace = [];
         foreach ($traceData as $call) {
@@ -166,12 +169,12 @@ class PhpConsole
                         $args[] = 'Array';
                     } else {
                         $arg = var_export($arg, 1);
-                        $args[] = strlen($arg) > 12 ? substr($arg, 0, 8) . '...\'' : $arg;
+                        $args[] = strlen((string) $arg) > 12 ? substr((string) $arg, 0, 8) . '...\'' : $arg;
                     }
                 }
             }
             if (isset($call['file']) && $this->sourceBasePath) {
-                $call['file'] = preg_replace('!^' . preg_quote($this->sourceBasePath, '!') . '!', '', $call['file']);
+                $call['file'] = preg_replace('!^' . preg_quote((string) $this->sourceBasePath, '!') . '!', '', $call['file']);
             }
             $trace[] = (isset($call['file']) ? ($call['file'] . ':' . $call['line']) : '[internal call]') . ' - ' . (isset($call['class']) ? $call['class'] . $call['type'] : '') . $call['function'] . '(' . implode(', ', $args) . ')';
         }
@@ -198,7 +201,7 @@ class PhpConsole
         return substr(number_format(microtime(1), 3, '', ''), -6) + self::$index++;
     }
 
-    public static function flushMessagesBuffer()
+    public static function flushMessagesBuffer(): void
     {
         if (self::$messagesBuffer) {
             self::sendMessages(self::$messagesBuffer);
@@ -219,7 +222,7 @@ class PhpConsole
         if (headers_sent($file, $line)) {
             exit('PhpConsole ERROR: setcookie() failed because haders are sent (' . $file . ':' . $line . '). Try to use ob_start()');
         }
-        setcookie($name, $value, ['expires' => null, 'path' => '/']);
+        setcookie($name, (string) $value, ['expires' => null, 'path' => '/']);
     }
 
     protected static function sendMessages($messages)
@@ -254,7 +257,7 @@ class PhpConsole
         register_shutdown_function([$this, 'checkFatalError']);
     }
 
-    public function checkFatalError()
+    public function checkFatalError(): void
     {
         $error = error_get_last();
         if ($error) {
@@ -262,7 +265,7 @@ class PhpConsole
         }
     }
 
-    public function handleError($code = null, $message = null, $file = null, $line = null)
+    public function handleError($code = null, $message = null, $file = null, $line = null): void
     {
         if (error_reporting() == 0) { // if error has been supressed with an @
             return;
@@ -297,7 +300,7 @@ class PhpConsole
         $this->oldExceptionsHandler = set_exception_handler($this->handleException(...));
     }
 
-    public function handleException(Throwable $exception)
+    public function handleException(Throwable $exception): void
     {
         $event = new PhpConsoleEvent();
         $event->message = $exception->getMessage();
@@ -319,7 +322,7 @@ class PhpConsole
     DEBUG
      **************************************************************/
 
-    public static function debug($message, $tags = 'debug')
+    public static function debug($message, $tags = 'debug'): void
     {
         if (self::$instance) {
             $event = new PhpConsoleEvent();

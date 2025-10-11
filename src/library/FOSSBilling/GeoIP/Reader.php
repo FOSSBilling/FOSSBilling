@@ -171,14 +171,13 @@ class Reader
     /**
      * Downloads a database file and saves it to the provided location.
      *
-     * @return void
      *
      * @throws TransportExceptionInterface
      * @throws RedirectionExceptionInterface
      * @throws ClientExceptionInterface
      * @throws ServerExceptionInterface
      */
-    private static function downloadDb(string $path, string $url)
+    private static function downloadDb(string $path, string $url): void
     {
         $httpClient = HttpClient::create();
         $response = $httpClient->request('GET', $url);
