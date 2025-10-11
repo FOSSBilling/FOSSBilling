@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Activity\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -95,5 +97,41 @@ class Admin extends \Api_Abstract
         $content_text = $data['content_text'] ?? null;
 
         return $this->getService()->logEmail($subject, $client_id, $sender, $recipients, $content_html, $content_text);
+    }
+
+    /**
+     * Remove an activity message from the log.
+     *
+     * @param array $data Message data
+     *
+     * @return bool True if the message was deleted, false otherwise
+     */
+    #[RequiredParams(['id' => 'ID was not passed'])]
+    public function log_delete($data)
+    {
+        $model = $this->di['db']->getExistingModelById('ActivitySystem', $data['id'], 'Event not found');
+
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'delete_activity');
+
+        $this->di['db']->trash($model);
+
+        return true;
+    }
+
+    /**
+     * Delete multiple activity messages from the log.
+     *
+     * @param array $data Deletion data
+     *
+     * @return bool True if the messages were deleted, false otherwise
+     */
+    #[RequiredParams(['ids' => 'IDs were not passed'])]
+    public function batch_delete($data)
+    {
+        foreach ($data['ids'] as $id) {
+            $this->log_delete(['id' => $id]);
+        }
+
+        return true;
     }
 }

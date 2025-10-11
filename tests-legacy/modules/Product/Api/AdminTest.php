@@ -630,7 +630,7 @@ class AdminTest extends \BBTestCase
         $data = [];
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Promo id is missing');
+        $this->expectExceptionMessage('Promo ID is missing');
         $this->api->promo_get($data);
     }
 
