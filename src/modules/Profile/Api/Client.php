@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Profile\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Client extends \Api_Abstract
 {
     /**
@@ -100,14 +102,13 @@ class Client extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams([
+        'current_password' => 'Current password required',
+        'new_password' => 'New password required',
+        'confirm_password' => 'New password confirmation required',
+    ])]
     public function change_password($data)
     {
-        $required = [
-            'current_password' => 'Current password required',
-            'new_password' => 'New password required',
-            'confirm_password' => 'New password confirmation required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $this->di['validator']->isPasswordStrong($data['new_password']);
 
         if ($data['new_password'] != $data['confirm_password']) {

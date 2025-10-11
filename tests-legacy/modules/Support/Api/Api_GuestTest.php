@@ -21,13 +21,8 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForGuest')
             ->willReturn(sha1(uniqid()));
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -51,13 +46,8 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('ticketCreateForGuest')
             ->willReturn(sha1(uniqid()));
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -85,13 +75,8 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -113,13 +98,8 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicCloseTicket')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -141,13 +121,8 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketReplyForGuest')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);

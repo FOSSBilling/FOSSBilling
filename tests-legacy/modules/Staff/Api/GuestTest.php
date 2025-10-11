@@ -95,7 +95,11 @@ class GuestTest extends \BBTestCase
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();
 
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
         $di = new \Pimple\Container();
+        $di['tools'] = $toolsMock;
         $di['validator'] = new \FOSSBilling\Validate();
 
         $guestApi->setDi($di);
@@ -110,7 +114,11 @@ class GuestTest extends \BBTestCase
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();
 
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
         $di = new \Pimple\Container();
+        $di['tools'] = $toolsMock;
         $di['validator'] = new \FOSSBilling\Validate();
 
         $guestApi->setDi($di);
@@ -133,17 +141,11 @@ class GuestTest extends \BBTestCase
             ->method('login')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
@@ -170,13 +172,7 @@ class GuestTest extends \BBTestCase
             ->method('getConfig')
             ->willReturn($configArr);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;

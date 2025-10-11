@@ -17,12 +17,6 @@ class GuestTest extends \BBTestCase
     public function testfreeTlds(): void
     {
         $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
-        $di['validator'] = $validatorMock;
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
@@ -49,12 +43,6 @@ class GuestTest extends \BBTestCase
     public function testfreeTldsProductTypeIsNotHosting(): void
     {
         $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
-        $di['validator'] = $validatorMock;
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
@@ -63,7 +51,10 @@ class GuestTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+
         $di['db'] = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->never())->method('getFreeTlds');

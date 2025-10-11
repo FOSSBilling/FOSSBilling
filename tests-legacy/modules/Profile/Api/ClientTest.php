@@ -81,8 +81,8 @@ class ClientTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('isPasswordStrong')
+            ->willReturn(true);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -113,11 +113,7 @@ class ClientTest extends \BBTestCase
             ->willReturn(true);
 
         $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-        $di['validator'] = $validatorMock;
+        
         $this->clientApi->setDi($di);
         $this->clientApi->setService($service);
         $this->clientApi->setIdentity(new \Model_Client());

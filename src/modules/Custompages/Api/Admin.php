@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Custompages\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -35,13 +37,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Custom page ID was not passed'])]
     public function delete($data)
     {
-        $required = [
-            'id' => 'Custom Page ID not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $this->getService()->deletePage($data['id']);
 
         return true;
@@ -52,13 +50,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['ids' => 'Custom page IDs were not passed'])]
     public function batch_delete($data)
     {
-        $required = [
-            'ids' => 'Custom Page IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $this->getService()->deletePage($data['ids']);
 
         return true;
@@ -72,14 +66,9 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
+    #[RequiredParams(['title' => 'Title was not passed', 'content' => 'Content was not passed'])]
     public function create($data)
     {
-        $required = [
-            'title' => 'Custom page title not passed',
-            'content' => 'Custom page content not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $title = $data['title'];
 
         $content = $data['content'];
@@ -97,16 +86,14 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
+    #[RequiredParams([
+        'id' => 'Custom page ID was not passed',
+        'title' => 'Custom page title was not passed',
+        'slug' => 'Custom page slug was not passed',
+        'content' => 'Custom page content was not passed',
+    ])]
     public function update($data)
     {
-        $required = [
-            'id' => 'Custom page id not passed',
-            'title' => 'Custom page title not passed',
-            'slug' => 'Custom page slug not passed',
-            'content' => 'Custom page content not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $id = $data['id'];
         $title = $data['title'];
         $content = $data['content'];

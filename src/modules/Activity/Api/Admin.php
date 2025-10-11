@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Activity\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -107,13 +109,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool True if the message was deleted, false otherwise
      */
+    #[RequiredParams(['id' => 'ID was not passed'])]
     public function log_delete($data)
     {
-        $required = [
-            'id' => 'ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ActivitySystem', $data['id'], 'Event not found');
 
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'delete_activity');
@@ -130,13 +128,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool True if the messages were deleted, false otherwise
      */
+    #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data)
     {
-        $required = [
-            'ids' => 'IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         foreach ($data['ids'] as $id) {
             $this->log_delete(['id' => $id]);
         }
