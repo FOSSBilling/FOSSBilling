@@ -70,7 +70,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $hookService);
+        $di['mod_service'] = $di->protect(fn ($name) => $hookService);
 
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
@@ -180,16 +180,12 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $boxModMock);
+        $di['mod'] = $di->protect(fn () => $boxModMock);
         $di['mod_service'] = $di->protect(function ($name) use ($extensionServiceMock) {
             if ($name == 'extension') {
                 return $extensionServiceMock;
             }
         });
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
         $this->service->setDi($di);
         $result = $this->service->batchConnect($mod);
         $this->assertTrue($result);

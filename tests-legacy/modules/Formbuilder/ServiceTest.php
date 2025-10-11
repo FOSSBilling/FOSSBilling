@@ -36,7 +36,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public static function typeValidationData(): array
+    public static function typeValidationData()
     {
         return [
             ['select', true],
@@ -45,13 +45,13 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('typeValidationData')]
-    public function testtypeValidation(string $type, bool $expected): void
+    public function testtypeValidation($type, $expected): void
     {
         $result = $this->service->typeValidation($type);
         $this->assertEquals($expected, $result);
     }
 
-    public static function isArrayUniqueData(): array
+    public static function isArrayUniqueData()
     {
         return [
             [['sameValue', 'sameValue'], false],
@@ -61,7 +61,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('isArrayUniqueData')]
-    public function testisArrayUnique(array $data, bool $expected): void
+    public function testisArrayUnique($data, $expected): void
     {
         $result = $this->service->isArrayUnique($data);
         $this->assertEquals($expected, $result);
@@ -136,7 +136,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newFieldId, $result);
     }
 
-    public static function updateFieldTypeData(): array
+    public static function updateFieldTypeData()
     {
         return [
             ['select'],
@@ -145,7 +145,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('updateFieldTypeData')]
-    public function testupdateField(string $fieldType): void
+    public function testupdateField($fieldType): void
     {
         $updateFIeldId = 2;
         $data = [
@@ -189,11 +189,6 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
 
         $this->service->setDi($di);
 
@@ -427,10 +422,6 @@ class ServiceTest extends \BBTestCase
             ->willReturn($modelArray);
 
         $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);

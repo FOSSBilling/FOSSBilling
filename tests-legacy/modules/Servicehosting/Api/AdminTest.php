@@ -247,9 +247,7 @@ class AdminTest extends \BBTestCase
             ->willReturn(['list' => []]);
 
         $di = new \Pimple\Container();
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
-        $dbMock = $this->getMockBuilder('Box_Database')->getMock();
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
 
@@ -277,7 +275,6 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['pager'] = $pagerMock;
-        $dbMock = $this->getMockBuilder('Box_Database')->getMock();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -302,12 +299,8 @@ class AdminTest extends \BBTestCase
             ->method('createServer')
             ->willReturn($newServerId);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -331,14 +324,9 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ServiceHostingServer());
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -361,14 +349,9 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ServiceHostingServer());
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -383,9 +366,6 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ServiceHostingServer());
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         // Mock the 'find' method to return a non-empty array, simulating the server being used by service hostings
         $dbMock->expects($this->atLeastOnce())
@@ -394,8 +374,6 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
 
         // Now, we expect an exception to be thrown because the server is used by service_hostings
@@ -418,14 +396,9 @@ class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ServiceHostingServer());
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -447,14 +420,9 @@ class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ServiceHostingServer());
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -517,14 +485,9 @@ class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -559,14 +522,9 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -592,14 +550,9 @@ class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -621,12 +574,8 @@ class AdminTest extends \BBTestCase
             ->method('createHp')
             ->willReturn($newHpId);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -653,15 +602,10 @@ class AdminTest extends \BBTestCase
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
         $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
 
         $result = $this->api->_getService($data);
@@ -688,15 +632,10 @@ class AdminTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($model);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
         $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);

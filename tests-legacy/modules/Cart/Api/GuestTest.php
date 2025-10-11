@@ -214,7 +214,6 @@ class GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -251,7 +250,6 @@ class GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -289,7 +287,6 @@ class GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -326,7 +323,6 @@ class GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -379,7 +375,6 @@ class GuestTest extends \BBTestCase
             ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -416,7 +411,6 @@ class GuestTest extends \BBTestCase
             ->willReturn(new \Model_Product());
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
         $this->guestApi->setDi($di);
@@ -461,7 +455,6 @@ class GuestTest extends \BBTestCase
             ->willReturn(new \Model_Product());
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $apiMock->setDi($di);
 

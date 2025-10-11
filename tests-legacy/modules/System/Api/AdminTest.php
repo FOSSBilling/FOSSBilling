@@ -153,9 +153,6 @@ class AdminTest extends \BBTestCase
 
             return false;
         });
-
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
 
         $result = $this->api->is_allowed($data);

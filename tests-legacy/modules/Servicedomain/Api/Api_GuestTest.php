@@ -47,12 +47,7 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('tldToApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);
 
@@ -73,12 +68,8 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('tldToApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);
 
@@ -107,7 +98,6 @@ class Api_GuestTest extends \BBTestCase
             ->willReturn(true);
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $data = [
@@ -124,11 +114,8 @@ class Api_GuestTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->willReturn(false);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $data = [
@@ -154,11 +141,8 @@ class Api_GuestTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->willReturn(true);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $data = [
@@ -184,11 +168,8 @@ class Api_GuestTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->willReturn(true);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $data = [
@@ -209,12 +190,8 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('canBeTransferred')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -237,12 +214,8 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('canBeTransferred')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);
 
@@ -264,12 +237,8 @@ class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('canBeTransferred')
             ->willReturn(false);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);
 

@@ -45,12 +45,12 @@ class GuestTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
+
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
+        $di['mod_config'] = $di->protect(fn ($name) => $configArr);
         $di['validator'] = $validatorMock;
         $di['tools'] = $toolsMock;
 
@@ -90,10 +90,9 @@ class GuestTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
+        $di['mod_config'] = $di->protect(fn ($name) => $configArr);
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
@@ -123,7 +122,7 @@ class GuestTest extends \BBTestCase
 
         $client = new Guest();
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
+        $di['mod_config'] = $di->protect(fn ($name) => $configArr);
         $client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -143,13 +142,9 @@ class GuestTest extends \BBTestCase
             'password_confirm' => 'wrongpaswword',
         ];
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
-
         $client = new Guest();
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
-        $di['validator'] = $validatorMock;
+        $di['mod_config'] = $di->protect(fn ($name) => $configArr);
         $client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -194,17 +189,12 @@ class GuestTest extends \BBTestCase
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         // $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
-        $di['validator'] = $validatorMock;
         $di['tools'] = $toolsMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $cartServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $cartServiceMock);
 
         $client = new Guest();
         $client->setDi($di);
@@ -247,17 +237,12 @@ class GuestTest extends \BBTestCase
         $toolsMock->expects($this->once())
             ->method('validateAndSanitizeEmail')->willReturn($data['email']);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->once())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name) => $emailServiceMock);
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
-        $di['validator'] = $validatorMock;
 
         $client = new Guest();
         $client->setDi($di);
@@ -280,10 +265,6 @@ class GuestTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
@@ -331,13 +312,9 @@ class GuestTest extends \BBTestCase
         $eventMock->expects($this->exactly(2))
             ->method('fire');
 
-        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
+        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
         $passwordMock->expects($this->once())
             ->method('hashIt');
-
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->once())
-            ->method('checkRequiredParamsForArray');
 
         $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
         $emailServiceMock->expects($this->once())
@@ -347,9 +324,8 @@ class GuestTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['password'] = $passwordMock;
-        $di['validator'] = $validatorMock;
         $di['logger'] = new \Box_Log();
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name) => $emailServiceMock);
 
         $client = new Guest();
         $client->setDi($di);
@@ -376,16 +352,10 @@ class GuestTest extends \BBTestCase
         $eventMock->expects($this->once())
             ->method('fire');
 
-        // Mock for the validator
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->once())
-            ->method('checkRequiredParamsForArray');
-
         // Dependency injection container setup
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['validator'] = $validatorMock;
 
         $client = new Guest();
         $client->setDi($di);
@@ -401,7 +371,7 @@ class GuestTest extends \BBTestCase
         $configArr = [];
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
+        $di['mod_config'] = $di->protect(fn ($name) => $configArr);
 
         $client = new Guest();
         $client->setDi($di);

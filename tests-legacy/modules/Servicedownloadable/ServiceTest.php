@@ -32,12 +32,7 @@ class ServiceTest extends \BBTestCase
 
         $expected = array_merge(json_decode($productModel->config ?? '', true), $data);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->service->setDi($di);
         $result = $this->service->attachOrderConfig($productModel, $data);
         $this->assertIsArray($result);
@@ -61,13 +56,9 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(1);
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
 
         $this->service->setDi($di);
         $result = $this->service->action_create($clientOrderModel);
@@ -89,7 +80,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
 
         $this->service->setDi($di);
         $this->service->action_delete($clientOrderModel);

@@ -76,7 +76,6 @@ class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 

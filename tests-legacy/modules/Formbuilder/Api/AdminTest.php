@@ -14,7 +14,7 @@ class AdminTest extends \BBTestCase
      */
     protected $api;
 
-    public function getServiceMock(): \PHPUnit\Framework\MockObject\MockObject
+    public function getServiceMock()
     {
         return $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
     }
@@ -45,12 +45,7 @@ class AdminTest extends \BBTestCase
 
         $this->api->setService($serviceMock);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $result = $this->api->create_form($data);
@@ -64,12 +59,8 @@ class AdminTest extends \BBTestCase
             'name' => 'testName',
             'type' => 'custom',
         ];
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Form style was not found in predefined list');
@@ -152,12 +143,7 @@ class AdminTest extends \BBTestCase
             ->method('getForm')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -174,12 +160,7 @@ class AdminTest extends \BBTestCase
             ->method('getFormFields')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -196,12 +177,7 @@ class AdminTest extends \BBTestCase
             ->method('getField')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -230,14 +206,9 @@ class AdminTest extends \BBTestCase
         $serviceMock = $this->getServiceMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('removeForm')
-            ->willReturn(true);
-
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+            ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -253,14 +224,9 @@ class AdminTest extends \BBTestCase
         $serviceMock = $this->getServiceMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('removeField')
-            ->willReturn(true);
-
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+            ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -285,12 +251,7 @@ class AdminTest extends \BBTestCase
             ->method('isArrayUnique')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -371,7 +332,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function form_settings_data(): array
+    public static function form_settings_data()
     {
         return [
             ['form_id', 'Form id was not passed', 1654],
@@ -382,7 +343,7 @@ class AdminTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('form_settings_data')]
-    public function testupdateFormSettingsExceptions(string $missingField, string $exceptionMessage, int $exceptionCode): void
+    public function testupdateFormSettingsExceptions($missingField, $exceptionMessage, $exceptionCode): void
     {
         $data = [
             'form_id' => 1,

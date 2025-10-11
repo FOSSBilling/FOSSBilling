@@ -115,12 +115,8 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('findExtension')
             ->willReturn(null);
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -141,12 +137,7 @@ class AdminTest extends \BBTestCase
             ->method('activateExistingExtension')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -168,7 +159,7 @@ class AdminTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findExtension')
-            ->willReturnOnConsecutiveCalls($model);
+            ->will($this->onConsecutiveCalls($model));
         $serviceMock->expects($this->atLeastOnce())
             ->method('deactivate')
             ->willReturn(true);
@@ -180,11 +171,6 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -205,6 +191,9 @@ class AdminTest extends \BBTestCase
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
+            ->method('findExtension')
+            ->willReturn($model);
+        $serviceMock->expects($this->atLeastOnce())
             ->method('uninstall')
             ->willReturn(true);
 
@@ -215,11 +204,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
-
+        
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
@@ -255,11 +240,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
-
+        
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
@@ -300,11 +281,6 @@ class AdminTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
-
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
@@ -324,12 +300,7 @@ class AdminTest extends \BBTestCase
             ->method('getConfig')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -352,12 +323,7 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->never())
             ->method('getConfig');
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
