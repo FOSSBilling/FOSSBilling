@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Theme\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -42,13 +44,9 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
+    #[RequiredParams(['code' => 'Theme code was not passed'])]
     public function get($data)
     {
-        $required = [
-            'code' => 'Theme code is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         return $this->getService()->loadTheme($data['code']);
     }
 
@@ -57,13 +55,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['code' => 'Theme code was not passed'])]
     public function select($data)
     {
-        $required = [
-            'code' => 'Theme code is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $theme = $this->getService()->getTheme($data['code']);
 
         $systemService = $this->di['mod_service']('system');
@@ -83,14 +77,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['code' => 'Theme code was not passed', 'preset' => 'Preset name is missing'])]
     public function preset_delete($data)
     {
-        $required = [
-            'code' => 'Theme code is missing',
-            'preset' => 'Theme preset name is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $service = $this->getService();
 
         $theme = $service->getTheme($data['code']);
@@ -104,14 +93,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['code' => 'Theme code was not passed', 'preset' => 'Preset name is missing'])]
     public function preset_select($data)
     {
-        $required = [
-            'code' => 'Theme code is missing',
-            'preset' => 'Theme preset name is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $service = $this->getService();
         $theme = $service->getTheme($data['code']);
         $service->setCurrentThemePreset($theme, $data['preset']);

@@ -227,13 +227,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $data = [
             'code' => 'EUR',
         ];
@@ -332,12 +326,8 @@ class Api_AdminTest extends \BBTestCase
             ->method('getAvailableCurrencies')
             ->willReturn($this->availableCurrencies);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $adminApi->setService($service);
         $adminApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -364,12 +354,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('createCurrency')
             ->willReturn($data['code']);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $adminApi->setService($service);
         $adminApi->setDi($di);
 
@@ -397,13 +382,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('updateCurrency')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $adminApi->setDi($di);
         $adminApi->setService($service);
 
@@ -424,14 +403,7 @@ class Api_AdminTest extends \BBTestCase
         $service->expects($this->never())
             ->method('getByCode')
             ->willReturn(true);
-
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')->willThrowException(new \FOSSBilling\Exception(''));
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $adminApi->setDi($di);
         $adminApi->setService($service);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -456,13 +428,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('deleteCurrencyByCode')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $adminApi->setDi($di);
         $adminApi->setService($service);
 
@@ -504,13 +470,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getByCode')
             ->willReturn($getByCodeReturn);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $adminApi->setDi($di);
 
         $adminApi->setService($service);
@@ -539,15 +499,9 @@ class Api_AdminTest extends \BBTestCase
             ->method('setAsDefault')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $di['db'] = $db;
-        $di['validator'] = $validatorMock;
-
         $adminApi->setDi($di);
         $adminApi->setService($service);
 

@@ -96,14 +96,12 @@ class ClientTest extends \BBTestCase
             ->with('ClientOrder')
             ->willReturn(new \Model_ClientOrder());
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
