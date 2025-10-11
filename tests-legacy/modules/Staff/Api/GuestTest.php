@@ -95,7 +95,11 @@ class GuestTest extends \BBTestCase
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();
 
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
         $di = new \Pimple\Container();
+        $di['tools'] = $toolsMock;
         $di['validator'] = new \FOSSBilling\Validate();
 
         $guestApi->setDi($di);
@@ -110,7 +114,11 @@ class GuestTest extends \BBTestCase
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();
 
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
         $di = new \Pimple\Container();
+        $di['tools'] = $toolsMock;
         $di['validator'] = new \FOSSBilling\Validate();
 
         $guestApi->setDi($di);

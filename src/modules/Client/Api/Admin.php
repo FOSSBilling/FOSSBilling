@@ -209,7 +209,7 @@ class Admin extends \Api_Abstract
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
      */
-    #[RequiredParams(['id' => 'Id required'])]
+    #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function update($data = [])
     {
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
