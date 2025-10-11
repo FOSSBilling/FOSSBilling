@@ -34,7 +34,7 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public static function onBeforeClientOpenTicket(\Box_Event $event)
+    public static function onBeforeClientOpenTicket(\Box_Event $event): bool
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -50,10 +50,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return bool
-     */
-    public static function onAfterClientOpenTicket(\Box_Event $event)
+    public static function onAfterClientOpenTicket(\Box_Event $event): bool
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -82,10 +79,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return float
-     */
-    public function getTicketPrice()
+    public function getTicketPrice(): float
     {
         $config = $this->di['mod_config']('Paidsupport');
         if (!isset($config['ticket_price'])) {
@@ -115,7 +109,7 @@ class Service implements InjectionAwareInterface
         return $config['helpdesk'] ?? [];
     }
 
-    public function enoughInBalanceToOpenTicket(\Model_Client $client)
+    public function enoughInBalanceToOpenTicket(\Model_Client $client): bool
     {
         $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
         $clientBalance = $clientBalanceService->getClientBalance($client);
@@ -127,10 +121,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return bool
-     */
-    public function hasHelpdeskPaidSupport($id)
+    public function hasHelpdeskPaidSupport($id): bool
     {
         $helpdeskConfig = $this->getPaidHelpdeskConfig();
 
@@ -141,7 +132,7 @@ class Service implements InjectionAwareInterface
         return false;
     }
 
-    public function uninstall()
+    public function uninstall(): bool
     {
         $model = $this->di['db']->findOne(
             'ExtensionMeta',
@@ -155,7 +146,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function install()
+    public function install(): bool
     {
         $extensionService = $this->di['mod_service']('Extension');
         $defaultConfig = [

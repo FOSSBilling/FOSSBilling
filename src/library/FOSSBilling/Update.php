@@ -234,7 +234,7 @@ class Update implements InjectionAwareInterface
         if ($updateBranch !== 'preview') {
             $allowed = false;
             foreach ($this->allowedDownloadPrefixes as $prefix) {
-                $allowed = $allowed ? true : str_starts_with($releaseInfo['download_url'], $prefix);
+                $allowed = $allowed ? true : str_starts_with((string) $releaseInfo['download_url'], (string) $prefix);
             }
 
             if (!$allowed) {

@@ -71,7 +71,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result->session_id, $session_id);
     }
 
-    public static function getSessionCartDoesNotExistProvider()
+    public static function getSessionCartDoesNotExistProvider(): array
     {
         $self = new ServiceTest('ServiceTest');
 
@@ -90,7 +90,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getSessionCartDoesNotExistProvider')]
-    public function testGetSessionCartDoesNotExist($sessionGetWillReturn, $getCurrencyByClientIdExpects, $getDefaultExpects): void
+    public function testGetSessionCartDoesNotExist(?int $sessionGetWillReturn, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $getCurrencyByClientIdExpects, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $getDefaultExpects): void
     {
         $service = new \Box\Mod\Cart\Service();
 
@@ -134,7 +134,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['session'] = $sessionMock;
-        $di['mod_service'] = $di->protect(fn () => $currencyServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyServiceMock);
         $service->setDi($di);
 
         $result = $service->getSessionCart();
@@ -558,7 +558,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public static function promoCanBeAppliedProvider()
+    public static function promoCanBeAppliedProvider(): array
     {
         $promo1 = new \Model_Promo();
         $promo1->loadBean(new \DummyBean());
@@ -603,7 +603,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('promoCanBeAppliedProvider')]
-    public function testPromoCanBeApplied($promo, $expectedResult): void
+    public function testPromoCanBeApplied(\Model_Promo $promo, bool $expectedResult): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
@@ -796,7 +796,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
@@ -839,11 +839,10 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);
@@ -882,7 +881,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
 
         $serviceMock->setDi($di);
         $productModel->setDi($di);
@@ -933,7 +932,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -986,7 +985,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceLicenseServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceLicenseServiceMock);
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
@@ -1014,8 +1013,7 @@ class ServiceTest extends \BBTestCase
 
         $serviceCustomServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicecustom\Service::class)->getMock();
         $serviceCustomServiceMock->expects($this->atLeastOnce())
-            ->method('validateCustomForm')
-            ->willReturn([]);
+            ->method('validateCustomForm');
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isStockAvailable'])
@@ -1041,7 +1039,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceCustomServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceCustomServiceMock);
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
@@ -1089,7 +1087,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $currencyService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyService);
 
         $serviceMock->setDi($di);
 
@@ -1238,7 +1236,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($discountSetup, $result[1]);
     }
 
-    public static function isPromoAvailableForClientGroupProvider()
+    public static function isPromoAvailableForClientGroupProvider(): array
     {
         $promo1 = new \Model_Promo();
         $promo1->loadBean(new \DummyBean());
@@ -1294,7 +1292,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('isPromoAvailableForClientGroupProvider')]
-    public function testIsPromoAvailableForClientGroup(\Model_Promo $promo, $client, $expectedResult): void
+    public function testIsPromoAvailableForClientGroup(\Model_Promo $promo, ?\Model_Client $client, bool $expectedResult): void
     {
         $di = new \Pimple\Container();
         $di['loggedin_client'] = $client;

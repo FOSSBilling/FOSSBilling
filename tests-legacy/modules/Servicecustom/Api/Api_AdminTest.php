@@ -18,8 +18,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['updateConfig'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
-            ->method('updateConfig')
-            ->willReturn(null);
+            ->method('updateConfig');
 
         $data = [
             'order_id' => random_int(1, 100),
@@ -37,8 +36,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['updateConfig'])->getMock();
         $serviceMock->expects($this->never())
-            ->method('updateConfig')
-            ->willReturn(null);
+            ->method('updateConfig');
 
         $data = [
             'config' => [
@@ -57,8 +55,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['updateConfig'])->getMock();
         $serviceMock->expects($this->never())
-            ->method('updateConfig')
-            ->willReturn(null);
+            ->method('updateConfig');
 
         $data = [
             'order_id' => random_int(1, 100),
@@ -74,8 +71,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['updateConfig'])->getMock();
         $serviceMock->expects($this->never())
-            ->method('updateConfig')
-            ->willReturn(null);
+            ->method('updateConfig');
 
         $data = [
             'order_id' => random_int(1, 100),

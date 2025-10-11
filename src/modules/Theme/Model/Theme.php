@@ -31,12 +31,12 @@ class Theme
         return $this->name;
     }
 
-    public function isAdminAreaTheme()
+    public function isAdminAreaTheme(): bool
     {
-        return str_contains($this->name, 'admin_');
+        return str_contains((string) $this->name, 'admin_');
     }
 
-    public function isAssetsPathWritable()
+    public function isAssetsPathWritable(): bool
     {
         return is_writable($this->getPathAssets());
     }
@@ -99,10 +99,10 @@ class Theme
         $settings_page = $this->strip_tags_content($settings_page, '<script><style>');
 
         // remove style attributes
-        $settings_page = preg_replace('/(<[^>]+) style=".*?"/i', '$1', $settings_page);
+        $settings_page = preg_replace('/(<[^>]+) style=".*?"/i', '$1', (string) $settings_page);
 
         // fix unclosed text area
-        $settings_page = preg_replace('/<textarea (.*)\/>/i', '<textarea $1></textarea>', $settings_page);
+        $settings_page = preg_replace('/<textarea (.*)\/>/i', '<textarea $1></textarea>', (string) $settings_page);
 
         return $settings_page;
     }
@@ -140,32 +140,32 @@ class Theme
         return (is_array($array) && isset($array[$preset])) ? $array[$preset] : [];
     }
 
-    public function getUrl()
+    public function getUrl(): string
     {
         return SYSTEM_URL . "themes/{$this->name}";
     }
 
-    public function getPath()
+    public function getPath(): string
     {
         return Path::join(PATH_THEMES, $this->name);
     }
 
-    public function getPathConfig()
+    public function getPathConfig(): string
     {
         return Path::join($this->getPath(), 'config');
     }
 
-    public function getPathAssets()
+    public function getPathAssets(): string
     {
         return Path::join($this->getPath(), 'assets');
     }
 
-    public function getPathHtml()
+    public function getPathHtml(): string
     {
         return Path::join($this->getPath(), 'html');
     }
 
-    public function getPathSettingsDataFile()
+    public function getPathSettingsDataFile(): string
     {
         return Path::join($this->getPathConfig(), 'settings_data.json');
     }
@@ -175,7 +175,7 @@ class Theme
      */
     private function strip_tags_content($text, $tags = '', $invert = true)
     {
-        preg_match_all('/<(.+?)[\s]*\/?[\s]*>/si', trim($tags), $tags);
+        preg_match_all('/<(.+?)[\s]*\/?[\s]*>/si', trim((string) $tags), $tags);
         $tags = array_unique($tags[1]);
 
         if (!empty($tags)) {

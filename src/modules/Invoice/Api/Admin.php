@@ -945,10 +945,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes invoices with given IDs.
-     *
-     * @return bool
      */
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         $required = [
             'ids' => 'IDs not passed',
@@ -964,10 +962,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes subscriptions with given IDs.
-     *
-     * @return bool
      */
-    public function batch_delete_subscription($data)
+    public function batch_delete_subscription($data): bool
     {
         $required = [
             'ids' => 'IDs not passed',
@@ -983,10 +979,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes transactions with given IDs.
-     *
-     * @return bool
      */
-    public function batch_delete_transaction($data)
+    public function batch_delete_transaction($data): bool
     {
         $required = [
             'ids' => 'IDs not passed',
@@ -1002,10 +996,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes taxes with given IDs.
-     *
-     * @return bool
      */
-    public function batch_delete_tax($data)
+    public function batch_delete_tax($data): bool
     {
         $required = [
             'ids' => 'IDs not passed',

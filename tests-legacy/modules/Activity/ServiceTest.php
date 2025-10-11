@@ -17,7 +17,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public static function searchFilters()
+    public static function searchFilters(): array
     {
         return [
             [[], 'FROM activity_system ', true],
@@ -31,7 +31,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchFilters')]
-    public function testgetSearchQuery($filterKey, $search, $expected): void
+    public function testgetSearchQuery(array $filterKey, string $search, bool $expected): void
     {
         $di = new \Pimple\Container();
         $service = new \Box\Mod\Activity\Service();

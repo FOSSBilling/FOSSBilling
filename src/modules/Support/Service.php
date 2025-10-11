@@ -27,7 +27,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public static function onAfterClientOpenTicket(\Box_Event $event)
+    public static function onAfterClientOpenTicket(\Box_Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -49,7 +49,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminOpenTicket(\Box_Event $event)
+    public static function onAfterAdminOpenTicket(\Box_Event $event): void
     {
         $di = $event->getDi();
         $supportService = $di['mod_service']('support');
@@ -71,7 +71,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminCloseTicket(\Box_Event $event)
+    public static function onAfterAdminCloseTicket(\Box_Event $event): void
     {
         $di = $event->getDi();
         $supportService = $di['mod_service']('support');
@@ -93,7 +93,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminReplyTicket(\Box_Event $event)
+    public static function onAfterAdminReplyTicket(\Box_Event $event): void
     {
         $di = $event->getDi();
         $supportService = $di['mod_service']('support');
@@ -115,7 +115,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public static function onAfterGuestPublicTicketOpen(\Box_Event $event)
+    public static function onAfterGuestPublicTicketOpen(\Box_Event $event): void
     {
         $di = $event->getDi();
         $supportService = $di['mod_service']('support');
@@ -137,7 +137,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminPublicTicketOpen(\Box_Event $event)
+    public static function onAfterAdminPublicTicketOpen(\Box_Event $event): void
     {
         $di = $event->getDi();
         $supportService = $di['mod_service']('support');
@@ -160,7 +160,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminPublicTicketReply(\Box_Event $event)
+    public static function onAfterAdminPublicTicketReply(\Box_Event $event): void
     {
         $di = $event->getDi();
         $supportService = $di['mod_service']('support');
@@ -183,7 +183,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminPublicTicketClose(\Box_Event $event)
+    public static function onAfterAdminPublicTicketClose(\Box_Event $event): void
     {
         $di = $event->getDi();
         $supportService = $di['mod_service']('support');
@@ -219,7 +219,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * Return array of ticket statuses.
      */
-    public function getStatuses()
+    public function getStatuses(): array
     {
         return [
             \Model_SupportTicket::OPENED => 'Open',
@@ -251,7 +251,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $ticket;
     }
 
-    public function getSearchQuery($data)
+    public function getSearchQuery($data): array
     {
         $query = 'SELECT st.*
                 FROM support_ticket st
@@ -325,17 +325,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($created_at) {
             $where[] = "DATE_FORMAT(st.created_at, '%Y-%m-%d') = :created_at";
-            $bindings[':created_at'] = date('Y-m-d', strtotime($created_at));
+            $bindings[':created_at'] = date('Y-m-d', strtotime((string) $created_at));
         }
 
         if ($date_from) {
             $where[] = 'UNIX_TIMESTAMP(st.created_at) >= :date_from';
-            $bindings[':date_from'] = strtotime($date_from);
+            $bindings[':date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $where[] = 'UNIX_TIMESTAMP(st.created_at) <= :date_to';
-            $bindings[':date_to'] = strtotime($date_to);
+            $bindings[':date_to'] = strtotime((string) $date_to);
         }
         // smartSearch
         if ($search) {
@@ -359,7 +359,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function counter()
+    public function counter(): array
     {
         $query = 'SELECT status, COUNT(id) as counter
                     FROM support_ticket
@@ -420,7 +420,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->getCell($query, $bindings);
     }
 
-    public function checkIfTaskAlreadyExists(\Model_Client $client, $rel_id, $rel_type, $rel_task)
+    public function checkIfTaskAlreadyExists(\Model_Client $client, $rel_id, $rel_type, $rel_task): bool
     {
         $bindings = [
             ':client_id' => $client->id,
@@ -443,7 +443,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $ticket instanceof \Model_SupportTicket;
     }
 
-    public function closeTicket(\Model_SupportTicket $ticket, $identity)
+    public function closeTicket(\Model_SupportTicket $ticket, $identity): bool
     {
         $ticket->status = \Model_SupportTicket::CLOSED;
         $ticket->updated_at = date('Y-m-d H:i:s');
@@ -461,7 +461,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function autoClose(\Model_SupportTicket $model)
+    public function autoClose(\Model_SupportTicket $model): bool
     {
         $model->status = \Model_SupportTicket::CLOSED;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -513,7 +513,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $result;
     }
 
-    public function rmByClient(\Model_Client $client)
+    public function rmByClient(\Model_Client $client): void
     {
         $clientTickets = $this->di['db']->find('SupportTicket', 'client_id = :client_id', [':client_id' => $client->id]);
         foreach ($clientTickets as $ticket) {
@@ -521,7 +521,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function rm(\Model_SupportTicket $model)
+    public function rm(\Model_SupportTicket $model): bool
     {
         $supportTicketNotes = $this->di['db']->find('SupportTicketNote', 'support_ticket_id = :support_ticket_id', [':support_ticket_id' => $model->id]);
         foreach ($supportTicketNotes as $note) {
@@ -588,7 +588,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function noteGetAuthorDetails(\Model_SupportTicketNote $model)
+    public function noteGetAuthorDetails(\Model_SupportTicketNote $model): array
     {
         $admin = $this->di['db']->load('Admin', $model->admin_id);
 
@@ -598,7 +598,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function noteRm(\Model_SupportTicketNote $model)
+    public function noteRm(\Model_SupportTicketNote $model): bool
     {
         $id = $model->id;
         $this->di['db']->trash($model);
@@ -616,7 +616,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
-    public function helpdeskGetSearchQuery($data)
+    public function helpdeskGetSearchQuery($data): array
     {
         $query = 'SELECT * FROM support_helpdesk';
 
@@ -646,7 +646,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->getAssoc('SELECT id, name FROM support_helpdesk');
     }
 
-    public function helpdeskRm(\Model_SupportHelpdesk $model)
+    public function helpdeskRm(\Model_SupportHelpdesk $model): bool
     {
         $id = $model->id;
 
@@ -684,7 +684,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->getCell($query, $bindings);
     }
 
-    public function messageGetAuthorDetails(\Model_SupportTicketMessage $model)
+    public function messageGetAuthorDetails(\Model_SupportTicketMessage $model): array
     {
         if ($model->admin_id) {
             $author = $this->di['db']->load('Admin', $model->admin_id);
@@ -710,7 +710,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
-    public function ticketUpdate(\Model_SupportTicket $model, $data)
+    public function ticketUpdate(\Model_SupportTicket $model, $data): bool
     {
         $model->support_helpdesk_id = $data['support_helpdesk_id'] ?? $model->support_helpdesk_id;
         $model->status = $data['status'] ?? $model->status;
@@ -725,7 +725,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function ticketMessageUpdate(\Model_SupportTicketMessage $model, $content)
+    public function ticketMessageUpdate(\Model_SupportTicketMessage $model, $content): bool
     {
         $model->content = $content;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -773,7 +773,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $msgId;
     }
 
-    public function ticketCreateForAdmin(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, $data, \Model_Admin $identity)
+    public function ticketCreateForAdmin(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, $data, \Model_Admin $identity): int
     {
         $status = $data['status'] ?? \Model_SupportTicket::ONHOLD;
 
@@ -804,7 +804,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return (int) $ticketId;
     }
 
-    public function ticketCreateForGuest($data)
+    public function ticketCreateForGuest($data): string
     {
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
@@ -854,7 +854,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $ticket->hash;
     }
 
-    public function canClientSubmitNewTicket(\Model_Client $client, array $config)
+    public function canClientSubmitNewTicket(\Model_Client $client, array $config): bool
     {
         $hours = $config['wait_hours'];
 
@@ -872,7 +872,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function ticketCreateForClient(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, array $data)
+    public function ticketCreateForClient(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, array $data): int
     {
         // @todo validate task params
         $rel_id = $data['rel_id'] ?? null;
@@ -954,7 +954,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return (int) $ticketId;
     }
 
-    private function cannedReply(\Model_SupportTicket $ticket, $cannedId)
+    private function cannedReply(\Model_SupportTicket $ticket, $cannedId): void
     {
         try {
             $cannedObj = $this->di['db']->getExistingModelById('SupportPr', $cannedId, 'Canned reply not found');
@@ -991,7 +991,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->store($msg);
     }
 
-    public function publicGetStatuses()
+    public function publicGetStatuses(): array
     {
         return [
             \Model_SupportPTicket::OPENED => 'Open',
@@ -1014,7 +1014,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $publicTicket;
     }
 
-    public function publicGetSearchQuery($data)
+    public function publicGetSearchQuery($data): array
     {
         $query = 'SELECT spt.* FROM support_p_ticket spt
         LEFT JOIN support_p_ticket_message sptm
@@ -1084,7 +1084,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function publicCounter()
+    public function publicCounter(): array
     {
         $query = 'SELECT status, COUNT(id) as counter
                 FROM support_p_ticket
@@ -1124,7 +1124,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->find('SupportPTicket', 'status = :status AND DATE_ADD(updated_at, INTERVAL 48 HOUR) < NOW() ORDER BY id ASC', $bindings);
     }
 
-    public function publicCloseTicket(\Model_SupportPTicket $model, $identity)
+    public function publicCloseTicket(\Model_SupportPTicket $model, $identity): bool
     {
         $model->status = 'closed';
         $model->updated_at = date('Y-m-d H:i:s');
@@ -1142,7 +1142,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function publicAutoClose(\Model_SupportPTicket $model)
+    public function publicAutoClose(\Model_SupportPTicket $model): bool
     {
         $model->status = 'closed';
         $model->updated_at = date('Y-m-d H:i:s');
@@ -1154,7 +1154,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function publicRm(\Model_SupportPTicket $model)
+    public function publicRm(\Model_SupportPTicket $model): bool
     {
         $id = $model->id;
         $bindings = [
@@ -1193,7 +1193,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
-    public function publicMessageGetAuthorDetails(\Model_SupportPTicketMessage $model)
+    public function publicMessageGetAuthorDetails(\Model_SupportPTicketMessage $model): array
     {
         if ($model->admin_id) {
             $author = $this->di['db']->getExistingModelById('Admin', $model->admin_id);
@@ -1252,7 +1252,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $ticketId;
     }
 
-    public function publicTicketUpdate(\Model_SupportPTicket $model, $data)
+    public function publicTicketUpdate(\Model_SupportPTicket $model, $data): bool
     {
         $model->subject = $data['subject'] ?? $model->subject;
         $model->status = $data['status'] ?? $model->status;
@@ -1307,7 +1307,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $ticket->hash;
     }
 
-    public function helpdeskUpdate(\Model_SupportHelpdesk $model, $data)
+    public function helpdeskUpdate(\Model_SupportHelpdesk $model, $data): bool
     {
         $model->name = $data['name'] ?? $model->name;
         $model->email = $data['email'] ?? $model->email;
@@ -1339,7 +1339,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $id;
     }
 
-    public function cannedGetSearchQuery($data)
+    public function cannedGetSearchQuery($data): array
     {
         $query = 'SELECT sp.* FROM support_pr sp
                 LEFT JOIN support_pr_category spc
@@ -1384,7 +1384,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $res;
     }
 
-    public function cannedRm(\Model_SupportPr $model)
+    public function cannedRm(\Model_SupportPr $model): bool
     {
         $id = $model->id;
 
@@ -1416,7 +1416,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->getAssoc('SELECT id, title FROM support_pr_category');
     }
 
-    public function cannedCategoryRm(\Model_SupportPrCategory $model)
+    public function cannedCategoryRm(\Model_SupportPrCategory $model): bool
     {
         $id = $model->id;
         $this->di['db']->trash($model);
@@ -1448,7 +1448,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $id;
     }
 
-    public function cannedUpdate(\Model_SupportPr $model, $data)
+    public function cannedUpdate(\Model_SupportPr $model, $data): bool
     {
         $model->support_pr_category_id = $data['category_id'] ?? $model->support_pr_category_id;
         $model->title = $data['title'] ?? $model->title;
@@ -1474,7 +1474,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $id;
     }
 
-    public function cannedCategoryUpdate(\Model_SupportPrCategory $model, $title)
+    public function cannedCategoryUpdate(\Model_SupportPrCategory $model, $title): bool
     {
         $model->title = $title;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -1500,7 +1500,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $id;
     }
 
-    public function ticketTaskComplete(\Model_SupportTicket $model)
+    public function ticketTaskComplete(\Model_SupportTicket $model): bool
     {
         $model->rel_status = \Model_SupportTicket::REL_STATUS_COMPLETE;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -1515,7 +1515,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      * Knowledge Base Functions.
      */
 
-    public function kbEnabled()
+    public function kbEnabled(): bool
     {
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
@@ -1578,13 +1578,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->find('SupportKbArticle', 'status=:status', [':status' => \Model_SupportKbArticle::ACTIVE]);
     }
 
-    public function kbHitView(\Model_SupportKbArticle $model)
+    public function kbHitView(\Model_SupportKbArticle $model): void
     {
         ++$model->views;
         $this->di['db']->store($model);
     }
 
-    public function kbRm(\Model_SupportKbArticle $model)
+    public function kbRm(\Model_SupportKbArticle $model): void
     {
         $id = $model->id;
         $this->di['db']->trash($model);
@@ -1643,7 +1643,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $id;
     }
 
-    public function kbUpdateArticle($id, $articleCategoryId = null, $title = null, $slug = null, $status = null, $content = null, $views = null)
+    public function kbUpdateArticle($id, $articleCategoryId = null, $title = null, $slug = null, $status = null, $content = null, $views = null): bool
     {
         $model = $this->di['db']->findOne('SupportKbArticle', 'id = ?', [$id]);
 
@@ -1683,7 +1683,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function kbCategoryGetSearchQuery($data)
+    public function kbCategoryGetSearchQuery($data): array
     {
         $sql = '
         SELECT kac.*
@@ -1735,7 +1735,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->getAssoc($sql);
     }
 
-    public function kbCategoryRm(\Model_SupportKbArticleCategory $model)
+    public function kbCategoryRm(\Model_SupportKbArticleCategory $model): bool
     {
         $bindings = [
             ':kb_article_category_id' => $model->id,
@@ -1806,7 +1806,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $id;
     }
 
-    public function kbUpdateCategory(\Model_SupportKbArticleCategory $model, $title = null, $slug = null, $description = null)
+    public function kbUpdateCategory(\Model_SupportKbArticleCategory $model, $title = null, $slug = null, $description = null): bool
     {
         if (isset($title)) {
             $model->title = $title;

@@ -50,7 +50,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function isCoreModule($mod)
+    public function isCoreModule($mod): bool
     {
         $core = $this->di['mod']('extension')->getCoreModules();
 
@@ -76,7 +76,7 @@ class Service implements InjectionAwareInterface
         return (bool) $id_or_null;
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event)
+    public static function onBeforeAdminCronRun(\Box_Event $event): bool
     {
         $di = $event->getDi();
         $extensionService = $di['mod_service']('extension');
@@ -107,7 +107,7 @@ class Service implements InjectionAwareInterface
         return $removedItems == 0 ? true : $removedItems;
     }
 
-    public function getSearchQuery($filter)
+    public function getSearchQuery($filter): array
     {
         $search = $filter['search'] ?? null;
         $type = $filter['type'] ?? null;
@@ -213,7 +213,7 @@ class Service implements InjectionAwareInterface
 
         if (!empty($search)) {
             foreach ($result as $idx => $mod) {
-                if (!str_contains(strtolower($mod['name']), $search)) {
+                if (!str_contains(strtolower((string) $mod['name']), $search)) {
                     unset($result[$idx]);
                 }
             }
@@ -232,9 +232,9 @@ class Service implements InjectionAwareInterface
         foreach ($result as $key => $value) {
             $icon_url = $value['icon_url'] ?? null;
             if ($icon_url) {
-                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), basename($icon_url));
+                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), basename((string) $icon_url));
                 if ($this->filesystem->exists($iconPath)) {
-                    $result[$key]['icon_path'] = 'mod_' . ucfirst($value['id']) . '_' . basename($icon_url);
+                    $result[$key]['icon_path'] = 'mod_' . ucfirst((string) $value['id']) . '_' . basename((string) $icon_url);
                 }
             }
         }
@@ -384,7 +384,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function deactivate(\Model_Extension $ext)
+    public function deactivate(\Model_Extension $ext): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
@@ -424,7 +424,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function uninstall(\Model_Extension $ext)
+    public function uninstall(\Model_Extension $ext): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
@@ -443,7 +443,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function downloadAndExtract($type, $id)
+    public function downloadAndExtract($type, $id): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
@@ -492,7 +492,7 @@ class Service implements InjectionAwareInterface
 
         switch ($type) {
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
-                $destination = Path::join(PATH_MODS, ucfirst($id));
+                $destination = Path::join(PATH_MODS, ucfirst((string) $id));
 
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_THEME:
@@ -504,7 +504,7 @@ class Service implements InjectionAwareInterface
 
                 break;
             case \FOSSBilling\ExtensionManager::TYPE_PG:
-                $destination = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', ucfirst($id));
+                $destination = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', ucfirst((string) $id));
 
                 break;
         }
@@ -546,7 +546,7 @@ class Service implements InjectionAwareInterface
         return $stmt->fetchAll(\PDO::FETCH_COLUMN);
     }
 
-    private function installModule(\Model_Extension $ext)
+    private function installModule(\Model_Extension $ext): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
@@ -631,7 +631,7 @@ class Service implements InjectionAwareInterface
         });
     }
 
-    public function setConfig($data)
+    public function setConfig($data): bool
     {
         $this->hasManagePermission($data['ext']);
         $ext = $data['ext'];

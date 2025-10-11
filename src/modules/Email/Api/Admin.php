@@ -121,11 +121,10 @@ class Admin extends \Api_Abstract
     /**
      * Delete sent email from logs.
      *
-     * @return bool
      *
      * @throws \FOSSBilling\Exception
      */
-    public function email_delete($data)
+    public function email_delete($data): bool
     {
         $required = [
             'id' => 'Email ID is required',
@@ -193,11 +192,10 @@ class Admin extends \Api_Abstract
     /**
      * Delete email template.
      *
-     * @return bool
      *
      * @throws \FOSSBilling\Exception
      */
-    public function template_delete($data)
+    public function template_delete($data): bool
     {
         $required = [
             'id' => 'Email ID is required',
@@ -391,10 +389,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes email logs with given IDs.
-     *
-     * @return bool
      */
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         $required = [
             'ids' => 'IDs not passed',

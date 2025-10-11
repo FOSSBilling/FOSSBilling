@@ -46,7 +46,7 @@ if ($filesystem->exists(PATH_CONFIG)) {
 // Dynamically load the commands from the modules
 foreach ($modules as $module) {
     // Our manifests declare the names in lowercase, but the module directories start with an uppercase letter.
-    $cap = ucfirst($module);
+    $cap = ucfirst((string) $module);
 
     $commandsPath = Path::join(PATH_ROOT, 'modules', $cap, 'Commands');
 

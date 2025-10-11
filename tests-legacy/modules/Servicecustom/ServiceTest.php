@@ -42,7 +42,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($form);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $service);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
         $this->service->setDi($di);
 
@@ -77,7 +77,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($form);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $service);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
         $this->service->setDi($di);
 
@@ -110,7 +110,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($form);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $service);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
         $this->service->setDi($di);
 
@@ -177,7 +177,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($serviceCustomModel);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
         $result = $this->service->action_activate($order);
@@ -197,7 +197,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
         $this->service->action_activate($order);
@@ -226,7 +226,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
         $result = $this->service->action_renew($order);
@@ -247,7 +247,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn(null);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
         $result = $this->service->action_renew($order);
@@ -277,7 +277,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
         $result = $this->service->action_suspend($order);
@@ -307,7 +307,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
         $result = $this->service->action_unsuspend($order);
@@ -337,7 +337,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
         $result = $this->service->action_cancel($order);
@@ -367,7 +367,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
         $result = $this->service->action_uncancel($order);
@@ -397,7 +397,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
         $result = $this->service->action_delete($order);
@@ -466,7 +466,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $this->service->setDi($di);
 
         $result = $this->service->getServiceCustomByOrderId(random_int(1, 100));
@@ -488,7 +488,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
         $this->service->getServiceCustomByOrderId(random_int(1, 100));
