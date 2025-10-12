@@ -7,7 +7,7 @@
         "issues": "https://github.com/FOSSBilling/FOSSBilling/issues",
         "chat": "https://fossbilling.org/discord"
     },
-    "readme": "https://github.com/FOSSBilling/FOSSBilling/blob/master/README.md",
+    "readme": "https://github.com/FOSSBilling/FOSSBilling/blob/main/README.md",
     "type": "project",
     "license": "Apache-2.0",
     "keywords": [
@@ -16,6 +16,24 @@
         "client management"
     ],
     "homepage": "https://fossbilling.org",
+    "scripts": {
+        "test": "phpunit",
+        "phpstan": "phpstan analyze --memory-limit=512M",
+        "phpstan:baseline": "phpstan analyze --generate-baseline",
+        "cs:check": "php-cs-fixer fix --dry-run --diff",
+        "cs:fix": "php-cs-fixer fix",
+        "rector:check": "rector --dry-run",
+        "rector:fix": "rector",
+        "check": [
+            "@phpstan",
+            "@cs:check",
+            "@test"
+        ],
+        "fix": [
+            "@rector:fix",
+            "@cs:fix"
+        ]
+    },
     "require": {
         "php": ">=8.2",
         "ext-curl": "*",

@@ -9,6 +9,8 @@
  * Import /install/sql/content.sql to your database
  * Open browser https://www.yourdomain.com/admin to create a new admin account.
  * Remove /install directory
+ * 
+ * For more information, see the documentation: https://fossbilling.org/docs/customizing-fossbilling/config
  */
 
 return [
