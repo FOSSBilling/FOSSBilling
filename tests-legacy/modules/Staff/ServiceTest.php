@@ -1543,24 +1543,32 @@ class ServiceTest extends \BBTestCase
 
     public function testsetPermissions(): void
     {
-        $pdoStatementMock = $this->getMockBuilder('\\' . PdoStatementMock::class)
-            ->getMock();
-        $pdoStatementMock->expects($this->atLeastOnce())
-            ->method('execute');
-
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatementMock);
-
         $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
 
+        $dbalMock = $this->getMockBuilder(\stdClass::class)->addMethods(['createQueryBuilder'])->getMock();
+        $queryBuilderMock = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['update', 'set', 'where', 'setParameter', 'executeStatement'])
+            ->getMock();
+        $queryBuilderMock->expects($this->atLeastOnce())
+            ->method('update')->willReturnSelf();
+        $queryBuilderMock->expects($this->atLeastOnce())
+            ->method('set')->willReturnSelf();
+        $queryBuilderMock->expects($this->atLeastOnce())
+            ->method('where')->willReturnSelf();
+        $queryBuilderMock->expects($this->atLeastOnce())
+            ->method('setParameter')->willReturnSelf();
+        $queryBuilderMock->expects($this->atLeastOnce())
+            ->method('executeStatement')->willReturn(1);
+        $dbalMock->expects($this->atLeastOnce())
+            ->method('createQueryBuilder')
+            ->willReturn($queryBuilderMock);
+
         $di = new \Pimple\Container();
-        $di['pdo'] = $pdoMock;
+        $di['dbal'] = $dbalMock;
         $serviceMock->setDi($di);
 
         $member_id = 1;
@@ -1570,23 +1578,50 @@ class ServiceTest extends \BBTestCase
 
     public function testgetPermissionsPermAreEmpty(): void
     {
-        $pdoStatementMock = $this->getMockBuilder('\\' . PdoStatementMock::class)
+        $statementWithFetchOne = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['fetchOne'])
             ->getMock();
-        $pdoStatementMock->expects($this->atLeastOnce())
-            ->method('execute');
-        $pdoStatementMock->expects($this->atLeastOnce())
-            ->method('fetchColumn')
+        $statementWithFetchOne->expects($this->any())
+            ->method('fetchOne')
             ->willReturn('{}');
-
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatementMock);
 
         $service = new Service();
 
+        $dbalMock = $this->getMockBuilder(\stdClass::class)->addMethods(['createQueryBuilder'])->getMock();
+        $statementWithFetchOne = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['fetchOne'])
+            ->getMock();
+        $statementWithFetchOne->expects($this->any())
+            ->method('fetchOne')
+            ->willReturn('{}');
+
+        $queryBuilderMock = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['update', 'set', 'where', 'setParameter', 'executeStatement', 'select', 'from', 'executeQuery', 'fetchOne'])
+            ->getMock();
+        $queryBuilderMock->expects($this->any())
+            ->method('executeQuery')->willReturn($statementWithFetchOne);
+        $queryBuilderMock->expects($this->any())
+            ->method('fetchOne')->willReturn('{}');
+        $queryBuilderMock->expects($this->any())
+            ->method('from')->willReturnSelf();
+        $queryBuilderMock->expects($this->any())
+            ->method('select')->willReturnSelf();
+        $queryBuilderMock->expects($this->any())
+            ->method('update')->willReturnSelf();
+        $queryBuilderMock->expects($this->any())
+            ->method('set')->willReturnSelf();
+        $queryBuilderMock->expects($this->any())
+            ->method('where')->willReturnSelf();
+        $queryBuilderMock->expects($this->any())
+            ->method('setParameter')->willReturnSelf();
+        $queryBuilderMock->expects($this->any())
+            ->method('executeStatement')->willReturn(1);
+        $dbalMock->expects($this->any())
+            ->method('createQueryBuilder')
+            ->willReturn($queryBuilderMock);
+
         $di = new \Pimple\Container();
-        $di['pdo'] = $pdoMock;
+        $di['dbal'] = $dbalMock;
         $service->setDi($di);
 
         $member_id = 1;
@@ -1597,24 +1632,50 @@ class ServiceTest extends \BBTestCase
 
     public function testgetPermissions(): void
     {
-        $pdoStatementMock = $this->getMockBuilder('\\' . PdoStatementMock::class)
-            ->getMock();
-        $pdoStatementMock->expects($this->atLeastOnce())
-            ->method('execute');
         $queryResult = '{"id" : "1"}';
-        $pdoStatementMock->expects($this->atLeastOnce())
-            ->method('fetchColumn')
+        $statementWithFetchOne = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['fetchOne'])
+            ->getMock();
+        $statementWithFetchOne->expects($this->any())
+            ->method('fetchOne')
             ->willReturn($queryResult);
-
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatementMock);
-
         $service = new Service();
 
-        $di = new \Pimple\Container();
-        $di['pdo'] = $pdoMock;
+        $dbalMock = $this->getMockBuilder(\stdClass::class)->addMethods(['createQueryBuilder'])->getMock();
+        $statementWithFetchOne = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['fetchOne'])
+            ->getMock();
+        $statementWithFetchOne->expects($this->any())
+            ->method('fetchOne')
+            ->willReturn($queryResult);
+
+        $queryBuilderMock = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['update', 'set', 'where', 'setParameter', 'executeStatement', 'select', 'from', 'executeQuery', 'fetchOne'])
+            ->getMock();
+        $queryBuilderMock->expects($this->any())
+            ->method('executeQuery')->willReturn($statementWithFetchOne);
+        $queryBuilderMock->expects($this->any())
+            ->method('fetchOne')->willReturn($queryResult);
+        $queryBuilderMock->expects($this->any())
+            ->method('from')->willReturnSelf();
+        $queryBuilderMock->expects($this->any())
+            ->method('select')->willReturnSelf();
+        $queryBuilderMock->expects($this->any())
+            ->method('update')->willReturnSelf();
+        $queryBuilderMock->expects($this->any())
+            ->method('set')->willReturnSelf();
+        $queryBuilderMock->expects($this->any())
+            ->method('where')->willReturnSelf();
+        $queryBuilderMock->expects($this->any())
+            ->method('setParameter')->willReturnSelf();
+        $queryBuilderMock->expects($this->any())
+            ->method('executeStatement')->willReturn(1);
+        $dbalMock->expects($this->any())
+            ->method('createQueryBuilder')
+            ->willReturn($queryBuilderMock);
+
+    $di = new \Pimple\Container();
+    $di['dbal'] = $dbalMock;
         $service->setDi($di);
 
         $member_id = 1;
