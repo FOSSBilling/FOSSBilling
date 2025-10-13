@@ -113,8 +113,7 @@ class AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->with(['id' => 'Product ID is missing'], $data)
-            ->willReturn(null);
+            ->with(['id' => 'Product ID is missing'], $data);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -166,8 +165,7 @@ class AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->with(['id' => 'Product ID is missing'], $data)
-            ->willReturn(null);
+            ->with(['id' => 'Product ID is missing'], $data);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;

@@ -312,12 +312,12 @@ class Service implements InjectionAwareInterface
         $config = json_decode($config ?? '', true) ?: [];
 
         if (!isset($config['filename'])) {
-            throw new \FOSSBilling\Exception('No file associated with this product', null, 404);
+            throw new \FOSSBilling\Exception('No file associated with this product.', null, 404);
         }
 
         $filesystem = new Filesystem();
         $fileName = $config['filename'];
-        $filePath = Path::normalize(PATH_UPLOADS . md5($fileName));
+        $filePath = Path::join(PATH_UPLOADS, md5($fileName));
 
         if (!$filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
@@ -337,7 +337,7 @@ class Service implements InjectionAwareInterface
             $response->send();
         }
 
-        $this->di['logger']->info('Downloaded product %s file by admin', $product->id);
+        $this->di['logger']->info('Downloaded product %s file by admin.', $product->id);
 
         return true;
     }
