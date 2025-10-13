@@ -91,7 +91,7 @@ class Service
             ->executeQuery();
 
         $result = $query->fetchFirstColumn();
-        if ($result === false) {
+        if (empty($result)) {
             return $default;
         }
 
@@ -131,7 +131,6 @@ class Service
                     ->setParameter('updated_at', date('Y-m-d H:i:s'))
                     ->executeStatement();
             } catch (\Exception $e) {
-                // ignore duplicate key error
                 if ($e->getCode() != 23000) {
                     throw $e;
                 }
