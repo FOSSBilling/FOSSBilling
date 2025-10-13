@@ -233,19 +233,19 @@ class UpdatePatcher implements InjectionAwareInterface
         $patches = [
             25 => function (): void {
                 // Migrate email templates to be compatible with Twig 3.x.
-                $this->di['dbal']->getQueryBuilder()
+                $this->di['dbal']->createQueryBuilder()
                     ->update('email_template')
                     ->set('content', 'REPLACE(content, \'{% filter markdown %}\', \'{% apply markdown %}\')')
                     ->executeStatement();
 
-                $this->di['dbal']->getQueryBuilder()
+                $this->di['dbal']->createQueryBuilder()
                     ->update('email_template')
                     ->set('content', 'REPLACE(content, \'{% endfilter %}\', \'{% endapply %}\')')
                     ->executeStatement();
             },
             26 => function (): void {
                 // Migration steps from BoxBilling to FOSSBilling - added favicon settings.
-                $this->di['dbal']->getQueryBuilder()
+                $this->di['dbal']->createQueryBuilder()
                     ->insert('setting')
                     ->values([
                         'param' => ':param',
@@ -270,7 +270,7 @@ class UpdatePatcher implements InjectionAwareInterface
             28 => function (): void {
                 // Patch to remove .html from email templates action code.
                 // @see https://github.com/FOSSBilling/FOSSBilling/issues/863
-                $this->di['dbal']->getQueryBuilder()
+                $this->di['dbal']->createQueryBuilder()
                     ->update('email_template')
                     ->set('action_code', 'REPLACE(action_code, \'.html\', \'\')')
                     ->executeStatement();
@@ -279,12 +279,12 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Patch to update email templates to use format_date/format_datetime filters
                 // instead of removed bb_date/bb_datetime filters.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/948
-                $this->di['dbal']->getQueryBuilder()
+                $this->di['dbal']->createQueryBuilder()
                     ->update('email_template')
                     ->set('content', 'REPLACE(content, \'bb_date\', \'format_date\')')
                     ->executeStatement();
 
-                $this->di['dbal']->getQueryBuilder()
+                $this->di['dbal']->createQueryBuilder()
                     ->update('email_template')
                     ->set('content', 'REPLACE(content, \'bb_datetime\', \'format_datetime\')')
                     ->executeStatement();
@@ -432,7 +432,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/2189
                 $ext_service = $this->di['mod_service']('extension');
 
-                $query = $this->di['dbal']->getQueryBuilder()
+                $query = $this->di['dbal']->createQueryBuilder()
                     ->select('param', 'value')
                     ->from('setting')
                     ->executeQuery();

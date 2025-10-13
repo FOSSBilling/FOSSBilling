@@ -181,7 +181,7 @@ class Model_ProductDomainTable extends Model_ProductTable
     {
         $pricing = [];
 
-        $query = $this->di['dbal']->getQueryBuilder();
+        $query = $this->di['dbal']->createQueryBuilder();
         $query
             ->select('t.*', 'r.name')
             ->from('tld', 't')

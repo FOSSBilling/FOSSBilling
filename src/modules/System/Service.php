@@ -82,7 +82,7 @@ class Service
             throw new \FOSSBilling\Exception('Parameter key is missing');
         }
 
-        $query = $this->di['dbal']->getQueryBuilder();
+        $query = $this->di['dbal']->createQueryBuilder();
         $query
             ->select('value')
             ->from('setting')
@@ -106,7 +106,7 @@ class Service
         }
 
         if ($this->paramExists($param)) {
-            $query = $this->di['dbal']->getQueryBuilder();
+            $query = $this->di['dbal']->createQueryBuilder();
             $query
                 ->update('setting')
                 ->set('value', ':value')
@@ -116,7 +116,7 @@ class Service
                 ->executeStatement();
         } elseif ($createIfNotExists) {
             try {
-                $query = $this->di['dbal']->getQueryBuilder();
+                $query = $this->di['dbal']->createQueryBuilder();
                 $query
                     ->insert('setting')
                     ->values([
@@ -143,7 +143,7 @@ class Service
 
     public function paramExists($param): bool
     {
-        $query = $this->di['dbal']->getQueryBuilder();
+        $query = $this->di['dbal']->createQueryBuilder();
         $query
             ->select('id')
             ->from('setting')
@@ -544,7 +544,7 @@ class Service
 
     public function getPublicParamValue($param)
     {
-        $query = $this->di['dbal']->getQueryBuilder();
+        $query = $this->di['dbal']->createQueryBuilder();
         $query
             ->select('value')
             ->from('setting')
