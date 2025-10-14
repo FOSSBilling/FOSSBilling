@@ -8,7 +8,7 @@ nodeBuildTimestamp="node_modules/package.stamp"
 # Composer vars
 composerVendorPath="src/vendor"
 composerLock="composer.lock"
-customVendorTimestamp="src/vendor/composer.stamp" # Does this file for sure change each time the deps are updated?
+customVendorTimestamp="src/vendor/composer.stamp"
 
 # Other vars
 npmBuildNeeded=0
