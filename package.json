@@ -4,12 +4,12 @@
   "homepage": "https://fossbilling.org",
   "license": "Apache License 2.0",
   "scripts": {
-    "build": "npm run build-themes && npm run build-modules",
-    "build-themes": "npm run build-admin_default && npm run build -w huraga",
-    "build-modules": "npm run build-wysiwyg",
-    "build-huraga": "npm run build -w huraga",
-    "build-admin_default": "npm run build -w admin_default",
-    "build-wysiwyg": "npm run build -w wysiwyg",
+  "build": "npm run build-themes && npm run build-modules",
+  "build-themes": "npm run build-admin_default && npm run build-huraga",
+  "build-modules": "npm run build-wysiwyg",
+  "build-huraga": "node src/themes/huraga/esbuild.mjs",
+  "build-admin_default": "node src/themes/admin_default/esbuild.mjs",
+  "build-wysiwyg": "node src/modules/Wysiwyg/esbuild.mjs",
     "cypress:open": "cypress open"
   },
   "repository": {
@@ -30,6 +30,8 @@
     "autoprefixer": "10.4.21",
     "core-js": "3.46.0",
     "cypress": "15.5.0",
+    "esbuild": "0.25.10",
+    "esbuild-sass-plugin": "3.3.1",
     "postcss": "8.5.6",
     "postcss-loader": "8.2.0",
     "sass": "1.93.2",
