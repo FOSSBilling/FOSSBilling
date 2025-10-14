@@ -1,10 +1,11 @@
 @use "flags";
 
 /* stylelint-disable no-invalid-position-at-import-rule -- @use must be written before other rules. */
-@import "~@tabler/core/scss/tabler.scss";
-@import "~@tabler/core/scss/vendor/_litepicker.scss";
-@import "~@tabler/core/scss/vendor/_coloris.scss";
-@import "~tom-select/dist/css/tom-select.bootstrap5.css";
+@import "@tabler/core/scss/tabler.scss";
+@import "@tabler/core/scss/vendor/_litepicker.scss";
+@import "@tabler/core/scss/vendor/_coloris.scss";
+@import "tom-select/dist/css/tom-select.bootstrap5.css";
+@import "@melloware/coloris/dist/coloris.css";
 @import "theme_settings";
 @import 'sortable-tablesort/dist/sortable-base.css';
 /* stylelint-enable no-invalid-position-at-import-rule */

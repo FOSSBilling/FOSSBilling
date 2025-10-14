@@ -1,14 +1,9 @@
 {
   "name": "admin_default",
   "scripts": {
-    "dev-server": "encore dev-server",
-    "dev": "encore dev",
-    "watch": "encore dev --watch",
-    "build": "encore production --progress"
+    "build": "node ./esbuild.mjs"
   },
   "dependencies": {
-    "@babel/plugin-transform-class-properties": "^7.25.7",
-    "@babel/plugin-transform-object-rest-spread": "^7.25.7",
     "@melloware/coloris": "^0.25.0",
     "@tabler/core": "^1.2.0",
     "apexcharts": "^5.0.0",
@@ -20,6 +15,7 @@
     "imask": "^7.6.1",
     "jquery": "^3.7.1",
     "litepicker": "^2.0.12",
+    "sass-embedded": "^1.93.2",
     "select2": "^4.0.13",
     "sortable-tablesort": "^4.0.0"
   }
