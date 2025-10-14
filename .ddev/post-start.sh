@@ -20,7 +20,7 @@ sleep 2
 
 # If the NPM packages aren't installed or are outdated, install the locked versions
 if [ ! -d "$nodeModulesPath" ] || [ ! -f "$nodeBuildTimestamp" ] || [ "$packageLock" -nt "$nodeBuildTimestamp" ]; then
-    npm install
+    npm ci --include=dev
     npmBuildNeeded=1
 elif [ ! -d "src/themes/admin_default/build" ]; then
     npmBuildNeeded=1
