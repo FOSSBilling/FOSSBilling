@@ -177,34 +177,43 @@
 </table>
 
 <script>
-    $(function() {
+    document.addEventListener("DOMContentLoaded", function() {
         // Self-triggers to loop each input box and sets the default total values.
-        $('input.price:not(:disabled)').keyup(function() {
-            var row = $(this).parents('tr:first');
-            var s = row.find('input.setup_price').val();
-            var p = row.find('input.bill_price').val();
-            var total = countTotal(p, s);
-            var elem = row.find('input.total');
-            elem.val(total);
-        }).trigger('keyup');
-
-        // Triggers on input change to toggle checkbox if total is above zero.
-        $('input.price:not(:disabled)').change(function() {
-            var row = $(this).parents('tr:first');
-            var s = row.find('input.setup_price').val();
-            var p = row.find('input.bill_price').val();
-            var total = countTotal(p, s);
-            var checkbox = row.find('input.form-check-input');
-            if (total > 0) {
-                checkbox.prop('checked', true);
-            } else {
-                checkbox.prop('checked', false);
+        document.querySelectorAll('input.price:not(:disabled)').forEach(function(input) {
+            function updateTotal() {
+                const row = input.closest('tr');
+                const setupPrice = row.querySelector('input.setup_price').value;
+                const billPrice = row.querySelector('input.bill_price').value;
+                const total = countTotal(billPrice, setupPrice);
+                const totalInput = row.querySelector('input.total');
+                totalInput.value = total;
             }
+
+            input.addEventListener('keyup', (updateTotal));
+            // Initial calculation
+            updateTotal();
         });
 
-        $('.pp_type input').on('click', function() {
-            $('table.pp tbody').hide();
-            $('table.pp tbody.' + $(this).val()).show();
+        // Triggers on input change to toggle checkbox if total is above zero.
+        document.querySelectorAll('input.price:not(:disabled)').forEach(function(input) {
+            input.addEventListener('change', function() {
+                const row = this.closest('tr');
+                const setupPrice = row.querySelector('input.setup_price').value;
+                const billPrice = row.querySelector('input.bill_price').value;
+                const total = countTotal(billPrice, setupPrice);
+                const checkbox = row.querySelector('input.form-check-input');
+                checkbox.checked = total > 0;
+            });
+        });
+
+        document.querySelectorAll('.pp_type input').forEach(function(input) {
+            input.addEventListener('click', function() {
+                document.querySelectorAll('table.pp tbody').forEach(function(tbody) {
+                    tbody.style.display = 'none';
+                });
+
+                document.querySelector('table.pp tbody.' + this.value).style.display = '';
+            });
         });
     });
 
