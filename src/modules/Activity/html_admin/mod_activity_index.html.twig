@@ -74,7 +74,7 @@
                 </a>
                 {% if event.client or not event.staff %}
                 <a class="btn btn-icon api-link"
-                    href="{{ 'api/admin/antispam/block_ip'|link({ 'ip': event.ip, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'api/admin/security/block_ip'|link({ 'ip': event.ip, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'activity'|alink }}">
                     <svg class="icon">

@@ -83,7 +83,7 @@ class Service implements InjectionAwareInterface
      */
     public function isBlockedIp($event): void
     {
-        $config = $this->di['mod_config']('antispam');
+        $config = $this->di['mod_config']('security');
         $block = boolval($config['block_ips'] ?? true);
         if ($block && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);

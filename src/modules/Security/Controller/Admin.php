@@ -2,7 +2,6 @@
 
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -37,14 +36,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'subpages' => [
                 [
                     'location' => 'security',
-                    'label' => __trans('Security dashboard'),
+                    'label' => __trans('Security Dashboard'),
                     'index' => 100,
                     'uri' => $this->di['url']->adminLink('security'),
                     'class' => '',
                 ],
                 [
                     'location' => 'security',
-                    'label' => __trans('IP lookup'),
+                    'label' => __trans('IP Lookup'),
                     'index' => 200,
                     'uri' => $this->di['url']->adminLink('security/iplookup'),
                     'class' => '',
@@ -76,6 +75,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             try {
                 $record = $this->di['api']('admin')->Security_IP_Lookup(['ip' => $_GET['ip']]);
             } catch (\Exception) {
+                $record = [];
             }
         }
 
