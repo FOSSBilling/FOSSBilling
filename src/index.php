@@ -17,6 +17,24 @@ $debugBar = new DebugBar\StandardDebugBar();
 $debugBar['request']->useHtmlVarDumper();
 $debugBar['messages']->useHtmlVarDumper();
 
+// PDO collector
+$pdoCollector = new DebugBar\DataCollector\PDO\PDOCollector();
+
+// RedBean
+$pdoCollector->addConnection($di['pdo'], 'RedBeanPHP');
+
+// Doctrine
+$connection = $di['em']->getConnection();
+$native = method_exists($connection, 'getNativeConnection')
+    ? $connection->getNativeConnection()
+    : $connection->getWrappedConnection();
+
+if ($native instanceof \PDO) {
+    $pdoCollector->addConnection($native, 'Doctrine');
+}
+
+$debugBar->addCollector($pdoCollector);
+
 $config = FOSSBilling\Config::getConfig();
 $config['info']['salt'] = '********';
 $config['db'] = array_fill_keys(array_keys($config['db']), '********');
