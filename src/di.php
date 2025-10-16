@@ -9,9 +9,11 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
 use Lcharette\WebpackEncoreTwig\JsonManifest;
@@ -79,24 +81,20 @@ $di['crypt'] = function () use ($di) {
  * @return PDO The PDO object used for database connections
  */
 $di['pdo'] = function () {
-    $config = Config::getProperty('db');
+    $debugConfig = Config::getProperty('debug_and_monitoring', []);
+    $dbConfig = Config::getProperty('db');
+    $driverOptions = [
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ];
 
-    $pdo = new PDO(
-        $config['type'] . ':host=' . $config['host'] . ';port=' . $config['port'] . ';dbname=' . $config['name'],
-        $config['user'],
-        $config['password'],
-        [
-            PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]
-    );
+    $connection = DriverManagerFactory::getConnection($driverOptions);
+    $pdo = (object) $connection->getNativeConnection();
 
-    if (isset($config['debug']) && $config['debug']) {
+    if (isset($debugConfig['debug']) && $debugConfig['debug']) {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
     }
 
-    if ($config['type'] === 'mysql') {
+    if ($dbConfig['driver'] === 'pdo_mysql') {
         $pdo->exec('SET NAMES "utf8"');
         $pdo->exec('SET CHARACTER SET utf8');
         $pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
@@ -139,6 +137,22 @@ $di['db'] = function () use ($di) {
     return $db;
 };
 
+/*
+ * Creates and returns a Doctrine DBAL connection instance.
+ *
+ * @return Connection The Doctrine DBAL connection instance.
+ */
+$di['dbal'] = function ($driverOptions): Connection {
+    return DriverManagerFactory::getConnection();
+};
+
+/*
+ * Creates and returns a Doctrine ORM EntityManager instance.
+ *
+ * @param void
+ *
+ * @return EntityManager The Doctrine ORM EntityManager instance.
+ */
 $di['em'] = function (): EntityManager {
     return EntityManagerFactory::create();
 };
