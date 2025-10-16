@@ -20,7 +20,19 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
+
+    /**
+     * In-request cache for the current admin theme name.
+     * This cache is used to store theme information during a single request.
+     * It is cleared whenever theme settings are changed by calling clearThemeCache().
+     */
     private static ?string $adminThemeCache = null;
+    /**
+     * In-request cache for the current client theme name.
+     * This cache is used to avoid repeated lookups during a single request.
+     * It is cleared whenever theme settings are changed by calling clearThemeCache().
+     */
+    
     private static ?string $clientThemeCache = null;
 
     public function setDi(\Pimple\Container $di): void
