@@ -20,7 +20,7 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
-    private static ?array $adminThemeCache = null;
+    private static ?string $adminThemeCache = null;
     private static ?string $clientThemeCache = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -244,24 +244,33 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentAdminAreaTheme(): array
     {
+        $default = 'admin_default';
+
         if (self::$adminThemeCache !== null) {
-            return self::$adminThemeCache;
+            // Apply default logic when returning from cache
+            $theme = !empty(self::$adminThemeCache) && $this->filesystem->exists(Path::join(PATH_THEMES, self::$adminThemeCache))
+                ? self::$adminThemeCache
+                : $default;
+            $url = SYSTEM_URL . "themes/{$theme}/";
+
+            return ['code' => $theme, 'url' => $url];
         }
 
         $query = 'SELECT value
                 FROM setting
                 WHERE param = :param
                ';
-        $default = 'admin_default';
         $theme = $this->di['db']->getCell($query, ['param' => 'admin_theme']);
+        // Cache the raw database value (use empty string instead of null to mark as cached)
+        self::$adminThemeCache = $theme ?? '';
+
+        // Apply default logic for the return value
         if ($theme == null || !$this->filesystem->exists(Path::join(PATH_THEMES, $theme))) {
             $theme = $default;
         }
         $url = SYSTEM_URL . "themes/{$theme}/";
 
-        self::$adminThemeCache = ['code' => $theme, 'url' => $url];
-
-        return self::$adminThemeCache;
+        return ['code' => $theme, 'url' => $url];
     }
 
     public function getCurrentClientAreaTheme()
@@ -274,13 +283,15 @@ class Service implements InjectionAwareInterface
     public function getCurrentClientAreaThemeCode()
     {
         if (self::$clientThemeCache !== null) {
-            return self::$clientThemeCache;
+            // Apply default logic when returning from cache
+            return !empty(self::$clientThemeCache) ? self::$clientThemeCache : 'huraga';
         }
 
         $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
-        self::$clientThemeCache = !empty($theme) ? $theme : 'huraga';
+        // Cache the raw database value (use empty string instead of null to mark as cached)
+        self::$clientThemeCache = $theme ?? '';
 
-        return self::$clientThemeCache;
+        return !empty($theme) ? $theme : 'huraga';
     }
 
     /**
