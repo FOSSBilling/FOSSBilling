@@ -20,6 +20,8 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
+    private static ?array $adminThemeCache = null;
+    private static ?string $clientThemeCache = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -34,6 +36,15 @@ class Service implements InjectionAwareInterface
     public function __construct()
     {
         $this->filesystem = new Filesystem();
+    }
+
+    /**
+     * Clear the theme cache. Call this method when theme settings are updated.
+     */
+    public static function clearThemeCache(): void
+    {
+        self::$adminThemeCache = null;
+        self::$clientThemeCache = null;
     }
 
     public function getTheme($name): \Box\Mod\Theme\Model\Theme
@@ -233,6 +244,10 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentAdminAreaTheme(): array
     {
+        if (self::$adminThemeCache !== null) {
+            return self::$adminThemeCache;
+        }
+
         $query = 'SELECT value
                 FROM setting
                 WHERE param = :param
@@ -244,7 +259,9 @@ class Service implements InjectionAwareInterface
         }
         $url = SYSTEM_URL . "themes/{$theme}/";
 
-        return ['code' => $theme, 'url' => $url];
+        self::$adminThemeCache = ['code' => $theme, 'url' => $url];
+
+        return self::$adminThemeCache;
     }
 
     public function getCurrentClientAreaTheme()
@@ -256,9 +273,14 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentClientAreaThemeCode()
     {
-        $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
+        if (self::$clientThemeCache !== null) {
+            return self::$clientThemeCache;
+        }
 
-        return !empty($theme) ? $theme : 'huraga';
+        $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
+        self::$clientThemeCache = !empty($theme) ? $theme : 'huraga';
+
+        return self::$clientThemeCache;
     }
 
     /**
