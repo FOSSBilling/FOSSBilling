@@ -349,7 +349,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
-            ->willReturn([]);
+            ->willReturn('');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
