@@ -25,9 +25,7 @@ $pdoCollector->addConnection($di['pdo'], 'RedBeanPHP');
 
 // Doctrine
 $connection = $di['em']->getConnection();
-$native = method_exists($connection, 'getNativeConnection')
-    ? $connection->getNativeConnection()
-    : $connection->getWrappedConnection();
+$native = $connection->getNativeConnection();
 
 if ($native instanceof \PDO) {
     $pdoCollector->addConnection($native, 'Doctrine');
