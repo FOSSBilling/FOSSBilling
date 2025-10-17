@@ -79,7 +79,7 @@ class Registrar_Domain implements Stringable
         return $this;
     }
 
-    public function getContactRegistrar(): ?\Registrar_Domain_Contact
+    public function getContactRegistrar(): ?Registrar_Domain_Contact
     {
         return $this->_contact_registrar;
     }
@@ -91,7 +91,7 @@ class Registrar_Domain implements Stringable
         return $this;
     }
 
-    public function getContactAdmin(): ?\Registrar_Domain_Contact
+    public function getContactAdmin(): ?Registrar_Domain_Contact
     {
         return $this->_contact_admin;
     }
@@ -103,7 +103,7 @@ class Registrar_Domain implements Stringable
         return $this;
     }
 
-    public function getContactTech(): ?\Registrar_Domain_Contact
+    public function getContactTech(): ?Registrar_Domain_Contact
     {
         return $this->_contact_tech;
     }
@@ -115,7 +115,7 @@ class Registrar_Domain implements Stringable
         return $this;
     }
 
-    public function getContactBilling(): ?\Registrar_Domain_Contact
+    public function getContactBilling(): ?Registrar_Domain_Contact
     {
         return $this->_contact_billing;
     }

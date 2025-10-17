@@ -36,7 +36,7 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
-    public function getTheme($name): \Box\Mod\Theme\Model\Theme
+    public function getTheme($name): Model\Theme
     {
         return new Model\Theme($name);
     }
