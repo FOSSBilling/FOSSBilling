@@ -299,6 +299,7 @@ class Box_App
                     $apiController->setDi($this->di);
 
                     $apiController->renderJson(null, $exc);
+
                     return '';
                 } else {
                     return $this->render('mod_system_maintenance');

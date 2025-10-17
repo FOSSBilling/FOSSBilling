@@ -3,7 +3,7 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -411,9 +411,9 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             44 => function (): void {
                 // Add ipn_hash column to transaction table and index it for fast duplicate detection.
-                $q = "ALTER TABLE `transaction`
+                $q = 'ALTER TABLE `transaction`
                         ADD COLUMN `ipn_hash` VARCHAR(64) DEFAULT NULL,
-                        ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));";
+                        ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));';
                 $this->executeSql($q);
             },
         ];

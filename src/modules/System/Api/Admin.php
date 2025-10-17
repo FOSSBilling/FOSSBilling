@@ -181,7 +181,6 @@ class Admin extends \Api_Abstract
     /**
      * Update FOSSBilling core.
      *
-     *
      * @throws \FOSSBilling\Exception
      */
     public function update_core($data): bool

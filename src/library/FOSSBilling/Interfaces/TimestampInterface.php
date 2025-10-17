@@ -15,5 +15,6 @@ namespace FOSSBilling\Interfaces;
 interface TimestampInterface
 {
     public function setCreatedAt(\DateTime $createdAt): void;
+
     public function setUpdatedAt(\DateTime $updatedAt): void;
 }
