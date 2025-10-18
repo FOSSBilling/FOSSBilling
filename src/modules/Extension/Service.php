@@ -451,23 +451,7 @@ class Service implements InjectionAwareInterface
         }
 
         // Determine the path based on extension type
-        $path = null;
-        switch ($type) {
-            case \FOSSBilling\ExtensionManager::TYPE_MOD:
-                $path = Path::join(PATH_MODS, ucfirst((string) $id));
-                break;
-            case \FOSSBilling\ExtensionManager::TYPE_THEME:
-                $path = Path::join(PATH_THEMES, $id);
-                break;
-            case \FOSSBilling\ExtensionManager::TYPE_TRANSLATION:
-                $path = Path::join(PATH_LANGS, $id);
-                break;
-            case \FOSSBilling\ExtensionManager::TYPE_PG:
-                $path = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', ucfirst((string) $id));
-                break;
-            default:
-                throw new \FOSSBilling\Exception('Extension type (:type) cannot be automatically deleted. Please remove it from the disk manually.', [':type' => $type]);
-        }
+        $path = $this->getExtensionPath($type, $id);
 
         // Try calling $module->uninstall() for modules to trigger database cleanup
         if ($type === \FOSSBilling\ExtensionManager::TYPE_MOD) {
@@ -542,37 +526,17 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }
 
-        switch ($type) {
-            case \FOSSBilling\ExtensionManager::TYPE_MOD:
-                $destination = Path::join(PATH_MODS, ucfirst((string) $id));
+        // Get the destination path for the extension (includes LC_MESSAGES for translations)
+        $destination = $this->getExtensionPath($type, $id, true);
 
-                break;
-            case \FOSSBilling\ExtensionManager::TYPE_THEME:
-                $destination = Path::join(PATH_THEMES, $id);
-
-                break;
-            case \FOSSBilling\ExtensionManager::TYPE_TRANSLATION:
-                $destination = Path::join(PATH_LANGS, $id, 'LC_MESSAGES');
-
-                break;
-            case \FOSSBilling\ExtensionManager::TYPE_PG:
-                $destination = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', ucfirst((string) $id));
-
-                break;
+        if ($this->filesystem->exists($destination)) {
+            throw new \FOSSBilling\InformationException('Extension :id seems to be already installed.', [':id' => $id], 436);
         }
 
-        if (isset($destination)) {
-            if ($this->filesystem->exists($destination)) {
-                throw new \FOSSBilling\InformationException('Extension :id seems to be already installed.', [':id' => $id], 436);
-            }
-
-            try {
-                $this->filesystem->rename($extractedPath, $destination);
-            } catch (IOException) {
-                throw new \FOSSBilling\Exception("Failed to move extension to it's final destination. Please check permissions for the destination folder. (:destination)", [':destination' => $destination], 437);
-            }
-        } else {
-            throw new \FOSSBilling\InformationException('Extension type (:type) cannot be automatically installed.', [':type' => $type]);
+        try {
+            $this->filesystem->rename($extractedPath, $destination);
+        } catch (IOException) {
+            throw new \FOSSBilling\Exception("Failed to move extension to it's final destination. Please check permissions for the destination folder. (:destination)", [':destination' => $destination], 437);
         }
 
         if ($this->filesystem->exists($zipPath)) {
@@ -711,6 +675,27 @@ class Service implements InjectionAwareInterface
         $this->di['cache']->delete("config_{$ext}");
 
         return true;
+    }
+
+    /**
+     * Get the filesystem path for an extension based on its type and ID
+     * @param string $type Extension type
+     * @param string $id Extension ID
+     * @param bool $includeMessagesSubdir Whether to include LC_MESSAGES subdirectory for translations (used during installation)
+     * @return string The filesystem path for the extension
+     * @throws \FOSSBilling\Exception If the extension type is not supported
+     */
+    public function getExtensionPath(string $type, string $id, bool $includeMessagesSubdir = false): string
+    {
+        return match ($type) {
+            \FOSSBilling\ExtensionManager::TYPE_MOD => Path::join(PATH_MODS, ucfirst($id)),
+            \FOSSBilling\ExtensionManager::TYPE_THEME => Path::join(PATH_THEMES, $id),
+            \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => $includeMessagesSubdir
+                ? Path::join(PATH_LANGS, $id, 'LC_MESSAGES')
+                : Path::join(PATH_LANGS, $id),
+            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join(PATH_LIBRARY, 'Payment', 'Adapter', ucfirst($id)),
+            default => throw new \FOSSBilling\Exception('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
+        };
     }
 
     private function _getSalt(): ?string
