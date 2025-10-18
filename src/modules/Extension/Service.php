@@ -469,7 +469,7 @@ class Service implements InjectionAwareInterface
                 $this->filesystem->remove($path);
                 $this->di['logger']->info('Removed extension files for "%s" from %s', $id, $path);
             } catch (IOException $e) {
-                $this->di['logger']->warn('Failed to remove extension files for "%s":', $id, $e->getMessage());
+                $this->di['logger']->warn('Failed to remove extension files for "%s": %s', $id, $e->getMessage());
                 throw new \FOSSBilling\Exception('Failed to remove extension files. Please check file permissions and try again or manually remove the files from :path', [':path' => $path]);
             }
         } else {
@@ -486,7 +486,7 @@ class Service implements InjectionAwareInterface
         $latest = $this->di['extension_manager']->getLatestExtensionRelease($id);
 
         if (!isset($latest['download_url'])) {
-            throw new \FOSSBilling\Exception('Coudn\'t find a valid download URL for the extension.');
+            throw new \FOSSBilling\Exception('Couldn\'t find a valid download URL for the extension.');
         }
 
         if (!$this->di['extension_manager']->isExtensionCompatible($id)) {
