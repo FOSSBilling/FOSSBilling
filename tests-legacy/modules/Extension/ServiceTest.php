@@ -375,10 +375,6 @@ class ServiceTest extends \BBTestCase
             ->method('getCoreModules')
             ->willReturn([]);
 
-        $modMock->expects($this->atLeastOnce())
-            ->method('uninstall')
-            ->willReturn(true);
-
         $staffService = $this->getMockBuilder(\Box\Mod\Staff\Service::class)->getMock();
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
@@ -417,40 +413,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('FOSSBilling core modules cannot be managed');
-        $this->service->deactivate($ext);
-    }
-
-    public function testdeactivateUninstallException(): void
-    {
-        $ext = new \Model_Extension();
-        $ext->loadBean(new \DummyBean());
-        $ext->type = 'mod';
-        $ext->name = 'extensionTest';
-
-        $exceptionMessage = 'testException';
-
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
-        $modMock->expects($this->atLeastOnce())
-            ->method('getCoreModules')
-            ->willReturn([]);
-
-        $modMock->expects($this->atLeastOnce())
-            ->method('uninstall')
-            ->willThrowException(new \FOSSBilling\Exception($exceptionMessage));
-
-        $staffService = $this->getMockBuilder(\Box\Mod\Staff\Service::class)->getMock();
-        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
-
-        $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
-
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
-
-        $this->service->setDi($di);
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage($exceptionMessage);
+        $this->expectExceptionMessage('Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
         $this->service->deactivate($ext);
     }
 
@@ -484,10 +447,6 @@ class ServiceTest extends \BBTestCase
         $ext->type = 'mod';
         $ext->name = 'extensionTest';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
-
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getCoreModules')
@@ -501,7 +460,6 @@ class ServiceTest extends \BBTestCase
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
         $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);

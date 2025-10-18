@@ -82,7 +82,7 @@
                                             {% else %}
                                                 <a class="btn btn-icon api-link"
                                                    href="{{ 'api/admin/extension/uninstall'|link({ 'type': ext.type, 'id': ext.id }) }}"
-                                                   data-api-confirm="{{ 'Are you sure?<br /><br />Uninstalling a module will completely purge its database tables and remove the files from the disk. This is irreversible.'|trans }}"
+                                                   data-api-confirm="{{ 'Are you sure?<br /><br />Uninstalling this module will permanently delete all its database tables and remove its files from the disk. This action cannot be undone.'|trans }}"
                                                    data-api-confirm-btn="Uninstall"
                                                    data-api-type="danger"
                                                    data-api-jsonp="onAfterModuleActivated"

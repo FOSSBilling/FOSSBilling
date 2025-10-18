@@ -205,9 +205,6 @@ class AdminTest extends \BBTestCase
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
-            ->method('findExtension')
-            ->willReturn($model);
-        $serviceMock->expects($this->atLeastOnce())
             ->method('uninstall')
             ->willReturn(true);
 
