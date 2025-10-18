@@ -442,10 +442,7 @@ class ServiceTest extends \BBTestCase
 
     public function testuninstall(): void
     {
-        $ext = new \Model_Extension();
-        $ext->loadBean(new \DummyBean());
-        $ext->type = 'mod';
-        $ext->name = 'extensionTest';
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
@@ -460,13 +457,14 @@ class ServiceTest extends \BBTestCase
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
 
         $this->service->setDi($di);
 
-        $result = $this->service->deactivate($ext);
+        $result = $this->service->uninstall('mod', 'Example');
         $this->assertTrue($result);
     }
 
