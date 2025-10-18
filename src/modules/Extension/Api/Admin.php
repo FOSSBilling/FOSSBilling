@@ -192,8 +192,10 @@ class Admin extends \Api_Abstract
 
     /**
      * Uninstall a deactivated extension, remove its files from the disk and call $extension->uninstall() to trigger database cleanup.
-     * @param \Model_Extension $ext
+     * 
      * @return bool
+     * 
+     * @throws \FOSSBilling\Exception
      */
     public function uninstall($data): bool
     {
