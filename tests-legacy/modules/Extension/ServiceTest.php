@@ -458,13 +458,14 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
         $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
 
         $this->service->setDi($di);
 
-        $result = $this->service->uninstall('mod', 'Example');
+        $result = $this->service->uninstall('mod', 'Branding');
         $this->assertTrue($result);
     }
 
