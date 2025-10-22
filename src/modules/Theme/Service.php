@@ -59,7 +59,7 @@ class Service implements InjectionAwareInterface
         self::$clientThemeCache = null;
     }
 
-    public function getTheme($name): \Box\Mod\Theme\Model\Theme
+    public function getTheme($name): Model\Theme
     {
         return new Model\Theme($name);
     }

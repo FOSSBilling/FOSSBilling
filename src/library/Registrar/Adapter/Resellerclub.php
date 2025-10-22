@@ -731,8 +731,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      * @see http://manage.resellerclub.com/kb/answer/755
      *
      * @param array $params
-     *
-     * @return string
      */
     private function _formatParams($params): ?string
     {

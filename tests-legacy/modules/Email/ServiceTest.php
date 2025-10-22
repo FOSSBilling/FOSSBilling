@@ -4,7 +4,7 @@ namespace Box\Tests\Mod\Email;
 
 class ServiceEmailTestDouble extends \Box\Mod\Email\Service
 {
-    public function template_render(...$args)
+    public function template_render(...$args): string
     {
         return '';
     }
@@ -1079,7 +1079,7 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $modMock = $this->getMockBuilder('\stdClass')->getMock();
         $extension = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->getMock();
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['mod_service'] = $di->protect(function ($name) use ($extension) {
             if ($name == 'system') {
             } elseif ($name == 'extension') {

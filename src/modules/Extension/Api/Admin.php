@@ -209,7 +209,6 @@ class Admin extends \Api_Abstract
     /**
      * Install new extension from extensions site.
      *
-     *
      * @throws \FOSSBilling\Exception
      */
     public function install($data): array

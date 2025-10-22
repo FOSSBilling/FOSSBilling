@@ -238,7 +238,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete server.
      *
-     *
      * @throws \FOSSBilling\Exception
      */
     public function server_delete($data): bool
@@ -278,7 +277,6 @@ class Admin extends \Api_Abstract
      * @optional bool $secure - flag to define whether to use secure connection (https) to server or not (http)
      * @optional bool $active - flag to enable/disable server
      *
-     *
      * @throws \FOSSBilling\Exception
      */
     public function server_update($data): bool
@@ -300,7 +298,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Test connection to server.
-     *
      *
      * @throws \FOSSBilling\Exception
      */
@@ -346,7 +343,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete hosting plan.
-     *
      *
      * @throws \FOSSBilling\InformationException
      */
@@ -394,7 +390,6 @@ class Admin extends \Api_Abstract
      * Update hosting plan details.
      *
      * @optional string $name - hosting plan name. Used as identifier on server
-     *
      *
      * @throws \FOSSBilling\Exception
      */
