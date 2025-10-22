@@ -27,7 +27,7 @@ class Admin implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->get('', 'get_index', [], static::class);
         $app->get('/', 'get_index', [], static::class);

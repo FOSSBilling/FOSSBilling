@@ -58,10 +58,8 @@ class Admin extends \Api_Abstract
      * Remove shopping carts that are older than a week and was not ordered.
      *
      * @BOXBILLING_CRON
-     *
-     * @return bool
      */
-    public function batch_expire($data)
+    public function batch_expire($data): bool
     {
         $this->di['logger']->info('Executed action to clear expired shopping carts from database');
 

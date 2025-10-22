@@ -82,7 +82,7 @@ class AdminTest extends \BBTestCase
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('batchConnect')
-            ->willReturn(1);
+            ->willReturn(true);
 
         $di = new \Pimple\Container();
 

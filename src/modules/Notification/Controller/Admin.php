@@ -25,12 +25,12 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->get('/notification', 'get_index', [], static::class);
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\Box_App $app): string
     {
         $this->di['is_admin_logged'];
 

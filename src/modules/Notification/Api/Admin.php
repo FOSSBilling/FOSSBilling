@@ -76,11 +76,9 @@ class Admin extends \Api_Abstract
     /**
      * Remove notification message.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function delete($data)
+    public function delete($data): bool
     {
         $required = [
             'id' => 'Notification ID is missing',
@@ -99,11 +97,9 @@ class Admin extends \Api_Abstract
     /**
      * Remove all notification messages.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function delete_all()
+    public function delete_all(): bool
     {
         $sql = "DELETE
             FROM extension_meta 

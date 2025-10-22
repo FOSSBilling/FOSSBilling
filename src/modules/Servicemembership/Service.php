@@ -25,7 +25,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function validateOrderData(array &$data)
+    public function validateOrderData(array &$data): bool
     {
         return true;
     }
@@ -47,66 +47,49 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model;
     }
 
-    /**
-     * @return bool
-     */
-    public function action_activate(\Model_ClientOrder $order)
+    public function action_activate(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
     /**
      * @todo
-     *
-     * @return bool
      */
-    public function action_renew(\Model_ClientOrder $order)
+    public function action_renew(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
     /**
      * @todo
-     *
-     * @return bool
      */
-    public function action_suspend(\Model_ClientOrder $order)
+    public function action_suspend(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
     /**
      * @todo
-     *
-     * @return bool
      */
-    public function action_unsuspend(\Model_ClientOrder $order)
+    public function action_unsuspend(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
     /**
      * @todo
-     *
-     * @return bool
      */
-    public function action_cancel(\Model_ClientOrder $order)
+    public function action_cancel(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
-    /**
-     * @return bool
-     */
-    public function action_uncancel(\Model_ClientOrder $order)
+    public function action_uncancel(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
-    /**
-     * @return void
-     */
-    public function action_delete(\Model_ClientOrder $order)
+    public function action_delete(\Model_ClientOrder $order): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);

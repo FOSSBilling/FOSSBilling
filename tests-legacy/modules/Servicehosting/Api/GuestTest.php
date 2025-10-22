@@ -19,8 +19,7 @@ class GuestTest extends \BBTestCase
         $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         $di['validator'] = $validatorMock;
 
@@ -51,8 +50,7 @@ class GuestTest extends \BBTestCase
         $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         $di['validator'] = $validatorMock;
 

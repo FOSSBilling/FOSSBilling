@@ -49,7 +49,7 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
      * @param Box_EventDispatcher $disp
      * @param string              $event
      */
-    private function _connectDatabaseHooks(&$disp, $event)
+    private function _connectDatabaseHooks(&$disp, $event): void
     {
         $sql = "SELECT id, rel_id, meta_value
             FROM extension_meta

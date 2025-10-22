@@ -39,7 +39,7 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public static function onBeforeClientSignUp(\Box_Event $event)
+    public static function onBeforeClientSignUp(\Box_Event $event): void
     {
         $di = $event->getDi();
         $spamCheckerService = $di['mod_service']('Spamchecker');
@@ -48,7 +48,7 @@ class Service implements InjectionAwareInterface
         $spamCheckerService->isTemp($event);
     }
 
-    public static function onBeforeGuestPublicTicketOpen(\Box_Event $event)
+    public static function onBeforeGuestPublicTicketOpen(\Box_Event $event): void
     {
         $di = $event->getDi();
         $spamCheckerService = $di['mod_service']('Spamchecker');
@@ -60,7 +60,7 @@ class Service implements InjectionAwareInterface
     /**
      * @param \Box_Event $event
      */
-    public function isBlockedIp($event)
+    public function isBlockedIp($event): void
     {
         $di = $event->getDi();
         $config = $di['mod_config']('Spamchecker');
@@ -73,7 +73,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function isSpam(\Box_Event $event)
+    public function isSpam(\Box_Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -120,7 +120,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function isTemp(\Box_Event $event)
+    public function isTemp(\Box_Event $event): void
     {
         $di = $event->getDi();
         $config = $di['mod_config']('Spamchecker');
@@ -141,10 +141,8 @@ class Service implements InjectionAwareInterface
      * ip
      * email
      * username
-     *
-     * @return bool
      */
-    public function isInStopForumSpamDatabase(array $data)
+    public function isInStopForumSpamDatabase(array $data): bool
     {
         $url = 'https://www.stopforumspam.com/api';
         $client = HttpClient::create(['bindto' => BIND_TO]);

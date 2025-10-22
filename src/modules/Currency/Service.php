@@ -577,7 +577,7 @@ class Service implements InjectionAwareInterface
                 continue;
             }
             // All values are prefixed with our 'from' currency (EX: 'USDAUD'), so strip that off before storing it.
-            $strippedName = substr($key, $prefixLen);
+            $strippedName = substr((string) $key, $prefixLen);
             $rates[$strippedName] = $rate;
         }
 

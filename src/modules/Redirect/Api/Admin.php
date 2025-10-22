@@ -28,10 +28,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Get redirect by id.
-     *
-     * @return array
      */
-    public function get($data)
+    public function get($data): array
     {
         $required = [
             'id' => 'Redirect ID is required',
@@ -52,7 +50,7 @@ class Admin extends \Api_Abstract
      *
      * @return int redirect id
      */
-    public function create($data)
+    public function create($data): int
     {
         $required = [
             'path' => 'Redirect path not passed',
@@ -62,8 +60,8 @@ class Admin extends \Api_Abstract
 
         $bean = $this->di['db']->dispense('extension_meta');
         $bean->extension = 'mod_redirect';
-        $bean->meta_key = trim(htmlspecialchars($data['path'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
-        $bean->meta_value = trim(htmlspecialchars($data['target'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
+        $bean->meta_key = trim(htmlspecialchars((string) $data['path'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
+        $bean->meta_value = trim(htmlspecialchars((string) $data['target'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
         $bean->created_at = date('Y-m-d H:i:s');
         $bean->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($bean);
@@ -83,7 +81,7 @@ class Admin extends \Api_Abstract
      *
      * @return true
      */
-    public function update($data)
+    public function update($data): bool
     {
         $required = [
             'id' => 'Redirect ID is required',
@@ -107,7 +105,7 @@ class Admin extends \Api_Abstract
      *
      * @return true
      */
-    public function delete($data)
+    public function delete($data): bool
     {
         $required = [
             'id' => 'Redirect ID is required',

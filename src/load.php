@@ -138,7 +138,7 @@ function checkWebServer(): void
 /*
  * Error handler.
  */
-function errorHandler(int $number, string $message, string $file, int $line)
+function errorHandler(int $number, string $message, string $file, int $line): bool
 {
     // If it's an exception, handle it. Otherwise we don't need to do anything as PHP will log it for us.
     if ($number === E_RECOVERABLE_ERROR) {

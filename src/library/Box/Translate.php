@@ -34,7 +34,7 @@ class Box_Translate
         return $this;
     }
 
-    public function setup()
+    public function setup(): void
     {
         PhpMyAdmin\MoTranslator\Loader::loadFunctions();
 
@@ -58,7 +58,7 @@ class Box_Translate
         _bind_textdomain_codeset($this->domain, $codeset);
         _textdomain($this->domain);
 
-        function __trans(string $msgid, ?array $values = null)
+        function __trans(string $msgid, ?array $values = null): string
         {
             $translated = _gettext($msgid);
 
@@ -69,7 +69,7 @@ class Box_Translate
             return $translated;
         }
 
-        function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null)
+        function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null): string
         {
             $translated = _ngettext($msgid, $msgidPlural, $number);
 

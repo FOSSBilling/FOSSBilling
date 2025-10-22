@@ -3,7 +3,7 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -182,10 +182,10 @@ class Mail
             throw new InformationException('SMTP host or port is not configured');
         }
 
-        $host = urlencode(trim($options['smtp_host']));
+        $host = urlencode(trim((string) $options['smtp_host']));
 
         if (!empty($options['smtp_username'])) {
-            $username = urlencode(trim($options['smtp_username']));
+            $username = urlencode(trim((string) $options['smtp_username']));
             $pass = urlencode(trim($options['smtp_password'] ?? ''));
 
             $authString = !empty($pass) ? $username . ':' . $pass : $username;

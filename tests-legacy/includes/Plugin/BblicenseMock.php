@@ -2,27 +2,27 @@
 
 class Plugin_BblicenseMock
 {
-    public function partner_order_reset()
+    public function partner_order_reset(): bool
     {
         return true;
     }
 
-    public function partner_order_create()
+    public function partner_order_create(): bool
     {
         return true;
     }
 
-    public function partner_order_suspend()
+    public function partner_order_suspend(): bool
     {
         return true;
     }
 
-    public function partner_order_unsuspend()
+    public function partner_order_unsuspend(): bool
     {
         return true;
     }
 
-    public function partner_order_delete()
+    public function partner_order_delete(): bool
     {
         return true;
     }

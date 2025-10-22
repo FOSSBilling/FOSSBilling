@@ -43,7 +43,7 @@ class Client implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->post('/api/:role/:class/:method', 'post_method', ['role', 'class', 'method'], static::class);
         $app->get('/api/:role/:class/:method', 'get_method', ['role', 'class', 'method'], static::class);
@@ -53,21 +53,25 @@ class Client implements InjectionAwareInterface
         $app->post('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
     }
 
-    public function show_error(\Box_App $app, $page)
+    public function show_error(\Box_App $app, $page): null
     {
         $exc = new \FOSSBilling\Exception('Unknown API call :call', [':call' => $page], 879);
 
-        return $this->renderJson(null, $exc);
+        $this->renderJson(null, $exc);
+
+        return null;
     }
 
-    public function get_method(\Box_App $app, $role, $class, $method)
+    public function get_method(\Box_App $app, $role, $class, $method): null
     {
         $call = $class . '_' . $method;
 
-        return $this->tryCall($role, $call, $_GET);
+        $this->tryCall($role, $call, $_GET);
+
+        return null;
     }
 
-    public function post_method(\Box_App $app, $role, $class, $method)
+    public function post_method(\Box_App $app, $role, $class, $method): null
     {
         $p = $_POST;
 
@@ -79,13 +83,15 @@ class Client implements InjectionAwareInterface
 
         $call = $class . '_' . $method;
 
-        return $this->tryCall($role, $call, $p);
+        $this->tryCall($role, $call, $p);
+
+        return null;
     }
 
     /**
      * @param string $call
      */
-    private function tryCall($role, $call, $p)
+    private function tryCall($role, $call, $p): void
     {
         try {
             $this->_apiCall($role, $call, $p);
@@ -96,14 +102,14 @@ class Client implements InjectionAwareInterface
         }
     }
 
-    private function _loadConfig()
+    private function _loadConfig(): void
     {
         if (is_null($this->_api_config)) {
             $this->_api_config = Config::getProperty('api', []);
         }
     }
 
-    private function checkRateLimit($method = null)
+    private function checkRateLimit($method = null): bool
     {
         if (in_array($this->_getIp(), $this->_api_config['rate_limit_whitelist'])) {
             return true;
@@ -133,13 +139,13 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function checkHttpReferer()
+    private function checkHttpReferer(): bool
     {
         // snake oil: check request is from the same domain as FOSSBilling is installed if present
         $check_referer_header = isset($this->_api_config['require_referrer_header']) && (bool) $this->_api_config['require_referrer_header'];
         if ($check_referer_header) {
             $url = strtolower(SYSTEM_URL);
-            $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower($_SERVER['HTTP_REFERER']) : null;
+            $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower((string) $_SERVER['HTTP_REFERER']) : null;
             if (!$referer || !str_starts_with($referer, $url)) {
                 throw new \FOSSBilling\InformationException('Invalid request. Make sure request origin is :from', [':from' => SYSTEM_URL], 1004);
             }
@@ -148,7 +154,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function checkAllowedIps()
+    private function checkAllowedIps(): bool
     {
         $ips = $this->_api_config['allowed_ips'];
         if (!empty($ips) && !in_array($this->_getIp(), $ips)) {
@@ -158,7 +164,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function isRoleLoggedIn($role)
+    private function isRoleLoggedIn($role): bool
     {
         if ($role == 'client') {
             $this->di['is_client_logged'];
@@ -170,7 +176,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function _apiCall($role, $method, $params)
+    private function _apiCall($role, $method, $params): null
     {
         $this->_loadConfig();
         $this->checkAllowedIps();
@@ -194,13 +200,15 @@ class Client implements InjectionAwareInterface
         unset($params['CSRFToken']);
         $result = $api->$method($params);
 
-        return $this->renderJson($result);
+        $this->renderJson($result);
+
+        return null;
     }
 
-    private function getAuth()
+    private function getAuth(): array
     {
         if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            $auth_params = explode(':', base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
+            $auth_params = explode(':', base64_decode(substr((string) $_SERVER['HTTP_AUTHORIZATION'], 6)));
             $_SERVER['PHP_AUTH_USER'] = $auth_params[0];
             unset($auth_params[0]);
             $_SERVER['PHP_AUTH_PW'] = implode('', $auth_params);
@@ -221,7 +229,7 @@ class Client implements InjectionAwareInterface
         return [$_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']];
     }
 
-    private function _tryTokenLogin()
+    private function _tryTokenLogin(): void
     {
         [$username, $password] = $this->getAuth();
 
@@ -261,7 +269,7 @@ class Client implements InjectionAwareInterface
      *
      * @throws \FOSSBilling\Exception
      */
-    private function isRoleAllowed($role)
+    private function isRoleAllowed($role): bool
     {
         $allowed = ['guest', 'client', 'admin'];
         if (!in_array($role, $allowed)) {
@@ -271,7 +279,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    public function renderJson($data = null, ?\Exception $e = null)
+    public function renderJson($data = null, ?\Exception $e = null): void
     {
         // do not emit response if headers already sent
         if (headers_sent()) {
@@ -331,7 +339,7 @@ class Client implements InjectionAwareInterface
 
         $token = $data->CSRFToken ?? $_POST['CSRFToken'] ?? $_GET['CSRFToken'] ?? null;
         if (session_status() !== PHP_SESSION_ACTIVE) {
-            $expectedToken = (!is_null($_COOKIE['PHPSESSID'])) ? hash('md5', $_COOKIE['PHPSESSID']) : null;
+            $expectedToken = (!is_null($_COOKIE['PHPSESSID'])) ? hash('md5', (string) $_COOKIE['PHPSESSID']) : null;
         } else {
             $expectedToken = hash('md5', session_id());
         }
@@ -339,7 +347,7 @@ class Client implements InjectionAwareInterface
         /* Due to the way the cart works, it creates a new session which causes issues with the CSRF token system.
          * Due to this, we whitelist the checkout URL.
          */
-        if (str_contains($_SERVER['REQUEST_URI'], '/api/client/cart/checkout')) {
+        if (str_contains((string) $_SERVER['REQUEST_URI'], '/api/client/cart/checkout')) {
             return true;
         }
 
