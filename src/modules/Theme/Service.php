@@ -21,6 +21,20 @@ class Service implements InjectionAwareInterface
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
 
+    /**
+     * In-request cache for the current admin theme name.
+     * This cache is used to store theme information during a single request.
+     * It is cleared whenever theme settings are changed by calling clearThemeCache().
+     */
+    private static ?string $adminThemeCache = null;
+    /**
+     * In-request cache for the current client theme name.
+     * This cache is used to avoid repeated lookups during a single request.
+     * It is cleared whenever theme settings are changed by calling clearThemeCache().
+     */
+    
+    private static ?string $clientThemeCache = null;
+
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
@@ -34,6 +48,15 @@ class Service implements InjectionAwareInterface
     public function __construct()
     {
         $this->filesystem = new Filesystem();
+    }
+
+    /**
+     * Clear the theme cache. Call this method when theme settings are updated.
+     */
+    public static function clearThemeCache(): void
+    {
+        self::$adminThemeCache = null;
+        self::$clientThemeCache = null;
     }
 
     public function getTheme($name): Model\Theme
@@ -233,12 +256,27 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentAdminAreaTheme(): array
     {
+        $default = 'admin_default';
+
+        if (self::$adminThemeCache !== null) {
+            // Apply default logic when returning from cache
+            $theme = !empty(self::$adminThemeCache) && $this->filesystem->exists(Path::join(PATH_THEMES, self::$adminThemeCache))
+                ? self::$adminThemeCache
+                : $default;
+            $url = SYSTEM_URL . "themes/{$theme}/";
+
+            return ['code' => $theme, 'url' => $url];
+        }
+
         $query = 'SELECT value
                 FROM setting
                 WHERE param = :param
                ';
-        $default = 'admin_default';
         $theme = $this->di['db']->getCell($query, ['param' => 'admin_theme']);
+        // Cache the raw database value (use empty string instead of null to mark as cached)
+        self::$adminThemeCache = $theme ?? '';
+
+        // Apply default logic for the return value
         if ($theme == null || !$this->filesystem->exists(Path::join(PATH_THEMES, $theme))) {
             $theme = $default;
         }
@@ -256,7 +294,14 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentClientAreaThemeCode()
     {
+        if (self::$clientThemeCache !== null) {
+            // Apply default logic when returning from cache
+            return !empty(self::$clientThemeCache) ? self::$clientThemeCache : 'huraga';
+        }
+
         $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
+        // Cache the raw database value (use empty string instead of null to mark as cached)
+        self::$clientThemeCache = $theme ?? '';
 
         return !empty($theme) ? $theme : 'huraga';
     }

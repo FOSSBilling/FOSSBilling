@@ -67,6 +67,9 @@ class Admin extends \Api_Abstract
             $systemService->setParamValue('theme', $data['code']);
         }
 
+        // Clear theme cache so subsequent calls get the updated theme
+        \Box\Mod\Theme\Service::clearThemeCache();
+
         $this->di['logger']->info('Changed default theme');
 
         return true;
