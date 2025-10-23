@@ -39,6 +39,7 @@
 		{% for key, value in seller %}
 		{% if key == 'Name' %}<b>{% endif %}
 		{% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
+		{% if key == 'VAT Number' %} {{ 'VAT Number'|trans }} :{% endif %}
 				{{ value }}<br>
 		{% if key == 'Name' %}</b>{% endif %}
 		{% endfor %}
@@ -50,7 +51,8 @@
 		<p>
 		{% for key, value in buyer %}
 		{% if key == 'Company' %}<b>{% endif %}
-		{% if key == 'Phone '%} {{ 'Phone'|trans }} :{% endif %}
+		{% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
+		{% if key == 'VAT Number' %} {{ 'VAT Number'|trans }} :{% endif %}
 				{{ value }}<br>
 		{% if key == 'Company' %}</b>{% endif %}
 		{% endfor %}
