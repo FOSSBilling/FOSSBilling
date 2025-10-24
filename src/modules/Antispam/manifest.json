@@ -1,8 +1,8 @@
 {
-  "id": "spamchecker",
+  "id": "antispam",
   "type": "mod",
-  "name": "SpamChecker",
-  "description": "Used to prevent spam using reCAPTCHA, stopforumspam.com, and a database of disposable email domains.",
+  "name": "Ant-Spam",
+  "description": "FOSSBilling's built-in protections against spam.",
   "icon_url": "icon.svg",
   "project_url": "https://fossbilling.org/",
   "homepage_url": "https://fossbilling.org/",
