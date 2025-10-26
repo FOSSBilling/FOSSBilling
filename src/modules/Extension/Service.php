@@ -417,7 +417,7 @@ class Service implements InjectionAwareInterface
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 $mod = $ext->name;
                 if ($this->isCoreModule($mod)) {
-                    throw new \FOSSBilling\Exception('Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
+                    throw new \FOSSBilling\InformationException('Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
                 }
 
                 break;
