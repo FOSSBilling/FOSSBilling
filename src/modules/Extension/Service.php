@@ -443,7 +443,7 @@ class Service implements InjectionAwareInterface
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'uninstall_extensions');
 
         if ($this->isCoreModule($id)) {
-            throw new \FOSSBilling\Exception('Core modules are an integral part of the FOSSBilling system and cannot be uninstalled.');
+            throw new \FOSSBilling\InformationException('Core modules are an integral part of the FOSSBilling system and cannot be uninstalled.');
         }
 
         if ($this->isExtensionActive($type, $id)) {
