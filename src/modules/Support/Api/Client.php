@@ -26,7 +26,7 @@ class Client extends \Api_Abstract
      *
      * @return array
      */
-    public function ticket_get_list($data)
+    public function ticket_get_list(array $data): array
     {
         $identity = $this->getIdentity();
         $data['client_id'] = $identity->id;
@@ -47,7 +47,7 @@ class Client extends \Api_Abstract
      *
      * @return array
      */
-    public function ticket_get($data)
+    public function ticket_get(array $data): array
     {
         $required = [
             'id' => 'Ticket id required',
@@ -64,7 +64,7 @@ class Client extends \Api_Abstract
      *
      * @return array
      */
-    public function helpdesk_get_pairs()
+    public function helpdesk_get_pairs(): array
     {
         return $this->getService()->helpdeskGetPairs();
     }
@@ -80,7 +80,7 @@ class Client extends \Api_Abstract
      *
      * @return int $id - ticket id
      */
-    public function ticket_create($data)
+    public function ticket_create(array $data): int
     {
         $required = [
             'content' => 'Ticket content required',
@@ -101,7 +101,7 @@ class Client extends \Api_Abstract
     /**
      * Add new conversation message to ticket. Ticket will be reopened if closed.
      */
-    public function ticket_reply($data): bool
+    public function ticket_reply(array $data): bool
     {
         $required = [
             'id' => 'Ticket ID required',
@@ -137,7 +137,7 @@ class Client extends \Api_Abstract
      *
      * @return bool
      */
-    public function ticket_close($data)
+    public function ticket_close(array $data): bool
     {
         $required = [
             'id' => 'Ticket ID required',

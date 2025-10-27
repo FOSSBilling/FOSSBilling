@@ -26,7 +26,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function ticket_get_list($data)
+    public function ticket_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
@@ -44,7 +44,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function ticket_get($data)
+    public function ticket_get(array $data): array
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -66,7 +66,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
-    public function ticket_update($data)
+    public function ticket_update(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -83,7 +83,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
-    public function ticket_message_update($data)
+    public function ticket_message_update(array $data): bool
     {
         $required = [
             'id' => 'Ticket message id is missing',
@@ -101,7 +101,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
-    public function ticket_delete($data)
+    public function ticket_delete(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -118,7 +118,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - ticket message id
      */
-    public function ticket_reply($data)
+    public function ticket_reply(array $data): int
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -138,7 +138,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
-    public function ticket_close($data)
+    public function ticket_close(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -162,7 +162,7 @@ class Admin extends \Api_Abstract
      *
      * @return int $id - ticket id
      */
-    public function ticket_create($data)
+    public function ticket_create(array $data): int
     {
         $required = [
             'client_id' => 'Client id is missing',
@@ -223,7 +223,7 @@ class Admin extends \Api_Abstract
     /**
      * Return tickets statuses with counter.
      */
-    public function ticket_get_statuses($data)
+    public function ticket_get_statuses(array $data): array
     {
         if (isset($data['titles'])) {
             return $this->getService()->getStatuses();
@@ -237,7 +237,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function public_ticket_get_list($data)
+    public function public_ticket_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->publicGetSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
@@ -258,7 +258,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function public_ticket_create($data)
+    public function public_ticket_create(array $data): int
     {
         $required = [
             'name' => 'Client name parameter is missing',
@@ -278,7 +278,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function public_ticket_get($data)
+    public function public_ticket_get(array $data): array
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -297,7 +297,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function public_ticket_delete($data)
+    public function public_ticket_delete(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -312,11 +312,11 @@ class Admin extends \Api_Abstract
     /**
      * Set id status to closed.
      *
-     * @return array
+     * @return bool
      *
      * @throws \FOSSBilling\Exception
      */
-    public function public_ticket_close($data)
+    public function public_ticket_close(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -338,7 +338,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function public_ticket_update($data)
+    public function public_ticket_update(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -353,11 +353,11 @@ class Admin extends \Api_Abstract
     /**
      * Post new reply to inquiry.
      *
-     * @return bool
+     * @return int
      *
      * @throws \FOSSBilling\Exception
      */
-    public function public_ticket_reply($data)
+    public function public_ticket_reply(array $data): int
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -373,7 +373,7 @@ class Admin extends \Api_Abstract
     /**
      * Return tickets statuses with counter.
      */
-    public function public_ticket_get_statuses($data)
+    public function public_ticket_get_statuses(array $data): array
     {
         if (isset($data['titles'])) {
             return $this->getService()->publicGetStatuses();
@@ -387,7 +387,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function helpdesk_get_list($data)
+    public function helpdesk_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->helpdeskGetSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
@@ -400,7 +400,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function helpdesk_get_pairs($data)
+    public function helpdesk_get_pairs(array $data): array
     {
         return $this->getService()->helpdeskGetPairs();
     }
@@ -412,7 +412,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function helpdesk_get($data)
+    public function helpdesk_get(array $data): array
     {
         $required = [
             'id' => 'Help desk id is missing',
@@ -437,7 +437,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function helpdesk_update($data)
+    public function helpdesk_update(array $data): bool
     {
         $required = [
             'id' => 'Help desk id is missing',
@@ -461,7 +461,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function helpdesk_create($data)
+    public function helpdesk_create(array $data): int
     {
         $required = [
             'name' => 'Help desk title is missing',
@@ -478,7 +478,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function helpdesk_delete($data)
+    public function helpdesk_delete(array $data): bool
     {
         $required = [
             'id' => 'Help desk id is missing',
@@ -495,7 +495,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function canned_get_list($data)
+    public function canned_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->cannedGetSearchQuery($data);
 

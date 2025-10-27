@@ -22,7 +22,7 @@ class Guest extends \Api_Abstract
      *
      * @return string - ticket hash
      */
-    public function ticket_create($data)
+    public function ticket_create(array $data): string
     {
         $required = [
             'name' => 'Please enter your name',
@@ -44,7 +44,7 @@ class Guest extends \Api_Abstract
      *
      * @return array - ticket details
      */
-    public function ticket_get($data)
+    public function ticket_get(array $data): array
     {
         $required = [
             'hash' => 'Public ticket hash required',
@@ -61,7 +61,7 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      */
-    public function ticket_close($data)
+    public function ticket_close(array $data): bool
     {
         $required = [
             'hash' => 'Public ticket hash required',
@@ -78,7 +78,7 @@ class Guest extends \Api_Abstract
      *
      * @return string - ticket hash
      */
-    public function ticket_reply($data)
+    public function ticket_reply(array $data): string
     {
         $required = [
             'hash' => 'Public ticket hash required',
@@ -100,7 +100,7 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      */
-    public function kb_enabled()
+    public function kb_enabled(): bool
     {
         return $this->getService()->kbEnabled();
     }
@@ -111,11 +111,11 @@ class Guest extends \Api_Abstract
      *
      * @return array
      */
-    public function kb_article_get_list($data)
+    public function kb_article_get_list(array $data): array
     {
         $data['status'] = 'active';
 
-        $status = $data['status'] ?? null;
+        $status = $data['status'];
         $search = $data['search'] ?? null;
         $cat = $data['kb_article_category_id'] ?? null;
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
@@ -136,7 +136,7 @@ class Guest extends \Api_Abstract
      *
      * @return array
      */
-    public function kb_article_get($data)
+    public function kb_article_get(array $data): array
     {
         if (!isset($data['id']) && !isset($data['slug'])) {
             throw new \FOSSBilling\InformationException('ID or slug is missing');
@@ -165,7 +165,7 @@ class Guest extends \Api_Abstract
      *
      * @return array
      */
-    public function kb_category_get_list($data)
+    public function kb_category_get_list(array $data): array
     {
         $data['article_status'] = \Model_SupportKbArticle::ACTIVE;
         [$query, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
@@ -188,7 +188,7 @@ class Guest extends \Api_Abstract
      *
      * @return array
      */
-    public function kb_category_get_pairs($data)
+    public function kb_category_get_pairs(array $data): array
     {
         return $this->getService()->kbCategoryGetPairs();
     }
@@ -198,7 +198,7 @@ class Guest extends \Api_Abstract
      *
      * @return array
      */
-    public function kb_category_get($data)
+    public function kb_category_get(array $data): array
     {
         if (!isset($data['id']) && !isset($data['slug'])) {
             throw new \FOSSBilling\InformationException('Category ID or slug is missing');
