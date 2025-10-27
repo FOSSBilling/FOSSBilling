@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Cart;
 
+use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -260,12 +261,12 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeCartCurrency(\Model_Cart $cart, \Model_Currency $currency): bool
+    public function changeCartCurrency(\Model_Cart $cart, Currency $currency): bool
     {
-        $cart->currency_id = $currency->id;
+        $cart->currency_id = $currency->getId();
         $this->di['db']->store($cart);
 
-        $this->di['logger']->info('Changed shopping cart #%s currency to %s', $cart->id, $currency->title);
+        $this->di['logger']->info('Changed shopping cart #%s currency to %s', $cart->id, $currency->getTitle());
 
         return true;
     }
