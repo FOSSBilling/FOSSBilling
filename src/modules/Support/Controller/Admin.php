@@ -130,7 +130,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 }
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->err($e->getMessage());
         }
 
         return $app->render('mod_support_ticket', ['ticket' => $ticket, 'canned_delay_message' => $cdm, 'request_message' => $messageid]);
