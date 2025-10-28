@@ -89,7 +89,8 @@ class Client extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', (string) $data['content']);
+        // Sanitize content to prevent XSS attacks
+        $data['content'] = $this->di['tools']->sanitizeContent($data['content'], true);
 
         $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
 
@@ -109,7 +110,8 @@ class Client extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', (string) $data['content']);
+        // Sanitize content to prevent XSS attacks
+        $data['content'] = $this->di['tools']->sanitizeContent($data['content'], true);
 
         $client = $this->getIdentity();
 

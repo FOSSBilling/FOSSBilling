@@ -126,7 +126,8 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', (string) $data['content']);
+        // Sanitize content to prevent XSS attacks
+        $data['content'] = $this->di['tools']->sanitizeContent($data['content'], true);
 
         $ticket = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
@@ -172,7 +173,8 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', (string) $data['content']);
+        // Sanitize content to prevent XSS attacks
+        $data['content'] = $this->di['tools']->sanitizeContent($data['content'], true);
 
         $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
         $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');

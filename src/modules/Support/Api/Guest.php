@@ -36,6 +36,9 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\InformationException('Please enter your message');
         }
 
+        // Sanitize message to prevent XSS attacks
+        $data['message'] = $this->di['tools']->sanitizeContent($data['message'], true);
+
         return $this->getService()->ticketCreateForGuest($data);
     }
 
@@ -87,6 +90,9 @@ class Guest extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
+
+        // Sanitize message to prevent XSS attacks
+        $data['message'] = $this->di['tools']->sanitizeContent($data['message'], true);
 
         return $this->getService()->publicTicketReplyForGuest($publicTicket, $data['message']);
     }
