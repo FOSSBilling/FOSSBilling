@@ -369,7 +369,7 @@ class Tools
      * @param bool $allowHtml Whether to allow safe HTML tags (default: true for rich content)
      * @return string Sanitized content safe for output
      */
-    public function sanitizeContent(string $content, bool $allowHtml = true): string
+    public static function sanitizeContent(?string $content = null, bool $allowHtml = true): string
     {
         if (empty($content)) {
             return '';

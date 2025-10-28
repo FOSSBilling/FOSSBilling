@@ -37,7 +37,7 @@ class Guest extends \Api_Abstract
         }
 
         // Sanitize message to prevent XSS attacks
-        $data['message'] = $this->di['tools']->sanitizeContent($data['message'], true);
+        $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
 
         return $this->getService()->ticketCreateForGuest($data);
     }
@@ -92,7 +92,7 @@ class Guest extends \Api_Abstract
         $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
 
         // Sanitize message to prevent XSS attacks
-        $data['message'] = $this->di['tools']->sanitizeContent($data['message'], true);
+        $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
 
         return $this->getService()->publicTicketReplyForGuest($publicTicket, $data['message']);
     }

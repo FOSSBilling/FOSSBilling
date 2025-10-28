@@ -25,13 +25,8 @@ class Api_GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('sanitizeContent')
-            ->willReturn('Sanitized Message');
-
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['tools'] = $toolsMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -147,13 +142,8 @@ class Api_GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('sanitizeContent')
-            ->willReturn('Sanitized Message');
-
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['tools'] = $toolsMock;
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);

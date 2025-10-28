@@ -199,14 +199,9 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
             ->willReturn(random_int(1, 100));
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('sanitizeContent')
-            ->willReturn('Sanitized Content');
-
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['tools'] = $toolsMock;
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -313,14 +308,9 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForAdmin')
             ->willReturn($randID);
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('sanitizeContent')
-            ->willReturn('Sanitized Content');
-
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['tools'] = $toolsMock;
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -547,11 +537,6 @@ class Api_AdminTest extends \BBTestCase
             'subject' => 'Subject',
             'message' => 'Message',
         ];
-
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('sanitizeContent')
-            ->willReturnCallback(fn ($content) => $content);
-        $di['tools'] = $toolsMock;
 
         $result = $this->adminApi->public_ticket_create($data);
 
@@ -1506,11 +1491,6 @@ class Api_AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('sanitizeContent')
-            ->willReturnCallback(fn ($content) => $content);
-        $di['tools'] = $toolsMock;
-
         $adminApi->setDi($di);
 
         $result = $adminApi->kb_article_create($data);
@@ -1542,11 +1522,6 @@ class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
-
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('sanitizeContent')
-            ->willReturnCallback(fn ($content) => $content);
-        $di['tools'] = $toolsMock;
 
         $adminApi->setDi($di);
 

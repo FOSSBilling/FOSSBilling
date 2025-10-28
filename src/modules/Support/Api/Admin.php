@@ -77,7 +77,7 @@ class Admin extends \Api_Abstract
 
         // Sanitize subject if provided
         if (isset($data['subject'])) {
-            $data['subject'] = $this->di['tools']->sanitizeContent($data['subject'], false);
+            $data['subject'] = \FOSSBilling\Tools::sanitizeContent($data['subject'], false);
         }
 
         return $this->getService()->ticketUpdate($model, $data);
@@ -132,7 +132,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         // Sanitize content to prevent XSS attacks
-        $data['content'] = $this->di['tools']->sanitizeContent($data['content'], true);
+        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
 
         $ticket = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
@@ -179,7 +179,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         // Sanitize content to prevent XSS attacks
-        $data['content'] = $this->di['tools']->sanitizeContent($data['content'], true);
+        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
 
         $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
         $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
@@ -276,8 +276,8 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         // Sanitize user input to prevent XSS attacks
-        $data['subject'] = $this->di['tools']->sanitizeContent($data['subject'], false);
-        $data['message'] = $this->di['tools']->sanitizeContent($data['message'], true);
+        $data['subject'] = \FOSSBilling\Tools::sanitizeContent($data['subject'], false);
+        $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
 
         return $this->getService()->publicTicketCreate($data, $this->getIdentity());
     }
@@ -861,9 +861,9 @@ class Admin extends \Api_Abstract
 
         $articleCategoryId = $data['kb_article_category_id'];
         // Sanitize title and content to prevent XSS attacks
-        $title = $this->di['tools']->sanitizeContent($data['title'], false);
+        $title = \FOSSBilling\Tools::sanitizeContent($data['title'], false);
         $status = $data['status'] ?? \Model_SupportKbArticle::DRAFT;
-        $content = isset($data['content']) ? $this->di['tools']->sanitizeContent($data['content'], true) : null;
+        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeContent($data['content'], true) : null;
 
         return $this->getService()->kbCreateArticle($articleCategoryId, $title, $status, $content);
     }
@@ -889,10 +889,10 @@ class Admin extends \Api_Abstract
 
         $articleCategoryId = $data['kb_article_category_id'] ?? null;
         // Sanitize title and content to prevent XSS attacks
-        $title = isset($data['title']) ? $this->di['tools']->sanitizeContent($data['title'], false) : null;
+        $title = isset($data['title']) ? \FOSSBilling\Tools::sanitizeContent($data['title'], false) : null;
         $slug = $data['slug'] ?? null;
         $status = $data['status'] ?? null;
-        $content = isset($data['content']) ? $this->di['tools']->sanitizeContent($data['content'], true) : null;
+        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeContent($data['content'], true) : null;
         $views = $data['views'] ?? null;
 
         return $this->getService()->kbUpdateArticle($data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);
