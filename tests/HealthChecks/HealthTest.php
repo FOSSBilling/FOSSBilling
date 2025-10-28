@@ -2,48 +2,38 @@
 
 declare(strict_types=1);
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+dataset('public_urls', [
+    'homepage' => ['', 200],
+    'order page' => ['order', 200],
+    'news page' => ['news', 200],
+    'privacy policy' => ['privacy-policy', 200],
+    'sitemap' => ['sitemap.xml', 200],
+    'contact us' => ['contact-us', 200],
+    'login page' => ['login', 200],
+    'signup page' => ['signup', 200],
+    'password reset' => ['password-reset', 200],
+]);
 
-final class HealthTest extends TestCase
-{
-    private array $test_urls = [
-        '' => 200,
-        'order' => 200,
-        'news' => 200,
-        'privacy-policy' => 200,
-        'sitemap.xml' => 200,
-        'contact-us' => 200,
-        'login' => 200,
-        'signup' => 200,
-        'password-reset' => 200,
-    ];
+test('public URL returns expected status code', function (string $path, int $expectedCode) {
+    $baseUrl = getenv('APP_URL');
 
-    public function testUrls(): void
-    {
-        $baseUrl = getenv('APP_URL');
-        foreach ($this->test_urls as $url => $code) {
-            $ch = curl_init($baseUrl . $url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_exec($ch);
-            $responseCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+    $ch = curl_init($baseUrl . $path);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_exec($ch);
+    $responseCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
 
-            $this->assertEquals($code, $responseCode, "Failed asserting that the URL '{$url}' returned a {$code} response code.");
-        }
-    }
+    expect($responseCode)->toBe($expectedCode);
+})->with('public_urls');
 
-    public function testIsFOSSBillingWorking(): void
-    {
-        $result = Request::makeRequest('guest/system/company');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
+test('API is responding correctly', function () {
+    expect(api('guest/system/company'))
+        ->toHaveResult()
+        ->toBeArray();
+});
 
-    public function testStartingPatchNotBehind(): void
-    {
-        $result = Request::makeRequest('admin/system/is_behind_on_patches');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertFalse($result->getResult()); // This should return false to indicate there are no patches available, meaning the `last_patch` number is correct for fresh installs.
-    }
-}
+test('fresh install has no pending patches', function () {
+    expect(api('admin/system/is_behind_on_patches'))
+        ->toHaveResult()
+        ->toBeFalse();
+});

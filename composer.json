@@ -17,7 +17,12 @@
     ],
     "homepage": "https://fossbilling.org",
     "scripts": {
-        "test": "phpunit",
+        "test:legacy": "phpunit",
+        "test:pest": "pest --configuration=phpunit.pest.xml",
+        "test": [
+            "@test:legacy",
+            "@test:pest"
+        ],
         "phpstan": "phpstan analyze --memory-limit=512M",
         "phpstan:baseline": "phpstan analyze --generate-baseline",
         "cs:check": "php-cs-fixer fix --dry-run --diff",
@@ -84,6 +89,8 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.8",
+        "pestphp/pest": "^3.8",
+        "pestphp/pest-plugin-faker": "^3.0",
         "phpstan/extension-installer": "^1.2",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-deprecation-rules": "^2.0",
@@ -97,7 +104,8 @@
         "allow-plugins": {
             "phpstan/extension-installer": true,
             "php-http/discovery": true,
-            "liborm85/composer-vendor-cleaner": true
+            "liborm85/composer-vendor-cleaner": true,
+            "pestphp/pest-plugin": true
         },
         "vendor-dir": "src/vendor"
     },

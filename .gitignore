@@ -2,6 +2,7 @@
 ._*
 .DS_Store
 src/config.php
+src/config.old.php
 src/data/log/*
 src/data/cache/*
 src/vendor/*
@@ -11,6 +12,7 @@ cache
 ### phpunit/phpunit ###
 .phpunit.result.cache
 .phpunit.cache/test-results
+.phpunit.cache.pest
 
 ### node_modules ###
 node_modules

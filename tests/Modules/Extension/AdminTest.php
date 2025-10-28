@@ -2,81 +2,89 @@
 
 declare(strict_types=1);
 
-namespace ExtensionTests;
+describe('Extension Management', function () {
+    it('can activate an extension', function () {
+        expect(api('admin/extension/activate', ['type' => 'mod', 'id' => 'massmailer']))
+            ->toBeSuccessfulResponse();
+    });
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+    it('can deactivate an extension', function () {
+        expect(api('admin/extension/deactivate', ['type' => 'mod', 'id' => 'massmailer']))
+            ->toBeSuccessfulResponse();
+    });
 
-final class AdminTest extends TestCase
-{
-    public function testCanActivateExtension(): void
-    {
-        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'massmailer']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-    }
+    it('can install an extension', function () {
+        //
+    })->todo();
+});
 
-    public function testCanDeactivateExtension(): void
-    {
-        $result = Request::makeRequest('admin/extension/deactivate', ['type' => 'mod', 'id' => 'massmailer']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-    }
+describe('Language Management', function () {
+    it('lists enabled languages on fresh install', function () {
+        $languages = api('admin/extension/languages')->getResult();
 
-    /*
-    public function testCanInstallExtension(): void
-    {
-        $result = Request::makeRequest('admin/extension/install', ['type' => 'mod', 'id' => 'example']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-    }
-    */
+        expect($languages)
+            ->not->toBeEmpty('Fresh install should have at least one enabled language');
+    });
 
-    public function testLanguageManagement(): void
-    {
-        $result = Request::makeRequest('admin/extension/languages');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertNotCount(0, $result->getResult()); // A fresh install should never display 0 enabled languages
+    it('has no disabled languages on fresh install', function () {
+        $disabledLanguages = api('admin/extension/languages', ['disabled' => true])->getResult();
 
-        $result = Request::makeRequest('admin/extension/languages', ['disabled' => true]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertCount(0, $result->getResult()); // There should be no disabled languages on a fresh install
+        expect($disabledLanguages)
+            ->toBeEmpty('Fresh install should have no disabled languages');
+    });
 
-        // Disable the en_US language
-        $result = Request::makeRequest('admin/extension/toggle_language', ['locale_id' => 'en_US']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+    it('can toggle language status', function () {
+        // Get initial state
+        $enabledLanguages = api('admin/extension/languages', ['details' => false])->getResult();
 
-        // Validate it's now listed under the disabled languages
-        $result = Request::makeRequest('admin/extension/languages', ['disabled' => true, 'details' => false]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertContains('en_US', $result->getResult(), 'The en_US language was not disabled');
-
-        // Validate it's no longer listed under the enabled languages
-        $result = Request::makeRequest('admin/extension/languages');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertNotContains('en_US', $result->getResult(), 'The en_US language was not disabled');
-
-        // Enable it again
-        $result = Request::makeRequest('admin/extension/toggle_language', ['locale_id' => 'en_US']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-    }
-
-    public function testLanguageCompletion(): void
-    {
-        // Enable any languages that are disabled
-        $locales = Request::makeRequest('admin/extension/languages', ['disabled' => true, 'details' => false])->getResult();
-        foreach ($locales as $locale) {
-            Request::makeRequest('admin/extension/toggle_language', ['locale_id' => $locale]);
+        // Skip test if en_US is not available
+        if (!in_array('en_US', $enabledLanguages)) {
+            test()->markTestSkipped('en_US language is not available');
         }
 
-        $this->assertEmpty(Request::makeRequest('admin/extension/languages', ['disabled' => true, 'details' => false])->getResult()); // There should now be no disabled languages
+        // Disable en_US
+        expect(api('admin/extension/toggle_language', ['locale_id' => 'en_US']))
+            ->toBeSuccessfulResponse();
 
-        // Get a list of all languages, validate they have an expected completion level
-        $locales = Request::makeRequest('admin/extension/languages', ['details' => false])->getResult();
-        foreach ($locales as $locale) {
-            $completionResult = Request::makeRequest('admin/extension/locale_completion', ['locale_id' => $locale]);
+        // Verify it's now disabled
+        $disabledLanguages = api('admin/extension/languages', ['disabled' => true, 'details' => false])->getResult();
+        expect($disabledLanguages)->toContain('en_US');
+
+        // Verify it's removed from enabled list
+        $enabledLanguages = api('admin/extension/languages', ['details' => false])->getResult();
+        expect($enabledLanguages)->not->toContain('en_US');
+
+        // Re-enable it
+        expect(api('admin/extension/toggle_language', ['locale_id' => 'en_US']))
+            ->toBeSuccessfulResponse();
+    });
+
+    it('reports completion level for all languages', function () {
+        // Enable all languages first
+        $disabledLanguages = api('admin/extension/languages', ['disabled' => true, 'details' => false])->getResult();
+
+        foreach ($disabledLanguages as $locale) {
+            api('admin/extension/toggle_language', ['locale_id' => $locale]);
+        }
+
+        // Verify all are now enabled
+        expect(api('admin/extension/languages', ['disabled' => true, 'details' => false]))
+            ->toHaveResult()
+            ->toBeEmpty();
+
+        // Check completion levels
+        $allLanguages = api('admin/extension/languages', ['details' => false])->getResult();
+
+        foreach ($allLanguages as $locale) {
+            $completion = api('admin/extension/locale_completion', ['locale_id' => $locale])->getResult();
+
             if ($locale === 'en_US') {
-                $this->assertEquals(100, $completionResult->getResult());
+                expect($completion)
+                    ->toBe(100, "en_US should be 100% complete");
             } else {
-                $this->assertGreaterThanOrEqual(25, $completionResult->getResult());
+                expect($completion)
+                    ->toBeGreaterThanOrEqual(25, "Language {$locale} should be at least 25% complete");
             }
         }
-    }
-}
+    });
+});

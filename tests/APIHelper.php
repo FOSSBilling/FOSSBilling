@@ -64,9 +64,17 @@ class Response
 
     public function __construct(private readonly int $code, private readonly string $rawResponse)
     {
-        $this->decodedResponse = json_decode($this->rawResponse, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \RuntimeException('Invalid JSON response: ' . json_last_error_msg());
+        $decoded = json_decode($this->rawResponse, true);
+        if (json_last_error() !== JSON_ERROR_NONE || $decoded === null) {
+            // If JSON decoding fails or returns null, create a minimal error response
+            $this->decodedResponse = [
+                'error' => [
+                    'message' => 'Invalid or empty response from server: ' . ($this->rawResponse ?: 'Empty response'),
+                    'code' => $this->code,
+                ],
+            ];
+        } else {
+            $this->decodedResponse = $decoded;
         }
     }
 

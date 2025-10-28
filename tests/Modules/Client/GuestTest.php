@@ -2,31 +2,10 @@
 
 declare(strict_types=1);
 
-namespace ClientTests;
+it('can create and delete a client account', function () {
+    $clientId = createTestClient();
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+    expect($clientId)->toBeInt()->toBeGreaterThan(0);
 
-final class GuestTest extends TestCase
-{
-    public function testCreateAndDestroyClient(): void
-    {
-        // Generate a new test user
-        $password = 'A1a' . bin2hex(random_bytes(6));
-        $result = Request::makeRequest('guest/client/create', [
-            'email' => 'client@example.com',
-            'first_name' => 'Test',
-            'password' => $password,
-            'password_confirm' => $password,
-        ]);
-
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsNumeric($result->getResult());
-
-        $id = intval($result->getResult());
-
-        $result = Request::makeRequest('admin/client/delete', ['id' => $id]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
-    }
-}
+    deleteTestClient($clientId);
+});
