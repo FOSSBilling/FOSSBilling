@@ -125,9 +125,14 @@ class Api_ClientTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportHelpdesk());
 
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('sanitizeContent')
+            ->willReturn('Sanitized Content');
+
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
+        $di['tools'] = $toolsMock;
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
@@ -165,9 +170,14 @@ class Api_ClientTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_SupportTicket());
 
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('sanitizeContent')
+            ->willReturn('Sanitized Content');
+
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
+        $di['tools'] = $toolsMock;
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
@@ -205,9 +215,15 @@ class Api_ClientTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_SupportTicket());
 
+        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('sanitizeContent')
+            ->willReturn('Sanitized Content');
+
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
+        $di['tools'] = $toolsMock;
+
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();

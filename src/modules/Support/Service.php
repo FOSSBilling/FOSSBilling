@@ -1523,7 +1523,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return isset($config['kb_enable']) && $config['kb_enable'] == 'on';
     }
 
-    public function kbSearchArticles(?string $status = null, ?string $search = null, ?int $cat = null, int $per_page = 100, ?int $page = null): array
+    public function kbSearchArticles(?string $status = null, ?string $search = null, ?string $cat = null, int $per_page = 100, ?int $page = null): array
     {
         $filter = [];
 
