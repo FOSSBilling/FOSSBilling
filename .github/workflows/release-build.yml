@@ -8,6 +8,10 @@ on:
         default: 'preview-build'
         required: false
         type: string
+      release_version:
+        description: 'Explicit release version to use when preview is disabled.'
+        required: false
+        type: string
       preview:
         description: 'Whether the release is a preview release or not.'
         default: true
@@ -61,8 +65,15 @@ jobs:
         run: sed -i s/0.0.1/${GITHUB_SHA::7}/ Version.php
         working-directory: ./src/library/FOSSBilling
 
+      - name: 'Add the Provided Release Version'
+        if: ${{ inputs.preview == false && inputs.release_version }}
+        run: |
+          version='${{ inputs.release_version }}'
+          sed -i "s/0\.0\.1/${version}/" Version.php
+        working-directory: ./src/library/FOSSBilling
+
       - name: 'Add the Branch/Tag Name as the Release Version'
-        if: ${{ inputs.preview == false }}
+        if: ${{ inputs.preview == false && !inputs.release_version }}
         run: sed -i s/0.0.1/${{ github.ref_name }}/ Version.php
         working-directory: ./src/library/FOSSBilling
 

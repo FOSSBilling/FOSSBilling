@@ -1,0 +1,49 @@
+name: 'Manual Release Build'
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version to embed in Version.php (e.g. 1.2.3)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  release-build:
+    uses: ./.github/workflows/release-build.yml
+    with:
+      artifact-name: 'release-build'
+      preview: false
+      release_version: ${{ inputs.version }}
+
+  prepare-release:
+    name: 'Create Release Archive'
+    runs-on: ubuntu-latest
+    needs: release-build
+    steps:
+      - name: 'Download Release Build Archive'
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53
+        with:
+          name: 'release-build'
+          path: '/tmp'
+
+      - name: 'Extract Release Build Archive'
+        run: |
+          mkdir build
+          tar -xvf /tmp/build.tar -C build
+
+      - name: 'Package Release Zip'
+        run: |
+          cd build
+          zip -r "../FOSSBilling-${{ inputs.version }}.zip" .
+
+      - name: 'Upload Release Archive Artifact'
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          if-no-files-found: 'error'
+          name: "FOSSBilling-${{ inputs.version }}"
+          path: "FOSSBilling-${{ inputs.version }}.zip"
+          retention-days: 30
