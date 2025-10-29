@@ -1580,6 +1580,7 @@ class Service implements InjectionAwareInterface
             'Address 3' => $invoice['seller']['address_3'],
             'Phone' => $invoice['seller']['phone'],
             'Email' => $invoice['seller']['email'],
+            'VAT Number' => $invoice['seller']['company_vat'],
         ];
 
         foreach ($sourceData as $label => $data) {
@@ -1604,6 +1605,7 @@ class Service implements InjectionAwareInterface
             'Zip' => $invoice['buyer']['zip'],
             'Country' => $invoice['buyer']['country'],
             'Phone' => $invoice['buyer']['phone'],
+            'VAT Number' => $invoice['buyer']['company_vat'],
         ];
 
         foreach ($sourceData as $label => $data) {
