@@ -72,6 +72,7 @@
                          <select name="captcha_provider" class="form-select" id="provider-select">
                             <option value="recaptcha_v2" {% if not params.captcha_provider or params.captcha_provider == 'recaptcha_v2' %}selected{% endif %}>{{ 'Google reCAPTCHA v2'|trans }}</option>
                             <option value="turnstile" {% if params.captcha_provider == 'turnstile' %}selected{% endif %}>{{ 'Cloudflare Turnstile'|trans }}</option>
+                            <option value="hcaptcha" {% if params.captcha_provider == 'hcaptcha' %}selected{% endif %}>{{ 'hCaptcha'|trans }}</option>
                         </select>
                     </div>
                 </div>
@@ -104,6 +105,21 @@
                         <label class="col-md-3 col-form-label" for="turnstile_secret_key">{{ 'Turnstile Secret Key'|trans }}</label>
                         <div class="col-md-6 row">
                             <input class="form-control" type="text" id="turnstile_secret_key" name="turnstile_secret_key" value="{{ params.turnstile_secret_key }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="hcaptcha_settings">
+                    <div class="mb-3 row">
+                        <label class="col-md-3 col-form-label">{{ 'hCaptcha Site Key'|trans }}</label>
+                        <div class="col-md-6 row">
+                            <input class="form-control" type="text" id="hcaptcha_site_key" name="hcaptcha_site_key" value="{{ params.hcaptcha_site_key }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="col-md-3 col-form-label">{{ 'hCaptcha Secret Key'|trans }}</label>
+                        <div class="col-md-6 row">
+                            <input class="form-control" type="text" id="hcaptcha_secret_key" name="hcaptcha_secret_key" value="{{ params.hcaptcha_site_key }}">
                         </div>
                     </div>
                 </div>
@@ -154,9 +170,15 @@
             if (selectedProvider === 'recaptcha_v2') {
                 $('#recaptcha_v2_settings').show();
                 $('#turnstile_settings').hide();
+                $('#hcaptcha_settings').hide();
             } else if (selectedProvider === 'turnstile') {
                 $('#recaptcha_v2_settings').hide();
                 $('#turnstile_settings').show();
+                $('#hcaptcha_settings').hide();
+            } else if (selectedProvider === 'hcaptcha') {
+                $('#recaptcha_v2_settings').hide();
+                $('#turnstile_settings').hide();
+                $('#hcaptcha_settings').show();
             }
         }
 

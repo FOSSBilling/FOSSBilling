@@ -135,6 +135,29 @@ class Service implements InjectionAwareInterface
                 if (!isset($content['success']) || $content['success'] !== true) {
                     throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
                 }
+            } elseif ($provider === 'hcaptcha') {
+                if (empty($config['hcaptcha_secret_key'])) {
+                    throw new \FOSSBilling\InformationException('hCaptcha secret key is not configured.');
+                }
+
+                $hcaptcha_response = $params['h-captcha-response'] ?? null;
+                if (empty($hcaptcha_response)) {
+                    throw new \FOSSBilling\InformationException('Prease complete the CAPTCHA verification');
+                }
+
+                $client = HttpClient::create(['bindto'=> BIND_TO]);
+                $response = $client->request('POST', 'https://hcaptcha.com/siteverify', [
+                    'body'=> [
+                        'secret'=> $config[''],
+                        'response'=> $hcaptcha_response,
+                        'remoteip'=> $di['request']->getClientIp(),
+                    ],
+                ]);
+                $content = $response->toArray();
+
+                if (!isset($content['success']) || $content['success'] !== true) {
+                    throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
+                }
             }
         }
         if (isset($config['sfs']) && $config['sfs']) {
