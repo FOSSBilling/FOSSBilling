@@ -51,14 +51,13 @@
             </div>
 
             <div class="card-body">
-                <h3 class="card-title">{{ 'reCAPTCHA settings'|trans }}</h3>
+                <h3 class="card-title">{{ 'CAPTCHA settings'|trans }}</h3> {# CHANGED: Renamed from reCAPTCHA #}
                 <p class="card-subtitle">
                     {{ 'Enable captcha for client registration and contact forms'|trans }}<br>
-                    {{ 'Sign up for reCAPTCHA key for your domain at'|trans }}
-                    <a href="https://www.google.com/recaptcha/about/" target="_blank">Google reCAPTCHA</a>
+                    {{ 'Get keys from %recaptcha% or %turnstile%.'|trans({ '%recaptcha%': '<a href="https://www.google.com/recaptcha/about/" target="_blank">Google reCAPTCHA</a>', '%turnstile%': '<a href="https://www.cloudflare.com/products/turnstile/" target="_blank">Cloudflare Turnstile</a>' })|raw }}
                 </p>
                 <div class="mb-3 row">
-                    <label class="col-md-3 col-form-label" for="captcha_enabled">{{ 'Enable reCAPTCHA'|trans }}</label>
+                    <label class="col-md-3 col-form-label" for="captcha_enabled">{{ 'Enable CAPTCHA'|trans }}</label>
                     <div class="col-md-6 pt-2 ps-0">
                         <label class="form-check form-check-single form-switch ps-0">
                             <input id="captcha_enabled" class="form-check-input" name="captcha_enabled" type="checkbox"
@@ -66,33 +65,46 @@
                         </label>
                     </div>
                 </div>
+
                 <div class="mb-3 row">
-                    <label class="col-md-3 col-form-label">{{ 'reCAPTCHA version'|trans }}</label>
-                    <div class="col-md-6 pt-2 ps-0">
-                        <label class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="captcha_version" value="2"
-                                   {% if params.captcha_version == "2" %}checked="checked"{% endif %}>
-                            <span class="form-check-label">{{ 'v2'|trans }}</span>
-                        </label>
-{#                        <label class="form-check form-check-inline">#}
-{#                            <input class="form-check-input" type="radio" value="3" disabled#}
-{#                                   {% if params.captcha_version == "3" %}checked="checked"{% endif %}>#}
-{#                            <span class="form-check-label">{{ 'v3'|trans }}</span>#}
-{#                        </label>#}
-                    </div>
-                </div>
-                <div class="mb-3 row">
-                    <label class="col-md-3 col-form-label" for="captcha_recaptcha_publickey">{{ 'reCAPTCHA Public key'|trans }}</label>
+                    <label class="col-md-3 col-form-label" for="provider-select">{{ 'CAPTCHA Provider'|trans }}</label>
                     <div class="col-md-6 row">
-                        <input class="form-control" type="text" id="captcha_recaptcha_publickey" name="captcha_recaptcha_publickey"
-                               value="{{ params.captcha_recaptcha_publickey }}">
+                         <select name="captcha_provider" class="form-select" id="provider-select">
+                            <option value="recaptcha_v2" {% if not params.captcha_provider or params.captcha_provider == 'recaptcha_v2' %}selected{% endif %}>{{ 'Google reCAPTCHA v2'|trans }}</option>
+                            <option value="turnstile" {% if params.captcha_provider == 'turnstile' %}selected{% endif %}>{{ 'Cloudflare Turnstile'|trans }}</option>
+                        </select>
                     </div>
                 </div>
-                <div class="mb-3 row">
-                    <label class="col-md-3 col-form-label" for="captcha_recaptcha_privatekey">{{ 'reCAPTCHA Secret key'|trans }}</label>
-                    <div class="col-md-6 pt-2 row">
-                        <input class="form-control" type="text" id="captcha_recaptcha_privatekey" name="captcha_recaptcha_privatekey"
-                               value="{{ params.captcha_recaptcha_privatekey }}">
+                
+                <div id="recaptcha_v2_settings">
+                    <div class="mb-3 row">
+                        <label class="col-md-3 col-form-label" for="recaptcha_publickey">{{ 'reCAPTCHA Public key'|trans }}</label>
+                        <div class="col-md-6 row">
+                            <input class="form-control" type="text" id="recaptcha_publickey" name="recaptcha_publickey"
+                                   value="{{ params.recaptcha_publickey }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="col-md-3 col-form-label" for="recaptcha_privatekey">{{ 'reCAPTCHA Secret key'|trans }}</label>
+                        <div class="col-md-6 pt-2 row">
+                            <input class="form-control" type="text" id="recaptcha_privatekey" name="recaptcha_privatekey"
+                                   value="{{ params.recaptcha_privatekey }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="turnstile_settings">
+                    <div class="mb-3 row">
+                        <label class="col-md-3 col-form-label" for="turnstile_site_key">{{ 'Turnstile Site Key'|trans }}</label>
+                        <div class="col-md-6 row">
+                            <input class="form-control" type="text" id="turnstile_site_key" name="turnstile_site_key" value="{{ params.turnstile_site_key }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="col-md-3 col-form-label" for="turnstile_secret_key">{{ 'Turnstile Secret Key'|trans }}</label>
+                        <div class="col-md-6 row">
+                            <input class="form-control" type="text" id="turnstile_secret_key" name="turnstile_secret_key" value="{{ params.turnstile_secret_key }}">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -131,4 +143,30 @@
             </div>
         </form>
     </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    $(document).ready(function() {
+        function toggleProviderSettings() {
+            var selectedProvider = $('#provider-select').val();
+            
+            if (selectedProvider === 'recaptcha_v2') {
+                $('#recaptcha_v2_settings').show();
+                $('#turnstile_settings').hide();
+            } else if (selectedProvider === 'turnstile') {
+                $('#recaptcha_v2_settings').hide();
+                $('#turnstile_settings').show();
+            }
+        }
+
+        // Run on page load
+        toggleProviderSettings();
+
+        // Run when the dropdown changes
+        $('#provider-select').on('change', function() {
+            toggleProviderSettings();
+        });
+    });
+</script>
 {% endblock %}
