@@ -87,7 +87,10 @@ class Service implements InjectionAwareInterface
         $config = $di['mod_config']('Spamchecker');
 
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
-            if (isset($config['captcha_version']) && $config['captcha_version'] == 2) {
+            
+            $provider = $config['captcha_provider'] ?? 'recaptcha_v2';
+
+            if ($provider === 'recaptcha_v2') {
                 if (!isset($config['captcha_recaptcha_privatekey']) || $config['captcha_recaptcha_privatekey'] == '') {
                     throw new \FOSSBilling\InformationException("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
                 }
@@ -109,11 +112,31 @@ class Service implements InjectionAwareInterface
                 if (!$content['success']) {
                     throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
                 }
-            } else {
-                throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+            
+            } elseif ($provider === 'turnstile') {
+                if (empty($config['turnstile_secret_key'])) {
+                    throw new \FOSSBilling\InformationException('Cloudflare Turnstile secret key is not configured.');
+                }
+
+                if (empty($turnstile_response)) {
+                    throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
+                }
+
+                $client = HttpClient::create(['bindto' => BIND_TO]);
+                $response = $client->request('POST', 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                    'body' => [
+                        'secret'   => $config['turnstile_secret_key'],
+                        'response' => $turnstile_response,
+                        'remoteip' => $di['request']->getClientIp(), // Pass the user's IP
+                    ],
+                ]);
+                $content = $response->toArray();
+
+                if (!isset($content['success']) || $content['success'] !== true) {
+                    throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
+                }
             }
         }
-
         if (isset($config['sfs']) && $config['sfs']) {
             $spamCheckerService = $di['mod_service']('Spamchecker');
             $spamCheckerService->isInStopForumSpamDatabase($data);
