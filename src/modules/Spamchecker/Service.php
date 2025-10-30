@@ -91,7 +91,7 @@ class Service implements InjectionAwareInterface
             $provider = $config['captcha_provider'] ?? 'recaptcha_v2';
 
             if ($provider === 'recaptcha_v2') {
-                if (!isset($config['captcha_recaptcha_privatekey']) || $config['captcha_recaptcha_privatekey'] == '') {
+                if (!isset($config['recaptcha_privatekey']) || $config['recaptcha_privatekey'] == '') {
                     throw new \FOSSBilling\InformationException("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
                 }
 
