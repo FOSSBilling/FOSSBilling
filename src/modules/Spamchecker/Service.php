@@ -143,7 +143,7 @@ class Service implements InjectionAwareInterface
 
                 $hcaptcha_response = $params['h-captcha-response'] ?? null;
                 if (empty($hcaptcha_response)) {
-                    throw new \FOSSBilling\InformationException('Prease complete the CAPTCHA verification');
+                    throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification');
                 }
 
                 $client = HttpClient::create(['bindto'=> BIND_TO]);
