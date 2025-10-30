@@ -30,7 +30,7 @@ class Guest extends \Api_Abstract
             'version' => $config['captcha_version'] ?? null,
             'captcha_provider' => $config['captcha_provider'] ?? 'recaptcha_v2',
             'turnstile_site_key' => $config['turnstile_site_key'] ?? null,
-            'hcaptcha_site_key'=> $config['hcaptcha_site_key'] ?? null,
+            'hcaptcha_site_key' => $config['hcaptcha_site_key'] ?? null,
         ];
     }
 }
