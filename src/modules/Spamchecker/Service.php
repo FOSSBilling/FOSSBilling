@@ -118,6 +118,7 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\InformationException('Cloudflare Turnstile secret key is not configured.');
                 }
 
+                $turnstile_response = $params['cf-turnstile-response'] ?? null;
                 if (empty($turnstile_response)) {
                     throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
                 }
