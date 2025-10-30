@@ -149,7 +149,7 @@ class Service implements InjectionAwareInterface
                 $client = HttpClient::create(['bindto'=> BIND_TO]);
                 $response = $client->request('POST', 'https://hcaptcha.com/siteverify', [
                     'body'=> [
-                        'secret'=> $config[''],
+                        'secret'=> $config['hcaptcha_secret_key'],
                         'response'=> $hcaptcha_response,
                         'remoteip'=> $di['request']->getClientIp(),
                     ],
