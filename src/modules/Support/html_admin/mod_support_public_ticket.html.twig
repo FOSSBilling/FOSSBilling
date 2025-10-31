@@ -204,10 +204,10 @@
 
 {% block js%}
 <script>
-    document.addEventListener('DOMContentLoaded', function(event) {
+    document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('#reply-box textarea').focus();
 
-        document.querySelectorAll('.conversation .card-header').forEach(function(header) {
+        document.querySelectorAll('.conversation .card-header').forEach(function(header, event) {
             header.addEventListener('click', function() {
                 const body = this.nextElementSibling;
                 if (body && body.classList.contains('card-body')) {
