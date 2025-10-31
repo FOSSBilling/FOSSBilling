@@ -39,10 +39,10 @@
 
 {% block js %}
 {% autoescape "js" %}
-<script type="text/javascript">
+<script>
     function resizeIframe(obj) {
         obj.style.height = obj.contentWindow.document.documentElement.scrollHeight + 'px';
-        $('#loader-image').hide();
+        document.getElementById('loader-image').style.display = 'none';
     }
 </script>
 {% endautoescape %}
