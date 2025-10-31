@@ -204,17 +204,16 @@
 
 {% block js%}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function(event) {
         document.querySelector('#reply-box textarea').focus();
 
         document.querySelectorAll('.conversation .card-header').forEach(function(header) {
             header.addEventListener('click', function() {
                 const body = this.nextElementSibling;
                 if (body && body.classList.contains('card-body')) {
-                    body.style.display = body.style.display === 'none' ? '' : 'none';
+                    body.classList.toggle('hidden');
                 }
             });
-            event.preventDefault();
         });
     });
 </script>

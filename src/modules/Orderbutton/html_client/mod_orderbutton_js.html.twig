@@ -208,14 +208,13 @@
         // Store the image element
         this.loaderImageElem = img;
 
-        // Append to background element (jQuery object)
-        this.backgroundElem.append(img);
+        this.backgroundElem.appendChild(img);
     };
 
     orderbutton.prototype.popup = function (){
         if (this.backgroundElem && this.iframeElem){
-            if (this.iframeElem.attr('src') != this.srclink()){
-                this.iframeElem.attr('src', this.srclink());
+            if (this.iframeElem.src !== this.srclink()) {
+                this.iframeElem.src = this.srclink();
                 this.loaderImageElem.show();
             }
             else{

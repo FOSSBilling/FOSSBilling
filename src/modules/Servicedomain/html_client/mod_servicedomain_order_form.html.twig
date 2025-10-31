@@ -168,7 +168,7 @@
         });
 
         document.getElementById('domain-check').addEventListener('click', function(event) {
-            var sld = document.querySelector('input[name="register_sld"]').value.toLowerCase;
+            var sld = document.querySelector('input[name="register_sld"]').value.toLowerCase();
             var tld = document.querySelector('select[name="register_tld"]').value;
             var domain = sld + tld;
             document.getElementById('domain-action').value = 'register';

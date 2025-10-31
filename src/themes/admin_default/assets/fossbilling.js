@@ -12,7 +12,7 @@ import ApexCharts from 'apexcharts';
 import './js/ui/theme_settings';
 import './js/fossbilling';
 import 'sortable-tablesort/dist/sortable.min.js';
-import Ajv from "ajv/dist/jtd"
+import Ajv from "ajv/dist/jtd";
 
 globalThis.ApexCharts = ApexCharts;
 globalThis.bootstrap = tabler.bootstrap;

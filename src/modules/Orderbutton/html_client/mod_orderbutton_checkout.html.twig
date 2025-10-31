@@ -113,8 +113,7 @@
                             <a href="#" id="show-promo-field">{{ 'Have a coupon code?'|trans }}</a>
                         {% endif %}
 
-                        <form method="post" action="{{ 'api/guest/cart/apply_promo'|link }}"
-                            data-fb-api='{ "reload": true }' data-fb-api='{ "message": "{{ 'Promo Code Applied to Order'|trans }}" }'
+                        <form method="post" action="{{ 'api/guest/cart/apply_promo'|link }}" data-fb-api='{ "message": "{{ 'Promo Code Applied to Order'|trans }}", "reload": true }'
                             {% if not cart.promocode %}style="display:none"{% endif %} id="apply-promo">
                             <div class="control-group">
                                 <div class="form-controls">

@@ -257,7 +257,7 @@
                 document.getElementById('domain-disable-pp').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    API.post.client('servicedomain/disable_privacy_protection', { order_id: {{ order.id }} },
+                    API.client.post('servicedomain/disable_privacy_protection', { order_id: {{ order.id }} },
                         (result) => {
                             FOSSBilling.message('Privacy Protection disabled');
 

@@ -24,7 +24,7 @@
 <div class="card">
     <div class="card-body">
         <h5>{{ 'Manage hosting plan'|trans }}</h5>
-        <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" data-fb-api='{ "message": ""{{ 'Hosting Plan Updated'|trans }}" }'>
+        <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" data-fb-api='{ "message": "{{ 'Hosting Plan Updated'|trans }}" }'>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
                 <div class="col">

@@ -284,7 +284,7 @@
             cancelRequestForm.addEventListener('submit', function(event) {
                 event.preventDefault();
 
-                API.client.post('support/ticket_create', new Tools.serializeFormDataToObject(new FormData(cancelRequestForm)),
+                API.client.post('support/ticket_create', Tools.serializeFormDataToObject(new FormData(cancelRequestForm)),
                     () => {
                         FOSSBilling.message('Service cancellation request received');
                         const cancelRequestModal = bootstrap.Modal.getInstance(document.getElementById('cancel-request-modal'))
