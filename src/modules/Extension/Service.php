@@ -447,7 +447,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($this->isExtensionActive($type, $id)) {
-            throw new \FOSSBilling\Exception('Cannot uninstall an active module. Please deactivate it first.');
+            throw new \FOSSBilling\InformationException('Cannot uninstall an active module. Please deactivate it first.');
         }
 
         // Determine the path based on extension type
@@ -490,7 +490,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$this->di['extension_manager']->isExtensionCompatible($id)) {
-            throw new \FOSSBilling\Exception('This extension is not compatible with your version of FOSSBilling. Please update FOSSBilling to the latest version and try again.');
+            throw new \FOSSBilling\InformationException('This extension is not compatible with your version of FOSSBilling. Please update FOSSBilling to the latest version and try again.');
         }
 
         $extractedPath = Path::join(PATH_CACHE, md5(uniqid()));
@@ -694,7 +694,7 @@ class Service implements InjectionAwareInterface
                 ? Path::join(PATH_LANGS, $id, 'LC_MESSAGES')
                 : Path::join(PATH_LANGS, $id),
             \FOSSBilling\ExtensionManager::TYPE_PG => Path::join(PATH_LIBRARY, 'Payment', 'Adapter', ucfirst($id)),
-            default => throw new \FOSSBilling\Exception('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
+            default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
         };
     }
 
