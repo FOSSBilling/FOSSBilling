@@ -10,7 +10,7 @@
  */
 class Payment_Invoice
 {
-    private $id; // FOSSBilling Invoice Id
+    private $id; // FOSSBilling Invoice ID
     private $number; // Invoice number for accounting
     private string $currency = 'USD';
     private array $items = [];
