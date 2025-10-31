@@ -1,0 +1,73 @@
+<?php
+
+namespace Box\Mod\Profile;
+
+use FOSSBilling\InformationException;
+use Model_Client;
+
+class ClientValidator
+{
+    /**
+     * Validate and normalize gender.
+     */
+    public static function validateGender(string $gender): string
+    {
+        $gender = strtolower(trim($gender));
+
+        if (!in_array($gender, Model_Client::ALLOWED_GENDERS, true)) {
+            throw new InformationException(
+                'Invalid gender value. Allowed: male, female, non-binary, other'
+            );
+        }
+
+        return $gender;
+    }
+
+    /**
+     * Validate and normalize birthday.
+     * Ensures it's a valid date, not older than 120 years, not in the future.
+     */
+    public static function validateBirthday(?string $birthday): ?string
+    {
+        if ($birthday === null || trim($birthday) === '') {
+            return null;
+        }
+
+        if (strtotime($birthday) === false) {
+            throw new InformationException('Invalid birthdate value');
+        }
+
+        $birthdayDate = new \DateTime($birthday);
+        $today = new \DateTime('today');
+        $minDate = (new \DateTime('today'))->modify('-120 years');
+
+        if ($birthdayDate < $minDate) {
+            throw new InformationException('Birthdate cannot be more than 120 years ago.');
+        }
+
+        if ($birthdayDate > $today) {
+            throw new InformationException('Birthdate cannot be in the future.');
+        }
+
+        return $birthdayDate->format('Y-m-d');
+    }
+
+    /**
+     * Validate document type and normalize it.
+     * If no type is provided but a document number exists, defaults to 'passport'.
+     */
+    public static function validateDocument(string $documentType): string
+    {
+        if (!in_array($documentType, Model_Client::ALLOWED_DOCUMENT_TYPES, true)) {
+            throw new InformationException(
+                sprintf(
+                    'Invalid document type. Allowed: %s',
+                    implode(', ', Model_Client::ALLOWED_DOCUMENT_TYPES)
+                )
+            );
+        }
+
+        return $documentType;
+    }
+
+}
