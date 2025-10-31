@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f4e0f0dcf2049e05bdc2dda8d58b3e5a",
+    "content-hash": "e52cc2813553ea260805985d74c04bf4",
     "packages": [
         {
             "name": "antcms/antloader",
@@ -3389,16 +3389,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v17.6.0",
+            "version": "v18.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "a6219df5df1324a0d3f1da25fb5e4b8a3307ea16"
+                "reference": "1fd80dbcf1add025d66284c5be4e80255b8d51f0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/a6219df5df1324a0d3f1da25fb5e4b8a3307ea16",
-                "reference": "a6219df5df1324a0d3f1da25fb5e4b8a3307ea16",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/1fd80dbcf1add025d66284c5be4e80255b8d51f0",
+                "reference": "1fd80dbcf1add025d66284c5be4e80255b8d51f0",
                 "shasum": ""
             },
             "require": {
@@ -3442,9 +3442,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v17.6.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v18.1.0"
             },
-            "time": "2025-08-27T19:32:42+00:00"
+            "time": "2025-10-29T22:46:48+00:00"
         },
         {
             "name": "symfony/asset",
