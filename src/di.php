@@ -112,7 +112,7 @@ $di['pdo'] = function () {
         $pdo->exec("SET time_zone = '{$offset}'");
     }
 
-    return $pdo;
+    return new DebugBar\DataCollector\PDO\TraceablePDO($pdo);
 };
 
 /*
