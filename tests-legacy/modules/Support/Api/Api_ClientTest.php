@@ -208,6 +208,7 @@ class Api_ClientTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
+
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
