@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f4e0f0dcf2049e05bdc2dda8d58b3e5a",
+    "content-hash": "81f8a1b5088ccfb9b1146579bea1ce16",
     "packages": [
         {
             "name": "antcms/antloader",
@@ -2601,36 +2601,46 @@
         },
         {
             "name": "phpmyadmin/motranslator",
-            "version": "5.4.0",
+            "version": "6.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpmyadmin/motranslator.git",
-                "reference": "6aca7c750ce27328c56b8d66f9883e9ec7357a0e"
+                "reference": "f7aff2bd67c67267055c82e78854f09eb79b9741"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpmyadmin/motranslator/zipball/6aca7c750ce27328c56b8d66f9883e9ec7357a0e",
-                "reference": "6aca7c750ce27328c56b8d66f9883e9ec7357a0e",
+                "url": "https://api.github.com/repos/phpmyadmin/motranslator/zipball/f7aff2bd67c67267055c82e78854f09eb79b9741",
+                "reference": "f7aff2bd67c67267055c82e78854f09eb79b9741",
                 "shasum": ""
             },
             "require": {
-                "php": "^7.2 || ^8.0",
-                "symfony/expression-language": "^5.0 || ^6.0 || ^7.0"
+                "php": "^8.2",
+                "symfony/expression-language": "^6.4 || ^7.0"
             },
             "require-dev": {
-                "phpmyadmin/coding-standard": "^3.0.0",
+                "phpmyadmin/coding-standard": "^4.0",
                 "phpstan/extension-installer": "^1.4",
-                "phpstan/phpstan": "^1.12",
-                "phpstan/phpstan-deprecation-rules": "^1.2",
-                "phpstan/phpstan-phpunit": "^1.4",
-                "phpstan/phpstan-strict-rules": "^1.6",
-                "phpunit/phpunit": "^8.5 || ^9.6 || ^10.5"
+                "phpstan/phpstan": "^2.1",
+                "phpstan/phpstan-deprecation-rules": "^2.0",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "phpunit/phpunit": "^11.5 || ^12.0",
+                "psalm/plugin-phpunit": "^0.19.2",
+                "vimeo/psalm": "^6.8"
             },
             "suggest": {
-                "ext-apcu": "Needed for ACPu-backed translation cache"
+                "ext-apcu": "Needed for APCu-backed translation cache"
             },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "6.0-dev"
+                }
+            },
             "autoload": {
+                "files": [
+                    "src/functions.php"
+                ],
                 "psr-4": {
                     "PhpMyAdmin\\MoTranslator\\": "src"
                 }
@@ -2658,7 +2668,7 @@
                 "issues": "https://github.com/phpmyadmin/motranslator/issues",
                 "source": "https://github.com/phpmyadmin/motranslator"
             },
-            "time": "2025-03-16T04:01:14+00:00"
+            "time": "2025-10-31T16:17:44+00:00"
         },
         {
             "name": "pimple/pimple",
