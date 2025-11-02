@@ -20,7 +20,7 @@ class Server_Client
     private ?string $address_1 = null;
     private ?string $address_2 = null;
     private ?string $street = null;
-    private ?string $state = 'n/a';
+    private ?string $state = 'N/A';
     private ?string $country = 'US';
     private ?string $city = null;
     private ?string $zip = null;

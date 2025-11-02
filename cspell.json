@@ -458,5 +458,6 @@
         ".ddev/**",
         "hcaptcha",
         "hCaptcha"
+        "LEMP"
     ]
 }
