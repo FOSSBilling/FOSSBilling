@@ -57,7 +57,7 @@
         "monolog/monolog": "^3.5",
         "nelexa/zip": "^4.0.2",
         "php-debugbar/php-debugbar": "^2.1.6",
-        "phpmyadmin/motranslator": "^5.3.0",
+        "phpmyadmin/motranslator": "^6.0.0",
         "pimple/pimple": "^3.3",
         "plesk/api-php-lib": "^2.0.0",
         "prinsfrank/standards": "^3.8",
