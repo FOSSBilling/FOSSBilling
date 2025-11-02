@@ -455,6 +455,8 @@
         "src/.htaccess",
         "phpstan-baseline.neon",
         "Dockerfile",
-        ".ddev/**"
+        ".ddev/**",
+        "hcaptcha",
+        "hCaptcha"
     ]
 }
