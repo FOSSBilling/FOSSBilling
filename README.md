@@ -25,72 +25,61 @@
 
 </div>
 
-FOSSBilling is a free and open-source billing and client management solution designed to automate invoicing, payment processing, and client communications for online businesses of all sizes. Originally created as a solution for web hosting companies, FOSSBilling has evolved to support various digital business models including software licensing, digital downloads, and subscription services.
+> [!NOTE]
+> FOSSBilling is under active development and currently considered beta. Expect rough edges and limited support.
 
-## 🔑 Key Features
+**FOSSBilling** is a free, open-source billing and client management system. It helps online service businesses automate invoicing, payments, and client communication. While it’s popular with web hosting providers, it also works well for software licensing, digital downloads, and subscription services.
 
-- 📊 **Comprehensive Billing System**: Automated invoicing, payment reminders, and financial reporting.
-- 👥 **Client Management**: Centralized client database with communication tools.
-- 🔌 **Extensible Architecture**: Plugin system for custom functionality.
-- 💳 **Multiple Payment Gateways**: Integration with popular payment processors.
-- 🌐 **Multi-language Support**: Available in multiple languages through community translations.
-- 📱 **Responsive Design**: Works seamlessly on desktop and mobile devices.
-- 🔒 **Security-focused**: Built with security best practices in mind.
+## Features
 
-## ➡️ Use Cases
+- **Billing & Invoicing**: automated invoices, reminders, and basic reporting.
+- **Client Management**: a central place for client data and communication.
+- **Extensibility**: extension-friendly architecture for integrations and custom features.
+- **Payments**: support for multiple gateways.
+- **Translations**: community-powered, multi-language interface.
+- **Responsive UI**: usable on desktop and mobile.
+- **Security-focused**: built with security best practices in mind.
 
-FOSSBilling is ideal for:
-
-- Web hosting companies
-- Software-as-a-Service (SaaS) providers
-- Digital content sellers
-- Subscription-based services
-- Any business requiring automated billing and client management
-
-## 🚀 Get Started
+## Getting Started
 
 ### Requirements
 
-FOSSBilling runs on standard LAMP/LEMP stacks. For the latest system requirements (PHP version, extensions, database, etc.), see our [official requirements guide](https://fossbilling.org/docs/getting-started/requirements).
+FOSSBilling runs on standard LAMP/LEMP stacks. For the latest system requirements (PHP version, extensions, database, etc.), see the official [requirements](https://fossbilling.org/docs/getting-started/requirements).
 
 ### Installation
 
-Ready to try it out? Follow our step-by-step [Getting Started guide](https://fossbilling.org/docs/getting-started) to install FOSSBilling on your server.
+Follow the step-by-step [Getting Started guide](https://fossbilling.org/docs/getting-started).
 
-> 💡 **Tip**: Even if you're not ready to deploy, you can explore the [demo](https://fossbilling.org/demo) to see FOSSBilling in action!
+**Just exploring?** Try the public [demo](https://fossbilling.org/demo).
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions from the community! FOSSBilling is undergoing a revival with major code updates, and there's plenty of work to do.
+We welcome contributions from the community! We’re actively modernizing the codebase and there’s plenty to do.
 
-### How to Contribute
+- Read the [contributor guide](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md).
+- Pick an item from the [open issues](https://github.com/FOSSBilling/FOSSBilling/issues).
+- Open a PR when you’re ready.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+If you prefer to start a conversation first, drop by the [forum](https://forum.fossbilling.org/) or say hello on [Discord](https://fossbilling.org/discord).
 
-Please review our [contributors' guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md) before submitting. For ideas on where to start, check our [open issues](https://github.com/FOSSBilling/FOSSBilling/issues).
-
-## 📜 Licensing
-
-FOSSBilling is open-source software released under the Apache v2.0 license. See [LICENSE](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE) for full terms.
-
-This product includes third-party work:
-
-- Open Source Iconography by [Pictogrammers](https://pictogrammers.com/) licensed under the [Pictogrammers Free License](https://pictogrammers.com/docs/general/license/).
-
-## 🔗 Useful Links
-
-- 🌐 [Official Website](https://www.fossbilling.org/)
-- 📚 [Documentation](https://fossbilling.org/docs)
-- 💬 [Community Forum](https://forum.fossbilling.org)
-- 🐦 [Twitter / X](https://twitter.com/FOSSBilling)
-- 💬 [Discord](https://fossbilling.org/discord)
-
-## ⭐ Star History
+## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=FOSSBilling/FOSSBilling&type=Date)](https://star-history.com/#FOSSBilling/FOSSBilling&Date)
 
-⭐ Not a developer? You can still help by starring the repository. It helps us attract new contributors!
+Not a developer? Starring the repository helps others discover the project.
+
+## License
+
+FOSSBilling is released under the Apache 2.0 license. See [LICENSE](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE) for details.
+
+This project includes third-party work:
+
+- Open Source Iconography by [Pictogrammers](https://pictogrammers.com/) under the [Pictogrammers Free License](https://pictogrammers.com/docs/general/license/).
+
+## Links
+
+- Website: https://www.fossbilling.org/  
+- Documentation: https://fossbilling.org/docs  
+- Forum: https://forum.fossbilling.org  
+- Discord: https://fossbilling.org/discord  
+- Twitter/X: https://twitter.com/FOSSBilling
