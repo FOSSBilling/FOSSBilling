@@ -1,0 +1,12 @@
+{
+  "id": "imageproxy",
+  "type": "mod",
+  "name": "Image Proxy",
+  "description": "Proxies remote images in support tickets to prevent IP/UA leakage when staff view tickets",
+  "icon_url": "icon.svg",
+  "author": "Ryahn",
+  "author_url": "https://isekaiexpresscode.xyz/",
+  "license": "Apache-2.0",
+  "version": "1.0.0"
+}
+

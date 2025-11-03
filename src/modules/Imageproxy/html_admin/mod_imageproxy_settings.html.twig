@@ -1,0 +1,207 @@
+{% extends "layout_default.html.twig" %}
+
+{% block meta_title %}Image Proxy{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <svg class="icon me-2">
+                <use xlink:href="#lock-closed" />
+            </svg>
+            Image Proxy Module
+        </h3>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-success mb-4">
+            <svg class="icon alert-icon">
+                <use xlink:href="#check" />
+            </svg>
+            <div>
+                <h4 class="alert-title">Module is Active</h4>
+                <div class="text-muted">
+                    The Image Proxy module is running in the background and automatically protecting both staff and clients from IP/UA leakage.
+                </div>
+            </div>
+        </div>
+
+        <h3 class="mb-3">How It Works</h3>
+        <p>This module automatically proxies remote images in support ticket messages to prevent IP address and user-agent leakage when staff and clients view tickets.</p>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h4 class="card-title">
+                            <svg class="icon text-danger me-2">
+                                <use xlink:href="#alert-triangle" />
+                            </svg>
+                            Without Image Proxy
+                        </h4>
+                        <p class="text-muted mb-0">When a ticket contains <code>![image](https://evil.example/tracker.php)</code>, your browser makes a direct request, exposing your IP address and browser information to the external server.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h4 class="card-title">
+                            <svg class="icon text-success me-2">
+                                <use xlink:href="#circle-check" />
+                            </svg>
+                            With Image Proxy
+                        </h4>
+                        <p class="text-muted mb-0">The module rewrites image URLs to point to <code>/imageproxy/image?u=...</code> so your FOSSBilling server fetches the image, protecting your identity.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="mb-3">How It Protects You</h3>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="d-flex align-items-start">
+                    <svg class="icon text-success me-2 mt-1">
+                        <use xlink:href="#contacts" />
+                    </svg>
+                    <div>
+                        <strong>Protects Everyone</strong>
+                        <p class="text-muted mb-0 small">Works for both staff viewing tickets in admin area and clients viewing their own tickets.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex align-items-start">
+                    <svg class="icon text-success me-2 mt-1">
+                        <use xlink:href="#refresh" />
+                    </svg>
+                    <div>
+                        <strong>Automatic Processing</strong>
+                        <p class="text-muted mb-0 small">Activates on ticket creation and replies. No manual intervention needed.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex align-items-start">
+                    <svg class="icon text-success me-2 mt-1">
+                        <use xlink:href="#pic" />
+                    </svg>
+                    <div>
+                        <strong>Content Validation</strong>
+                        <p class="text-muted mb-0 small">Only allows image content types (PNG, JPEG, GIF, WebP, SVG). Rejects other file types.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex align-items-start">
+                    <svg class="icon text-success me-2 mt-1">
+                        <use xlink:href="#clock" />
+                    </svg>
+                    <div>
+                        <strong>Browser Cache</strong>
+                        <p class="text-muted mb-0 small">5-minute browser cache reduces repeated external requests.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="mb-3">Supported Formats</h3>
+        <ul class="mb-4">
+            <li>Markdown images: <code>![alt text](https://example.com/image.png)</code></li>
+            <li>HTML images: <code>&lt;img src="https://example.com/image.png"&gt;</code></li>
+        </ul>
+
+        <hr class="my-4">
+
+        <h3 class="mb-3">Settings</h3>
+        <p class="text-muted mb-3">Configure size and timeout limits for proxied images.</p>
+
+        {% set config = admin.extension_config_get({ "ext": "mod_imageproxy" }) %}
+        {% set max_size_mb = config.max_size_mb|default(5) %}
+        {% set timeout_seconds = config.timeout_seconds|default(5) %}
+        {% set max_duration_seconds = config.max_duration_seconds|default(10) %}
+
+        <form method="post" action="{{ 'api/admin/imageproxy/update_config' | link }}" class="api-form" data-api-msg="Settings updated successfully">
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label" for="max_size_mb">
+                        Maximum Image Size (MB)
+                        <span class="text-muted">(1-50)</span>
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="max_size_mb" 
+                           name="max_size_mb" 
+                           value="{{ max_size_mb }}" 
+                           min="1" 
+                           max="50" 
+                           required>
+                    <div class="form-text">Maximum size for proxied images. Larger images will be rejected.</div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label" for="timeout_seconds">
+                        Connection Timeout (seconds)
+                        <span class="text-muted">(1-30)</span>
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="timeout_seconds" 
+                           name="timeout_seconds" 
+                           value="{{ timeout_seconds }}" 
+                           min="1" 
+                           max="30" 
+                           required>
+                    <div class="form-text">How long to wait for the initial connection to the remote server.</div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label" for="max_duration_seconds">
+                        Maximum Duration (seconds)
+                        <span class="text-muted">(1-60)</span>
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="max_duration_seconds" 
+                           name="max_duration_seconds" 
+                           value="{{ max_duration_seconds }}" 
+                           min="1" 
+                           max="60" 
+                           required>
+                    <div class="form-text">Maximum time allowed for the entire request (must be ≥ connection timeout).</div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon">
+                    <use xlink:href="#check" />
+                </svg>
+                Save Settings
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="location.reload()">
+                <svg class="icon">
+                    <use xlink:href="#refresh" />
+                </svg>
+                Reset
+            </button>
+        </form>
+
+        <hr class="my-4">
+
+        <div class="alert alert-info mb-0">
+            <svg class="icon alert-icon">
+                <use xlink:href="#info" />
+            </svg>
+            <div>
+                <h4 class="alert-title">Testing the Module</h4>
+                <div class="text-muted">
+                    Create a new ticket with <code>![test](https://picsum.photos/200/300)</code> and verify the image loads from <code>/imageproxy/image?u=...</code> in browser DevTools (F12 → Network tab).
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
