@@ -190,6 +190,50 @@
 
         <hr class="my-4">
 
+        <h3 class="mb-3">Migrate Existing Tickets</h3>
+        <p class="text-muted mb-3">Apply image proxy to existing ticket messages created before this module was activated.</p>
+
+        <div class="alert alert-warning mb-3">
+            <svg class="icon alert-icon">
+                <use xlink:href="#alert-triangle" />
+            </svg>
+            <div>
+                <h4 class="alert-title">One-Time Operation</h4>
+                <div class="text-muted">
+                    This scans all existing ticket messages and rewrites remote image URLs to use the proxy. 
+                    This operation can take time if you have many tickets. You can run this safely multiple times (already proxified URLs won't be re-proxified).
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-list">
+            <button type="button" 
+                    class="btn btn-warning api-link" 
+                    data-api-confirm="Are you sure you want to migrate all existing tickets? This will update all ticket messages containing remote images."
+                    data-api-confirm-btn="Migrate"
+                    data-api-reload="1"
+                    href="{{ 'api/admin/imageproxy/migrate_existing_tickets' | link }}">
+                <svg class="icon">
+                    <use xlink:href="#refresh" />
+                </svg>
+                Migrate Existing Tickets
+            </button>
+            
+            <button type="button" 
+                    class="btn btn-outline-danger api-link" 
+                    data-api-confirm="Are you sure you want to revert all proxified URLs back to originals? This is useful if you want to temporarily disable the module."
+                    data-api-confirm-btn="Revert"
+                    data-api-reload="1"
+                    href="{{ 'api/admin/imageproxy/revert_proxified_urls' | link }}">
+                <svg class="icon">
+                    <use xlink:href="#arrow-back-up" />
+                </svg>
+                Revert Proxified URLs
+            </button>
+        </div>
+
+        <hr class="my-4">
+
         <div class="alert alert-info mb-0">
             <svg class="icon alert-icon">
                 <use xlink:href="#info" />

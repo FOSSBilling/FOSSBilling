@@ -67,4 +67,30 @@ class Admin extends \Api_Abstract
 
         return true;
     }
+
+    /**
+     * Migrate all existing ticket messages to use proxified image URLs.
+     * This is a one-time operation to retroactively apply image proxy to old tickets.
+     *
+     * @return array{processed: int, updated: int, images_found: int} Migration statistics
+     */
+    public function migrate_existing_tickets(): array
+    {
+        $service = $this->getService();
+
+        return $service->migrateExistingTickets();
+    }
+
+    /**
+     * Revert all proxified image URLs back to their original URLs.
+     * Useful if you need to disable the module temporarily or before uninstalling.
+     *
+     * @return array{processed: int, reverted: int} Reversion statistics
+     */
+    public function revert_proxified_urls(): array
+    {
+        $service = $this->getService();
+
+        return $service->revertAllProxifiedUrls();
+    }
 }

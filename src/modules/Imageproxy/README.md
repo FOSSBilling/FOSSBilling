@@ -33,6 +33,8 @@ The module hooks into 6 Support ticket events and automatically processes images
 - Admins create or reply to tickets
 - Guests reply to public tickets
 
+**Note**: This only applies to **new** tickets and replies. To retroactively apply image proxy to existing tickets, see the [Migration](#migration) section below.
+
 ### URL Rewriting
 
 **Original:**
@@ -65,6 +67,72 @@ The module hooks into 6 Support ticket events and automatically processes images
 - HTML `<img>` tags
 - Markdown `![alt](url)` syntax
 
+## Migration
+
+### Migrating Existing Tickets
+
+Since the module only processes new tickets and replies automatically, you can retroactively apply image proxy to existing ticket messages.
+
+#### Via Admin Panel
+
+1. Navigate to **Extensions → Image Proxy → Settings**
+2. Scroll to the "Migrate Existing Tickets" section
+3. Click the **"Migrate Existing Tickets"** button
+4. Confirm the operation
+5. Wait for the page to reload with a success message
+
+This will scan all existing ticket messages (both regular and public tickets) and rewrite remote image URLs to use the proxy.
+
+#### Via Console Command
+
+For large installations or to run as a scheduled task:
+
+```bash
+docker exec fossbilling-app php /var/www/html/console.php imageproxy:migrate-existing
+```
+
+**Output example:**
+```
+Imageproxy: Migrate Existing Tickets
+=====================================
+
+ Scanning all ticket messages for remote images...
+
+ [OK] Migration completed!
+
+ -------------------- -------
+  Metric               Count
+ -------------------- -------
+  Messages Processed   150
+  Messages with Images 23
+  Messages Updated     23
+ -------------------- -------
+```
+
+### Reverting to Original URLs
+
+If you need to temporarily disable the module or revert all proxified URLs back to their originals:
+
+#### Via Admin Panel
+
+1. Navigate to **Extensions → Image Proxy → Settings**
+2. Scroll to the "Migrate Existing Tickets" section
+3. Click the **"Revert Proxified URLs"** button
+4. Confirm the operation
+
+#### Via Console Command
+
+```bash
+docker exec fossbilling-app php /var/www/html/console.php imageproxy:revert
+```
+
+### Safety Features
+
+- **Idempotent**: Migration can be run multiple times safely. Already proxified URLs won't be re-proxified.
+- **Non-destructive**: Only updates messages containing remote images.
+- **Reversible**: The `revert` command decodes proxified URLs back to originals.
+- **Automatic on Uninstall**: When you uninstall the module, all proxified URLs are automatically reverted to prevent broken images.
+
 ## Testing
 
 1. Create a new support ticket with:
@@ -92,7 +160,7 @@ The module hooks into 6 Support ticket events and automatically processes images
 - Check that external URLs are accessible from your server
 
 **Still seeing direct image loads?**
-- Existing tickets need to be replied to or edited for rewriting to occur
+- For existing tickets, use the [Migration feature](#migration) to apply image proxy retroactively
 - Check that module is activated in Extensions
 
 **Fetch errors?**

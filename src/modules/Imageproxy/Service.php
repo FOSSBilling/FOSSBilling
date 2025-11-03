@@ -319,4 +319,155 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             exit;  // Important: exit after sending binary response
         }
     }
+
+    /**
+     * Migrates all existing ticket messages to use proxified image URLs.
+     * Scans both regular tickets (support_ticket_message) and public tickets (support_p_ticket_message).
+     * This is a one-time operation to retroactively apply image proxy to existing content.
+     *
+     * @return array{processed: int, updated: int, images_found: int} Statistics about the migration
+     */
+    public function migrateExistingTickets(): array
+    {
+        $stats = [
+            'processed' => 0,
+            'updated' => 0,
+            'images_found' => 0,
+        ];
+
+        // Process regular ticket messages
+        $messages = $this->di['db']->find('SupportTicketMessage');
+        foreach ($messages as $msg) {
+            $stats['processed']++;
+            $original = $msg->content;
+            $proxified = $this->proxifyImages($original);
+
+            if ($proxified !== $original) {
+                $stats['images_found']++;
+                $msg->content = $proxified;
+                $msg->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($msg);
+                $stats['updated']++;
+            }
+        }
+
+        // Process public ticket messages
+        $publicMessages = $this->di['db']->find('SupportPTicketMessage');
+        foreach ($publicMessages as $msg) {
+            $stats['processed']++;
+            $original = $msg->content;
+            $proxified = $this->proxifyImages($original);
+
+            if ($proxified !== $original) {
+                $stats['images_found']++;
+                $msg->content = $proxified;
+                $msg->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($msg);
+                $stats['updated']++;
+            }
+        }
+
+        $this->di['logger']->info('Migrated existing tickets: %d messages processed, %d updated', $stats['processed'], $stats['updated']);
+
+        return $stats;
+    }
+
+    /**
+     * Reverts all proxified image URLs back to their original URLs.
+     * This is called during module uninstall to prevent broken images.
+     *
+     * @return array{processed: int, reverted: int} Statistics about the reversion
+     */
+    public function revertAllProxifiedUrls(): array
+    {
+        $stats = [
+            'processed' => 0,
+            'reverted' => 0,
+        ];
+
+        // Process regular ticket messages
+        $messages = $this->di['db']->find('SupportTicketMessage');
+        foreach ($messages as $msg) {
+            $stats['processed']++;
+            $original = $msg->content;
+            $reverted = $this->revertProxifiedContent($original);
+
+            if ($reverted !== $original) {
+                $msg->content = $reverted;
+                $msg->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($msg);
+                $stats['reverted']++;
+            }
+        }
+
+        // Process public ticket messages
+        $publicMessages = $this->di['db']->find('SupportPTicketMessage');
+        foreach ($publicMessages as $msg) {
+            $stats['processed']++;
+            $original = $msg->content;
+            $reverted = $this->revertProxifiedContent($original);
+
+            if ($reverted !== $original) {
+                $msg->content = $reverted;
+                $msg->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($msg);
+                $stats['reverted']++;
+            }
+        }
+
+        $this->di['logger']->info('Reverted proxified URLs: %d messages processed, %d reverted', $stats['processed'], $stats['reverted']);
+
+        return $stats;
+    }
+
+    /**
+     * Reverts proxified URLs in content back to original URLs.
+     * Decodes base64url-encoded URLs from proxy parameters.
+     *
+     * @param string $content Content with potentially proxified URLs
+     *
+     * @return string Content with original URLs restored
+     */
+    protected function revertProxifiedContent(string $content): string
+    {
+        // Pattern to match our proxy URLs with base64url-encoded original URL
+        // Matches: /imageproxy/image?u=<base64url> or http://domain/imageproxy/image?u=<base64url>
+        $content = preg_replace_callback(
+            '~(https?://[^/]+)?/imageproxy/image\?u=([A-Za-z0-9_-]+)~',
+            function ($m) {
+                $encoded = $m[2];
+                // Decode base64url
+                $originalUrl = base64_decode(strtr($encoded, '-_', '+/'));
+
+                return $originalUrl ?: $m[0]; // Return original if decode fails
+            },
+            $content
+        );
+
+        return $content;
+    }
+
+    /**
+     * Called when module is uninstalled.
+     * Reverts all proxified URLs back to originals and cleans up configuration.
+     *
+     * @return void
+     */
+    public function uninstall(): void
+    {
+        // Revert all proxified URLs back to originals to prevent broken images
+        $this->revertAllProxifiedUrls();
+
+        // Clean up module configuration
+        $model = $this->di['db']->findOne(
+            'ExtensionMeta',
+            'extension = :ext AND meta_key = :key',
+            [':ext' => 'mod_imageproxy', ':key' => 'config']
+        );
+        if ($model instanceof \Model_ExtensionMeta) {
+            $this->di['db']->trash($model);
+        }
+
+        $this->di['logger']->info('Imageproxy module uninstalled and URLs reverted');
+    }
 }

@@ -91,6 +91,42 @@ final class IntegrationTest extends TestCase
         $this->assertFalse($result->wasSuccessful());
         $this->assertEquals('Max duration must be greater than or equal to timeout', $result->getErrorMessage());
     }
+
+    /**
+     * Test migration of existing tickets to use proxified URLs.
+     */
+    public function testMigrateExistingTickets(): void
+    {
+        $result = Request::makeRequest('admin/imageproxy/migrate_existing_tickets');
+
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $stats = $result->getResult();
+
+        $this->assertIsArray($stats);
+        $this->assertArrayHasKey('processed', $stats);
+        $this->assertArrayHasKey('updated', $stats);
+        $this->assertArrayHasKey('images_found', $stats);
+        $this->assertGreaterThanOrEqual(0, $stats['processed']);
+        $this->assertGreaterThanOrEqual(0, $stats['updated']);
+        $this->assertGreaterThanOrEqual(0, $stats['images_found']);
+    }
+
+    /**
+     * Test reversion of proxified URLs back to originals.
+     */
+    public function testRevertProxifiedUrls(): void
+    {
+        $result = Request::makeRequest('admin/imageproxy/revert_proxified_urls');
+
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $stats = $result->getResult();
+
+        $this->assertIsArray($stats);
+        $this->assertArrayHasKey('processed', $stats);
+        $this->assertArrayHasKey('reverted', $stats);
+        $this->assertGreaterThanOrEqual(0, $stats['processed']);
+        $this->assertGreaterThanOrEqual(0, $stats['reverted']);
+    }
 }
 
 
