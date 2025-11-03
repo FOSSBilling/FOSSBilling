@@ -419,11 +419,11 @@ class UpdatePatcher implements InjectionAwareInterface
             45 => function (): void {
                 // Change gender column to ENUM type
                 $q1 = 'ALTER TABLE `client`
-            MODIFY COLUMN `gender` ENUM("male", "female", "nonbinary", "other") DEFAULT NULL;';
+                    MODIFY COLUMN `gender` ENUM("male", "female", "nonbinary", "other") DEFAULT NULL;';
 
                 // Change document_type column to ENUM type
                 $q2 = 'ALTER TABLE `client`
-            MODIFY COLUMN `document_type` ENUM("passport") DEFAULT NULL;';
+                    MODIFY COLUMN `document_type` ENUM("passport") DEFAULT NULL;';
 
                 $this->executeSql($q1);
                 $this->executeSql($q2);
