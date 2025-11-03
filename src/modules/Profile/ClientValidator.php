@@ -10,8 +10,11 @@ class ClientValidator
     /**
      * Validate and normalize gender.
      */
-    public static function validateGender(string $gender): string
+    public static function validateGender(?string $gender): ?string
     {
+        if ($gender === null || trim($gender) === '') {
+            return null;
+        }
         $gender = strtolower(trim($gender));
 
         if (!in_array($gender, Model_Client::ALLOWED_GENDERS, true)) {
