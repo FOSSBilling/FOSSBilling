@@ -32,7 +32,10 @@ class ClientValidator
      */
     public static function validateBirthday(?string $birthday): ?string
     {
-        if ($birthday === null || trim($birthday) === '') {
+        if ($birthday === null) {
+            return null;
+        }
+        if (trim($birthday) === '') {
             return null;
         }
 
