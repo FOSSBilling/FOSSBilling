@@ -202,6 +202,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return $url;
         }
 
+        // Skip if already proxified (prevents double-proxification)
+        if (str_contains($url, '/imageproxy/image')) {
+            return $url;
+        }
+
         // Base64url encode (URL-safe base64 without padding)
         $encoded = rtrim(strtr(base64_encode($url), '+/', '-_'), '=');
 

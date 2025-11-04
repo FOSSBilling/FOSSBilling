@@ -129,6 +129,7 @@ docker exec fossbilling-app php /var/www/html/console.php imageproxy:revert
 ### Safety Features
 
 - **Idempotent**: Migration can be run multiple times safely. Already proxified URLs won't be re-proxified.
+- **Double-Proxification Prevention**: The module automatically detects and skips already-proxified URLs to prevent nested proxy URLs.
 - **Non-destructive**: Only updates messages containing remote images.
 - **Reversible**: The `revert` command decodes proxified URLs back to originals.
 - **Automatic on Uninstall**: When you uninstall the module, all proxified URLs are automatically reverted to prevent broken images.
