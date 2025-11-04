@@ -11,15 +11,20 @@
 
 namespace Box\Mod\Client;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Repository\ClientRepository;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    protected ?ClientRepository $clientRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        // Inject Doctrine repository via PersistenceFacade (no direct EM access)
+        $this->clientRepository = $this->di['persistence']->getRepository(Client::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -84,7 +89,34 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getSearchQuery($data, $selectStmt = 'SELECT c.*'): array
+    /**
+     * Get search query for clients using Doctrine QueryBuilder.
+     *
+     * This method is used by the new pagination system with Doctrine.
+     * For backward compatibility, when $selectStmt is provided, falls back to legacy SQL.
+     *
+     * @param array       $data       Filter parameters
+     * @param string|null $selectStmt If provided, uses legacy SQL method
+     *
+     * @return \Doctrine\ORM\QueryBuilder|array Returns QueryBuilder or [sql, params] for legacy
+     */
+    public function getSearchQuery($data, $selectStmt = null)
+    {
+        // New Doctrine path (when no $selectStmt provided)
+        if ($selectStmt === null) {
+            return $this->clientRepository->getSearchQueryBuilder($data);
+        }
+
+        // Legacy path for backward compatibility
+        return $this->getSearchQueryLegacy($data, $selectStmt);
+    }
+
+    /**
+     * Legacy SQL-based search query (for backward compatibility).
+     *
+     * @deprecated Will be removed after full migration
+     */
+    private function getSearchQueryLegacy($data, $selectStmt = 'SELECT c.*'): array
     {
         $sql = $selectStmt;
         $sql .= ' FROM client as c left join client_group as cg on c.client_group_id = cg.id';
@@ -176,17 +208,19 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
+    /**
+     * Get client pairs for dropdowns (id => name).
+     *
+     * MIGRATED: Now uses Doctrine repository.
+     *
+     * @param array $data Filter parameters (status, group_id, etc.)
+     *
+     * @return array<int, string> Array of [id => "Full Name"]
+     */
     public function getPairs($data)
     {
-        $limit = $data['per_page'] ?? 30;
-        if (!is_numeric($limit) || $limit < 1) {
-            throw new \FOSSBilling\InformationException('Invalid per page number');
-        }
-
-        [$sql, $params] = $this->getSearchQuery($data, "SELECT c.id, IF(c.company <> '', CONCAT_WS(' ', c.first_name, c.last_name, ' (', c.company, ')'), CONCAT_WS(' ', c.first_name, c.last_name)) as client");
-        $sql .= sprintf(' LIMIT %u', $limit);
-
-        return $this->di['db']->getAssoc($sql, $params);
+        // Use repository method which returns proper pairs
+        return $this->clientRepository->getPairs($data);
     }
 
     public function toSessionArray(\Model_Client $model): array
@@ -404,27 +438,48 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->getCell($sql, [$c->id]);
     }
 
+    /**
+     * Get client by ID or email.
+     *
+     * MIGRATED: Now uses Doctrine repository via PersistenceFacade.
+     * Returns Doctrine Client entity instead of RedBean Model_Client.
+     *
+     * @param array $data Must contain 'id' or 'email'
+     *
+     * @return Client Doctrine entity
+     *
+     * @throws \FOSSBilling\InformationException            If neither ID nor email provided
+     * @throws \FOSSBilling\Exception\Domain\EntityNotFound If client not found
+     */
     public function get($data)
     {
         if (!isset($data['id']) && !isset($data['email'])) {
             throw new \FOSSBilling\InformationException('Client ID or email is required');
         }
 
-        $db = $this->di['db'];
-        $client = null;
+        // Try by ID first
         if (isset($data['id'])) {
-            $client = $db->findOne('Client', 'id = ?', [$data['id']]);
+            try {
+                return $this->clientRepository->findOneByIdOrFail((int) $data['id']);
+            } catch (\FOSSBilling\Exception\Domain\EntityNotFound $e) {
+                // If not found by ID and email also provided, try email
+                if (!isset($data['email'])) {
+                    throw new \FOSSBilling\Exception('Client not found');
+                }
+            }
         }
 
-        if (!$client && isset($data['email'])) {
-            $client = $db->findOne('Client', 'email = ?', [$data['email']]);
+        // Try by email
+        if (isset($data['email'])) {
+            $client = $this->clientRepository->findOneByEmail($data['email']);
+            if (!$client) {
+                throw new \FOSSBilling\Exception('Client not found');
+            }
+
+            return $client;
         }
 
-        if (!$client instanceof \Model_Client) {
-            throw new \FOSSBilling\Exception('Client not found');
-        }
-
-        return $client;
+        throw new \FOSSBilling\Exception('Client not found');
     }
 
     public function isClientTaxable(\Model_Client $model): bool

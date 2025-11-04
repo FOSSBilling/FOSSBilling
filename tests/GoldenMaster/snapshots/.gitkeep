@@ -1,0 +1,5 @@
+# Snapshot directory for golden-master tests
+#
+# Snapshots are generated automatically on first test run.
+# They capture the baseline API response structure before migration.
+

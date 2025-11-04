@@ -143,6 +143,18 @@ $di['db'] = function () use ($di) {
 $di['em'] = (fn (): EntityManager => EntityManagerFactory::create());
 
 /*
+ * Persistence Facade - centralized Doctrine operations
+ *
+ * Provides type-safe helpers for common operations and prevents
+ * direct EntityManager usage across the codebase.
+ *
+ * @return FOSSBilling\Persistence\PersistenceFacade
+ */
+$di['persistence'] = function () use ($di) {
+    return new FOSSBilling\Persistence\PersistenceFacade($di['em']);
+};
+
+/*
  *
  * @param void
  *

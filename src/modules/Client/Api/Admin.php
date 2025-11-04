@@ -20,6 +20,9 @@ class Admin extends \Api_Abstract
     /**
      * Get a list of clients.
      *
+     * MIGRATED: Now uses Doctrine QueryBuilder and paginateDoctrineQuery().
+     * Returns identical response structure for backward compatibility.
+     *
      * @param array $data filtering options
      *
      * @return array list of clients in a paginated manner
@@ -27,13 +30,15 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
 
-        foreach ($pager['list'] as $key => $clientArr) {
-            $client = $this->di['db']->getExistingModelById('Client', $clientArr['id'], 'Client not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($client, true, $this->getIdentity());
-        }
+        // Get QueryBuilder from service (Doctrine migration)
+        $qb = $this->getService()->getSearchQuery($data);
+
+        // Use Doctrine pagination helper
+        $pager = $this->di['pager']->paginateDoctrineQuery($qb, $per_page);
+
+        // paginateDoctrineQuery already calls toApiArray() on entities
+        // Response structure remains identical to RedBean version
 
         return $pager;
     }
