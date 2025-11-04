@@ -64,6 +64,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         // Check admin authentication (throws if not logged in)
         $this->di['is_admin_logged']; // @phpstan-ignore expr.resultUnused
 
+        // Close session to prevent locks and fingerprint issues with concurrent image requests
+        session_write_close();
+
         // Get and validate URL parameter
         $encoded = $this->di['request']->query->get('u');
         if (!$encoded) {

@@ -70,6 +70,9 @@ class Client implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\InformationException('You must be logged in to view proxied images', [], 403);
         }
 
+        // Close session to prevent locks and fingerprint issues with concurrent image requests
+        session_write_close();
+
         // Get and validate URL parameter
         $encoded = $this->di['request']->query->get('u');
         if (!$encoded) {
