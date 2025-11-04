@@ -27,7 +27,7 @@ class GuestTest extends \BBTestCase
         return [
             [
                 [
-                    'recaptcha_publickey' => 1234,
+                    'captcha_recaptcha_publickey' => 1234,
                     'captcha_enabled' => true,
                 ],
                 [
@@ -54,7 +54,7 @@ class GuestTest extends \BBTestCase
             ],
             [
                 [
-                    'recaptcha_publickey' => 1234,
+                    'captcha_recaptcha_publickey' => 1234,
                     'captcha_enabled' => false,
                     'captcha_version' => 2,
                 ],
