@@ -102,9 +102,9 @@ class GuestTest extends \BBTestCase
                     'hcaptcha_site_key' => 'abc',
                 ],
                 [
-                    'publickey'=> null,
-                    'enabled'=> true,
-                    'version'=> null,
+                    'publickey' => null,
+                    'enabled' => true,
+                    'version' => null,
                     'captcha_provider' => 'hcaptcha',
                     'turnstile_site_key'=> null,
                     'hcaptcha_site_key' => 'abc',
