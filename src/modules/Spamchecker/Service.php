@@ -87,7 +87,6 @@ class Service implements InjectionAwareInterface
         $config = $di['mod_config']('Spamchecker');
 
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
-            
             $provider = $config['captcha_provider'] ?? 'recaptcha_v2';
 
             if ($provider === 'recaptcha_v2') {
