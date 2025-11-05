@@ -128,7 +128,7 @@ class Service implements InjectionAwareInterface
                     'body' => [
                         'secret'   => $config['turnstile_secret_key'],
                         'response' => $turnstile_response,
-                        'remoteip' => $di['request']->getClientIp(), // Pass the user's IP
+                        'remoteip' => $di['request']->getClientIp(),
                     ],
                 ]);
                 $content = $response->toArray();
