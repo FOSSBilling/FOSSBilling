@@ -457,7 +457,7 @@
         "Dockerfile",
         ".ddev/**",
         "hcaptcha",
-        "hCaptcha"
+        "hCaptcha",
         "LEMP"
     ]
 }
