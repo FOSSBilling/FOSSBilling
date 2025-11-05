@@ -160,7 +160,7 @@
             const replyToMessageBtn = document.querySelectorAll('.btn-quote-reply');
             const ticketReplyTextArea = document.getElementById('ticket-reply-text');
 
-            ticketReplyForm.addEventListener('submit', (e) => {
+            ticketReplyForm?.addEventListener('submit', (e) => {
                 e.preventDefault();
                 API.client.post('support/ticket_reply', Tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
                     () => {
