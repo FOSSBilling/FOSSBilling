@@ -84,7 +84,7 @@ class GuestTest extends \BBTestCase
                 [
                     'captcha_enabled' => true,
                     'captcha_provider' => 'turnstile',
-                    'turnstile_site_key'=> 'abc',
+                    'turnstile_site_key' => 'abc',
                 ],
                 [
                     'publickey' => null,
