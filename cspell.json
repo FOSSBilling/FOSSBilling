@@ -412,7 +412,10 @@
         "CSRF",
         "undismissed",
         "filp",
-        "phpunit"
+        "phpunit",
+        "hcaptcha",
+        "hCaptcha",
+        "LEMP"
     ],
     "ignorePaths": [
         "tests-legacy/**",
@@ -455,9 +458,6 @@
         "src/.htaccess",
         "phpstan-baseline.neon",
         "Dockerfile",
-        ".ddev/**",
-        "hcaptcha",
-        "hCaptcha",
-        "LEMP"
+        ".ddev/**"
     ]
 }
