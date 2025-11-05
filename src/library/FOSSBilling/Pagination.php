@@ -81,7 +81,7 @@ class Pagination implements InjectionAwareInterface
             throw new InformationException("The number of items per page ($perPageParam) must be a positive integer.");
         }
         if ($perPage > self::MAX_PER_PAGE) {
-            throw new InformationException("The number of items per page ($perPageParam) must be below the maximum allowed amount (" . self::MAX_PER_PAGE . ').');
+            throw new InformationException("The number of items per page ($perPageParam) is too large. Please specify a smaller number.");
         }
 
         $offset = ($page - 1) * $perPage;
@@ -143,7 +143,7 @@ class Pagination implements InjectionAwareInterface
             throw new InformationException("The number of items per page ($perPageParam) must be a positive integer.");
         }
         if ($perPage > self::MAX_PER_PAGE) {
-            throw new InformationException("The number of items per page ($perPageParam) must be below the maximum allowed amount (" . self::MAX_PER_PAGE . ').');
+            throw new InformationException("The number of items per page ($perPageParam) is too large. Please specify a smaller number.");
         }
 
         $offset = ($page - 1) * $perPage;
