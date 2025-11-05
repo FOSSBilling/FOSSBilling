@@ -69,7 +69,7 @@
                                         {% if ext.type == 'mod' %}
                                             {% if ext.status == 'installed' %}
                                                 <a class="btn btn-icon api-link"
-                                                   href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}"
+                                                   href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id }) }}"
                                                    data-api-type="danger"
                                                    data-api-confirm-btn="Deactivate"
                                                    data-api-confirm="{{ 'Are you sure?'|trans }}"
@@ -81,34 +81,47 @@
                                                 </a>
                                             {% else %}
                                                 <a class="btn btn-icon api-link"
-                                                   href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}"
-                                                   data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                                   data-api-confirm-btn="Activate"
+                                                   href="{{ 'api/admin/extension/uninstall'|link({ 'type': ext.type, 'id': ext.id }) }}"
+                                                   data-api-confirm="{{ 'Are you sure?<br /><br />Uninstalling this module will permanently delete all its database tables and remove its files from the disk. This action cannot be undone.'|trans }}"
+                                                   data-api-confirm-btn="Uninstall"
+                                                   data-api-type="danger"
                                                    data-api-jsonp="onAfterModuleActivated"
-                                                   data-bs-toggle="tooltip" data-bs-title="{{ 'Activate'|trans }}">
+                                                   data-bs-toggle="tooltip" data-bs-title="{{ 'Uninstall'|trans }}">
                                                     <svg class="icon">
-                                                        <use xlink:href="#play" />
+                                                        <use xlink:href="#delete" />
                                                     </svg>
                                                 </a>
                                             {% endif %}
-                                        {% else %}
-                                            &nbsp;
                                         {% endif %}
                                     </td>
+                                    {% if ext.type == 'mod' and ext.status != 'installed' %}
                                     <td>
-                                        {% if ext.has_settings %}
-                                            <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}"
-                                               data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">
-                                                <svg class="icon">
-                                                    <use xlink:href="#cog" />
-                                                </svg>
-                                            </a>
-                                        {% endif %}
+                                        <a class="btn btn-icon api-link"
+                                            href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id }) }}"
+                                            data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                            data-api-confirm-btn="Activate"
+                                            data-api-jsonp="onAfterModuleActivated"
+                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Activate'|trans }}">
+                                            <svg class="icon">
+                                                <use xlink:href="#play" />
+                                            </svg>
+                                        </a>
                                     </td>
+                                    {% endif %}
+                                    {% if ext.has_settings %}
+                                    <td>
+                                        <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}"
+                                           data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">
+                                           <svg class="icon">
+                                                <use xlink:href="#cog" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                    {% endif %}
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                    <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>

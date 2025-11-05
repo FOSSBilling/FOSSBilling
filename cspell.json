@@ -455,6 +455,7 @@
         "src/.htaccess",
         "phpstan-baseline.neon",
         "Dockerfile",
-        ".ddev/**"
+        ".ddev/**",
+        "LEMP"
     ]
 }
