@@ -108,7 +108,7 @@ class Service implements InjectionAwareInterface
                 ]);
                 $content = $response->toArray();
 
-                if (!$content['success']) {
+                if (!isset($content['success']) || $content['success'] !== true) {
                     throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
                 }
             
