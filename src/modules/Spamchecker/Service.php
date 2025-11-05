@@ -146,12 +146,12 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
                 }
 
-                $client = HttpClient::create(['bindto'=> BIND_TO]);
+                $client = HttpClient::create(['bindto' => BIND_TO]);
                 $response = $client->request('POST', 'https://hcaptcha.com/siteverify', [
-                    'body'=> [
-                        'secret'=> $config['hcaptcha_secret_key'],
-                        'response'=> $hcaptcha_response,
-                        'remoteip'=> $di['request']->getClientIp(),
+                    'body' => [
+                        'secret'   => $config['hcaptcha_secret_key'],
+                        'response' => $hcaptcha_response,
+                        'remoteip' => $di['request']->getClientIp(),
                     ],
                 ]);
                 $content = $response->toArray();
