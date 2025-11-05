@@ -92,7 +92,7 @@ class GuestTest extends \BBTestCase
                     'version' => null,
                     'captcha_provider' => 'turnstile',
                     'turnstile_site_key'=> 'abc',
-                    'hcaptcha_site_key'=> null,
+                    'hcaptcha_site_key' => null,
                 ]
             ],
             [
