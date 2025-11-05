@@ -8,7 +8,7 @@
                 <div class="cf-turnstile" data-sitekey="{{ rc.turnstile_site_key }}"></div>
             {% endif %}
         {% elseif provider == 'recaptcha_v2' %}
-            {% if config.recaptcha_publickey %}
+            {% if rc.publickey %}
                 <script src='https://www.google.com/recaptcha/api.js' async defer></script>
                 <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
             {% endif %}
