@@ -140,7 +140,7 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\InformationException('hCaptcha secret key is not configured.');
                 }
 
-                $hcaptcha_response = $params['h-captcha-response'] ?? null;
+                $hcaptcha_response = $params['h-captcha-response'] ?? $params['h_captcha_response'] ?? null;
                 if (empty($hcaptcha_response)) {
                     throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
                 }
