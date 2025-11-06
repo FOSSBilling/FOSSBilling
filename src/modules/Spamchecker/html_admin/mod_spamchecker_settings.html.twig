@@ -163,7 +163,7 @@
 
 {% block js %}
 <script>
-    $(document).ready(function() {
+    document.addEventListener("DOMContentLoaded", function() {
         function toggleProviderSettings() {
             var selectedProvider = document.getElementById("provider-select").value;
             
