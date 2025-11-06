@@ -66,10 +66,8 @@ class ClientValidator
     {
         if (!in_array($documentType, Model_Client::ALLOWED_DOCUMENT_TYPES, true)) {
             throw new InformationException(
-                sprintf(
-                    'Invalid document type. Allowed: %s',
-                    implode(', ', Model_Client::ALLOWED_DOCUMENT_TYPES)
-                )
+                'Invalid document type. Allowed: :list',
+                [':list' => implode(', ', Model_Client::ALLOWED_DOCUMENT_TYPES)]
             );
         }
 
