@@ -106,7 +106,7 @@ class GuestTest extends \BBTestCase
                     'enabled' => true,
                     'version' => null,
                     'captcha_provider' => 'hcaptcha',
-                    'turnstile_site_key'=> null,
+                    'turnstile_site_key' => null,
                     'hcaptcha_site_key' => 'abc',
                 ],
             ],
