@@ -165,20 +165,20 @@
 <script>
     $(document).ready(function() {
         function toggleProviderSettings() {
-            var selectedProvider = $('#provider-select').val();
+            var selectedProvider = document.getElementById("provider-select").value;
             
             if (selectedProvider === 'recaptcha_v2') {
-                $('#recaptcha_v2_settings').show();
-                $('#turnstile_settings').hide();
-                $('#hcaptcha_settings').hide();
+                document.getElementById("recaptcha_v2_settings").style.display = "block";
+                document.getElementById("turnstile_settings").style.display = "none";
+                document.getElementById("hcaptcha_settings").style.display = "none";
             } else if (selectedProvider === 'turnstile') {
-                $('#recaptcha_v2_settings').hide();
-                $('#turnstile_settings').show();
-                $('#hcaptcha_settings').hide();
+                document.getElementById("recaptcha_v2_settings").style.display = "none";
+                document.getElementById("turnstile_settings").style.display = "block";
+                document.getElementById("hcaptcha_settings").style.display = "none";
             } else if (selectedProvider === 'hcaptcha') {
-                $('#recaptcha_v2_settings').hide();
-                $('#turnstile_settings').hide();
-                $('#hcaptcha_settings').show();
+                document.getElementById("recaptcha_v2_settings").style.display = "none";
+                document.getElementById("turnstile_settings").style.display = "none";
+                document.getElementById("hcaptcha_settings").style.display = "block";
             }
         }
 
@@ -186,7 +186,7 @@
         toggleProviderSettings();
 
         // Run when the dropdown changes
-        $('#provider-select').on('change', function() {
+        document.getElementById("provider-select").addEventListener("change", () => {
             toggleProviderSettings();
         });
     });
