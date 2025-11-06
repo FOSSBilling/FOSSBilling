@@ -115,7 +115,7 @@ class Guest extends \Api_Abstract
         $mod = $this->di['mod']('system');
         $cfg = $mod->getConfig();
 
-        return $cfg['default_country'];
+        return $cfg['default_country'] ?? null;
     }
 
     /**
