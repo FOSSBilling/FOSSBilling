@@ -51,7 +51,7 @@
             </div>
 
             <div class="card-body">
-                <h3 class="card-title">{{ 'CAPTCHA settings'|trans }}</h3> {# CHANGED: Renamed from reCAPTCHA #}
+                <h3 class="card-title">{{ 'CAPTCHA settings'|trans }}</h3>
                 <p class="card-subtitle">
                     {{ 'Enable captcha for client registration and contact forms'|trans }}<br>
                     {{ 'Get keys from %recaptcha%, %turnstile% or %hcaptcha%.'|trans({ '%recaptcha%': '<a href="https://www.google.com/recaptcha/about/" target="_blank">Google reCAPTCHA</a>', '%turnstile%': '<a href="https://www.cloudflare.com/products/turnstile/" target="_blank">Cloudflare Turnstile</a>', '%hcaptcha%': '<a href="https://www.hcaptcha.com" target="_blank">hCaptcha</a>' })|raw }}
