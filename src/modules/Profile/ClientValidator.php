@@ -19,7 +19,7 @@ class ClientValidator
 
         if (!in_array($gender, Model_Client::ALLOWED_GENDERS, true)) {
             throw new InformationException(
-                'Invalid gender value. Allowed: male, female, non-binary, other'
+                'Invalid gender value. Allowed: male, female, nonbinary, other'
             );
         }
 
