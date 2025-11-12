@@ -776,7 +776,7 @@ class Service implements InjectionAwareInterface
                 break;
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceRefund', 'params' => $this->toApiArray($new)]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceRefund', 'params' => ['id' => $invoice->id]]);
 
         $this->di['logger']->info("Refunded invoice #{$invoice->id}.");
 
