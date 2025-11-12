@@ -25,18 +25,18 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->get('/orderbutton', 'get_index', [], static::class);
         $app->get('/orderbutton/js', 'get_js', [], static::class);
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\Box_App $app): string
     {
         return $app->render('mod_orderbutton_index');
     }
 
-    public function get_js(\Box_App $app)
+    public function get_js(\Box_App $app): string
     {
         header('Content-Type: application/javascript');
 

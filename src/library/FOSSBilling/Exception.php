@@ -3,7 +3,7 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -51,7 +51,7 @@ class Exception extends \Exception
      * We have slightly modified it for our purposes
      * https://stackoverflow.com/a/32365961.
      */
-    private function stackTrace($Length = 25, $protected = false)
+    private function stackTrace($Length = 25, $protected = false): string
     {
         $stack = debug_backtrace($Length);
         $output = '';

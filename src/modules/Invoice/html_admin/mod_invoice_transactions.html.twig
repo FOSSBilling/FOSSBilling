@@ -26,7 +26,7 @@
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Invoice Id'|trans }}</label>
+                <label class="form-label col-3 col-form-label">{{ 'Invoice ID'|trans }}</label>
                 <div class="col">
                     <input class="form-control" type="text" name="invoice_id" value="{{ request.invoice_id }}">
                 </div>
@@ -183,7 +183,7 @@
                     {% if tx.invoice_id %}
                         <a href="{{ 'invoice/manage'|alink }}/{{ tx.invoice_id }}">#{{ tx.invoice_id }}</a>
                     {% else %}
-                        {{ 'n/a'|trans }}
+                        {{ 'N/A'|trans }}
                     {% endif %}
                 </td>
                 <td>{{ mf.status_name(tx.type|default('-')) }}</td>

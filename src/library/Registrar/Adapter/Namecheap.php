@@ -12,7 +12,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         'ip' => null,
     ];
 
-    public function isKeyValueNotEmpty($array, $key)
+    public function isKeyValueNotEmpty($array, $key): bool
     {
         $value = $array[$key] ?? '';
         if (strlen(trim($value)) == 0) {
@@ -49,7 +49,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         }
     }
 
-    public static function getConfig()
+    public static function getConfig(): array
     {
         return [
             'label' => 'Manages domains on Namecheap via API. Namecheap requires your server IP in order to work.',
@@ -86,10 +86,10 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         ];
     }
 
-    public function isDomainAvailable(Registrar_Domain $domain)
+    public function isDomainAvailable(Registrar_Domain $domain): bool
     {
         $params = [
-            'DomainList' => strtolower($domain->getSld()) . $domain->getTld(),
+            'DomainList' => strtolower((string) $domain->getSld()) . $domain->getTld(),
             'Command' => 'namecheap.domains.check',
         ];
 
@@ -174,10 +174,8 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
      * @see http://manage.resellerclub.com/kb/answer/755
      *
      * @param array $params
-     *
-     * @return string
      */
-    private function _formatParams($params)
+    private function _formatParams($params): string
     {
         foreach ($params as &$param) {
             if (is_bool($param)) {
@@ -190,10 +188,8 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
     /**
      * Api URL.
-     *
-     * @return string
      */
-    private function _getApiUrl()
+    private function _getApiUrl(): string
     {
         if ($this->isTestEnv()) {
             return 'https://api.sandbox.namecheap.com/xml.response';
@@ -207,20 +203,15 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         return $this->_testMode;
     }
 
-    /**
-     * @return array
-     */
-    public function includeAuthorizationParams(array $params)
+    public function includeAuthorizationParams(array $params): array
     {
         return ['ApiUser' => $this->config['api-user-id'], 'ApiKey' => $this->config['api-key'], 'UserName' => $this->config['username'], 'ClientIp' => $this->config['ip'], ...$params];
     }
 
     /**
-     * @return bool
-     *
      * @throws Registrar_Exception
      */
-    public function modifyNs(Registrar_Domain $domain)
+    public function modifyNs(Registrar_Domain $domain): bool
     {
         // get NS info
         $params = [
@@ -245,15 +236,13 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * @return bool
-     *
      * @throws Registrar_Exception
      */
-    public function modifyContact(Registrar_Domain $domain)
+    public function modifyContact(Registrar_Domain $domain): bool
     {
         $params = [
             'Command' => 'namecheap.domains.setContacts',
-            'DomainName' => strtolower($domain->getSld()) . $domain->getTld(),
+            'DomainName' => strtolower((string) $domain->getSld()) . $domain->getTld(),
         ];
 
         // Set contact data
@@ -291,11 +280,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     /**
      * relying on domain->getEpp() to return user's input for Epp code.
      *
-     * @return bool
-     *
      * @throws Registrar_Exception
      */
-    public function transferDomain(Registrar_Domain $domain)
+    public function transferDomain(Registrar_Domain $domain): bool
     {
         $params = [
             'DomainName' => $domain->getName(),
@@ -316,11 +303,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
      * Should return details of registered domain
      * If domain is not registered should throw Registrar_Exception.
      *
-     * @return Registrar_Domain
-     *
      * @throws Registrar_Exception
      */
-    public function getDomainDetails(Registrar_Domain $domain)
+    public function getDomainDetails(Registrar_Domain $domain): Registrar_Domain
     {
         $params = [
             'DomainName' => $domain->getName(),
@@ -429,15 +414,13 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * @return bool
-     *
      * @throws Registrar_Exception
      */
-    public function registerDomain(Registrar_Domain $domain)
+    public function registerDomain(Registrar_Domain $domain): bool
     {
         $params = [
             'Command' => 'namecheap.domains.create',
-            'DomainName' => strtolower($domain->getSld()) . $domain->getTld(),
+            'DomainName' => strtolower((string) $domain->getSld()) . $domain->getTld(),
             'Years' => $domain->getRegistrationPeriod(),
         ];
 
@@ -540,11 +523,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * @return bool
-     *
      * @throws Registrar_Exception
      */
-    public function renewDomain(Registrar_Domain $domain)
+    public function renewDomain(Registrar_Domain $domain): bool
     {
         $params = [
             'Command' => 'namecheap.domains.renew',
@@ -643,11 +624,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * @return bool
-     *
      * @throws Registrar_Exception
      */
-    public function getLock(Registrar_Domain $domain)
+    public function getLock(Registrar_Domain $domain): bool
     {
         $params = [
             'DomainName' => $domain->getName(),
@@ -664,11 +643,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * @return bool
-     *
      * @throws Registrar_Exception
      */
-    public function lock(Registrar_Domain $domain)
+    public function lock(Registrar_Domain $domain): bool
     {
         if ($this->getLock($domain) == 'true') {
             return true;
@@ -696,11 +673,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * @return bool
-     *
      * @throws Registrar_Exception
      */
-    public function unlock(Registrar_Domain $domain)
+    public function unlock(Registrar_Domain $domain): bool
     {
         if ($this->getLock($domain) == 'false') {
             return true;
@@ -731,11 +706,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
      * Checks if tld is compatible with namecheaps transfer api and
      * if the domain is not available for registration (meaning hopefully the client owns it).
      *
-     * @return bool
-     *
      * @throws Registrar_Exception
      */
-    public function isDomaincanBeTransferred(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain): bool
     {
         return in_array($domain->getTld(), [
             '.biz', '.ca', '.cc', '.co', '.co.uk', '.com', '.com.es',

@@ -76,7 +76,7 @@ class Client extends \Api_Abstract
         return $this->getService()->generateLoginUrl($s);
     }
 
-    public function _getService($data)
+    public function _getService($data): array
     {
         if (!isset($data['order_id'])) {
             throw new \FOSSBilling\Exception('Order ID is required');

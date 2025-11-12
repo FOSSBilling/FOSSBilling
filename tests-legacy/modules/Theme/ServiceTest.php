@@ -48,7 +48,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
 
-        $di['theme'] = $di->protect(fn () => $themeMock);
+        $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
@@ -69,7 +69,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
 
-        $di['theme'] = $di->protect(fn () => $themeMock);
+        $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -91,7 +91,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
 
-        $di['theme'] = $di->protect(fn () => $themeMock);
+        $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -127,7 +127,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
 
-        $di['theme'] = $di->protect(fn () => $themeMock);
+        $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
@@ -158,7 +158,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
 
-        $di['theme'] = $di->protect(fn () => $themeMock);
+        $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -349,7 +349,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
-            ->willReturn([]);
+            ->willReturn('');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;

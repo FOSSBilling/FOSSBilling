@@ -26,7 +26,8 @@ class Service
         $this->postRepository = $this->di['em']->getRepository(Post::class);
     }
 
-    public function getPostRepository(): PostRepository {
+    public function getPostRepository(): PostRepository
+    {
         return $this->postRepository;
     }
 
@@ -34,6 +35,7 @@ class Service
      * Generate a placeholder meta description from given string.
      *
      * @param string $content - string to generate description from
+     *
      * @return string Placeholder meta description
      */
     public function generateDescriptionFromContent(string $content): string

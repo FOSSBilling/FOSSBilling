@@ -902,7 +902,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public static function productHasOrdersProvider()
+    public static function productHasOrdersProvider(): array
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -914,7 +914,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('productHasOrdersProvider')]
-    public function testProductHasOrders($order, $expectedResult): void
+    public function testProductHasOrders(?\Model_ClientOrder $order, bool $expectedResult): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -993,7 +993,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($randId);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
 
         $this->service->setDi($di);
 
@@ -1133,7 +1133,7 @@ class ServiceTest extends \BBTestCase
         $modelClient->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->willReturnCallback(fn (...$args) => match ($args[0]) {
+            ->willReturnCallback(fn (...$args): \Model_Product => match ($args[0]) {
                 'Product' => $modelProduct,
             });
 
@@ -1166,7 +1166,7 @@ class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey('client', $result);
     }
 
-    public static function searchQueryData()
+    public static function searchQueryData(): array
     {
         return [
             [[], 'SELECT co.* from client_order co', []],
@@ -1262,7 +1262,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery($data, $expectedStr, $expectedParams): void
+    public function testgetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -1512,7 +1512,7 @@ class ServiceTest extends \BBTestCase
         });
         $di['events_manager'] = $eventMock;
         $di['db'] = $dbMock;
-        $di['period'] = $di->protect(fn () => $periodMock);
+        $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -1750,9 +1750,9 @@ class ServiceTest extends \BBTestCase
             ->method('findPaidInvoicesForOrder');
 
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn ($name) => []);
-        $di['mod_service'] = $di->protect(fn () => $invoiceServiceMock);
-        $di['period'] = $di->protect(fn () => $periodMock);
+        $di['mod_config'] = $di->protect(fn ($name): array => []);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $invoiceServiceMock);
+        $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
@@ -1839,7 +1839,7 @@ class ServiceTest extends \BBTestCase
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
         $periodMock->expects($this->atLeastOnce())
             ->method('getCode');
-        $di['period'] = $di->protect(fn () => $periodMock);
+        $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
 
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();
@@ -1855,7 +1855,7 @@ class ServiceTest extends \BBTestCase
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
         $periodMock->expects($this->never())
             ->method('getCode');
-        $di['period'] = $di->protect(fn () => $periodMock);
+        $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
 
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();
@@ -1871,7 +1871,7 @@ class ServiceTest extends \BBTestCase
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
         $periodMock->expects($this->never())
             ->method('getCode');
-        $di['period'] = $di->protect(fn () => $periodMock);
+        $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
 
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();

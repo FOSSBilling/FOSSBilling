@@ -236,7 +236,7 @@ class Box_App
             $allowedURLs[] = parse_url($realAdminApiUrl)['path'];
         }
         foreach ($allowedURLs as $url) {
-            if (preg_match('/^' . str_replace('/', '\/', $url) . '(.*)/', $REQUEST_URI) !== 0) {
+            if (preg_match('/^' . str_replace('/', '\/', $url) . '(.*)/', (string) $REQUEST_URI) !== 0) {
                 return false;
             }
         }
@@ -251,10 +251,10 @@ class Box_App
 
         // Check if the visitor is in using of the allowed IPs/networks
         foreach ($allowedIPs as $network) {
-            if (!str_contains($network, '/')) {
+            if (!str_contains((string) $network, '/')) {
                 $network .= '/32';
             }
-            [$network, $netmask] = explode('/', $network, 2);
+            [$network, $netmask] = explode('/', (string) $network, 2);
             $network_decimal = ip2long($network);
             $ip_decimal = ip2long($visitorIP);
             $wildcard_decimal = 2 ** (32 - (int) $netmask) - 1;
@@ -274,7 +274,7 @@ class Box_App
         $realAdminUrl = SYSTEM_URL[-1] === '/' ? substr(SYSTEM_URL, 0, -1) . ADMIN_PREFIX : SYSTEM_URL . ADMIN_PREFIX;
         $realAdminPath = parse_url($realAdminUrl)['path'];
 
-        if (preg_match('/^' . str_replace('/', '\/', $realAdminPath) . '(.*)/', $REQUEST_URI) !== 0) {
+        if (preg_match('/^' . str_replace('/', '\/', $realAdminPath) . '(.*)/', (string) $REQUEST_URI) !== 0) {
             return false;
         }
 
@@ -298,7 +298,9 @@ class Box_App
                     $apiController = new Box\Mod\Api\Controller\Client();
                     $apiController->setDi($this->di);
 
-                    return $apiController->renderJson(null, $exc);
+                    $apiController->renderJson(null, $exc);
+
+                    return '';
                 } else {
                     return $this->render('mod_system_maintenance');
                 }

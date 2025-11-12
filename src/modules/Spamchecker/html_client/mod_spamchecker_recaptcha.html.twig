@@ -1,9 +1,21 @@
 {% if guest.extension_is_on({"mod":"spamchecker"}) %}
 {% set rc = guest.spamchecker_recaptcha %}
     {% if rc.enabled %}
-        {% if rc.version == 2 %}
-            <script src='https://www.google.com/recaptcha/api.js' async defer></script>
-            <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
-        {% endif %}
+        {% set provider = rc.captcha_provider|default('recaptcha_v2') %}
+        {% if provider == 'turnstile' %}
+            {% if rc.turnstile_site_key %}
+                <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+                <div class="cf-turnstile" data-sitekey="{{ rc.turnstile_site_key }}"></div>
+            {% endif %}
+        {% elseif provider == 'recaptcha_v2' %}
+            {% if rc.publickey %}
+                <script src='https://www.google.com/recaptcha/api.js' async defer></script>
+                <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
+            {% endif %}
+        {% elseif provider == 'hcaptcha' %}
+            {% if rc.hcaptcha_site_key %}
+                <script src='https://js.hcaptcha.com/1/api.js' async defer></script>
+                <div class="h-captcha" data-sitekey="{{ rc.hcaptcha_site_key }}"></div>
+            {% endif %}
     {% endif %}
 {% endif %}

@@ -19,7 +19,7 @@ class ServiceTest extends \BBTestCase
         $systemServiceMock->expects($this->atLeastOnce())->method('getParamValue');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $service = new Service();
         $service->setDi($di);
 
@@ -35,7 +35,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn('2012-12-12 12:12:12');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $service = new Service();
         $service->setDi($di);
 

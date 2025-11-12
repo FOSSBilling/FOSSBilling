@@ -10,7 +10,7 @@
  */
 class Payment_Invoice
 {
-    private $id; // FOSSBilling Invoice Id
+    private $id; // FOSSBilling Invoice ID
     private $number; // Invoice number for accounting
     private string $currency = 'USD';
     private array $items = [];
@@ -85,7 +85,7 @@ class Payment_Invoice
      *
      * @return string the currency
      */
-    public function getCurrency()
+    public function getCurrency(): string
     {
         return $this->currency;
     }
@@ -109,7 +109,7 @@ class Payment_Invoice
      *
      * @return Payment_Invoice_Buyer the buyer object
      */
-    public function getBuyer()
+    public function getBuyer(): ?Payment_Invoice_Buyer
     {
         return $this->buyer;
     }
@@ -137,7 +137,7 @@ class Payment_Invoice
      *
      * @return array an array of Payment_Invoice_Item objects
      */
-    public function getItems()
+    public function getItems(): array
     {
         return $this->items;
     }
@@ -161,7 +161,7 @@ class Payment_Invoice
      *
      * @return Payment_Invoice_Subscription the subscription object
      */
-    public function getSubscription()
+    public function getSubscription(): ?Payment_Invoice_Subscription
     {
         return $this->subscription;
     }
@@ -183,9 +183,9 @@ class Payment_Invoice
     /**
      * Get the title.
      *
-     * @return string|null the title
+     * @return string the title
      */
-    public function getTitle()
+    public function getTitle(): string
     {
         return $this->title;
     }

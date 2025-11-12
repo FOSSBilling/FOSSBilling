@@ -39,7 +39,7 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public static function onBeforeClientSignUp(\Box_Event $event)
+    public static function onBeforeClientSignUp(\Box_Event $event): void
     {
         $di = $event->getDi();
         $spamCheckerService = $di['mod_service']('Spamchecker');
@@ -48,7 +48,7 @@ class Service implements InjectionAwareInterface
         $spamCheckerService->isTemp($event);
     }
 
-    public static function onBeforeGuestPublicTicketOpen(\Box_Event $event)
+    public static function onBeforeGuestPublicTicketOpen(\Box_Event $event): void
     {
         $di = $event->getDi();
         $spamCheckerService = $di['mod_service']('Spamchecker');
@@ -60,7 +60,7 @@ class Service implements InjectionAwareInterface
     /**
      * @param \Box_Event $event
      */
-    public function isBlockedIp($event)
+    public function isBlockedIp($event): void
     {
         $di = $event->getDi();
         $config = $di['mod_config']('Spamchecker');
@@ -73,7 +73,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function isSpam(\Box_Event $event)
+    public function isSpam(\Box_Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -87,7 +87,9 @@ class Service implements InjectionAwareInterface
         $config = $di['mod_config']('Spamchecker');
 
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
-            if (isset($config['captcha_version']) && $config['captcha_version'] == 2) {
+            $provider = $config['captcha_provider'] ?? 'recaptcha_v2';
+
+            if ($provider === 'recaptcha_v2') {
                 if (!isset($config['captcha_recaptcha_privatekey']) || $config['captcha_recaptcha_privatekey'] == '') {
                     throw new \FOSSBilling\InformationException("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
                 }
@@ -106,21 +108,65 @@ class Service implements InjectionAwareInterface
                 ]);
                 $content = $response->toArray();
 
-                if (!$content['success']) {
+                if (!isset($content['success']) || $content['success'] !== true) {
                     throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
                 }
-            } else {
-                throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+            
+            } elseif ($provider === 'turnstile') {
+                if (empty($config['turnstile_secret_key'])) {
+                    throw new \FOSSBilling\InformationException('Cloudflare Turnstile secret key is not configured.');
+                }
+
+                $turnstile_response = $params['cf-turnstile-response'] ?? null;
+                if (empty($turnstile_response)) {
+                    throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
+                }
+
+                $client = HttpClient::create(['bindto' => BIND_TO]);
+                $response = $client->request('POST', 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                    'body' => [
+                        'secret'   => $config['turnstile_secret_key'],
+                        'response' => $turnstile_response,
+                        'remoteip' => $di['request']->getClientIp(),
+                    ],
+                ]);
+                $content = $response->toArray();
+
+                if (!isset($content['success']) || $content['success'] !== true) {
+                    throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
+                }
+            } elseif ($provider === 'hcaptcha') {
+                if (empty($config['hcaptcha_secret_key'])) {
+                    throw new \FOSSBilling\InformationException('hCaptcha secret key is not configured.');
+                }
+
+                $hcaptcha_response = $params['h-captcha-response'] ?? null;
+                if (empty($hcaptcha_response)) {
+                    throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
+                }
+
+                $client = HttpClient::create(['bindto' => BIND_TO]);
+                $response = $client->request('POST', 'https://hcaptcha.com/siteverify', [
+                    'body' => [
+                        'secret'   => $config['hcaptcha_secret_key'],
+                        'response' => $hcaptcha_response,
+                        'remoteip' => $di['request']->getClientIp(),
+                    ],
+                ]);
+                $content = $response->toArray();
+
+                if (!isset($content['success']) || $content['success'] !== true) {
+                    throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
+                }
             }
         }
-
         if (isset($config['sfs']) && $config['sfs']) {
             $spamCheckerService = $di['mod_service']('Spamchecker');
             $spamCheckerService->isInStopForumSpamDatabase($data);
         }
     }
 
-    public function isTemp(\Box_Event $event)
+    public function isTemp(\Box_Event $event): void
     {
         $di = $event->getDi();
         $config = $di['mod_config']('Spamchecker');
@@ -141,10 +187,8 @@ class Service implements InjectionAwareInterface
      * ip
      * email
      * username
-     *
-     * @return bool
      */
-    public function isInStopForumSpamDatabase(array $data)
+    public function isInStopForumSpamDatabase(array $data): bool
     {
         $url = 'https://www.stopforumspam.com/api';
         $client = HttpClient::create(['bindto' => BIND_TO]);

@@ -81,7 +81,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function prepare($data)
+    public function prepare($data): int
     {
         $required = [
             'title' => 'You must specify a title',
@@ -361,7 +361,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function category_create($data)
+    public function category_create($data): int
     {
         $required = [
             'title' => 'Category title is required',
@@ -433,7 +433,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function promo_create($data)
+    public function promo_create($data): int
     {
         $required = [
             'code' => 'Promo code is missing',

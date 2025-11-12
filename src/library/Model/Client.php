@@ -14,7 +14,7 @@ class Model_Client extends RedBeanPHP\SimpleModel
     final public const SUSPENDED = 'suspended';
     final public const CANCELED = 'canceled';
 
-    public function getFullName()
+    public function getFullName(): string
     {
         return $this->first_name . ' ' . $this->last_name;
     }

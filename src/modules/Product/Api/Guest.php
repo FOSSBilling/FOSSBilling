@@ -145,8 +145,8 @@ class Guest extends \Api_Abstract
                 'pricing' => $product['pricing'],
             ];
             foreach ($pc as $k => $v) {
-                if (str_contains($k, 'slider_')) {
-                    $s[substr($k, strlen('slider_'))] = $v;
+                if (str_contains((string) $k, 'slider_')) {
+                    $s[substr((string) $k, strlen('slider_'))] = $v;
                 }
             }
             $slider[] = $s;

@@ -97,7 +97,7 @@ class Service
         return $results;
     }
 
-    public function setParamValue($param, $value, $createIfNotExists = true)
+    public function setParamValue($param, $value, $createIfNotExists = true): bool
     {
         // Skip this param if the user isn't permitted to update it.
         if (!$this->canUpdateParam($param)) {
@@ -125,7 +125,7 @@ class Service
         return true;
     }
 
-    public function paramExists($param)
+    public function paramExists($param): bool
     {
         $pdo = $this->di['pdo'];
         $q = 'SELECT id
@@ -167,7 +167,7 @@ class Service
         return $result;
     }
 
-    public function getCompany()
+    public function getCompany(): array
     {
         $c = [
             'company_name',
@@ -260,7 +260,7 @@ class Service
         return $result;
     }
 
-    public function updateParams($data)
+    public function updateParams($data): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminSettingsUpdate', 'params' => $data]);
 
@@ -302,7 +302,7 @@ class Service
             $cronUrl = $this->di['url']->adminLink('extension/settings/cron');
 
             // Perform the fallback behavior if enabled
-            if (!$disableAutoCron && (!$last_exec || (time() - strtotime($last_exec)) / 60 >= 15)) {
+            if (!$disableAutoCron && (!$last_exec || (time() - strtotime((string) $last_exec)) / 60 >= 15)) {
                 $cronService->runCrons();
             }
 
@@ -312,7 +312,7 @@ class Service
                     'text' => __trans('Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly.'),
                     'url' => $cronUrl,
                 ];
-            } elseif ((time() - strtotime($last_exec)) / 60 >= 15) {
+            } elseif ((time() - strtotime((string) $last_exec)) / 60 >= 15) {
                 $msgs['danger'][] = [
                     'text' => __trans("FOSSBilling has detected that cron hasn't been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes."),
                     'url' => $cronUrl,
@@ -360,7 +360,7 @@ class Service
         }
 
         $install = Path::join(PATH_ROOT, 'install');
-        if ($this->filesystem->exists($install)) {
+        if (!Environment::isDevelopment() && $this->filesystem->exists($install)) {
             $msgs['danger'][] = [
                 'text' => sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install),
             ];
@@ -394,7 +394,7 @@ class Service
         }
     }
 
-    public function templateExists($file, $identity = null)
+    public function templateExists($file, $identity = null): bool
     {
         if ($identity instanceof \Model_Admin) {
             $client = false;
@@ -466,7 +466,7 @@ class Service
         return $parsed;
     }
 
-    public function clearCache()
+    public function clearCache(): bool
     {
         $this->filesystem->remove(PATH_CACHE);
         $this->filesystem->mkdir(PATH_CACHE);
@@ -491,7 +491,7 @@ class Service
         return $data;
     }
 
-    public function getCurrentUrl()
+    public function getCurrentUrl(): string
     {
         $pageScheme = $_SERVER['HTTPS'] ? 'https' : 'http';
         $pageURL = $pageScheme . '://';
@@ -504,8 +504,8 @@ class Service
         }
 
         $this_page = $_SERVER['REQUEST_URI'] ?? '';
-        if (str_contains($this_page, '?')) {
-            $a = explode('?', $this_page);
+        if (str_contains((string) $this_page, '?')) {
+            $a = explode('?', (string) $this_page);
             $this_page = reset($a);
         }
 
@@ -543,7 +543,7 @@ class Service
         return $results;
     }
 
-    public function getLocales()
+    public function getLocales(): array
     {
         return [
             'aa' => 'Afar',
@@ -885,7 +885,7 @@ class Service
         return $res;
     }
 
-    public function getStates()
+    public function getStates(): array
     {
         return [
             'AK' => 'Alaska',
@@ -996,7 +996,7 @@ class Service
         return $messages;
     }
 
-    public function setPendingMessage($msg)
+    public function setPendingMessage($msg): bool
     {
         $messages = $this->getPendingMessages();
         $messages[] = $msg;
@@ -1005,14 +1005,14 @@ class Service
         return true;
     }
 
-    public function clearPendingMessages()
+    public function clearPendingMessages(): bool
     {
         $this->di['session']->delete('pending_messages');
 
         return true;
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event)
+    public static function onBeforeAdminCronRun(\Box_Event $event): void
     {
         $di = $event->getDi();
         Reader::updateDefaultDatabases();

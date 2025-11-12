@@ -2,7 +2,7 @@
 
 class QueryDebuggerListener extends Doctrine_EventListener
 {
-    public function preStmtExecute(Doctrine_Event $event)
+    public function preStmtExecute(Doctrine_Event $event): void
     {
         $query = $event->getQuery();
         $params = $event->getParams();

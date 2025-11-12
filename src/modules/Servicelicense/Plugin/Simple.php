@@ -27,10 +27,8 @@ class Simple
 
     /**
      * License generation script.
-     *
-     * @return string
      */
-    public function generate(\Model_ServiceLicense $service, \Model_ClientOrder $order, array $config)
+    public function generate(\Model_ServiceLicense $service, \Model_ClientOrder $order, array $config): string
     {
         // Optional: to get customer data
         // $client = $this->di['db']->load('Client', $order->client_id);

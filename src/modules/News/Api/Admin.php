@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\News\Api;
 
-use \Box\Mod\News\Entity\Post;
+use Box\Mod\News\Entity\Post;
 
 class Admin extends \Api_Abstract
 {
@@ -20,6 +20,7 @@ class Admin extends \Api_Abstract
      * Get paginated list of news items (any status).
      *
      * @param array $data Filtering and pagination parameters
+     *
      * @return array Paginated list of news items
      */
     public function get_list(array $data): array
@@ -37,7 +38,7 @@ class Admin extends \Api_Abstract
      * Get a single news item by ID or slug.
      *
      * @param array $data ['id' => int|null, 'slug' => string|null]
-     * @return array
+     *
      * @throws \FOSSBilling\Exception if ID/slug is missing or news item not found
      */
     public function get(array $data): array
@@ -65,7 +66,7 @@ class Admin extends \Api_Abstract
 
         /** @todo Doctrine: Replace with actual Admin entity once it's migrated to Doctrine. */
         $admin = $this->di['db']->getRow('SELECT name FROM admin WHERE id = :id', ['id' => $post->getAdminId()]);
-        
+
         $post->setAdminData($admin);
 
         return $post->toApiArray();
@@ -73,9 +74,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update news item.
-     *
-     * @param array $data
-     * @return bool
      */
     public function update(array $data): bool
     {
@@ -83,7 +81,7 @@ class Admin extends \Api_Abstract
 
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
-        
+
         $post = $repo->find($data['id']);
 
         if (!$post instanceof Post) {
@@ -121,7 +119,6 @@ class Admin extends \Api_Abstract
     /**
      * Create new news item.
      *
-     * @param array $data
      * @return int New post ID
      */
     public function create(array $data): int
@@ -129,7 +126,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray(['title' => 'Post title not passed'], $data);
 
         $post = new Post($data['title'], $this->di['tools']->slug($data['title']));
-        
+
         $post->setAdminId($this->getIdentity()->id)
              ->setContent($data['content'] ?? null)
              ->setStatus($data['status'] ?? Post::STATUS_ACTIVE)
@@ -145,9 +142,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete news item by ID.
-     *
-     * @param array $data
-     * @return bool
      */
     public function delete(array $data): bool
     {
@@ -155,7 +149,7 @@ class Admin extends \Api_Abstract
 
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
-        
+
         $post = $repo->find($data['id']);
 
         if (!$post instanceof Post) {
@@ -172,9 +166,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Batch delete news items by IDs.
-     *
-     * @param array $data
-     * @return bool
      */
     public function batch_delete(array $data): bool
     {
@@ -182,7 +173,7 @@ class Admin extends \Api_Abstract
 
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
-        
+
         $count = $repo->deleteByIds($data['ids']);
 
         $this->di['logger']->info('Removed %s news items', $count);

@@ -3,7 +3,7 @@
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 {
-    public static function domains()
+    public static function domains(): array
     {
         return [
             ['google', true],
@@ -20,7 +20,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     }
 
     #[PHPUnit\Framework\Attributes\DataProvider('domains')]
-    public function testValidator($domain, $valid): void
+    public function testValidator(string $domain, bool $valid): void
     {
         $v = new FOSSBilling\Validate();
         $this->assertEquals($valid, $v->isSldValid($domain));

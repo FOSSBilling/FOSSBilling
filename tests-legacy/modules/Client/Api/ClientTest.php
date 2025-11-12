@@ -47,7 +47,7 @@ class ClientTest extends \BBTestCase
             ->willReturn($model);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
 
@@ -73,7 +73,7 @@ class ClientTest extends \BBTestCase
             ->willReturn($balanceAmount);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn ($name, $sub) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name, $sub): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
         $api = new Client();
         $api->setDi($di);

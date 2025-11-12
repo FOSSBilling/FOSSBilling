@@ -8,7 +8,7 @@ FOSSBilling is a free and open-source billing and client management solution des
 
 * **Backend:** PHP 8.2+ with dependencies managed by Composer. Key libraries include:
   * [Symfony Components](https://symfony.com/): Console, cache, filesystem, HTTP client, and other core functionalities. See `composer.json` for a list of imported components.
-    * Prefer Symfony components wherever you can. 
+    * Prefer Symfony components wherever you can.
   * [Twig](https://twig.symfony.com/): Template engine for rendering views
     * API endpoints are injected as parameters to Twig. See the "Interacting with the FOSSBilling API" section.
   * [RedBeanPHP](https://redbeanphp.com/): ORM for database interactions in legacy modules.
@@ -173,15 +173,19 @@ tests-legacy/                  # Legacy PHPUnit tests
 ```
 
 ### Front-end Guidelines
+
 * Reuse svg files in the `admin_default` theme. Icons are compiled from the `src/themes/admin_default/assets/icons` directory and can be referenced from within the Twig template like so:
+
   ```html
   <svg class="icon">
     <use xlink:href="#icon-name" />
   </svg>
   ```
+
 * Check the available Twig filters and functions in `src/library/Box/TwigExtensions.php`. Use these where applicable.
 
 ### Interacting with the FOSSBilling API
+
 * API is injected directly into the Twig templates. You do not need to use fetch/AJAX to read from the API.
   * When applicable, APIs are injected as Twig parameters `admin`, `client`, and `guest`.
   * Guest API is always available. Admin and client APIs are injected if an admin or a client is logged in.

@@ -339,10 +339,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Return available invoice options.
-     *
-     * @return array
      */
-    public function get_invoice_options($data)
+    public function get_invoice_options($data): array
     {
         return [
             'issue-invoice' => __trans('Automatically issue renewal invoices'),
@@ -352,10 +350,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Return order statuses codes with titles.
-     *
-     * @return array
      */
-    public function get_status_pairs($data)
+    public function get_status_pairs($data): array
     {
         return [
             \Model_ClientOrder::STATUS_PENDING_SETUP => 'Pending setup',
@@ -395,10 +391,8 @@ class Admin extends \Api_Abstract
      * Deletes orders with given IDs.
      *
      * @optional bool $delete_addons - Remove addons also. Default false.
-     *
-     * @return bool
      */
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         $required = [
             'ids' => 'Orders ids not passed',

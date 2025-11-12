@@ -98,6 +98,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $existing = $this->di['db']->findOne('Transaction', 'txn_id = ? AND gateway_id = ?', [$txnIdCandidate, $data['gateway_id']]);
             if ($existing instanceof \Model_Transaction && $existing->status == \Model_Transaction::STATUS_PROCESSED) {
                 $this->di['logger']->info('Duplicate transaction ignored, returning existing processed transaction #%s', $existing->id);
+
                 return $existing->id;
             }
         }
@@ -255,12 +256,12 @@ class ServiceTransaction implements InjectionAwareInterface
 
         if ($date_from) {
             $sql .= ' AND UNIX_TIMESTAMP(m.created_at) >= :date_from';
-            $params['date_from'] = strtotime($date_from);
+            $params['date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $sql .= ' AND UNIX_TIMESTAMP(m.created_at) <= :date_to';
-            $params['date_to'] = strtotime($date_to);
+            $params['date_to'] = strtotime((string) $date_to);
         }
 
         if ($search) {
@@ -500,14 +501,14 @@ class ServiceTransaction implements InjectionAwareInterface
     /**
      * Compute SHA-256 hash of normalized IPN payload.
      */
-    private function ipnHash($ipn)
+    private function ipnHash($ipn): ?string
     {
         $norm = $this->normalizeIpn($ipn);
         if (empty($norm)) {
             return null;
         }
 
-        return hash('sha256', $norm);
+        return hash('sha256', (string) $norm);
     }
 
     private function hasProcessedTransaction(\Model_Transaction $tx)

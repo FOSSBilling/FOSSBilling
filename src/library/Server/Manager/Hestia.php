@@ -77,7 +77,7 @@ class Server_Manager_Hestia extends Server_Manager
 
     public function generateUsername(string $domain): string
     {
-        $processedDomain = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $domain));
+        $processedDomain = strtolower((string) preg_replace('/[^A-Za-z0-9]/', '', $domain));
         $prefix = $this->_config['config']['userprefix'] ?? '';
         $username = $prefix . substr($processedDomain, 0, 7) . random_int(0, 9);
 
@@ -145,7 +145,7 @@ class Server_Manager_Hestia extends Server_Manager
             'arg2' => $account->getPassword(),
             'arg3' => $client->getEmail(),
             'arg4' => $account->getPackage()->getName(),
-            'arg5' => trim($client->getFullName()),
+            'arg5' => trim((string) $client->getFullName()),
         ];
 
         // Make request and create user

@@ -25,7 +25,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function fetchNavigation()
+    public function fetchNavigation(): array
     {
         return [
             'subpages' => [
@@ -40,21 +40,21 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->get('/servicedomain', 'get_index', null, static::class);
         $app->get('/servicedomain/id/:id', 'get_tld_id', ['id' => '[0-9]+'], static::class);
         $app->get('/servicedomain/registrar/:id', 'get_registrar', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\Box_App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_servicedomain_index');
     }
 
-    public function get_tld_id(\Box_App $app, $id)
+    public function get_tld_id(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $m = $api->servicedomain_tld_get_id(['id' => $id]);
@@ -62,7 +62,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_servicedomain_tld', ['tld' => $m]);
     }
 
-    public function get_registrar(\Box_App $app, $id)
+    public function get_registrar(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $registrar = $api->servicedomain_registrar_get(['id' => $id]);

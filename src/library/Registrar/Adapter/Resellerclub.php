@@ -23,7 +23,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         'api-key' => null,
     ];
 
-    public function isKeyValueNotEmpty($array, $key)
+    public function isKeyValueNotEmpty($array, $key): bool
     {
         $value = $array[$key] ?? '';
         if (strlen(trim($value)) == 0) {
@@ -50,7 +50,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
     }
 
-    public static function getConfig()
+    public static function getConfig(): array
     {
         return [
             'label' => 'Manages domains on ResellerClub via API. ResellerClub requires your server IP in order to work. Login to the ResellerClub control panel (the url will be in the email you received when you signed up with them) and then go to Settings > API and enter the IP address of the server where FOSSBilling is installed to authorize it for API access.',
@@ -74,7 +74,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         ];
     }
 
-    public function isDomainAvailable(Registrar_Domain $domain)
+    public function isDomainAvailable(Registrar_Domain $domain): bool
     {
         $params = [
             'domain-name' => $domain->getSld(),
@@ -95,7 +95,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return false;
     }
 
-    public function isDomaincanBeTransferred(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain): bool
     {
         $params = [
             'domain-name' => $domain->getName(),
@@ -105,7 +105,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return strtolower($result) == 'true';
     }
 
-    public function modifyNs(Registrar_Domain $domain)
+    public function modifyNs(Registrar_Domain $domain): bool
     {
         $ns = [];
         $ns[] = $domain->getNs1();
@@ -127,7 +127,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $result['status'] == 'Success';
     }
 
-    public function modifyContact(Registrar_Domain $domain)
+    public function modifyContact(Registrar_Domain $domain): bool
     {
         $customer = $this->_getCustomerDetails($domain);
         $cdetails = $this->_getDefaultContactDetails($domain, $customer['customerid']);
@@ -160,7 +160,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $result['status'] == 'Success';
     }
 
-    public function transferDomain(Registrar_Domain $domain)
+    public function transferDomain(Registrar_Domain $domain): bool
     {
         $customer = $this->_getCustomerDetails($domain);
         $contacts = $this->_getDefaultContactDetails($domain, $customer['customerid']);
@@ -263,14 +263,14 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $d;
     }
 
-    public function deleteDomain(Registrar_Domain $domain)
+    public function deleteDomain(Registrar_Domain $domain): bool
     {
         $required_params = [
             'order-id' => $this->_getDomainOrderId($domain),
         ];
         $result = $this->_makeRequest('domains/delete', $required_params, 'POST');
 
-        return strtolower($result['status']) == 'success';
+        return strtolower((string) $result['status']) == 'success';
     }
 
     public function registerDomain(Registrar_Domain $domain)
@@ -338,7 +338,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $result['status'] == 'Success';
     }
 
-    public function renewDomain(Registrar_Domain $domain)
+    public function renewDomain(Registrar_Domain $domain): bool
     {
         $params = [
             'order-id' => $this->_getDomainOrderId($domain),
@@ -352,7 +352,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $result['actionstatus'] == 'Success';
     }
 
-    public function enablePrivacyProtection(Registrar_Domain $domain)
+    public function enablePrivacyProtection(Registrar_Domain $domain): bool
     {
         $order_id = $this->_getDomainOrderId($domain);
         $params = [
@@ -363,10 +363,10 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest('domains/modify-privacy-protection', $params, 'POST');
 
-        return strtolower($result['actionstatus']) == 'success';
+        return strtolower((string) $result['actionstatus']) == 'success';
     }
 
-    public function disablePrivacyProtection(Registrar_Domain $domain)
+    public function disablePrivacyProtection(Registrar_Domain $domain): bool
     {
         $order_id = $this->_getDomainOrderId($domain);
         $params = [
@@ -377,7 +377,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest('domains/modify-privacy-protection', $params, 'POST');
 
-        return strtolower($result['actionstatus']) == 'success';
+        return strtolower((string) $result['actionstatus']) == 'success';
     }
 
     public function getEpp(Registrar_Domain $domain)
@@ -396,27 +396,27 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $data['domsecret'];
     }
 
-    public function lock(Registrar_Domain $domain)
+    public function lock(Registrar_Domain $domain): bool
     {
         $params = [
             'order-id' => $this->_getDomainOrderId($domain),
         ];
         $result = $this->_makeRequest('domains/enable-theft-protection', $params, 'POST');
 
-        return strtolower($result['status']) == 'success';
+        return strtolower((string) $result['status']) == 'success';
     }
 
-    public function unlock(Registrar_Domain $domain)
+    public function unlock(Registrar_Domain $domain): bool
     {
         $params = [
             'order-id' => $this->_getDomainOrderId($domain),
         ];
         $result = $this->_makeRequest('domains/disable-theft-protection', $params, 'POST');
 
-        return strtolower($result['status']) == 'success';
+        return strtolower((string) $result['status']) == 'success';
     }
 
-    private function _getCustomerDetails(Registrar_Domain $domain)
+    private function _getCustomerDetails(Registrar_Domain $domain): array
     {
         $c = $domain->getContactRegistrar();
         $params = [
@@ -441,8 +441,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $company = 'N/A';
         }
         $phoneNum = $c->getTel();
-        $phoneNum = preg_replace('/[^0-9]/', '', $phoneNum);
-        $phoneNum = substr($phoneNum, 0, 12);
+        $phoneNum = preg_replace('/[^0-9]/', '', (string) $phoneNum);
+        $phoneNum = substr((string) $phoneNum, 0, 12);
         $params = [
             'username' => $c->getEmail(),
             'passwd' => $c->getPassword(),
@@ -603,7 +603,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $this->_makeRequest('contacts/default', $params, 'POST');
     }
 
-    private function removeCustomer($params)
+    private function removeCustomer($params): bool
     {
         $required_params = [
             'customer-id' => '',
@@ -637,10 +637,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     /**
      * Api URL.
-     *
-     * @return string
      */
-    private function _getApiUrl()
+    private function _getApiUrl(): string
     {
         if ($this->isTestEnv()) {
             return 'https://test.httpapi.com/api/';
@@ -649,10 +647,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return 'https://httpapi.com/api/';
     }
 
-    /**
-     * @return array
-     */
-    public function includeAuthorizationParams(array $params)
+    public function includeAuthorizationParams(array $params): array
     {
         return [...$params, 'auth-userid' => $this->config['userid'], 'api-key' => $this->config['api-key']];
     }
@@ -736,10 +731,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      * @see http://manage.resellerclub.com/kb/answer/755
      *
      * @param array $params
-     *
-     * @return string
      */
-    private function _formatParams($params)
+    private function _formatParams($params): ?string
     {
         foreach ($params as &$param) {
             if (is_bool($param)) {
@@ -773,7 +766,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $params;
     }
 
-    private function _getAllContacts($tld, $customer_id, Registrar_Domain_Contact $client)
+    private function _getAllContacts($tld, $customer_id, Registrar_Domain_Contact $client): array
     {
         if ($tld[0] != '.') {
             $tld = '.' . $tld; // $tld must start with a dot(.)
@@ -796,7 +789,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'country' => $client->getCountry(),
             'zipcode' => $client->getZip(),
             'phone-cc' => $client->getTelCc(),
-            'phone' => substr($client->getTel(), 0, 12), // phone must be 4-12 digits
+            'phone' => substr((string) $client->getTel(), 0, 12), // phone must be 4-12 digits
         ];
 
         // @see http://manage.resellerclub.com/kb/answer/790 for us contact details
@@ -847,7 +840,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         if ($tld == '.es') {
-            if (strlen(trim($client->getDocumentNr())) == 0) {
+            if (strlen(trim((string) $client->getDocumentNr())) == 0) {
                 throw new Registrar_Exception('Valid contact passport information is required while registering ES domain name');
             }
 
@@ -861,12 +854,12 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $contact['attr-value3'] = $client->getDocumentNr();
         }
 
-        if ($tld == '.co' || str_ends_with($tld, '.co')) {
+        if ($tld == '.co' || str_ends_with((string) $tld, '.co')) {
             $contact['type'] = 'CoContact';
         }
 
         if ($tld == '.asia') {
-            if (strlen(trim($client->getDocumentNr())) == 0) {
+            if (strlen(trim((string) $client->getDocumentNr())) == 0) {
                 throw new Registrar_Exception('Valid contact passport information is required while registering ASIA domain name');
             }
 
@@ -894,11 +887,11 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 throw new Registrar_Exception('Valid contact birthdate is required while registering RU domain name');
             }
 
-            if (strlen(trim($client->getDocumentNr())) === 0) {
+            if (strlen(trim((string) $client->getDocumentNr())) === 0) {
                 throw new Registrar_Exception('Valid contact passport information is required while registering RU domain name');
             }
 
-            if (str_word_count($contact['company']) < 2) {
+            if (str_word_count((string) $contact['company']) < 2) {
                 $contact['company'] .= ' Inc';
             }
 

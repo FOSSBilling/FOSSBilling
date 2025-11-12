@@ -10,7 +10,7 @@
  */
 class Model_ProductDomainTable extends Model_ProductTable
 {
-    public function getUnit(Model_Product $model)
+    public function getUnit(Model_Product $model): string
     {
         return 'year';
     }
@@ -26,7 +26,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return empty($p) ? 0 : min($p);
     }
 
-    public function isRecurrentPricing(Model_Product $model)
+    public function isRecurrentPricing(Model_Product $model): bool
     {
         return false;
     }
@@ -73,7 +73,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return 0;
     }
 
-    private function _hasFreePeriod($addon)
+    private function _hasFreePeriod($addon): bool
     {
         $free_domain_periods = $addon['config']['free_domain_periods'];
         $addon_period = $addon['config']['period'];
@@ -105,7 +105,7 @@ class Model_ProductDomainTable extends Model_ProductTable
                 }
             }
 
-            if (str_contains($addon_period, 'Y')) {
+            if (str_contains((string) $addon_period, 'Y')) {
                 if (min($ref_item_qty, $addon_qty) == 1) {
                     return 1;
                 }
@@ -133,12 +133,12 @@ class Model_ProductDomainTable extends Model_ProductTable
     /**
      * @param string $actionName
      */
-    private function isActionNameSet($item, $actionName)
+    private function isActionNameSet($item, $actionName): bool
     {
         return isset($item['config']['domain']['action']) && $item['config']['domain']['action'] == $actionName;
     }
 
-    private function _isFreeDomainSet($item)
+    private function _isFreeDomainSet($item): bool
     {
         $free_domain = $item['config']['free_domain'] ?? false;
         $tld = $item['config']['tld'] ?? null;
@@ -169,7 +169,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return $item['config']['domain']['transfer_sld'] == $config['transfer_sld'] && $item['config']['domain']['transfer_tld'] == $config['transfer_tld'];
     }
 
-    private function isFreeTransferSet($item)
+    private function isFreeTransferSet($item): bool
     {
         return isset($item['config']['free_transfer']) && $item['config']['free_transfer'];
     }
@@ -248,9 +248,9 @@ class Model_ProductDomainTable extends Model_ProductTable
         return 0;
     }
 
-    public function getProductSetupPrice(Model_Product $product, ?array $config = null)
+    public function getProductSetupPrice(Model_Product $product, ?array $config = null): float
     {
-        return 0;
+        return (float) 0;
     }
 
     public function rm(Model_Product $product): never

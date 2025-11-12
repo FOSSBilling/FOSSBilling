@@ -134,23 +134,23 @@ class Validate
 
     public function isPasswordStrong($pwd): bool
     {
-        if (strlen($pwd) < 8) {
+        if (strlen((string) $pwd) < 8) {
             throw new InformationException('Minimum password length is 8 characters.');
         }
 
-        if (strlen($pwd) > 256) {
+        if (strlen((string) $pwd) > 256) {
             throw new InformationException('Maximum password length is 256 characters.');
         }
 
-        if (!preg_match('#[0-9]+#', $pwd)) {
+        if (!preg_match('#[0-9]+#', (string) $pwd)) {
             throw new InformationException('Password must include at least one number.');
         }
 
-        if (!preg_match('#[a-z]+#', $pwd)) {
+        if (!preg_match('#[a-z]+#', (string) $pwd)) {
             throw new InformationException('Password must include at least one lowercase letter.');
         }
 
-        if (!preg_match('#[A-Z]+#', $pwd)) {
+        if (!preg_match('#[A-Z]+#', (string) $pwd)) {
             throw new InformationException('Password must include at least one uppercase letter.');
         }
 
@@ -170,7 +170,7 @@ class Validate
      *
      * @throws InformationException
      */
-    public function checkRequiredParamsForArray(array $required, array $data, ?array $variables = null, $code = 0)
+    public function checkRequiredParamsForArray(array $required, array $data, ?array $variables = null, $code = 0): void
     {
         foreach ($required as $key => $msg) {
             if (!isset($data[$key])) {
@@ -187,9 +187,9 @@ class Validate
         }
     }
 
-    public function isBirthdayValid($birthday = '')
+    public function isBirthdayValid($birthday = ''): bool
     {
-        if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
+        if (strlen(trim((string) $birthday)) > 0 && strtotime((string) $birthday) === false) {
             $friendlyName = ucfirst(__trans('Birthdate'));
 
             throw new Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);

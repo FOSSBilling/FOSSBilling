@@ -177,10 +177,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Update staff member permissions.
-     *
-     * @return bool
      */
-    public function permissions_update($data)
+    public function permissions_update($data): bool
     {
         $required = [
             'id' => 'ID is missing',
@@ -356,10 +354,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes admin login logs with given IDs.
-     *
-     * @return bool
      */
-    public function batch_delete_logs($data)
+    public function batch_delete_logs($data): bool
     {
         $required = [
             'ids' => 'IDs not passed',

@@ -22,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public static function validateOrdertDataProvider()
+    public static function validateOrdertDataProvider(): array
     {
         return [
             ['server_id', 'Hosting product is not configured completely. Configure server for hosting product.', 701],
@@ -33,7 +33,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('validateOrdertDataProvider')]
-    public function testvalidateOrderData($field, $exceptionMessage, $excCode): void
+    public function testvalidateOrderData(string $field, string $exceptionMessage, int $excCode): void
     {
         $data = [
             'server_id' => 1,
@@ -71,7 +71,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->onConsecutiveCalls($hostingServerModel, $hostingPlansModel));
+            ->willReturnOnConsecutiveCalls($hostingServerModel, $hostingPlansModel);
 
         $servhostingModel = new \Model_ServiceHosting();
         $servhostingModel->loadBean(new \DummyBean());
@@ -86,7 +86,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
         $this->service->action_create($orderModel);
@@ -172,7 +172,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
         $result = $this->service->action_renew($orderModel);
@@ -190,7 +190,7 @@ class ServiceTest extends \BBTestCase
             ->method('getOrderService');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -217,7 +217,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['_getAM'])
@@ -246,7 +246,7 @@ class ServiceTest extends \BBTestCase
             ->method('getOrderService');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -273,7 +273,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['_getAM'])
@@ -302,7 +302,7 @@ class ServiceTest extends \BBTestCase
             ->method('getOrderService');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -329,7 +329,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['_getAM'])
@@ -358,7 +358,7 @@ class ServiceTest extends \BBTestCase
             ->method('getOrderService');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -450,7 +450,7 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['action_cancel'])
@@ -777,7 +777,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->onConsecutiveCalls($hostingServer, $hostingHp));
+            ->willReturnOnConsecutiveCalls($hostingServer, $hostingHp);
 
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
@@ -787,8 +787,8 @@ class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
-        $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustomMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
+        $di['server_manager'] = $di->protect(fn ($manager, $config): \PHPUnit\Framework\MockObject\MockObject => $serverManagerCustomMock);
 
         $this->service->setDi($di);
 
@@ -970,7 +970,7 @@ class ServiceTest extends \BBTestCase
         $serverManagerCustom = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
 
         $di = new \Pimple\Container();
-        $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustom);
+        $di['server_manager'] = $di->protect(fn ($manager, $config): \PHPUnit\Framework\MockObject\MockObject => $serverManagerCustom);
         $this->service->setDi($di);
 
         $result = $this->service->getServerManager($hostingServerModel);
@@ -995,7 +995,7 @@ class ServiceTest extends \BBTestCase
         $hostingServerModel->manager = 'Custom';
 
         $di = new \Pimple\Container();
-        $di['server_manager'] = $di->protect(fn ($manager, $config) => null);
+        $di['server_manager'] = $di->protect(fn ($manager, $config): null => null);
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -1180,7 +1180,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn(new \Box_Log());
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $serviceMock->setDi($di);
         $result = $serviceMock->getServerManagerWithLog($hostingServerModel, $clientOrderModel);
@@ -1242,7 +1242,7 @@ class ServiceTest extends \BBTestCase
         $serviceDomainServiceMock->expects($this->atLeastOnce())
             ->method('tldToApiArray')
             ->willReturn($tldArray);
-        $di['mod_service'] = $di->protect(fn () => $serviceDomainServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceDomainServiceMock);
 
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());

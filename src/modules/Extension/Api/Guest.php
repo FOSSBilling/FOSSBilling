@@ -50,11 +50,9 @@ class Guest extends \Api_Abstract
     /**
      * Retrieve extension public settings.
      *
-     * @return array
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function settings($data)
+    public function settings($data): array
     {
         if (!isset($data['ext'])) {
             throw new \FOSSBilling\Exception('Parameter ext is missing');

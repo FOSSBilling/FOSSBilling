@@ -51,10 +51,8 @@ class Admin extends \Api_Abstract
      * Add a message to the log.
      *
      * @param array $data Message data
-     *
-     * @return bool
      */
-    public function log($data)
+    public function log($data): bool
     {
         if (!isset($data['m'])) {
             return false;
@@ -107,7 +105,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool True if the message was deleted, false otherwise
      */
-    public function log_delete($data)
+    public function log_delete($data): bool
     {
         $required = [
             'id' => 'ID is required',
@@ -130,7 +128,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool True if the messages were deleted, false otherwise
      */
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         $required = [
             'ids' => 'IDs not passed',

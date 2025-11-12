@@ -181,11 +181,9 @@ class Admin extends \Api_Abstract
     /**
      * Update FOSSBilling core.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function update_core($data)
+    public function update_core($data): bool
     {
         $updater = $this->di['updater'];
         if ($updater->getUpdateBranch() !== 'preview' && !$updater->isUpdateAvailable()) {

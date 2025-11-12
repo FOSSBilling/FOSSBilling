@@ -177,7 +177,7 @@ class Server_Manager_Whm extends Server_Manager
      */
     public function generateUsername(string $domain): string
     {
-        $processedDomain = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $domain));
+        $processedDomain = strtolower((string) preg_replace('/[^A-Za-z0-9]/', '', $domain));
         $username = substr($processedDomain, 0, 7) . random_int(0, 9);
 
         // WHM doesn't allow usernames to start with "test", so replace it with a random string if it does (test3456 would then become something like a62f93456).

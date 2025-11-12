@@ -27,7 +27,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function install()
+    public function install(): void
     {
         $extensionService = $this->di['mod_service']('extension');
 
@@ -52,7 +52,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService->setConfig(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);
     }
 
-    public function getSearchQuery($data)
+    public function getSearchQuery($data): array
     {
         $sql = 'SELECT *
             FROM mod_massmailer
@@ -113,7 +113,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->getAll($sql, $values);
     }
 
-    public function getParsed($model, $client_id)
+    public function getParsed($model, $client_id): array
     {
         $clientService = $this->di['mod_service']('client');
         $systemService = $this->di['mod_service']('system');
@@ -134,7 +134,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$ps, $pc];
     }
 
-    public function sendMessage($model, $client_id, bool $sendNow = false)
+    public function sendMessage($model, $client_id, bool $sendNow = false): bool
     {
         [$ps, $pc] = $this->getParsed($model, $client_id);
 
@@ -182,7 +182,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $row;
     }
 
-    public function sendMail($params)
+    public function sendMail($params): void
     {
         $model = $this->di['db']->load('mod_massmailer', $params['msg_id']);
         if (!$model) {

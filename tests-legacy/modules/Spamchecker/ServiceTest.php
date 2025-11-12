@@ -33,7 +33,7 @@ class ServiceTest extends \BBTestCase
             ->method('isSpam');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $spamCheckerService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $spamCheckerService);
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
         $boxEventMock->expects($this->atLeastOnce())
@@ -52,7 +52,7 @@ class ServiceTest extends \BBTestCase
             ->method('isSpam');
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $spamCheckerService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $spamCheckerService);
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
         $boxEventMock->expects($this->atLeastOnce())
@@ -109,7 +109,7 @@ class ServiceTest extends \BBTestCase
         $this->service->isBlockedIp($boxEventMock);
     }
 
-    public function dataProviderSpamResponses()
+    public function dataProviderSpamResponses(): array
     {
         return [
             [

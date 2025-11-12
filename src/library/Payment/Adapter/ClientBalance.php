@@ -26,7 +26,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
     {
     }
 
-    public static function getConfig()
+    public static function getConfig(): array
     {
         return [
             'logo' => [
@@ -37,7 +37,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         ];
     }
 
-    public function enoughInBalanceToCoverInvoice(Model_Invoice $invoice)
+    public function enoughInBalanceToCoverInvoice(Model_Invoice $invoice): bool
     {
         $clientModel = $this->di['db']->load('Client', $invoice->client_id);
         $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
@@ -77,7 +77,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
                 </script>";
     }
 
-    public function processTransaction($api_admin, $id, $data, $gateway_id)
+    public function processTransaction($api_admin, $id, $data, $gateway_id): bool
     {
         if (!$this->isIpnValid($data)) {
             throw new Payment_Exception('IPN is invalid');
@@ -112,7 +112,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         return true;
     }
 
-    public function isIpnValid($data)
+    public function isIpnValid($data): bool
     {
         /*
          * @TODO do we need validation here? -_-
