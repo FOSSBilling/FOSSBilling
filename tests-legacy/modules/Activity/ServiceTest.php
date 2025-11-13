@@ -21,8 +21,8 @@ class ServiceTest extends \BBTestCase
     {
         return [
             [[], 'FROM activity_system ', true],
-            [['only_clients' => 'yes'], 'm.client_id IS NOT NULL', true],
-            [['only_staff' => 'yes'], 'm.admin_id IS NOT NULL', true],
+            [['user_filter' => 'only_clients'], 'm.client_id IS NOT NULL', true],
+            [['user_filter' => 'only_staff'], 'm.admin_id IS NOT NULL', true],
             [['priority' => '2'], 'm.priority =', true],
             [['search' => 'keyword'], 'm.message LIKE ', true],
             [['no_info' => true], 'm.priority < :priority ', true],

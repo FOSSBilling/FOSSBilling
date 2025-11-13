@@ -6,6 +6,86 @@
 
 {% set active_menu = 'activity' %}
 
+{% block top_content %}
+{% if request.show_filter %}
+    <section class="card mb-3">
+        <div class="card-body">
+            <h5>{{ 'Filter activity logs'|trans }}</h5>
+            <form method="get">
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Search'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" name="search" value="{{ request.search }}" placeholder="{{ 'Search in message or IP address'|trans }}">
+                    </div>
+                </div>
+
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'User type'|trans }}</label>
+                    <div class="col">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" id="userTypeAll" type="radio" name="user_filter" value=""{% if not request.user_filter %} checked{% endif %}>
+                            <label class="form-check-label" for="userTypeAll">{{ 'All users'|trans }}</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" id="userTypeStaff" type="radio" name="user_filter" value="only_staff"{% if request.user_filter == 'only_staff' %} checked{% endif %}>
+                            <label class="form-check-label" for="userTypeStaff">{{ 'Staff only'|trans }}</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" id="userTypeClients" type="radio" name="user_filter" value="only_clients"{% if request.user_filter == 'only_clients' %} checked{% endif %}>
+                            <label class="form-check-label" for="userTypeClients">{{ 'Clients only'|trans }}</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label" for="admin_id">{{ 'Specific admin'|trans }}</label>
+                    <div class="col">
+                        <select class="form-control autocomplete-selector"
+                                placeholder="{{ 'Start typing the admin name or ID'|trans }}"
+                                id="admin_id"
+                                name="admin_id"
+                                data-resturl="admin/staff/get_pairs">
+                        {% if not request.admin_id %}
+                        {% else %}
+                            {% set admin = admin.staff_get({ 'id': request.admin_id }) %}
+                            <option value="{{ request.admin_id }}" selected>{{ admin.name }} ({{ admin.email }})</option>
+                        {% endif %}
+                        </select>
+                        <small class="form-hint">{{ 'Leave empty to show all staff members'|trans }}</small>
+                    </div>
+                </div>
+
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label" for="client_id">{{ 'Specific client'|trans }}</label>
+                    <div class="col">
+                        <select class="form-control autocomplete-selector"
+                                placeholder="{{ 'Start typing the client name or ID'|trans }}"
+                                id="client_id"
+                                name="client_id"
+                                data-resturl="admin/client/get_pairs">
+                        {% if not request.client_id %}
+                        {% else %}
+                            {% set client = admin.client_get({ 'id': request.client_id }) %}
+                            <option value="{{ request.client_id }}" selected>{{ client.name }} ({{ client.email }})</option>
+                        {% endif %}
+                        </select>
+                        <small class="form-hint">{{ 'Leave empty to show all clients'|trans }}</small>
+                    </div>
+                </div>
+
+                <input type="hidden" name="show_filter" value="1">
+                <button class="btn btn-primary w-100" type="submit">
+                    <svg class="icon">
+                        <use xlink:href="#filter" />
+                    </svg>
+                    {{ 'Filter'|trans }}
+                </button>
+            </form>
+        </div>
+    </section>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="card overflow-auto">
     <div class="card-header">
@@ -21,6 +101,7 @@
                 <th>{{ '#'|trans }}</th>
                 <th class="w-1 no-sort"></th>
                 <th>{{ 'User'|trans }}</th>
+                <th>{{ 'Priority'|trans }}</th>
                 <th>{{ 'Message'|trans }}</th>
                 <th>{{ 'IP'|trans }}</th>
                 <th>{{ 'Country'|trans }}</th>
@@ -54,6 +135,27 @@
                 Guest
                 {% endif %}
             </td>
+            <td>
+                {% if event.priority == 0 %}
+                    <span class="badge bg-red" title="Emergency">EMERG</span>
+                {% elseif event.priority == 1 %}
+                    <span class="badge bg-red-lt" title="Alert">ALERT</span>
+                {% elseif event.priority == 2 %}
+                    <span class="badge bg-orange" title="Critical">CRIT</span>
+                {% elseif event.priority == 3 %}
+                    <span class="badge bg-orange-lt" title="Error">ERR</span>
+                {% elseif event.priority == 4 %}
+                    <span class="badge bg-yellow" title="Warning">WARN</span>
+                {% elseif event.priority == 5 %}
+                    <span class="badge bg-blue" title="Notice">NOTICE</span>
+                {% elseif event.priority == 6 %}
+                    <span class="badge bg-cyan-lt" title="Info">INFO</span>
+                {% elseif event.priority == 7 %}
+                    <span class="badge bg-gray" title="Debug">DEBUG</span>
+                {% else %}
+                    <span class="badge bg-secondary">N/A</span>
+                {% endif %}
+            </td>
             <td>{{ event.message }}</td>
             <td>{{ event.ip|iplookup }}</td>
             <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
@@ -61,7 +163,7 @@
         </tr>
         {% else %}
         <tr>
-            <td colspan="7">{{ 'The list is empty'|trans }}</td>
+            <td colspan="8">{{ 'The list is empty'|trans }}</td>
         </tr>
         {% endfor %}
         </tbody>

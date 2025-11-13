@@ -127,12 +127,13 @@ class Service implements InjectionAwareInterface
         $params = [];
         $search = $data['search'] ?? null;
         $priority = $data['priority'] ?? null;
-        $only_staff = $data['only_staff'] ?? null;
+        $user_filter = $data['user_filter'] ?? null;
         $admin_id = $data['admin_id'] ?? null;
-        $only_clients = $data['only_clients'] ?? null;
+        $client_id = $data['client_id'] ?? null;
         $no_info = $data['no_info'] ?? null;
         $no_debug = $data['no_debug'] ?? null;
         $where = [];
+
         if ($priority) {
             $where[] = 'm.priority = :priority';
             $params[':priority'] = $priority;
@@ -148,8 +149,11 @@ class Service implements InjectionAwareInterface
             $params[':priority'] = \Box_Log::DEBUG;
         }
 
-        if ($only_staff) {
+        // Handle user filter radio buttons
+        if ($user_filter === 'only_staff') {
             $where[] = 'm.admin_id IS NOT NULL';
+        } elseif ($user_filter === 'only_clients') {
+            $where[] = 'm.client_id IS NOT NULL';
         }
 
         if ($admin_id) {
@@ -157,14 +161,15 @@ class Service implements InjectionAwareInterface
             $params[':admin_id'] = $admin_id;
         }
 
-        if ($only_clients) {
-            $where[] = 'm.client_id IS NOT NULL';
+        if ($client_id) {
+            $where[] = 'm.client_id = :client_id';
+            $params[':client_id'] = $client_id;
         }
 
         if ($search) {
-            $where[] = 'm.message LIKE :search OR m.ip LIKE :search2';
-            $params[':search'] = $search;
-            $params[':search2'] = $search;
+            $where[] = '(m.message LIKE :search OR m.ip LIKE :search2)';
+            $params[':search'] = '%' . $search . '%';
+            $params[':search2'] = '%' . $search . '%';
         }
 
         if (!empty($where)) {
