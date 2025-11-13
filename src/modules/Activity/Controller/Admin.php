@@ -37,8 +37,8 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'subpages' => [
                 [
                     'location' => 'activity',
-                    'label' => __trans('Event history'),
-                    'index' => 100,
+                    'label' => __trans('System activity'),
+                    'index' => 200,
                     'uri' => $this->di['url']->adminLink('activity'),
                     'class' => '',
                 ],
