@@ -18,25 +18,20 @@
     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
         <thead>
             <tr>
-                <th class="w-1 no-sort">
-                    <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
-                </th>
+                <th>{{ '#'|trans }}</th>
                 <th class="w-1 no-sort"></th>
                 <th>{{ 'User'|trans }}</th>
                 <th>{{ 'Message'|trans }}</th>
                 <th>{{ 'IP'|trans }}</th>
                 <th>{{ 'Country'|trans }}</th>
                 <th>{{ 'Date'|trans }}</th>
-                <th class="w-1"></th>
             </tr>
         </thead>
         <tbody>
         {% set events = admin.activity_log_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
         {% for i, event in events.list %}
         <tr>
-            <td>
-                <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ event.id }}">
-            </td>
+            <td>{{ event.id }}</td>
             <td>
                 {% if event.client %}
                 <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
@@ -63,16 +58,6 @@
             <td>{{ event.ip|iplookup }}</td>
             <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
             <td>{{ event.created_at|format_datetime }}</td>
-            <td>
-                <a class="btn btn-icon api-link"
-                    href="{{ 'api/admin/activity/log_delete'|link({ 'id': event.id, 'CSRFToken': CSRFToken }) }}"
-                    data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{ 'activity'|alink }}">
-                    <svg class="icon">
-                        <use xlink:href="#delete" />
-                    </svg>
-                </a>
-            </td>
         </tr>
         {% else %}
         <tr>
@@ -83,7 +68,6 @@
     </table>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
-        {{ include('partial_batch_delete.html.twig', { 'action': 'admin/activity/batch_delete' }) }}
         {{ include('partial_pagination.html.twig', { 'list': events, 'url': 'activity' }) }}
     </div>
 </div>
