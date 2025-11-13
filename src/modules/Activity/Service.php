@@ -130,6 +130,8 @@ class Service implements InjectionAwareInterface
         $user_filter = $data['user_filter'] ?? null;
         $admin_id = $data['admin_id'] ?? null;
         $client_id = $data['client_id'] ?? null;
+        $date_from = $data['date_from'] ?? null;
+        $date_to = $data['date_to'] ?? null;
         $no_info = $data['no_info'] ?? null;
         $no_debug = $data['no_debug'] ?? null;
         $where = [];
@@ -164,6 +166,16 @@ class Service implements InjectionAwareInterface
         if ($client_id) {
             $where[] = 'm.client_id = :client_id';
             $params[':client_id'] = $client_id;
+        }
+
+        if ($date_from) {
+            $where[] = 'm.created_at >= :date_from';
+            $params[':date_from'] = date('Y-m-d 00:00:00', strtotime($date_from));
+        }
+
+        if ($date_to) {
+            $where[] = 'm.created_at <= :date_to';
+            $params[':date_to'] = date('Y-m-d 23:59:59', strtotime($date_to));
         }
 
         if ($search) {

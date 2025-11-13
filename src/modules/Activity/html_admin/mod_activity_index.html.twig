@@ -73,6 +73,28 @@
                     </div>
                 </div>
 
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label" for="date_range">{{ 'Date range'|trans }}</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <div class="input-icon w-100">
+                                <input class="form-control datepicker"
+                                       id="date_range"
+                                       value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                       data-name-from="date_from"
+                                       data-name-to="date_to"
+                                >
+                                <span class="input-icon-addon">
+                                    <svg class="icon">
+                                        <use xlink:href="#calendar" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                        <small class="form-hint">{{ 'Filter activity logs by date range'|trans }}</small>
+                    </div>
+                </div>
+
                 <input type="hidden" name="show_filter" value="1">
                 <button class="btn btn-primary w-100" type="submit">
                     <svg class="icon">
@@ -123,16 +145,26 @@
                     <span class="avatar avatar-sm d-none d-md-inline-block" style="background-image: url({{ event.staff.email|gravatar }}&size=24)"></span>
                 </a>
                 {% else %}
-                &nbsp;
+                <span class="avatar avatar-sm d-none d-md-inline-block" style="background-image: url({{ 'guest@fossbilling.org'|gravatar }}&size=24)"></span>
                 {% endif %}
             </td>
             <td>
                 {% if event.client %}
-                <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.name }}</a>
+                    <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.name }}</a>
+                    <a href="{{ request._url|link({ 'client_id': event.client.id, 'show_filter': 1 }) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
+                        <svg class="icon icon-sm text-muted">
+                            <use xlink:href="#filter" />
+                        </svg>
+                    </a>
                 {% elseif event.staff %}
-                <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">{{ event.staff.name }}</a>
+                    <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">{{ event.staff.name }}</a>
+                    <a href="{{ request._url|link({ 'admin_id': event.staff.id, 'show_filter': 1 }) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
+                        <svg class="icon icon-sm text-muted">
+                            <use xlink:href="#filter" />
+                        </svg>
+                    </a>
                 {% else %}
-                Guest
+                    {{ 'Guest'|trans }}
                 {% endif %}
             </td>
             <td>
