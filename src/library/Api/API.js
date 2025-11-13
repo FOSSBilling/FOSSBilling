@@ -101,39 +101,9 @@ const Tools = {
         }
       }
     }
-
-    const parse = ajv.compileParser(schema);
-    const data = parse(dataAttrValue);
-
-    if (data === undefined) {
-      throw new Error(parse.message);
-    } else {
-      return data;
-    }
-  },
-
-  /**
-   * Converts a form element into a URL encoded string.
-   *
-   * @param {FormData} formData The FormData object to serialize.
-   * @returns {string} Serialized string of the FormData.
-   */
-  serializeFormData: function (formData) {
-    if (!formData.get('CSRFToken')) {
-      formData.append('CSRFToken', Tools.getCSRFToken());
-    }
-    return new URLSearchParams(formData).toString();
-  },
-
-  /**
-   * Converts a FormData object into a valid JavaScript object.
-   *
-   * @param {FormData} formData The FormData object to serialize.
-   * @returns {object} The reformatted object.
-   */
-  serializeFormDataToObject: function (formData) {
-    const obj = Object.fromEntries(
-      Array.from(formData.entries()).map(([key, value]) => {
+    // reformat input[] fields to arrays
+    for (const pair of this.entries()) {
+        let key = pair[0];
         if (key.endsWith('[]')) {
           const plainKey = key.slice(0, -2);
           return [plainKey, formData.getAll(`${plainKey}[]`)];
