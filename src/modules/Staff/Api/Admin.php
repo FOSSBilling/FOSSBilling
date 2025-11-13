@@ -37,6 +37,18 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Get ID-name pairs of admins.
+     *
+     * @param array $data Filtering options
+     *
+     * @return array List of admins
+     */
+    public function get_pairs($data)
+    {
+        return $this->getService()->getPairs();
+    }
+
+    /**
      * Get staff member by id.
      *
      * @return array

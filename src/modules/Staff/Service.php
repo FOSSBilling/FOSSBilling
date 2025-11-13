@@ -108,6 +108,13 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->getCell($sql);
     }
 
+    public function getPairs()
+    {
+        $sql = 'SELECT id, name FROM admin';
+        
+        return $this->di['db']->getAssoc($sql);
+    }
+
     public function setPermissions($member_id, $array): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
