@@ -335,37 +335,4 @@ class Admin extends \Api_Abstract
 
         return $this->getService()->toActivityAdminHistoryApiArray($model);
     }
-
-    /**
-     * Delete login history event.
-     *
-     * @return bool
-     */
-    public function login_history_delete($data)
-    {
-        $required = [
-            'id' => 'Id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        $model = $this->di['db']->getExistingModelById('ActivityAdminHistory', $data['id'], 'Event not found');
-
-        return $this->getService()->deleteLoginHistory($model);
-    }
-
-    /**
-     * Deletes admin login logs with given IDs.
-     */
-    public function batch_delete_logs($data): bool
-    {
-        $required = [
-            'ids' => 'IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
-        foreach ($data['ids'] as $id) {
-            $this->login_history_delete(['id' => $id]);
-        }
-
-        return true;
-    }
 }
