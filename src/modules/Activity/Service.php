@@ -127,28 +127,24 @@ class Service implements InjectionAwareInterface
         $params = [];
         $search = $data['search'] ?? null;
         $priority = $data['priority'] ?? null;
+        $min_priority = $data['min_priority'] ?? null;
         $user_filter = $data['user_filter'] ?? null;
         $admin_id = $data['admin_id'] ?? null;
         $client_id = $data['client_id'] ?? null;
         $date_from = $data['date_from'] ?? null;
         $date_to = $data['date_to'] ?? null;
-        $no_info = $data['no_info'] ?? null;
-        $no_debug = $data['no_debug'] ?? null;
         $where = [];
 
-        if ($priority) {
+        // Exact priority match
+        if ($priority !== null && $priority !== '') {
             $where[] = 'm.priority = :priority';
             $params[':priority'] = $priority;
         }
 
-        if ($no_info) {
-            $where[] = 'm.priority < :priority';
-            $params[':priority'] = \Box_Log::INFO;
-        }
-
-        if ($no_debug) {
-            $where[] = 'm.priority < :priority';
-            $params[':priority'] = \Box_Log::DEBUG;
+        // Minimum priority
+        if ($min_priority !== null && $min_priority !== '') {
+            $where[] = 'm.priority <= :min_priority';
+            $params[':min_priority'] = $min_priority;
         }
 
         // Handle user filter radio buttons

@@ -95,6 +95,41 @@
                     </div>
                 </div>
 
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label" for="min_priority">{{ 'Minimum priority'|trans }}</label>
+                    <div class="col">
+                        <select class="form-select" id="min_priority" name="min_priority">
+                            <option value="0"{% if request.min_priority == '0' %} selected{% endif %}>{{ 'Emergency and above'|trans }}</option>
+                            <option value="1"{% if request.min_priority == '1' %} selected{% endif %}>{{ 'Alert and above'|trans }}</option>
+                            <option value="2"{% if request.min_priority == '2' %} selected{% endif %}>{{ 'Critical and above'|trans }}</option>
+                            <option value="3"{% if request.min_priority == '3' %} selected{% endif %}>{{ 'Error and above'|trans }}</option>
+                            <option value="4"{% if request.min_priority == '4' %} selected{% endif %}>{{ 'Warning and above'|trans }}</option>
+                            <option value="5"{% if request.min_priority == '5' %} selected{% endif %}>{{ 'Notice and above'|trans }}</option>
+                            <option value="6"{% if request.min_priority == '6' or request.min_priority == '' %} selected{% endif %}>{{ 'Info and above'|trans }}</option>
+                            <option value="7"{% if request.min_priority == '7' %} selected{% endif %}>{{ 'Debug and above'|trans }}</option>
+                        </select>
+                        <small class="form-hint">{{ 'Show logs with minimum priority level (lower number = higher severity)'|trans }}</small>
+                    </div>
+                </div>
+
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label" for="priority">{{ 'Exact priority'|trans }}</label>
+                    <div class="col">
+                        <select class="form-select" id="priority" name="priority">
+                            <option value="">{{ 'All priorities'|trans }}</option>
+                            <option value="0"{% if request.priority == '0' %} selected{% endif %}>{{ 'Emergency'|trans }}</option>
+                            <option value="1"{% if request.priority == '1' %} selected{% endif %}>{{ 'Alert'|trans }}</option>
+                            <option value="2"{% if request.priority == '2' %} selected{% endif %}>{{ 'Critical'|trans }}</option>
+                            <option value="3"{% if request.priority == '3' %} selected{% endif %}>{{ 'Error'|trans }}</option>
+                            <option value="4"{% if request.priority == '4' %} selected{% endif %}>{{ 'Warning'|trans }}</option>
+                            <option value="5"{% if request.priority == '5' %} selected{% endif %}>{{ 'Notice'|trans }}</option>
+                            <option value="6"{% if request.priority == '6' %} selected{% endif %}>{{ 'Info'|trans }}</option>
+                            <option value="7"{% if request.priority == '7' %} selected{% endif %}>{{ 'Debug'|trans }}</option>
+                        </select>
+                        <small class="form-hint">{{ 'Show only logs with this exact priority level'|trans }}</small>
+                    </div>
+                </div>
+
                 <input type="hidden" name="show_filter" value="1">
                 <button class="btn btn-primary w-100" type="submit">
                     <svg class="icon">

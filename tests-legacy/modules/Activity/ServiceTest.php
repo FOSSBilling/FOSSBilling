@@ -25,8 +25,8 @@ class ServiceTest extends \BBTestCase
             [['user_filter' => 'only_staff'], 'm.admin_id IS NOT NULL', true],
             [['priority' => '2'], 'm.priority =', true],
             [['search' => 'keyword'], 'm.message LIKE ', true],
-            [['no_info' => true], 'm.priority < :priority ', true],
-            [['no_debug' => true], 'm.priority < :priority ', true],
+            [['min_priority' => 6], 'm.priority <= :min_priority', true],
+            [['priority' => 6], 'm.priority = :priority', true],
         ];
     }
 
