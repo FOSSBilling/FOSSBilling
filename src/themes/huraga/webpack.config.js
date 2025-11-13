@@ -1,6 +1,5 @@
 const fs = require("node:fs");
 const Encore = require('@symfony/webpack-encore');
-const SpriteLoaderPlugin = require('svg-sprite-loader/plugin');
 
 if (!Encore.isRuntimeEnvironmentConfigured()) {
   Encore.configureRuntimeEnvironment(process.env.NODE_ENV || 'dev');
@@ -18,16 +17,11 @@ Encore
   .addEntry('huraga', './assets/huraga.js')
   .addStyleEntry('markdown', './assets/scss/markdown.scss')
 
-  .autoProvidejQuery()
   .enableIntegrityHashes()
   .disableSingleRuntimeChunk()
   .cleanupOutputBeforeBuild()
   .enableSourceMaps(!Encore.isProduction())
   .enableVersioning(Encore.isProduction())
-  .configureBabelPresetEnv((config) => {
-    config.useBuiltIns = 'usage';
-    config.corejs = 3;
-  })
   .enableSassLoader()
   .enablePostCssLoader()
   .configureTerserPlugin((options) => {

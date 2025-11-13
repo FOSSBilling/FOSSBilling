@@ -20,6 +20,7 @@
     "url": "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "dependencies": {
+    "ajv": "^8.17.1",
     "autosize": "^6.0.1",
     "bootstrap": "^5.3.3",
     "flag-icons": "^7.2.3",
