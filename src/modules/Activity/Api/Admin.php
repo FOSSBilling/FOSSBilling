@@ -66,7 +66,6 @@ class Admin extends \Api_Abstract
         $entry->priority = $priority;
         $entry->message = $data['m'];
         $entry->created_at = date('Y-m-d H:i:s');
-        $entry->updated_at = date('Y-m-d H:i:s');
         $entry->ip = $this->di['request']->getClientIp();
         $this->di['db']->store($entry);
 

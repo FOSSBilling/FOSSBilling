@@ -42,7 +42,6 @@ class Service implements InjectionAwareInterface
         $entry->priority = $data['priority'] ?? null;
         $entry->message = $data['message'];
         $entry->created_at = date('Y-m-d H:i:s');
-        $entry->updated_at = date('Y-m-d H:i:s');
         $entry->ip = $ip;
         $this->di['db']->store($entry);
     }
@@ -64,7 +63,6 @@ class Service implements InjectionAwareInterface
         $log->client_id = $params['id'];
         $log->ip = $ip;
         $log->created_at = date('Y-m-d H:i:s');
-        $log->updated_at = date('Y-m-d H:i:s');
 
         $di['db']->store($log);
     }
@@ -85,7 +83,6 @@ class Service implements InjectionAwareInterface
         $log->admin_id = $params['id'];
         $log->ip = $ip;
         $log->created_at = date('Y-m-d H:i:s');
-        $log->updated_at = date('Y-m-d H:i:s');
 
         $di['db']->store($log);
     }
@@ -191,7 +188,6 @@ class Service implements InjectionAwareInterface
         $entry->content_html = $content_html;
         $entry->content_text = $content_text;
         $entry->created_at = date('Y-m-d H:i:s');
-        $entry->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($entry);
 
