@@ -27,17 +27,6 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getModulePermissions(): array
-    {
-        return [
-            'delete_activity' => [
-                'type' => 'bool',
-                'display_name' => __trans('Delete activity'),
-                'description' => __trans('Allows the staff member to delete recorded activity.'),
-            ],
-        ];
-    }
-
     public function logEvent($data): void
     {
         $extensionService = $this->di['mod_service']('extension');
