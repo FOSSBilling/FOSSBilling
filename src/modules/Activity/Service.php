@@ -126,6 +126,7 @@ class Service implements InjectionAwareInterface
 
         $params = [];
         $search = $data['search'] ?? null;
+        $ip = $data['ip'] ?? null;
         $priority = $data['priority'] ?? null;
         $min_priority = $data['min_priority'] ?? null;
         $user_filter = $data['user_filter'] ?? null;
@@ -174,10 +175,14 @@ class Service implements InjectionAwareInterface
             $params[':date_to'] = date('Y-m-d 23:59:59', strtotime($date_to));
         }
 
+        if ($ip) {
+            $where[] = 'm.ip = :ip';
+            $params[':ip'] = $ip;
+        }
+
         if ($search) {
-            $where[] = '(m.message LIKE :search OR m.ip LIKE :search2)';
+            $where[] = 'm.message LIKE :search';
             $params[':search'] = '%' . $search . '%';
-            $params[':search2'] = '%' . $search . '%';
         }
 
         if (!empty($where)) {

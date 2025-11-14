@@ -15,7 +15,15 @@
                 <div class="mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Search'|trans }}</label>
                     <div class="col">
-                        <input class="form-control" type="text" name="search" value="{{ request.search }}" placeholder="{{ 'Search in message or IP address'|trans }}">
+                        <input class="form-control" type="text" name="search" value="{{ request.search }}" placeholder="{{ 'Search in message'|trans }}">
+                    </div>
+                </div>
+
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label" for="ip">{{ 'IP address'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" id="ip" name="ip" value="{{ request.ip }}" placeholder="{{ 'Filter by IP address'|trans }}">
+                        <small class="form-hint">{{ 'Show logs from a specific IP address'|trans }}</small>
                     </div>
                 </div>
 
@@ -224,9 +232,18 @@
                 {% endif %}
             </td>
             <td>{{ event.message }}</td>
-            <td>{{ event.ip|iplookup }}</td>
+            <td>
+                {{ event.ip|iplookup }}
+                {% if event.ip %}
+                    <a href="{{ request._url|link({ 'ip': event.ip, 'show_filter': 1 }) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
+                        <svg class="icon icon-sm text-muted">
+                            <use xlink:href="#filter" />
+                        </svg>
+                    </a>
+                {% endif %}
+            </td>
             <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
-            <td>{{ event.created_at|format_datetime }}</td>
+            <td>{{ event.created_at|format_datetime }} ({{ event.created_at|timeago }} ago)</td>
         </tr>
         {% else %}
         <tr>

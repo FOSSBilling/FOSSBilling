@@ -111,7 +111,7 @@ class Service implements InjectionAwareInterface
     public function getPairs()
     {
         $sql = 'SELECT id, name FROM admin';
-        
+
         return $this->di['db']->getAssoc($sql);
     }
 
