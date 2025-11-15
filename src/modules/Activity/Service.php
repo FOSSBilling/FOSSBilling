@@ -136,14 +136,12 @@ class Service implements InjectionAwareInterface
         $date_to = $data['date_to'] ?? null;
         $where = [];
 
-        // Exact priority match
+        // Exact priority match takes precedence over minimum priority
         if ($priority !== null && $priority !== '') {
             $where[] = 'm.priority = :priority';
             $params[':priority'] = $priority;
-        }
-
-        // Minimum priority
-        if ($min_priority !== null && $min_priority !== '') {
+        } elseif ($min_priority !== null && $min_priority !== '') {
+            // Only apply minimum priority if exact priority is not set
             $where[] = 'm.priority <= :min_priority';
             $params[':min_priority'] = $min_priority;
         }

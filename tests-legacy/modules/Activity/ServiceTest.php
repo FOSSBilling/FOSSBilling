@@ -27,6 +27,9 @@ class ServiceTest extends \BBTestCase
             [['search' => 'keyword'], 'm.message LIKE ', true],
             [['min_priority' => 6], 'm.priority <= :min_priority', true],
             [['priority' => 6], 'm.priority = :priority', true],
+            // When both priority and min_priority are set, priority takes precedence
+            [['priority' => 5, 'min_priority' => 3], 'm.priority = :priority', true],
+            [['priority' => 5, 'min_priority' => 3], 'm.priority <= :min_priority', false],
         ];
     }
 
