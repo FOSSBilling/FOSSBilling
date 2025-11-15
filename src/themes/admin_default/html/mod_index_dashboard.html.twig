@@ -468,7 +468,7 @@
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                     <table class="table table-vcenter card-table table-striped">
                         <tbody>
-                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'only_clients': 1 }) %}
+                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_clients' }) %}
                             {% for i, event in events.list %}
                             <tr>
                                 <td class="w-1">
@@ -495,7 +495,7 @@
                 <div class="tab-pane fade" id="tab-staff" role="tabpanel">
                     <table class="table table-vcenter card-table table-striped">
                         <tbody>
-                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'only_staff': 1 }) %}
+                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_staff' }) %}
                             {% for i, event in events.list %}
                             <tr>
                                 <td class="w-1">

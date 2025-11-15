@@ -26,7 +26,6 @@ CREATE TABLE `activity_admin_history` (
   `admin_id` bigint(20) DEFAULT NULL,
   `ip` varchar(45) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `admin_id_idx` (`admin_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -47,7 +46,6 @@ CREATE TABLE `activity_client_email` (
   `content_html` text,
   `content_text` text,
   `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -64,7 +62,6 @@ CREATE TABLE `activity_client_history` (
   `client_id` bigint(20) DEFAULT NULL,
   `ip` varchar(45) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -84,7 +81,6 @@ CREATE TABLE `activity_system` (
   `message` text,
   `ip` varchar(45) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `admin_id_idx` (`admin_id`),
   KEY `client_id_idx` (`client_id`)

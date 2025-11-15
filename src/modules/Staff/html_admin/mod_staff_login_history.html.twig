@@ -16,15 +16,12 @@
     <table class="table card-table table-vcenter table-striped text-nowrap">
         <thead>
             <tr>
-                <th class="w-1">
-                    <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
-                </th>
-                <th class="w-1"></th>
+                <th>{{ '#'|trans }}</th>
+                <th class="w-1 no-sort"></th>
                 <th>{{ 'Admin'|trans }}</th>
                 <th>{{ 'IP'|trans }}</th>
                 <th>{{ 'Country'|trans }}</th>
                 <th>{{ 'Date'|trans }}</th>
-                <th class="w-1"></th>
             </tr>
         </thead>
 
@@ -32,9 +29,7 @@
         {% set history = admin.staff_login_history_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
         {% for i, event in history.list %}
         <tr>
-            <td>
-                <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ event.id }}">
-            </td>
+            <td>{{ event.id }}</td>
             <td>
                 <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
                     <span class="avatar avatar-xs d-none d-md-inline-block" style="background-image: url({{ event.staff.email|gravatar }}&size=24)"></span>
@@ -48,20 +43,10 @@
             <td>{{ event.ip|iplookup }}</td>
             <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
             <td>{{ event.created_at|format_datetime }}</td>
-            <td>
-                <a class="btn btn-icon api-link"
-                    href="{{ 'api/admin/staff/login_history_delete'|link({ 'id': event.id, 'CSRFToken': CSRFToken }) }}"
-                    data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{'staff/logins'|alink }}">
-                    <svg class="icon">
-                        <use xlink:href="#delete" />
-                    </svg>
-                </a>
-            </td>
         </tr>
         {% else %}
         <tr>
-            <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
+            <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
         </tr>
         {% endfor %}
         </tbody>

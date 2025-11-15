@@ -456,25 +456,6 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Remove log entry form clients logins history.
-     */
-    public function login_history_delete($data): bool
-    {
-        $required = [
-            'id' => 'Id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        $model = $this->di['db']->getExistingModelById('ActivityClientHistory', $data['id']);
-
-        if (!$model instanceof \Model_ActivityClientHistory) {
-            throw new \FOSSBilling\Exception('Event not found');
-        }
-        $this->di['db']->trash($model);
-
-        return true;
-    }
-
-    /**
      * Return client statuses with counter.
      *
      * @return array
@@ -586,23 +567,6 @@ class Admin extends \Api_Abstract
 
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id]);
-        }
-
-        return true;
-    }
-
-    /**
-     * Deletes client login logs with given IDs.
-     */
-    public function batch_delete_log($data): bool
-    {
-        $required = [
-            'ids' => 'IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
-        foreach ($data['ids'] as $id) {
-            $this->login_history_delete(['id' => $id]);
         }
 
         return true;
