@@ -108,11 +108,22 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->getCell($sql);
     }
 
-    public function getPairs()
+    public function getPairs(array $data = [])
     {
-        $sql = 'SELECT id, name FROM admin';
+        $limit = $data['per_page'] ?? 30;
+        
+        $sql = 'SELECT id, name FROM admin WHERE 1';
+        $params = [];
 
-        return $this->di['db']->getAssoc($sql);
+        if (!empty($data['search'])) {
+            $sql .= ' AND (name LIKE :search OR email LIKE :search)';
+            $params['search'] = '%' . $data['search'] . '%';
+        }
+
+        // Limit results for performance
+        $sql .= sprintf(' ORDER BY name ASC LIMIT %u', $limit);
+
+        return $this->di['db']->getAssoc($sql, $params);
     }
 
     public function setPermissions($member_id, $array): bool

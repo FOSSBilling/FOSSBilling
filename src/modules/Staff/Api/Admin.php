@@ -43,9 +43,9 @@ class Admin extends \Api_Abstract
      *
      * @return array List of admins
      */
-    public function get_pairs($data)
+    public function get_pairs(array $data): array
     {
-        return $this->getService()->getPairs();
+        return $this->getService()->getPairs($data);
     }
 
     /**
