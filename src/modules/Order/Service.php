@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Order;
 
+use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 
@@ -494,7 +495,7 @@ class Service implements InjectionAwareInterface
         } else {
             $currency = $currencyService->getDefault();
         }
-        if (!$currency instanceof \Model_Currency) {
+        if (!$currency instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency could not be determined for order');
         }
 
@@ -561,7 +562,7 @@ class Service implements InjectionAwareInterface
         $order->group_id = ($parent_order) ? $parent_order->group_id : uniqid();
         $order->group_master = ($parent_order) ? 0 : 1;
         $order->title = $generatedOrderTitle ?? $data['title'] ?? $product->title;
-        $order->currency = $currency->code;
+        $order->currency = $currency->getCode();
         $order->quantity = $qty;
         $order->service_type = $product->type;
         $order->unit = $product->unit;
@@ -578,7 +579,7 @@ class Service implements InjectionAwareInterface
             $order->price = $data['price'];
         } else {
             $repo = $product->getTable();
-            $rate = $currencyService->getRateByCode($currency->code);
+            $rate = $currencyService->getRateByCode($currency->getCode());
             $order->price = $repo->getProductPrice($product, $config) * $rate;
         }
 

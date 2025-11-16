@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Cart\Api;
 
+use Box\Mod\Currency\Entity\Currency;
+
 /**
  * Shopping cart management.
  */
@@ -54,7 +56,7 @@ class Guest extends \Api_Abstract
 
         $currencyService = $this->di['mod_service']('currency');
         $currency = $currencyService->getByCode($data['currency']);
-        if (!$currency instanceof \Model_Currency) {
+        if (!$currency instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found');
         }
         $cart = $this->getService()->getSessionCart();
@@ -73,7 +75,7 @@ class Guest extends \Api_Abstract
 
         $currencyService = $this->di['mod_service']('currency');
         $currency = $this->di['db']->load('Currency', $cart->currency_id);
-        if (!$currency instanceof \Model_Currency) {
+        if (!$currency instanceof Currency) {
             $currency = $currencyService->getDefault();
         }
 
