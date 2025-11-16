@@ -194,14 +194,14 @@
             <td>
                 {% if event.client %}
                     <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.name }}</a>
-                    <a href="{{ request._url|link({ 'client_id': event.client.id, 'show_filter': 1 }) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
+                    <a href="{{ request._url|link(request|merge({ 'client_id': event.client.id, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
                         <svg class="icon icon-sm text-muted">
                             <use xlink:href="#filter" />
                         </svg>
                     </a>
                 {% elseif event.staff %}
                     <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">{{ event.staff.name }}</a>
-                    <a href="{{ request._url|link({ 'admin_id': event.staff.id, 'show_filter': 1 }) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
+                    <a href="{{ request._url|link(request|merge({ 'admin_id': event.staff.id, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
                         <svg class="icon icon-sm text-muted">
                             <use xlink:href="#filter" />
                         </svg>
@@ -235,7 +235,7 @@
             <td>
                 {{ event.ip|iplookup }}
                 {% if event.ip %}
-                    <a href="{{ request._url|link({ 'ip': event.ip, 'show_filter': 1 }) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
+                    <a href="{{ request._url|link(request|merge({ 'ip': event.ip, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
                         <svg class="icon icon-sm text-muted">
                             <use xlink:href="#filter" />
                         </svg>
