@@ -74,7 +74,7 @@
                         {% if not request.client_id %}
                         {% else %}
                             {% set client = admin.client_get({ 'id': request.client_id }) %}
-                            <option value="{{ request.client_id }}" selected>{{ client.name }} ({{ client.email }})</option>
+                            <option value="{{ request.client_id }}" selected>{{ client.first_name }} {{ client.last_name }} ({{ client.email }})</option>
                         {% endif %}
                         </select>
                         <small class="form-hint">{{ 'Leave empty to show all clients'|trans }}</small>
