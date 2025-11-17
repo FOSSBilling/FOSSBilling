@@ -42,7 +42,7 @@ class ServiceTest extends \BBTestCase
         $result = $service->getSearchQuery($filterKey);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
-        $this->assertTrue(str_contains($result[0], $search), $expected);
+        $this->assertEquals($expected, str_contains($result[0], $search));
     }
 
     public function testLogEmail(): void
