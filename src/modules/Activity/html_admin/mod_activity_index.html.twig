@@ -116,7 +116,7 @@
                             <option value="6"{% if request.min_priority == '6' or request.min_priority == '' %} selected{% endif %}>{{ 'Info and above'|trans }}</option>
                             <option value="7"{% if request.min_priority == '7' %} selected{% endif %}>{{ 'Debug and above'|trans }}</option>
                         </select>
-                        <small class="form-hint">{{ 'Show logs with minimum priority level (lower number = higher severity)'|trans }}</small>
+                        <small class="form-hint">{{ 'Show logs with minimum priority level (disabled when exact priority is selected)'|trans }}</small>
                     </div>
                 </div>
 
@@ -134,7 +134,7 @@
                             <option value="6"{% if request.priority == '6' %} selected{% endif %}>{{ 'Info'|trans }}</option>
                             <option value="7"{% if request.priority == '7' %} selected{% endif %}>{{ 'Debug'|trans }}</option>
                         </select>
-                        <small class="form-hint">{{ 'Show only logs with this exact priority level'|trans }}</small>
+                        <small class="form-hint">{{ 'Show only logs with this exact priority level (takes precedence over minimum priority)'|trans }}</small>
                     </div>
                 </div>
 
@@ -148,6 +148,30 @@
             </form>
         </div>
     </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const prioritySelect = document.getElementById('priority');
+            const minPrioritySelect = document.getElementById('min_priority');
+
+            function updatePriorityFields() {
+                // If exact priority is selected, disable min_priority
+                if (prioritySelect.value !== '') {
+                    minPrioritySelect.disabled = true;
+                    minPrioritySelect.classList.add('text-muted');
+                } else {
+                    minPrioritySelect.disabled = false;
+                    minPrioritySelect.classList.remove('text-muted');
+                }
+            }
+
+            // Update on page load
+            updatePriorityFields();
+
+            // Update when priority changes
+            prioritySelect.addEventListener('change', updatePriorityFields);
+        });
+    </script>
 {% endif %}
 {% endblock %}
 
