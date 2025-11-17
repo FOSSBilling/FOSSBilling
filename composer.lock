@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "81f8a1b5088ccfb9b1146579bea1ce16",
+    "content-hash": "3332b9eab15b07cc7b3db44ff2fbf26e",
     "packages": [
         {
             "name": "antcms/antloader",
@@ -3402,16 +3402,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v17.6.0",
+            "version": "v18.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "a6219df5df1324a0d3f1da25fb5e4b8a3307ea16"
+                "reference": "0acd7bdac84ad0f940d5da30c417170ce59b4fbc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/a6219df5df1324a0d3f1da25fb5e4b8a3307ea16",
-                "reference": "a6219df5df1324a0d3f1da25fb5e4b8a3307ea16",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/0acd7bdac84ad0f940d5da30c417170ce59b4fbc",
+                "reference": "0acd7bdac84ad0f940d5da30c417170ce59b4fbc",
                 "shasum": ""
             },
             "require": {
@@ -3455,9 +3455,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v17.6.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v18.2.0"
             },
-            "time": "2025-08-27T19:32:42+00:00"
+            "time": "2025-11-05T22:59:39+00:00"
         },
         {
             "name": "symfony/asset",
@@ -6695,21 +6695,21 @@
         },
         {
             "name": "twig/intl-extra",
-            "version": "v3.22.0",
+            "version": "v3.22.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twigphp/intl-extra.git",
-                "reference": "7393fc911c7315db18a805d3a541ac7bb9e4fdc0"
+                "reference": "93ac31e53cdd3f2e541f42690cd0c54ca8138ab1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/intl-extra/zipball/7393fc911c7315db18a805d3a541ac7bb9e4fdc0",
-                "reference": "7393fc911c7315db18a805d3a541ac7bb9e4fdc0",
+                "url": "https://api.github.com/repos/twigphp/intl-extra/zipball/93ac31e53cdd3f2e541f42690cd0c54ca8138ab1",
+                "reference": "93ac31e53cdd3f2e541f42690cd0c54ca8138ab1",
                 "shasum": ""
             },
             "require": {
                 "php": ">=8.1.0",
-                "symfony/intl": "^5.4|^6.4|^7.0",
+                "symfony/intl": "^5.4|^6.4|^7.0|^8.0",
                 "twig/twig": "^3.13|^4.0"
             },
             "require-dev": {
@@ -6743,7 +6743,7 @@
                 "twig"
             ],
             "support": {
-                "source": "https://github.com/twigphp/intl-extra/tree/v3.22.0"
+                "source": "https://github.com/twigphp/intl-extra/tree/v3.22.1"
             },
             "funding": [
                 {
@@ -6755,7 +6755,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-09-15T06:05:04+00:00"
+            "time": "2025-11-02T11:00:49+00:00"
         },
         {
             "name": "twig/twig",
@@ -7977,16 +7977,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "11.5.43",
+            "version": "11.5.44",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "c6b89b6cf4324a8b4cb86e1f5dfdd6c9e0371924"
+                "reference": "c346885c95423eda3f65d85a194aaa24873cda82"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/c6b89b6cf4324a8b4cb86e1f5dfdd6c9e0371924",
-                "reference": "c6b89b6cf4324a8b4cb86e1f5dfdd6c9e0371924",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/c346885c95423eda3f65d85a194aaa24873cda82",
+                "reference": "c346885c95423eda3f65d85a194aaa24873cda82",
                 "shasum": ""
             },
             "require": {
@@ -8058,7 +8058,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.5.43"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.5.44"
             },
             "funding": [
                 {
@@ -8082,7 +8082,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-10-30T08:39:39+00:00"
+            "time": "2025-11-13T07:17:35+00:00"
         },
         {
             "name": "react/cache",
@@ -9989,5 +9989,5 @@
         "ext-zlib": "*"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
