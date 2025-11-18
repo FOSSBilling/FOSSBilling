@@ -34,7 +34,7 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
         $subject = $data['subject'] ?? null;
         $params = $data['params'] ?? null;
 
-        $this->di['logger']->setChannel('event')->debug($event, $params);
+        $this->di['logger']->setChannel('event')->debug('Fired event: ' . $event, $params);
 
         $e = new Box_Event($subject, $event, $params);
         $e->setDi($this->di);
