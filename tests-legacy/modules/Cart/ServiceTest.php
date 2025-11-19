@@ -94,9 +94,12 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Cart\Service();
 
-        $curencyModel = new \Model_Currency();
-        $curencyModel->loadBean(new \DummyBean());
-        $curencyModel->id = random_int(0, 1000);
+        $curencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $curencyModel->expects($this->any())
+            ->method('getId')
+            ->willReturn(random_int(0, 1000));
 
         $session_id = 'rrcpqo7tkjh14d2vmf0car64k7';
         $model = null; // Does not exist in database
@@ -123,7 +126,10 @@ class ServiceTest extends \BBTestCase
             ->method('get')
             ->willReturn($sessionGetWillReturn);
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getCurrencyByClientId', 'getDefault'])->getMock();
+        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getCurrencyByClientId'])
+            ->addMethods(['getDefault'])
+            ->getMock();
         $currencyServiceMock->expects($getCurrencyByClientIdExpects)
             ->method('getCurrencyByClientId')
             ->willReturn($curencyModel);
@@ -296,8 +302,9 @@ class ServiceTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
 
-        $currency = new \Model_Currency();
-        $currency->loadBean(new \DummyBean());
+        $currency = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -1074,13 +1081,17 @@ class ServiceTest extends \BBTestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
-        $currencyModel = new \Model_Currency();
-        $currencyModel->loadBean(new \DummyBean());
+        $currencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($currencyModel);
 
-        $currencyService = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyService = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->addMethods(['toApiArray'])
+            ->getMock();
         $currencyService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
