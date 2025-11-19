@@ -488,12 +488,15 @@ class Service implements InjectionAwareInterface
     public function createOrder(\Model_Client $client, \Model_Product $product, array $data)
     {
         $currencyService = $this->di['mod_service']('currency');
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
+
         if (isset($data['currency']) && !empty($data['currency'])) {
-            $currency = $currencyService->getByCode($data['currency']);
+            $currency = $currencyRepository->findOneByCode($data['currency']);
         } elseif ($client->currency) {
-            $currency = $currencyService->getByCode($client->currency);
+            $currency = $currencyRepository->findOneByCode($client->currency);
         } else {
-            $currency = $currencyService->getDefault();
+            $currency = $currencyRepository->findDefault();
         }
         if (!$currency instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency could not be determined for order');

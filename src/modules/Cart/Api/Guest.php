@@ -55,7 +55,9 @@ class Guest extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $currencyService = $this->di['mod_service']('currency');
-        $currency = $currencyService->getByCode($data['currency']);
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
+        $currency = $currencyRepository->findOneByCode($data['currency']);
         if (!$currency instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found');
         }
@@ -74,12 +76,14 @@ class Guest extends \Api_Abstract
         $cart = $this->getService()->getSessionCart();
 
         $currencyService = $this->di['mod_service']('currency');
-        $currency = $this->di['db']->load('Currency', $cart->currency_id);
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
+        $currency = $currencyRepository->find($cart->currency_id);
         if (!$currency instanceof Currency) {
-            $currency = $currencyService->getDefault();
+            $currency = $currencyRepository->findDefault();
         }
 
-        return $currencyService->toApiArray($currency);
+        return $currency->toApiArray();
     }
 
     /**

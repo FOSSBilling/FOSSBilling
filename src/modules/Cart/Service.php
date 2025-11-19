@@ -67,13 +67,15 @@ class Service implements InjectionAwareInterface
             return $cart;
         }
 
-        $cc = $this->di['mod_service']('currency');
+        $currencyService = $this->di['mod_service']('currency');
+         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getRepository();
 
         if ($this->di['session']->get('client_id')) {
             $client_id = $this->di['session']->get('client_id');
-            $currency = $cc->getCurrencyByClientId($client_id);
+            $currency = $currencyService->getCurrencyByClientId($client_id);
         } else {
-            $currency = $cc->getDefault();
+            $currency = $currencyRepository->findDefault();
         }
 
         $cart = $this->di['db']->dispense('Cart');
