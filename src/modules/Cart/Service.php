@@ -68,19 +68,22 @@ class Service implements InjectionAwareInterface
         }
 
         $currencyService = $this->di['mod_service']('currency');
-         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
-        $currencyRepository = $currencyService->getRepository();
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
 
+        $currency = null;
         if ($this->di['session']->get('client_id')) {
             $client_id = $this->di['session']->get('client_id');
             $currency = $currencyService->getCurrencyByClientId($client_id);
-        } else {
+        }
+
+        if (!$currency instanceof Currency) {
             $currency = $currencyRepository->findDefault();
         }
 
         $cart = $this->di['db']->dispense('Cart');
         $cart->session_id = $sessionID;
-        $cart->currency_id = $currency->id;
+        $cart->currency_id = $currency->getId();
         $cart->created_at = date('Y-m-d H:i:s');
         $cart->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($cart);
@@ -339,7 +342,17 @@ class Service implements InjectionAwareInterface
     {
         $products = $this->getCartProducts($model);
 
-        $currency = $this->di['db']->getExistingModelById('Currency', $model->currency_id);
+        $currencyService = $this->di['mod_service']('currency');
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
+        $currency = $currencyRepository->find($model->currency_id);
+        if (!$currency instanceof Currency) {
+            $currency = $currencyRepository->findDefault();
+        }
+        
+        if (!$currency instanceof Currency) {
+            throw new \FOSSBilling\Exception('Currency not found and no default currency is configured');
+        }
 
         $items = [];
         $total = 0;
@@ -359,15 +372,13 @@ class Service implements InjectionAwareInterface
             $promocode = null;
         }
 
-        $currencyService = $this->di['mod_service']('currency');
-
         return [
             'promocode' => $promocode,
             'discount' => $items_discount,
             'subtotal' => $total,
             'total' => $total - $items_discount,
             'items' => $items,
-            'currency' => $currencyService->toApiArray($currency),
+            'currency' => $currency->toApiArray(),
         ];
     }
 

@@ -398,11 +398,14 @@ class Service implements InjectionAwareInterface
         }
 
         $systemService = $this->di['mod_service']('system');
-        $ctable = $this->di['mod_service']('Currency');
+
+        $currencyService = $this->di['mod_service']('currency');
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
 
         $invoice->serie = $systemService->getParamValue('invoice_series_paid');
         $invoice->approved = true;
-        $invoice->currency_rate = $ctable->getRateByCode($invoice->currency);
+        $invoice->currency_rate = $currencyRepository->getRateByCode((string) $invoice->currency);
         $invoice->status = \Model_Invoice::STATUS_PAID;
         $invoice->paid_at = date('Y-m-d H:i:s');
         $invoice->updated_at = date('Y-m-d H:i:s');

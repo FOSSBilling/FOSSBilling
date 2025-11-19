@@ -81,6 +81,9 @@ class Guest extends \Api_Abstract
         $currency = $currencyRepository->find($cart->currency_id);
         if (!$currency instanceof Currency) {
             $currency = $currencyRepository->findDefault();
+            if (!$currency instanceof Currency) {
+                throw new \FOSSBilling\Exception('No currency available');
+            }
         }
 
         return $currency->toApiArray();

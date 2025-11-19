@@ -103,9 +103,9 @@ class Currency implements ApiArrayInterface, TimestampInterface
         return $this->isDefault;
     }
 
-    public function getConversionRate(): string
+    public function getConversionRate(): float
     {
-        return $this->conversionRate;
+        return (float) $this->conversionRate;
     }
 
     public function getFormat(): ?string
