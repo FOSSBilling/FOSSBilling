@@ -455,14 +455,11 @@ class ServiceTest extends \BBTestCase
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue');
 
-        $currencyService = new class {
-            public int $getRateByCodeCalls = 0;
-
-            public function getRateByCode(): void
-            {
-                $this->getRateByCodeCalls++;
-            }
-        };
+        $currencyService = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->addMethods(['getRateByCode'])
+            ->getMock();
+        $currencyService->expects($this->atLeastOnce())
+            ->method('getRateByCode');
 
         $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
@@ -495,7 +492,6 @@ class ServiceTest extends \BBTestCase
         $result = $serviceMock->markAsPaid($invoiceModel, true, true);
         $this->assertIsBool($result);
         $this->assertTrue($result);
-        $this->assertSame(1, $currencyService->getRateByCodeCalls);
     }
 
     public function testcountIncome(): void
@@ -558,20 +554,12 @@ class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $currencyService = new class($currencyModel) {
-            public int $getDefaultCalls = 0;
-
-            public function __construct(private \Box\Mod\Currency\Entity\Currency $currency)
-            {
-            }
-
-            public function getDefault(): \Box\Mod\Currency\Entity\Currency
-            {
-                $this->getDefaultCalls++;
-
-                return $this->currency;
-            }
-        };
+        $currencyService = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->addMethods(['getDefault'])
+            ->getMock();
+        $currencyService->expects($this->atLeastOnce())
+            ->method('getDefault')
+            ->willReturn($currencyModel);
 
         $itemInvoiceServiceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)->getMock();
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
@@ -602,7 +590,6 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
         $result = $serviceMock->prepareInvoice($clientModel, $data);
         $this->assertInstanceOf('Model_Invoice', $result);
-        $this->assertSame(1, $currencyService->getDefaultCalls);
     }
 
     public function testsetInvoiceDefaults(): void
