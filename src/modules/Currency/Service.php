@@ -23,7 +23,7 @@ use Symfony\Contracts\Cache\ItemInterface;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    protected CurrencyRepository $currencyRepository;
+    protected ?CurrencyRepository $currencyRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -38,6 +38,14 @@ class Service implements InjectionAwareInterface
 
     public function getCurrencyRepository(): CurrencyRepository
     {
+        if ($this->currencyRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+
+            $this->currencyRepository = $this->di['em']->getRepository(Currency::class);
+        }
+
         return $this->currencyRepository;
     }
 
@@ -441,7 +449,7 @@ class Service implements InjectionAwareInterface
         if (isset($rates[$to]) && is_numeric($rates[$to])) {
             return floatval($rates[$to]);
         }
-        
+
         throw new \FOSSBilling\Exception("Unable to fetch conversion rate for currency: {$to}");
     }
 
