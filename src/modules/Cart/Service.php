@@ -68,7 +68,7 @@ class Service implements InjectionAwareInterface
         }
 
         $currencyService = $this->di['mod_service']('currency');
-         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
 
         $currency = null;
@@ -343,7 +343,7 @@ class Service implements InjectionAwareInterface
         $products = $this->getCartProducts($model);
 
         $currencyService = $this->di['mod_service']('currency');
-         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
         $currency = $currencyRepository->find($model->currency_id);
         if (!$currency instanceof Currency) {

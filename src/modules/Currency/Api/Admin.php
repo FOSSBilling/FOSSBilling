@@ -82,6 +82,9 @@ class Admin extends \Api_Abstract
 
         $default = $repo->findDefault();
 
+        if (!$default instanceof Currency) {
+            throw new \FOSSBilling\Exception('Default currency not found');
+        }
         return $default->toApiArray();
     }
 
@@ -162,7 +165,7 @@ class Admin extends \Api_Abstract
      */
     public function update_rates(array $data): bool
     {
-        return $this->service->updateCurrencyRates($data);
+        return $this->service->updateCurrencyRates();
     }
 
     /**
@@ -201,7 +204,7 @@ class Admin extends \Api_Abstract
 
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $service->getCurrencyRepository();
-        
+
         $model = $repo->findOneByCode($data['code']);
         if (!$model instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found');
