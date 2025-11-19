@@ -349,6 +349,10 @@ class Service implements InjectionAwareInterface
         if (!$currency instanceof Currency) {
             $currency = $currencyRepository->findDefault();
         }
+        
+        if (!$currency instanceof Currency) {
+            throw new \FOSSBilling\Exception('Currency not found and no default currency is configured');
+        }
 
         $items = [];
         $total = 0;
