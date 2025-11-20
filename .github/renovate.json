@@ -34,5 +34,6 @@
   "postUpdateOptions": [
     "npmDedupe",
     "npmInstallTwice"
-  ]
+  ],
+  "skipInstalls": false
 }
