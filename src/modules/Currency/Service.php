@@ -273,9 +273,8 @@ class Service implements InjectionAwareInterface
             try {
                 $conversionRate = $this->_getRate(null, $code);
             } catch (\Exception $e) {
-                // If rate fetch fails, default to 1.0
-                $conversionRate = 1.0;
-                $this->di['logger']->warning('Failed to fetch conversion rate for %s: %s', $code, $e->getMessage());
+                // If rate fetch fails, throw an exception to alert administrators
+                throw new \FOSSBilling\Exception(sprintf('Failed to fetch conversion rate for %s: %s', $code, $e->getMessage()));
             }
         }
 
