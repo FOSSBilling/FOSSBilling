@@ -88,19 +88,19 @@ class Service implements InjectionAwareInterface
      *
      * @param string $foreign_code Currency code to get the rate for
      * @return float The base currency rate
-     * @throws InformationException If currency not found or rate is zero
+     * @throws \FOSSBilling\Exception If currency not found or rate is zero
      */
     public function getBaseCurrencyRate(string $foreign_code): float
     {
         $rate = $this->currencyRepository->getRateByCode($foreign_code);
 
-        // Fallback to 1.0 if currency not found
+        // Throw exception if currency not found
         if ($rate === null) {
-            $rate = 1.0;
+            throw new \FOSSBilling\Exception('Currency not found');
         }
 
         if ($rate === 0.0) {
-            throw new InformationException('Currency conversion rate cannot be zero');
+            throw new \FOSSBilling\Exception('Currency conversion rate cannot be zero');
         }
 
         return 1 / $rate;

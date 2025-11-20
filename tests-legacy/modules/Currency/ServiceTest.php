@@ -83,6 +83,33 @@ class ServiceTest extends \BBTestCase
         $service->getBaseCurrencyRate($code); // Expecting exception
     }
 
+    public function testGetBaseCurrencyRateNotFound(): void
+    {
+        $service = new \Box\Mod\Currency\Service();
+
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('getRateByCode')
+            ->willReturn(null);
+
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
+        $di = new \Pimple\Container();
+        $di['em'] = $emMock;
+        $service->setDi($di);
+        $code = 'XYZ';
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Currency not found');
+        $service->getBaseCurrencyRate($code); // Expecting exception when currency doesn't exist
+    }
+
     public static function toBaseCurrencyProvider(): array
     {
         return [
