@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: 'Perform Spellcheck'
-        uses: streetsidesoftware/cspell-action@v7
+        uses: streetsidesoftware/cspell-action@3294df585d3d639e30f3bc019cb11940b9866e95 # v8
         with:
           incremental_files_only: true
 
@@ -31,10 +31,10 @@ jobs:
       matrix:
         php: [8.2, 8.3, 8.4]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@19dd41443d048b090a99b8ec22b09e84cba21a56
+        uses: FOSSBilling/.workflows/.github/actions/php-build@efee8f85e827627b74fb052aab440e2125955bd4
         with:
           php-version: ${{ matrix.php }}
 
@@ -45,7 +45,7 @@ jobs:
           echo APP_ENV=test >> $GITHUB_ENV
         
       - name: 'PHP Tests (PHPStan and PHPUnit)'
-        uses: FOSSBilling/.workflows/.github/actions/php-test@19dd41443d048b090a99b8ec22b09e84cba21a56
+        uses: FOSSBilling/.workflows/.github/actions/php-test@efee8f85e827627b74fb052aab440e2125955bd4
         with:
           php-version: ${{ matrix.php }}
           phpstan-enable: 'true'
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'Download Preview Release Archive'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
           name: preview-build
           path: '/tmp'
@@ -107,7 +107,7 @@ jobs:
           SOURCE_DIR: './dist'
     
       - name: 'Upload Downloadable Preview to GitHub'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           if-no-files-found: 'error'
           name: 'FOSSBilling Preview'
@@ -121,7 +121,7 @@ jobs:
       actions: write
     needs: [ preview-build ]
     if: ${{ github.ref == 'refs/heads/main' }}
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@19dd41443d048b090a99b8ec22b09e84cba21a56
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@efee8f85e827627b74fb052aab440e2125955bd4
     secrets:
       dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}

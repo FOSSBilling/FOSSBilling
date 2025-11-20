@@ -43,7 +43,9 @@ class Admin extends \Api_Abstract
 
         try {
             $list = $this->di['extension_manager']->getExtensionList($type);
-        } catch (\Exception) {
+        } catch (\Exception $e) {
+            $this->di['logger']->warn(sprintf('Failed to fetch extension list for type "%s": %s', $type ?? 'all', $e->getMessage()));
+
             $list = [];
         }
 
@@ -172,7 +174,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function deactivate($data)
+    public function deactivate($data): bool
     {
         $ext = $this->_getExtension($data);
 
@@ -189,19 +191,25 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Completely remove extension from FOSSBilling.
-     *
+     * Uninstall a deactivated extension, remove its files from the disk and call $extension->uninstall() to trigger database cleanup.
+     * 
      * @return bool
+     * 
+     * @throws \FOSSBilling\Exception
      */
-    public function uninstall($data)
+    public function uninstall($data): bool
     {
-        $ext = $this->_getExtension($data);
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUninstallExtension', 'params' => ['id' => $ext->id]]);
+        $required = [
+            'id' => 'Extension ID was not passed',
+            'type' => 'Extension type was not passed',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUninstallExtension', 'params' => ['type' => $data['type'], 'id' => $data['id']]]);
 
-        $service = $this->getService();
-        $service->uninstall($ext);
+        $this->getService()->uninstall($data['type'], $data['id']);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminUninstallExtension', 'params' => ['id' => $ext->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminUninstallExtension', 'params' => ['type' => $data['type'], 'id' => $data['id']]]);
 
         return true;
     }
@@ -209,11 +217,9 @@ class Admin extends \Api_Abstract
     /**
      * Install new extension from extensions site.
      *
-     * @return array
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function install($data)
+    public function install($data): array
     {
         $required = [
             'id' => 'Extension ID was not passed',

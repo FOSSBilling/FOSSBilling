@@ -67,15 +67,36 @@
 
 {% macro recaptcha() %}
 
-{% if guest.extension_is_on({"mod":"spamchecker"}) %}
-{% set rc = guest.spamchecker_recaptcha %}
-    {% if rc.enabled %}
-        {% if rc.version == 2 %}
-            <script src='https://www.google.com/recaptcha/api.js' async defer></script>
-            <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
+    {% if guest.extension_is_on({"mod":"spamchecker"}) %}
+
+        {% set config = guest.spamchecker_recaptcha %}
+        {% if config.enabled %}
+            {% set provider = config.captcha_provider|default('recaptcha_v2') %}
+            {% if provider == 'turnstile' %}
+                {% if config.turnstile_site_key %}
+                    <div class="mb-3">
+                        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+                        <div class="cf-turnstile" data-sitekey="{{ config.turnstile_site_key }}"></div>
+                    </div>
+                {% endif %}
+
+            {% elseif provider == 'recaptcha_v2' %}
+                {% if config.publickey %}
+                    <div class="mb-3">
+                        <script src='https://www.google.com/recaptcha/api.js' async defer></script>
+                        <div class="g-recaptcha" data-sitekey="{{ config.publickey }}"></div>
+                    </div>
+                {% endif %}
+            {% elseif provider == 'hcaptcha' %}
+                {% if config.hcaptcha_site_key %}
+                    <div class="mb-3">
+                        <script src='https://js.hcaptcha.com/1/api.js' async defer></script>
+                        <div class="h-captcha" data-sitekey="{{ config.hcaptcha_site_key }}"></div>
+                    </div>
+                {% endif %}
+            {% endif %}
         {% endif %}
     {% endif %}
-{% endif %}
 {% endmacro %}
 
 {% macro wysiwyg(selector) %}

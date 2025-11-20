@@ -108,6 +108,17 @@ class Guest extends \Api_Abstract
     }
 
     /**
+     * Return the code of the default country, if set.
+     */
+    public function default_country(): ?string
+    {
+        $mod = $this->di['mod']('system');
+        $cfg = $mod->getConfig();
+
+        return $cfg['default_country'] ?? null;
+    }
+
+    /**
      * Returns system parameter by key.
      *
      * @return string
@@ -191,10 +202,8 @@ class Guest extends \Api_Abstract
 
     /**
      * Get current client locale.
-     *
-     * @return string
      */
-    public function locale()
+    public function locale(): string
     {
         return i18n::getActiveLocale();
     }

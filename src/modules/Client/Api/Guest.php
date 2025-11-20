@@ -51,7 +51,7 @@ class Guest extends \Api_Abstract
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
      */
-    public function create($data = [])
+    public function create($data = []): int
     {
         $config = $this->di['mod_config']('client');
 
@@ -79,7 +79,7 @@ class Guest extends \Api_Abstract
 
         $email = $data['email'] ?? null;
         $email = $this->di['tools']->validateAndSanitizeEmail($email);
-        $email = strtolower(trim($email));
+        $email = strtolower(trim((string) $email));
         if ($service->clientAlreadyExists($email)) {
             throw new \FOSSBilling\InformationException('This email address is already registered.');
         }
@@ -148,11 +148,9 @@ class Guest extends \Api_Abstract
     /**
      * Password reset confirmation email will be sent to email.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function reset_password($data)
+    public function reset_password($data): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
 
@@ -198,7 +196,7 @@ class Guest extends \Api_Abstract
         // Send the email if the reset request has the same created_at and updated_at or if at least 1 full minute has passed since the last request.
         if ($reset->created_at == $reset->updated_at) {
             $emailService->sendTemplate($email);
-        } elseif (strtotime($reset->updated_at) - time() + 60 < 0) {
+        } elseif (strtotime((string) $reset->updated_at) - time() + 60 < 0) {
             $emailService->sendTemplate($email);
         }
 
@@ -211,7 +209,7 @@ class Guest extends \Api_Abstract
         return true;
     }
 
-    public function update_password($data)
+    public function update_password($data): bool
     {
         $required = [
             'hash' => 'No Hash provided',
@@ -261,7 +259,7 @@ class Guest extends \Api_Abstract
      *
      * @return bool true if VAT is valid, false if not
      */
-    public function is_vat($data)
+    public function is_vat($data): bool
     {
         $required = [
             'country' => 'Country code',

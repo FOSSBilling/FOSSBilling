@@ -106,7 +106,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -281,7 +281,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $invoiceItemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $invoiceItemService);
 
         $this->api->setDi($di);
 
@@ -553,7 +553,7 @@ class AdminTest extends \BBTestCase
             ->willReturn(true);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
         $result = $this->api->transaction_process_all([]);
@@ -593,7 +593,7 @@ class AdminTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventsMock;
         $di['logger'] = new \Box_Log();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -628,7 +628,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -646,7 +646,7 @@ class AdminTest extends \BBTestCase
             ->willReturn($newTransactionId);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
         $this->api->setDi($di);
 
         $result = $this->api->transaction_create([]);
@@ -680,7 +680,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -715,7 +715,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -740,7 +740,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
         $result = $this->api->transaction_get_list([]);
@@ -755,7 +755,7 @@ class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -771,7 +771,7 @@ class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -787,7 +787,7 @@ class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -803,7 +803,7 @@ class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -819,7 +819,7 @@ class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -844,7 +844,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
 
         $this->api->setDi($di);
         $result = $this->api->gateway_get_list([]);
@@ -859,7 +859,7 @@ class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
         $this->api->setDi($di);
 
         $result = $this->api->gateway_get_pairs([]);
@@ -874,7 +874,7 @@ class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
         $this->api->setDi($di);
 
         $result = $this->api->gateway_get_available([]);
@@ -898,7 +898,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
         $this->api->setDi($di);
 
         $result = $this->api->gateway_install($data);
@@ -932,7 +932,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
 
         $this->api->setDi($di);
 
@@ -966,7 +966,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
 
         $this->api->setDi($di);
 
@@ -1001,7 +1001,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
 
         $this->api->setDi($di);
 
@@ -1036,7 +1036,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
 
         $this->api->setDi($di);
 
@@ -1045,7 +1045,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function subscription_get_list()
+    public function subscription_get_list(): void
     {
         $subscriptionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)->getMock();
         $subscriptionService->expects($this->atLeastOnce())
@@ -1062,7 +1062,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $subscriptionService);
 
         $this->api->setDi($di);
         $result = $this->api->subscription_get_list([]);
@@ -1096,12 +1096,12 @@ class AdminTest extends \BBTestCase
 
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->onConsecutiveCalls($client, $model));
+            ->willReturnOnConsecutiveCalls($client, $model);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $subscriptionService);
 
         $this->api->setDi($di);
 
@@ -1131,7 +1131,7 @@ class AdminTest extends \BBTestCase
 
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->onConsecutiveCalls($client, $model));
+            ->willReturnOnConsecutiveCalls($client, $model);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -1170,7 +1170,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $subscriptionService);
 
         $this->api->setDi($di);
 
@@ -1200,7 +1200,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $subscriptionService);
 
         $this->api->setDi($di);
 
@@ -1234,7 +1234,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $subscriptionService);
 
         $this->api->setDi($di);
 
@@ -1269,7 +1269,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $taxService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $taxService);
 
         $this->api->setDi($di);
 
@@ -1295,7 +1295,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
-        $di['mod_service'] = $di->protect(fn () => $taxService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $taxService);
 
         $this->api->setDi($di);
 
@@ -1304,7 +1304,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newTaxId, $result);
     }
 
-    public function tax_get_list()
+    public function tax_get_list(): void
     {
         $taxService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)->getMock();
         $taxService->expects($this->atLeastOnce())
@@ -1321,7 +1321,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $taxService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $taxService);
 
         $this->api->setDi($di);
 
@@ -1337,8 +1337,7 @@ class AdminTest extends \BBTestCase
         willReturn(true);
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -1355,8 +1354,7 @@ class AdminTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -1373,8 +1371,7 @@ class AdminTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -1391,8 +1388,7 @@ class AdminTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -1423,7 +1419,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $taxService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $taxService);
 
         $this->api->setDi($di);
         $this->api->setService($taxService);
@@ -1455,7 +1451,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $taxService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $taxService);
 
         $this->api->setDi($di);
         $this->api->setService($taxService);

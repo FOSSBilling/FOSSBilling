@@ -25,12 +25,12 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->get('/currency/manage/:code', 'get_manage', ['code' => '[a-zA-Z]+'], static::class);
     }
 
-    public function get_manage(\Box_App $app, $code)
+    public function get_manage(\Box_App $app, $code): string
     {
         $this->di['is_admin_logged'];
         $guest_api = $this->di['api_guest'];

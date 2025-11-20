@@ -22,7 +22,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public static function datarecaptchaConfig()
+    public static function datarecaptchaConfig(): array
     {
         return [
             [
@@ -34,6 +34,9 @@ class GuestTest extends \BBTestCase
                     'publickey' => 1234,
                     'enabled' => true,
                     'version' => null,
+                    'captcha_provider'=> 'recaptcha_v2',
+                    'turnstile_site_key'=> null,
+                    'hcaptcha_site_key' => null,
                 ],
             ],
             [
@@ -44,6 +47,9 @@ class GuestTest extends \BBTestCase
                     'publickey' => null,
                     'enabled' => true,
                     'version' => null,
+                    'captcha_provider'=> 'recaptcha_v2',
+                    'turnstile_site_key'=> null,
+                    'hcaptcha_site_key'=> null,
                 ],
             ],
             [
@@ -56,6 +62,9 @@ class GuestTest extends \BBTestCase
                     'publickey' => 1234,
                     'enabled' => false,
                     'version' => 2,
+                    'captcha_provider'=> 'recaptcha_v2',
+                    'turnstile_site_key'=> null,
+                    'hcaptcha_site_key' => null,
                 ],
             ],
             [
@@ -66,16 +75,49 @@ class GuestTest extends \BBTestCase
                     'publickey' => null,
                     'enabled' => false,
                     'version' => null,
+                    'captcha_provider'=> 'recaptcha_v2',
+                    'turnstile_site_key'=> null,
+                    'hcaptcha_site_key' => null,
+                ],
+            ],
+            [
+                [
+                    'captcha_enabled' => true,
+                    'captcha_provider' => 'turnstile',
+                    'turnstile_site_key' => 'abc',
+                ],
+                [
+                    'publickey' => null,
+                    'enabled' => true,
+                    'version' => null,
+                    'captcha_provider' => 'turnstile',
+                    'turnstile_site_key'=> 'abc',
+                    'hcaptcha_site_key' => null,
+                ]
+            ],
+            [
+                [
+                    'captcha_enabled' => true,
+                    'captcha_provider' => 'hcaptcha',
+                    'hcaptcha_site_key' => 'abc',
+                ],
+                [
+                    'publickey' => null,
+                    'enabled' => true,
+                    'version' => null,
+                    'captcha_provider' => 'hcaptcha',
+                    'turnstile_site_key' => null,
+                    'hcaptcha_site_key' => 'abc',
                 ],
             ],
         ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('datarecaptchaConfig')]
-    public function testrecaptcha($config, $expected): void
+    public function testrecaptcha(array $config, array $expected): void
     {
         $di = new \Pimple\Container();
-        $di['mod_config'] = $di->protect(fn () => $config);
+        $di['mod_config'] = $di->protect(fn (): array => $config);
 
         $this->api->setDi($di);
         $result = $this->api->recaptcha([]);

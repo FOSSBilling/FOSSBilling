@@ -33,7 +33,7 @@ abstract class BBDatabaseTestCase extends TestCase
             $this->_seedFilesPath = PATH_TESTS . '/fixtures';
         }
 
-        return rtrim($this->_seedFilesPath, '/') . '/';
+        return rtrim((string) $this->_seedFilesPath, '/') . '/';
     }
 
     /**

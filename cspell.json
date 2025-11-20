@@ -40,7 +40,11 @@
         "ICANN",
         "failovers",
         "Autosize",
-        "analyse"
+        "analyse",
+        "triaging",
+        "hostable",
+        "cooldown",
+        "ONLYDIR"
     ],
 
     "ignoreWords": [
@@ -408,7 +412,10 @@
         "CSRF",
         "undismissed",
         "filp",
-        "phpunit"
+        "phpunit",
+        "hcaptcha",
+        "hCaptcha",
+        "LEMP"
     ],
     "ignorePaths": [
         "tests-legacy/**",

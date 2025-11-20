@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -194,13 +193,13 @@ class Fingerprint
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
         // Extract the browser name
-        if (preg_match('/(?:Chrome|CriOS)\/([0-9\.]+)/', $userAgent, $matches)) {
+        if (preg_match('/(?:Chrome|CriOS)\/([0-9\.]+)/', (string) $userAgent, $matches)) {
             $browser = 'Chrome';
             $version = $matches[1];
-        } elseif (preg_match('/Firefox\/([0-9\.]+)/', $userAgent, $matches)) {
+        } elseif (preg_match('/Firefox\/([0-9\.]+)/', (string) $userAgent, $matches)) {
             $browser = 'Firefox';
             $version = $matches[1];
-        } elseif (preg_match('/Safari\/([0-9\.]+)/', $userAgent, $matches)) {
+        } elseif (preg_match('/Safari\/([0-9\.]+)/', (string) $userAgent, $matches)) {
             $browser = 'Safari';
             $version = $matches[1];
         } else {
@@ -209,11 +208,11 @@ class Fingerprint
         }
 
         // Extract the operating system
-        if (preg_match('/Windows NT ([0-9\.]+)/', $userAgent, $matches)) {
+        if (preg_match('/Windows NT ([0-9\.]+)/', (string) $userAgent, $matches)) {
             $os = 'Windows NT ' . $matches[1];
-        } elseif (preg_match('/Mac OS X ([0-9_]+)/', $userAgent, $matches)) {
+        } elseif (preg_match('/Mac OS X ([0-9_]+)/', (string) $userAgent, $matches)) {
             $os = 'Mac OS X';
-        } elseif (preg_match('/Linux/', $userAgent)) {
+        } elseif (preg_match('/Linux/', (string) $userAgent)) {
             $os = 'Linux';
         } else {
             $os = 'Unknown';

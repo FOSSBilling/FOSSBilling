@@ -157,11 +157,9 @@ class Admin extends \Api_Abstract
     /**
      * Delete form and its form fields.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function delete_form($data)
+    public function delete_form($data): bool
     {
         $required = [
             'id' => 'Form id was not passed',
@@ -177,11 +175,9 @@ class Admin extends \Api_Abstract
     /**
      * Delete field by id.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function delete_field($data)
+    public function delete_field($data): bool
     {
         $required = [
             'id' => 'Field id was not passed',

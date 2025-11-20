@@ -361,7 +361,7 @@ class ClientTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 

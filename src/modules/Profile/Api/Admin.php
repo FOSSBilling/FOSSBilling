@@ -47,10 +47,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Clear session data and logout from system.
-     *
-     * @return bool
      */
-    public function logout()
+    public function logout(): bool
     {
         unset($_COOKIE['BOXADMR']);
         $this->di['session']->destroy('admin');

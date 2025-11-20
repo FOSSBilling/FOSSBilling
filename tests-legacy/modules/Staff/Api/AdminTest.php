@@ -35,7 +35,9 @@ class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $resultSet = [
-            'list' => ['id' => 1],
+            'list' => [
+                ['id' => 1],
+            ],
         ];
         $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
@@ -468,8 +470,7 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('getActivityAdminHistorySearchQuery')
             ->willReturn(['sqlString', []]);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('toActivityAdminHistoryApiArray')
+        $serviceMock->method('toActivityAdminHistoryApiArray')
             ->willReturn([]);
 
         $resultSet = [
@@ -486,8 +487,7 @@ class AdminTest extends \BBTestCase
         $model = new \Model_ActivityAdminHistory();
         $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
+        $dbMock->method('getExistingModelById')
             ->willReturn($model);
 
         $di = new \Pimple\Container();
@@ -506,8 +506,7 @@ class AdminTest extends \BBTestCase
         $data['id'] = '1';
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('toActivityAdminHistoryApiArray')
+        $serviceMock->method('toActivityAdminHistoryApiArray')
             ->willReturn([]);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
@@ -528,53 +527,5 @@ class AdminTest extends \BBTestCase
 
         $result = $this->api->login_history_get($data);
         $this->assertIsArray($result);
-    }
-
-    public function testloginHistoryDelete(): void
-    {
-        $data['id'] = '1';
-
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('deleteLoginHistory')
-            ->willReturn(true);
-
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn(new \Model_ActivityAdminHistory());
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-        $di['db'] = $dbMock;
-
-        $this->api->setIdentity(new \Model_Admin());
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-
-        $result = $this->api->login_history_delete($data);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
-    public function testBatchDelete(): void
-    {
-        $activityMock = $this->getMockBuilder('\\' . Admin::class)->onlyMethods(['login_history_delete'])->getMock();
-        $activityMock->expects($this->atLeastOnce())->method('login_history_delete')->willReturn(true);
-
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-        $activityMock->setDi($di);
-
-        $result = $activityMock->batch_delete_logs(['ids' => [1, 2, 3]]);
-        $this->assertTrue($result);
     }
 }

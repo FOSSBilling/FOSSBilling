@@ -161,13 +161,13 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPermissions');
 
-        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->onlyMethods(['getSpecificModulePermissions'])->getMock();
+        $extensionServiceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->onlyMethods(['getSpecificModulePermissions'])->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getSpecificModulePermissions')
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $extensionServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extensionServiceMock);
 
         $serviceMock->setDi($di);
 
@@ -189,13 +189,13 @@ class ServiceTest extends \BBTestCase
             ->method('getPermissions')
             ->willReturn(['cart' => [], 'client' => []]);
 
-        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->onlyMethods(['getSpecificModulePermissions'])->getMock();
+        $extensionServiceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->onlyMethods(['getSpecificModulePermissions'])->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getSpecificModulePermissions')
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $extensionServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extensionServiceMock);
 
         $serviceMock->setDi($di);
 
@@ -217,13 +217,13 @@ class ServiceTest extends \BBTestCase
             ->method('getPermissions')
             ->willReturn(['example' => [], 'client' => []]);
 
-        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->onlyMethods(['getSpecificModulePermissions'])->getMock();
+        $extensionServiceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->onlyMethods(['getSpecificModulePermissions'])->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getSpecificModulePermissions')
             ->willReturn([]);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $extensionServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extensionServiceMock);
 
         $serviceMock->setDi($di);
 
@@ -815,7 +815,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public static function searchFilters()
+    public static function searchFilters(): array
     {
         return [
             [
@@ -842,7 +842,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchFilters')]
-    public function testgetSearchQuery($data, $expectedStr, $expectedParams): void
+    public function testgetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -894,7 +894,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
+        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt');
 
@@ -974,7 +974,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1006,7 +1006,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1052,14 +1052,14 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
+        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($plainTextPassword);
 
         $profileService = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1070,7 +1070,7 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
         $di['password'] = $passwordMock;
-        $di['mod_service'] = $di->protect(fn () => $profileService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $profileService);
 
         $serviceMock->setDi($di);
 
@@ -1111,12 +1111,12 @@ class ServiceTest extends \BBTestCase
 
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
+        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1126,7 +1126,7 @@ class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $di['password'] = $passwordMock;
 
@@ -1170,12 +1170,12 @@ class ServiceTest extends \BBTestCase
 
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
+        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1185,7 +1185,7 @@ class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $di['password'] = $passwordMock;
 
@@ -1224,7 +1224,7 @@ class ServiceTest extends \BBTestCase
 
         $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
+        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);
@@ -1310,7 +1310,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($newGroupId);
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1319,7 +1319,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $serviceMock->setDi($di);
 
@@ -1361,7 +1361,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->willReturn(0);
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1384,7 +1384,7 @@ class ServiceTest extends \BBTestCase
         $adminGroupModel->loadBean(new \DummyBean());
         $adminGroupModel->id = 1;
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1405,7 +1405,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->willReturn(2);
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1430,7 +1430,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1448,7 +1448,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function ActivityAdminHistorySearchFilters()
+    public static function ActivityAdminHistorySearchFilters(): array
     {
         return [
             [
@@ -1470,7 +1470,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('ActivityAdminHistorySearchFilters')]
-    public function testgetActivityAdminHistorySearchQuery($data, $expectedStr, $expectedParams): void
+    public function testgetActivityAdminHistorySearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -1522,25 +1522,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(count(array_diff(array_keys($expected), array_keys($result))) == 0, 'Missing array key values.');
     }
 
-    public function testdeleteLoginHistory(): void
-    {
-        $adminHistoryModel = new \Model_ActivityAdminHistory();
-        $adminHistoryModel->loadBean(new \DummyBean());
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-
-        $service = new Service();
-        $service->setDi($di);
-
-        $result = $service->deleteLoginHistory($adminHistoryModel);
-        $this->assertTrue($result);
-    }
-
     public function testsetPermissions(): void
     {
         $pdoStatementMock = $this->getMockBuilder('\\' . PdoStatementMock::class)
@@ -1553,7 +1534,7 @@ class ServiceTest extends \BBTestCase
             ->method('prepare')
             ->willReturn($pdoStatementMock);
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())

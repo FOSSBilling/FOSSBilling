@@ -24,12 +24,12 @@ class Session
         return $this->_handler->get($key);
     }
 
-    public function set($key, $value)
+    public function set($key, $value): void
     {
         $this->_handler->set($key, $value);
     }
 
-    public function destroy()
+    public function destroy(): void
     {
         $this->_handler->destroy();
     }
@@ -57,19 +57,19 @@ class Box_SessionFile
         return self::$instance;
     }
 
-    public function getId()
+    public function getId(): string|false
     {
         return session_id();
     }
 
-    public function destroy()
+    public function destroy(): void
     {
         if (self::$instance->sessionExists()) {
             session_destroy();
         }
     }
 
-    public function delete($key)
+    public function delete($key): bool
     {
         if (isset($_SESSION[$key])) {
             unset($_SESSION[$key]);
@@ -78,7 +78,7 @@ class Box_SessionFile
         return true;
     }
 
-    private function sessionExists()
+    private function sessionExists(): bool
     {
         if (!isset($_SESSION)) {
             return false;

@@ -122,7 +122,7 @@ class ClientTest extends \BBTestCase
             ->willReturn($model);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -156,7 +156,7 @@ class ClientTest extends \BBTestCase
             ->willReturn($model);
 
         $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);

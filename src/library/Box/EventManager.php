@@ -34,7 +34,7 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
         $subject = $data['subject'] ?? null;
         $params = $data['params'] ?? null;
 
-        $this->di['logger']->setChannel('event')->debug($event, $params);
+        $this->di['logger']->setChannel('event')->debug('Fired event: ' . $event, $params);
 
         $e = new Box_Event($subject, $event, $params);
         $e->setDi($this->di);
@@ -49,7 +49,7 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
      * @param Box_EventDispatcher $disp
      * @param string              $event
      */
-    private function _connectDatabaseHooks(&$disp, $event)
+    private function _connectDatabaseHooks(&$disp, $event): void
     {
         $sql = "SELECT id, rel_id, meta_value
             FROM extension_meta

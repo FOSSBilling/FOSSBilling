@@ -35,7 +35,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $service);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -78,7 +78,7 @@ class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $service);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -122,56 +122,5 @@ class AdminTest extends \BBTestCase
         $activity = new \Box\Mod\Activity\Api\Admin();
         $result = $activity->log_email([]);
         $this->assertFalse($result);
-    }
-
-    public function testlogDelete(): void
-    {
-        $di = new \Pimple\Container();
-
-        $databaseMock = $this->getMockBuilder('Box_Database')->getMock();
-        $databaseMock->expects($this->atLeastOnce())->
-            method('getExistingModelById')->
-            willReturn(new \Model_ActivitySystem());
-
-        $databaseMock->expects($this->atLeastOnce())->
-            method('trash');
-
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->onlyMethods(['hasPermission'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('hasPermission')
-            ->willReturn(true);
-
-        $di['db'] = $databaseMock;
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-        $di['validator'] = $validatorMock;
-
-        $di['mod_service'] = $di->protect(fn () => $serviceMock);
-
-        $activity = new \Box\Mod\Activity\Api\Admin();
-        $activity->setDi($di);
-
-        $result = $activity->log_delete(['id' => 1]);
-        $this->assertTrue($result);
-    }
-
-    public function testBatchDelete(): void
-    {
-        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Activity\Api\Admin::class)->onlyMethods(['log_delete'])->getMock();
-        $activityMock->expects($this->atLeastOnce())->method('log_delete')->willReturn(true);
-
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-        $activityMock->setDi($di);
-
-        $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);
-        $this->assertTrue($result);
     }
 }

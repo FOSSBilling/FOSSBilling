@@ -54,7 +54,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $serviceMock->setDi($di);
 
         $serviceMock->markAsPaid($invoiceItemModel);
@@ -332,7 +332,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->onConsecutiveCalls($invoiceModel, $clientModel));
+            ->willReturnOnConsecutiveCalls($invoiceModel, $clientModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($clientBalanceModel);
@@ -345,7 +345,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $invoiceServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $invoiceServiceMock);
 
         $serviceMock->setDi($di);
         $serviceMock->creditInvoiceItem($invoiceItemModel);
@@ -353,7 +353,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
     public function testgetTotalWithTax(): void
     {
-        $total = 5;
+        $total = 5.0;
         $tax = 0.5;
         $quantity = 3;
         $invoiceItemModel = new \Model_InvoiceItem();

@@ -34,7 +34,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function getSearchQuery($filter)
+    public function getSearchQuery($filter): array
     {
         $q = "SELECT id, rel_type, rel_id, meta_value as event, created_at, updated_at
             FROM extension_meta
@@ -51,7 +51,7 @@ class Service implements InjectionAwareInterface
         return $row;
     }
 
-    public static function onAfterAdminActivateExtension(\Box_Event $event)
+    public static function onAfterAdminActivateExtension(\Box_Event $event): void
     {
         $params = $event->getParameters();
         if (!isset($params['id'])) {
@@ -67,7 +67,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminDeactivateExtension(\Box_Event $event)
+    public static function onAfterAdminDeactivateExtension(\Box_Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -83,10 +83,7 @@ class Service implements InjectionAwareInterface
         $event->setReturnValue(true);
     }
 
-    /**
-     * @return bool
-     */
-    public function batchConnect($mod_name = null)
+    public function batchConnect($mod_name = null): bool
     {
         // Clean up the existing list before we add to it
         $this->_disconnectUnavailable();
@@ -115,7 +112,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    private function canBeConnected(\ReflectionMethod $method)
+    private function canBeConnected(\ReflectionMethod $method): bool
     {
         $parameters = $method->getParameters();
         if (!isset($parameters[0]) || !$method->isPublic()) {
@@ -133,11 +130,9 @@ class Service implements InjectionAwareInterface
     /**
      * Connect event for module.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
-    private function connect($data)
+    private function connect($data): bool
     {
         $required = [
             'event' => 'Hook event not passed',
@@ -177,7 +172,7 @@ class Service implements InjectionAwareInterface
     /**
      * Disconnect unavailable listeners.
      */
-    private function _disconnectUnavailable()
+    private function _disconnectUnavailable(): void
     {
         $rm_sql = 'DELETE FROM extension_meta WHERE id = :id';
 

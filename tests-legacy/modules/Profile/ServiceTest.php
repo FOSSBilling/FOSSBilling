@@ -104,7 +104,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
+        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($password);
@@ -157,8 +157,8 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $clientServiceMock);
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['tools'] = $toolsMock;
 
         $model = new \Model_Client();
@@ -233,8 +233,8 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $clientServiceMock);
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -282,8 +282,8 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $clientServiceMock);
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['tools'] = $toolsMock;
 
         $model = new \Model_Client();
@@ -338,7 +338,7 @@ class ServiceTest extends \BBTestCase
 
         $password = 'new password';
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
+        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($password);

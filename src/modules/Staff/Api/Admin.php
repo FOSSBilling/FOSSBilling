@@ -37,6 +37,18 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Get ID-name pairs of admins.
+     *
+     * @param array $data Filtering options
+     *
+     * @return array List of admins
+     */
+    public function get_pairs(array $data): array
+    {
+        return $this->getService()->getPairs($data);
+    }
+
+    /**
      * Get staff member by id.
      *
      * @return array
@@ -177,10 +189,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Update staff member permissions.
-     *
-     * @return bool
      */
-    public function permissions_update($data)
+    public function permissions_update($data): bool
     {
         $required = [
             'id' => 'ID is missing',
@@ -336,40 +346,5 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->getExistingModelById('ActivityAdminHistory', $data['id'], 'Event not found');
 
         return $this->getService()->toActivityAdminHistoryApiArray($model);
-    }
-
-    /**
-     * Delete login history event.
-     *
-     * @return bool
-     */
-    public function login_history_delete($data)
-    {
-        $required = [
-            'id' => 'Id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        $model = $this->di['db']->getExistingModelById('ActivityAdminHistory', $data['id'], 'Event not found');
-
-        return $this->getService()->deleteLoginHistory($model);
-    }
-
-    /**
-     * Deletes admin login logs with given IDs.
-     *
-     * @return bool
-     */
-    public function batch_delete_logs($data)
-    {
-        $required = [
-            'ids' => 'IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
-        foreach ($data['ids'] as $id) {
-            $this->login_history_delete(['id' => $id]);
-        }
-
-        return true;
     }
 }

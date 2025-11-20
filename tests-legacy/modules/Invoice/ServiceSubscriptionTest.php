@@ -100,7 +100,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->will($this->onConsecutiveCalls($clientModel, $gatewayModel));
+            ->willReturnOnConsecutiveCalls($clientModel, $gatewayModel);
 
         $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
             ->getMock();
@@ -171,7 +171,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function searchQueryData()
+    public static function searchQueryData(): array
     {
         return [
             [
@@ -208,7 +208,7 @@ class ServiceSubscriptionTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery($data, $expectedSqlPart, $expectedParams): void
+    public function testgetSearchQuery(array $data, string $expectedSqlPart, array $expectedParams): void
     {
         $di = new \Pimple\Container();
 

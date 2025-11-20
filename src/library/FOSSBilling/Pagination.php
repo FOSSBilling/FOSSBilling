@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -11,6 +10,12 @@ declare(strict_types=1);
  */
 
 namespace FOSSBilling;
+
+use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
+use FOSSBilling\Interfaces\ApiArrayInterface;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
 
 class Pagination implements InjectionAwareInterface
 {
@@ -38,6 +43,73 @@ class Pagination implements InjectionAwareInterface
     }
 
     /**
+     * Paginate results from a Doctrine QueryBuilder.
+     *
+     * Applies pagination to a Doctrine QueryBuilder and returns metadata and normalized entities.
+     * Entities implementing `ApiArrayInterface` will use `toApiArray()`, others will be normalized
+     * using Symfony's ObjectNormalizer.
+     *
+     * @param QueryBuilder $qb           the Doctrine QueryBuilder instance to paginate
+     * @param int|null     $perPage      Optional number of items per page. (defaults to 100)
+     * @param int|null     $page         Optional current page number. (grabbed from query parameters by default)
+     * @param string       $pageParam    query parameter key for the page number (default: "page")
+     * @param string       $perPageParam query parameter key for the per-page count (default: "per_page")
+     *
+     * @return array{
+     *     pages: int,      // Total number of pages
+     *     page: int,       // Current page number
+     *     per_page: int,   // Items per page
+     *     total: int,      // Total number of items
+     *     list: array      // List of paginated items as arrays
+     * }
+     *
+     * @throws InformationException if the page or per-page value is invalid
+     */
+    public function paginateDoctrineQuery(QueryBuilder $qb, ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
+    {
+        $request = $this->di['request'];
+        $serializer = new Serializer([new ObjectNormalizer()]);
+        $paginator = new DoctrinePaginator($qb, true);
+
+        $page ??= filter_var($request->query->get($pageParam), FILTER_VALIDATE_INT, ['options' => ['default' => 1]]);
+        $perPage ??= filter_var($request->query->get($perPageParam), FILTER_VALIDATE_INT, ['options' => ['default' => $this->getDefaultPerPage()]]);
+
+        if ($page < 1) {
+            throw new InformationException("Page number ($pageParam) must be a positive integer.");
+        }
+        if ($perPage < 1) {
+            throw new InformationException("The number of items per page ($perPageParam) must be a positive integer.");
+        }
+        if ($perPage > self::MAX_PER_PAGE) {
+            throw new InformationException("The number of items per page ($perPageParam) is too large. Please specify a smaller number.");
+        }
+
+        $offset = ($page - 1) * $perPage;
+        $qb->setFirstResult($offset)
+           ->setMaxResults($perPage);
+
+        $total = count($paginator);
+
+        $list = [];
+        foreach ($paginator as $entity) {
+            if ($entity instanceof ApiArrayInterface) {
+                $list[] = $entity->toApiArray();
+            } else {
+                // fallback: use serializer to normalize entity
+                $list[] = $serializer->normalize($entity);
+            }
+        }
+
+        return [
+            'pages' => $total > 0 ? (int) ceil($total / $perPage) : 0,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'list' => $list,
+        ];
+    }
+
+    /**
      * Paginate a SQL query using a simple LIMIT clause and a secondary count query.
      *
      * @param string   $query        the base SQL query without LIMIT
@@ -48,11 +120,11 @@ class Pagination implements InjectionAwareInterface
      * @param string   $perPageParam query parameter key for the per-page count (default: "per_page")
      *
      * @return array{
-     *     pages: int,
-     *     page: int,
-     *     per_page: int,
-     *     total: int,
-     *     list: array
+     *     pages: int,      // Total number of pages
+     *     page: int,       // Current page number
+     *     per_page: int,   // Items per page
+     *     total: int,      // Total number of items
+     *     list: array      // List of paginated items as arrays
      * }
      *
      * @throws InformationException if the page/per-page value or the SQL query is invalid
@@ -71,7 +143,7 @@ class Pagination implements InjectionAwareInterface
             throw new InformationException("The number of items per page ($perPageParam) must be a positive integer.");
         }
         if ($perPage > self::MAX_PER_PAGE) {
-            throw new InformationException("The number of items per page ($perPageParam) must be below the maximum allowed amount (" . self::MAX_PER_PAGE . ').');
+            throw new InformationException("The number of items per page ($perPageParam) is too large. Please specify a smaller number.");
         }
 
         $offset = ($page - 1) * $perPage;
@@ -96,36 +168,5 @@ class Pagination implements InjectionAwareInterface
             'total' => $total,
             'list' => $result,
         ];
-    }
-
-    /* Deprecated functions */
-    /**
-     * @deprecated 0.7.0, you should use getPaginatedResultSet() instead which is a drop in replacement.
-     */
-    public function getAdvancedResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
-    {
-        trigger_error('getAdvancedResultSet() is deprecated and will be removed in a future version of FOSSBilling. Please use getPaginatedResultSet() instead.', E_USER_DEPRECATED);
-
-        return $this->getPaginatedResultSet($query, $params, $perPage, $page, $pageParam, $perPageParam);
-    }
-
-    /**
-     * @deprecated 0.7.0, you should use getPaginatedResultSet() instead which is a drop in replacement.
-     */
-    public function getSimpleResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
-    {
-        trigger_error('getSimpleResultSet() is deprecated and will be removed in a future version of FOSSBilling. Please use getPaginatedResultSet() instead.', E_USER_DEPRECATED);
-
-        return $this->getPaginatedResultSet($query, $params, $perPage, $page, $pageParam, $perPageParam);
-    }
-
-    /**
-     * @deprecated 0.7.0, you should use getDefaultPerPage() instead which is a drop in replacement.
-     */
-    public function getPer_page(): int
-    {
-        trigger_error('getPer_page() is deprecated and will be removed in a future version of FOSSBilling. Please use getDefaultPerPage() instead.', E_USER_DEPRECATED);
-
-        return $this->getDefaultPerPage();
     }
 }

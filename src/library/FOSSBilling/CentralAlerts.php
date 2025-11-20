@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -81,8 +80,8 @@ class CentralAlerts implements InjectionAwareInterface
                 $alerts = array_filter($alerts, fn ($alert) => $alert['include_preview_branch']);
             } else {
                 $alerts = array_filter($alerts, function ($alert) use ($version) {
-                    $overThanTheMinimum = version_compare(strtolower($version), strtolower($alert['min_fossbilling_version']), '>=');
-                    $lessThanTheMaximum = version_compare(strtolower($version), strtolower($alert['max_fossbilling_version']), '<=');
+                    $overThanTheMinimum = version_compare(strtolower($version), strtolower((string) $alert['min_fossbilling_version']), '>=');
+                    $lessThanTheMaximum = version_compare(strtolower($version), strtolower((string) $alert['max_fossbilling_version']), '<=');
 
                     return $overThanTheMinimum && $lessThanTheMaximum;
                 });

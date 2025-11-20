@@ -1,40 +1,21 @@
-.idea
 .vscode
-.nova
 ._*
 .DS_Store
-.vagrant*
 src/config.php
 src/data/log/*
 src/data/cache/*
 src/vendor/*
 build
-composer.phar
-report/*
-*.log
-DOCKER_ENV
-docker_tag
-src/themes/*/config/settings_data.json
 cache
-
-### Cypress ###
-tests/cypress/videos/*
-tests/cypress/screenshots/*
 
 ### phpunit/phpunit ###
 .phpunit.result.cache
+.phpunit.cache/test-results
 
 ### node_modules ###
 node_modules
-npm-debug.log
-.history/
 
 ### friendsofphp/php-cs-fixer ###
-src/.php-cs-fixer.cache
 .php-cs-fixer.cache
-
-# Developer Workflow
-src/themes/*/config/settings_data.json
-docker-compose.yml
-.phpunit.cache/test-results
-.phpunit-live.cache/test-results
+src/install/php_error.log
+src/themes/huraga/config/settings_data.json

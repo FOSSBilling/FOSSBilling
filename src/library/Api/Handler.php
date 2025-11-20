@@ -13,7 +13,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 final class Api_Handler implements InjectionAwareInterface
 {
-    protected $type;
+    protected string|array $type;
     protected $ip;
     protected ?Pimple\Container $di = null;
 
@@ -41,7 +41,7 @@ final class Api_Handler implements InjectionAwareInterface
 
     public function __call($method, $arguments)
     {
-        if (!str_contains($method, '_')) {
+        if (!str_contains((string) $method, '_')) {
             throw new FOSSBilling\Exception('Method :method must contain underscore', [':method' => $method], 710);
         }
 
@@ -49,7 +49,7 @@ final class Api_Handler implements InjectionAwareInterface
             $arguments = $arguments[0];
         }
 
-        $e = explode('_', $method);
+        $e = explode('_', (string) $method);
         $mod = strtolower($e[0]);
         unset($e[0]);
         $method_name = implode('_', $e);
@@ -80,7 +80,7 @@ final class Api_Handler implements InjectionAwareInterface
             }
         }
 
-        $api_class = '\Box\Mod\\' . ucfirst($mod) . '\\Api\\' . ucfirst($this->type);
+        $api_class = '\Box\Mod\\' . ucfirst($mod) . '\\Api\\' . ucfirst((string) $this->type);
 
         $api = new $api_class();
 
@@ -101,7 +101,7 @@ final class Api_Handler implements InjectionAwareInterface
         if (!method_exists($api, $method_name) || !is_callable([$api, $method_name])) {
             $reflector = new ReflectionClass($api);
             if (!$reflector->hasMethod('__call')) {
-                throw new FOSSBilling\Exception(':type API call :method does not exist in module :module', [':type' => ucfirst($this->type), ':method' => $method_name, ':module' => $mod], 740);
+                throw new FOSSBilling\Exception(':type API call :method does not exist in module :module', [':type' => ucfirst((string) $this->type), ':method' => $method_name, ':module' => $mod], 740);
             }
         }
 

@@ -38,12 +38,12 @@ class Registrar_Domain implements Stringable
         return $this;
     }
 
-    public function getRegistrationPeriod()
+    public function getRegistrationPeriod(): ?int
     {
         return $this->_period;
     }
 
-    public function getName()
+    public function getName(): string
     {
         return $this->_sld . $this->_tld;
     }
@@ -79,7 +79,7 @@ class Registrar_Domain implements Stringable
         return $this;
     }
 
-    public function getContactRegistrar()
+    public function getContactRegistrar(): ?Registrar_Domain_Contact
     {
         return $this->_contact_registrar;
     }
@@ -91,7 +91,7 @@ class Registrar_Domain implements Stringable
         return $this;
     }
 
-    public function getContactAdmin()
+    public function getContactAdmin(): ?Registrar_Domain_Contact
     {
         return $this->_contact_admin;
     }
@@ -103,7 +103,7 @@ class Registrar_Domain implements Stringable
         return $this;
     }
 
-    public function getContactTech()
+    public function getContactTech(): ?Registrar_Domain_Contact
     {
         return $this->_contact_tech;
     }
@@ -115,7 +115,7 @@ class Registrar_Domain implements Stringable
         return $this;
     }
 
-    public function getContactBilling()
+    public function getContactBilling(): ?Registrar_Domain_Contact
     {
         return $this->_contact_billing;
     }
@@ -139,7 +139,7 @@ class Registrar_Domain implements Stringable
         return $this;
     }
 
-    public function getPrivacyEnabled()
+    public function getPrivacyEnabled(): ?bool
     {
         return $this->_privacy;
     }
@@ -154,7 +154,7 @@ class Registrar_Domain implements Stringable
     public function getTld($with_dot = true)
     {
         if ($with_dot === false && $this->_tld[0] == '.') {
-            return ltrim($this->_tld, '.');
+            return ltrim((string) $this->_tld, '.');
         }
 
         return $this->_tld;

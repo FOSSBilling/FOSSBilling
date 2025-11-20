@@ -161,10 +161,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes client from system.
-     *
-     * @return bool
      */
-    public function delete($data)
+    public function delete($data): bool
     {
         $required = [
             'id' => 'Client id is missing',
@@ -221,10 +219,8 @@ class Admin extends \Api_Abstract
      * @optional string $custom_8 - Custom field 8
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
-     *
-     * @return bool
      */
-    public function update($data = [])
+    public function update($data = []): bool
     {
         $required = ['id' => 'Id required'];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
@@ -308,10 +304,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Change client password.
-     *
-     * @return bool
      */
-    public function change_password($data)
+    public function change_password($data): bool
     {
         $required = [
             'id' => 'ID required',
@@ -371,10 +365,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Remove row from clients balance.
-     *
-     * @return bool
      */
-    public function balance_delete($data)
+    public function balance_delete($data): bool
     {
         $required = [
             'id' => 'Client ID is required',
@@ -399,10 +391,8 @@ class Admin extends \Api_Abstract
      *
      * @optional string $type - Related item type
      * @optional string $rel_id - Related item id
-     *
-     * @return bool
      */
-    public function balance_add_funds($data)
+    public function balance_add_funds($data): bool
     {
         $required = [
             'id' => 'Client ID required',
@@ -421,10 +411,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Remove password reminders which were not confirmed in 2 hours.
-     *
-     * @return bool
      */
-    public function batch_expire_password_reminders()
+    public function batch_expire_password_reminders(): bool
     {
         $service = $this->di['mod_service']('client');
         $expired = $service->getExpiredPasswordReminders();
@@ -465,27 +453,6 @@ class Admin extends \Api_Abstract
         }
 
         return $pager;
-    }
-
-    /**
-     * Remove log entry form clients logins history.
-     *
-     * @return bool
-     */
-    public function login_history_delete($data)
-    {
-        $required = [
-            'id' => 'Id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        $model = $this->di['db']->getExistingModelById('ActivityClientHistory', $data['id']);
-
-        if (!$model instanceof \Model_ActivityClientHistory) {
-            throw new \FOSSBilling\Exception('Event not found');
-        }
-        $this->di['db']->trash($model);
-
-        return true;
     }
 
     /**
@@ -532,7 +499,7 @@ class Admin extends \Api_Abstract
      *
      * @optional string $title - new group title
      */
-    public function group_update($data)
+    public function group_update($data): bool
     {
         $required = [
             'id' => 'Group id is missing',
@@ -590,10 +557,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes clients with given IDs.
-     *
-     * @return bool
      */
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         $required = [
             'ids' => 'IDs not passed',
@@ -602,25 +567,6 @@ class Admin extends \Api_Abstract
 
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id]);
-        }
-
-        return true;
-    }
-
-    /**
-     * Deletes client login logs with given IDs.
-     *
-     * @return bool
-     */
-    public function batch_delete_log($data)
-    {
-        $required = [
-            'ids' => 'IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
-        foreach ($data['ids'] as $id) {
-            $this->login_history_delete(['id' => $id]);
         }
 
         return true;

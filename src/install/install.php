@@ -11,11 +11,11 @@
 
 use Box\Mod\Email\Service;
 use FOSSBilling\Environment;
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Uid\Uuid;
 use Twig\Loader\FilesystemLoader;
 
 date_default_timezone_set('UTC');
@@ -112,6 +112,7 @@ final class FOSSBilling_Installer
         require_once 'session.php';
         $this->session = new Session();
         $this->filesystem = new Filesystem();
+        $this->isDebug = !Environment::isProduction();
 
         if (!$this->isDebug && $this->filesystem->exists(PATH_CONFIG)) {
             $config = require PATH_CONFIG;
@@ -314,19 +315,19 @@ final class FOSSBilling_Installer
             throw new Exception('The admin email is not a valid address.');
         }
 
-        if (strlen($this->session->get('admin_password')) < 8) {
+        if (strlen((string) $this->session->get('admin_password')) < 8) {
             throw new Exception('Minimum admin password length is 8 characters.');
         }
 
-        if (!preg_match('#[0-9]+#', $this->session->get('admin_password'))) {
+        if (!preg_match('#[0-9]+#', (string) $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one number.');
         }
 
-        if (!preg_match('#[a-z]+#', $this->session->get('admin_password'))) {
+        if (!preg_match('#[a-z]+#', (string) $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one lowercase letter.');
         }
 
-        if (!preg_match('#[A-Z]+#', $this->session->get('admin_password'))) {
+        if (!preg_match('#[A-Z]+#', (string) $this->session->get('admin_password'))) {
             throw new Exception('Admin password must include at least one uppercase letter.');
         }
 
@@ -446,7 +447,7 @@ final class FOSSBilling_Installer
         $data['debug_and_monitoring']['report_errors'] = (bool) $this->session->get('error_reporting');
         $data['debug_and_monitoring']['debug'] = $this->isDebug;
         $data['update_branch'] = $updateBranch;
-        $data['info']['instance_id'] = Uuid::uuid4()->toString();
+        $data['info']['instance_id'] = Uuid::v4()->toString();
         $data['url'] = str_replace(['https://', 'http://'], '', SYSTEM_URL);
         $data['path_data'] = Path::join(PATH_ROOT, 'data');
         $data['db'] = [
