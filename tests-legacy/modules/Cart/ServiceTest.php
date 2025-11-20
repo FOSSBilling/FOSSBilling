@@ -101,9 +101,6 @@ class ServiceTest extends \BBTestCase
         $curencyModel->expects($this->any())
             ->method('getId')
             ->willReturn($currencyId);
-        $reflectionId = new \ReflectionProperty(\Box\Mod\Currency\Entity\Currency::class, 'id');
-        $reflectionId->setAccessible(true);
-        $reflectionId->setValue($curencyModel, $currencyId);
 
         $session_id = 'rrcpqo7tkjh14d2vmf0car64k7';
         $model = null; // Does not exist in database
