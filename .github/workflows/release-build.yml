@@ -38,7 +38,7 @@ jobs:
           node-version: 24
 
       - name: 'Install Node.js Dependencies'
-        run: npm ci
+        run: npm install
 
       - name: 'Build Frontend Assets'
         run: npm run build
