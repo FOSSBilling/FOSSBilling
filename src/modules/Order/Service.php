@@ -582,7 +582,10 @@ class Service implements InjectionAwareInterface
             $order->price = $data['price'];
         } else {
             $repo = $product->getTable();
-            $rate = $currencyService->getRateByCode($currency->getCode());
+            $rate = $currencyRepository->getRateByCode($currency->getCode());
+            if ($rate === null) {
+                throw new \FOSSBilling\Exception("Currency rate for code '{$currency->getCode()}' is not configured.");
+            }
             $order->price = $repo->getProductPrice($product, $config) * $rate;
         }
 
