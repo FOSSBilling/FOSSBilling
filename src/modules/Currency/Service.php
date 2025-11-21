@@ -237,7 +237,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($model->getCode() === null || empty($model->getCode())) {
-            throw new \FOSSBilling\Exception('Currency not found');
+            throw new \FOSSBilling\Exception('Currency code is invalid or missing');
         }
 
         $em = $this->di['em'];
