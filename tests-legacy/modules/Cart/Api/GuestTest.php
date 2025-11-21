@@ -298,6 +298,5 @@ class GuestTest extends \BBTestCase
         $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('The promo code has expired or does not exist');
         $result = $this->guestApi->apply_promo($data);
-        $this->assertTrue($result);
     }
 }
