@@ -29,8 +29,8 @@ class Currency implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: "string", length: 50, nullable: true)]
     private ?string $title = null;
 
-    #[ORM\Column(type: "string", length: 3, nullable: true)]
-    private ?string $code = null;
+    #[ORM\Column(type: "string", length: 3, unique: true)]
+    private string $code;
 
     #[ORM\Column(type: "boolean", options: ["default" => false])]
     private bool $isDefault = false;
