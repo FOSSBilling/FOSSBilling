@@ -21,12 +21,15 @@ class ServiceTest extends \BBTestCase
     {
         return [
             [[], 'FROM activity_system ', true],
-            [['only_clients' => 'yes'], 'm.client_id IS NOT NULL', true],
-            [['only_staff' => 'yes'], 'm.admin_id IS NOT NULL', true],
+            [['user_filter' => 'only_clients'], 'm.client_id IS NOT NULL', true],
+            [['user_filter' => 'only_staff'], 'm.admin_id IS NOT NULL', true],
             [['priority' => '2'], 'm.priority =', true],
             [['search' => 'keyword'], 'm.message LIKE ', true],
-            [['no_info' => true], 'm.priority < :priority ', true],
-            [['no_debug' => true], 'm.priority < :priority ', true],
+            [['min_priority' => 6], 'm.priority <= :min_priority', true],
+            [['priority' => 6], 'm.priority = :priority', true],
+            // When both priority and min_priority are set, priority takes precedence
+            [['priority' => 5, 'min_priority' => 3], 'm.priority = :priority', true],
+            [['priority' => 5, 'min_priority' => 3], 'm.priority <= :min_priority', false],
         ];
     }
 
@@ -39,7 +42,7 @@ class ServiceTest extends \BBTestCase
         $result = $service->getSearchQuery($filterKey);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
-        $this->assertTrue(str_contains($result[0], $search), $expected);
+        $this->assertEquals($expected, str_contains($result[0], $search));
     }
 
     public function testLogEmail(): void

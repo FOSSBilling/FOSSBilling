@@ -1535,25 +1535,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(count(array_diff(array_keys($expected), array_keys($result))) == 0, 'Missing array key values.');
     }
 
-    public function testdeleteLoginHistory(): void
-    {
-        $adminHistoryModel = new \Model_ActivityAdminHistory();
-        $adminHistoryModel->loadBean(new \DummyBean());
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-
-        $service = new Service();
-        $service->setDi($di);
-
-        $result = $service->deleteLoginHistory($adminHistoryModel);
-        $this->assertTrue($result);
-    }
-
     public function testsetPermissions(): void
     {
         $pdoStatementMock = $this->getMockBuilder('\\' . PdoStatementMock::class)
