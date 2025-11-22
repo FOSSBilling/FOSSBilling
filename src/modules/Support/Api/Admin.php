@@ -26,7 +26,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function ticket_get_list($data)
+    public function ticket_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
@@ -44,7 +44,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function ticket_get($data)
+    public function ticket_get(array $data): array
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -66,7 +66,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
-    public function ticket_update($data)
+    public function ticket_update(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -74,6 +74,11 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+
+        // Sanitize subject if provided
+        if (isset($data['subject'])) {
+            $data['subject'] = \FOSSBilling\Tools::sanitizeContent($data['subject'], false);
+        }
 
         return $this->getService()->ticketUpdate($model, $data);
     }
@@ -83,7 +88,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
-    public function ticket_message_update($data)
+    public function ticket_message_update(array $data): bool
     {
         $required = [
             'id' => 'Ticket message id is missing',
@@ -101,7 +106,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
-    public function ticket_delete($data)
+    public function ticket_delete(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -118,7 +123,7 @@ class Admin extends \Api_Abstract
      *
      * @return int - ticket message id
      */
-    public function ticket_reply($data)
+    public function ticket_reply(array $data): int
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -126,7 +131,8 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', (string) $data['content']);
+        // Sanitize content to prevent XSS attacks
+        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
 
         $ticket = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
@@ -138,7 +144,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
-    public function ticket_close($data)
+    public function ticket_close(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -162,7 +168,7 @@ class Admin extends \Api_Abstract
      *
      * @return int $id - ticket id
      */
-    public function ticket_create($data)
+    public function ticket_create(array $data): int
     {
         $required = [
             'client_id' => 'Client id is missing',
@@ -172,7 +178,8 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', (string) $data['content']);
+        // Sanitize content to prevent XSS attacks
+        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
 
         $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
         $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
@@ -223,7 +230,7 @@ class Admin extends \Api_Abstract
     /**
      * Return tickets statuses with counter.
      */
-    public function ticket_get_statuses($data)
+    public function ticket_get_statuses(array $data): array
     {
         if (isset($data['titles'])) {
             return $this->getService()->getStatuses();
@@ -237,7 +244,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function public_ticket_get_list($data)
+    public function public_ticket_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->publicGetSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
@@ -258,7 +265,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function public_ticket_create($data)
+    public function public_ticket_create(array $data): int
     {
         $required = [
             'name' => 'Client name parameter is missing',
@@ -267,6 +274,10 @@ class Admin extends \Api_Abstract
             'message' => 'Ticket message is missing',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        // Sanitize user input to prevent XSS attacks
+        $data['subject'] = \FOSSBilling\Tools::sanitizeContent($data['subject'], false);
+        $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
 
         return $this->getService()->publicTicketCreate($data, $this->getIdentity());
     }
@@ -278,7 +289,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function public_ticket_get($data)
+    public function public_ticket_get(array $data): array
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -297,7 +308,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function public_ticket_delete($data)
+    public function public_ticket_delete(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -312,11 +323,11 @@ class Admin extends \Api_Abstract
     /**
      * Set id status to closed.
      *
-     * @return array
+     * @return bool
      *
      * @throws \FOSSBilling\Exception
      */
-    public function public_ticket_close($data)
+    public function public_ticket_close(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -338,7 +349,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function public_ticket_update($data)
+    public function public_ticket_update(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -353,11 +364,11 @@ class Admin extends \Api_Abstract
     /**
      * Post new reply to inquiry.
      *
-     * @return bool
+     * @return int
      *
      * @throws \FOSSBilling\Exception
      */
-    public function public_ticket_reply($data)
+    public function public_ticket_reply(array $data): int
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -373,7 +384,7 @@ class Admin extends \Api_Abstract
     /**
      * Return tickets statuses with counter.
      */
-    public function public_ticket_get_statuses($data)
+    public function public_ticket_get_statuses(array $data): array
     {
         if (isset($data['titles'])) {
             return $this->getService()->publicGetStatuses();
@@ -387,7 +398,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function helpdesk_get_list($data)
+    public function helpdesk_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->helpdeskGetSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
@@ -400,7 +411,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function helpdesk_get_pairs($data)
+    public function helpdesk_get_pairs(array $data): array
     {
         return $this->getService()->helpdeskGetPairs();
     }
@@ -412,7 +423,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function helpdesk_get($data)
+    public function helpdesk_get(array $data): array
     {
         $required = [
             'id' => 'Help desk id is missing',
@@ -437,7 +448,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function helpdesk_update($data)
+    public function helpdesk_update(array $data): bool
     {
         $required = [
             'id' => 'Help desk id is missing',
@@ -461,7 +472,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function helpdesk_create($data)
+    public function helpdesk_create(array $data): int
     {
         $required = [
             'name' => 'Help desk title is missing',
@@ -478,7 +489,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function helpdesk_delete($data)
+    public function helpdesk_delete(array $data): bool
     {
         $required = [
             'id' => 'Help desk id is missing',
@@ -495,7 +506,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function canned_get_list($data)
+    public function canned_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->cannedGetSearchQuery($data);
 
@@ -530,7 +541,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function canned_get($data)
+    public function canned_get(array $data): array
     {
         $required = [
             'id' => 'Canned reply id is missing',
@@ -549,7 +560,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function canned_delete($data)
+    public function canned_delete(array $data): bool
     {
         $required = [
             'id' => 'Canned reply id is missing',
@@ -570,7 +581,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function canned_create($data)
+    public function canned_create(array $data): int
     {
         $required = [
             'title' => 'Canned reply title is missing',
@@ -594,7 +605,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function canned_update($data)
+    public function canned_update(array $data): bool
     {
         $required = [
             'id' => 'Canned reply id is missing',
@@ -611,7 +622,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function canned_category_pairs($data)
+    public function canned_category_pairs(array $data): array
     {
         return $this->di['db']->getAssoc('SELECT id, title FROM support_pr_category WHERE 1');
     }
@@ -623,7 +634,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function canned_category_get($data)
+    public function canned_category_get(array $data): array
     {
         $required = [
             'id' => 'Canned category id is missing',
@@ -644,7 +655,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function canned_category_update($data)
+    public function canned_category_update(array $data): bool
     {
         $required = [
             'id' => 'Canned category id is missing',
@@ -665,7 +676,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function canned_category_delete($data)
+    public function canned_category_delete(array $data): bool
     {
         $required = [
             'id' => 'Canned category id is missing',
@@ -684,7 +695,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function canned_category_create($data)
+    public function canned_category_create(array $data): int
     {
         $required = [
             'title' => 'Canned category title is missing',
@@ -701,7 +712,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function note_create($data)
+    public function note_create(array $data): int
     {
         $required = [
             'ticket_id' => 'ticket_id is missing',
@@ -721,7 +732,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function note_delete($data)
+    public function note_delete(array $data): bool
     {
         $required = [
             'id' => 'Note id is missing',
@@ -740,7 +751,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function task_complete($data)
+    public function task_complete(array $data): bool
     {
         $required = [
             'id' => 'Ticket id is missing',
@@ -795,7 +806,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function kb_article_get_list($data)
+    public function kb_article_get_list(array $data): array
     {
         $status = $data['status'] ?? null;
         $search = $data['search'] ?? null;
@@ -816,7 +827,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function kb_article_get($data)
+    public function kb_article_get(array $data): array
     {
         $required = [
             'id' => 'Article id not passed',
@@ -838,9 +849,9 @@ class Admin extends \Api_Abstract
      * @optional string $status - knowledge base article status
      * @optional string $content - knowledge base article content
      *
-     * @return array
+     * @return int
      */
-    public function kb_article_create($data)
+    public function kb_article_create(array $data): int
     {
         $required = [
             'kb_article_category_id' => 'Article category id not passed',
@@ -849,9 +860,10 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $articleCategoryId = $data['kb_article_category_id'];
-        $title = $data['title'];
+        // Sanitize title and content to prevent XSS attacks
+        $title = \FOSSBilling\Tools::sanitizeContent($data['title'], false);
         $status = $data['status'] ?? \Model_SupportKbArticle::DRAFT;
-        $content = $data['content'] ?? null;
+        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeContent($data['content'], true) : null;
 
         return $this->getService()->kbCreateArticle($articleCategoryId, $title, $status, $content);
     }
@@ -868,7 +880,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
-    public function kb_article_update($data)
+    public function kb_article_update(array $data): bool
     {
         $required = [
             'id' => 'Article ID not passed',
@@ -876,10 +888,11 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $articleCategoryId = $data['kb_article_category_id'] ?? null;
-        $title = $data['title'] ?? null;
+        // Sanitize title and content to prevent XSS attacks
+        $title = isset($data['title']) ? \FOSSBilling\Tools::sanitizeContent($data['title'], false) : null;
         $slug = $data['slug'] ?? null;
         $status = $data['status'] ?? null;
-        $content = $data['content'] ?? null;
+        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeContent($data['content'], true) : null;
         $views = $data['views'] ?? null;
 
         return $this->getService()->kbUpdateArticle($data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);
@@ -911,7 +924,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function kb_category_get_list($data)
+    public function kb_category_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
@@ -930,7 +943,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function kb_category_get($data)
+    public function kb_category_get(array $data): array
     {
         $required = [
             'id' => 'Category ID not passed',
@@ -951,9 +964,9 @@ class Admin extends \Api_Abstract
      *
      * @optional string $description - knowledge base category description
      *
-     * @return array
+     * @return int
      */
-    public function kb_category_create($data)
+    public function kb_category_create(array $data): int
     {
         $required = [
             'title' => 'Category title not passed',
@@ -973,9 +986,9 @@ class Admin extends \Api_Abstract
      * @optional string $slug  - knowledge base category slug
      * @optional string $description - knowledge base category description
      *
-     * @return array
+     * @return bool
      */
-    public function kb_category_update($data)
+    public function kb_category_update(array $data): bool
     {
         $required = [
             'id' => 'Category ID not passed',
@@ -1000,7 +1013,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
-    public function kb_category_delete($data)
+    public function kb_category_delete(array $data): bool
     {
         $required = [
             'id' => 'Category ID not passed',
@@ -1021,7 +1034,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function kb_category_get_pairs($data)
+    public function kb_category_get_pairs(array $data): array
     {
         return $this->getService()->kbCategoryGetPairs();
     }
