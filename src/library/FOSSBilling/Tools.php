@@ -365,11 +365,11 @@ class Tools
      * Sanitize user content to prevent XSS attacks.
      * Uses Symfony's HTML Sanitizer component for robust protection.
      *
-     * @param string $content The content to sanitize
+     * @param string $content The content to sanitize. If empty, returns an empty string.
      * @param bool $allowHtml Whether to allow safe HTML tags (default: true for rich content)
      * @return string Sanitized content safe for output
      */
-    public static function sanitizeContent(?string $content = null, bool $allowHtml = true): string
+    public static function sanitizeContent(string $content = null, bool $allowHtml = true): string
     {
         if (empty($content)) {
             return '';

@@ -119,15 +119,12 @@ class Guest extends \Api_Abstract
      */
     public function kb_article_get_list(array $data): array
     {
-        $data['status'] = 'active';
-
-        $status = $data['status'];
         $search = $data['search'] ?? null;
         $cat = $data['kb_article_category_id'] ?? null;
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $page = $data['page'] ?? null;
 
-        $pager = $this->getService()->kbSearchArticles($status, $search, $cat, $per_page, $page);
+        $pager = $this->getService()->kbSearchArticles('active', $search, $cat, $per_page, $page);
 
         foreach ($pager['list'] as $key => $item) {
             $article = $this->di['db']->getExistingModelById('SupportKbArticle', $item['id'], 'KB Article not found');

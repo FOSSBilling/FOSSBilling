@@ -399,7 +399,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function countByStatus(string $status): int
     {
         $query = "SELECT COUNT(m.id) as counter FROM support_ticket
-                WHERE 'status' = :status GROUP BY 'status' LIMIT 1";
+                WHERE status = :status GROUP BY status LIMIT 1";
 
         return $this->di['db']->getCell($query, [':status' => $status]);
     }
