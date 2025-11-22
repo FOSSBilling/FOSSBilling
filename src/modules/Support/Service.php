@@ -1756,7 +1756,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function kbCategoryToApiArray(\Model_SupportKbArticleCategory $model, \Model_Admin|null $identity = null, ?string $query = null): array
+    public function kbCategoryToApiArray(\Model_SupportKbArticleCategory $model, \Model_Admin|\Model_Client|\Model_Guest|null $identity = null, ?string $query = null): array
     {
         $data = $this->di['db']->toArray($model);
 
