@@ -10,7 +10,6 @@
     "build-huraga": "npm run build -w huraga",
     "build-admin_default": "npm run build -w admin_default",
     "build-wysiwyg": "npm run build -w wysiwyg",
-    "cypress:open": "cypress open"
   },
   "repository": {
     "type": "git",
@@ -29,7 +28,6 @@
     "@symfony/webpack-encore": "5.2.0",
     "autoprefixer": "10.4.22",
     "core-js": "3.47.0",
-    "cypress": "15.7.0",
     "postcss": "8.5.6",
     "postcss-loader": "8.2.0",
     "sass": "1.94.2",
