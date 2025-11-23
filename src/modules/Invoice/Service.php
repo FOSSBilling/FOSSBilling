@@ -277,6 +277,31 @@ class Service implements InjectionAwareInterface
             ];
         }
 
+        // Add order information for email templates
+        $result['orders'] = [];
+        foreach ($lines as $line) {
+            if ($line['order_id']) {
+                $order = $this->di['db']->load('ClientOrder', $line['order_id']);
+                if ($order instanceof \Model_ClientOrder) {
+                    $orderInfo = [
+                        'id' => $order->id,
+                        'title' => $order->title,
+                        'expires_at' => $order->expires_at,
+                    ];
+
+                    // Get product name if available
+                    if ($order->product_id) {
+                        $product = $this->di['db']->load('Product', $order->product_id);
+                        if ($product instanceof \Model_Product) {
+                            $orderInfo['product_name'] = $product->title;
+                        }
+                    }
+
+                    $result['orders'][] = $orderInfo;
+                }
+            }
+        }
+
         return $result;
     }
 

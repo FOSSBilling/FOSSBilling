@@ -41,6 +41,17 @@
     <ul>
         <li><strong>Total Paid:</strong> {{ invoice.total|money(invoice.currency) }}</li>
         <li><strong>Date Paid:</strong>  {{ invoice.paid_at|format_date }}</li>
+        {% if invoice.orders is defined and invoice.orders|length > 0 %}
+            {% for order in invoice.orders %}
+                <li><strong>Order ID:</strong> #{{ order.id }}</li>
+                {% if order.product_name is defined %}
+                    <li><strong>Product:</strong> {{ order.product_name }}</li>
+                {% endif %}
+                {% if order.expires_at %}
+                    <li><strong>Renewal Date:</strong> {{ order.expires_at|format_date }}</li>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
     </ul>
 
     <p>You may view the invoice <a href="{{'invoice'|link}}/{{invoice.hash}}" target="_blank">here.</a>

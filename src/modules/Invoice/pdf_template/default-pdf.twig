@@ -31,6 +31,17 @@
 			<p>{{ 'Invoice date'|trans }}: {{ invoice.created_at|format_date }}</p>
 			<p>{{ 'Due date'|trans }}: {{ invoice.due_at|format_date }}</p>
 			<p>{{ 'Invoice status'|trans }}: {{ invoice.status|capitalize }}</p>
+			{% if invoice.orders is defined and invoice.orders|length > 0 %}
+				{% for order in invoice.orders %}
+					<p>{{ 'Order ID'|trans }}: #{{ order.id }}</p>
+					{% if order.product_name is defined %}
+						<p>{{ 'Product'|trans }}: {{ order.product_name }}</p>
+					{% endif %}
+					{% if order.expires_at %}
+						<p>{{ 'Renewal Date'|trans }}: {{ order.expires_at|format_date }}</p>
+					{% endif %}
+				{% endfor %}
+			{% endif %}
 		</div>
 
 		<h3 class='CompanyInfo'>{{ 'Company'|trans }}</h3>
