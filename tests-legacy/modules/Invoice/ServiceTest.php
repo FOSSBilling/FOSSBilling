@@ -459,7 +459,8 @@ class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
         $currencyRepositoryMock->expects($this->atLeastOnce())
-            ->method('getRateByCode');
+            ->method('getRateByCode')
+            ->willReturn(1.0);
 
         $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
             ->onlyMethods(['getCurrencyRepository'])->getMock();

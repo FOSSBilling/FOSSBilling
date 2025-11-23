@@ -405,7 +405,13 @@ class Service implements InjectionAwareInterface
 
         $invoice->serie = $systemService->getParamValue('invoice_series_paid');
         $invoice->approved = true;
-        $invoice->currency_rate = $currencyRepository->getRateByCode((string) $invoice->currency);
+        
+        $currencyRate = $currencyRepository->getRateByCode((string) $invoice->currency);
+        if ($currencyRate === null) {
+            throw new \FOSSBilling\Exception("Currency rate for code '{$invoice->currency}' is not configured.");
+        }
+        $invoice->currency_rate = $currencyRate;
+        
         $invoice->status = \Model_Invoice::STATUS_PAID;
         $invoice->paid_at = date('Y-m-d H:i:s');
         $invoice->updated_at = date('Y-m-d H:i:s');
