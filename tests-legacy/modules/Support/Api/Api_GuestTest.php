@@ -190,8 +190,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('kbFindActiveArticleBySlug')
             ->willReturn(new \Model_SupportKbArticle());
         $supportService->expects($this->atLeastOnce())
-            ->method('kbHitView')
-            ->willReturn(new \Model_SupportKbArticle());
+            ->method('kbHitView');
         $supportService->expects($this->atLeastOnce())
             ->method('kbToApiArray')
             ->willReturn([]);
@@ -220,8 +219,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('kbFindActiveArticleBySlug')
             ->willReturn(new \Model_SupportKbArticle());
         $supportService->expects($this->atLeastOnce())
-            ->method('kbHitView')
-            ->willReturn(new \Model_SupportKbArticle());
+            ->method('kbHitView');
         $supportService->expects($this->atLeastOnce())
             ->method('kbToApiArray')
             ->willReturn([]);
@@ -246,8 +244,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('kbFindActiveArticleBySlug')
             ->willReturn(new \Model_SupportKbArticle());
         $kbService->expects($this->never())
-            ->method('kbHitView')
-            ->willReturn(new \Model_SupportKbArticle());
+            ->method('kbHitView');
         $kbService->expects($this->never())
             ->method('kbToApiArray')
             ->willReturn([]);
@@ -270,8 +267,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('kbFindActiveArticleBySlug')
             ->willReturn(new \Model_SupportKbArticle());
         $kbService->expects($this->never())
-            ->method('kbHitView')
-            ->willReturn(new \Model_SupportKbArticle());
+            ->method('kbHitView');
         $kbService->expects($this->never())
             ->method('kbToApiArray')
             ->willReturn([]);
@@ -301,8 +297,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('kbFindActiveArticleBySlug')
             ->willReturn(null);
         $kbService->expects($this->never())
-            ->method('kbHitView')
-            ->willReturn(new \Model_SupportKbArticle());
+            ->method('kbHitView');
         $kbService->expects($this->never())
             ->method('kbToApiArray')
             ->willReturn([]);
