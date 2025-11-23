@@ -21,7 +21,6 @@ class Service implements InjectionAwareInterface
     final public const DOMAIN = 'domain';
     final public const DOWNLOADABLE = 'downloadable';
     final public const HOSTING = 'hosting';
-    final public const MEMBERSHIP = 'membership';
     final public const VPS = 'vps';
 
     final public const SETUP_AFTER_ORDER = 'after_order';
