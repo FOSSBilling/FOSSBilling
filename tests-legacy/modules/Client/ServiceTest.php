@@ -260,7 +260,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($result[1]);
 
         $this->assertTrue(str_contains($result[0], $expectedStr), $result[0]);
-        $this->assertTrue(array_diff_key($result[1], $expectedParams) == []);
+        $this->assertEquals([], array_diff_key($result[1], $expectedParams));
     }
 
     public function testGetSearchQueryChangeSelect(): void
@@ -307,7 +307,7 @@ final class ServiceTest extends \BBTestCase
         $result = $clientService->toSessionArray($model);
 
         $this->assertIsArray($result);
-        $this->assertTrue(array_diff_key($result, $expectedArrayKeys) == []);
+        $this->assertEquals([], array_diff_key($result, $expectedArrayKeys));
     }
 
     public function testEmailAlreadyRegistered(): void
@@ -402,7 +402,7 @@ final class ServiceTest extends \BBTestCase
         $currency = 'EUR';
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $model->id = random_int(1, 100);
+        $model->id = 1;
         $model->currency = 'USD';
 
         $invoiceModel = new \Model_Invoice();
@@ -430,7 +430,7 @@ final class ServiceTest extends \BBTestCase
         $currency = 'EUR';
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $model->id = random_int(1, 100);
+        $model->id = 1;
         $model->currency = 'USD';
 
         $clientOrderModel = new \Model_ClientOrder();
@@ -490,7 +490,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($params);
 
         $this->assertTrue(str_contains($sql, $expectedStr), $sql);
-        $this->assertTrue(array_diff_key($params, $expectedParams) == []);
+        $this->assertEquals([], array_diff_key($params, $expectedParams));
     }
 
     public function testAddFunds(): void
@@ -616,7 +616,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($params);
 
         $this->assertTrue(str_contains($sql, $expectedStr), $sql);
-        $this->assertTrue(array_diff_key($params, $expectedParams) == []);
+        $this->assertEquals([], array_diff_key($params, $expectedParams));
     }
 
     public function testCounter(): void

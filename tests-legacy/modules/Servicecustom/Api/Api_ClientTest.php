@@ -26,7 +26,7 @@ final class Api_ClientTest extends \BBTestCase
 
         $arguments = [
             0 => [
-                'order_id' => random_int(1, 100),
+                'order_id' => 1,
             ],
         ];
 

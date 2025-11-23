@@ -63,7 +63,7 @@ final class Api_ClientTest extends PHPUnit\Framework\TestCase
 
         $client = new Model_Client();
         $client->loadBean(new DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
 
         $this->api->setIdentity($client);
         $this->api->setService($serviceMock);
@@ -95,7 +95,7 @@ final class Api_ClientTest extends PHPUnit\Framework\TestCase
 
         $client = new Model_Client();
         $client->loadBean(new DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
 
         $this->api->setIdentity($client);
         $this->api->setService($serviceMock);
@@ -126,7 +126,7 @@ final class Api_ClientTest extends PHPUnit\Framework\TestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->get($data);
 
@@ -183,7 +183,7 @@ final class Api_ClientTest extends PHPUnit\Framework\TestCase
         $apiMock->setIdentity($client);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->service($data);
 
@@ -242,7 +242,7 @@ final class Api_ClientTest extends PHPUnit\Framework\TestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->delete($data);
 
@@ -267,7 +267,7 @@ final class Api_ClientTest extends PHPUnit\Framework\TestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $this->expectException(FOSSBilling\Exception::class);
@@ -306,7 +306,7 @@ final class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->api->setIdentity($client);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $this->api->get($data);
     }
@@ -338,7 +338,7 @@ final class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->api->setIdentity($client);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $this->expectException(FOSSBilling\Exception::class);

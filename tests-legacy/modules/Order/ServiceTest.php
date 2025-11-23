@@ -39,7 +39,7 @@ final class ServiceTest extends \BBTestCase
     public function testCounter(): void
     {
         $counter = [
-            \Model_ClientOrder::STATUS_ACTIVE => random_int(1, 100),
+            \Model_ClientOrder::STATUS_ACTIVE => 1,
         ];
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -65,7 +65,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminOrderActivate(): void
     {
         $params = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -87,9 +87,9 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $orderArr = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'client' => [
-                'id' => random_int(1, 100),
+                'id' => 1,
             ],
             'service_type' => 'domain',
         ];
@@ -127,7 +127,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminOrderActivateLogException(): void
     {
         $params = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -149,9 +149,9 @@ final class ServiceTest extends \BBTestCase
             ->willThrowException(new \Exception('PHPUnit controlled exception'));
 
         $orderArr = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'client' => [
-                'id' => random_int(1, 100),
+                'id' => 1,
             ],
             'service_type' => 'domain',
         ];
@@ -189,7 +189,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminOrderRenew(): void
     {
         $params = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -211,9 +211,9 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $orderArr = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'client' => [
-                'id' => random_int(1, 100),
+                'id' => 1,
             ],
             'service_type' => 'domain',
         ];
@@ -249,7 +249,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminOrderRenewLogException(): void
     {
         $params = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -271,9 +271,9 @@ final class ServiceTest extends \BBTestCase
             ->willThrowException(new \Exception('PHPUnit controlled exception'));
 
         $orderArr = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'client' => [
-                'id' => random_int(1, 100),
+                'id' => 1,
             ],
             'service_type' => 'domain',
         ];
@@ -309,7 +309,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminOrderSuspend(): void
     {
         $params = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -331,9 +331,9 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $orderArr = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'client' => [
-                'id' => random_int(1, 100),
+                'id' => 1,
             ],
             'service_type' => 'domain',
         ];
@@ -369,7 +369,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminOrderSuspendLogException(): void
     {
         $params = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -391,9 +391,9 @@ final class ServiceTest extends \BBTestCase
             ->willThrowException(new \Exception('PHPUnit controlled exception'));
 
         $orderArr = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'client' => [
-                'id' => random_int(1, 100),
+                'id' => 1,
             ],
             'service_type' => 'domain',
         ];
@@ -430,7 +430,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminOrderUnsuspend(): void
     {
         $params = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -452,9 +452,9 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $orderArr = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'client' => [
-                'id' => random_int(1, 100),
+                'id' => 1,
             ],
             'service_type' => 'domain',
         ];
@@ -490,7 +490,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminOrderUnsuspendLogException(): void
     {
         $params = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -512,9 +512,9 @@ final class ServiceTest extends \BBTestCase
             ->willThrowException(new \Exception('PHPUnit controlled exception'));
 
         $orderArr = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'client' => [
-                'id' => random_int(1, 100),
+                'id' => 1,
             ],
             'service_type' => 'domain',
         ];
@@ -550,7 +550,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminOrderCancel(): void
     {
         $params = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -572,9 +572,9 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $orderArr = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'client' => [
-                'id' => random_int(1, 100),
+                'id' => 1,
             ],
             'service_type' => 'domain',
         ];
@@ -608,7 +608,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminOrderCancelLogException(): void
     {
         $params = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -630,9 +630,9 @@ final class ServiceTest extends \BBTestCase
             ->willThrowException(new \Exception('PHPUnit controlled exception'));
 
         $orderArr = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'client' => [
-                'id' => random_int(1, 100),
+                'id' => 1,
             ],
             'service_type' => 'domain',
         ];
@@ -666,7 +666,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminOrderUncancel(): void
     {
         $params = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -688,9 +688,9 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $orderArr = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'client' => [
-                'id' => random_int(1, 100),
+                'id' => 1,
             ],
             'service_type' => 'domain',
         ];
@@ -726,7 +726,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminOrderUncancelLogException(): void
     {
         $params = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -748,9 +748,9 @@ final class ServiceTest extends \BBTestCase
             ->willThrowException(new \Exception('PHPUnit controlled exception'));
 
         $orderArr = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'client' => [
-                'id' => random_int(1, 100),
+                'id' => 1,
             ],
             'service_type' => 'domain',
         ];
@@ -805,7 +805,7 @@ final class ServiceTest extends \BBTestCase
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->service_id = random_int(1, 100);
+        $order->service_id = 1;
         $order->service_type = \Model_ProductTable::CUSTOM;
 
         $result = $this->service->getOrderService($order);
@@ -830,7 +830,7 @@ final class ServiceTest extends \BBTestCase
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->service_id = random_int(1, 100);
+        $order->service_id = 1;
 
         $result = $this->service->getOrderService($order);
         $this->assertInstanceOf('Model_ServiceCustom', $result);
@@ -880,7 +880,7 @@ final class ServiceTest extends \BBTestCase
 
         $service = new \Model_ServiceCustom();
         $service->loadBean(new \DummyBean());
-        $service->id = random_int(1, 100);
+        $service->id = 1;
 
         $result = $this->service->getServiceOrder($service);
         $this->assertInstanceOf('Model_ClientOrder', $result);
@@ -927,7 +927,7 @@ final class ServiceTest extends \BBTestCase
 
         $product = new \Model_Product();
         $product->loadBean(new \DummyBean());
-        $product->id = random_int(1, 100);
+        $product->id = 1;
 
         $result = $this->service->productHasOrders($product);
 
@@ -945,7 +945,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($orderStatus);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -982,7 +982,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetSoonExpiringActiveOrdersQuery(): void
     {
-        $randId = random_int(1, 100);
+        $randId = 1;
 
         $orderStatus = new \Model_ClientOrderStatus();
         $orderStatus->loadBean(new \DummyBean());
@@ -1273,7 +1273,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($result[1]);
 
         $this->assertTrue(str_contains($result[0], $expectedStr), $result[0]);
-        $this->assertTrue(array_diff_key($result[1], $expectedParams) == []);
+        $this->assertEquals([], array_diff_key($result[1], $expectedParams));
     }
 
     public function testCreateOrderMissingOrderCurrency(): void

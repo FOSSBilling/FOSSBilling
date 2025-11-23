@@ -47,7 +47,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $product = [
-            'form_id' => random_int(1, 100),
+            'form_id' => 1,
         ];
         $data = [
             'label' => 'label',
@@ -82,7 +82,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $product = [
-            'form_id' => random_int(1, 100),
+            'form_id' => 1,
         ];
         $data = [];
         $this->expectException(\Exception::class);
@@ -115,7 +115,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $product = [
-            'form_id' => random_int(1, 100),
+            'form_id' => 1,
         ];
         $data = [
             'field_name' => 'field_name',
@@ -130,8 +130,8 @@ final class ServiceTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->product_id = random_int(1, 100);
-        $order->client_id = random_int(1, 100);
+        $order->product_id = 1;
+        $order->client_id = 1;
         $order->config = 'config';
 
         $product = new \Model_Product();
@@ -142,7 +142,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($product);
@@ -164,7 +164,7 @@ final class ServiceTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $order->config = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
@@ -188,7 +188,7 @@ final class ServiceTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $order->config = 'config';
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
@@ -207,7 +207,7 @@ final class ServiceTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $order->config = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
@@ -222,7 +222,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -237,8 +237,8 @@ final class ServiceTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->id = random_int(1, 100);
-        $order->client_id = random_int(1, 100);
+        $order->id = 1;
+        $order->client_id = 1;
         $order->config = 'config';
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
@@ -258,7 +258,7 @@ final class ServiceTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $order->config = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
@@ -273,7 +273,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -288,7 +288,7 @@ final class ServiceTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $order->config = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
@@ -303,7 +303,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -318,7 +318,7 @@ final class ServiceTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $order->config = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
@@ -333,7 +333,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -348,7 +348,7 @@ final class ServiceTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $order->config = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
@@ -363,7 +363,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -378,7 +378,7 @@ final class ServiceTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $order->config = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
@@ -430,8 +430,8 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_ServiceCustom();
         $model->loadBean(new \DummyBean());
-        $model->id = random_int(1, 100);
-        $model->client_id = random_int(1, 100);
+        $model->id = 1;
+        $model->client_id = 1;
         $model->plugin = 'plugin';
         $model->config = '{"config_param":"config_value"}';
         $model->updated_at = date('Y-m-d H:i:s');
@@ -469,7 +469,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $this->service->setDi($di);
 
-        $result = $this->service->getServiceCustomByOrderId(random_int(1, 100));
+        $result = $this->service->getServiceCustomByOrderId(1);
 
         $this->assertInstanceOf('Model_ServiceCustom', $result);
     }
@@ -491,14 +491,14 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
-        $this->service->getServiceCustomByOrderId(random_int(1, 100));
+        $this->service->getServiceCustomByOrderId(1);
     }
 
     public function testUpdateConfig(): void
     {
         $model = new \Model_ServiceCustom();
         $model->loadBean(new \DummyBean());
-        $model->id = random_int(1, 100);
+        $model->id = 1;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -508,7 +508,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -516,7 +516,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $config = ['param1' => 'value1'];
-        $result = $serviceMock->updateConfig(random_int(1, 100), $config);
+        $result = $serviceMock->updateConfig(1, $config);
         $this->assertNull($result);
     }
 
@@ -524,7 +524,7 @@ final class ServiceTest extends \BBTestCase
     {
         $model = new \Model_ServiceCustom();
         $model->loadBean(new \DummyBean());
-        $model->id = random_int(1, 100);
+        $model->id = 1;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
         $serviceMock->expects($this->never())
@@ -534,7 +534,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->never())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -543,6 +543,6 @@ final class ServiceTest extends \BBTestCase
 
         $config = '';
         $this->expectException(\Exception::class);
-        $serviceMock->updateConfig(random_int(1, 100), $config);
+        $serviceMock->updateConfig(1, $config);
     }
 }

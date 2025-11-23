@@ -21,7 +21,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('updateConfig');
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
             'config' => [
                 'param1' => 'value1',
             ],
@@ -58,7 +58,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('updateConfig');
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
         ];
 
         $this->api->setService($serviceMock);
@@ -74,7 +74,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('updateConfig');
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
             'config' => 'NotArray',
         ];
 
@@ -96,7 +96,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $arguments = [
             0 => [
-                'order_id' => random_int(1, 100),
+                'order_id' => 1,
             ],
         ];
 

@@ -124,7 +124,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($params);
 
         $this->assertTrue(str_contains($sql, $expectedStr), $sql);
-        $this->assertTrue(array_diff_key($params, $expectedParams) == []);
+        $this->assertEquals([], array_diff_key($params, $expectedParams));
     }
 
     public function testGetExtensionsList(): void

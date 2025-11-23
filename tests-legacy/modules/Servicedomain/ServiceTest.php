@@ -260,7 +260,7 @@ final class ServiceTest extends \BBTestCase
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
-        $tldModel->tld_registrar_id = random_int(1, 100);
+        $tldModel->tld_registrar_id = 1;
 
         $data = [
             'action' => 'register',
@@ -331,7 +331,7 @@ final class ServiceTest extends \BBTestCase
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
 
         $result = $serviceMock->action_create($order);
         $this->assertInstanceOf('Model_ServiceDomain', $result);
@@ -341,7 +341,7 @@ final class ServiceTest extends \BBTestCase
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
-        $tldModel->tld_registrar_id = random_int(1, 100);
+        $tldModel->tld_registrar_id = 1;
 
         $data = [
             'action' => 'register',
@@ -376,7 +376,7 @@ final class ServiceTest extends \BBTestCase
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $this->expectException(\FOSSBilling\Exception::class);
         $serviceMock->action_create($order);
     }
@@ -404,11 +404,11 @@ final class ServiceTest extends \BBTestCase
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
-        $tldModel->tld_registrar_id = random_int(1, 100);
+        $tldModel->tld_registrar_id = 1;
 
         $domainModel = new \Model_ServiceDomain();
         $domainModel->loadBean(new \DummyBean());
-        $domainModel->tld_registrar_id = random_int(1, 100);
+        $domainModel->tld_registrar_id = 1;
         $domainModel->action = $action;
 
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)
@@ -433,7 +433,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
@@ -442,7 +442,7 @@ final class ServiceTest extends \BBTestCase
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $result = $serviceMock->action_activate($order);
         $this->assertInstanceOf('Model_ServiceDomain', $result);
     }
@@ -460,7 +460,7 @@ final class ServiceTest extends \BBTestCase
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->service->action_activate($order);
@@ -470,11 +470,11 @@ final class ServiceTest extends \BBTestCase
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
-        $tldModel->tld_registrar_id = random_int(1, 100);
+        $tldModel->tld_registrar_id = 1;
 
         $domainModel = new \Model_ServiceDomain();
         $domainModel->loadBean(new \DummyBean());
-        $domainModel->tld_registrar_id = random_int(1, 100);
+        $domainModel->tld_registrar_id = 1;
         $domainModel->action = 'register';
 
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)
@@ -504,7 +504,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -513,7 +513,7 @@ final class ServiceTest extends \BBTestCase
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $result = $serviceMock->action_renew($order);
 
         $this->assertTrue($result);
@@ -532,8 +532,8 @@ final class ServiceTest extends \BBTestCase
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->id = random_int(1, 100);
-        $order->client_id = random_int(1, 100);
+        $order->id = 1;
+        $order->client_id = 1;
 
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->service->action_renew($order);
@@ -561,11 +561,11 @@ final class ServiceTest extends \BBTestCase
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
-        $tldModel->tld_registrar_id = random_int(1, 100);
+        $tldModel->tld_registrar_id = 1;
 
         $domainModel = new \Model_ServiceDomain();
         $domainModel->loadBean(new \DummyBean());
-        $domainModel->tld_registrar_id = random_int(1, 100);
+        $domainModel->tld_registrar_id = 1;
         $domainModel->action = 'register';
 
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)
@@ -589,7 +589,7 @@ final class ServiceTest extends \BBTestCase
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $result = $serviceMock->action_cancel($order);
 
         $this->assertTrue($result);
@@ -608,8 +608,8 @@ final class ServiceTest extends \BBTestCase
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->id = random_int(1, 100);
-        $order->client_id = random_int(1, 100);
+        $order->id = 1;
+        $order->client_id = 1;
 
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->service->action_cancel($order);
@@ -626,7 +626,7 @@ final class ServiceTest extends \BBTestCase
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $order->client_id = random_int(1, 100);
+        $order->client_id = 1;
         $result = $serviceMock->action_uncancel($order);
 
         $this->assertTrue($result);
@@ -636,11 +636,11 @@ final class ServiceTest extends \BBTestCase
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
-        $tldModel->tld_registrar_id = random_int(1, 100);
+        $tldModel->tld_registrar_id = 1;
 
         $domainModel = new \Model_ServiceDomain();
         $domainModel->loadBean(new \DummyBean());
-        $domainModel->tld_registrar_id = random_int(1, 100);
+        $domainModel->tld_registrar_id = 1;
         $domainModel->action = 'register';
 
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)
@@ -691,7 +691,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -749,7 +749,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
@@ -819,7 +819,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -848,7 +848,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -877,7 +877,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -906,7 +906,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -934,7 +934,7 @@ final class ServiceTest extends \BBTestCase
 
         $tldRegistrar = new \Model_TldRegistrar();
         $tldRegistrar->loadBean(new \DummyBean());
-        $tldRegistrar->tld_registrar_id = random_int(1, 100);
+        $tldRegistrar->tld_registrar_id = 1;
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -949,7 +949,7 @@ final class ServiceTest extends \BBTestCase
         $tld->loadBean(new \DummyBean());
         $tld->allow_transfer = true;
         $tld->tld = '.com';
-        $tld->tld_registrar_id = random_int(1, 100);
+        $tld->tld_registrar_id = 1;
 
         $result = $serviceMock->canBeTransferred($tld, 'example');
 
@@ -986,7 +986,7 @@ final class ServiceTest extends \BBTestCase
 
         $tldRegistrar = new \Model_TldRegistrar();
         $tldRegistrar->loadBean(new \DummyBean());
-        $tldRegistrar->tld_registrar_id = random_int(1, 100);
+        $tldRegistrar->tld_registrar_id = 1;
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1006,7 +1006,7 @@ final class ServiceTest extends \BBTestCase
         $tld->loadBean(new \DummyBean());
         $tld->allow_register = true;
         $tld->tld = '.com';
-        $tld->tld_registrar_id = random_int(1, 100);
+        $tld->tld_registrar_id = 1;
 
         $result = $serviceMock->isDomainAvailable($tld, 'example');
 
@@ -1114,7 +1114,7 @@ final class ServiceTest extends \BBTestCase
         $model->contact_phone_cc = 'phone_cc';
         $model->contact_phone = 'phone';
         $model->transfer_code = 'EPPCODE';
-        $model->tld_registrar_id = random_int(1, 100);
+        $model->tld_registrar_id = 1;
 
         $tldRegistrar = new \Model_TldRegistrar();
         $tldRegistrar->loadBean(new \DummyBean());
@@ -1359,7 +1359,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
-        $result = $this->service->tldFindOneActiveById(random_int(1, 100));
+        $result = $this->service->tldFindOneActiveById(1);
 
         $this->assertInstanceOf('Model_Tld', $result);
     }
@@ -1432,7 +1432,7 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_Tld();
         $model->loadBean(new \DummyBean());
-        $model->id = random_int(1, 100);
+        $model->id = 1;
 
         $result = $this->service->tldRm($model);
 
@@ -1457,14 +1457,14 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_Tld();
         $model->loadBean(new \DummyBean());
         $model->tld = '.com';
-        $model->price_registration = random_int(1, 100);
-        $model->price_renew = random_int(1, 100);
-        $model->price_transfer = random_int(1, 100);
+        $model->price_registration = 1;
+        $model->price_renew = 1;
+        $model->price_transfer = 1;
         $model->active = 1;
         $model->allow_register = 1;
         $model->allow_transfer = 1;
         $model->min_years = 2;
-        $model->tld_registrar_id = random_int(1, 100);
+        $model->tld_registrar_id = 1;
 
         $result = $this->service->tldToApiArray($model);
         $this->assertIsArray($result);
@@ -1686,7 +1686,7 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_TldRegistrar();
         $model->loadBean(new \DummyBean());
-        $model->id = random_int(1, 100);
+        $model->id = 1;
         $model->name = 'ResellerClub';
 
         $result = $this->service->registrarRm($model);
@@ -1712,7 +1712,7 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_TldRegistrar();
         $model->loadBean(new \DummyBean());
-        $model->id = random_int(1, 100);
+        $model->id = 1;
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->service->registrarRm($model);
@@ -1722,7 +1722,7 @@ final class ServiceTest extends \BBTestCase
     {
         $config = [
             'label' => 'Label',
-            'form' => random_int(1, 100),
+            'form' => 1,
         ];
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
@@ -1734,7 +1734,7 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_TldRegistrar();
         $model->loadBean(new \DummyBean());
-        $model->id = random_int(1, 100);
+        $model->id = 1;
         $model->name = 'ResellerClub';
         $model->test_mode = true;
 
@@ -1745,17 +1745,17 @@ final class ServiceTest extends \BBTestCase
     {
         $data = [];
         $data['tld'] = '.com';
-        $data['tld_registrar_id'] = random_int(1, 100);
-        $data['price_registration'] = random_int(1, 10);
-        $data['price_renew'] = random_int(1, 10);
-        $data['price_transfer'] = random_int(1, 10);
+        $data['tld_registrar_id'] = 1;
+        $data['price_registration'] = 1;
+        $data['price_renew'] = 1;
+        $data['price_transfer'] = 1;
         $data['min_years'] = random_int(1, 5);
         $data['allow_register'] = 1;
         $data['allow_transfer'] = 1;
         $data['updated_at'] = date('Y-m-d H:i:s');
         $data['created_at'] = date('Y-m-d H:i:s');
 
-        $randId = random_int(1, 100);
+        $randId = 1;
 
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
@@ -1783,10 +1783,10 @@ final class ServiceTest extends \BBTestCase
     {
         $data = [];
         $data['tld'] = '.com';
-        $data['tld_registrar_id'] = random_int(1, 100);
-        $data['price_registration'] = random_int(1, 10);
-        $data['price_renew'] = random_int(1, 10);
-        $data['price_transfer'] = random_int(1, 10);
+        $data['tld_registrar_id'] = 1;
+        $data['price_registration'] = 1;
+        $data['price_renew'] = 1;
+        $data['price_transfer'] = 1;
         $data['min_years'] = random_int(1, 5);
         $data['allow_register'] = true;
         $data['allow_transfer'] = true;
@@ -1794,7 +1794,7 @@ final class ServiceTest extends \BBTestCase
         $data['updated_at'] = date('Y-m-d H:i:s');
         $data['created_at'] = date('Y-m-d H:i:s');
 
-        $randId = random_int(1, 100);
+        $randId = 1;
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1821,7 +1821,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $model = new \Model_TldRegistrar();
         $model->loadBean(new \DummyBean());
@@ -1841,7 +1841,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testRegistrarCopy(): void
     {
-        $newId = random_int(1, 100);
+        $newId = 1;
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
@@ -1875,7 +1875,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -1905,7 +1905,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -1918,7 +1918,7 @@ final class ServiceTest extends \BBTestCase
             'ns2' => 'ns2.example.com',
             'ns3' => 'ns3.example.com',
             'ns4' => 'ns4.example.com',
-            'period' => random_int(1, 10),
+            'period' => 1,
             'privacy' => 1,
             'locked' => 1,
             'transfer_code' => 'EPPCODE',
@@ -1926,7 +1926,7 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
-        $model->id = random_int(1, 100);
+        $model->id = 1;
 
         $result = $this->service->updateDomain($model, $data);
 

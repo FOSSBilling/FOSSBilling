@@ -206,7 +206,7 @@ final class Api_ClientTest extends \BBTestCase
         $this->clientApi->setIdentity(new \Model_Client());
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
         ];
         $result = $this->clientApi->lock($data);
 
@@ -266,7 +266,7 @@ final class Api_ClientTest extends \BBTestCase
         $this->clientApi->setIdentity(new \Model_Client());
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -298,7 +298,7 @@ final class Api_ClientTest extends \BBTestCase
         $this->clientApi->setIdentity(new \Model_Client());
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);

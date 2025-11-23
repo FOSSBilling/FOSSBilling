@@ -345,7 +345,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('tldAlreadyRegistered')
             ->willReturn(false);
         $serviceMock->expects($this->atLeastOnce())->method('tldCreate')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -359,10 +359,10 @@ final class Api_AdminTest extends \BBTestCase
 
         $data = [
             'tld' => '.com',
-            'tld_registrar_id' => random_int(1, 100),
-            'price_registration' => random_int(1, 100),
-            'price_renew' => random_int(1, 100),
-            'price_transfer' => random_int(1, 100),
+            'tld_registrar_id' => 1,
+            'price_registration' => 1,
+            'price_renew' => 1,
+            'price_transfer' => 1,
         ];
 
         $result = $this->adminApi->tld_create($data);
@@ -625,7 +625,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->registrar_copy($data);
 
@@ -690,7 +690,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->registrar_get($data);
 
@@ -768,7 +768,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->registrar_update($data);
 
@@ -836,7 +836,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setDi($di);
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
         ];
         $result = $this->adminApi->update($data);
 
@@ -907,7 +907,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setDi($di);
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);

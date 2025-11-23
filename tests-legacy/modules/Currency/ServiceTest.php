@@ -444,7 +444,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($currencyModel);

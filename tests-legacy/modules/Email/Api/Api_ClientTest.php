@@ -36,7 +36,7 @@ final class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
         $clientApi->setIdentity($client);
 
         $result = $clientApi->get_list([]);
@@ -71,7 +71,7 @@ final class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
         $clientApi->setIdentity($client);
 
         $result = $clientApi->get(['id' => 1]);

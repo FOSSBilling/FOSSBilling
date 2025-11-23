@@ -38,7 +38,7 @@ final class Api_AdminTest extends BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->get($data);
 
@@ -83,7 +83,7 @@ final class Api_AdminTest extends BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['createOrder'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('createOrder')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -107,8 +107,8 @@ final class Api_AdminTest extends BBTestCase
         $this->api->setService($serviceMock);
 
         $data = [
-            'client_id' => random_int(1, 100),
-            'product_id' => random_int(1, 100),
+            'client_id' => 1,
+            'product_id' => 1,
         ];
         $result = $this->api->create($data);
 
@@ -133,8 +133,8 @@ final class Api_AdminTest extends BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'client_id' => random_int(1, 100),
-            'product_id' => random_int(1, 100),
+            'client_id' => 1,
+            'product_id' => 1,
         ];
         $result = $apiMock->update($data);
 
@@ -159,8 +159,8 @@ final class Api_AdminTest extends BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'client_id' => random_int(1, 100),
-            'product_id' => random_int(1, 100),
+            'client_id' => 1,
+            'product_id' => 1,
         ];
         $result = $apiMock->activate($data);
 
@@ -512,7 +512,7 @@ final class Api_AdminTest extends BBTestCase
         $apiMock->setIdentity($admin);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->service($data);
 
@@ -608,7 +608,7 @@ final class Api_AdminTest extends BBTestCase
         $this->api->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->api->status_history_delete($data);
 
@@ -695,7 +695,7 @@ final class Api_AdminTest extends BBTestCase
         $this->api->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->api->get($data);
     }

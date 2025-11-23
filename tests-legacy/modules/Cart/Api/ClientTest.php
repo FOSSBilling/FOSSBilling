@@ -43,7 +43,7 @@ final class ClientTest extends \BBTestCase
         $this->clientApi->setIdentity($client);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $di = new \Pimple\Container();
 

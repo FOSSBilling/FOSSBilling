@@ -755,7 +755,7 @@ final class ServiceTest extends \BBTestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('template_updateProvider')]
     public function testTemplateUpdate(array $data, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $templateRenderExpects): void
     {
-        $id = random_int(1, 100);
+        $id = 1;
         $model = new \Model_EmailTemplate();
         $model->loadBean(new \DummyBean());
         $model->id = $id;
@@ -799,7 +799,7 @@ final class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $id = random_int(1, 100);
+        $id = 1;
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
         $model->id = $id;
@@ -839,7 +839,7 @@ final class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $id = random_int(1, 100);
+        $id = 1;
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
         $model->id = $id;
@@ -1012,7 +1012,7 @@ final class ServiceTest extends \BBTestCase
 
         $templateModel = new \Model_EmailTemplate();
         $templateModel->loadBean(new \DummyBean());
-        $templateModel->id = random_int(1, 100);
+        $templateModel->id = 1;
         $templateModel->action_code = 'mod_email_test';
 
         $db = $this->createMock('Box_Database');

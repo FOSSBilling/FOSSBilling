@@ -31,7 +31,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     public function testCheckRequiredParamsForArray(): void
     {
         $data = [
-            'id' => random_int(1, 10),
+            'id' => 1,
             'key' => 'KEY must be set',
         ];
         $required = [
@@ -58,7 +58,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     public function testCheckRequiredParamsForArrayOneKeyNotExists(): void
     {
         $data = [
-            'id' => random_int(1, 10),
+            'id' => 1,
         ];
         $required = [
             'id' => 'ID must be set',
@@ -74,7 +74,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     public function testCheckRequiredParamsForArrayMessagePlaceholder(): void
     {
         $data = [
-            'id' => random_int(1, 10),
+            'id' => 1,
         ];
         $required = [
             'id' => 'ID must be set',
@@ -92,7 +92,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     public function testCheckRequiredParamsForArrayMessagePlaceholders(): void
     {
         $data = [
-            'id' => random_int(1, 10),
+            'id' => 1,
         ];
         $required = [
             'id' => 'ID must be set',
@@ -113,7 +113,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     public function testCheckRequiredParamsForArrayErrorCode(): void
     {
         $data = [
-            'id' => random_int(1, 10),
+            'id' => 1,
         ];
         $required = [
             'id' => 'ID must be set',
@@ -131,7 +131,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     public function testCheckRequiredParamsForArrayErrorCodeVariablesNotSet(): void
     {
         $data = [
-            'id' => random_int(1, 10),
+            'id' => 1,
         ];
         $required = [
             'id' => 'ID must be set',

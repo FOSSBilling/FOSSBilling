@@ -82,7 +82,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->ticket_get($data);
 
@@ -113,7 +113,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->ticket_update($data);
 
@@ -144,7 +144,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'content' => 'Content',
         ];
         $result = $this->adminApi->ticket_message_update($data);
@@ -176,7 +176,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->ticket_delete($data);
 
@@ -207,7 +207,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'content' => 'Content',
         ];
         $result = $this->adminApi->ticket_reply($data);
@@ -242,7 +242,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->ticket_close($data);
 
@@ -277,7 +277,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->ticket_close($data);
 
@@ -301,7 +301,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturnOnConsecutiveCalls($clientModel, $supportHelpdeskModel);
 
-        $randID = random_int(1, 100);
+        $randID = 1;
         $serviceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForAdmin')
             ->willReturn($randID);
@@ -315,10 +315,10 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'client_id' => random_int(1, 100),
+            'client_id' => 1,
             'content' => 'Content',
             'subject' => 'Subject',
-            'support_helpdesk_id' => random_int(1, 100),
+            'support_helpdesk_id' => 1,
         ];
         $result = $this->adminApi->ticket_create($data);
 
@@ -337,7 +337,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
-        $ticket->id = random_int(1, 100);
+        $ticket->id = 1;
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -360,7 +360,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
-        $ticket->id = random_int(1, 100);
+        $ticket->id = 1;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['getExpired', 'autoClose'])->getMock();
@@ -404,7 +404,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $ticket = new \Model_SupportPTicket();
         $ticket->loadBean(new \DummyBean());
-        $ticket->id = random_int(1, 100);
+        $ticket->id = 1;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['publicGetExpired', 'publicAutoClose'])->getMock();
@@ -516,7 +516,7 @@ final class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $randID = random_int(1, 100);
+        $randID = 1;
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['publicTicketCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketCreate')
@@ -552,7 +552,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPTicket());
 
-        $randID = random_int(1, 100);
+        $randID = 1;
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['publicToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
@@ -566,7 +566,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->public_ticket_get($data);
 
@@ -597,7 +597,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->public_ticket_delete($data);
 
@@ -629,7 +629,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->public_ticket_close($data);
 
@@ -661,7 +661,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->public_ticket_update($data);
 
@@ -693,7 +693,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'content' => 'Content',
         ];
         $result = $this->adminApi->public_ticket_reply($data);
@@ -814,7 +814,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->helpdesk_get($data);
 
@@ -846,7 +846,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->helpdesk_update($data);
 
@@ -872,7 +872,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->helpdesk_create($data);
 
@@ -996,7 +996,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->canned_get($data);
 
@@ -1028,7 +1028,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->canned_delete($data);
 
@@ -1044,7 +1044,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCreate')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -1142,7 +1142,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->canned_category_get($data);
 
@@ -1178,7 +1178,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->canned_category_update($data);
 
@@ -1213,7 +1213,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->canned_category_delete($data);
 
@@ -1270,7 +1270,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'ticket_id' => random_int(1, 100),
+            'ticket_id' => 1,
             'note' => 'Note',
         ];
         $result = $this->adminApi->note_create($data);
@@ -1303,7 +1303,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->note_delete($data);
 
@@ -1334,7 +1334,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->task_complete($data);
 
@@ -1408,7 +1408,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $db = $this->createMock('Box_Database');
@@ -1445,7 +1445,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $db = $this->createMock('Box_Database');
@@ -1469,11 +1469,11 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $data = [
-            'kb_article_category_id' => random_int(1, 100),
+            'kb_article_category_id' => 1,
             'title' => 'Title',
         ];
 
-        $id = random_int(1, 100);
+        $id = 1;
 
         $di = new \Pimple\Container();
 
@@ -1498,13 +1498,13 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $data = [
-            'id' => random_int(1, 100),
-            'kb_article_category_id' => random_int(1, 100),
+            'id' => 1,
+            'kb_article_category_id' => 1,
             'title' => 'Title',
             'slug' => 'article-slug',
             'status' => 'active',
             'content' => 'Content',
-            'views' => random_int(1, 100),
+            'views' => 1,
         ];
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbUpdateArticle'])->getMock();
@@ -1531,7 +1531,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $db = $this->createMock('Box_Database');
@@ -1582,7 +1582,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setService($kbService);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $adminApi->kb_article_delete(['id' => random_int(1, 100)]);
+        $result = $adminApi->kb_article_delete(['id' => 1]);
         $this->assertTrue($result);
     }
 
@@ -1646,7 +1646,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setService($kbService);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $adminApi->kb_category_get($data);
         $this->assertIsArray($result);
@@ -1705,7 +1705,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setService($kbService);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -1766,7 +1766,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'title' => 'Title',
             'slug' => 'category-slug',
             'description' => 'Description',
@@ -1830,7 +1830,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'title' => 'Title',
             'slug' => 'category-slug',
             'description' => 'Description',
@@ -1865,7 +1865,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $adminApi->kb_category_delete($data);
         $this->assertTrue($result);
@@ -1925,7 +1925,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);

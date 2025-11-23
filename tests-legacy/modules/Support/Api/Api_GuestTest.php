@@ -217,7 +217,7 @@ final class Api_GuestTest extends \BBTestCase
         $guestApi->setService($supportService);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $guestApi->kb_article_get($data);
         $this->assertIsArray($result);
@@ -294,7 +294,7 @@ final class Api_GuestTest extends \BBTestCase
         $guestApi->setService($kbService);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $di = new \Pimple\Container();
@@ -409,7 +409,7 @@ final class Api_GuestTest extends \BBTestCase
         $guestApi->setService($kbService);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $di = new \Pimple\Container();
@@ -484,7 +484,7 @@ final class Api_GuestTest extends \BBTestCase
         $guestApi->setService($kbService);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $di = new \Pimple\Container();

@@ -52,7 +52,7 @@ final class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Activity\Service();
         $data = [
-            'client_id' => random_int(1, 100),
+            'client_id' => 1,
             'sender' => 'sender',
             'recipients' => 'recipients',
             'subject' => 'subject',

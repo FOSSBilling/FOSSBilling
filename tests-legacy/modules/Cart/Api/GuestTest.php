@@ -118,7 +118,7 @@ final class GuestTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $cart->currency_id = random_int(1, 100);
+        $cart->currency_id = 1;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart'])->getMock();
@@ -156,7 +156,7 @@ final class GuestTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $cart->currency_id = random_int(1, 100);
+        $cart->currency_id = 1;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart'])->getMock();
@@ -194,7 +194,7 @@ final class GuestTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $cart->currency_id = random_int(1, 100);
+        $cart->currency_id = 1;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'])->getMock();
@@ -231,7 +231,7 @@ final class GuestTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $cart->currency_id = random_int(1, 100);
+        $cart->currency_id = 1;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'])->getMock();
@@ -269,7 +269,7 @@ final class GuestTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $cart->currency_id = random_int(1, 100);
+        $cart->currency_id = 1;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'])->getMock();
@@ -308,7 +308,7 @@ final class GuestTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $cart->currency_id = random_int(1, 100);
+        $cart->currency_id = 1;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'applyPromo', 'findActivePromoByCode', 'isPromoAvailableForClientGroup'])->getMock();
@@ -345,7 +345,7 @@ final class GuestTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $cart->currency_id = random_int(1, 100);
+        $cart->currency_id = 1;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'removePromo'])->getMock();
@@ -365,7 +365,7 @@ final class GuestTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $cart->currency_id = random_int(1, 100);
+        $cart->currency_id = 1;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'removeProduct'])->getMock();
@@ -385,7 +385,7 @@ final class GuestTest extends \BBTestCase
         $this->guestApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $result = $this->guestApi->remove_item($data);
@@ -397,7 +397,7 @@ final class GuestTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $cart->currency_id = random_int(1, 100);
+        $cart->currency_id = 1;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'addItem'])->getMock();
@@ -424,7 +424,7 @@ final class GuestTest extends \BBTestCase
         $this->guestApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'multiple' => true,
         ];
 
@@ -437,7 +437,7 @@ final class GuestTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $cart->currency_id = random_int(1, 100);
+        $cart->currency_id = 1;
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'addItem'])->getMock();
@@ -468,7 +468,7 @@ final class GuestTest extends \BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
             'multiple' => false, // should reset cart before adding
         ];
 

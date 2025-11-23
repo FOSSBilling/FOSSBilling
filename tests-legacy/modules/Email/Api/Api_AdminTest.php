@@ -412,7 +412,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $modelId = random_int(1, 100);
+        $modelId = 1;
 
         $templateModel = new \Model_EmailTemplate();
         $templateModel->loadBean(new \DummyBean());
@@ -461,7 +461,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $id = random_int(1, 100);
+        $id = 1;
         $data = [
             'id' => $id,
             'enabled' => '1',
@@ -502,7 +502,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $id = random_int(1, 100);
+        $id = 1;
         $data = [
             'code' => 'CODE',
         ];

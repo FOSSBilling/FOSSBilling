@@ -83,7 +83,7 @@ final class AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->get($data);
 
@@ -95,7 +95,7 @@ final class AdminTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc')
-            ->willReturn([random_int(1, 100), date('Y-m-d H:i:s')]);
+            ->willReturn([1, date('Y-m-d H:i:s')]);
         $dbMock->expects($this->atLeastOnce())
             ->method('exec')
             ->willReturn(null);
@@ -106,7 +106,7 @@ final class AdminTest extends \BBTestCase
         $this->adminApi->setDi($di);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->batch_expire($data);
 

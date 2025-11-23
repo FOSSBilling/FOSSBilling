@@ -111,7 +111,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($modelCart);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
             ->disableOriginalConstructor()
@@ -260,7 +260,7 @@ final class ServiceTest extends \BBTestCase
 
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $result = $this->service->removeProduct($cart, random_int(1, 100));
+        $result = $this->service->removeProduct($cart, 1);
         $this->assertTrue($result);
     }
 
@@ -282,7 +282,7 @@ final class ServiceTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $this->service->removeProduct($cart, random_int(1, 100));
+        $result = $this->service->removeProduct($cart, 1);
         $this->assertTrue($result);
     }
 
@@ -291,7 +291,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -319,7 +319,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(null);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -338,7 +338,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -357,7 +357,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([new \Model_CartProduct(), new \Model_CartProduct()]);
@@ -384,7 +384,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['isEmptyCart'])->getMock();
@@ -413,7 +413,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['isEmptyCart'])->getMock();
@@ -494,7 +494,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $promo = new \Model_Promo();
         $promo->loadBean(new \DummyBean());
@@ -608,7 +608,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -642,7 +642,7 @@ final class ServiceTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $cart->promo_id = random_int(1, 100);
+        $cart->promo_id = 1;
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -650,7 +650,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
             ->onlyMethods(['createFromCart', 'isClientAbleToUsePromo', 'rm', 'isPromoAvailableForClientGroup'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('createFromCart')
-            ->willReturn([$order, random_int(1, 100), [random_int(1, 100)]]);
+            ->willReturn([$order, 1, [1]]);
         $serviceMock->expects($this->atLeastOnce())->method('isClientAbleToUsePromo')
             ->willReturn(true);
         $serviceMock->expects($this->atLeastOnce())->method('rm')
@@ -699,7 +699,7 @@ final class ServiceTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
-        $cart->promo_id = random_int(1, 100);
+        $cart->promo_id = 1;
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -741,7 +741,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
