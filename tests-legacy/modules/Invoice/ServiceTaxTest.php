@@ -4,7 +4,8 @@ namespace Box\Mod\Invoice;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTaxTest extends \BBTestCase
-{    protected ?ServiceTax $service;
+{
+    protected ?ServiceTax $service;
 
     public function setUp(): void
     {

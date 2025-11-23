@@ -4,7 +4,8 @@ namespace Box\Mod\Servicedownloadable\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class ClientTest extends \BBTestCase
-{    protected ?Client $api;
+{
+    protected ?Client $api;
 
     public function setUp(): void
     {

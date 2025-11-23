@@ -4,7 +4,8 @@ namespace Box\Tests\Mod\Servicecustom\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_AdminTest extends \BBTestCase
-{    protected ?\Box\Mod\Servicecustom\Api\Admin $api;
+{
+    protected ?\Box\Mod\Servicecustom\Api\Admin $api;
 
     public function setUp(): void
     {

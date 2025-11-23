@@ -8,7 +8,8 @@
  */
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_ClientTest extends PHPUnit\Framework\TestCase
-{    protected ?Box\Mod\Order\Api\Client $api;
+{
+    protected ?Box\Mod\Order\Api\Client $api;
 
     public function setUp(): void
     {

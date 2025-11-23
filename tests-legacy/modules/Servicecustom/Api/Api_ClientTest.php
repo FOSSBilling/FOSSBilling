@@ -4,7 +4,8 @@ namespace Box\Tests\Mod\Servicecustom\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_ClientTest extends \BBTestCase
-{    protected ?\Box\Mod\Servicecustom\Api\Client $api;
+{
+    protected ?\Box\Mod\Servicecustom\Api\Client $api;
 
     public function setUp(): void
     {

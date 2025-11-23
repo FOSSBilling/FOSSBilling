@@ -790,7 +790,7 @@ class ServiceTest extends \BBTestCase
         $templateModel->loadBean(new \DummyBean());
 
         $result = $emailServiceMock->updateTemplate($templateModel, $data['enabled'], $data['category'], $data['subject'], @$data['content']);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testGetEmailById(): void

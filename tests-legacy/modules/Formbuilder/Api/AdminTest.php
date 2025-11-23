@@ -4,7 +4,9 @@ namespace Box\Mod\Formbuilder\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class AdminTest extends \BBTestCase
-{    protected ?\Box\Mod\Formbuilder\Service $service;    protected ?Admin $api;
+{
+    protected ?\Box\Mod\Formbuilder\Service $service;
+    protected ?Admin $api;
 
     public function getServiceMock(): \PHPUnit\Framework\MockObject\MockObject
     {

@@ -411,7 +411,7 @@ class Api_AdminTest extends \BBTestCase
         $result = $adminApi->update($data);
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     /**
@@ -470,7 +470,7 @@ class Api_AdminTest extends \BBTestCase
         $result = $adminApi->delete($data);
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public static function SetDefaultExceptionProvider(): array
@@ -555,6 +555,6 @@ class Api_AdminTest extends \BBTestCase
         $result = $adminApi->set_default($data);
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 }

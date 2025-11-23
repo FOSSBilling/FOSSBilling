@@ -493,7 +493,7 @@ class Api_AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $result = $adminApi->template_update($data);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testTemplateReset(): void

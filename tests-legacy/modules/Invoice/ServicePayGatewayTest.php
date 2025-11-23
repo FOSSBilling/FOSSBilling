@@ -4,7 +4,8 @@ namespace Box\Mod\Invoice;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class ServicePayGatewayTest extends \BBTestCase
-{    protected ?ServicePayGateway $service;
+{
+    protected ?ServicePayGateway $service;
 
     public function setUp(): void
     {

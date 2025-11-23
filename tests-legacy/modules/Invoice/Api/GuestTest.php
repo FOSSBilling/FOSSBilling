@@ -4,7 +4,8 @@ namespace Box\Mod\Invoice\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class GuestTest extends \BBTestCase
-{    protected ?Guest $api;
+{
+    protected ?Guest $api;
 
     public function setUp(): void
     {

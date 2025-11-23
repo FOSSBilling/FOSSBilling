@@ -4,7 +4,8 @@ namespace Box\Tests\Mod\Servicedomain;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
-{    protected ?\Box\Mod\Servicedomain\Service $service;
+{
+    protected ?\Box\Mod\Servicedomain\Service $service;
 
     public function setUp(): void
     {
