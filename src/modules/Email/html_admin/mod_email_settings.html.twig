@@ -196,6 +196,7 @@
                                 <th>{{ 'Tries'|trans }}</th>
                                 <th>{{ 'Created at'|trans }}</th>
                                 <th>{{ 'Updated at'|trans }}</th>
+                                <th class="w-1"></th>
                             </tr>
                             </thead>
                             <tbody>
@@ -228,10 +229,20 @@
                                     <td>
                                         {{ queuedEmail.updated_at|format_date }}
                                     </td>
+                                    <td>
+                                        <button class="btn btn-icon email-preview-btn"
+                                            data-email-subject="{{ queuedEmail.subject }}"
+                                            data-email-content="{{ queuedEmail.content|e('html_attr') }}"
+                                            title="{{ 'Preview'|trans }}">
+                                            <svg class="icon">
+                                                <use xlink:href="#eye" />
+                                            </svg>
+                                        </button>
+                                    </td>
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td class="text-muted" colspan="5">{{ 'The list is empty.'|trans }}</td>
+                                    <td class="text-muted" colspan="8">{{ 'The list is empty.'|trans }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -385,6 +396,7 @@
 {% endblock %}
 
 {% block js %}
+{{ include('partial_email_preview.html.twig') }}
 <script>
 $(function() {
     $('#emailTest').on('click', function() {

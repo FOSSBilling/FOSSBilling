@@ -49,6 +49,15 @@
             </td>
             <td>{{ email.created_at|format_date }}</td>
             <td>
+                <button class="btn btn-icon email-preview-btn"
+                    data-email-id="{{ email.id }}"
+                    data-email-subject="{{ email.subject }}"
+                    data-email-content="{{ email.content_html|e('html_attr') }}"
+                    title="{{ 'Preview'|trans }}">
+                    <svg class="icon">
+                        <use xlink:href="#eye" />
+                    </svg>
+                </button>
                 <a class="btn btn-icon" href="{{ '/email'|alink }}/{{ email.id }}">
                     <svg class="icon">
                         <use xlink:href="#edit" />
@@ -77,4 +86,8 @@
         {{ include('partial_pagination.html.twig', { 'list': emails, 'url': 'email/history' }) }}
     </div>
 </div>
+{% endblock %}
+
+{% block js %}
+{{ include('partial_email_preview.html.twig') }}
 {% endblock %}
