@@ -212,9 +212,6 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function update($data = [])
     {
-        $required = ['id' => 'Id required'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
         $service = $this->di['mod_service']('client');

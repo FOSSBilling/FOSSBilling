@@ -160,9 +160,6 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function delete($data)
     {
-        $required = ['code' => 'Currency code is missing'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         return $this->getService()->deleteCurrencyByCode($data['code']);
     }
 
