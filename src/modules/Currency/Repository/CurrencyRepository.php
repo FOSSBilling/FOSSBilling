@@ -65,7 +65,7 @@ class CurrencyRepository extends EntityRepository
      * Returns null if no currency is marked as default. Callers should handle
      * this case appropriately (e.g., by throwing an exception or using a fallback).
      *
-     * @return Currency|null Returns null if no default currency is found
+     * @return Currency|null
      */
     public function findDefault(): ?Currency
     {
