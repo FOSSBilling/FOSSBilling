@@ -16,6 +16,7 @@
 namespace Box\Mod\Invoice\Api;
 
 use FOSSBilling\InformationException;
+use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
 {
@@ -111,13 +112,9 @@ class Admin extends \Api_Abstract
      *
      * @return int $id - newly generated invoice ID
      */
+    #[RequiredParams(['client_id' => 'Client ID is missing'])]
     public function prepare($data)
     {
-        $required = [
-            'client_id' => 'Client id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
 
         $invoice = $this->getService()->prepareInvoice($client, $data);
@@ -202,13 +199,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice item ID was not passed'])]
     public function item_delete($data)
     {
-        $required = [
-            'id' => 'Invoice item id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('InvoiceItem', $data['id'], 'Invoice item was not found');
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
 
@@ -238,14 +231,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Order ID was not passed'])]
     public function renewal_invoice($data)
     {
-        $required = [
-            'id' => 'Order id required',
-        ];
-
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
         if ($model->price <= 0) {
             throw new InformationException('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
@@ -363,14 +351,9 @@ class Admin extends \Api_Abstract
     /**
      * Process selected transaction.
      */
+    #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_process($data): bool
     {
-        $required = [
-            'id' => 'Transaction id is missing',
-        ];
-
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
 
         $output = null;
@@ -397,12 +380,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_update($data)
     {
-        $required = [
-            'id' => 'Transaction id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $model = $this->di['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
 
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
@@ -434,12 +414,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_delete($data)
     {
-        $required = [
-            'id' => 'Transaction id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $model = $this->di['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
 
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
@@ -452,12 +429,9 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
+    #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_get($data)
     {
-        $required = [
-            'id' => 'Transaction id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $model = $this->di['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
 
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
@@ -595,12 +569,9 @@ class Admin extends \Api_Abstract
      *
      * @return true
      */
+    #[RequiredParams(['code' => 'Payment gateway code is missing'])]
     public function gateway_install(array $data)
     {
-        $required = [
-            'code' => 'Payment gateway code is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $code = $data['code'];
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
 
@@ -614,13 +585,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_get($data)
     {
-        $required = [
-            'id' => 'Gateway id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
 
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
@@ -633,12 +600,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_copy($data)
     {
-        $required = [
-            'id' => 'Gateway id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $model = $this->di['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
 
@@ -660,13 +624,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_update($data)
     {
-        $required = [
-            'id' => 'Gateway id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
 
@@ -680,13 +640,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_delete($data)
     {
-        $required = [
-            'id' => 'Gateway id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
 
@@ -726,15 +682,13 @@ class Admin extends \Api_Abstract
      *
      * @throws InformationException
      */
+    #[RequiredParams([
+        'client_id' => 'Client ID was not passed',
+        'gateway_id' => 'Payment gateway ID was not passed',
+        'currency' => 'Subscription currency was not passed',
+    ])]
     public function subscription_create($data)
     {
-        $required = [
-            'client_id' => 'Client id not passed',
-            'gateway_id' => 'Payment gateway id not passed',
-            'currency' => 'Subscription currency not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
         $payGateway = $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Payment gateway not found');
 
@@ -759,13 +713,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Subscription ID was not passed'])]
     public function subscription_update($data)
     {
-        $required = [
-            'id' => 'Subscription id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Subscription', $data['id'], 'Subscription not found');
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
 
@@ -783,8 +733,8 @@ class Admin extends \Api_Abstract
     {
         if (!isset($data['id']) && !isset($data['sid'])) {
             $required = [
-                'id' => 'Subscription id not passed',
-                'sid' => 'Subscription sid not passed',
+                'id' => 'Subscription ID was not passed',
+                'sid' => 'Subscription sID was not passed',
             ];
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
         }
@@ -813,13 +763,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Subscription ID was not passed'])]
     public function subscription_delete($data)
     {
-        $required = [
-            'id' => 'Subscription id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Subscription', $data['id'], 'Subscription not found');
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
 
@@ -833,13 +779,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Tax ID was not passed'])]
     public function tax_delete($data)
     {
-        $required = [
-            'id' => 'Tax id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
 
@@ -851,14 +793,12 @@ class Admin extends \Api_Abstract
      *
      * @return int - new tax id
      */
+    #[RequiredParams([
+        'name' => 'Tax name is missing',
+        'taxrate' => 'Tax rate is missing or is invalid',
+    ])]
     public function tax_create($data)
     {
-        $required = [
-            'name' => 'Tax name is missing',
-            'taxrate' => 'Tax rate is missing or is invalid',
-        ];
-
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
 
         return $taxService->create($data);
@@ -869,14 +809,9 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
+    #[RequiredParams(['id' => 'Tax ID was not passed'])]
     public function tax_get($data)
     {
-        $required = [
-            'id' => 'Tax id is missing',
-        ];
-
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $tax = $this->di['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
 
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
@@ -889,17 +824,15 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams([
+        'id' => 'Tax ID is missing',
+        'taxrate' => 'Tax rate is missing',
+        'name' => 'Tax name is missing',
+    ])]
     public function tax_update($data)
     {
-        $required = [
-            'id' => 'Tax id is missing',
-            'taxrate' => 'Tax rate is missing',
-            'name' => 'Tax name is missing',
-        ];
-
         $tax = $this->di['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
 
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
 
         return $taxService->update($tax, $data);
@@ -933,26 +866,18 @@ class Admin extends \Api_Abstract
         return $taxService->setupEUTaxes($data);
     }
 
+    #[RequiredParams(['id' => 'Invoice ID was not passed'])]
     private function _getInvoice($data)
     {
-        $required = [
-            'id' => 'Invoice id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         return $this->di['db']->getExistingModelById('Invoice', $data['id'], 'Invoice was not found');
     }
 
     /**
      * Deletes invoices with given IDs.
      */
-    public function batch_delete($data): bool
+    #[RequiredParams(['ids' => 'IDs were not passed'])]
+    public function batch_delete($data)
     {
-        $required = [
-            'ids' => 'IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id]);
         }
@@ -963,13 +888,9 @@ class Admin extends \Api_Abstract
     /**
      * Deletes subscriptions with given IDs.
      */
-    public function batch_delete_subscription($data): bool
+    #[RequiredParams(['ids' => 'IDs were not passed'])]
+    public function batch_delete_subscription($data)
     {
-        $required = [
-            'ids' => 'IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         foreach ($data['ids'] as $id) {
             $this->subscription_delete(['id' => $id]);
         }
@@ -980,13 +901,9 @@ class Admin extends \Api_Abstract
     /**
      * Deletes transactions with given IDs.
      */
-    public function batch_delete_transaction($data): bool
+    #[RequiredParams(['ids' => 'IDs were not passed'])]
+    public function batch_delete_transaction($data)
     {
-        $required = [
-            'ids' => 'IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         foreach ($data['ids'] as $id) {
             $this->transaction_delete(['id' => $id]);
         }
@@ -997,13 +914,9 @@ class Admin extends \Api_Abstract
     /**
      * Deletes taxes with given IDs.
      */
-    public function batch_delete_tax($data): bool
+    #[RequiredParams(['ids' => 'IDs were not passed'])]
+    public function batch_delete_tax($data)
     {
-        $required = [
-            'ids' => 'IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         foreach ($data['ids'] as $id) {
             $this->tax_delete(['id' => $id]);
         }

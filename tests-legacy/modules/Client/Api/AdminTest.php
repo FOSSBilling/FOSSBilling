@@ -153,14 +153,10 @@ class AdminTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
-
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $di['events_manager'] = $eventMock;
         $di['tools'] = $toolsMock;
 
@@ -184,13 +180,10 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $di['tools'] = $toolsMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -301,10 +294,6 @@ class AdminTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
@@ -312,9 +301,7 @@ class AdminTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $di['events_manager'] = $eventMock;
-        $di['validator'] = $validatorMock;
         $di['logger'] = new \Box_Log();
-
         $di['tools'] = $toolsMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -383,16 +370,12 @@ class AdminTest extends \BBTestCase
         $eventMock->expects($this->never())->
         method('fire');
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $di['events_manager'] = $eventMock;
-        $di['validator'] = $validatorMock;
         $di['logger'] = new \Box_Log();
+        $di['validator'] = new \FOSSBilling\Validate();
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
@@ -417,7 +400,8 @@ class AdminTest extends \BBTestCase
         $admin_Client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Id required');
+        $this->expectExceptionMessage('Client ID was not passed');
+        $this->validateRequiredParams($admin_Client, 'update', $data);
         $admin_Client->update($data);
     }
 
@@ -482,7 +466,6 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $admin_Client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -698,13 +681,7 @@ class AdminTest extends \BBTestCase
         method('createGroup')
             ->willReturn($newGroupId);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setService($serviceMock);
         $admin_Client->setDi($di);
@@ -822,7 +799,6 @@ class AdminTest extends \BBTestCase
             ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
         $activityMock->setDi($di);
 
         $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);

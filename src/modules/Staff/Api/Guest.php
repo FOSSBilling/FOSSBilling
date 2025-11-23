@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Staff\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Guest extends \Api_Abstract
 {
     /**
@@ -57,14 +59,9 @@ class Guest extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['email' => 'Email required', 'password' => 'Password required'])]
     public function login($data)
     {
-        $required = [
-            'email' => 'Email required',
-            'password' => 'Password required',
-        ];
-        $validator = $this->di['validator'];
-        $validator->checkRequiredParamsForArray($required, $data);
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
         $config = $this->getMod()->getConfig();

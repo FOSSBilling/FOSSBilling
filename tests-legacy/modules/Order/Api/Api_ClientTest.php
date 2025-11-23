@@ -137,15 +137,15 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testAddons(): void
     {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['getOrderAddonsList', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getOrderAddonsList')
-            ->willReturn([$order]);
+            ->willReturn([new Model_ClientOrder()]);
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);
+
+        $order = new Model_ClientOrder();
+        $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -217,7 +217,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
         $di = new Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): PHPUnit\Framework\MockObject\MockObject => $productServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $productServiceMock);
         $apiMock->setDi($di);
         $data = [];
 
@@ -282,7 +282,8 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
     {
         $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+            ->method('checkRequiredParamsForArray')
+            ->willReturn(null);
 
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -317,7 +318,8 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
     {
         $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+            ->method('checkRequiredParamsForArray')
+            ->willReturn(null);
 
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['findForClientById', 'toApiArray'])->getMock();

@@ -100,6 +100,7 @@ class GuestTest extends \BBTestCase
 
         $guestApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($guestApi, 'login', []);
         $guestApi->login([]);
     }
 
@@ -115,6 +116,7 @@ class GuestTest extends \BBTestCase
 
         $guestApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($guestApi, 'login', ['email' => 'email@domain.com']);
         $guestApi->login(['email' => 'email@domain.com']);
     }
 
@@ -133,21 +135,16 @@ class GuestTest extends \BBTestCase
             ->method('login')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
 
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
         $di['session'] = $sessionMock;
+        $di['validator'] = new \FOSSBilling\Validate();
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);
@@ -170,16 +167,11 @@ class GuestTest extends \BBTestCase
             ->method('getConfig')
             ->willReturn($configArr);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
+        $di['validator'] = new \FOSSBilling\Validate();
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);

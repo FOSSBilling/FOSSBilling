@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Servicedomain\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 /**
  * Domain order management.
  */
@@ -32,6 +34,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function update($data)
     {
         $s = $this->_getService($data);
@@ -151,13 +154,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['tld' => 'TLD is missing'])]
     public function tld_get($data)
     {
-        $required = [
-            'tld' => 'TLD is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $tld = $data['tld'];
         if ($tld[0] != '.') {
             $tld = '.' . $tld;
@@ -178,13 +177,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'ID is missing'])]
     public function tld_get_id($data)
     {
-        $required = [
-            'id' => 'ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->getService()->tldFindOneById($data['id']);
         if (!$model instanceof \Model_Tld) {
             throw new \FOSSBilling\Exception('ID not found');
@@ -200,13 +195,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['tld' => 'TLD is missing'])]
     public function tld_delete($data)
     {
-        $required = [
-            'tld' => 'TLD is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->getService()->tldFindOneByTld($data['tld']);
 
         if (!$model instanceof \Model_Tld) {
@@ -229,17 +220,15 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams([
+        'tld' => 'TLD is missing',
+        'tld_registrar_id' => 'TLD registrar ID is missing',
+        'price_registration' => 'Registration price is missing',
+        'price_renew' => 'Renewal price is missing',
+        'price_transfer' => 'Transfer price is missing',
+    ])]
     public function tld_create($data)
     {
-        $required = [
-            'tld' => 'TLD is missing',
-            'tld_registrar_id' => 'TLD registrar id is missing',
-            'price_registration' => 'Registration price is missing',
-            'price_renew' => 'Renewal price is missing',
-            'price_transfer' => 'Transfer price is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         if ($this->getService()->tldAlreadyRegistered($data['tld'])) {
             throw new \FOSSBilling\InformationException('TLD already registered');
         }
@@ -259,13 +248,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['tld' => 'TLD is missing'])]
     public function tld_update($data)
     {
-        $required = [
-            'tld' => 'TLD is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof \Model_Tld) {
             throw new \FOSSBilling\Exception('TLD not found');
@@ -322,13 +307,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['code' => 'Registrar code is missing'])]
     public function registrar_install($data)
     {
-        $required = [
-            'code' => 'registrar code is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $code = $data['code'];
         if (!in_array($code, $this->getService()->registrarGetAvailable())) {
             throw new \FOSSBilling\Exception('Registrar is not available for installation.');
@@ -342,13 +323,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Registrar ID is missing'])]
     public function registrar_delete($data)
     {
-        $required = [
-            'id' => 'Registrar ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarRm($model);
@@ -359,13 +336,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Registrar ID is missing'])]
     public function registrar_copy($data)
     {
-        $required = [
-            'id' => 'Registrar ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarCopy($model);
@@ -376,13 +349,9 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
+    #[RequiredParams(['id' => 'Registrar ID is missing'])]
     public function registrar_get($data)
     {
-        $required = [
-            'id' => 'Registrar ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $registrar = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarToApiArray($registrar);
@@ -407,25 +376,17 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Registrar ID is missing'])]
     public function registrar_update($data)
     {
-        $required = [
-            'id' => 'Registrar ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarUpdate($model, $data);
     }
 
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     protected function _getService($data)
     {
-        $required = [
-            'order_id' => 'Order ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $orderId = $data['order_id'];
 
         $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
