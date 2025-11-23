@@ -404,6 +404,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getByCode')
             ->willReturn(true);
         $di = new \Pimple\Container();
+        $di['validator'] = new \FOSSBilling\Validate();
         $adminApi->setDi($di);
         $adminApi->setService($service);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -429,6 +430,7 @@ class Api_AdminTest extends \BBTestCase
             ->willReturn(true);
 
         $di = new \Pimple\Container();
+        $di['validator'] = new \FOSSBilling\Validate();
         $adminApi->setDi($di);
         $adminApi->setService($service);
 

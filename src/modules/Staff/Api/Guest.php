@@ -64,6 +64,11 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['email' => 'Email required', 'password' => 'Password required'])]
     public function login($data)
     {
+        $required = [
+            'email' => 'Email required',
+            'password' => 'Password required',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
         $config = $this->getMod()->getConfig();
