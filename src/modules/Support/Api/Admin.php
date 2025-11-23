@@ -797,9 +797,6 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_get($data)
     {
-        $required = ['id' => 'Category ID not passed'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_SupportKbArticleCategory) {
@@ -837,9 +834,6 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_update($data)
     {
-        $required = ['id' => 'Category ID not passed'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_SupportKbArticleCategory) {
@@ -861,9 +855,6 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_delete($data)
     {
-        $required = ['id' => 'Category ID not passed'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_SupportKbArticleCategory) {
