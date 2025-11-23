@@ -112,6 +112,7 @@ final class FOSSBilling_Installer
         require_once 'session.php';
         $this->session = new Session();
         $this->filesystem = new Filesystem();
+        $this->isDebug = !Environment::isProduction();
 
         if (!$this->isDebug && $this->filesystem->exists(PATH_CONFIG)) {
             $config = require PATH_CONFIG;

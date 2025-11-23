@@ -974,7 +974,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1006,7 +1006,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1059,7 +1059,7 @@ class ServiceTest extends \BBTestCase
 
         $profileService = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1116,7 +1116,7 @@ class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($data['password']);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1175,7 +1175,7 @@ class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($data['password']);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1310,7 +1310,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($newGroupId);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1361,7 +1361,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->willReturn(0);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1384,7 +1384,7 @@ class ServiceTest extends \BBTestCase
         $adminGroupModel->loadBean(new \DummyBean());
         $adminGroupModel->id = 1;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1405,7 +1405,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->willReturn(2);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1430,7 +1430,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -1520,25 +1520,6 @@ class ServiceTest extends \BBTestCase
         $this->assertNotEmpty($result);
         $this->assertIsArray($result);
         $this->assertTrue(count(array_diff(array_keys($expected), array_keys($result))) == 0, 'Missing array key values.');
-    }
-
-    public function testdeleteLoginHistory(): void
-    {
-        $adminHistoryModel = new \Model_ActivityAdminHistory();
-        $adminHistoryModel->loadBean(new \DummyBean());
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
-
-        $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
-
-        $service = new Service();
-        $service->setDi($di);
-
-        $result = $service->deleteLoginHistory($adminHistoryModel);
-        $this->assertTrue($result);
     }
 
     public function testsetPermissions(): void

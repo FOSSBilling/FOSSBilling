@@ -377,7 +377,7 @@ class Service
         }
 
         $install = Path::join(PATH_ROOT, 'install');
-        if ($this->filesystem->exists($install)) {
+        if (!Environment::isDevelopment() && $this->filesystem->exists($install)) {
             $msgs['danger'][] = [
                 'text' => sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install),
             ];

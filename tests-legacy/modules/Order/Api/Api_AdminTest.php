@@ -67,7 +67,7 @@ class Api_AdminTest extends BBTestCase
 
         $di = new Pimple\Container();
         $di['pager'] = $paginatorMock;
-        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
+        $di['mod'] = $di->protect(fn (): PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $this->api->setDi($di);
 

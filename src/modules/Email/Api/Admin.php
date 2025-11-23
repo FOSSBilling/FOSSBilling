@@ -121,7 +121,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete sent email from logs.
      *
-     *
      * @throws \FOSSBilling\Exception
      */
     public function email_delete($data): bool
@@ -191,7 +190,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete email template.
-     *
      *
      * @throws \FOSSBilling\Exception
      */

@@ -76,7 +76,6 @@ class Admin extends \Api_Abstract
     /**
      * Remove notification message.
      *
-     *
      * @throws \FOSSBilling\Exception
      */
     public function delete($data): bool
@@ -97,7 +96,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Remove all notification messages.
-     *
      *
      * @throws \FOSSBilling\Exception
      */

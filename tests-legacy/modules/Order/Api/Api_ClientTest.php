@@ -217,7 +217,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
         $di = new Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productServiceMock);
+        $di['mod_service'] = $di->protect(fn (): PHPUnit\Framework\MockObject\MockObject => $productServiceMock);
         $apiMock->setDi($di);
         $data = [];
 

@@ -34,6 +34,9 @@ class GuestTest extends \BBTestCase
                     'publickey' => 1234,
                     'enabled' => true,
                     'version' => null,
+                    'captcha_provider'=> 'recaptcha_v2',
+                    'turnstile_site_key'=> null,
+                    'hcaptcha_site_key' => null,
                 ],
             ],
             [
@@ -44,6 +47,9 @@ class GuestTest extends \BBTestCase
                     'publickey' => null,
                     'enabled' => true,
                     'version' => null,
+                    'captcha_provider'=> 'recaptcha_v2',
+                    'turnstile_site_key'=> null,
+                    'hcaptcha_site_key'=> null,
                 ],
             ],
             [
@@ -56,6 +62,9 @@ class GuestTest extends \BBTestCase
                     'publickey' => 1234,
                     'enabled' => false,
                     'version' => 2,
+                    'captcha_provider'=> 'recaptcha_v2',
+                    'turnstile_site_key'=> null,
+                    'hcaptcha_site_key' => null,
                 ],
             ],
             [
@@ -66,6 +75,39 @@ class GuestTest extends \BBTestCase
                     'publickey' => null,
                     'enabled' => false,
                     'version' => null,
+                    'captcha_provider'=> 'recaptcha_v2',
+                    'turnstile_site_key'=> null,
+                    'hcaptcha_site_key' => null,
+                ],
+            ],
+            [
+                [
+                    'captcha_enabled' => true,
+                    'captcha_provider' => 'turnstile',
+                    'turnstile_site_key' => 'abc',
+                ],
+                [
+                    'publickey' => null,
+                    'enabled' => true,
+                    'version' => null,
+                    'captcha_provider' => 'turnstile',
+                    'turnstile_site_key'=> 'abc',
+                    'hcaptcha_site_key' => null,
+                ]
+            ],
+            [
+                [
+                    'captcha_enabled' => true,
+                    'captcha_provider' => 'hcaptcha',
+                    'hcaptcha_site_key' => 'abc',
+                ],
+                [
+                    'publickey' => null,
+                    'enabled' => true,
+                    'version' => null,
+                    'captcha_provider' => 'hcaptcha',
+                    'turnstile_site_key' => null,
+                    'hcaptcha_site_key' => 'abc',
                 ],
             ],
         ];

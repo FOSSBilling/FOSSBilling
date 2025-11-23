@@ -11,11 +11,11 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Doctrine;
 
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\ORMSetup;
-use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
-use Doctrine\ORM\Proxy\ProxyFactory;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
+use Doctrine\ORM\ORMSetup;
+use Doctrine\ORM\Proxy\ProxyFactory;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Path;

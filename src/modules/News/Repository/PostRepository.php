@@ -21,8 +21,7 @@ class PostRepository extends EntityRepository
     /**
      * Build a QueryBuilder for searching posts with optional filters.
      *
-     * @param array $data Array of filters: 'status', 'search', etc.
-     * @return QueryBuilder
+     * @param array $data array of filters: 'status', 'search', etc
      */
     public function getSearchQueryBuilder(array $data): QueryBuilder
     {
@@ -50,29 +49,25 @@ class PostRepository extends EntityRepository
 
         return $qb;
     }
-    
+
     /**
-     * Find an active post by its slug
-     * @param string $slug
-     * @return Post|null
+     * Find an active post by its slug.
      */
     public function findOneActiveBySlug(string $slug): ?Post
     {
         return $this->findOneBy([
-            'slug'   => $slug,
+            'slug' => $slug,
             'status' => Post::STATUS_ACTIVE,
         ]);
     }
 
     /**
-     * Find an active post by its ID
-     * @param int $id
-     * @return Post|null
+     * Find an active post by its ID.
      */
     public function findOneActiveById(int $id): ?Post
     {
         return $this->findOneBy([
-            'id'     => $id,
+            'id' => $id,
             'status' => Post::STATUS_ACTIVE,
         ]);
     }
@@ -81,6 +76,7 @@ class PostRepository extends EntityRepository
      * Delete posts by a list of IDs in one go.
      *
      * @param int[] $ids
+     *
      * @return int Number of affected rows
      */
     public function deleteByIds(array $ids): int

@@ -148,7 +148,6 @@ class Guest extends \Api_Abstract
     /**
      * Password reset confirmation email will be sent to email.
      *
-     *
      * @throws \FOSSBilling\Exception
      */
     public function reset_password($data): bool

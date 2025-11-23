@@ -53,23 +53,25 @@ class Client implements InjectionAwareInterface
         $app->post('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
     }
 
-    public function show_error(\Box_App $app, $page)
+    public function show_error(\Box_App $app, $page): null
     {
         $exc = new \FOSSBilling\Exception('Unknown API call :call', [':call' => $page], 879);
 
         $this->renderJson(null, $exc);
+
         return null;
     }
 
-    public function get_method(\Box_App $app, $role, $class, $method)
+    public function get_method(\Box_App $app, $role, $class, $method): null
     {
         $call = $class . '_' . $method;
 
         $this->tryCall($role, $call, $_GET);
+
         return null;
     }
 
-    public function post_method(\Box_App $app, $role, $class, $method)
+    public function post_method(\Box_App $app, $role, $class, $method): null
     {
         $p = $_POST;
 
@@ -82,6 +84,7 @@ class Client implements InjectionAwareInterface
         $call = $class . '_' . $method;
 
         $this->tryCall($role, $call, $p);
+
         return null;
     }
 
@@ -173,7 +176,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function _apiCall($role, $method, $params)
+    private function _apiCall($role, $method, $params): null
     {
         $this->_loadConfig();
         $this->checkAllowedIps();
@@ -198,6 +201,7 @@ class Client implements InjectionAwareInterface
         $result = $api->$method($params);
 
         $this->renderJson($result);
+
         return null;
     }
 

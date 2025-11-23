@@ -153,6 +153,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         $params['subject'] = 'Request for Epp code was received';
         $params['content'] = 'A request for Domain Transfer code was received.';
         $this->sendEmail($domain, $params);
+
         return '';
     }
 
