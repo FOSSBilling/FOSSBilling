@@ -542,6 +542,7 @@ class Api_AdminTest extends \BBTestCase
         $data = [];
 
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($this->adminApi, 'registrar_delete', $data);
         $result = $this->adminApi->registrar_delete($data);
 
         $this->assertTrue($result);
@@ -602,6 +603,7 @@ class Api_AdminTest extends \BBTestCase
         $data = [];
 
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($this->adminApi, 'registrar_copy', $data);
         $result = $this->adminApi->registrar_copy($data);
 
         $this->assertTrue($result);
@@ -662,6 +664,7 @@ class Api_AdminTest extends \BBTestCase
         $data = [];
 
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($this->adminApi, 'registrar_get', $data);
         $result = $this->adminApi->registrar_get($data);
 
         $this->assertIsArray($result);
@@ -735,6 +738,7 @@ class Api_AdminTest extends \BBTestCase
         $data = [];
 
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($this->adminApi, 'registrar_update', $data);
         $result = $this->adminApi->registrar_update($data);
 
         $this->assertTrue($result);
@@ -801,6 +805,7 @@ class Api_AdminTest extends \BBTestCase
         $data = [];
 
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($this->adminApi, 'update', $data);
         $result = $this->adminApi->update($data);
 
         $this->assertTrue($result);

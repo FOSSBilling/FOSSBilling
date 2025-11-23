@@ -100,6 +100,7 @@ class GuestTest extends \BBTestCase
 
         $guestApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($guestApi, 'login', []);
         $guestApi->login([]);
     }
 
@@ -115,6 +116,7 @@ class GuestTest extends \BBTestCase
 
         $guestApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($guestApi, 'login', ['email' => 'email@domain.com']);
         $guestApi->login(['email' => 'email@domain.com']);
     }
 
