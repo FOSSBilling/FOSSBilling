@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Client;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceBalanceTest extends \BBTestCase
+final class ServiceBalanceTest extends \BBTestCase
 {
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $service = new \Box\Mod\Client\ServiceBalance();
@@ -14,7 +16,7 @@ class ServiceBalanceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testdeductFunds(): void
+    public function testDeductFunds(): void
     {
         $di = new \Pimple\Container();
 
@@ -53,7 +55,7 @@ class ServiceBalanceTest extends \BBTestCase
         $this->assertEquals('default', $result->type);
     }
 
-    public function testdeductFundsInvalidDescription(): void
+    public function testDeductFundsInvalidDescription(): void
     {
         $service = new \Box\Mod\Client\ServiceBalance();
 
@@ -72,7 +74,7 @@ class ServiceBalanceTest extends \BBTestCase
         $service->deductFunds($clientModel, $amount, $description, $extra);
     }
 
-    public function testdeductFundsInvalidAmount(): void
+    public function testDeductFundsInvalidAmount(): void
     {
         $service = new \Box\Mod\Client\ServiceBalance();
 

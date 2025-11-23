@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicehosting\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class AdminTest extends \BBTestCase
+final class AdminTest extends \BBTestCase
 {
     protected ?Admin $api;
 
@@ -12,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -20,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testchangePlan(): void
+    public function testChangePlan(): void
     {
         $data = [
             'plan_id' => 1,
@@ -56,7 +58,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangePlanMissingPlanId(): void
+    public function testChangePlanMissingPlanId(): void
     {
         $data = [];
 
@@ -65,7 +67,7 @@ class AdminTest extends \BBTestCase
         $this->api->change_plan($data);
     }
 
-    public function testchangeUsername(): void
+    public function testChangeUsername(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Admin::class)
@@ -88,7 +90,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangeIp(): void
+    public function testChangeIp(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Admin::class)
@@ -111,7 +113,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangeDomain(): void
+    public function testChangeDomain(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Admin::class)
@@ -134,7 +136,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangePassword(): void
+    public function testChangePassword(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Admin::class)
@@ -157,7 +159,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testsync(): void
+    public function testSync(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Admin::class)
@@ -180,7 +182,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Admin::class)
@@ -203,7 +205,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testmanagerGetPairs(): void
+    public function testManagerGetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -216,7 +218,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testserverGetPairs(): void
+    public function testServerGetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -229,7 +231,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testaccountGetList(): void
+    public function testAccountGetList(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -258,7 +260,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testserverGetList(): void
+    public function testServerGetList(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -285,7 +287,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testserverCreate(): void
+    public function testServerCreate(): void
     {
         $data = [
             'name' => 'test',
@@ -315,7 +317,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newServerId, $result);
     }
 
-    public function testserverGet(): void
+    public function testServerGet(): void
     {
         $data['id'] = 1;
 
@@ -403,7 +405,7 @@ class AdminTest extends \BBTestCase
         $this->api->server_delete($data);
     }
 
-    public function testserverUpdate(): void
+    public function testServerUpdate(): void
     {
         $data['id'] = 1;
 
@@ -432,7 +434,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testserverTestConnection(): void
+    public function testServerTestConnection(): void
     {
         $data['id'] = 1;
 
@@ -461,7 +463,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testhpGetPairs(): void
+    public function testHpGetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -473,7 +475,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testhpGetList(): void
+    public function testHpGetList(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -498,7 +500,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testhpDelete(): void
+    public function testHpDelete(): void
     {
         $data = [
             'id' => 1,
@@ -539,7 +541,7 @@ class AdminTest extends \BBTestCase
         }
     }
 
-    public function testhpGet(): void
+    public function testHpGet(): void
     {
         $data = [
             'id' => 1,
@@ -572,7 +574,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testhpUpdate(): void
+    public function testHpUpdate(): void
     {
         $data = [
             'id' => 1,
@@ -606,7 +608,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testhpCreate(): void
+    public function testHpCreate(): void
     {
         $data = [
             'name' => 'test',

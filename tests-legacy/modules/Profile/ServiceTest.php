@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Profile;
 
 use Box\Mod\Profile\Service;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
@@ -16,7 +18,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetAdminIdentityArray(): void
+    public function testGetAdminIdentityArray(): void
     {
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());

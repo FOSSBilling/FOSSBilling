@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Email\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Api_AdminTest extends \BBTestCase
+final class Api_AdminTest extends \BBTestCase
 {
     public function testEmailGetList(): void
     {
@@ -379,7 +381,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtemplateDeleteTemplateNotFound(): void
+    public function testTemplateDeleteTemplateNotFound(): void
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 

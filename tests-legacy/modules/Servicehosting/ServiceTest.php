@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicehosting;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
 
@@ -12,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -31,7 +33,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('validateOrdertDataProvider')]
-    public function testvalidateOrderData(string $field, string $exceptionMessage, int $excCode): void
+    public function testValidateOrderData(string $field, string $exceptionMessage, int $excCode): void
     {
         $data = [
             'server_id' => 1,
@@ -47,7 +49,7 @@ class ServiceTest extends \BBTestCase
         $this->service->validateOrderData($data);
     }
 
-    public function testactionCreate(): void
+    public function testActionCreate(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -90,7 +92,7 @@ class ServiceTest extends \BBTestCase
         $this->service->action_create($orderModel);
     }
 
-    //    public function testaction_activate()
+    //    public function testAction_activate()
     //    {
     //        $orderModel = new \Model_ClientOrder();
     //        $orderModel->loadBean(new \DummyBean());
@@ -151,7 +153,7 @@ class ServiceTest extends \BBTestCase
     //        $this->assertNotEmpty($result['password']);
     //    }
 
-    public function testactionRenew(): void
+    public function testActionRenew(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -177,7 +179,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testactionRenewOrderWithoutActiveService(): void
+    public function testActionRenewOrderWithoutActiveService(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -196,7 +198,7 @@ class ServiceTest extends \BBTestCase
         $this->service->action_renew($orderModel);
     }
 
-    public function testactionSuspend(): void
+    public function testActionSuspend(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -233,7 +235,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testactionSuspendOrderWithoutActiveService(): void
+    public function testActionSuspendOrderWithoutActiveService(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -252,7 +254,7 @@ class ServiceTest extends \BBTestCase
         $this->service->action_suspend($orderModel);
     }
 
-    public function testactionUnsuspend(): void
+    public function testActionUnsuspend(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -289,7 +291,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testactionUnsuspendOrderWithoutActiveService(): void
+    public function testActionUnsuspendOrderWithoutActiveService(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -308,7 +310,7 @@ class ServiceTest extends \BBTestCase
         $this->service->action_unsuspend($orderModel);
     }
 
-    public function testactionCancel(): void
+    public function testActionCancel(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -345,7 +347,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testactionCancelOrderWithoutActiveService(): void
+    public function testActionCancelOrderWithoutActiveService(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -364,7 +366,7 @@ class ServiceTest extends \BBTestCase
         $this->service->action_cancel($orderModel);
     }
 
-    //    public function testaction_uncancel()
+    //    public function testAction_uncancel()
     //    {
     //        $orderModel = new \Model_ClientOrder();
     //        $orderModel->loadBean(new \DummyBean());
@@ -428,7 +430,7 @@ class ServiceTest extends \BBTestCase
     //        $serviceMock->action_uncancel($orderModel);
     //    }
 
-    public function testactionDelete(): void
+    public function testActionDelete(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -460,7 +462,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->action_delete($orderModel);
     }
 
-    public function testchangeAccountPlan(): void
+    public function testChangeAccountPlan(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -498,7 +500,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangeAccountUsername(): void
+    public function testChangeAccountUsername(): void
     {
         $data = [
             'username' => 'u123456',
@@ -537,7 +539,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangeAccountUsernameMissingUsername(): void
+    public function testChangeAccountUsernameMissingUsername(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
@@ -551,7 +553,7 @@ class ServiceTest extends \BBTestCase
         $this->service->changeAccountUsername($orderModel, $model, $data);
     }
 
-    public function testchangeAccountIp(): void
+    public function testChangeAccountIp(): void
     {
         $data = [
             'ip' => '1.1.1.1',
@@ -590,7 +592,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangeAccountIpMissingIp(): void
+    public function testChangeAccountIpMissingIp(): void
     {
         $data = [];
         $orderModel = new \Model_ClientOrder();
@@ -604,7 +606,7 @@ class ServiceTest extends \BBTestCase
         $this->service->changeAccountIp($orderModel, $model, $data);
     }
 
-    public function testchangeAccountDomain(): void
+    public function testChangeAccountDomain(): void
     {
         $data = [
             'tld' => 'com',
@@ -644,7 +646,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangeAccountDomainMissingParams(): void
+    public function testChangeAccountDomainMissingParams(): void
     {
         $data = [];
         $orderModel = new \Model_ClientOrder();
@@ -658,7 +660,7 @@ class ServiceTest extends \BBTestCase
         $this->service->changeAccountDomain($orderModel, $model, $data);
     }
 
-    public function testchangeAccountPassword(): void
+    public function testChangeAccountPassword(): void
     {
         $data = [
             'password' => 'topsecret',
@@ -698,7 +700,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangeAccountPasswordMissingParams(): void
+    public function testChangeAccountPasswordMissingParams(): void
     {
         $data = [];
         $orderModel = new \Model_ClientOrder();
@@ -712,7 +714,7 @@ class ServiceTest extends \BBTestCase
         $this->service->changeAccountPassword($orderModel, $model, $data);
     }
 
-    public function testsync(): void
+    public function testSync(): void
     {
         $data = [
             'password' => 'topsecret',
@@ -761,7 +763,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtoApiArray(): void
+    public function testToApiArray(): void
     {
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
@@ -794,7 +796,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $data = [
             'username' => 'testUser',
@@ -816,13 +818,13 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetServerManagers(): void
+    public function testGetServerManagers(): void
     {
         $result = $this->service->getServerManagers();
         $this->assertIsArray($result);
     }
 
-    public function testgetServerManagerConfig(): void
+    public function testGetServerManagerConfig(): void
     {
         $manager = 'Custom';
 
@@ -835,7 +837,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetServerPairs(): void
+    public function testGetServerPairs(): void
     {
         $expected = [
             '1' => 'name',
@@ -866,7 +868,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetServerSearchQuery(): void
+    public function testGetServerSearchQuery(): void
     {
         $result = $this->service->getServersSearchQuery([]);
         $this->assertIsString($result[0]);
@@ -874,7 +876,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals([], $result[1]);
     }
 
-    public function testcreateServer(): void
+    public function testCreateServer(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
@@ -904,7 +906,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
-    public function testdeleteServer(): void
+    public function testDeleteServer(): void
     {
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
@@ -922,7 +924,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdateServer(): void
+    public function testUpdateServer(): void
     {
         $data = [
             'name' => 'newName',
@@ -959,7 +961,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetServerManager(): void
+    public function testGetServerManager(): void
     {
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
@@ -975,7 +977,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Server_Manager_Custom', $result);
     }
 
-    public function testgetServerManagerManagerNotDefined(): void
+    public function testGetServerManagerManagerNotDefined(): void
     {
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
@@ -986,7 +988,7 @@ class ServiceTest extends \BBTestCase
         $this->service->getServerManager($hostingServerModel);
     }
 
-    public function testgetServerManagerServerManagerInvalid(): void
+    public function testGetServerManagerServerManagerInvalid(): void
     {
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
@@ -1001,7 +1003,7 @@ class ServiceTest extends \BBTestCase
         $this->service->getServerManager($hostingServerModel);
     }
 
-    public function testtestConnection(): void
+    public function testTestConnection(): void
     {
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
         $serverManagerMock->expects($this->atLeastOnce())
@@ -1022,7 +1024,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetHpPairs(): void
+    public function testGetHpPairs(): void
     {
         $expected = [
             '1' => 'free',
@@ -1053,7 +1055,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetHpSearchQuery(): void
+    public function testGetHpSearchQuery(): void
     {
         $result = $this->service->getServersSearchQuery([]);
         $this->assertIsString($result[0]);
@@ -1061,7 +1063,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals([], $result[1]);
     }
 
-    public function testdeleteHp(): void
+    public function testDeleteHp(): void
     {
         $model = new \Model_ServiceHostingHp();
         $model->loadBean(new \DummyBean());
@@ -1079,7 +1081,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtoHostingHpApiArray(): void
+    public function testToHostingHpApiArray(): void
     {
         $model = new \Model_ServiceHostingHp();
         $model->loadBean(new \DummyBean());
@@ -1119,7 +1121,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcreateHp(): void
+    public function testCreateHp(): void
     {
         $model = new \Model_ServiceHostingHp();
         $model->loadBean(new \DummyBean());
@@ -1142,7 +1144,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
-    public function testgetServerPackage(): void
+    public function testGetServerPackage(): void
     {
         $model = new \Model_ServiceHostingHp();
         $model->loadBean(new \DummyBean());
@@ -1155,7 +1157,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Server_Package', $result);
     }
 
-    public function testgetServerManagerWithLog(): void
+    public function testGetServerManagerWithLog(): void
     {
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
@@ -1185,7 +1187,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Server_Manager_Custom', $result);
     }
 
-    public function testgetManagerUrls(): void
+    public function testGetManagerUrls(): void
     {
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
@@ -1212,7 +1214,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($result[1]);
     }
 
-    public function testgetManagerUrlsException(): void
+    public function testGetManagerUrlsException(): void
     {
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
@@ -1231,7 +1233,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result[1]);
     }
 
-    public function testgetFreeTldsFreeTldsAreNotSet(): void
+    public function testGetFreeTldsFreeTldsAreNotSet(): void
     {
         $di = new \Pimple\Container();
 
@@ -1258,7 +1260,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetFreeTlds(): void
+    public function testGetFreeTlds(): void
     {
         $config = [
             'free_tlds' => ['.com'],

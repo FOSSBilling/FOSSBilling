@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Page\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class AdminTest extends \BBTestCase
+final class AdminTest extends \BBTestCase
 {
     protected ?Admin $api;
 
@@ -12,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -20,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetPairs(): void
+    public function testGetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Page\Service::class)->getMock();
 

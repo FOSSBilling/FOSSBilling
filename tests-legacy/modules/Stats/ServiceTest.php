@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Stats;
 
 class PdoMock extends \PDO
@@ -16,7 +18,7 @@ class PdoStatmentsMock extends \PDOStatement
 }
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
 
@@ -25,7 +27,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -33,7 +35,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetOrdersStatuses(): void
+    public function testGetOrdersStatuses(): void
     {
         $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
@@ -49,7 +51,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetProductSummary(): void
+    public function testGetProductSummary(): void
     {
         $data = [];
 
@@ -66,7 +68,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetSummary(): void
+    public function testGetSummary(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -115,7 +117,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetSummaryIncome(): void
+    public function testGetSummaryIncome(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -146,7 +148,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetProductSales(): void
+    public function testGetProductSales(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -177,7 +179,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testincomeAndRefundStats(): void
+    public function testIncomeAndRefundStats(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -208,7 +210,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($res[0], $result);
     }
 
-    public function testgetRefunds(): void
+    public function testGetRefunds(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -237,7 +239,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetIncome(): void
+    public function testGetIncome(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -266,7 +268,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetClientCountries(): void
+    public function testGetClientCountries(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -291,7 +293,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetSalesByCountry(): void
+    public function testGetSalesByCountry(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();
@@ -316,7 +318,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetTableStats(): void
+    public function testGetTableStats(): void
     {
         $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
             ->getMock();

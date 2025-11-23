@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicelicense;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
 
@@ -12,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -20,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testattachOrderConfigEmptyProductConig(): void
+    public function testAttachOrderConfigEmptyProductConig(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -32,7 +34,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals([], $result);
     }
 
-    public function testattachOrderConfig(): void
+    public function testAttachOrderConfig(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -45,13 +47,13 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetLicensePlugins(): void
+    public function testGetLicensePlugins(): void
     {
         $result = $this->service->getLicensePlugins();
         $this->assertIsArray($result);
     }
 
-    public function testactionCreate(): void
+    public function testActionCreate(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -79,7 +81,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_ServiceLicense', $result);
     }
 
-    public function testactionActivate(): void
+    public function testActionActivate(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -110,7 +112,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testactionActivateLicenseCollision(): void
+    public function testActionActivateLicenseCollision(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -144,7 +146,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testactionActivateLicenseCollisionMaxIterationsException(): void
+    public function testActionActivateLicenseCollisionMaxIterationsException(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -179,7 +181,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testactionActivatePluginNotFound(): void
+    public function testActionActivatePluginNotFound(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -206,7 +208,7 @@ class ServiceTest extends \BBTestCase
         $this->service->action_activate($clientOrderModel);
     }
 
-    public function testactionActivateOrderActivationException(): void
+    public function testActionActivateOrderActivationException(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -229,7 +231,7 @@ class ServiceTest extends \BBTestCase
         $this->service->action_activate($clientOrderModel);
     }
 
-    public function testactionDelete(): void
+    public function testActionDelete(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -254,7 +256,7 @@ class ServiceTest extends \BBTestCase
         $this->service->action_delete($clientOrderModel);
     }
 
-    public function testreset(): void
+    public function testReset(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -277,7 +279,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisLicenseActive(): void
+    public function testIsLicenseActive(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -299,7 +301,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisLicenseNotActive(): void
+    public function testIsLicenseNotActive(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -317,7 +319,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testisValidIp(): void
+    public function testIsValidIp(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -337,7 +339,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidIpTest2(): void
+    public function testIsValidIpTest2(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -357,7 +359,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidIpTest3(): void
+    public function testIsValidIpTest3(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -369,7 +371,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testisValidVersion(): void
+    public function testIsValidVersion(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -389,7 +391,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidVersionTest2(): void
+    public function testIsValidVersionTest2(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -409,7 +411,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidVersionTest3(): void
+    public function testIsValidVersionTest3(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -421,7 +423,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testisValidPath(): void
+    public function testIsValidPath(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -441,7 +443,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidPathTest2(): void
+    public function testIsValidPathTest2(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -461,7 +463,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidPathTest3(): void
+    public function testIsValidPathTest3(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -473,7 +475,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testisValidHost(): void
+    public function testIsValidHost(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -493,7 +495,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidHostTest2(): void
+    public function testIsValidHostTest2(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -513,7 +515,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisValidHostTest3(): void
+    public function testIsValidHostTest3(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -525,7 +527,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testgetAdditionalParams(): void
+    public function testGetAdditionalParams(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -535,7 +537,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetOwnerName(): void
+    public function testGetOwnerName(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -562,7 +564,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetExpirationDate(): void
+    public function testGetExpirationDate(): void
     {
         $expected = '2004-02-12 15:19:21';
         $clientOrderModel = new \Model_ClientOrder();
@@ -587,7 +589,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testtoApiArray(): void
+    public function testToApiArray(): void
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
@@ -611,7 +613,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(count(array_diff(array_keys($expected), array_keys($result))) == 0, 'Missing array key values.');
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $data = [
             'license_key' => '123456Licence',
@@ -639,7 +641,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcheckLicenseDetailsFormatEq2(): void
+    public function testCheckLicenseDetailsFormatEq2(): void
     {
         $loggerMock = $this->getMockBuilder('\Box_Log')
             ->getMock();

@@ -1,7 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_ModTest extends PHPUnit\Framework\TestCase
+final class Box_ModTest extends PHPUnit\Framework\TestCase
 {
     public function testEmptyConfig(): void
     {
@@ -46,7 +48,7 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
         $this->assertIsArray($array);
     }
 
-    public function testgetServiceSub(): void
+    public function testGetServiceSub(): void
     {
         $mod = new Box_Mod('Invoice');
         $subServiceName = 'transaction';

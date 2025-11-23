@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Currency\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Api_AdminTest extends \BBTestCase
+final class Api_AdminTest extends \BBTestCase
 {
     public $availableCurrencies = [
         'AED' => 'AED - United Arab Emirates dirham',

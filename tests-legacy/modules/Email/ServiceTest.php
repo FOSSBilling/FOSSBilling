@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Email;
 
 class ServiceEmailTestDouble extends \Box\Mod\Email\Service
@@ -11,7 +13,7 @@ class ServiceEmailTestDouble extends \Box\Mod\Email\Service
 }
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
@@ -929,7 +931,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $service->templateBatchDisable();
 
-        $this->assertTrue($result, true);
+        $this->assertTrue($result);
     }
 
     public function testTemplateBatchEnable(): void
@@ -948,10 +950,10 @@ class ServiceTest extends \BBTestCase
 
         $result = $service->templateBatchEnable();
 
-        $this->assertTrue($result, true);
+        $this->assertTrue($result);
     }
 
-    public function testbatchSend(): void
+    public function testBatchSend(): void
     {
         $service = new \Box\Mod\Email\Service();
 
@@ -1060,7 +1062,7 @@ class ServiceTest extends \BBTestCase
         $service->resetTemplateByCode('mod_email_test');
     }
 
-    public function testsendMail(): void
+    public function testSendMail(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 

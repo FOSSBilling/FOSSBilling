@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Hook\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class AdminTest extends \BBTestCase
+final class AdminTest extends \BBTestCase
 {
     protected ?Admin $api;
 
@@ -12,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -20,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList(): void
+    public function testGetList(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Hook\Service::class)->getMock();
 
@@ -45,7 +47,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testcall(): void
+    public function testCall(): void
     {
         $data['event'] = 'testEvent';
 
@@ -65,7 +67,7 @@ class AdminTest extends \BBTestCase
         $this->assertNotEmpty($result);
     }
 
-    public function testcallMissingEventParam(): void
+    public function testCallMissingEventParam(): void
     {
         $data['event'] = null;
 
@@ -74,7 +76,7 @@ class AdminTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testbatchConnect(): void
+    public function testBatchConnect(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Hook\Service::class)->getMock();
 

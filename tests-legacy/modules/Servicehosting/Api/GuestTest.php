@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicehosting\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class GuestTest extends \BBTestCase
+final class GuestTest extends \BBTestCase
 {
     protected ?Guest $api;
 
@@ -12,7 +14,7 @@ class GuestTest extends \BBTestCase
         $this->api = new Guest();
     }
 
-    public function testfreeTlds(): void
+    public function testFreeTlds(): void
     {
         $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
@@ -43,7 +45,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testfreeTldsProductTypeIsNotHosting(): void
+    public function testFreeTldsProductTypeIsNotHosting(): void
     {
         $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();

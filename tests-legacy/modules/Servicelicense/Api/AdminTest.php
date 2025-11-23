@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicelicense\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class AdminTest extends \BBTestCase
+final class AdminTest extends \BBTestCase
 {
     protected ?Admin $api;
 
@@ -12,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -20,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testpluginGetPairs(): void
+    public function testPluginGetPairs(): void
     {
         $licensePluginArray[]['filename'] = 'plugin1';
         $licensePluginArray[]['filename'] = 'plugin2';
@@ -44,7 +46,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $data = [
             'order_id' => 1,
@@ -69,7 +71,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testreset(): void
+    public function testReset(): void
     {
         $data = [
             'order_id' => 1,

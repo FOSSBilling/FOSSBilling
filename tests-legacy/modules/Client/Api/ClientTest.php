@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Client\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ClientTest extends \BBTestCase
+final class ClientTest extends \BBTestCase
 {
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $client = new Client();
@@ -14,7 +16,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testbalanceGetList(): void
+    public function testBalanceGetList(): void
     {
         $data = [];
 
@@ -62,7 +64,7 @@ class ClientTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testbalanceGetTotal(): void
+    public function testBalanceGetTotal(): void
     {
         $balanceAmount = 0.00;
         $model = new \Model_Client();
@@ -86,7 +88,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($balanceAmount, $result);
     }
 
-    public function testisTaxable(): void
+    public function testIsTaxable(): void
     {
         $clientIsTaxable = true;
 

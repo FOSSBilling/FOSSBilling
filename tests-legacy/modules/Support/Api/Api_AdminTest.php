@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Support\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Api_AdminTest extends \BBTestCase
+final class Api_AdminTest extends \BBTestCase
 {
     protected ?\Box\Mod\Support\Api\Admin $adminApi;
 

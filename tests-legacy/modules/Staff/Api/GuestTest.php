@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Staff\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class GuestTest extends \BBTestCase
+final class GuestTest extends \BBTestCase
 {
     protected ?\Box\Mod\Staff\Api\Guest $api;
 
@@ -12,7 +14,7 @@ class GuestTest extends \BBTestCase
         $this->api = new \Box\Mod\Staff\Api\Guest();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Currency;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
@@ -176,7 +178,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_Currency', $result);
     }
 
-    public function testgetByCode(): void
+    public function testGetByCode(): void
     {
         $di = new \Pimple\Container();
         $service = new \Box\Mod\Currency\Service();
@@ -311,7 +313,7 @@ class ServiceTest extends \BBTestCase
         $service->setAsDefault($model); // Currency code is null, should throw an \FOSSBilling\Exception
     }
 
-    public function testgetPairs(): void
+    public function testGetPairs(): void
     {
         $service = new \Box\Mod\Currency\Service();
 

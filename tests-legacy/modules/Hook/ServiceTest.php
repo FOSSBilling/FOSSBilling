@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Hook;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
 
@@ -12,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -20,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetSearchQuery(): void
+    public function testGetSearchQuery(): void
     {
         [$sql, $params] = $this->service->getSearchQuery([]);
 
@@ -31,14 +33,14 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($params, []);
     }
 
-    public function testtoApiArray(): void
+    public function testToApiArray(): void
     {
         $arrMock = ['testing' => 'okey'];
         $result = $this->service->toApiArray($arrMock);
         $this->assertEquals($arrMock, $result);
     }
 
-    public function testonAfterAdminActivateExtension(): void
+    public function testOnAfterAdminActivateExtension(): void
     {
         $eventParams = [
             'id' => 1,
@@ -80,7 +82,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testonAfterAdminActivateExtensionMissingId(): void
+    public function testOnAfterAdminActivateExtensionMissingId(): void
     {
         $eventParams = [];
 
@@ -97,7 +99,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testonAfterAdminDeactivateExtension(): void
+    public function testOnAfterAdminDeactivateExtension(): void
     {
         $eventParams = [
             'type' => 'mod',
@@ -129,7 +131,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testbatchConnect(): void
+    public function testBatchConnect(): void
     {
         $mod = 'activity';
 

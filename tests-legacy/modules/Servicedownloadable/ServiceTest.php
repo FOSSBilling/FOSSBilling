@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicedownloadable;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
 
@@ -12,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -20,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testattachOrderConfig(): void
+    public function testAttachOrderConfig(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -42,7 +44,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testactionCreate(): void
+    public function testActionCreate(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -72,7 +74,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_ServiceDownloadable', $result);
     }
 
-    public function testactionDelete(): void
+    public function testActionDelete(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
 

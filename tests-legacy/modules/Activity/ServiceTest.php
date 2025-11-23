@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Activity;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
@@ -35,7 +37,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchFilters')]
-    public function testgetSearchQuery(array $filterKey, string $search, bool $expected): void
+    public function testGetSearchQuery(array $filterKey, string $search, bool $expected): void
     {
         $di = new \Pimple\Container();
         $service = new \Box\Mod\Activity\Service();
@@ -77,7 +79,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtoApiArray(): void
+    public function testToApiArray(): void
     {
         $clientHistoryModel = new \Model_ActivityClientHistory();
         $clientHistoryModel->loadBean(new \DummyBean());
@@ -112,7 +114,7 @@ class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey('email', $result['client']);
     }
 
-    public function testrmByClient(): void
+    public function testRmByClient(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());

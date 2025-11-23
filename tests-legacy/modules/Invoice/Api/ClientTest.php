@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Invoice\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ClientTest extends \BBTestCase
+final class ClientTest extends \BBTestCase
 {
     protected ?Client $api;
 
@@ -12,7 +14,7 @@ class ClientTest extends \BBTestCase
         $this->api = new Client();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -20,7 +22,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testget(): void
+    public function testGet(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -46,12 +48,12 @@ class ClientTest extends \BBTestCase
         $this->api->setService($serviceMock);
         $this->api->setIdentity(new \Model_Admin());
 
-        $data['hash'] = md5(1);
+        $data['hash'] = md5('1');
         $result = $this->api->get($data);
         $this->assertIsArray($result);
     }
 
-    public function testgetInvoiceNotFound(): void
+    public function testGetInvoiceNotFound(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -71,13 +73,13 @@ class ClientTest extends \BBTestCase
         $this->api->setDi($di);
         $this->api->setIdentity(new \Model_Admin());
 
-        $data['hash'] = md5(1);
+        $data['hash'] = md5('1');
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invoice was not found');
         $this->api->get($data);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -103,13 +105,13 @@ class ClientTest extends \BBTestCase
         $this->api->setService($serviceMock);
         $this->api->setIdentity(new \Model_Admin());
 
-        $data['hash'] = md5(1);
+        $data['hash'] = md5('1');
         $result = $this->api->update($data);
         $this->assertIsBool($result);
         $this->assertTrue(true);
     }
 
-    public function testupdateInvoiceNotFound(): void
+    public function testUpdateInvoiceNotFound(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -129,13 +131,13 @@ class ClientTest extends \BBTestCase
         $this->api->setDi($di);
         $this->api->setIdentity(new \Model_Admin());
 
-        $data['hash'] = md5(1);
+        $data['hash'] = md5('1');
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invoice was not found');
         $this->api->update($data);
     }
 
-    public function testupdateInvoiceIsPaid(): void
+    public function testUpdateInvoiceIsPaid(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -156,13 +158,13 @@ class ClientTest extends \BBTestCase
         $this->api->setDi($di);
         $this->api->setIdentity(new \Model_Admin());
 
-        $data['hash'] = md5(1);
+        $data['hash'] = md5('1');
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Paid Invoice cannot be modified');
         $this->api->update($data);
     }
 
-    public function testrenewalInvoice(): void
+    public function testRenewalInvoice(): void
     {
         $generatedHash = 'generatedHashString';
 
@@ -207,7 +209,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($generatedHash, $result);
     }
 
-    public function testrenewalInvoiceOrderIsFree(): void
+    public function testRenewalInvoiceOrderIsFree(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -240,7 +242,7 @@ class ClientTest extends \BBTestCase
         $this->api->renewal_invoice($data);
     }
 
-    public function testrenewalInvoiceOrderNotFound(): void
+    public function testRenewalInvoiceOrderNotFound(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -271,7 +273,7 @@ class ClientTest extends \BBTestCase
         $this->api->renewal_invoice($data);
     }
 
-    public function testfundsInvoice(): void
+    public function testFundsInvoice(): void
     {
         $generatedHash = 'generatedHashString';
 
@@ -306,7 +308,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($generatedHash, $result);
     }
 
-    public function testdelete(): void
+    public function testDelete(): void
     {
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -336,13 +338,13 @@ class ClientTest extends \BBTestCase
         $identity->loadBean(new \DummyBean());
         $this->api->setIdentity($identity);
 
-        $data['hash'] = md5(1);
+        $data['hash'] = md5('1');
         $result = $this->api->delete($data);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
-    public function testtransactionGetList(): void
+    public function testTransactionGetList(): void
     {
         $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
         $transactionService->expects($this->atLeastOnce())
@@ -370,7 +372,7 @@ class ClientTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetTaxRate(): void
+    public function testGetTaxRate(): void
     {
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());

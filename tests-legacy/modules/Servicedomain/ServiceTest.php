@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Servicedomain;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     protected ?\Box\Mod\Servicedomain\Service $service;
 
@@ -918,7 +920,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcanBeTransferred(): void
+    public function testCanBeTransferred(): void
     {
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
@@ -954,13 +956,13 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcanBeTransferredEmptySldException(): void
+    public function testCanBeTransferredEmptySldException(): void
     {
         $this->expectException(\FOSSBilling\Exception::class);
         $this->service->canBeTransferred(new \Model_Tld(), '');
     }
 
-    public function testcanBeTransferredNotAllowedException(): void
+    public function testCanBeTransferredNotAllowedException(): void
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());

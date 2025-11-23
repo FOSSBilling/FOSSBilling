@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\System\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class GuestTest extends \BBTestCase
+final class GuestTest extends \BBTestCase
 {
     protected ?Guest $api;
 
@@ -12,7 +14,7 @@ class GuestTest extends \BBTestCase
         $this->api = new Guest();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -165,7 +167,7 @@ class GuestTest extends \BBTestCase
         $this->assertArrayNotHasKey('address_3', $result);
     }
 
-    public function testperiodTitle(): void
+    public function testPeriodTitle(): void
     {
         $data = ['code' => 'periodCode'];
 
@@ -182,7 +184,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsString($result);
     }
 
-    public function testperiodTitleMissingCode(): void
+    public function testPeriodTitleMissingCode(): void
     {
         $data = [];
         $expected = '-';
@@ -194,7 +196,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetPendingMessages(): void
+    public function testGetPendingMessages(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $messageArr = ['Important message to user'];

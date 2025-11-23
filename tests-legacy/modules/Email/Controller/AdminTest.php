@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Email\Controller;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class AdminTest extends \BBTestCase
+final class AdminTest extends \BBTestCase
 {
     public function testDi(): void
     {
@@ -18,7 +20,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public function testregister(): void
+    public function testRegister(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->exactly(5))
@@ -28,7 +30,7 @@ class AdminTest extends \BBTestCase
         $controllerAdmin->register($boxAppMock);
     }
 
-    public function testgetIndex(): void
+    public function testGetIndex(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())

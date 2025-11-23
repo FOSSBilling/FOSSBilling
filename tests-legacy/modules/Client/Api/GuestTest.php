@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Client\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class GuestTest extends \BBTestCase
+final class GuestTest extends \BBTestCase
 {
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $client = new Guest();
@@ -14,7 +16,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testcreate(): void
+    public function testCreate(): void
     {
         $configArr = [
             'disable_signup' => false,
@@ -65,7 +67,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($model->id, $result);
     }
 
-    public function testcreateExceptionClientExists(): void
+    public function testCreateExceptionClientExists(): void
     {
         $configArr = [
             'disable_signup' => false,
@@ -158,7 +160,7 @@ class GuestTest extends \BBTestCase
         $client->create($data);
     }
 
-    public function testlogin(): void
+    public function testLogin(): void
     {
         $data = [
             'email' => 'test@example.com',
@@ -267,7 +269,7 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testresetPasswordEmailNotFound(): void
+    public function testResetPasswordEmailNotFound(): void
     {
         $data['email'] = 'joghn@example.eu';
 
@@ -397,7 +399,7 @@ class GuestTest extends \BBTestCase
         $client->update_password($data);
     }
 
-    public function testrequired(): void
+    public function testRequired(): void
     {
         $configArr = [];
 

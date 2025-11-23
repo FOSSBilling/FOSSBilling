@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Staff\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class AdminTest extends \BBTestCase
+final class AdminTest extends \BBTestCase
 {
     protected ?Admin $api;
 
@@ -12,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -20,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList(): void
+    public function testGetList(): void
     {
         $data = [];
 
@@ -63,7 +65,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testget(): void
+    public function testGet(): void
     {
         $data['id'] = 1;
 
@@ -91,7 +93,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $data['id'] = 1;
 
@@ -120,7 +122,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdelete(): void
+    public function testDelete(): void
     {
         $data['id'] = 1;
 
@@ -149,7 +151,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangePassword(): void
+    public function testChangePassword(): void
     {
         $data = [
             'id' => '1',
@@ -184,7 +186,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue(true);
     }
 
-    public function testchangePasswordPasswordDonotMatch(): void
+    public function testChangePasswordPasswordDonotMatch(): void
     {
         $data = [
             'id' => '1',
@@ -205,7 +207,7 @@ class AdminTest extends \BBTestCase
         $this->api->change_password($data);
     }
 
-    public function testcreate(): void
+    public function testCreate(): void
     {
         $data = [
             'admin_group_id' => '1',
@@ -240,7 +242,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newStaffId, $result);
     }
 
-    public function testpermissionsGet(): void
+    public function testPermissionsGet(): void
     {
         $data['id'] = 1;
 
@@ -271,7 +273,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testpermissionsUpdate(): void
+    public function testPermissionsUpdate(): void
     {
         $data = [
             'id' => '1',
@@ -307,7 +309,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgroupGetPairs(): void
+    public function testGroupGetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -319,7 +321,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgroupGetList(): void
+    public function testGroupGetList(): void
     {
         $data = [];
 
@@ -346,7 +348,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgroupCreate(): void
+    public function testGroupCreate(): void
     {
         $data['name'] = 'Prime Group';
         $newGroupId = 1;
@@ -371,7 +373,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newGroupId, $result);
     }
 
-    public function testgroupGet(): void
+    public function testGroupGet(): void
     {
         $data['id'] = '1';
 
@@ -400,7 +402,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgroupDelete(): void
+    public function testGroupDelete(): void
     {
         $data['id'] = '1';
 
@@ -430,7 +432,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgroupUpdate(): void
+    public function testGroupUpdate(): void
     {
         $data['id'] = '1';
 
@@ -460,7 +462,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testloginHistoryGetList(): void
+    public function testLoginHistoryGetList(): void
     {
         $data = [];
 
@@ -499,7 +501,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testloginHistoryGet(): void
+    public function testLoginHistoryGet(): void
     {
         $data['id'] = '1';
 

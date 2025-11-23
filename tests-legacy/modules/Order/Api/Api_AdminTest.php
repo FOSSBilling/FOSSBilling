@@ -1,7 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Api_AdminTest extends BBTestCase
+final class Api_AdminTest extends BBTestCase
 {
     protected ?Box\Mod\Order\Api\Admin $api;
 
@@ -10,7 +12,7 @@ class Api_AdminTest extends BBTestCase
         $this->api = new Box\Mod\Order\Api\Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new Pimple\Container();
         $this->api->setDi($di);

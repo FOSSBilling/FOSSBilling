@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicedownloadable\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ClientTest extends \BBTestCase
+final class ClientTest extends \BBTestCase
 {
     protected ?Client $api;
 
@@ -12,7 +14,7 @@ class ClientTest extends \BBTestCase
         $this->api = new Client();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -20,7 +22,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testsendFileMissingOrderId(): void
+    public function testSendFileMissingOrderId(): void
     {
         $data = [];
 
@@ -29,7 +31,7 @@ class ClientTest extends \BBTestCase
         $this->api->send_file($data);
     }
 
-    public function testsendFileOrderNotFound(): void
+    public function testSendFileOrderNotFound(): void
     {
         $data = [
             'order_id' => 1,
@@ -53,7 +55,7 @@ class ClientTest extends \BBTestCase
         $this->api->send_file($data);
     }
 
-    public function testsendFileOrderNotActivated(): void
+    public function testSendFileOrderNotActivated(): void
     {
         $data = [
             'order_id' => 1,
@@ -83,7 +85,7 @@ class ClientTest extends \BBTestCase
         $this->api->send_file($data);
     }
 
-    public function testsendFile(): void
+    public function testSendFile(): void
     {
         $data = [
             'order_id' => 1,

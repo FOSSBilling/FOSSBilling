@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Currency\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Api_GuestTest extends \BBTestCase
+final class Api_GuestTest extends \BBTestCase
 {
     public function testGetPairs(): void
     {

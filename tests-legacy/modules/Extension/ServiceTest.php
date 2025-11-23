@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Extension;
 
 class PdoMock extends \PDO
@@ -16,7 +18,7 @@ class PdoStatmentsMock extends \PDOStatement
 }
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
 
@@ -25,7 +27,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -33,7 +35,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testisCoreModule(): void
+    public function testIsCoreModule(): void
     {
         $coreModules = ['extension', 'cron', 'staff'];
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
@@ -51,7 +53,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisExtensionActiveModNotFound(): void
+    public function testIsExtensionActiveModNotFound(): void
     {
         $coreModules = ['extension', 'cron', 'staff'];
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
@@ -75,7 +77,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testremoveNotExistingModules(): void
+    public function testRemoveNotExistingModules(): void
     {
         $model = new \Model_Extension();
         $model->loadBean(new \DummyBean());
@@ -111,7 +113,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
+    public function testGetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -125,7 +127,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(array_diff_key($params, $expectedParams) == []);
     }
 
-    public function testgetExtensionsList(): void
+    public function testGetExtensionsList(): void
     {
         $data = [
             'has_settings' => true,
@@ -173,7 +175,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetExtensionsListOnlyInstalled(): void
+    public function testGetExtensionsListOnlyInstalled(): void
     {
         $data = [
             'installed' => true,
@@ -216,7 +218,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetAdminNavigation(): void
+    public function testGetAdminNavigation(): void
     {
         $extensionServiceMock = $this->getMockBuilder(Service::class)->onlyMethods(['getConfig'])->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
@@ -272,7 +274,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testfindExtension(): void
+    public function testFindExtension(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -287,7 +289,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Extension', $result);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $model = new \Model_Extension();
         $model->loadBean(new \DummyBean());
@@ -311,7 +313,7 @@ class ServiceTest extends \BBTestCase
         $this->service->update($model);
     }
 
-    public function testactivate(): void
+    public function testActivate(): void
     {
         $ext = new \Model_Extension();
         $ext->loadBean(new \DummyBean());
@@ -357,7 +359,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expectedResult, $result);
     }
 
-    public function testdeactivate(): void
+    public function testDeactivate(): void
     {
         $ext = new \Model_Extension();
         $ext->loadBean(new \DummyBean());
@@ -388,7 +390,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdeactivateCoreModuleException(): void
+    public function testDeactivateCoreModuleException(): void
     {
         $ext = new \Model_Extension();
         $ext->loadBean(new \DummyBean());
@@ -415,7 +417,7 @@ class ServiceTest extends \BBTestCase
         $this->service->deactivate($ext);
     }
 
-    public function testdeactivateExtensionHook(): void
+    public function testDeactivateExtensionHook(): void
     {
         $ext = new \Model_Extension();
         $ext->loadBean(new \DummyBean());
@@ -438,7 +440,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testuninstall(): void
+    public function testUninstall(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
@@ -467,7 +469,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdownloadAndExtractDownloadUrlMissing(): void
+    public function testDownloadAndExtractDownloadUrlMissing(): void
     {
         $extensionMock = $this->getMockBuilder(\FOSSBilling\ExtensionManager::class)->getMock();
 
@@ -488,7 +490,7 @@ class ServiceTest extends \BBTestCase
         $this->service->downloadAndExtract('mod', 'extensionId');
     }
 
-    public function testgetInstalledMods(): void
+    public function testGetInstalledMods(): void
     {
         $pdoStatment = $this->getMockBuilder(PdoStatmentsMock::class)->getMock();
         $pdoStatment->expects($this->atLeastOnce())
@@ -510,7 +512,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals([], $result);
     }
 
-    public function testactivateExistingExtension(): void
+    public function testActivateExistingExtension(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -552,7 +554,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testactivateException(): void
+    public function testActivateException(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -584,7 +586,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->activateExistingExtension($data);
     }
 
-    public function testgetConfig(): void
+    public function testGetConfig(): void
     {
         $data = [
             'ext' => 'extensionName',
@@ -613,7 +615,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetConfigExtensionMetaNotFound(): void
+    public function testGetConfigExtensionMetaNotFound(): void
     {
         $data = [
             'ext' => 'extensionName',
@@ -644,7 +646,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals(['ext' => 'extensionName'], $result);
     }
 
-    public function testsetConfig(): void
+    public function testSetConfig(): void
     {
         $data = [
             'ext' => 'extensionName',

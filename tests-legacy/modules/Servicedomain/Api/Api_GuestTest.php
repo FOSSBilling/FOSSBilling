@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Servicedomain\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Api_GuestTest extends \BBTestCase
+final class Api_GuestTest extends \BBTestCase
 {
     protected ?\Box\Mod\Servicedomain\Api\Guest $guestApi;
 

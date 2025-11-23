@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Cart;
 
 use Symfony\Component\HttpFoundation\Request;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     protected ?\Box\Mod\Cart\Service $service;
 
@@ -769,7 +771,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_Promo', $result);
     }
 
-    public function testaddItemmRecurringPaymentPeriodParamMissing(): void
+    public function testAddItemmRecurringPaymentPeriodParamMissing(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -808,7 +810,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
 
-    public function testaddItemmRecurringPaymentPeriodIsNotEnabled(): void
+    public function testAddItemmRecurringPaymentPeriodIsNotEnabled(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -850,7 +852,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
 
-    public function testaddItemmOutOfStock(): void
+    public function testAddItemmOutOfStock(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -889,7 +891,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
 
-    public function testaddItemmTypeHosting(): void
+    public function testAddItemmTypeHosting(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -941,7 +943,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testaddItemmTypeLicense(): void
+    public function testAddItemmTypeLicense(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -994,7 +996,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testaddItemmTypeCustom(): void
+    public function testAddItemmTypeCustom(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -1048,7 +1050,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtoApiArray(): void
+    public function testToApiArray(): void
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
@@ -1103,7 +1105,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetProductDiscount(): void
+    public function testGetProductDiscount(): void
     {
         $cartProductModel = new \Model_CartProduct();
         $cartProductModel->loadBean(new \DummyBean());
@@ -1150,7 +1152,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($discountSetup, $result[1]);
     }
 
-    public function testgetProductDiscountNoPromo(): void
+    public function testGetProductDiscountNoPromo(): void
     {
         $cartProductModel = new \Model_CartProduct();
         $cartProductModel->loadBean(new \DummyBean());
@@ -1186,7 +1188,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals(0, $result[1]);
     }
 
-    public function testgetProductDiscountProductQtyIsSetAndFreeSetup(): void
+    public function testGetProductDiscountProductQtyIsSetAndFreeSetup(): void
     {
         $cartProductModel = new \Model_CartProduct();
         $cartProductModel->loadBean(new \DummyBean());

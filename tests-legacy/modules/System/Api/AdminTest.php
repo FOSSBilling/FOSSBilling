@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\System\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class AdminTest extends \BBTestCase
+final class AdminTest extends \BBTestCase
 {
     protected ?Admin $api;
 
@@ -12,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -20,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetParams(): void
+    public function testGetParams(): void
     {
         $data = [
         ];
@@ -36,7 +38,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testupdateParams(): void
+    public function testUpdateParams(): void
     {
         $data = [
         ];
@@ -53,7 +55,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testmessages(): void
+    public function testMessages(): void
     {
         $data = [
         ];
@@ -73,7 +75,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtemplateExists(): void
+    public function testTemplateExists(): void
     {
         $data = [
             'file' => 'testing.txt',
@@ -91,7 +93,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function teststringRender(): void
+    public function testStringRender(): void
     {
         $data = [
             '_tpl' => 'default',
@@ -110,7 +112,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsString($result);
     }
 
-    public function testenv(): void
+    public function testEnv(): void
     {
         $data = [];
 
@@ -128,7 +130,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testisAllowed(): void
+    public function testIsAllowed(): void
     {
         $data = [
             'mod' => 'extension',

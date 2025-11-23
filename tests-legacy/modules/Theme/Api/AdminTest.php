@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Theme\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class AdminTest extends \BBTestCase
+final class AdminTest extends \BBTestCase
 {
     protected ?Admin $api;
 
@@ -12,7 +14,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -20,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList(): void
+    public function testGetList(): void
     {
         $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
@@ -33,7 +35,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testget(): void
+    public function testGet(): void
     {
         $data = [
             'code' => 'themeCode',
@@ -57,7 +59,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testselectNotAdminTheme(): void
+    public function testSelectNotAdminTheme(): void
     {
         $data = [
             'code' => 'pjw',
@@ -96,7 +98,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testselectAdminTheme(): void
+    public function testSelectAdminTheme(): void
     {
         $data = [
             'code' => 'pjw',
@@ -135,7 +137,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpresetDelete(): void
+    public function testPresetDelete(): void
     {
         $data = [
             'code' => 'themeCode',
@@ -165,7 +167,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpresetSelect(): void
+    public function testPresetSelect(): void
     {
         $data = [
             'code' => 'themeCode',

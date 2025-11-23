@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicelicense\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ClientTest extends \BBTestCase
+final class ClientTest extends \BBTestCase
 {
     protected ?Client $api;
 
@@ -12,7 +14,7 @@ class ClientTest extends \BBTestCase
         $this->api = new Client();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -20,7 +22,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testreset(): void
+    public function testReset(): void
     {
         $data = [
             'order_id' => 1,

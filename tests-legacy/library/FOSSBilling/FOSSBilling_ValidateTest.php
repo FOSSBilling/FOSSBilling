@@ -1,7 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
+final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 {
     public static function domains(): array
     {
@@ -143,7 +145,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $v->checkRequiredParamsForArray($required, $data, [], 54321);
     }
 
-    public function testcheckRequiredParamsForArrayKeyValueIsZero(): void
+    public function testCheckRequiredParamsForArrayKeyValueIsZero(): void
     {
         $data = [
             'amount' => 0,
@@ -159,7 +161,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $this->assertTrue(true);
     }
 
-    public function testcheckRequiredParamsForArrayEmptyString(): void
+    public function testCheckRequiredParamsForArrayEmptyString(): void
     {
         $data = [
             'message' => '',
@@ -176,7 +178,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $v->checkRequiredParamsForArray($required, $data);
     }
 
-    public function testcheckRequiredParamsForArrayEmptyStringFilledWithSpaces(): void
+    public function testCheckRequiredParamsForArrayEmptyStringFilledWithSpaces(): void
     {
         $data = [
             'message' => '    ',

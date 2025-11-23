@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Servicecustom\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Api_ClientTest extends \BBTestCase
+final class Api_ClientTest extends \BBTestCase
 {
     protected ?\Box\Mod\Servicecustom\Api\Client $api;
 

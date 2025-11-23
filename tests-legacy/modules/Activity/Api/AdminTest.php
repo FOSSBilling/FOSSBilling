@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Activity\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class AdminTest extends \BBTestCase
+final class AdminTest extends \BBTestCase
 {
     public function testLogGetList(): void
     {
@@ -91,7 +93,7 @@ class AdminTest extends \BBTestCase
         $activity->log_get_list([]);
     }
 
-    public function testlogEmptyMParam(): void
+    public function testLogEmptyMParam(): void
     {
         $di = new \Pimple\Container();
 
@@ -101,7 +103,7 @@ class AdminTest extends \BBTestCase
         $this->assertFalse($result, 'Empty array key m');
     }
 
-    public function testlogEmail(): void
+    public function testLogEmail(): void
     {
         $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->onlyMethods(['logEmail'])->getMock();
         $service->expects($this->atLeastOnce())
@@ -118,7 +120,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result, 'Log_email did not returned true');
     }
 
-    public function testlogEmailWithoutSubject(): void
+    public function testLogEmailWithoutSubject(): void
     {
         $activity = new \Box\Mod\Activity\Api\Admin();
         $result = $activity->log_email([]);

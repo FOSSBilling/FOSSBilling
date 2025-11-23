@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Invoice;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
 
@@ -12,7 +14,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $itemInvoiceServiceMock = null;
@@ -131,7 +133,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('dataForSearchQuery')]
-    public function testgetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
+    public function testGetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -144,7 +146,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == []);
     }
 
-    public function testtoApiArray(): void
+    public function testToApiArray(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -239,7 +241,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testonAfterAdminInvoicePaymentReceived(): void
+    public function testOnAfterAdminInvoicePaymentReceived(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['toApiArray'])
@@ -292,7 +294,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testonAfterAdminInvoiceReminderSent(): void
+    public function testOnAfterAdminInvoiceReminderSent(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['toApiArray'])
@@ -346,7 +348,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testonAfterAdminCronRun(): void
+    public function testOnAfterAdminCronRun(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -375,7 +377,7 @@ class ServiceTest extends \BBTestCase
         $this->service->onAfterAdminCronRun($eventMock);
     }
 
-    public function testonEventAfterInvoiceIsDue(): void
+    public function testOnEventAfterInvoiceIsDue(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['toApiArray'])
@@ -427,7 +429,7 @@ class ServiceTest extends \BBTestCase
         $result = $serviceMock->onEventAfterInvoiceIsDue($eventMock);
     }
 
-    public function testmarkAsPaid(): void
+    public function testMarkAsPaid(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['countIncome'])
@@ -490,7 +492,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcountIncome(): void
+    public function testCountIncome(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['getTotal'])
@@ -514,7 +516,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->countIncome($invoiceModel);
     }
 
-    public function testprepareInvoiceCurrencyWasNotDefined(): void
+    public function testPrepareInvoiceCurrencyWasNotDefined(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['setInvoiceDefaults'])
@@ -580,7 +582,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_Invoice', $result);
     }
 
-    public function testsetInvoiceDefaults(): void
+    public function testSetInvoiceDefaults(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -657,7 +659,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setInvoiceDefaults($invoiceModel);
     }
 
-    public function testapproveInvoice(): void
+    public function testApproveInvoice(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['tryPayWithCredits'])
@@ -690,7 +692,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetTotalWithTax(): void
+    public function testGetTotalWithTax(): void
     {
         $total = 10.0;
         $tax = 2.2;
@@ -714,7 +716,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetTotal(): void
+    public function testGetTotal(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -744,7 +746,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($itemTotal, $result);
     }
 
-    public function testrefundInvoiceWithNegativeInvoiceLogic(): void
+    public function testRefundInvoiceWithNegativeInvoiceLogic(): void
     {
         $newId = 1;
         $total = 10.0;
@@ -802,7 +804,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
-    public function testupdateInvoice(): void
+    public function testUpdateInvoice(): void
     {
         $data = [
             'gateway_id' => '',
@@ -871,7 +873,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testrmInvoice(): void
+    public function testRmInvoice(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -897,7 +899,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdeleteInvoiceByAdmin(): void
+    public function testDeleteInvoiceByAdmin(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['rmInvoice'])
@@ -922,7 +924,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdeleteInvoiceByClient(): void
+    public function testDeleteInvoiceByClient(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -956,7 +958,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdeleteInvoiceByClientInvoiceIsRelatedToOrder(): void
+    public function testDeleteInvoiceByClientInvoiceIsRelatedToOrder(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -987,7 +989,7 @@ class ServiceTest extends \BBTestCase
         $this->service->deleteInvoiceByClient($invoiceModel);
     }
 
-    public function testrenewInvoice(): void
+    public function testRenewInvoice(): void
     {
         $newId = 2;
         $invoiceModel = new \Model_Invoice();
@@ -1020,7 +1022,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
-    public function testdoBatchPayWithCredits(): void
+    public function testDoBatchPayWithCredits(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -1049,7 +1051,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpayInvoiceWithCredits(): void
+    public function testPayInvoiceWithCredits(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -1069,7 +1071,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgenerateForOrderInvoiceIsCreatedAlready(): void
+    public function testGenerateForOrderInvoiceIsCreatedAlready(): void
     {
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \DummyBean());
@@ -1091,7 +1093,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Invoice', $result);
     }
 
-    public function testgenerateForOrder(): void
+    public function testGenerateForOrder(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['setInvoiceDefaults'])
@@ -1134,7 +1136,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Invoice', $result);
     }
 
-    public function testsgenerateForOrderAmountIsZero(): void
+    public function testSgenerateForOrderAmountIsZero(): void
     {
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \DummyBean());
@@ -1145,7 +1147,7 @@ class ServiceTest extends \BBTestCase
         $this->service->generateForOrder($clientOrder);
     }
 
-    public function testgenerateInvoicesForExpiringOrdersNoExpOrders(): void
+    public function testGenerateInvoicesForExpiringOrdersNoExpOrders(): void
     {
         $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
         $orderService->expects($this->atLeastOnce())
@@ -1161,7 +1163,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgenerateInvoicesForExpiringOrders(): void
+    public function testGenerateInvoicesForExpiringOrders(): void
     {
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \DummyBean());
@@ -1202,7 +1204,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdoBatchPaidInvoiceActivation(): void
+    public function testDoBatchPaidInvoiceActivation(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -1231,7 +1233,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdoBatchPaidInvoiceActivationException(): void
+    public function testDoBatchPaidInvoiceActivationException(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -1261,7 +1263,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdoBatchRemindersSend(): void
+    public function testDoBatchRemindersSend(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -1289,7 +1291,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdoBatchInvokeDueEvent(): void
+    public function testDoBatchInvokeDueEvent(): void
     {
         $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
@@ -1319,7 +1321,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testsendInvoiceReminderProtectionFromAccidentalReminders(): void
+    public function testSendInvoiceReminderProtectionFromAccidentalReminders(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -1330,7 +1332,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testsendInvoiceReminder(): void
+    public function testSendInvoiceReminder(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -1355,7 +1357,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcounter(): void
+    public function testCounter(): void
     {
         $sqlResult = [
             ['status' => \Model_Invoice::STATUS_PAID,
@@ -1374,7 +1376,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgenerateFundsInvoiceNoActiveOrder(): void
+    public function testGenerateFundsInvoiceNoActiveOrder(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -1384,7 +1386,7 @@ class ServiceTest extends \BBTestCase
         $this->service->generateFundsInvoice($clientModel, 10);
     }
 
-    public function testgenerateFundsInvoiceMinAmountLimit(): void
+    public function testGenerateFundsInvoiceMinAmountLimit(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -1409,7 +1411,7 @@ class ServiceTest extends \BBTestCase
         $this->service->generateFundsInvoice($clientModel, $fundsAmount);
     }
 
-    public function testgenerateFundsInvoiceMaxAmountLimit(): void
+    public function testGenerateFundsInvoiceMaxAmountLimit(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -1434,7 +1436,7 @@ class ServiceTest extends \BBTestCase
         $this->service->generateFundsInvoice($clientModel, $fundsAmount);
     }
 
-    public function testgenerateFundsInvoice(): void
+    public function testGenerateFundsInvoice(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -1486,7 +1488,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Invoice', $result);
     }
 
-    public function testprocessInvoiceInvoiceNotFound(): void
+    public function testProcessInvoiceInvoiceNotFound(): void
     {
         $data = [
             'hash' => 'hashString',
@@ -1509,7 +1511,7 @@ class ServiceTest extends \BBTestCase
         $this->service->processInvoice($data);
     }
 
-    public function testprocessInvoicePayGatewayNotFound(): void
+    public function testProcessInvoicePayGatewayNotFound(): void
     {
         $data = [
             'hash' => 'hashString',
@@ -1538,7 +1540,7 @@ class ServiceTest extends \BBTestCase
         $this->service->processInvoice($data);
     }
 
-    public function testprocessInvoicePayGatewayNotEnabled(): void
+    public function testProcessInvoicePayGatewayNotEnabled(): void
     {
         $data = [
             'hash' => 'hashString',
@@ -1570,7 +1572,7 @@ class ServiceTest extends \BBTestCase
         $this->service->processInvoice($data);
     }
 
-    public function testprocessInvoice(): void
+    public function testProcessInvoice(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['getPaymentInvoice'])
@@ -1645,7 +1647,7 @@ class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey('result', $result);
     }
 
-    public function testaddNote(): void
+    public function testAddNote(): void
     {
         $note = 'test Note';
 
@@ -1664,7 +1666,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testfindAllUnpaid(): void
+    public function testFindAllUnpaid(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -1690,7 +1692,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testfindAllPaid(): void
+    public function testFindAllPaid(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -1709,7 +1711,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Invoice', $result[0]);
     }
 
-    public function testgetUnpaidInvoicesLateFor(): void
+    public function testGetUnpaidInvoicesLateFor(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -1728,7 +1730,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Invoice', $result[0]);
     }
 
-    public function testgetBuyer(): void
+    public function testGetBuyer(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -1752,7 +1754,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testisInvoiceTypeDeposit(): void
+    public function testIsInvoiceTypeDeposit(): void
     {
         $di = new \Pimple\Container();
 
@@ -1778,7 +1780,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisInvoiceTypeDepositTypeIsNotDeposit(): void
+    public function testIsInvoiceTypeDepositTypeIsNotDeposit(): void
     {
         $di = new \Pimple\Container();
 
@@ -1804,7 +1806,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testisInvoiceTypeDepositEmptyArray(): void
+    public function testIsInvoiceTypeDepositEmptyArray(): void
     {
         $di = new \Pimple\Container();
 

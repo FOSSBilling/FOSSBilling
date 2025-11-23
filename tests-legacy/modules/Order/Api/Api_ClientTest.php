@@ -7,7 +7,7 @@
  * Time: 4:52 PM.
  */
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Api_ClientTest extends PHPUnit\Framework\TestCase
+final class Api_ClientTest extends PHPUnit\Framework\TestCase
 {
     protected ?Box\Mod\Order\Api\Client $api;
 
@@ -16,7 +16,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->api = new Box\Mod\Order\Api\Client();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new Pimple\Container();
         $this->api->setDi($di);

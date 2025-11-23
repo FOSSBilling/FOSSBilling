@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Invoice;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTaxTest extends \BBTestCase
+final class ServiceTaxTest extends \BBTestCase
 {
     protected ?ServiceTax $service;
 
@@ -12,7 +14,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->service = new ServiceTax();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -20,7 +22,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetTaxRateForClientByCountryAndState(): void
+    public function testGetTaxRateForClientByCountryAndState(): void
     {
         $taxRateExpected = 0.21;
         $clientModel = new \Model_Client();
@@ -52,7 +54,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($taxRateExpected, $result);
     }
 
-    public function testgetTaxRateForClientByCountry(): void
+    public function testGetTaxRateForClientByCountry(): void
     {
         $taxRateExpected = 0.21;
         $clientModel = new \Model_Client();
@@ -84,7 +86,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($taxRateExpected, $result);
     }
 
-    public function testgetTaxRateForClient(): void
+    public function testGetTaxRateForClient(): void
     {
         $taxRateExpected = 0.21;
         $clientModel = new \Model_Client();
@@ -116,7 +118,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($taxRateExpected, $result);
     }
 
-    public function testgetTaxRateForClientTaxWasNotFound(): void
+    public function testGetTaxRateForClientTaxWasNotFound(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -144,7 +146,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($taxRateExpected, $result);
     }
 
-    public function testgetTaxRateForClientClientIsNotTaxable(): void
+    public function testGetTaxRateForClientClientIsNotTaxable(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -168,7 +170,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals($taxRateExpected, $result);
     }
 
-    public function testgetTaxWhenTaxRateIsZero(): void
+    public function testGetTaxWhenTaxRateIsZero(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -179,7 +181,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals(0, $result);
     }
 
-    public function testgetTax(): void
+    public function testGetTax(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -208,7 +210,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertIsInt($result);
     }
 
-    public function testdelete(): void
+    public function testDelete(): void
     {
         $taxModel = new \Model_Tax();
         $taxModel->loadBean(new \DummyBean());
@@ -227,7 +229,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcreate(): void
+    public function testCreate(): void
     {
         $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
         $systemService->expects($this->atLeastOnce())
@@ -285,7 +287,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetSearchQuery(): void
+    public function testGetSearchQuery(): void
     {
         $result = $this->service->getSearchQuery([]);
         $this->assertIsString($result[0]);
@@ -293,7 +295,7 @@ class ServiceTaxTest extends \BBTestCase
         $this->assertEquals([], $result[1]);
     }
 
-    public function testtoApiArray(): void
+    public function testToApiArray(): void
     {
         $taxModel = new \Model_Tax();
         $taxModel->loadBean(new \DummyBean());

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Extension\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class AdminTest extends \BBTestCase
+final class AdminTest extends \BBTestCase
 {
     protected ?\Box\Mod\Extension\Service $service;
     protected ?Admin $api;
@@ -14,7 +16,7 @@ class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +24,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList(): void
+    public function testGetList(): void
     {
         $data = [];
 
@@ -37,7 +39,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetLatest(): void
+    public function testGetLatest(): void
     {
         $data = [];
 
@@ -55,7 +57,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetLatestException(): void
+    public function testGetLatestException(): void
     {
         $data = ['type' => 'mod'];
 
@@ -75,7 +77,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals([], $result);
     }
 
-    public function testgetNavigation(): void
+    public function testGetNavigation(): void
     {
         $data = ['url' => 'billing'];
 
@@ -92,13 +94,13 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testlanguages(): void
+    public function testLanguages(): void
     {
         $result = $this->api->languages([]);
         $this->assertIsArray($result);
     }
 
-    public function testupdateExtensionNotFound(): void
+    public function testUpdateExtensionNotFound(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -123,7 +125,7 @@ class AdminTest extends \BBTestCase
         $this->api->update($data);
     }
 
-    public function testactivate(): void
+    public function testActivate(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -149,7 +151,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testdeactivate(): void
+    public function testDeactivate(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -187,7 +189,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testuninstall(): void
+    public function testUninstall(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -221,7 +223,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testinstall(): void
+    public function testInstall(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -262,7 +264,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testinstallExceptionActivate(): void
+    public function testInstallExceptionActivate(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -307,7 +309,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testconfigGet(): void
+    public function testConfigGet(): void
     {
         $data = [
             'ext' => 'extensionName',
@@ -332,7 +334,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testconfigSave(): void
+    public function testConfigSave(): void
     {
         $data = [
             'ext' => 'extensionName',

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Invoice;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceInvoiceItemTest extends \BBTestCase
+final class ServiceInvoiceItemTest extends \BBTestCase
 {
     protected ?ServiceInvoiceItem $service;
 
@@ -12,7 +14,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->service = new ServiceInvoiceItem();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -20,7 +22,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testmarkAsPaid(): void
+    public function testMarkAsPaid(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -58,7 +60,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $serviceMock->markAsPaid($invoiceItemModel);
     }
 
-    public function testexecuteTaskItemAlreadyExecuted(): void
+    public function testExecuteTaskItemAlreadyExecuted(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -68,7 +70,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testexecuteTaskTypeOrderClientOrderNotFound(): void
+    public function testExecuteTaskTypeOrderClientOrderNotFound(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -96,7 +98,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $serviceMock->executeTask($invoiceItemModel);
     }
 
-    public function testexecuteTaskTypeHookCall(): void
+    public function testExecuteTaskTypeHookCall(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -120,7 +122,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $serviceMock->executeTask($invoiceItemModel);
     }
 
-    public function testexecuteTaskTypeDeposit(): void
+    public function testExecuteTaskTypeDeposit(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -153,7 +155,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $serviceMock->executeTask($invoiceItemModel);
     }
 
-    public function testexecuteTaskTypeCustom(): void
+    public function testExecuteTaskTypeCustom(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -168,7 +170,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $serviceMock->executeTask($invoiceItemModel);
     }
 
-    public function testaddNew(): void
+    public function testAddNew(): void
     {
         $data = [
             'title' => 'Guacamole',
@@ -201,7 +203,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
-    public function testgetTotal(): void
+    public function testGetTotal(): void
     {
         $price = 5;
         $quantity = 3;
@@ -217,7 +219,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetTax(): void
+    public function testGetTax(): void
     {
         $rate = 0.21;
         $price = 12;
@@ -242,7 +244,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -265,7 +267,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->service->update($invoiceItemModel, $data);
     }
 
-    public function testremove(): void
+    public function testRemove(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -289,7 +291,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgenerateForAddFunds(): void
+    public function testGenerateForAddFunds(): void
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -309,7 +311,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->service->generateForAddFunds($invoiceModel, $amount);
     }
 
-    public function testcreditInvoiceItem(): void
+    public function testCreditInvoiceItem(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)
             ->onlyMethods(['getTotalWithTax'])
@@ -349,7 +351,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $serviceMock->creditInvoiceItem($invoiceItemModel);
     }
 
-    public function testgetTotalWithTax(): void
+    public function testGetTotalWithTax(): void
     {
         $total = 5.0;
         $tax = 0.5;
@@ -374,7 +376,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetOrderId(): void
+    public function testGetOrderId(): void
     {
         $orderId = 2;
         $invoiceItemModel = new \Model_InvoiceItem();
@@ -387,7 +389,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->assertEquals($orderId, $result);
     }
 
-    public function testgetOrderIdInvoiceItemTypeIsNotOrder(): void
+    public function testGetOrderIdInvoiceItemTypeIsNotOrder(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
@@ -398,7 +400,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetAllNotExecutePaidItems(): void
+    public function testGetAllNotExecutePaidItems(): void
     {
         $di = new \Pimple\Container();
 

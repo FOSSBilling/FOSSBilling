@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Spamchecker;
 
 use Symfony\Component\HttpFoundation\Request;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ServiceTest extends \BBTestCase
+final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
 
@@ -14,7 +16,7 @@ class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -22,7 +24,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testonBeforeClientSignUp(): void
+    public function testOnBeforeClientSignUp(): void
     {
         $spamCheckerService = $this->getMockBuilder('\\' . Service::class)->getMock();
         $spamCheckerService->expects($this->atLeastOnce())
@@ -41,7 +43,7 @@ class ServiceTest extends \BBTestCase
         $this->service->onBeforeClientSignUp($boxEventMock);
     }
 
-    public function testonBeforeGuestPublicTicketOpen(): void
+    public function testOnBeforeGuestPublicTicketOpen(): void
     {
         $spamCheckerService = $this->getMockBuilder('\\' . Service::class)->getMock();
         $spamCheckerService->expects($this->atLeastOnce())
@@ -60,7 +62,7 @@ class ServiceTest extends \BBTestCase
         $this->service->onBeforeGuestPublicTicketOpen($boxEventMock);
     }
 
-    public function testisBlockedIpIpNotBlocked(): void
+    public function testIsBlockedIpIpNotBlocked(): void
     {
         $clientIp = '214.1.4.99';
         $modConfig = [
@@ -85,7 +87,7 @@ class ServiceTest extends \BBTestCase
         $this->service->isBlockedIp($boxEventMock);
     }
 
-    public function testisBlockedIpBlockIpsNotEnabled(): void
+    public function testIsBlockedIpBlockIpsNotEnabled(): void
     {
         $modConfig = [
             'block_ips' => false,

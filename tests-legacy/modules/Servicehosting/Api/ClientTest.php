@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicehosting\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class ClientTest extends \BBTestCase
+final class ClientTest extends \BBTestCase
 {
     protected ?Client $api;
 
@@ -12,7 +14,7 @@ class ClientTest extends \BBTestCase
         $this->api = new Client();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -20,7 +22,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testchangeUsername(): void
+    public function testChangeUsername(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Client::class)
@@ -43,7 +45,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangeDomain(): void
+    public function testChangeDomain(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Client::class)
@@ -66,7 +68,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangePassword(): void
+    public function testChangePassword(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Client::class)
@@ -89,7 +91,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testhpGetPairs(): void
+    public function testHpGetPairs(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
