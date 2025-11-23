@@ -82,7 +82,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$currency instanceof Currency) {
-            throw new \FOSSBilling\Exception('No default currency exists.');
+            throw new \FOSSBilling\Exception('Default currency not found');
         }
 
         $cart = $this->di['db']->dispense('Cart');
