@@ -36,7 +36,7 @@ final class ServiceTest extends \BBTestCase
             ],
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Formbuilder\Service::class);
         $service->expects($this->atLeastOnce())
             ->method('getForm')
             ->willReturn($form);
@@ -71,7 +71,7 @@ final class ServiceTest extends \BBTestCase
             ],
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Formbuilder\Service::class);
         $service->expects($this->atLeastOnce())
             ->method('getForm')
             ->willReturn($form);
@@ -104,7 +104,7 @@ final class ServiceTest extends \BBTestCase
             ],
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Formbuilder\Service::class);
         $service->expects($this->atLeastOnce())
             ->method('getForm')
             ->willReturn($form);
@@ -139,7 +139,7 @@ final class ServiceTest extends \BBTestCase
         $product->plugin = 'plugin';
         $product->plugin_config = 'plugin_config';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(random_int(1, 100));
@@ -219,7 +219,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(random_int(1, 100));
@@ -270,7 +270,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(random_int(1, 100));
@@ -300,7 +300,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(random_int(1, 100));
@@ -330,7 +330,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(random_int(1, 100));
@@ -360,7 +360,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(random_int(1, 100));
@@ -390,7 +390,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('trash')
             ->willReturn(null);
@@ -454,7 +454,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetServiceCustomByOrderId(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ClientOrder());
@@ -476,7 +476,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetServiceCustomByOrderIdOrderServiceNotFoundException(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ClientOrder());
@@ -505,14 +505,14 @@ final class ServiceTest extends \BBTestCase
             ->method('getServiceCustomByOrderId')
             ->willReturn($model);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(random_int(1, 100));
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['logger'] = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['logger'] = $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
 
         $config = ['param1' => 'value1'];
@@ -531,14 +531,14 @@ final class ServiceTest extends \BBTestCase
             ->method('getServiceCustomByOrderId')
             ->willReturn($model);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->never())
             ->method('store')
             ->willReturn(random_int(1, 100));
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['logger'] = $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['logger'] = $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
 
         $config = '';

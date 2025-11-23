@@ -18,7 +18,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testApproveClientEmailByHash(): void
     {
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->atLeastOnce())
             ->method('getRow')->willReturn(['client_id' => 2, 'id' => 1]);
 
@@ -36,7 +36,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testApproveClientEmailByHashException(): void
     {
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->atLeastOnce())
             ->method('getRow')->willReturn([]);
 
@@ -56,14 +56,14 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \DummyBean());
 
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->atLeastOnce())
             ->method('dispense')->willReturn($model);
 
         $database->expects($this->atLeastOnce())->method('store')
             ->willReturn(1);
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('url')
             ->willReturn('fossbilling.org/index.php/client/confirm-email/');
 
@@ -92,7 +92,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
             method('getParameters')->willReturn($eventParams);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Email\Service::class);
         $service->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->willReturn(true);
@@ -124,7 +124,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
             method('getParameters')->willReturn($eventParams);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Email\Service::class);
         $service->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->willReturn(true);
@@ -164,7 +164,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
             method('getParameters')->willReturn($eventParams);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Email\Service::class);
         $service->expects($this->atLeastOnce())->
             method('sendTemplate')->will($this->throwException(new \Exception('exception created in unit test')));
 
@@ -279,7 +279,7 @@ final class ServiceTest extends \BBTestCase
     {
         $data = [];
 
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->atLeastOnce())->method('getAssoc')
             ->willReturn([]);
 
@@ -315,7 +315,7 @@ final class ServiceTest extends \BBTestCase
         $email = 'test@example.com';
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->atLeastOnce())->method('findOne')
             ->willReturn($model);
 
@@ -350,7 +350,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->currency = 'USD';
 
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->atLeastOnce())->method('findOne')
             ->willReturn(null);
 
@@ -370,7 +370,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->never())->method('findOne');
 
         $clientService = new \Box\Mod\Client\Service();
@@ -387,7 +387,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->currency = $currency;
 
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->never())->method('findOne');
 
         $clientService = new \Box\Mod\Client\Service();
@@ -408,7 +408,7 @@ final class ServiceTest extends \BBTestCase
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
 
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->once())
                  ->method('findOne')
             ->willReturn($invoiceModel);
@@ -436,7 +436,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->exactly(2))->method('findOne')
             ->willReturnOnConsecutiveCalls(null, null);
 
@@ -505,7 +505,7 @@ final class ServiceTest extends \BBTestCase
         $amount = '2.22';
         $description = 'test description';
 
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->atLeastOnce())->method('dispense')
             ->willReturn($model);
 
@@ -569,7 +569,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetExpiredPasswordReminders(): void
     {
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->atLeastOnce())->method('find')
             ->willReturn([]);
 
@@ -621,7 +621,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testCounter(): void
     {
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->atLeastOnce())->method('getAssoc')
             ->willReturn([]);
 
@@ -644,7 +644,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetGroupPairs(): void
     {
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->atLeastOnce())->method('getAssoc')
             ->willReturn([]);
 
@@ -662,7 +662,7 @@ final class ServiceTest extends \BBTestCase
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->atLeastOnce())->method('findOne')
             ->willReturn($model);
 
@@ -680,7 +680,7 @@ final class ServiceTest extends \BBTestCase
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database = $this->createMock('\Box_Database');
         $database->expects($this->atLeastOnce())->method('findOne')
             ->willReturn($model);
 
@@ -708,7 +708,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')->willReturn($model);
 
@@ -725,7 +725,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetClientNotFound(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')->willReturn([]);
 
@@ -746,7 +746,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')->willReturn(1.0);
 
@@ -770,7 +770,7 @@ final class ServiceTest extends \BBTestCase
         $clientGroup->loadBean(new \DummyBean());
         $clientGroup->title = 'Group Title';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')->willReturn([]);
         $dbMock->expects($this->atLeastOnce())
@@ -818,7 +818,7 @@ final class ServiceTest extends \BBTestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('isClientTaxableProvider')]
     public function testIsClientTaxable(bool $getParamValueReturn, bool $tax_exempt, bool $expected): void
     {
-        $service = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\System\Service::class);
         $service->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->willReturn($getParamValueReturn);
@@ -849,18 +849,18 @@ final class ServiceTest extends \BBTestCase
             'first_name' => 'test',
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($clientModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventManagerMock = $this->createMock('\Box_EventManager');
         $eventManagerMock->expects($this->exactly(2))
             ->method('fire');
 
-        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);
@@ -886,7 +886,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testDeleteGroup(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne');
         $dbMock->expects($this->once())
@@ -908,7 +908,7 @@ final class ServiceTest extends \BBTestCase
     public function testDeleteGroupGroupHasClients(): void
     {
         $clientModel = new \Model_Client();
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($clientModel);
@@ -931,7 +931,7 @@ final class ServiceTest extends \BBTestCase
         $email = 'example@fossbilling.vm';
         $password = '123456';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('Client')
@@ -962,7 +962,7 @@ final class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('Client')
@@ -994,7 +994,7 @@ final class ServiceTest extends \BBTestCase
         $clientModel->loadBean(new \DummyBean());
         $clientModel->email_approved = 1;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('Client')

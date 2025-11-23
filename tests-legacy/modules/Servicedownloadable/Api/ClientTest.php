@@ -40,7 +40,7 @@ final class ClientTest extends \BBTestCase
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne');
 
@@ -64,11 +64,11 @@ final class ClientTest extends \BBTestCase
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(new \Model_ClientOrder());
@@ -94,12 +94,12 @@ final class ClientTest extends \BBTestCase
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedownloadable\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendFile')
             ->willReturn(true);
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceDownloadable());
@@ -108,7 +108,7 @@ final class ClientTest extends \BBTestCase
         $mockOrder->loadBean(new \DummyBean());
         $mockOrder->status = 'active';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($mockOrder);

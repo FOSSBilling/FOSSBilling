@@ -12,7 +12,7 @@ final class AdminTest extends \BBTestCase
 
     public function getServiceMock(): \PHPUnit\Framework\MockObject\MockObject
     {
-        return $this->getMockBuilder('\\' . \Box\Mod\Formbuilder\Service::class)->getMock();
+        return $this->createMock(\Box\Mod\Formbuilder\Service::class);
     }
 
     public function setUp(): void

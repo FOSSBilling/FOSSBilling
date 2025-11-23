@@ -24,7 +24,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetList(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
@@ -49,16 +49,16 @@ final class AdminTest extends \BBTestCase
 
     public function testGet(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
@@ -85,12 +85,12 @@ final class AdminTest extends \BBTestCase
             'execute' => true,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('markAsPaid')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -98,7 +98,7 @@ final class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->gateway_id = '1';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -125,16 +125,16 @@ final class AdminTest extends \BBTestCase
         $invoiceModel->loadBean(new \DummyBean());
         $invoiceModel->id = $newInvoiceId;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('prepareInvoice')
             ->willReturn($invoiceModel);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
@@ -159,16 +159,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('approveInvoice')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
@@ -193,16 +193,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
         $newNegativeInvoiceId = 2;
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('refundInvoice')
             ->willReturn($newNegativeInvoiceId);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
@@ -227,16 +227,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateInvoice')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
@@ -261,16 +261,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $invoiceItemService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceInvoiceItem::class)->getMock();
+        $invoiceItemService = $this->createMock(\Box\Mod\Invoice\ServiceInvoiceItem::class);
         $invoiceItemService->expects($this->atLeastOnce())
             ->method('remove')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_InvoiceItem();
         $model->loadBean(new \DummyBean());
@@ -296,16 +296,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteInvoiceByAdmin')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
@@ -331,16 +331,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
         $newInvoiceId = 3;
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('renewInvoice')
             ->willReturn($newInvoiceId);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_ClientOrder();
         $model->loadBean(new \DummyBean());
@@ -367,11 +367,11 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_ClientOrder();
         $model->loadBean(new \DummyBean());
@@ -394,7 +394,7 @@ final class AdminTest extends \BBTestCase
 
     public function testBatchPayWithCredits(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('doBatchPayWithCredits')
             ->willReturn(true);
@@ -412,16 +412,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('payInvoiceWithCredits')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
@@ -443,7 +443,7 @@ final class AdminTest extends \BBTestCase
 
     public function testBatchGenerate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('generateInvoicesForExpiringOrders')
             ->willReturn(true);
@@ -457,7 +457,7 @@ final class AdminTest extends \BBTestCase
 
     public function testBatchActivatePaid(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('doBatchPaidInvoiceActivation')
             ->willReturn(true);
@@ -471,7 +471,7 @@ final class AdminTest extends \BBTestCase
 
     public function testBatchSendReminders(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('doBatchRemindersSend')
             ->willReturn(true);
@@ -485,7 +485,7 @@ final class AdminTest extends \BBTestCase
 
     public function testBatchInvokeDueEvent(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('doBatchInvokeDueEvent')
             ->willReturn(true);
@@ -503,16 +503,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendInvoiceReminder')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
@@ -534,7 +534,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetStatuses(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('counter')
             ->willReturn([]);
@@ -547,7 +547,7 @@ final class AdminTest extends \BBTestCase
 
     public function testTransactionProcessAll(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('processReceivedATransactions')
             ->willReturn(true);
@@ -567,16 +567,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('preProcessTransaction')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_Transaction();
         $model->loadBean(new \DummyBean());
@@ -584,7 +584,7 @@ final class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -608,16 +608,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_Transaction();
         $model->loadBean(new \DummyBean());
@@ -640,7 +640,7 @@ final class AdminTest extends \BBTestCase
     public function testTransactionCreate(): void
     {
         $newTransactionId = 1;
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('create')
             ->willReturn($newTransactionId);
@@ -660,16 +660,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('delete')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_Transaction();
         $model->loadBean(new \DummyBean());
@@ -695,16 +695,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_Transaction();
         $model->loadBean(new \DummyBean());
@@ -725,7 +725,7 @@ final class AdminTest extends \BBTestCase
 
     public function testTransactionGetList(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
@@ -749,7 +749,7 @@ final class AdminTest extends \BBTestCase
 
     public function testTransactionGetStatuses(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('counter')
             ->willReturn([]);
@@ -765,7 +765,7 @@ final class AdminTest extends \BBTestCase
 
     public function testTransactionGetStatusesPairs(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('getStatusPairs')
             ->willReturn([]);
@@ -781,7 +781,7 @@ final class AdminTest extends \BBTestCase
 
     public function testTransactionStatuses(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('getStatuses')
             ->willReturn([]);
@@ -797,7 +797,7 @@ final class AdminTest extends \BBTestCase
 
     public function testTransactionGatewayStatuses(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('getGatewayStatuses')
             ->willReturn([]);
@@ -813,7 +813,7 @@ final class AdminTest extends \BBTestCase
 
     public function testTransactionTypes(): void
     {
-        $transactionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTransaction::class)->getMock();
+        $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('getTypes')
             ->willReturn([]);
@@ -829,7 +829,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGatewayGetList(): void
     {
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->createMock(\Box\Mod\Invoice\ServicePayGateway::class);
         $gatewayService->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
@@ -853,7 +853,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGatewayGetPairs(): void
     {
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->createMock(\Box\Mod\Invoice\ServicePayGateway::class);
         $gatewayService->expects($this->atLeastOnce())
             ->method('getPairs')
             ->willReturn([]);
@@ -868,7 +868,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGatewayGetAvailable(): void
     {
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->createMock(\Box\Mod\Invoice\ServicePayGateway::class);
         $gatewayService->expects($this->atLeastOnce())
             ->method('getAvailable')
             ->willReturn([]);
@@ -887,12 +887,12 @@ final class AdminTest extends \BBTestCase
             'code' => 'PP',
         ];
 
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->createMock(\Box\Mod\Invoice\ServicePayGateway::class);
         $gatewayService->expects($this->atLeastOnce())
             ->method('install')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -912,16 +912,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->createMock(\Box\Mod\Invoice\ServicePayGateway::class);
         $gatewayService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_PayGateway();
         $model->loadBean(new \DummyBean());
@@ -946,16 +946,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
         $newGatewayId = 1;
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->createMock(\Box\Mod\Invoice\ServicePayGateway::class);
         $gatewayService->expects($this->atLeastOnce())
             ->method('copy')
             ->willReturn($newGatewayId);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_PayGateway();
         $model->loadBean(new \DummyBean());
@@ -981,16 +981,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->createMock(\Box\Mod\Invoice\ServicePayGateway::class);
         $gatewayService->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_PayGateway();
         $model->loadBean(new \DummyBean());
@@ -1016,16 +1016,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $gatewayService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayService = $this->createMock(\Box\Mod\Invoice\ServicePayGateway::class);
         $gatewayService->expects($this->atLeastOnce())
             ->method('delete')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_PayGateway();
         $model->loadBean(new \DummyBean());
@@ -1047,7 +1047,7 @@ final class AdminTest extends \BBTestCase
 
     public function subscription_get_list(): void
     {
-        $subscriptionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)->getMock();
+        $subscriptionService = $this->createMock(\Box\Mod\Invoice\ServiceSubscription::class);
         $subscriptionService->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
@@ -1077,16 +1077,16 @@ final class AdminTest extends \BBTestCase
             'currency' => 'EU',
         ];
         $newSubscriptionId = 1;
-        $subscriptionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)->getMock();
+        $subscriptionService = $this->createMock(\Box\Mod\Invoice\ServiceSubscription::class);
         $subscriptionService->expects($this->atLeastOnce())
             ->method('create')
             ->willReturn($newSubscriptionId);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_PayGateway();
         $model->loadBean(new \DummyBean());
@@ -1118,11 +1118,11 @@ final class AdminTest extends \BBTestCase
             'currency' => 'EU',
         ];
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_PayGateway();
         $model->loadBean(new \DummyBean());
@@ -1150,16 +1150,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $subscriptionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)->getMock();
+        $subscriptionService = $this->createMock(\Box\Mod\Invoice\ServiceSubscription::class);
         $subscriptionService->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_Subscription();
         $model->loadBean(new \DummyBean());
@@ -1185,12 +1185,12 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $subscriptionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)->getMock();
+        $subscriptionService = $this->createMock(\Box\Mod\Invoice\ServiceSubscription::class);
         $subscriptionService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_Subscription();
         $model->loadBean(new \DummyBean());
@@ -1214,16 +1214,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $subscriptionService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceSubscription::class)->getMock();
+        $subscriptionService = $this->createMock(\Box\Mod\Invoice\ServiceSubscription::class);
         $subscriptionService->expects($this->atLeastOnce())
             ->method('delete')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_Subscription();
         $model->loadBean(new \DummyBean());
@@ -1249,16 +1249,16 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $taxService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)->getMock();
+        $taxService = $this->createMock(\Box\Mod\Invoice\ServiceTax::class);
         $taxService->expects($this->atLeastOnce())
             ->method('delete')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $model = new \Model_Tax();
         $model->loadBean(new \DummyBean());
@@ -1284,12 +1284,12 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
         $newTaxId = 1;
-        $taxService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)->getMock();
+        $taxService = $this->createMock(\Box\Mod\Invoice\ServiceTax::class);
         $taxService->expects($this->atLeastOnce())
             ->method('create')
             ->willReturn($newTaxId);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -1306,7 +1306,7 @@ final class AdminTest extends \BBTestCase
 
     public function tax_get_list(): void
     {
-        $taxService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)->getMock();
+        $taxService = $this->createMock(\Box\Mod\Invoice\ServiceTax::class);
         $taxService->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
@@ -1400,16 +1400,16 @@ final class AdminTest extends \BBTestCase
 
     public function testGetTax(): void
     {
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $taxService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)->getMock();
+        $taxService = $this->createMock(\Box\Mod\Invoice\ServiceTax::class);
         $taxService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Tax();
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
@@ -1432,16 +1432,16 @@ final class AdminTest extends \BBTestCase
 
     public function testUpdateTax(): void
     {
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $taxService = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServiceTax::class)->getMock();
+        $taxService = $this->createMock(\Box\Mod\Invoice\ServiceTax::class);
         $taxService->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Tax();
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())

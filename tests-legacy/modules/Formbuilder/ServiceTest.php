@@ -78,7 +78,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_Form();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($model);
@@ -111,7 +111,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = 2;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($model);
@@ -169,7 +169,7 @@ final class ServiceTest extends \BBTestCase
             'options' => '{"hidden":"hidden"}',
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($model);
@@ -333,7 +333,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_Form();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -359,7 +359,7 @@ final class ServiceTest extends \BBTestCase
     public function testGetFormFields(): void
     {
         $formId = 1;
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn([]);
@@ -375,7 +375,7 @@ final class ServiceTest extends \BBTestCase
     public function testGetFormFieldsCount(): void
     {
         $formId = 1;
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn([]);
@@ -391,7 +391,7 @@ final class ServiceTest extends \BBTestCase
     public function testGetFormPairs(): void
     {
         $formId = 1;
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc')
             ->willReturn([]);
@@ -418,7 +418,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_FormField();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -441,7 +441,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testRemoveForm(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->exactly(4))
             ->method('exec');
 
@@ -462,7 +462,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_FormField();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -487,7 +487,7 @@ final class ServiceTest extends \BBTestCase
             'field_id' => 10,
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(new \Model_FormField());
@@ -502,7 +502,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetForms(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn([]);
@@ -561,7 +561,7 @@ final class ServiceTest extends \BBTestCase
             'form_id' => 1,
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->exactly(2))
             ->method('exec');
 

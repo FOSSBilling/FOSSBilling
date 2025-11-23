@@ -31,7 +31,7 @@ final class Api_ClientTest extends \BBTestCase
 
         $clientApiMock->setService($serviceMock);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
@@ -185,7 +185,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testGetService(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('lock')
             ->willReturn(true);
 
@@ -215,7 +215,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testGetServiceOrderIdMissingException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->never())->method('lock')
             ->willReturn(true);
 
@@ -245,7 +245,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testGetServiceOrderNotFoundException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->never())->method('lock')
             ->willReturn(true);
 
@@ -277,7 +277,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testGetServiceOrderNotActivatedException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->never())->method('lock')
             ->willReturn(true);
 

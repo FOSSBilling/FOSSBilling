@@ -12,7 +12,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Activity\Service();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
         $service->setDi($di);
@@ -64,7 +64,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($model);
@@ -89,7 +89,7 @@ final class ServiceTest extends \BBTestCase
         $clientModel->loadBean(new \DummyBean());
 
         $expectionError = 'Client not found';
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->with('Client', $clientHistoryModel->client_id, $expectionError)
@@ -123,7 +123,7 @@ final class ServiceTest extends \BBTestCase
         $activitySystemModel = new \Model_ActivitySystem();
         $activitySystemModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->with('ActivitySystem', 'client_id = ?', [$clientModel->id])

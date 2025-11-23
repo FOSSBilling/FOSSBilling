@@ -26,7 +26,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testOnBeforeClientSignUp(): void
     {
-        $spamCheckerService = $this->getMockBuilder('\\' . Service::class)->getMock();
+        $spamCheckerService = $this->createMock(Service::class);
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isBlockedIp');
         $spamCheckerService->expects($this->atLeastOnce())
@@ -45,7 +45,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testOnBeforeGuestPublicTicketOpen(): void
     {
-        $spamCheckerService = $this->getMockBuilder('\\' . Service::class)->getMock();
+        $spamCheckerService = $this->createMock(Service::class);
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isBlockedIp');
         $spamCheckerService->expects($this->atLeastOnce())

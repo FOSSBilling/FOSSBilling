@@ -53,7 +53,7 @@ final class ServiceTransactionTest extends \BBTestCase
 
     public function testUpdate(): void
     {
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -90,7 +90,7 @@ final class ServiceTransactionTest extends \BBTestCase
 
     public function testCreateInvalidMissinginvoiceId(): void
     {
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -111,7 +111,7 @@ final class ServiceTransactionTest extends \BBTestCase
 
     public function testCreateInvalidMissingbbGatewayId(): void
     {
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -249,7 +249,7 @@ final class ServiceTransactionTest extends \BBTestCase
     public function testCounter(): void
     {
         $queryResult = [['status' => \Model_Transaction::STATUS_RECEIVED, 'counter' => 1]];
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn($queryResult);
@@ -338,7 +338,7 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('processTransaction')
             ->willReturn('processedOutputString');
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -365,7 +365,7 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('processTransaction')
             ->will($this->throwException(new \FOSSBilling\Exception($exceptionMessage)));
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -397,7 +397,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturnOnConsecutiveCalls($transactionModel, $payGatewayModel);
@@ -409,7 +409,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $paymentAdapterMock->expects($this->atLeastOnce())
             ->method('processTransaction');
 
-        $payGatewayService = $this->getMockBuilder('\\' . ServicePayGateway::class)->getMock();
+        $payGatewayService = $this->createMock(ServicePayGateway::class);
         $payGatewayService->expects($this->atLeastOnce())
             ->method('getPaymentAdapter')
             ->willReturn($paymentAdapterMock);
@@ -438,7 +438,7 @@ final class ServiceTransactionTest extends \BBTestCase
                 'invoice_id' => 1,
             ],
         ];
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($assoc);
@@ -475,7 +475,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $clientBalanceModel = new \Model_ClientBalance();
         $clientBalanceModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturnOnConsecutiveCalls($invoiceModel, $clientModdel);
@@ -513,12 +513,12 @@ final class ServiceTransactionTest extends \BBTestCase
         $existing->id = 123;
         $existing->status = \Model_Transaction::STATUS_PROCESSED;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($existing);
 
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 

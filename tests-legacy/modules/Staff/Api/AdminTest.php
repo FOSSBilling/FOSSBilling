@@ -26,7 +26,7 @@ final class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['sqlString', []]);
@@ -49,7 +49,7 @@ final class AdminTest extends \BBTestCase
 
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($adminModel);
@@ -69,15 +69,15 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toModel_AdminApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_Admin());
@@ -97,15 +97,15 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_Admin());
@@ -126,15 +126,15 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('delete')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_Admin());
@@ -159,18 +159,18 @@ final class AdminTest extends \BBTestCase
             'password_confirm' => 'test!23A',
         ];
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('isPasswordStrong');
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changePassword')
             ->willReturn(true);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_Admin());
@@ -194,7 +194,7 @@ final class AdminTest extends \BBTestCase
             'password_confirm' => 'test',
         ];
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -218,19 +218,19 @@ final class AdminTest extends \BBTestCase
 
         $newStaffId = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('create')
             ->willReturn($newStaffId);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
@@ -249,15 +249,15 @@ final class AdminTest extends \BBTestCase
         $staffModel = new \Model_Admin();
         $staffModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPermissions')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($staffModel);
@@ -280,7 +280,7 @@ final class AdminTest extends \BBTestCase
             'permissions' => 'default',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('setPermissions')
             ->willReturn(true);
@@ -288,10 +288,10 @@ final class AdminTest extends \BBTestCase
         $staffModel = new \Model_Admin();
         $staffModel->loadBean(new \DummyBean());
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($staffModel);
@@ -311,7 +311,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGroupGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdminGroupPair')
             ->willReturn([]);
@@ -325,7 +325,7 @@ final class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdminGroupSearchQuery')
             ->willReturn(['sqlString', []]);
@@ -353,12 +353,12 @@ final class AdminTest extends \BBTestCase
         $data['name'] = 'Prime Group';
         $newGroupId = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('createGroup')
             ->willReturn($newGroupId);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -377,15 +377,15 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toAdminGroupApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_AdminGroup());
@@ -406,15 +406,15 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteGroup')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_AdminGroup());
@@ -436,15 +436,15 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateGroup')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_AdminGroup());
@@ -466,7 +466,7 @@ final class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getActivityAdminHistorySearchQuery')
             ->willReturn(['sqlString', []]);
@@ -486,7 +486,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_ActivityAdminHistory();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->method('getExistingModelById')
             ->willReturn($model);
 
@@ -505,14 +505,14 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->method('toActivityAdminHistoryApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ActivityAdminHistory());

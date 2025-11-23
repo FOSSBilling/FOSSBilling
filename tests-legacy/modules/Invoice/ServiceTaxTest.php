@@ -191,12 +191,12 @@ final class ServiceTaxTest extends \BBTestCase
         $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->quantity = 1;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([$invoiceItemModel]);
 
-        $invoiceItemService = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)->getMock();
+        $invoiceItemService = $this->createMock(ServiceInvoiceItem::class);
         $invoiceItemService->expects($this->atLeastOnce())
             ->method('getTax')
             ->willReturn(21);
@@ -231,7 +231,7 @@ final class ServiceTaxTest extends \BBTestCase
 
     public function testCreate(): void
     {
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->createMock(\Box\Mod\System\Service::class);
         $systemService->expects($this->atLeastOnce())
             ->method('checkLimits');
 
@@ -292,7 +292,7 @@ final class ServiceTaxTest extends \BBTestCase
         $result = $this->service->getSearchQuery([]);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
-        $this->assertEquals([], $result[1]);
+        $this->assertSame([], $result[1]);
     }
 
     public function testToApiArray(): void

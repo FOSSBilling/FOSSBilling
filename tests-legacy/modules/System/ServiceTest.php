@@ -61,7 +61,7 @@ final class ServiceTest extends \BBTestCase
                 'value' => 'work@example.eu',
             ],
         ];
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn($multParamsResults);
@@ -98,7 +98,7 @@ final class ServiceTest extends \BBTestCase
                 'value' => 'work@example.eu',
             ],
         ];
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn($multParamsResults);
@@ -119,11 +119,11 @@ final class ServiceTest extends \BBTestCase
             'company_name' => 'newValue',
         ];
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $logMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $logMock = $this->createMock('\Box_Log');
 
         $systemServiceMock = $this->getMockBuilder('\\' . Service::class)->onlyMethods(['setParamValue'])->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
@@ -150,7 +150,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getParamValue')
             ->willReturn(false);
 
-        $updaterMock = $this->getMockBuilder('\\' . \FOSSBilling\Update::class)->getMock();
+        $updaterMock = $this->createMock(\FOSSBilling\Update::class);
         $updaterMock->expects($this->atLeastOnce())
             ->method('isUpdateAvailable')
             ->willReturn(true);
@@ -201,7 +201,7 @@ final class ServiceTest extends \BBTestCase
         $twigMock->method('createTemplate')
             ->will($this->throwException(new \Error('Error')));
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn(new \Model_Client());
@@ -235,7 +235,7 @@ final class ServiceTest extends \BBTestCase
         $twigMock->method('render')
             ->willReturn('');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn(new \Model_Client());

@@ -18,7 +18,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetCronInfo(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())->method('getParamValue');
 
         $di = new \Pimple\Container();
@@ -32,7 +32,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetLastExecutionTime(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->willReturn('2012-12-12 12:12:12');

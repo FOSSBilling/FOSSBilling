@@ -30,7 +30,7 @@ final class GuestTest extends \BBTestCase
 
     public function testIsLate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Cron\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('isLate')->willReturn(true);
 
         $api = new Guest();

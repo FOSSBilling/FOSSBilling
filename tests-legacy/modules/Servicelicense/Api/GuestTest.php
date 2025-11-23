@@ -36,7 +36,7 @@ final class GuestTest extends \BBTestCase
             'expires_at' => '2020-01+01',
             'valid' => true,
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('checkLicenseDetails')
             ->willReturn($licenseResult);

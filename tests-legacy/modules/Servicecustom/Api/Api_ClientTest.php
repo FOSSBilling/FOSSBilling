@@ -16,7 +16,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testCall(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());
@@ -37,7 +37,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testCallArgumentsNotSetException(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());
@@ -54,7 +54,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testCallOrderIdNotSetException(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());

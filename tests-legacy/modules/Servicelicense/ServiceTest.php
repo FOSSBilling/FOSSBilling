@@ -31,7 +31,7 @@ final class ServiceTest extends \BBTestCase
 
         $result = $this->service->attachOrderConfig($productModel, $data);
         $this->assertIsArray($result);
-        $this->assertEquals([], $result);
+        $this->assertSame([], $result);
     }
 
     public function testAttachOrderConfig(): void
@@ -61,12 +61,12 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($serviceLicenseModel);
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
@@ -90,7 +90,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
@@ -98,7 +98,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($serviceLicenseModel);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -121,7 +121,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn(['iterations' => 3]);
@@ -129,7 +129,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($serviceLicenseModel);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
         $dbMock->expects($this->exactly(3))
@@ -155,7 +155,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
@@ -163,7 +163,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($serviceLicenseModel);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->never())
             ->method('store');
         $dbMock->expects($this->atLeastOnce())
@@ -190,7 +190,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'TestPlugin';
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
@@ -213,7 +213,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
@@ -239,12 +239,12 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceLicenseModel);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
@@ -261,11 +261,11 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -288,7 +288,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getServiceOrder')
             ->willReturn($clientOrderModel);
@@ -306,7 +306,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getServiceOrder')
             ->willReturn(null);
@@ -326,7 +326,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel->ips = '{}';
         $value = '1.1.1.1';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -346,7 +346,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel->ips = '["2.2.2.2"]';
         $value = '1.1.1.1';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -378,7 +378,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel->versions = '{}';
         $value = '1.0';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -398,7 +398,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel->versions = '["2.0"]';
         $value = '1.0';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -430,7 +430,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel->paths = '{}';
         $value = '/var';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -450,7 +450,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel->paths = '["/"]';
         $value = '/var';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -482,7 +482,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel->hosts = '{}';
         $value = 'site.com';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -502,7 +502,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel->hosts = '["fossbilling.org"]';
         $value = 'site.com';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -549,7 +549,7 @@ final class ServiceTest extends \BBTestCase
 
         $expected = $clientModel->first_name . ' ' . $clientModel->last_name;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($clientModel);
@@ -574,7 +574,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getServiceOrder')
             ->willReturn($clientOrderModel);
@@ -628,7 +628,7 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 

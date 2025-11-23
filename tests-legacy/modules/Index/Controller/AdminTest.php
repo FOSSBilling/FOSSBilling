@@ -12,7 +12,7 @@ final class AdminTest extends \BBTestCase
         $controller = new Admin();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
         $controller->setDi($di);

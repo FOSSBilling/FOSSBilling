@@ -34,7 +34,7 @@ final class AdminTest extends \BBTestCase
             'plugin3' => 'plugin3',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getLicensePlugins')
             ->willReturn($licensePluginArray);
@@ -59,7 +59,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn(new \Model_ServiceLicense());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
@@ -84,7 +84,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn(new \Model_ServiceLicense());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('reset')
             ->willReturn(true);
@@ -100,17 +100,17 @@ final class AdminTest extends \BBTestCase
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceLicense());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ClientOrder());
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -129,17 +129,17 @@ final class AdminTest extends \BBTestCase
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(null);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ClientOrder());
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 

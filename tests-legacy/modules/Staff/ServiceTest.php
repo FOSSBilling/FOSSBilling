@@ -240,7 +240,7 @@ final class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $supportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getTicketById')
             ->willReturn(new \Model_SupportTicket());
@@ -248,7 +248,7 @@ final class ServiceTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate');
 
@@ -280,7 +280,7 @@ final class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $supportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getTicketById')
             ->willReturn(new \Model_SupportTicket());
@@ -288,7 +288,7 @@ final class ServiceTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
@@ -321,7 +321,7 @@ final class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $supportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getTicketById')
             ->willReturn(new \Model_SupportTicket());
@@ -329,7 +329,7 @@ final class ServiceTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate');
 
@@ -361,7 +361,7 @@ final class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $supportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getTicketById')
             ->willReturn(new \Model_SupportTicket());
@@ -369,7 +369,7 @@ final class ServiceTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
@@ -402,7 +402,7 @@ final class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $supportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getPublicTicketById')
             ->willReturn(new \Model_SupportPTicket());
@@ -410,7 +410,7 @@ final class ServiceTest extends \BBTestCase
             ->method('publicToApiArray')
             ->willReturn([]);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate');
 
@@ -442,7 +442,7 @@ final class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $supportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getPublicTicketById')
             ->willReturn(new \Model_SupportPTicket());
@@ -450,7 +450,7 @@ final class ServiceTest extends \BBTestCase
             ->method('publicToApiArray')
             ->willReturn([]);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
@@ -483,7 +483,7 @@ final class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $supportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getPublicTicketById')
             ->willReturn(new \Model_SupportPTicket());
@@ -491,7 +491,7 @@ final class ServiceTest extends \BBTestCase
             ->method('publicToApiArray')
             ->willReturn([]);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate');
 
@@ -523,7 +523,7 @@ final class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $supportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getPublicTicketById')
             ->willReturn(new \Model_SupportPTicket());
@@ -531,7 +531,7 @@ final class ServiceTest extends \BBTestCase
             ->method('publicToApiArray')
             ->willReturn([]);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
@@ -564,12 +564,12 @@ final class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $clientMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientMock = $this->createMock(\Box\Mod\Client\Service::class);
         $clientMock->expects($this->atLeastOnce())
             ->method('get')
             ->willReturn([]);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate');
 
@@ -601,12 +601,12 @@ final class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $clientMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientMock = $this->createMock(\Box\Mod\Client\Service::class);
         $clientMock->expects($this->atLeastOnce())
             ->method('get')
             ->willReturn([]);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
@@ -639,12 +639,12 @@ final class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $supportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('publicToApiArray')
             ->willReturn([]);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
@@ -652,7 +652,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('getparameters');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn(new \Model_SupportPTicket());
@@ -684,7 +684,7 @@ final class ServiceTest extends \BBTestCase
         $ticketModel = new \Model_SupportTicket();
         $ticketModel->loadBean(new \DummyBean());
 
-        $supportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getTicketById')
             ->willReturn($ticketModel);
@@ -694,7 +694,7 @@ final class ServiceTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn($supportTicketArray);
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
 
         $emailConfig = [
             'to_staff' => true,
@@ -715,7 +715,7 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn(null);
@@ -743,7 +743,7 @@ final class ServiceTest extends \BBTestCase
         $ticketModel = new \Model_SupportTicket();
         $ticketModel->loadBean(new \DummyBean());
 
-        $supportServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getTicketById')
             ->willReturn($ticketModel);
@@ -757,7 +757,7 @@ final class ServiceTest extends \BBTestCase
         $helpdeskModel->loadBean(new \DummyBean());
         $helpdeskModel->email = 'helpdesk@support.com';
 
-        $emailServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->getMock();
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailConfig = [
             'to' => $helpdeskModel->email,
             'code' => 'mod_support_helpdesk_ticket_open',
@@ -777,7 +777,7 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($helpdeskModel);
@@ -864,7 +864,7 @@ final class ServiceTest extends \BBTestCase
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($adminModel);
@@ -885,7 +885,7 @@ final class ServiceTest extends \BBTestCase
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(null);
@@ -897,7 +897,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt');
 
@@ -922,7 +922,7 @@ final class ServiceTest extends \BBTestCase
         $adminGroupModel = new \Model_Admin();
         $adminGroupModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($adminGroupModel);
@@ -967,13 +967,13 @@ final class ServiceTest extends \BBTestCase
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
 
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $logMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $logMock = $this->createMock('\Box_Log');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -999,13 +999,13 @@ final class ServiceTest extends \BBTestCase
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
 
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $logMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $logMock = $this->createMock('\Box_Log');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
@@ -1045,22 +1045,22 @@ final class ServiceTest extends \BBTestCase
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
 
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $logMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $logMock = $this->createMock('\Box_Log');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($plainTextPassword);
 
-        $profileService = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
+        $profileService = $this->createMock(\Box\Mod\Profile\Service::class);
 
         $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
@@ -1096,15 +1096,15 @@ final class ServiceTest extends \BBTestCase
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($adminModel);
@@ -1112,9 +1112,9 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($newId);
 
-        $logMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $logMock = $this->createMock('\Box_Log');
 
-        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);
@@ -1155,15 +1155,15 @@ final class ServiceTest extends \BBTestCase
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($adminModel);
@@ -1171,9 +1171,9 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willThrowException(new \RedBeanPHP\RedException());
 
-        $logMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $logMock = $this->createMock('\Box_Log');
 
-        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);
@@ -1215,7 +1215,7 @@ final class ServiceTest extends \BBTestCase
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($adminModel);
@@ -1223,11 +1223,11 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($newId);
 
-        $logMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $logMock = $this->createMock('\Box_Log');
 
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->createMock(\Box\Mod\System\Service::class);
 
-        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);
@@ -1268,7 +1268,7 @@ final class ServiceTest extends \BBTestCase
             2 => 'Another Smith',
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn($rows);
@@ -1301,11 +1301,11 @@ final class ServiceTest extends \BBTestCase
         $adminGroupModel->loadBean(new \DummyBean());
         $newGroupId = 1;
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($adminGroupModel);
@@ -1357,7 +1357,7 @@ final class ServiceTest extends \BBTestCase
         $adminGroupModel = new \Model_AdminGroup();
         $adminGroupModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
         $dbMock->expects($this->atLeastOnce())
@@ -1403,7 +1403,7 @@ final class ServiceTest extends \BBTestCase
         $adminGroupModel = new \Model_AdminGroup();
         $adminGroupModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn(2);
@@ -1429,7 +1429,7 @@ final class ServiceTest extends \BBTestCase
         $adminGroupModel = new \Model_AdminGroup();
         $adminGroupModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -1508,7 +1508,7 @@ final class ServiceTest extends \BBTestCase
         $adminModel->loadBean(new \DummyBean());
         $adminModel->id = 2;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($adminModel);
@@ -1532,7 +1532,7 @@ final class ServiceTest extends \BBTestCase
         $pdoStatementMock->expects($this->atLeastOnce())
             ->method('execute');
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatementMock);
@@ -1562,7 +1562,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fetchColumn')
             ->willReturn('{}');
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatementMock);
@@ -1576,7 +1576,7 @@ final class ServiceTest extends \BBTestCase
         $member_id = 1;
         $result = $service->getPermissions($member_id);
         $this->assertIsArray($result);
-        $this->assertEquals([], $result);
+        $this->assertSame([], $result);
     }
 
     public function testGetPermissions(): void
@@ -1590,7 +1590,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fetchColumn')
             ->willReturn($queryResult);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatementMock);
@@ -1613,7 +1613,7 @@ final class ServiceTest extends \BBTestCase
         $email = 'example@fossbilling.vm';
         $password = '123456';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('Admin', 'email = ? AND status = ? AND role != ?')
@@ -1644,7 +1644,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('Admin', 'email = ? AND status = ? AND role != ?')

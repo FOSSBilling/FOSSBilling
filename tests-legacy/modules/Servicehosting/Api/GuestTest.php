@@ -26,14 +26,14 @@ final class GuestTest extends \BBTestCase
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
         $model->type = \Model_Product::HOSTING;
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getFreeTlds')
             ->with($model)
@@ -56,14 +56,14 @@ final class GuestTest extends \BBTestCase
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->never())->method('getFreeTlds');
         $this->api->setService($serviceMock);
         $this->api->setDi($di);

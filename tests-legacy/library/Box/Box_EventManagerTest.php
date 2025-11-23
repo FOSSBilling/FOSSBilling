@@ -14,7 +14,7 @@ final class Box_EventManagerTest extends PHPUnit\Framework\TestCase
 
     public function testFire(): void
     {
-        $db_mock = $this->getMockBuilder('Box_Database')->getMock();
+        $db_mock = $this->createMock('Box_Database');
         $db_mock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn([]);

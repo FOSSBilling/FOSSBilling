@@ -12,7 +12,7 @@ final class AdminTest extends \BBTestCase
         $controller = new \Box\Mod\Activity\Controller\Admin();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
         $controller->setDi($di);
@@ -25,7 +25,7 @@ final class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $link = 'activity';
 
-        $urlMock = $this->getMockBuilder('Box_Url')->getMock();
+        $urlMock = $this->createMock('Box_Url');
         $urlMock->expects($this->atLeastOnce())
             ->method('adminLink')
             ->willReturn('https://fossbilling.org/index.php?_url=/' . $link);

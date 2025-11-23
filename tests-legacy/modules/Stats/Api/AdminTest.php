@@ -24,7 +24,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetSummary(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSummary')
             ->willReturn([]);
@@ -37,7 +37,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetSummaryIncome(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSummaryIncome')
             ->willReturn([]);
@@ -50,7 +50,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetOrdersStatuses(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrdersStatuses')
             ->willReturn([]);
@@ -64,7 +64,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetProductSummary(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSummary')
             ->willReturn([]);
@@ -78,7 +78,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetProductSales(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSales')
             ->willReturn([]);
@@ -92,7 +92,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetIncomeVsRefunds(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('incomeAndRefundStats')
             ->willReturn([]);
@@ -106,7 +106,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetRefunds(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getRefunds')
             ->willReturn([]);
@@ -120,7 +120,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetIncome(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getIncome')
             ->willReturn([]);
@@ -134,7 +134,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetOrders(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->willReturn([]);
@@ -148,7 +148,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetClients(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->willReturn([]);
@@ -162,7 +162,7 @@ final class AdminTest extends \BBTestCase
 
     public function testClientCountries(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getClientCountries')
             ->willReturn([]);
@@ -176,7 +176,7 @@ final class AdminTest extends \BBTestCase
 
     public function testSalesCountries(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSalesByCountry')
             ->willReturn([]);
@@ -190,7 +190,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetInvoices(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->willReturn([]);
@@ -204,7 +204,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetTickets(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->willReturn([]);

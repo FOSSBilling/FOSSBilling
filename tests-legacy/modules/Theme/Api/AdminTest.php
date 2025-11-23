@@ -24,7 +24,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetList(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getThemes')
             ->willReturn([]);
@@ -41,7 +41,7 @@ final class AdminTest extends \BBTestCase
             'code' => 'themeCode',
         ];
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('loadTheme')
             ->willReturn([]);
@@ -70,12 +70,12 @@ final class AdminTest extends \BBTestCase
             ->method('isAdminAreaTheme')
             ->willReturn(false);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
             ->with($this->equalTo('theme'));
@@ -84,7 +84,7 @@ final class AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $loggerMock = $this->createMock('\Box_Log');
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
@@ -109,12 +109,12 @@ final class AdminTest extends \BBTestCase
             ->method('isAdminAreaTheme')
             ->willReturn(true);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
             ->with($this->equalTo('admin_theme'));
@@ -123,7 +123,7 @@ final class AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $loggerMock = $this->createMock('\Box_Log');
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
@@ -146,7 +146,7 @@ final class AdminTest extends \BBTestCase
 
         $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
@@ -176,7 +176,7 @@ final class AdminTest extends \BBTestCase
 
         $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);

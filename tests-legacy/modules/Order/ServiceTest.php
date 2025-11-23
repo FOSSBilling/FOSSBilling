@@ -794,7 +794,7 @@ final class ServiceTest extends \BBTestCase
             ->method('load')
             ->willReturn($service);
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('to_camel_case')
             ->willReturn('ServiceCustom');
 
@@ -869,7 +869,7 @@ final class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($order);
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('from_camel_case')
             ->willReturn('servicecustom');
 
@@ -1034,7 +1034,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = $id;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('ClientOrder')
@@ -1056,7 +1056,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = $id;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('ClientOrder')
@@ -1109,17 +1109,17 @@ final class ServiceTest extends \BBTestCase
         $model->quantity = 1;
         $model->client_id = 1;
 
-        $clientService = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientService = $this->createMock(\Box\Mod\Client\Service::class);
         $clientService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
 
-        $supportService = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $supportService = $this->createMock(\Box\Mod\Support\Service::class);
         $supportService->expects($this->atLeastOnce())
             ->method('getActiveTicketsCountForOrder')
             ->willReturn(1);
 
-        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
             ->willReturn([]);
@@ -1284,7 +1284,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyServiceMock = $this->createMock(\Box\Mod\Currency\Service::class);
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getDefault')
             ->willReturn(null);
@@ -1315,18 +1315,18 @@ final class ServiceTest extends \BBTestCase
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \DummyBean());
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyServiceMock = $this->createMock(\Box\Mod\Currency\Service::class);
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getByCode')
             ->willReturn($currencyModel);
 
-        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock = $this->createMock(\Box\Mod\Cart\Service::class);
         $cartServiceMock->expects($this->atLeastOnce())
             ->method('isStockAvailable')
             ->with($modelProduct)
             ->willReturn(false);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -1363,18 +1363,18 @@ final class ServiceTest extends \BBTestCase
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \DummyBean());
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyServiceMock = $this->createMock(\Box\Mod\Currency\Service::class);
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getByCode')
             ->willReturn($currencyModel);
 
-        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock = $this->createMock(\Box\Mod\Cart\Service::class);
         $cartServiceMock->expects($this->atLeastOnce())
             ->method('isStockAvailable')
             ->with($modelProduct)
             ->willReturn(true);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -1410,18 +1410,18 @@ final class ServiceTest extends \BBTestCase
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \DummyBean());
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyServiceMock = $this->createMock(\Box\Mod\Currency\Service::class);
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getByCode')
             ->willReturn($currencyModel);
 
-        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock = $this->createMock(\Box\Mod\Cart\Service::class);
         $cartServiceMock->expects($this->atLeastOnce())
             ->method('isStockAvailable')
             ->with($modelProduct)
             ->willReturn(true);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -1463,17 +1463,17 @@ final class ServiceTest extends \BBTestCase
 
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \DummyBean());
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $currencyServiceMock = $this->createMock(\Box\Mod\Currency\Service::class);
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getByCode')
             ->willReturn($currencyModel);
-        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock = $this->createMock(\Box\Mod\Cart\Service::class);
         $cartServiceMock->expects($this->atLeastOnce())
             ->method('isStockAvailable')
             ->with($modelProduct)
             ->willReturn(true);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -1482,7 +1482,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->with('ClientOrder')
@@ -1528,7 +1528,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('ClientOrder')
@@ -1558,7 +1558,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
         $clientOrderModel->group_master = 1;
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -1601,7 +1601,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderAddonsList')
             ->willReturn([$clientOrderModel]);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -1618,7 +1618,7 @@ final class ServiceTest extends \BBTestCase
         $modelClientOrder = new \Model_ClientOrder();
         $modelClientOrder->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->with('ClientOrder')
@@ -1639,7 +1639,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->stock_control = 1;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel);
@@ -1657,11 +1657,11 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($clientOrderModel);
@@ -1707,7 +1707,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->group_master = 1;
         $clientOrderModel->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -1743,9 +1743,9 @@ final class ServiceTest extends \BBTestCase
 
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
 
-        $dbMock = $this->getMockBuilder('Box_Database')->getMock();
+        $dbMock = $this->createMock('Box_Database');
 
-        $invoiceServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $invoiceServiceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $invoiceServiceMock->expects($this->atLeastOnce())
             ->method('findPaidInvoicesForOrder');
 
@@ -1765,7 +1765,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->status = \Model_ClientOrder::STATUS_SUSPENDED;
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -1784,11 +1784,11 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->status = \Model_ClientOrder::STATUS_ACTIVE;
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($clientOrderModel);
@@ -1816,11 +1816,11 @@ final class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $pdoStatment = $this->getMockBuilder('\\' . PdoStatmentsMock::class)->getMock();
+        $pdoStatment = $this->createMock(PdoStatmentsMock::class);
         $pdoStatment->expects($this->atLeastOnce())
             ->method('execute');
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatment);
@@ -1894,7 +1894,7 @@ final class ServiceTest extends \BBTestCase
         $meta = [];
         $di = new \Pimple\Container();
 
-        $dBMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dBMock = $this->createMock('\Box_Database');
         $dBMock->expects($this->atLeastOnce())
             ->method('exec');
         $di['db'] = $dBMock;
@@ -1913,7 +1913,7 @@ final class ServiceTest extends \BBTestCase
         ];
         $di = new \Pimple\Container();
 
-        $dBMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dBMock = $this->createMock('\Box_Database');
         $dBMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('ClientOrderMeta')

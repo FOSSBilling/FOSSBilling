@@ -16,7 +16,7 @@ final class Api_GuestTest extends \BBTestCase
             'USD' => 'US Dollar',
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
         $service->expects($this->atLeastOnce())
             ->method('getPairs')
             ->willReturn($willReturn);
@@ -68,7 +68,7 @@ final class Api_GuestTest extends \BBTestCase
             'default' => 1,
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
         $service->expects($expectsGetByCode)
             ->method('getByCode')
             ->willReturn($model);
@@ -101,7 +101,7 @@ final class Api_GuestTest extends \BBTestCase
             'default' => 1,
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
         $service->expects($this->never())
             ->method('getByCode')
             ->willReturn(null);
@@ -163,7 +163,7 @@ final class Api_GuestTest extends \BBTestCase
             ->method('get')
             ->willReturn($willReturn);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
 
         $di = new \Pimple\Container();
 
@@ -219,7 +219,7 @@ final class Api_GuestTest extends \BBTestCase
             ->method('get')
             ->willReturn($willReturn);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
 
         $di = new \Pimple\Container();
 

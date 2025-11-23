@@ -36,7 +36,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('setCurrentThemePreset');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn([]);
@@ -58,7 +58,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testSetCurrentThemePreset(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('exec');
 
@@ -80,7 +80,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testDeletePreset(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('exec');
 
@@ -108,7 +108,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateSettings');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc');
 
@@ -143,7 +143,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetThemePresetsThemeDoNotHaveSettingsDataFile(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc');
 
@@ -177,7 +177,7 @@ final class ServiceTest extends \BBTestCase
         $extensionMetaModel->loadBean(new \DummyBean());
         $extensionMetaModel->meta_value = '{}';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($extensionMetaModel);
@@ -205,7 +205,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getCurrentThemePreset')
             ->willReturn('default');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(null);
@@ -225,7 +225,7 @@ final class ServiceTest extends \BBTestCase
 
         $result = $serviceMock->getThemeSettings($themeMock);
         $this->assertIsArray($result);
-        $this->assertEquals([], $result);
+        $this->assertSame([], $result);
     }
 
     public function testUpdateSettings(): void
@@ -233,7 +233,7 @@ final class ServiceTest extends \BBTestCase
         $extensionMetaModel = new \Model_ExtensionMeta();
         $extensionMetaModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(null);
@@ -311,7 +311,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetCurrentAdminAreaTheme(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn('');
@@ -346,7 +346,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetCurrentClientAreaThemeCode(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn('');

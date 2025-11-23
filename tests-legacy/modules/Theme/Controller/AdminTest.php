@@ -12,7 +12,7 @@ final class AdminTest extends \BBTestCase
         $controller = new Admin();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
         $controller->setDi($di);
@@ -50,7 +50,7 @@ final class AdminTest extends \BBTestCase
             ->method('isAssetsPathWritable')
             ->willReturn(false);
 
-        $themeServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $themeServiceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);

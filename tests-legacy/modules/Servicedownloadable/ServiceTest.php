@@ -53,7 +53,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceDownloadable();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($model);
@@ -78,12 +78,12 @@ final class ServiceTest extends \BBTestCase
     {
         $clientOrderModel = new \Model_ClientOrder();
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceDownloadable());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 

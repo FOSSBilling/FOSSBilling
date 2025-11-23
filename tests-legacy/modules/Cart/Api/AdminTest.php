@@ -40,7 +40,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_Cart();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -102,7 +102,7 @@ final class AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['logger'] = $this->createMock('Box_Log');
         $this->adminApi->setDi($di);
 
         $data = [

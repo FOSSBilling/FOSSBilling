@@ -32,7 +32,7 @@ final class ServicePayGatewayTest extends \BBTestCase
         $this->assertIsArray($result);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
-        $this->assertEquals([], $result[1]);
+        $this->assertSame([], $result[1]);
     }
 
     public function testGetSearchQueryWithAdditionalParams(): void
@@ -64,7 +64,7 @@ final class ServicePayGatewayTest extends \BBTestCase
             ],
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn($queryResult);
@@ -81,7 +81,7 @@ final class ServicePayGatewayTest extends \BBTestCase
 
     public function testGetAvailable(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn([]);
@@ -107,7 +107,7 @@ final class ServicePayGatewayTest extends \BBTestCase
 
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($payGatewayModel);
@@ -191,7 +191,7 @@ final class ServicePayGatewayTest extends \BBTestCase
     {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($payGatewayModel);
@@ -216,7 +216,7 @@ final class ServicePayGatewayTest extends \BBTestCase
     {
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -245,7 +245,7 @@ final class ServicePayGatewayTest extends \BBTestCase
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
@@ -264,7 +264,7 @@ final class ServicePayGatewayTest extends \BBTestCase
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([$payGatewayModel]);
@@ -307,11 +307,11 @@ final class ServicePayGatewayTest extends \BBTestCase
             ->method('getAdapterClassName')
             ->willReturn($expected);
 
-        $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
+        $urlMock = $this->createMock('\Box_Url');
         $urlMock->expects($this->atLeastOnce())
             ->method('link');
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
 
         $di = new \Pimple\Container();
         $di['url'] = $urlMock;
@@ -339,11 +339,11 @@ final class ServicePayGatewayTest extends \BBTestCase
             ->method('getAdapterClassName')
             ->willReturn('');
 
-        $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
+        $urlMock = $this->createMock('\Box_Url');
         $urlMock->expects($this->atLeastOnce())
             ->method('link');
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
 
         $di = new \Pimple\Container();
         $di['url'] = $urlMock;

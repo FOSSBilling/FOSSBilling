@@ -39,7 +39,7 @@ final class Api_ClientTest extends \BBTestCase
 
         $model = new \Model_SupportTicket();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);

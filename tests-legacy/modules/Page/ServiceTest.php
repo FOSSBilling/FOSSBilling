@@ -11,7 +11,7 @@ final class ServiceTest extends \BBTestCase
     {
         $service = new Service();
 
-        $themeService = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $themeService = $this->createMock(\Box\Mod\Theme\Service::class);
         $themeService->expects($this->atLeastOnce())
             ->method('getCurrentClientAreaThemeCode')
             ->willReturn('huraga');

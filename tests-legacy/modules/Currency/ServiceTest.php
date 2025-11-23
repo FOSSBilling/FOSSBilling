@@ -12,7 +12,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
         $service->setDi($di);
@@ -35,7 +35,7 @@ final class ServiceTest extends \BBTestCase
         $rate = 0.6;
         $expected = 1 / $rate;
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn($rate);
@@ -52,7 +52,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn(0);
@@ -126,7 +126,7 @@ final class ServiceTest extends \BBTestCase
     public function testGetCurrencyByClientId(\Model_Currency $row, ?string $currency, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $expectsGetByCode, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $getDefaultCalled): void
     {
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
 
         $db->expects($this->atLeastOnce())
             ->method('getCell')
@@ -154,7 +154,7 @@ final class ServiceTest extends \BBTestCase
     public function testGetCurrencyByClientIdNotFounfByCode(): void
     {
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
 
         $db->expects($this->atLeastOnce())
             ->method('getCell')
@@ -189,7 +189,7 @@ final class ServiceTest extends \BBTestCase
 
         $currency = 'EUR';
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($model);
@@ -219,7 +219,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn($returns);
@@ -239,7 +239,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean($bean);
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn([]);
@@ -279,7 +279,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($expects)
             ->method('exec')
             ->willReturn(true);
@@ -297,7 +297,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->never())
             ->method('exec')
             ->willReturn(true);
@@ -323,7 +323,7 @@ final class ServiceTest extends \BBTestCase
             'GBP' => 'Pound Sterling',
         ];
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('getAssoc')
             ->willReturn($pairs);
@@ -340,7 +340,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->never())
             ->method('exec')
             ->willReturn(true);
@@ -361,7 +361,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('exec')
             ->willReturn(true);
@@ -383,7 +383,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->never())
             ->method('exec')
             ->willReturn(true);
@@ -441,7 +441,7 @@ final class ServiceTest extends \BBTestCase
         $currencyModel = new \Model_Tld();
         $currencyModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(random_int(1, 100));
@@ -480,7 +480,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($model);
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $di['logger'] = new \Box_Log();
         $di['db'] = $db;
         $service->setDi($di);
@@ -502,7 +502,7 @@ final class ServiceTest extends \BBTestCase
         $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getByCode'])->getMock();
         $di = new \Pimple\Container();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $di['db'] = $db;
 
         $service->setDi($di);
@@ -528,7 +528,7 @@ final class ServiceTest extends \BBTestCase
         $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getByCode'])->getMock();
         $di = new \Pimple\Container();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $di['db'] = $db;
 
         $service->setDi($di);
@@ -568,7 +568,7 @@ final class ServiceTest extends \BBTestCase
         ];
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn($beansArray);
@@ -606,7 +606,7 @@ final class ServiceTest extends \BBTestCase
         ];
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn($beansArray);
@@ -636,13 +636,13 @@ final class ServiceTest extends \BBTestCase
         $service->expects($this->atLeastOnce())
             ->method('rm');
 
-        $manager = $this->getMockBuilder('Box_EventManager')->getMock();
+        $manager = $this->createMock('Box_EventManager');
         $manager->expects($this->atLeastOnce())
             ->method('fire')
             ->willReturn(true);
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $di['logger'] = new \Box_Log();
         $di['db'] = $db;
         $di['events_manager'] = $manager;

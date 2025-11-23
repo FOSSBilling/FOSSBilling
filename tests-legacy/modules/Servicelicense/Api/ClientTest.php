@@ -35,7 +35,7 @@ final class ClientTest extends \BBTestCase
             ->method('_getService')
             ->willReturn(new \Model_ServiceLicense());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('reset')
             ->willReturn(true);
@@ -51,18 +51,18 @@ final class ClientTest extends \BBTestCase
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceLicense());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('ClientOrder')
             ->willReturn(new \Model_ClientOrder());
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
@@ -85,18 +85,18 @@ final class ClientTest extends \BBTestCase
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(null);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('ClientOrder')
             ->willReturn(new \Model_ClientOrder());
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 

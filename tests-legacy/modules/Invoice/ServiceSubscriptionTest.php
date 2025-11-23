@@ -97,7 +97,7 @@ final class ServiceSubscriptionTest extends \BBTestCase
         $gatewayModel = new \Model_PayGateway();
         $gatewayModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturnOnConsecutiveCalls($clientModel, $gatewayModel);
@@ -277,7 +277,7 @@ final class ServiceSubscriptionTest extends \BBTestCase
             ->willReturn(true);
 
         $period = '1W';
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn($period);
@@ -298,7 +298,7 @@ final class ServiceSubscriptionTest extends \BBTestCase
     {
         $subscribtionModel = new \Model_Subscription();
         $subscribtionModel->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 

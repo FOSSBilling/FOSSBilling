@@ -39,7 +39,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $model = new \Model_SupportTicket();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -302,7 +302,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturnOnConsecutiveCalls($clientModel, $supportHelpdeskModel);
 
         $randID = random_int(1, 100);
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForAdmin')
             ->willReturn($randID);
 
@@ -339,7 +339,7 @@ final class Api_AdminTest extends \BBTestCase
         $ticket->loadBean(new \DummyBean());
         $ticket->id = random_int(1, 100);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($ticket);
@@ -347,7 +347,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['logger'] = $this->createMock('Box_Log');
         $this->adminApi->setDi($di);
         $this->adminApi->setService($serviceMock);
 
@@ -369,14 +369,14 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('autoClose')
             ->willReturn(true);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($ticket);
 
         $this->adminApi->setService($serviceMock);
         $di = new \Pimple\Container();
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['logger'] = $this->createMock('Box_Log');
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
         $result = $this->adminApi->batch_ticket_auto_close([]);
@@ -415,7 +415,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $this->adminApi->setService($serviceMock);
         $di = new \Pimple\Container();
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['logger'] = $this->createMock('Box_Log');
         $this->adminApi->setDi($di);
         $result = $this->adminApi->batch_public_ticket_auto_close([]);
 
@@ -491,7 +491,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $model = new \Model_SupportPTicket();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_DAtabase')->getMock();
+        $dbMock = $this->createMock('\Box_DAtabase');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -935,7 +935,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $model = new \Model_SupportPr();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_DAtabase')->getMock();
+        $dbMock = $this->createMock('\Box_DAtabase');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -1411,7 +1411,7 @@ final class Api_AdminTest extends \BBTestCase
             'id' => random_int(1, 100),
         ];
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticle());
@@ -1448,7 +1448,7 @@ final class Api_AdminTest extends \BBTestCase
             'id' => random_int(1, 100),
         ];
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(false);
@@ -1534,7 +1534,7 @@ final class Api_AdminTest extends \BBTestCase
             'id' => random_int(1, 100),
         ];
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticle());
@@ -1562,7 +1562,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(false);
@@ -1626,7 +1626,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticleCategory());
@@ -1656,7 +1656,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->never())
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticleCategory());
@@ -1685,7 +1685,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(false);
@@ -1750,7 +1750,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn(true);
         $adminApi->setService($kbService);
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticleCategory());
@@ -1786,7 +1786,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn(true);
         $adminApi->setService($kbService);
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->never())
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticleCategory());
@@ -1816,7 +1816,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn(true);
         $adminApi->setService($kbService);
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(false);
@@ -1851,7 +1851,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn(true);
         $adminApi->setService($kbService);
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticleCategory());
@@ -1881,7 +1881,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn(true);
         $adminApi->setService($kbService);
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->never())
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticleCategory());
@@ -1911,7 +1911,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn(true);
         $adminApi->setService($kbService);
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(false);

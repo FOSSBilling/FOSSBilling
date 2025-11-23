@@ -37,7 +37,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetOrdersStatuses(): void
     {
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('counter')
             ->willReturn([]);
@@ -55,7 +55,7 @@ final class ServiceTest extends \BBTestCase
     {
         $data = [];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn([]);
@@ -103,7 +103,7 @@ final class ServiceTest extends \BBTestCase
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('fetchColumn');
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
@@ -126,7 +126,7 @@ final class ServiceTest extends \BBTestCase
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('fetchColumn');
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
@@ -162,7 +162,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn($res);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
@@ -196,7 +196,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn($res);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
@@ -221,7 +221,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn([]);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
@@ -250,7 +250,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn([]);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
@@ -279,7 +279,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn([]);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
@@ -304,7 +304,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn([]);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
@@ -329,7 +329,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn([]);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);

@@ -49,7 +49,7 @@ final class Api_ClientTest extends PHPUnit\Framework\TestCase
         $clientOrderMock = new Model_ClientOrder();
         $clientOrderMock->loadBean(new DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->with('ClientOrder')

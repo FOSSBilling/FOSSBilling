@@ -7,7 +7,7 @@ final class Box_ModTest extends PHPUnit\Framework\TestCase
 {
     public function testEmptyConfig(): void
     {
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(null);
@@ -18,7 +18,7 @@ final class Box_ModTest extends PHPUnit\Framework\TestCase
         $mod = new Box_Mod('api');
         $mod->setDi($di);
         $array = $mod->getConfig();
-        $this->assertEquals([], $array);
+        $this->assertSame([], $array);
     }
 
     public function testCoreMod(): void

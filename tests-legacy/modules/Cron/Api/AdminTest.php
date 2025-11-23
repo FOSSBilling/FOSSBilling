@@ -18,7 +18,7 @@ final class AdminTest extends \BBTestCase
 
     public function testInfo(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Cron\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('getCronInfo')->willReturn([]);
 
         $api_admin = new Admin();

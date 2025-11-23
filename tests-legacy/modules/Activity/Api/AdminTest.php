@@ -20,7 +20,7 @@ final class AdminTest extends \BBTestCase
             ],
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Activity\Service::class);
         $service->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['String', []]);
@@ -63,7 +63,7 @@ final class AdminTest extends \BBTestCase
             ],
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Activity\Service::class);
         $service->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['String', []]);

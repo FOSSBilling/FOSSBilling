@@ -29,7 +29,7 @@ final class ServiceTest extends \BBTestCase
 
         $requestNumber = 11;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn($requestNumber);

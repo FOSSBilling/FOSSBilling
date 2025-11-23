@@ -23,7 +23,7 @@ final class ClientTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Client\ServiceBalance::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['sql', []]);
@@ -44,7 +44,7 @@ final class ClientTest extends \BBTestCase
 
         $model = new \Model_ClientBalance();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -70,7 +70,7 @@ final class ClientTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Client\ServiceBalance::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->willReturn($balanceAmount);
@@ -92,7 +92,7 @@ final class ClientTest extends \BBTestCase
     {
         $clientIsTaxable = true;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
             ->willReturn($clientIsTaxable);

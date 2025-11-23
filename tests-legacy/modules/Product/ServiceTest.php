@@ -41,7 +41,7 @@ final class ServiceTest extends \BBTestCase
             '1' => 'title4test',
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn($execArray);
@@ -91,7 +91,7 @@ final class ServiceTest extends \BBTestCase
 
         $modelProductPayment = new \Model_ProductPayment();
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturnOnConsecutiveCalls($modelProductPayment, $modelProductCategory);
@@ -123,7 +123,7 @@ final class ServiceTest extends \BBTestCase
 
         $expectedArray['customtest'] = 'Customtest';
 
-        $extensionServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getInstalledMods')
             ->willReturn($modArray);
@@ -141,7 +141,7 @@ final class ServiceTest extends \BBTestCase
     {
         $model = new \Model_Product();
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($model);
@@ -170,7 +170,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testCreateProduct(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
@@ -182,7 +182,7 @@ final class ServiceTest extends \BBTestCase
 
         $newProductId = 1;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn(0);
@@ -195,7 +195,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($newProductId);
 
-        $toolMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolMock->expects($this->atLeastOnce())
             ->method('slug');
 
@@ -290,7 +290,7 @@ final class ServiceTest extends \BBTestCase
         $modelProductPayment = new \Model_ProductPayment();
         $modelProductPayment->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($modelProductPayment);
@@ -321,7 +321,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($modelProduct);
@@ -354,7 +354,7 @@ final class ServiceTest extends \BBTestCase
             'new_config_value' => 'newValue',
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
@@ -382,7 +382,7 @@ final class ServiceTest extends \BBTestCase
             1 => 'testTitle',
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn($addonsRows);
@@ -408,7 +408,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn($newProductId);
@@ -416,7 +416,7 @@ final class ServiceTest extends \BBTestCase
             ->method('dispense')
             ->willReturnOnConsecutiveCalls($modelPayment, $modelProduct);
 
-        $toolMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolMock->expects($this->atLeastOnce())
             ->method('slug');
 
@@ -436,7 +436,7 @@ final class ServiceTest extends \BBTestCase
     {
         $model = new \Model_Product();
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('productHasOrders')
             ->willReturn(true);
@@ -464,7 +464,7 @@ final class ServiceTest extends \BBTestCase
             '1' => 'title4test',
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn($execArray);
@@ -483,7 +483,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(1);
@@ -503,14 +503,14 @@ final class ServiceTest extends \BBTestCase
     {
         $newCategoryId = 1;
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($model);
@@ -540,7 +540,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($modelProduct);
@@ -562,7 +562,7 @@ final class ServiceTest extends \BBTestCase
 
         $modelProduct = null;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($modelProduct);
@@ -601,7 +601,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testCreatePromo(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
@@ -610,7 +610,7 @@ final class ServiceTest extends \BBTestCase
 
         $newPromoId = 1;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($model);
@@ -636,14 +636,14 @@ final class ServiceTest extends \BBTestCase
         $model->products = '{}';
         $model->periods = '{}';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
             ->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['tools'] = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $di['tools'] = $this->createMock(\FOSSBilling\Tools::class);
 
         $this->service->setDi($di);
 
@@ -672,7 +672,7 @@ final class ServiceTest extends \BBTestCase
             'periods' => [],
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
@@ -691,7 +691,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('exec');
         $dbMock->expects($this->atLeastOnce())
@@ -753,7 +753,7 @@ final class ServiceTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn($apiArrayResult);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
             ->willReturn([]);
@@ -808,7 +808,7 @@ final class ServiceTest extends \BBTestCase
                 ]
             );
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
             ->willReturn([]);
@@ -826,7 +826,7 @@ final class ServiceTest extends \BBTestCase
     {
         $model = new \Model_Product();
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($model);
@@ -843,7 +843,7 @@ final class ServiceTest extends \BBTestCase
     {
         $model = new \Model_Product();
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($model);
@@ -862,7 +862,7 @@ final class ServiceTest extends \BBTestCase
 
         $this->assertIsString($sql);
         $this->assertIsArray($params);
-        $this->assertEquals([], $params);
+        $this->assertSame([], $params);
     }
 
     public function testGetStartingFromPriceTypeFree(): void
@@ -875,7 +875,7 @@ final class ServiceTest extends \BBTestCase
         $productPaymentModel->loadBean(new \DummyBean());
         $productPaymentModel->type = 'free';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($productPaymentModel);
@@ -953,7 +953,7 @@ final class ServiceTest extends \BBTestCase
             '2' => 'Another',
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn([]);
@@ -975,7 +975,7 @@ final class ServiceTest extends \BBTestCase
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([$productModel]);
