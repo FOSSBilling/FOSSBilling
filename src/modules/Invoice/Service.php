@@ -294,6 +294,7 @@ class Service implements InjectionAwareInterface
                         $product = $this->di['db']->load('Product', $order->product_id);
                         if ($product instanceof \Model_Product) {
                             $orderInfo['product_name'] = $product->title;
+                            $orderInfo['product_type'] = $product->type;
                         }
                     }
 
