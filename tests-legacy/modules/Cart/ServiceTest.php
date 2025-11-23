@@ -842,8 +842,7 @@ class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);

@@ -282,8 +282,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
     {
         $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
@@ -318,8 +317,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
     {
         $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
             ->onlyMethods(['findForClientById', 'toApiArray'])->getMock();

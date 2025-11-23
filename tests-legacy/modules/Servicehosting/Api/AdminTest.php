@@ -610,8 +610,7 @@ class AdminTest extends \BBTestCase
             ->willReturn($model);
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->method('checkRequiredParamsForArray');
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn () => $orderServiceMock);

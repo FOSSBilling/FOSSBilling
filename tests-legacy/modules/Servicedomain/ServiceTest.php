@@ -141,8 +141,7 @@ class ServiceTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
             ->willReturn($isSldValidArr['returns']);
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'canBeTransferred'])->getMock();
@@ -239,8 +238,7 @@ class ServiceTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
             ->willReturn($isSldValidArr['returns']);
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'isDomainAvailable'])->getMock();
