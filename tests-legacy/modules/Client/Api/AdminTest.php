@@ -375,6 +375,7 @@ class AdminTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
+        $di['validator'] = new \FOSSBilling\Validate();
 
         $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');

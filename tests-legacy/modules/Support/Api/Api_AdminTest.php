@@ -1487,7 +1487,8 @@ class Api_AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $db;
-        
+        $di['validator'] = new \FOSSBilling\Validate();
+
         $adminApi->setDi($di);
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryToApiArray'])->getMock();
@@ -1514,7 +1515,8 @@ class Api_AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $db;
-        
+        $di['validator'] = new \FOSSBilling\Validate();
+
         $adminApi->setDi($di);
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryToApiArray'])->getMock();
@@ -1538,8 +1540,9 @@ class Api_AdminTest extends \BBTestCase
             ->willReturn(false);
 
         $di = new \Pimple\Container();
-        
+
         $di['db'] = $db;
+        $di['validator'] = new \FOSSBilling\Validate();
         $adminApi->setDi($di);
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryToApiArray'])->getMock();
@@ -1597,6 +1600,7 @@ class Api_AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $db;
+        $di['validator'] = new \FOSSBilling\Validate();
 
         $adminApi->setDi($di);
 
@@ -1628,6 +1632,7 @@ class Api_AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $db;
+        $di['validator'] = new \FOSSBilling\Validate();
 
         $adminApi->setDi($di);
 
@@ -1655,6 +1660,7 @@ class Api_AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $db;
+        $di['validator'] = new \FOSSBilling\Validate();
 
         $adminApi->setDi($di);
 
@@ -1687,7 +1693,8 @@ class Api_AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $db;
-        
+        $di['validator'] = new \FOSSBilling\Validate();
+
         $adminApi->setDi($di);
 
         $data = [
@@ -1714,7 +1721,8 @@ class Api_AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $db;
-        
+        $di['validator'] = new \FOSSBilling\Validate();
+
         $adminApi->setDi($di);
 
         $data = [];
@@ -1740,7 +1748,8 @@ class Api_AdminTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $db;
-        
+        $di['validator'] = new \FOSSBilling\Validate();
+
         $adminApi->setDi($di);
 
         $data = [

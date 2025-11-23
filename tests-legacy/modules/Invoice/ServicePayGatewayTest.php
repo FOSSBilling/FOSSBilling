@@ -175,7 +175,7 @@ class ServicePayGatewayTest extends \BBTestCase
             'description' => null,
             'enabled' => null,
             'test_mode' => null,
-            'callback' => 'http://localhost/ipn.php?',
+            'callback' => 'https://localhost/ipn.php?',
         ];
 
         $di = new \Pimple\Container();
