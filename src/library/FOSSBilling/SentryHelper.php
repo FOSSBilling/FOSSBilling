@@ -54,7 +54,6 @@ class SentryHelper
         'order',
         'orderbutton',
         'page',
-        'paidsupport',
         'product',
         'profile',
         'redirect',
