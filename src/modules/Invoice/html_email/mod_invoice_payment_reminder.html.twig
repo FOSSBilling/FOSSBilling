@@ -48,7 +48,7 @@
                 {% if order.product_name is defined %}
                     <li><strong>Product:</strong> {{ order.product_name }}</li>
                 {% endif %}
-                {% if order.expires_at %}
+                {% if order.expires_at is defined %}
                     <li><strong>Renewal Date:</strong> {{ order.expires_at|format_date }}</li>
                 {% endif %}
             {% endfor %}

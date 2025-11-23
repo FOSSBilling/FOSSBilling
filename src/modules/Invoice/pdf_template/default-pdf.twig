@@ -37,7 +37,7 @@
 					{% if order.product_name is defined %}
 						<p>{{ 'Product'|trans }}: {{ order.product_name }}</p>
 					{% endif %}
-					{% if order.expires_at %}
+					{% if order.expires_at is defined %}
 						<p>{{ 'Renewal Date'|trans }}: {{ order.expires_at|format_date }}</p>
 					{% endif %}
 				{% endfor %}
