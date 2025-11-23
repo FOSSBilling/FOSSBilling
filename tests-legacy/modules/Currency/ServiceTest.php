@@ -295,8 +295,6 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $repositoryMock->expects($expects)
             ->method('clearDefaultFlags');
-        $repositoryMock->expects($expects)
-            ->method('invalidateDefaultCache');
 
         $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
             ->disableOriginalConstructor()

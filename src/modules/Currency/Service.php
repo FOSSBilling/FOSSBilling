@@ -172,9 +172,6 @@ class Service implements InjectionAwareInterface
         $em->persist($currency);
         $em->flush();
 
-        // Invalidate default currency cache
-        $this->currencyRepository->invalidateDefaultCache();
-
         $this->di['logger']->info('Set currency %s as default', $currency->getCode());
 
         return true;

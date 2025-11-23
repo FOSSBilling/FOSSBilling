@@ -19,14 +19,6 @@ use Doctrine\ORM\QueryBuilder;
 class CurrencyRepository extends EntityRepository
 {
     /**
-     * Cache for default currency to avoid repeated database queries.
-     * Reset per request lifecycle (static property).
-     *
-     * @var Currency|null
-     */
-    private static ?Currency $defaultCurrencyCache = null;
-
-    /**
      * Build a QueryBuilder for searching currencies.
      *
      * @param array $data Array of filters
@@ -59,39 +51,21 @@ class CurrencyRepository extends EntityRepository
     }
 
     /**
-     * Get the default currency with in-memory caching.
-     * Cache is automatically invalidated when default currency changes.
+     * Get the default currency.
      *
      * Returns null if no currency is marked as default. Callers should handle
      * this case appropriately (e.g., by throwing an exception or using a fallback).
+     *
+     * Note: Doctrine's identity map provides automatic caching within a request,
+     * ensuring the same entity instance is returned for repeated queries.
      *
      * @return Currency|null
      */
     public function findDefault(): ?Currency
     {
-        // Return cached value if available
-        if (self::$defaultCurrencyCache !== null) {
-            return self::$defaultCurrencyCache;
-        }
-
         // Query database for currency marked as default
-        $currency = $this->findOneBy(['isDefault' => true]);
-
-        // Cache the result (even if null to avoid repeated queries)
-        self::$defaultCurrencyCache = $currency;
-
-        return $currency;
-    }
-
-    /**
-     * Invalidate the default currency cache.
-     * Should be called whenever the default currency changes.
-     *
-     * @return void
-     */
-    public function invalidateDefaultCache(): void
-    {
-        self::$defaultCurrencyCache = null;
+        // Doctrine's identity map will cache this entity automatically
+        return $this->findOneBy(['isDefault' => true]);
     }
 
     /**
