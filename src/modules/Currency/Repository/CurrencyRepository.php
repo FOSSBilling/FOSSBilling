@@ -62,7 +62,7 @@ class CurrencyRepository extends EntityRepository
      * Get the default currency with in-memory caching.
      * Cache is automatically invalidated when default currency changes.
      *
-     * @return Currency|null
+     * @return Currency|null Returns null if no default currency is found
      */
     public function findDefault(): ?Currency
     {
@@ -75,10 +75,19 @@ class CurrencyRepository extends EntityRepository
         $currency = $this->findOneBy(['isDefault' => true]);
 
         if ($currency === null) {
+            // Log warning - no currency marked as default
+            error_log('Warning: No default currency found. Please configure a default currency in the system settings.');
+            
+            // Try fallback to currency with ID 1 (legacy behavior)
             $currency = $this->find(1);
+            
+            if ($currency === null) {
+                // No default currency and ID 1 doesn't exist - system misconfiguration
+                error_log('Critical: No default currency found and currency ID 1 does not exist. System requires at least one currency configured as default.');
+            }
         }
 
-        // Cache the result
+        // Cache the result (even if null)
         self::$defaultCurrencyCache = $currency;
 
         return $currency;
