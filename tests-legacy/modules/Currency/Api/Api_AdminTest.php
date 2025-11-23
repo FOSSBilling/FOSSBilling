@@ -408,6 +408,7 @@ class Api_AdminTest extends \BBTestCase
         $adminApi->setDi($di);
         $adminApi->setService($service);
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($adminApi, 'delete', []);
         $adminApi->delete([]); // Expecting \FOSSBilling\Exception every time
     }
 

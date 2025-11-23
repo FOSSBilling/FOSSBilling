@@ -98,10 +98,12 @@ class AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($adminApi, 'change_password', []);
         $adminApi->change_password([]);
         $this->fail('password should be passed');
 
         $this->expectException(\Exception::class);
+        $this->validateRequiredParams($adminApi, 'change_password', ['password' => 'new_pass']);
         $adminApi->change_password(['password' => 'new_pass']);
         $this->fail('password confirmation should be passed');
     }

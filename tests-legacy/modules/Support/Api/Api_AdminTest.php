@@ -1526,6 +1526,7 @@ class Api_AdminTest extends \BBTestCase
         $adminApi->setService($kbService);
 
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($adminApi, 'kb_category_get', []);
         $result = $adminApi->kb_category_get([]);
         $this->assertIsArray($result);
     }
@@ -1639,6 +1640,7 @@ class Api_AdminTest extends \BBTestCase
         $data = [];
 
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($adminApi, 'kb_category_update', $data);
         $result = $adminApi->kb_category_update($data);
         $this->assertIsArray($result);
     }
@@ -1727,6 +1729,7 @@ class Api_AdminTest extends \BBTestCase
 
         $data = [];
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($adminApi, 'kb_category_delete', $data);
         $result = $adminApi->kb_category_delete($data);
         $this->assertIsArray($result);
     }

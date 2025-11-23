@@ -122,7 +122,7 @@ final class Api_Handler implements InjectionAwareInterface
      * @return void
      * @throws FOSSBilling\InformationException If required parameters are missing
      */
-    private function validateRequiredParams(Api_Abstract $api, string $method_name, array $data): void
+    public function validateRequiredParams(Api_Abstract $api, string $method_name, array $data): void
     {
         try {
             $reflection = new ReflectionMethod($api, $method_name);

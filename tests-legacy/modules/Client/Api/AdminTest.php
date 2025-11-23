@@ -406,7 +406,8 @@ class AdminTest extends \BBTestCase
         $admin_Client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Id required');
+        $this->expectExceptionMessage('Client ID was not passed');
+        $this->validateRequiredParams($admin_Client, 'update', $data);
         $admin_Client->update($data);
     }
 
