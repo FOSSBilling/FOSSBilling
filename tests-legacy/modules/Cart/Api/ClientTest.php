@@ -4,13 +4,9 @@ namespace Box\Tests\Mod\Cart\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class ClientTest extends \BBTestCase
-{
-    /**
-     * @var \Box\Mod\Cart\Api\Client
-     */
-    protected $clientApi;
+{    protected ?\Box\Mod\Cart\Api\Client $clientApi;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->clientApi = new \Box\Mod\Cart\Api\Client();
     }

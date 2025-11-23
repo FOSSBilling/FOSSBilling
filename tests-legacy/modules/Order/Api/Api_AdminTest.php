@@ -2,13 +2,9 @@
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_AdminTest extends BBTestCase
-{
-    /**
-     * @var Box\Mod\Order\Api\Admin
-     */
-    protected $api;
+{    protected ?Box\Mod\Order\Api\Admin $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Box\Mod\Order\Api\Admin();
     }

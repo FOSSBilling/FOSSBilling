@@ -18,13 +18,9 @@ class PdoStatmentsMock extends \PDOStatement
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
-{
-    /**
-     * @var Service
-     */
-    protected $service;
+{    protected ?Service $service;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->service = new Service();
     }

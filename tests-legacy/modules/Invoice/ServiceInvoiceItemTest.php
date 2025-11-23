@@ -4,13 +4,9 @@ namespace Box\Mod\Invoice;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceInvoiceItemTest extends \BBTestCase
-{
-    /**
-     * @var ServiceInvoiceItem
-     */
-    protected $service;
+{    protected ?ServiceInvoiceItem $service;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->service = new ServiceInvoiceItem();
     }

@@ -8,13 +8,9 @@
  */
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_ClientTest extends PHPUnit\Framework\TestCase
-{
-    /**
-     * @var Box\Mod\Order\Api\Client
-     */
-    protected $api;
+{    protected ?Box\Mod\Order\Api\Client $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Box\Mod\Order\Api\Client();
     }

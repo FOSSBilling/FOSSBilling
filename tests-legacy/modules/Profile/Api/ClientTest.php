@@ -4,11 +4,7 @@ namespace Box\Tests\Mod\Profile\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class ClientTest extends \BBTestCase
-{
-    /**
-     * @var \Box\Mod\Profile\Api\Client
-     */
-    protected $clientApi;
+{    protected ?\Box\Mod\Profile\Api\Client $clientApi;
 
     public function setUp(): void
     {

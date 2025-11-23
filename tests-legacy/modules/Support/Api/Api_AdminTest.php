@@ -4,13 +4,9 @@ namespace Box\Tests\Mod\Support\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_AdminTest extends \BBTestCase
-{
-    /**
-     * @var \Box\Mod\Support\Api\Admin
-     */
-    protected $adminApi;
+{    protected ?\Box\Mod\Support\Api\Admin $adminApi;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->adminApi = new \Box\Mod\Support\Api\Admin();
     }

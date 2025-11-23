@@ -6,13 +6,9 @@ use Symfony\Component\HttpFoundation\Request;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
-{
-    /**
-     * @var \Box\Mod\Cart\Service
-     */
-    protected $service;
+{    protected ?\Box\Mod\Cart\Service $service;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->service = new \Box\Mod\Cart\Service();
     }

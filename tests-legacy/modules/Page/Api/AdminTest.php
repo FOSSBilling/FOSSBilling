@@ -4,13 +4,9 @@ namespace Box\Mod\Page\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class AdminTest extends \BBTestCase
-{
-    /**
-     * @var Admin
-     */
-    protected $api;
+{    protected ?Admin $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Admin();
     }

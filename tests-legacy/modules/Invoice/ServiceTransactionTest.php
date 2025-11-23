@@ -4,13 +4,9 @@ namespace Box\Mod\Invoice;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTransactionTest extends \BBTestCase
-{
-    /**
-     * @var ServiceTransaction
-     */
-    protected $service;
+{    protected ?ServiceTransaction $service;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->service = new ServiceTransaction();
     }

@@ -4,13 +4,9 @@ namespace Box\Tests\Mod\Staff\Api;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 class GuestTest extends \BBTestCase
-{
-    /**
-     * @var \Box\Mod\Staff\Api\Guest
-     */
-    protected $api;
+{    protected ?\Box\Mod\Staff\Api\Guest $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new \Box\Mod\Staff\Api\Guest();
     }
