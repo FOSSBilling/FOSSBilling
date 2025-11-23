@@ -250,7 +250,8 @@ class ServiceTest extends \BBTestCase
             ->method('sendTemplate');
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -291,7 +292,8 @@ class ServiceTest extends \BBTestCase
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -331,7 +333,8 @@ class ServiceTest extends \BBTestCase
             ->method('sendTemplate');
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -372,7 +375,8 @@ class ServiceTest extends \BBTestCase
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -412,7 +416,8 @@ class ServiceTest extends \BBTestCase
             ->method('sendTemplate');
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -453,7 +458,8 @@ class ServiceTest extends \BBTestCase
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -493,7 +499,8 @@ class ServiceTest extends \BBTestCase
             ->method('sendTemplate');
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -534,7 +541,8 @@ class ServiceTest extends \BBTestCase
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -571,7 +579,8 @@ class ServiceTest extends \BBTestCase
             ->method('sendTemplate');
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -609,7 +618,8 @@ class ServiceTest extends \BBTestCase
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -647,7 +657,8 @@ class ServiceTest extends \BBTestCase
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -727,7 +738,8 @@ class ServiceTest extends \BBTestCase
             ->willReturn($di);
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
         $service->onAfterClientOpenTicket($eventMock);
@@ -789,7 +801,8 @@ class ServiceTest extends \BBTestCase
             ->willReturn($di);
 
         $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters');
+            ->method('getparameters')
+            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
         $service->onAfterClientOpenTicket($eventMock);
