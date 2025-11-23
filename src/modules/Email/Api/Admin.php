@@ -38,7 +38,6 @@ class Admin extends \Api_Abstract
                 'content_html' => $item['content_html'],
                 'content_text' => $item['content_text'],
                 'created_at' => $item['created_at'],
-                'updated_at' => $item['updated_at'],
             ];
         }
 
