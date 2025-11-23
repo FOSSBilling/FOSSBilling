@@ -18,6 +18,32 @@
 #}
 <script>
 /**
+ * Escape HTML special characters to prevent XSS attacks
+ * @param {string} str - The string to escape
+ * @returns {string} - The escaped string
+ */
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+/**
+ * Escape HTML for use in HTML attribute values
+ * Properly escapes all special characters that could break out of attribute context
+ * @param {string} str - The string to escape
+ * @returns {string} - The escaped string safe for attribute values
+ */
+function escapeHtmlAttribute(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+/**
  * Show email preview in a modal with iframe for proper HTML isolation
  * @param {string} subject - The email subject
  * @param {string} content - The email HTML content
@@ -29,7 +55,7 @@ function showEmailPreview(subject, content) {
                 {{ "Subject"|trans }}
             </div>
             <div class="p-3" style="background: #f8f9fa; border: 1px dashed #adb5bd; border-radius: 4px; min-height: 50px;">
-                ${subject}
+                ${escapeHtml(subject)}
             </div>
         </div>
         <div>
@@ -39,7 +65,7 @@ function showEmailPreview(subject, content) {
             <div style="background: #f8f9fa; border: 1px dashed #adb5bd; border-radius: 4px; overflow: hidden;">
                 <iframe
                     style="width: 100%; min-height: 400px; border: none; display: block; background: white;"
-                    srcdoc="${content.replace(/"/g, '&quot;')}"
+                    srcdoc="${escapeHtmlAttribute(content)}"
                 ></iframe>
             </div>
         </div>

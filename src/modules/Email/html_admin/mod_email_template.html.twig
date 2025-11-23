@@ -228,7 +228,6 @@ Accessing Admin API can get information about your FOSSBilling, for example how 
 {{ include('partial_email_preview.html.twig') }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-
     // Preview button for the main email template
     document.getElementById('preview-button').addEventListener('click', function(e) {
         e.preventDefault();
@@ -254,7 +253,11 @@ document.addEventListener('DOMContentLoaded', function() {
             API.admin.post('email/template_render', contentParams, function(content) {
                 contentResult = content;
                 showEmailPreview(subjectResult, contentResult);
+            }, function(error) {
+                FOSSBilling.message(`{{ 'Failed to render email content'|trans }}: ${error.message}`, 'error');
             });
+        }, function(error) {
+            FOSSBilling.message(`{{ 'Failed to render email subject'|trans }}: ${error.message}`, 'error');
         });
     });
 
@@ -269,6 +272,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         API.admin.post('email/template_render', params, function(result) {
             showEmailPreview('<em class="text-muted">{{ "No subject for example preview"|trans }}</em>', result);
+        }, function(error) {
+            FOSSBilling.message(`{{ 'Failed to render template'|trans }}: ${error.message}`, 'error');
         });
     });
 });

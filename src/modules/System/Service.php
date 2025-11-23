@@ -457,10 +457,8 @@ class Service
             $template = $twig->createTemplate($tpl);
             $parsed = $template->render($vars);
         } catch (\Exception $e) {
-            $parsed = $tpl;
-            if (!$try_render) {
-                throw $e;
-            }
+            $errorMsg = 'Template rendering failed: ' . $e->getMessage();
+            throw new \FOSSBilling\InformationException($errorMsg, null, $e->getCode());
         }
 
         return $parsed;
