@@ -2,6 +2,7 @@
 
 namespace Box\Mod\Page;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
 {
     public function testgetPairs(): void

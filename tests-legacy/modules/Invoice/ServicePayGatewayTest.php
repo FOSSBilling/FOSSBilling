@@ -2,6 +2,7 @@
 
 namespace Box\Mod\Invoice;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServicePayGatewayTest extends \BBTestCase
 {
     /**

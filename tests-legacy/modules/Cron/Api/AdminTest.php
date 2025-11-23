@@ -2,6 +2,7 @@
 
 namespace Box\Mod\Cron\Api;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class AdminTest extends \BBTestCase
 {
     public function testgetDi(): void

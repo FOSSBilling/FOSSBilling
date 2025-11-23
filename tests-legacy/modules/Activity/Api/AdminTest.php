@@ -2,6 +2,7 @@
 
 namespace Box\Tests\Mod\Activity\Api;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class AdminTest extends \BBTestCase
 {
     public function testLogGetList(): void

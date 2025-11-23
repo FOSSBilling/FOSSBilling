@@ -2,6 +2,7 @@
 
 namespace Box\Mod\Product;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
 {
     /**

@@ -10,6 +10,7 @@ class ServiceEmailTestDouble extends \Box\Mod\Email\Service
     }
 }
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
 {
     public function testDi(): void

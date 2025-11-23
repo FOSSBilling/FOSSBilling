@@ -2,6 +2,7 @@
 
 namespace Box\Tests\Mod\Currency\Api;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_AdminTest extends \BBTestCase
 {
     public $availableCurrencies = [

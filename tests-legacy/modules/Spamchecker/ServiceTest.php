@@ -4,6 +4,7 @@ namespace Box\Mod\Spamchecker;
 
 use Symfony\Component\HttpFoundation\Request;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
 {
     /**

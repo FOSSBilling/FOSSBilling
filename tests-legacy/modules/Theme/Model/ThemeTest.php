@@ -2,6 +2,7 @@
 
 namespace Box\Mod\Theme\Model;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ThemeTest extends \BBTestCase
 {
     private ?string $existingTheme = 'huraga';

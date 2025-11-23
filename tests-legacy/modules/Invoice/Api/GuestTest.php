@@ -2,6 +2,7 @@
 
 namespace Box\Mod\Invoice\Api;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class GuestTest extends \BBTestCase
 {
     /**

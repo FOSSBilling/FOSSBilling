@@ -4,6 +4,7 @@ namespace Box\Tests\Mod\Profile;
 
 use Box\Mod\Profile\Service;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
 {
     public function testDi(): void

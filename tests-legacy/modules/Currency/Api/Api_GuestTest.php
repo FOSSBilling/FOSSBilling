@@ -2,6 +2,7 @@
 
 namespace Box\Tests\Mod\Currency\Api;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_GuestTest extends \BBTestCase
 {
     public function testGetPairs(): void

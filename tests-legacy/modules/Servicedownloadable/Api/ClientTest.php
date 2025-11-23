@@ -2,6 +2,7 @@
 
 namespace Box\Mod\Servicedownloadable\Api;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ClientTest extends \BBTestCase
 {
     /**

@@ -2,6 +2,7 @@
 
 namespace Box\Tests\Mod\Staff\Api;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class GuestTest extends \BBTestCase
 {
     /**

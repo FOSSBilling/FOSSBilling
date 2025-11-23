@@ -1,5 +1,6 @@
 <?php
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_AdminTest extends BBTestCase
 {
     /**

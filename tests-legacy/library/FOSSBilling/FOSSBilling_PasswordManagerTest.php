@@ -1,5 +1,6 @@
 <?php
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class FOSSBilling_PasswordManagerTest extends PHPUnit\Framework\TestCase
 {
     public function testsetAlgo(): void

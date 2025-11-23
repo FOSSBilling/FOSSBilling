@@ -16,6 +16,7 @@ class PdoStatementMock extends \PDOStatement
     }
 }
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
 {
     public function testLogin(): void

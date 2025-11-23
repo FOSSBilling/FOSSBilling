@@ -2,6 +2,7 @@
 
 namespace Box\Tests\Mod\Branding;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
 {
     public function testDi(): void

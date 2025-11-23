@@ -2,6 +2,7 @@
 
 namespace Box\Mod\Product\Api;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class AdminTest extends \BBTestCase
 {
     /**

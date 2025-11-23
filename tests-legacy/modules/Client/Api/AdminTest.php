@@ -2,6 +2,7 @@
 
 namespace Box\Tests\Mod\Client\Api;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class AdminTest extends \BBTestCase
 {
     public function testgetDi(): void

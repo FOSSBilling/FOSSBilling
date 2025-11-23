@@ -2,6 +2,7 @@
 
 namespace Box\Mod\Servicedownloadable;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
 {
     /**

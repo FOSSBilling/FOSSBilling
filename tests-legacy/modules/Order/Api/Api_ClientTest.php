@@ -6,6 +6,7 @@
  * Date: 8/5/14
  * Time: 4:52 PM.
  */
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_ClientTest extends PHPUnit\Framework\TestCase
 {
     /**

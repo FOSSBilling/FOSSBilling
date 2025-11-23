@@ -4,6 +4,7 @@ namespace Box\Mod\System;
 
 use Twig\Environment;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
 {
     /**

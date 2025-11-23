@@ -4,6 +4,7 @@ namespace Box\Tests\Mod\Cart;
 
 use Symfony\Component\HttpFoundation\Request;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
 {
     /**

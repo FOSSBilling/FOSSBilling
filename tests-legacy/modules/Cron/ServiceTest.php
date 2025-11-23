@@ -2,6 +2,7 @@
 
 namespace Box\Mod\Cron;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class ServiceTest extends \BBTestCase
 {
     public function testgetDi(): void

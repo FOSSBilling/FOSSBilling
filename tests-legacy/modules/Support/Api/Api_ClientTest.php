@@ -2,6 +2,7 @@
 
 namespace Box\Tests\Mod\Support\Api;
 
+#[PHPUnit\Framework\Attributes\Group('Core')]
 class Api_ClientTest extends \BBTestCase
 {
     /**
