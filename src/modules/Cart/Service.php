@@ -81,6 +81,10 @@ class Service implements InjectionAwareInterface
             $currency = $currencyRepository->findDefault();
         }
 
+        if (!$currency instanceof Currency) {
+            throw new \FOSSBilling\Exception('Default currency not found');
+        }
+
         $cart = $this->di['db']->dispense('Cart');
         $cart->session_id = $sessionID;
         $cart->currency_id = $currency->getId();
