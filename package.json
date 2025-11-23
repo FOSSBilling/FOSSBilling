@@ -9,7 +9,7 @@
     "build-modules": "npm run build-wysiwyg",
     "build-huraga": "npm run build -w huraga",
     "build-admin_default": "npm run build -w admin_default",
-    "build-wysiwyg": "npm run build -w wysiwyg",
+    "build-wysiwyg": "npm run build -w wysiwyg"
   },
   "repository": {
     "type": "git",
