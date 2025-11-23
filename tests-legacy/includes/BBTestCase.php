@@ -2,6 +2,22 @@
 
 class BBTestCase extends PHPUnit\Framework\TestCase
 {
+    /**
+     * Helper method to validate required parameters for API methods with RequiredParams attribute.
+     * This simulates the validation that happens in Api_Handler when methods are called through it.
+     *
+     * @param \Api_Abstract $api The API instance
+     * @param string $methodName The method name to validate
+     * @param array $data The data to validate
+     *
+     * @throws \FOSSBilling\InformationException if validation fails
+     */
+    protected function validateRequiredParams(\Api_Abstract $api, string $methodName, array $data): void
+    {
+        $handler = new \Api_Handler(new \Model_Admin());
+        $handler->validateRequiredParams($api, $methodName, $data);
+    }
+
     protected function tearDown(): void
     {
         parent::tearDown();

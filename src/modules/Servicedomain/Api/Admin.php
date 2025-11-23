@@ -34,6 +34,7 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function update($data)
     {
         $s = $this->_getService($data);
@@ -325,9 +326,6 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Registrar ID is missing'])]
     public function registrar_delete($data)
     {
-        $required = ['id' => 'Registrar ID is missing'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarRm($model);
@@ -341,9 +339,6 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Registrar ID is missing'])]
     public function registrar_copy($data)
     {
-        $required = ['id' => 'Registrar ID is missing'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarCopy($model);
@@ -357,9 +352,6 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Registrar ID is missing'])]
     public function registrar_get($data)
     {
-        $required = ['id' => 'Registrar ID is missing'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $registrar = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarToApiArray($registrar);
@@ -387,9 +379,6 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Registrar ID is missing'])]
     public function registrar_update($data)
     {
-        $required = ['id' => 'Registrar ID is missing'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarUpdate($model, $data);
@@ -398,9 +387,6 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['order_id' => 'Order ID is missing'])]
     protected function _getService($data)
     {
-        $required = ['order_id' => 'Order ID is missing'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $orderId = $data['order_id'];
 
         $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
