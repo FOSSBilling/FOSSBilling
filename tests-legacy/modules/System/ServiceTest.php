@@ -18,7 +18,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetParamValueMissingKeyParam(): void
     {
-        $param = [];
+        $param = '';
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Parameter key is missing');
 

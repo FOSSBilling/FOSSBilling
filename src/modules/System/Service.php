@@ -72,11 +72,7 @@ class Service
         ];
     }
 
-    /**
-     * @param string $param
-     * @param bool   $default
-     */
-    public function getParamValue($param, $default = null)
+    public function getParamValue(string $param, mixed $default = null): mixed
     {
         if (empty($param)) {
             throw new \FOSSBilling\Exception('Parameter key is missing');
@@ -97,7 +93,7 @@ class Service
         return $results;
     }
 
-    public function setParamValue($param, $value, $createIfNotExists = true): bool
+    public function setParamValue(string $param, mixed $value, bool $createIfNotExists = true): bool
     {
         // Skip this param if the user isn't permitted to update it.
         if (!$this->canUpdateParam($param)) {
@@ -125,7 +121,7 @@ class Service
         return true;
     }
 
-    public function paramExists($param): bool
+    public function paramExists(string $param): bool
     {
         $pdo = $this->di['pdo'];
         $q = 'SELECT id
@@ -141,11 +137,11 @@ class Service
     /**
      * @param string[] $params
      *
-     * @return mixed[]
+     * @return array<string, mixed>
      */
-    private function _getMultipleParams($params): array
+    private function _getMultipleParams(array $params): array
     {
-        if (!is_array($params)) {
+        if (empty($params)) {
             return [];
         }
         foreach ($params as $param) {
@@ -157,7 +153,6 @@ class Service
                 FROM setting
                 WHERE param IN('" . implode("', '", $params) . "')
                 ";
-        $result = [];
         $rows = $this->di['db']->getAll($query);
         $result = [];
         foreach ($rows as $row) {
@@ -235,9 +230,9 @@ class Service
     }
 
     /**
-     * @return mixed[]
+     * @return array<string, mixed>
      */
-    public function getParams($data): array
+    public function getParams(array $data): array
     {
         $query = 'SELECT param, value
                   FROM setting';
@@ -250,7 +245,7 @@ class Service
         return $result;
     }
 
-    public function updateParams($data): bool
+    public function updateParams(array $data): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminSettingsUpdate', 'params' => $data]);
 
@@ -265,7 +260,10 @@ class Service
         return true;
     }
 
-    public function getMessages($type)
+    /**
+     * @return array<int, array<string, string>>
+     */
+    public function getMessages(string $type): array
     {
         $msgs = [];
 
@@ -384,7 +382,7 @@ class Service
         }
     }
 
-    public function templateExists($file, $identity = null): bool
+    public function templateExists(string $file, ?\Model_Admin $identity = null): bool
     {
         if ($identity instanceof \Model_Admin) {
             $client = false;
@@ -402,7 +400,7 @@ class Service
         return false;
     }
 
-    public function renderString($tpl, $try_render, $vars)
+    public function renderString(?string $tpl, bool $try_render, array $vars): string
     {
         $twig = $this->di['twig'];
         // add client api if _client_id is set
@@ -440,7 +438,7 @@ class Service
         return $parsed;
     }
 
-    public function createTemplateFromString($tpl, $try_render, $vars)
+    public function createTemplateFromString(string $tpl, bool $try_render, array $vars): string
     {
         try {
             $twig = $this->di['twig'];
@@ -464,7 +462,7 @@ class Service
         return true;
     }
 
-    public function getEnv($ip = null)
+    public function getEnv(?bool $ip = null): array|string
     {
         if ($ip) {
             try {
@@ -502,7 +500,7 @@ class Service
         return $pageURL . $this_page;
     }
 
-    public function getPeriod($code)
+    public function getPeriod(string $code): string
     {
         $p = \Box_Period::getPredefined();
         if (isset($p[$code])) {
@@ -514,7 +512,7 @@ class Service
         return $p->getTitle();
     }
 
-    public function getPublicParamValue($param)
+    public function getPublicParamValue(string $param): mixed
     {
         $query = 'SELECT value
                 FROM setting
@@ -567,7 +565,7 @@ class Service
     }
 
     /**
-     * @return mixed[]
+     * @return array<string, string>
      */
     public function getEuCountries(): array
     {
@@ -668,14 +666,14 @@ class Service
         ];
     }
 
-    public function getPhoneCodes(array $data)
+    public function getPhoneCodes(array $data): array|string
     {
         // If we are looking for a specific country phone code, return it if found or else generate an error
         try {
             if (isset($data['country'])) {
                 $country = CountryAlpha2::from($data['country']);
 
-                return CountryCallingCode::forCountry($country)[0]->value;
+                return (string) CountryCallingCode::forCountry($country)[0]->value;
             }
         } catch (\ValueError) {
             throw new \FOSSBilling\InformationException('Country :code phone code is not registered', [':code' => $data['country']]);
@@ -695,12 +693,14 @@ class Service
 
     /**
      * Call this method in API to check limits for entries.
+     *
+     * @todo This method is not implemented yet
      */
-    public function checkLimits($model, $limit = 2)
+    public function checkLimits(string $model, int $limit = 2): void
     {
     }
 
-    public function getNameservers()
+    public function getNameservers(): array
     {
         $query = "SELECT param, value FROM setting WHERE param IN ('nameserver_1', 'nameserver_2', 'nameserver_3', 'nameserver_4')";
 
@@ -712,7 +712,7 @@ class Service
         return Version::VERSION;
     }
 
-    public function getPendingMessages()
+    public function getPendingMessages(): array
     {
         $messages = $this->di['session']->get('pending_messages');
 
@@ -723,7 +723,7 @@ class Service
         return $messages;
     }
 
-    public function setPendingMessage($msg): bool
+    public function setPendingMessage(string $msg): bool
     {
         $messages = $this->getPendingMessages();
         $messages[] = $msg;

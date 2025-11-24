@@ -22,9 +22,9 @@ class Admin extends \Api_Abstract
     /**
      * Get all defined system params.
      *
-     * @return array
+     * @return array<string, mixed>
      */
-    public function get_params($data)
+    public function get_params(array $data): array
     {
         return $this->getService()->getParams($data);
     }
@@ -33,10 +33,8 @@ class Admin extends \Api_Abstract
      * Updated parameters array with new values. Creates new setting if it was
      * not defined earlier. You can create new parameters using this method.
      * This method accepts any number of parameters you pass.
-     *
-     * @return bool
      */
-    public function update_params($data)
+    public function update_params(array $data): bool
     {
         return $this->getService()->updateParams($data);
     }
@@ -44,9 +42,9 @@ class Admin extends \Api_Abstract
     /**
      * System messages about working environment.
      *
-     * @return array
+     * @return array<int, array<string, string>>
      */
-    public function messages($data)
+    public function messages(array $data): array
     {
         $type = $data['type'] ?? 'info';
 
@@ -56,19 +54,17 @@ class Admin extends \Api_Abstract
     /**
      * Get Central Alerts System messages sent for this installation.
      *
-     * @return array - array of messages
+     * @return array<int, array<string, string>>
      */
-    public function cas_messages()
+    public function cas_messages(): array
     {
         return $this->getService()->getCasMessages();
     }
 
     /**
      * Check if passed file name template exists for admin area.
-     *
-     * @return bool
      */
-    public function template_exists($data)
+    public function template_exists(array $data): bool
     {
         if (!isset($data['file'])) {
             return false;
@@ -82,10 +78,8 @@ class Admin extends \Api_Abstract
      *
      * @optional bool $_try - if true, will not throw error if template is invalid, returns _tpl string
      * @optional int $_client_id - if passed client id, then client API will also be available
-     *
-     * @return string
      */
-    public function string_render($data)
+    public function string_render(array $data): string
     {
         if (!isset($data['_tpl'])) {
             error_log('_tpl parameter not passed');
@@ -104,9 +98,9 @@ class Admin extends \Api_Abstract
     /**
      * Returns system environment information.
      *
-     * @return array
+     * @return array<string, mixed>|string
      */
-    public function env($data)
+    public function env(array $data): array|string
     {
         $ip = $data['ip'] ?? null;
 
@@ -118,11 +112,9 @@ class Admin extends \Api_Abstract
      *
      * @optional string $f - module method name
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function is_allowed($data)
+    public function is_allowed(array $data): bool
     {
         $required = [
             'mod' => 'mod key is missing',
@@ -137,10 +129,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Clear system cache.
-     *
-     * @return bool
      */
-    public function clear_cache()
+    public function clear_cache(): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'invalidate_cache');
 
@@ -159,6 +149,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Returns an array containing the update info.
+     *
+     * @return array<string, mixed>
      */
     public function update_info(): array
     {
@@ -183,7 +175,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function update_core($data): bool
+    public function update_core(array $data): bool
     {
         $updater = $this->di['updater'];
         if ($updater->getUpdateBranch() !== 'preview' && !$updater->isUpdateAvailable()) {
@@ -270,7 +262,7 @@ class Admin extends \Api_Abstract
         return \FOSSBilling\Tools::listHttpInterfaces();
     }
 
-    public function set_interface_ip($data): bool
+    public function set_interface_ip(array $data): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_network_interface');
         $config = Config::getConfig();

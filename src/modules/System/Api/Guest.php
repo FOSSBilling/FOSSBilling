@@ -21,10 +21,8 @@ class Guest extends \Api_Abstract
 {
     /**
      * Get FOSSBilling version.
-     *
-     * @return string
      */
-    public function version()
+    public function version(): string
     {
         $hideVersionGuest = $this->getService()->getParamValue('hide_version_public');
 
@@ -39,10 +37,8 @@ class Guest extends \Api_Abstract
 
     /**
      * Returns company information.
-     *
-     * @return array
      */
-    public function company()
+    public function company(): array
     {
         $companyInfo = $this->getService()->getCompany();
         $auth = $this->di['auth'];
@@ -69,40 +65,32 @@ class Guest extends \Api_Abstract
      * Returns world wide phone codes.
      *
      * @optional $country - if passed country code the result will be phone code only
-     *
-     * @return array
      */
-    public function phone_codes($data)
+    public function phone_codes(array $data): array|string
     {
         return $this->getService()->getPhoneCodes($data);
     }
 
     /**
      * Returns USA states list.
-     *
-     * @return array
      */
-    public function states()
+    public function states(): array
     {
         return $this->getService()->getStates();
     }
 
     /**
      * Returns list of european union countries.
-     *
-     * @return array
      */
-    public function countries_eunion()
+    public function countries_eunion(): array
     {
         return $this->getService()->getEuCountries();
     }
 
     /**
      * Returns list of world countries.
-     *
-     * @return array
      */
-    public function countries()
+    public function countries(): array
     {
         return $this->getService()->getCountries();
     }
@@ -120,10 +108,8 @@ class Guest extends \Api_Abstract
 
     /**
      * Returns system parameter by key.
-     *
-     * @return string
      */
-    public function param($data)
+    public function param(array $data): mixed
     {
         $required = [
             'key' => 'Parameter key is missing',
@@ -135,20 +121,16 @@ class Guest extends \Api_Abstract
 
     /**
      * Return list of available payment periods.
-     *
-     * @return array
      */
-    public function periods()
+    public function periods(): array
     {
         return \Box_Period::getPredefined();
     }
 
     /**
      * Gets period title by identifier.
-     *
-     * @return string
      */
-    public function period_title($data)
+    public function period_title(array $data): string
     {
         $code = $data['code'] ?? null;
         if ($code == null) {
@@ -160,10 +142,8 @@ class Guest extends \Api_Abstract
 
     /**
      * Returns info for paginator according to list.
-     *
-     * @return array
      */
-    public function paginator($data)
+    public function paginator(array $data): array
     {
         $midrange = 7;
         $page_param = $data['page_param'] ?? 'page';
@@ -178,20 +158,16 @@ class Guest extends \Api_Abstract
 
     /**
      * If called from template file this function returns current url.
-     *
-     * @return string
      */
-    public function current_url()
+    public function current_url(): ?string
     {
         return $_SERVER['REQUEST_URI'] ?? null;
     }
 
     /**
      * Check if passed file name template exists for client area.
-     *
-     * @return bool
      */
-    public function template_exists($data)
+    public function template_exists(array $data): bool
     {
         if (!isset($data['file'])) {
             return false;
@@ -208,7 +184,7 @@ class Guest extends \Api_Abstract
         return i18n::getActiveLocale();
     }
 
-    public function get_pending_messages()
+    public function get_pending_messages(): array
     {
         $messages = $this->getService()->getPendingMessages();
         $this->getService()->clearPendingMessages();
