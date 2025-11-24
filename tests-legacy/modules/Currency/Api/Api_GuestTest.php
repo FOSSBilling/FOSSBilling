@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Currency\Api;
 
-class Api_GuestTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class Api_GuestTest extends \BBTestCase
 {
     public function testGetPairs(): void
     {
@@ -13,7 +16,7 @@ class Api_GuestTest extends \BBTestCase
             'USD' => 'US Dollar',
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
         $service->expects($this->atLeastOnce())
             ->method('getPairs')
             ->willReturn($willReturn);
@@ -65,7 +68,7 @@ class Api_GuestTest extends \BBTestCase
             'default' => 1,
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
         $service->expects($expectsGetByCode)
             ->method('getByCode')
             ->willReturn($model);
@@ -98,7 +101,7 @@ class Api_GuestTest extends \BBTestCase
             'default' => 1,
         ];
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
         $service->expects($this->never())
             ->method('getByCode')
             ->willReturn(null);
@@ -160,7 +163,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('get')
             ->willReturn($willReturn);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
 
         $di = new \Pimple\Container();
 
@@ -216,7 +219,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('get')
             ->willReturn($willReturn);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
 
         $di = new \Pimple\Container();
 
