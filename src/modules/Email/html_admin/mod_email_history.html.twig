@@ -50,7 +50,6 @@
             <td>{{ email.created_at|format_date }}</td>
             <td>
                 <button class="btn btn-icon email-preview-btn"
-                    data-email-id="{{ email.id }}"
                     data-email-subject="{{ email.subject }}"
                     data-email-content="{{ email.content_html|e('html_attr') }}"
                     title="{{ 'Preview'|trans }}">
