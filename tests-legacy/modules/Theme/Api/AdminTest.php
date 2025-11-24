@@ -1,20 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Theme\Api;
 
-class AdminTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class AdminTest extends \BBTestCase
 {
-    /**
-     * @var Admin
-     */
-    protected $api;
+    protected ?Admin $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,9 +22,9 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList(): void
+    public function testGetList(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getThemes')
             ->willReturn([]);
@@ -35,13 +35,13 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testget(): void
+    public function testGet(): void
     {
         $data = [
             'code' => 'themeCode',
         ];
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('loadTheme')
             ->willReturn([]);
@@ -59,7 +59,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testselectNotAdminTheme(): void
+    public function testSelectNotAdminTheme(): void
     {
         $data = [
             'code' => 'pjw',
@@ -70,12 +70,12 @@ class AdminTest extends \BBTestCase
             ->method('isAdminAreaTheme')
             ->willReturn(false);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
             ->with($this->equalTo('theme'));
@@ -84,7 +84,7 @@ class AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $loggerMock = $this->createMock('\Box_Log');
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
@@ -98,7 +98,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testselectAdminTheme(): void
+    public function testSelectAdminTheme(): void
     {
         $data = [
             'code' => 'pjw',
@@ -109,12 +109,12 @@ class AdminTest extends \BBTestCase
             ->method('isAdminAreaTheme')
             ->willReturn(true);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
             ->with($this->equalTo('admin_theme'));
@@ -123,7 +123,7 @@ class AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $loggerMock = $this->createMock('\Box_Log');
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
@@ -137,7 +137,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpresetDelete(): void
+    public function testPresetDelete(): void
     {
         $data = [
             'code' => 'themeCode',
@@ -146,7 +146,7 @@ class AdminTest extends \BBTestCase
 
         $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
@@ -167,7 +167,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpresetSelect(): void
+    public function testPresetSelect(): void
     {
         $data = [
             'code' => 'themeCode',
@@ -176,7 +176,7 @@ class AdminTest extends \BBTestCase
 
         $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);

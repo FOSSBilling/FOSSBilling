@@ -1,20 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Spamchecker\Api;
 
-class GuestTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class GuestTest extends \BBTestCase
 {
-    /**
-     * @var Guest
-     */
-    protected $api;
+    protected ?Guest $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Guest();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -34,8 +34,8 @@ class GuestTest extends \BBTestCase
                     'publickey' => 1234,
                     'enabled' => true,
                     'version' => null,
-                    'captcha_provider'=> 'recaptcha_v2',
-                    'turnstile_site_key'=> null,
+                    'captcha_provider' => 'recaptcha_v2',
+                    'turnstile_site_key' => null,
                     'hcaptcha_site_key' => null,
                 ],
             ],
@@ -47,9 +47,9 @@ class GuestTest extends \BBTestCase
                     'publickey' => null,
                     'enabled' => true,
                     'version' => null,
-                    'captcha_provider'=> 'recaptcha_v2',
-                    'turnstile_site_key'=> null,
-                    'hcaptcha_site_key'=> null,
+                    'captcha_provider' => 'recaptcha_v2',
+                    'turnstile_site_key' => null,
+                    'hcaptcha_site_key' => null,
                 ],
             ],
             [
@@ -62,8 +62,8 @@ class GuestTest extends \BBTestCase
                     'publickey' => 1234,
                     'enabled' => false,
                     'version' => 2,
-                    'captcha_provider'=> 'recaptcha_v2',
-                    'turnstile_site_key'=> null,
+                    'captcha_provider' => 'recaptcha_v2',
+                    'turnstile_site_key' => null,
                     'hcaptcha_site_key' => null,
                 ],
             ],
@@ -75,8 +75,8 @@ class GuestTest extends \BBTestCase
                     'publickey' => null,
                     'enabled' => false,
                     'version' => null,
-                    'captcha_provider'=> 'recaptcha_v2',
-                    'turnstile_site_key'=> null,
+                    'captcha_provider' => 'recaptcha_v2',
+                    'turnstile_site_key' => null,
                     'hcaptcha_site_key' => null,
                 ],
             ],
@@ -91,9 +91,9 @@ class GuestTest extends \BBTestCase
                     'enabled' => true,
                     'version' => null,
                     'captcha_provider' => 'turnstile',
-                    'turnstile_site_key'=> 'abc',
+                    'turnstile_site_key' => 'abc',
                     'hcaptcha_site_key' => null,
-                ]
+                ],
             ],
             [
                 [
@@ -114,7 +114,7 @@ class GuestTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('datarecaptchaConfig')]
-    public function testrecaptcha(array $config, array $expected): void
+    public function testRecaptcha(array $config, array $expected): void
     {
         $di = new \Pimple\Container();
         $di['mod_config'] = $di->protect(fn (): array => $config);

@@ -1,7 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_EventManagerTest extends PHPUnit\Framework\TestCase
+final class Box_EventManagerTest extends PHPUnit\Framework\TestCase
 {
     #[PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
     public function testEmptyFire(): void
@@ -12,7 +14,7 @@ class Box_EventManagerTest extends PHPUnit\Framework\TestCase
 
     public function testFire(): void
     {
-        $db_mock = $this->getMockBuilder('Box_Database')->getMock();
+        $db_mock = $this->createMock('Box_Database');
         $db_mock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn([]);
