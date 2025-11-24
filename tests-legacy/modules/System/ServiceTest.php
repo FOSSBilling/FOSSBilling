@@ -76,12 +76,6 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testGetLanguages(): void
-    {
-        $result = $this->service->getLanguages(true);
-        $this->assertIsArray($result);
-    }
-
     public function testGetParams(): void
     {
         $expected = [

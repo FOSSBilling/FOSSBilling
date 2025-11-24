@@ -235,16 +235,6 @@ class Service
     }
 
     /**
-     * @deprecated please use the \FOSSBilling\i18n::getLocales function, which provides the same functionality
-     *
-     * @param bool $deep
-     */
-    public function getLanguages($deep = false): array
-    {
-        return \FOSSBilling\i18n::getLocales($deep);
-    }
-
-    /**
      * @return mixed[]
      */
     public function getParams($data): array
