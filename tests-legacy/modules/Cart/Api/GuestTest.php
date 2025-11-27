@@ -482,7 +482,7 @@ final class GuestTest extends \BBTestCase
         $apiMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Api\Guest::class)
             ->onlyMethods(['reset'])->getMock();
         $apiMock->expects($this->atLeastOnce())->method('reset')
-            ->willReturn($cart);
+            ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
