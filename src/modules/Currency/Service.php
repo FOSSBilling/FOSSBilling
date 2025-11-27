@@ -158,7 +158,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        if ($currency->getCode() === null || empty($currency->getCode())) {
+        if (!$currency->getCode()) {
             throw new \FOSSBilling\Exception('Currency code not provided');
         }
 
