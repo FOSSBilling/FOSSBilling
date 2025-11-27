@@ -107,7 +107,7 @@ class CurrencyRepository extends EntityRepository
                 ->getSingleScalarResult();
 
             return $rate !== null ? (float) $rate : null;
-        } catch (\Doctrine\ORM\NoResultException) {
+        } catch (\Doctrine\ORM\NoResultException | \Doctrine\ORM\NonUniqueResultException) {
             return null;
         }
     }
