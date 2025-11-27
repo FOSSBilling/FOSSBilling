@@ -331,7 +331,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(false);
         $model->expects($this->any())
             ->method('getCode')
-            ->willReturn(null);
+            ->willReturn('');
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -350,7 +350,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $service->setAsDefault($model); // Currency code is null, should throw an \FOSSBilling\Exception
+        $service->setAsDefault($model); // Currency code is empty, should throw an \FOSSBilling\Exception
     }
 
     public function testGetPairs(): void
@@ -465,7 +465,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(false);
         $model->expects($this->any())
             ->method('getCode')
-            ->willReturn(null);
+            ->willReturn('');
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -484,7 +484,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $service->rm($model); // will throw \FOSSBilling\Exception because currency code is not set
+        $service->rm($model); // will throw \FOSSBilling\Exception because currency code is empty
     }
 
     public function testToApiArray(): void
