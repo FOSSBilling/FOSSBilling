@@ -233,7 +233,7 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Cannot remove default currency');
         }
 
-        if ($model->getCode() === null || empty($model->getCode())) {
+        if (empty($model->getCode())) {
             throw new \FOSSBilling\Exception('Currency code is invalid or missing');
         }
 

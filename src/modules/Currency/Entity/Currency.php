@@ -93,7 +93,7 @@ class Currency implements ApiArrayInterface, TimestampInterface
         return $this->title;
     }
 
-    public function getCode(): ?string
+    public function getCode(): string
     {
         return $this->code;
     }
@@ -135,7 +135,7 @@ class Currency implements ApiArrayInterface, TimestampInterface
         return $this;
     }
 
-    public function setCode(?string $code): self
+    public function setCode(string $code): self
     {
         $this->code = $code;
         return $this;
