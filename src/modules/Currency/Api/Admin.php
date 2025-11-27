@@ -33,9 +33,9 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get code title pairs of currencies.
+     * Get list of available currencies on system as key-value pairs.
      *
-     * @return array
+     * @return array<string, string> Array of currency code => formatted currency display name pairs (e.g., 'USD' => 'USD - United States dollar')
      */
     public function get_pairs(): array
     {
