@@ -299,4 +299,214 @@ final class GuestTest extends \BBTestCase
         $this->expectExceptionMessage('The promo code has expired or does not exist');
         $result = $this->guestApi->apply_promo($data);
     }
+
+    public function testApplyPromoCanNotBeApplied(): void
+    {
+        $cart = new \Model_Cart();
+        $cart->loadBean(new \DummyBean());
+        $cart->currency_id = 1;
+
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+            ->onlyMethods(['getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'])->getMock();
+        $serviceMock->expects($this->never())->method('getSessionCart')
+            ->willReturn($cart);
+        $serviceMock->expects($this->never())->method('applyPromo')
+            ->willReturn(true);
+        $serviceMock->expects($this->atLeastOnce())->method('findActivePromoByCode')
+            ->willReturn(new \Model_Promo());
+        $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
+            ->willReturn(true);
+        $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
+            ->willReturn(false);
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
+        $di = new \Pimple\Container();
+        $di['validator'] = $validatorMock;
+        $this->guestApi->setDi($di);
+
+        $this->guestApi->setService($serviceMock);
+
+        $data = [
+            'promocode' => 'CODE',
+        ];
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('The promo code has expired or does not exist');
+        $result = $this->guestApi->apply_promo($data);
+    }
+
+    public function testApplyPromoCanNotBeAppliedForUser(): void
+    {
+        $cart = new \Model_Cart();
+        $cart->loadBean(new \DummyBean());
+        $cart->currency_id = 1;
+
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+            ->onlyMethods(['getSessionCart', 'applyPromo', 'findActivePromoByCode', 'isPromoAvailableForClientGroup'])->getMock();
+        $serviceMock->expects($this->never())->method('getSessionCart')
+            ->willReturn($cart);
+        $serviceMock->expects($this->never())->method('applyPromo')
+            ->willReturn(true);
+        $serviceMock->expects($this->atLeastOnce())->method('findActivePromoByCode')
+            ->willReturn(new \Model_Promo());
+        $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
+            ->willReturn(false);
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
+        $di = new \Pimple\Container();
+        $di['validator'] = $validatorMock;
+        $this->guestApi->setDi($di);
+
+        $this->guestApi->setService($serviceMock);
+
+        $data = [
+            'promocode' => 'CODE',
+        ];
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Promo code cannot be applied to your account');
+        $result = $this->guestApi->apply_promo($data);
+    }
+
+    public function testRemovePromo(): void
+    {
+        $cart = new \Model_Cart();
+        $cart->loadBean(new \DummyBean());
+        $cart->currency_id = 1;
+
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+            ->onlyMethods(['getSessionCart', 'removePromo'])->getMock();
+        $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
+            ->willReturn($cart);
+        $serviceMock->expects($this->atLeastOnce())->method('removePromo')
+            ->willReturn(true);
+
+        $this->guestApi->setService($serviceMock);
+
+        $result = $this->guestApi->remove_promo();
+
+        $this->assertTrue($result);
+    }
+
+    public function testRemoveItem(): void
+    {
+        $cart = new \Model_Cart();
+        $cart->loadBean(new \DummyBean());
+        $cart->currency_id = 1;
+
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+            ->onlyMethods(['getSessionCart', 'removeProduct'])->getMock();
+        $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
+            ->willReturn($cart);
+        $serviceMock->expects($this->atLeastOnce())->method('removeProduct')
+            ->willReturn(true);
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
+        $di = new \Pimple\Container();
+        $di['validator'] = $validatorMock;
+        $this->guestApi->setDi($di);
+
+        $this->guestApi->setService($serviceMock);
+
+        $data = [
+            'id' => 1,
+        ];
+
+        $result = $this->guestApi->remove_item($data);
+
+        $this->assertTrue($result);
+    }
+
+    public function testAddItem(): void
+    {
+        $cart = new \Model_Cart();
+        $cart->loadBean(new \DummyBean());
+        $cart->currency_id = 1;
+
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+            ->onlyMethods(['getSessionCart', 'addItem'])->getMock();
+        $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
+            ->willReturn($cart);
+        $serviceMock->expects($this->atLeastOnce())->method('addItem')
+            ->willReturn(true);
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->willReturn(new \Model_Product());
+
+        $di = new \Pimple\Container();
+        $di['validator'] = $validatorMock;
+        $di['db'] = $dbMock;
+
+        $this->guestApi->setDi($di);
+
+        $this->guestApi->setService($serviceMock);
+
+        $data = [
+            'id' => 1,
+            'multiple' => true,
+        ];
+
+        $result = $this->guestApi->add_item($data);
+
+        $this->assertTrue($result);
+    }
+
+    public function testAddItemSingle(): void
+    {
+        $cart = new \Model_Cart();
+        $cart->loadBean(new \DummyBean());
+        $cart->currency_id = 1;
+
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+            ->onlyMethods(['getSessionCart', 'addItem'])->getMock();
+        $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
+            ->willReturn($cart);
+        $serviceMock->expects($this->atLeastOnce())->method('addItem')
+            ->willReturn(true);
+
+        $apiMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Api\Guest::class)
+            ->onlyMethods(['reset'])->getMock();
+        $apiMock->expects($this->atLeastOnce())->method('reset')
+            ->willReturn($cart);
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->willReturn(new \Model_Product());
+
+        $di = new \Pimple\Container();
+        $di['validator'] = $validatorMock;
+        $di['db'] = $dbMock;
+        $apiMock->setDi($di);
+
+        $apiMock->setService($serviceMock);
+
+        $data = [
+            'id' => 1,
+            'multiple' => false, // should reset cart before adding
+        ];
+
+        $result = $apiMock->add_item($data);
+
+        $this->assertTrue($result);
+    }
 }
