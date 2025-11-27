@@ -1,20 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Hook;
 
-class ServiceTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
-    /**
-     * @var Service
-     */
-    protected $service;
+    protected ?Service $service;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -22,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetSearchQuery(): void
+    public function testGetSearchQuery(): void
     {
         [$sql, $params] = $this->service->getSearchQuery([]);
 
@@ -30,17 +30,17 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($params);
 
         $this->assertTrue(str_contains($sql, 'SELECT id, rel_type, rel_id, meta_value as event, created_at, updated_at'));
-        $this->assertEquals($params, []);
+        $this->assertSame([], $params);
     }
 
-    public function testtoApiArray(): void
+    public function testToApiArray(): void
     {
         $arrMock = ['testing' => 'okey'];
         $result = $this->service->toApiArray($arrMock);
         $this->assertEquals($arrMock, $result);
     }
 
-    public function testonAfterAdminActivateExtension(): void
+    public function testOnAfterAdminActivateExtension(): void
     {
         $eventParams = [
             'id' => 1,
@@ -59,12 +59,12 @@ class ServiceTest extends \BBTestCase
         $model->id = 1;
         $model->type = 'mod';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($model);
 
-        $hookService = $this->getMockBuilder('\\' . Service::class)->getMock();
+        $hookService = $this->createMock(Service::class);
         $hookService->expects($this->atLeastOnce())
             ->method('batchConnect');
 
@@ -82,7 +82,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testonAfterAdminActivateExtensionMissingId(): void
+    public function testOnAfterAdminActivateExtensionMissingId(): void
     {
         $eventParams = [];
 
@@ -99,7 +99,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testonAfterAdminDeactivateExtension(): void
+    public function testOnAfterAdminDeactivateExtension(): void
     {
         $eventParams = [
             'type' => 'mod',
@@ -114,7 +114,7 @@ class ServiceTest extends \BBTestCase
             ->method('getParameters')
             ->willReturn($eventParams);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('exec');
 
@@ -131,13 +131,13 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testbatchConnect(): void
+    public function testBatchConnect(): void
     {
         $mod = 'activity';
 
         $data['mods'] = [$mod];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn(false);
@@ -163,7 +163,7 @@ class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->willReturn($returnArr);
 
-        $activityServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->getMock();
+        $activityServiceMock = $this->createMock(\Box\Mod\Activity\Service::class);
 
         $boxModMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $boxModMock->expects($this->atLeastOnce())
@@ -176,7 +176,7 @@ class ServiceTest extends \BBTestCase
             ->method('getName')
             ->willReturn('activity');
 
-        $extensionServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;

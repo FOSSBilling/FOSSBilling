@@ -1,22 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Servicecustom\Api;
 
-class Api_ClientTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class Api_ClientTest extends \BBTestCase
 {
-    /**
-     * @var \Box\Mod\Servicecustom\Api\Client
-     */
-    protected $api;
+    protected ?\Box\Mod\Servicecustom\Api\Client $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new \Box\Mod\Servicecustom\Api\Client();
     }
 
     public function testCall(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());
@@ -26,7 +26,7 @@ class Api_ClientTest extends \BBTestCase
 
         $arguments = [
             0 => [
-                'order_id' => random_int(1, 100),
+                'order_id' => 1,
             ],
         ];
 
@@ -37,7 +37,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testCallArgumentsNotSetException(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());
@@ -54,7 +54,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testCallOrderIdNotSetException(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());

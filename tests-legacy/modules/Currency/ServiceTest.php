@@ -1,15 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Currency;
 
-class ServiceTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -350,7 +353,7 @@ class ServiceTest extends \BBTestCase
         $service->setAsDefault($model); // Currency code is null, should throw an \FOSSBilling\Exception
     }
 
-    public function testgetPairs(): void
+    public function testGetPairs(): void
     {
         $pairs = [
             'USD' => 'US Dollar',
@@ -449,7 +452,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
         $result = $service->rm($model);
 
-        $this->assertEquals($result, null);
+        $this->assertNull($result);
     }
 
     public function testRmMissingCodeException(): void
@@ -587,7 +590,7 @@ class ServiceTest extends \BBTestCase
         $result = $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate);
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testUpdateCurrencyNotFoundException(): void
@@ -714,7 +717,7 @@ class ServiceTest extends \BBTestCase
         $result = $serviceMock->updateCurrencyRates();
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testUpdateCurrencyRatesRateNotNumeric(): void
@@ -763,7 +766,7 @@ class ServiceTest extends \BBTestCase
         $result = $serviceMock->updateCurrencyRates();
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testDelete(): void
@@ -798,7 +801,7 @@ class ServiceTest extends \BBTestCase
         $emMock->expects($this->atLeastOnce())
             ->method('flush');
 
-        $manager = $this->getMockBuilder('Box_EventManager')->getMock();
+        $manager = $this->createMock('Box_EventManager');
         $manager->expects($this->atLeastOnce())
             ->method('fire')
             ->willReturn(true);
@@ -814,7 +817,7 @@ class ServiceTest extends \BBTestCase
         $result = $service->deleteCurrencyByCode($code);
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testDeleteModelNotFoundException(): void
@@ -845,7 +848,7 @@ class ServiceTest extends \BBTestCase
         $result = $service->deleteCurrencyByCode($code);
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testValidateCurrencyFormatPriceTagMissing(): void

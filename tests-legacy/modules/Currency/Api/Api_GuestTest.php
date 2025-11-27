@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Currency\Api;
 
-class Api_GuestTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class Api_GuestTest extends \BBTestCase
 {
     public function testGetPairs(): void
     {
@@ -172,7 +175,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('get')
             ->willReturn($willReturn);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
 
         $di = new \Pimple\Container();
 
@@ -228,7 +231,7 @@ class Api_GuestTest extends \BBTestCase
             ->method('get')
             ->willReturn($willReturn);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
 
         $di = new \Pimple\Container();
 

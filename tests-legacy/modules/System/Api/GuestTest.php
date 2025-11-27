@@ -1,20 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\System\Api;
 
-class GuestTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class GuestTest extends \BBTestCase
 {
-    /**
-     * @var Guest
-     */
-    protected $api;
+    protected ?Guest $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Guest();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -32,7 +32,7 @@ class GuestTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['auth'] = $authorizationMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getVersion')
             ->willReturn(\FOSSBilling\Version::VERSION);
@@ -54,7 +54,7 @@ class GuestTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['auth'] = $authorizationMock;
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getVersion')
             ->willReturn(\FOSSBilling\Version::VERSION);
@@ -82,7 +82,7 @@ class GuestTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['auth'] = $authorizationMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->with('hide_version_public')
@@ -104,7 +104,7 @@ class GuestTest extends \BBTestCase
         $authMock->method('isAdminLoggedIn')->willReturn(false);
         $authMock->method('isClientLoggedIn')->willReturn(false);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getCompany')
             ->willReturn($companyData);
@@ -141,7 +141,7 @@ class GuestTest extends \BBTestCase
         $authMock->method('isAdminLoggedIn')->willReturn(false);
         $authMock->method('isClientLoggedIn')->willReturn(false);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getCompany')
             ->willReturn($companyData);
@@ -167,11 +167,11 @@ class GuestTest extends \BBTestCase
         $this->assertArrayNotHasKey('address_3', $result);
     }
 
-    public function testperiodTitle(): void
+    public function testPeriodTitle(): void
     {
         $data = ['code' => 'periodCode'];
 
-        $servuceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $servuceMock = $this->createMock(\Box\Mod\System\Service::class);
         $servuceMock->expects($this->atLeastOnce())
             ->method('getPeriod')
             ->willReturn('periodTtitleValue');
@@ -184,7 +184,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsString($result);
     }
 
-    public function testperiodTitleMissingCode(): void
+    public function testPeriodTitleMissingCode(): void
     {
         $data = [];
         $expected = '-';
@@ -196,9 +196,9 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetPendingMessages(): void
+    public function testGetPendingMessages(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $messageArr = ['Important message to user'];
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPendingMessages')
