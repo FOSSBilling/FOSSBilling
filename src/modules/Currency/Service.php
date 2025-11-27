@@ -298,7 +298,7 @@ class Service implements InjectionAwareInterface
     public function validateCurrencyFormat(string $format): void
     {
         if (!str_contains($format, '{{price}}')) {
-            throw new \FOSSBilling\Exception('Currency format must include {{price}} tag', null, 3569);
+            throw new \FOSSBilling\Exception('Currency format must include {{price}} tag', code: 3569);
         }
     }
 
