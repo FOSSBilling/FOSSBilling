@@ -303,7 +303,7 @@ class Service implements InjectionAwareInterface
     public function validateCurrencyFormat(string $format): void
     {
         if (!str_contains($format, '{{price}}')) {
-            throw new \FOSSBilling\Exception('Currency format must include {{price}} tag', 3569);
+            throw new \FOSSBilling\Exception('Currency format must include {{price}} tag', null, 3569);
         }
     }
 
@@ -319,7 +319,8 @@ class Service implements InjectionAwareInterface
      * @throws \FOSSBilling\Exception If currency not found
      * @throws InformationException If conversion rate is invalid
      */
-    public function updateCurrency(string $code, ?string $format = null, ?string $title = null, ?string $priceFormat = null, string|float|null $conversionRate = null): bool {
+    public function updateCurrency(string $code, ?string $format = null, ?string $title = null, ?string $priceFormat = null, string|float|null $conversionRate = null): bool
+    {
         $model = $this->currencyRepository->findOneByCode($code);
         if (!$model instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found');
