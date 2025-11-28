@@ -64,7 +64,7 @@ foreach ($modules as $module) {
 
         $command = new $class();
         $command->setDi($di);
-        $application->add($command);
+        $application->addCommand($command);
     }
 }
 
