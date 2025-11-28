@@ -530,16 +530,12 @@ class Service implements InjectionAwareInterface
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
         $currency = $currencyRepository->find($cart->currency_id);
-
         if (!$currency instanceof Currency) {
-            throw new \FOSSBilling\Exception('Currency not found.');
+            $currency = $currencyRepository->findDefault();
+            if (!$currency instanceof Currency) {
+                throw new \FOSSBilling\Exception('Default currency not found.');
+            }
         }
-
-        $currency = $currencyRepository->findDefault();
-        if (!$currency instanceof Currency) {
-            throw new \FOSSBilling\Exception('Default currency not found.');
-        }
-
         $currencyCode = $currency->getCode();
 
         // Set default client currency
