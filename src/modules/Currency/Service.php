@@ -162,10 +162,23 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Currency code not provided');
         }
 
+        // Store currency code before clearing identity map (entity will be detached)
+        $currencyCode = $currency->getCode();
+
         $em = $this->di['em'];
 
-        // Clear all default flags
+        // Clear all default flags using DQL bulk update
         $this->currencyRepository->clearDefaultFlags();
+
+        // Clear the identity map to ensure cached Currency entities reflect the DQL changes.
+        // This is necessary because bulk DQL UPDATE queries bypass the identity map.
+        $em->clear(Currency::class);
+
+        // Re-fetch the currency entity since we cleared the identity map
+        $currency = $this->currencyRepository->findOneByCode($currencyCode);
+        if (!$currency instanceof Currency) {
+            throw new \FOSSBilling\Exception("Currency with code {$currencyCode} not found after clearing identity map");
+        }
 
         // Set this currency as default
         $currency->setIsDefault(true);

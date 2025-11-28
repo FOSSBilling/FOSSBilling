@@ -56,15 +56,14 @@ class CurrencyRepository extends EntityRepository
      * Returns null if no currency is marked as default. Callers should handle
      * this case appropriately (e.g., by throwing an exception or using a fallback).
      *
-     * Note: Doctrine's identity map provides automatic caching within a request,
-     * ensuring the same entity instance is returned for repeated queries.
+     * Note: Doctrine's identity map provides automatic caching within a request.
+     * If the default currency is changed via `Service::setAsDefault()`, that method
+     * clears the identity map to ensure subsequent calls return fresh data.
      *
      * @return Currency|null
      */
     public function findDefault(): ?Currency
     {
-        // Query database for currency marked as default
-        // Doctrine's identity map will cache this entity automatically
         return $this->findOneBy(['isDefault' => true]);
     }
 

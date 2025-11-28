@@ -293,11 +293,27 @@ final class ServiceTest extends \BBTestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('setAsDefaultProvider')]
     public function testSetAsDefault($model, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $expects): void
     {
+        // Create a fresh mock for the re-fetched currency (after identity map clear)
+        $refetchedModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $refetchedModel->expects($this->any())
+            ->method('getCode')
+            ->willReturn('USD');
+        $refetchedModel->expects($this->any())
+            ->method('isDefault')
+            ->willReturn(false);
+
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
         $repositoryMock->expects($expects)
             ->method('clearDefaultFlags');
+        // Mock findOneByCode to return the re-fetched currency after identity map clear
+        $repositoryMock->expects($expects)
+            ->method('findOneByCode')
+            ->with('USD')
+            ->willReturn($refetchedModel);
 
         $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
             ->disableOriginalConstructor()
@@ -309,6 +325,10 @@ final class ServiceTest extends \BBTestCase
             ->method('persist');
         $emMock->expects($expects)
             ->method('flush');
+        // Mock clear() for identity map clearing
+        $emMock->expects($expects)
+            ->method('clear')
+            ->with(\Box\Mod\Currency\Entity\Currency::class);
 
         $di = new \Pimple\Container();
         $di['em'] = $emMock;
