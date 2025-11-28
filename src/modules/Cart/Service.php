@@ -540,14 +540,16 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Default currency not found.');
         }
 
+        $currencyCode = $currency->getCode();
+
         // Set default client currency
         if (!$client->currency) {
-            $client->currency = $currency->getCode();
+            $client->currency = $currencyCode;
             $this->di['db']->store($client);
         }
 
-        if ($client->currency != $currency->getCode()) {
-            throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currency->code, ':code' => $client->currency]);
+        if ($client->currency != $currencyCode) {
+            throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $client->currency]);
         }
 
         $clientService = $this->di['mod_service']('client');
@@ -594,13 +596,13 @@ class Service implements InjectionAwareInterface
             $order->group_master = ($i == 0);
             $order->invoice_option = 'issue-invoice';
             $order->title = $item['title'];
-            $order->currency = $currency->code;
+            $order->currency = $currencyCode;
             $order->service_type = $item['type'];
             $order->unit = $item['unit'] ?? null;
             $order->period = $item['period'] ?? null;
             $order->quantity = $item['quantity'] ?? null;
-            $order->price = $item['price'] * $currency->conversion_rate;
-            $order->discount = $item['discount_price'] * $currency->conversion_rate;
+            $order->price = $item['price'] * $currency->getConversionRate();
+            $order->discount = $item['discount_price'] * $currency->getConversionRate();
             $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
             $order->notes = $item['notes'] ?? null;
             $order->config = json_encode($item);
@@ -648,7 +650,7 @@ class Service implements InjectionAwareInterface
             }
 
             if ($item['setup_price'] > 0) {
-                $setup_price = ($item['setup_price'] * $currency->conversion_rate) - ($item['discount_setup'] * $currency->conversion_rate);
+                $setup_price = ($item['setup_price'] * $currency->getConversionRate()) - ($item['discount_setup'] * $currency->getConversionRate());
                 $invoice_items[] = [
                     'title' => __trans(':product setup', [':product' => $order->title]),
                     'price' => $setup_price,
