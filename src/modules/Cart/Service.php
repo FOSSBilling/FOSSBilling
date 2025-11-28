@@ -353,7 +353,7 @@ class Service implements InjectionAwareInterface
         if (!$currency instanceof Currency) {
             $currency = $currencyRepository->findDefault();
         }
-        
+
         if (!$currency instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found and no default currency is configured');
         }
@@ -526,15 +526,27 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Cannot checkout an empty cart');
         }
 
-        $currency = $this->di['db']->getExistingModelById('Currency', $cart->currency_id, 'Currency not found.');
+        $currencyService = $this->di['mod_service']('currency');
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
+        $currency = $currencyRepository->find($cart->currency_id);
 
-        // set default client currency
+        if (!$currency instanceof Currency) {
+            throw new \FOSSBilling\Exception('Currency not found.');
+        }
+
+        $currency = $currencyRepository->findDefault();
+        if (!$currency instanceof Currency) {
+            throw new \FOSSBilling\Exception('Default currency not found.');
+        }
+
+        // Set default client currency
         if (!$client->currency) {
-            $client->currency = $currency->code;
+            $client->currency = $currency->getCode();
             $this->di['db']->store($client);
         }
 
-        if ($client->currency != $currency->code) {
+        if ($client->currency != $currency->getCode()) {
             throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currency->code, ':code' => $client->currency]);
         }
 

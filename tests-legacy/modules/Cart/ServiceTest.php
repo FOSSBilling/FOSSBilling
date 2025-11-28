@@ -94,11 +94,11 @@ final class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Cart\Service();
 
-        $curencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+        $currencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->disableOriginalConstructor()
             ->getMock();
         $currencyId = random_int(0, 1000);
-        $curencyModel->expects($this->any())
+        $currencyModel->expects($this->any())
             ->method('getId')
             ->willReturn($currencyId);
 
@@ -133,7 +133,7 @@ final class ServiceTest extends \BBTestCase
         if ($sessionGetWillReturn === null) {
             $currencyRepositoryMock->expects($this->atLeastOnce())
                 ->method('findDefault')
-                ->willReturn($curencyModel);
+                ->willReturn($currencyModel);
         } else {
             $currencyRepositoryMock->expects($this->never())
                 ->method('findDefault');
@@ -144,7 +144,7 @@ final class ServiceTest extends \BBTestCase
             ->getMock();
         $currencyServiceMock->expects($getCurrencyByClientIdExpects)
             ->method('getCurrencyByClientId')
-            ->willReturn($curencyModel);
+            ->willReturn($currencyModel);
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getCurrencyRepository')
             ->willReturn($currencyRepositoryMock);
