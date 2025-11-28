@@ -71,18 +71,19 @@ class Service implements InjectionAwareInterface
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
 
+        // Try to get client's currency if client is logged in
         $currency = null;
-        if ($this->di['session']->get('client_id')) {
-            $client_id = $this->di['session']->get('client_id');
-            $currency = $currencyService->getCurrencyByClientId($client_id);
+        $clientId = $this->di['session']->get('client_id');
+        if ($clientId) {
+            $currency = $currencyService->getCurrencyByClientId($clientId);
         }
 
+        // Fallback to default currency
         if (!$currency instanceof Currency) {
             $currency = $currencyRepository->findDefault();
-        }
-
-        if (!$currency instanceof Currency) {
-            throw new \FOSSBilling\Exception('Default currency not found');
+            if (!$currency instanceof Currency) {
+                throw new \FOSSBilling\Exception('Default currency not found');
+            }
         }
 
         $cart = $this->di['db']->dispense('Cart');
