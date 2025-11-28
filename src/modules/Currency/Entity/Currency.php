@@ -195,7 +195,13 @@ class Currency implements ApiArrayInterface, TimestampInterface
      */
     public function setConversionRate(string|float $conversionRate): self
     {
-        $this->conversionRate = (string) $conversionRate;
+        // Use sprintf to ensure consistent decimal format (avoids scientific notation)
+        // and matches the database column precision of 6 decimal places
+        if (is_float($conversionRate)) {
+            $this->conversionRate = sprintf('%.6f', $conversionRate);
+        } else {
+            $this->conversionRate = $conversionRate;
+        }
         // Invalidate cached float value so it will be recalculated on next access
         $this->conversionRateFloat = null;
         return $this;
