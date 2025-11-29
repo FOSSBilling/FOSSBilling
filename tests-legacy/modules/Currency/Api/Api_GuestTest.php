@@ -16,10 +16,17 @@ final class Api_GuestTest extends \BBTestCase
             'USD' => 'US Dollar',
         ];
 
-        $service = $this->createMock(\Box\Mod\Currency\Service::class);
-        $service->expects($this->atLeastOnce())
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
             ->method('getPairs')
             ->willReturn($willReturn);
+
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service->expects($this->atLeastOnce())
+            ->method('getCurrencyRepository')
+            ->willReturn($repositoryMock);
 
         $guestApi->setService($service);
 
@@ -34,52 +41,61 @@ final class Api_GuestTest extends \BBTestCase
     {
         $self = new Api_GuestTest('Api_GuestTest');
 
-        $model = new \Model_Currency();
+        $willReturn = [
+            'code' => 'EUR',
+            'title' => 'Euro',
+            'conversion_rate' => 1.0,
+            'format' => '{{price}}',
+            'price_format' => '1',
+            'default' => true,
+        ];
 
         return [
             [
                 [
                     'code' => 'EUR',
                 ],
-                $model,
+                'findOneByCode',
                 $self->atLeastOnce(),
                 $self->never(),
+                $willReturn,
             ],
             [
                 [],
-                $model,
+                'findDefault',
                 $self->never(),
                 $self->atLeastOnce(),
+                $willReturn,
             ],
         ];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getProvider')]
-    public function testGet(array $data, \Model_Currency $model, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $expectsGetByCode, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $expectsGetDefault): void
+    public function testGet(array $data, string $expectedMethod, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $expectsFindOneByCode, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $expectsFindDefault, array $willReturn): void
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
 
-        $willReturn = [
-            'code' => 'EUR',
-            'title' => 'Euro',
-            'conversion_rate' => 1,
-            'format' => '{{price}}',
-            'price_format' => 1,
-            'default' => 1,
-        ];
-
-        $service = $this->createMock(\Box\Mod\Currency\Service::class);
-        $service->expects($expectsGetByCode)
-            ->method('getByCode')
-            ->willReturn($model);
-
-        $service->expects($expectsGetDefault)
-            ->method('getDefault')
-            ->willReturn($model);
-
-        $service->expects($this->atLeastOnce())
+        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $model->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn($willReturn);
+
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($expectsFindOneByCode)
+            ->method('findOneByCode')
+            ->willReturn($model);
+        $repositoryMock->expects($expectsFindDefault)
+            ->method('findDefault')
+            ->willReturn($model);
+
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
+        $service->expects($this->atLeastOnce())
+            ->method('getCurrencyRepository')
+            ->willReturn($repositoryMock);
 
         $guestApi->setService($service);
 
@@ -92,23 +108,19 @@ final class Api_GuestTest extends \BBTestCase
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
 
-        $willReturn = [
-            'code' => 'EUR',
-            'title' => 'Euro',
-            'conversion_rate' => 1,
-            'format' => '{{price}}',
-            'price_format' => 1,
-            'default' => 1,
-        ];
-
-        $service = $this->createMock(\Box\Mod\Currency\Service::class);
-        $service->expects($this->never())
-            ->method('getByCode')
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->never())
+            ->method('findOneByCode');
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findDefault')
             ->willReturn(null);
 
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
-            ->method('getDefault')
-            ->willReturn(null);
+            ->method('getCurrencyRepository')
+            ->willReturn($repositoryMock);
 
         $guestApi->setService($service);
         $this->expectException(\FOSSBilling\Exception::class);

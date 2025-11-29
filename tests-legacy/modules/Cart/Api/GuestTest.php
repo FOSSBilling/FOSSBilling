@@ -59,10 +59,21 @@ final class GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
+        $currencyMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyRepositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
+            ->willReturn($currencyMock);
+
         $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['getByCode'])->getMock();
-        $currencyServiceMock->expects($this->atLeastOnce())->method('getByCode')
-            ->willReturn(new \Model_Currency());
+            ->onlyMethods(['getCurrencyRepository'])->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())->method('getCurrencyRepository')
+            ->willReturn($currencyRepositoryMock);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -92,10 +103,17 @@ final class GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['getByCode'])->getMock();
-        $currencyServiceMock->expects($this->atLeastOnce())->method('getByCode')
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyRepositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
             ->willReturn(null);
+
+        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getCurrencyRepository'])->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())->method('getCurrencyRepository')
+            ->willReturn($currencyRepositoryMock);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -125,20 +143,28 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->willReturn($cart);
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['toApiArray', 'getDefault'])->getMock();
-        $currencyServiceMock->expects($this->atLeastOnce())->method('toApiArray')
+        $currencyMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
             ->willReturn([]);
-        $currencyServiceMock->expects($this->never())->method('getDefault')
-            ->willReturn(new \Model_Currency());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn(new \Model_Currency());
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyRepositoryMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->willReturn($currencyMock);
+        $currencyRepositoryMock->expects($this->never())
+            ->method('findDefault');
+
+        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getCurrencyRepository'])->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())->method('getCurrencyRepository')
+            ->willReturn($currencyRepositoryMock);
 
         $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyServiceMock);
         $this->guestApi->setDi($di);
 
@@ -163,20 +189,29 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->willReturn($cart);
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['toApiArray', 'getDefault'])->getMock();
-        $currencyServiceMock->expects($this->atLeastOnce())->method('toApiArray')
+        $currencyMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
             ->willReturn([]);
-        $currencyServiceMock->expects($this->atLeastOnce())->method('getDefault')
-            ->willReturn(new \Model_Currency());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyRepositoryMock->expects($this->atLeastOnce())
+            ->method('find')
             ->willReturn(null);
+        $currencyRepositoryMock->expects($this->atLeastOnce())
+            ->method('findDefault')
+            ->willReturn($currencyMock);
+
+        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getCurrencyRepository'])->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())->method('getCurrencyRepository')
+            ->willReturn($currencyRepositoryMock);
 
         $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyServiceMock);
         $this->guestApi->setDi($di);
 
@@ -260,9 +295,9 @@ final class GuestTest extends \BBTestCase
             'promocode' => 'CODE',
         ];
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('The promo code has expired or does not exist');
         $result = $this->guestApi->apply_promo($data);
-        $this->assertTrue($result);
     }
 
     public function testApplyPromoCanNotBeApplied(): void
@@ -298,10 +333,9 @@ final class GuestTest extends \BBTestCase
             'promocode' => 'CODE',
         ];
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('The promo code has expired or does not exist');
         $result = $this->guestApi->apply_promo($data);
-
-        $this->assertTrue($result);
     }
 
     public function testApplyPromoCanNotBeAppliedForUser(): void
@@ -335,10 +369,9 @@ final class GuestTest extends \BBTestCase
             'promocode' => 'CODE',
         ];
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Promo code cannot be applied to your account');
         $result = $this->guestApi->apply_promo($data);
-
-        $this->assertTrue($result);
     }
 
     public function testRemovePromo(): void
@@ -449,7 +482,7 @@ final class GuestTest extends \BBTestCase
         $apiMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Api\Guest::class)
             ->onlyMethods(['reset'])->getMock();
         $apiMock->expects($this->atLeastOnce())->method('reset')
-            ->willReturn($cart);
+            ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
