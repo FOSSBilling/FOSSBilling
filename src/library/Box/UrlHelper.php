@@ -15,7 +15,7 @@ class Box_UrlHelper
 
     public function __construct(private readonly string $method, string $url, private ?array $conditions, string $requestUri)
     {
-        $requestMethod = $_SERVER['REQUEST_METHOD'];
+        $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
         // Respond identically to a HEAD request as if it's a GET request
         if ($requestMethod === 'HEAD') {
