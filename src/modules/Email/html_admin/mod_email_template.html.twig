@@ -23,11 +23,6 @@
 {% endblock %}
 
 {% block content %}
-{# {% if template.vars|length == 0 %}
-<div class="nNote nInformation hideit first">
-    <p><strong>{{ 'INFORMATION'|trans }}: </strong>{{ 'This email template is deprecated'|trans }}</p>
-</div>
-{% endif %} #}
     <div class="card-tabs">
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
@@ -62,12 +57,6 @@
                                 <div class="col-md-7">
                                     <textarea class="form-control" name="content" id="email-template" rows="10" required>{{ template.content }}</textarea>
                                 </div>
-                            </div>
-
-
-                            <div class="mt-3" id="preview" style="display: none;">
-                                <div class="p-3 esubject mb-3" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
-                                <div class="p-3 econtent" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
                             </div>
                         </div>
                         <div class="card-footer d-flex justify-content-between">
@@ -189,37 +178,37 @@
                         <p class="card-subtitle">{{ 'Email template playground. Use this tool to try rendering email templates.'|trans }}</p>
 
                         <div class="mb-3">
-                    <textarea class="form-control" rows="20">{% autoescape false %}{% apply markdown %}
-                            This is an example of markdown syntax in email template
+                    <textarea class="form-control" id="email-sample-template" rows="20">{% autoescape false %}{% apply markdown %}
+This is an example of markdown syntax in email template
 
-                            *Italic text*
-                            **Bolded text**
+*Italic text*
+**Bolded text**
 
-                            Lists:
+Lists:
 
-                            * Red
-                            * Green
-                            * Blue
+* Red
+* Green
+* Blue
 
-                            ***
+***
 
-                            Link to login form: <{{ 'login'|link }}>
+Link to login form: <{{ 'login'|link }}>
 
-                            Company signature: {{ guest.system_company.signature }}
+Company signature: {{ guest.system_company.signature }}
 
-                            You can event use IF statements in email templates: {% if 1 == 2 %}This will never show{% else %}Of course 1 is not equal 2{% endif %}
+You can event use IF statements in email templates: {% if 1 == 2 %}This will never show{% else %}Of course 1 is not equal 2{% endif %}
 
-                            ***
+***
 
-                            Accessing Admin API can get information about your FOSSBilling, for example how many clients you have:
-                            {% set stats =  admin.stats_get_summary %}
-                            **Total clients:** {{ stats.clients_total }}
+Accessing Admin API can get information about your FOSSBilling, for example how many clients you have:
+{% set stats =  admin.stats_get_summary %}
+**Total clients:** {{ stats.clients_total }}
 
-                            {# Comments in email templates. This text is not visible #}
-                            {# Uncomment the line below to see what is the output #}
+{# Comments in email templates. This text is not visible #}
+{# Uncomment the line below to see what is the output #}
 
-                            {#<pre>{% debug stats %}</pre>#}
-                        {% endapply %}{% endautoescape %}</textarea>
+{#<pre>{% debug stats %}</pre>#}
+{% endapply %}{% endautoescape %}</textarea>
                         </div>
 
                         <button class="btn btn-secondary epb">
@@ -228,7 +217,6 @@
                             </svg>
                             {{ 'Preview'|trans }}
                         </button>
-                        <div class="mt-3 p-3 example-preview" style="border: 1px dashed grey; overflow: auto; display: none;"></div>
                     </div>
                 </div>
             </div>
@@ -237,33 +225,56 @@
 {% endblock %}
 
 {% block js %}
+{{ include('partial_email_preview.html.twig') }}
 <script>
-$(function() {
-    $('.epb').on('click', function() {
-        var r = $(this).siblings('.example-preview');
-        var params = { _tpl: $(this).siblings('textarea').val(), id: '{{ template.id }}', CSRFToken: "{{ CSRFToken }}" };
+document.addEventListener('DOMContentLoaded', function() {
+    // Preview button for the main email template
+    document.getElementById('preview-button').addEventListener('click', function(e) {
+        e.preventDefault();
 
-        bb.post('admin/email/template_render', params, function(result) {
-            r.html(result).show();
+        const subjectParams = {
+            _tpl: document.getElementById('email-subject').value,
+            id: '{{ template.id }}',
+        };
+
+        const contentParams = {
+            _tpl: document.getElementById('email-template').value,
+            id: '{{ template.id }}',
+        };
+
+        let subjectResult = '';
+        let contentResult = '';
+
+        // Render subject
+        API.admin.post('email/template_render', subjectParams, function(subject) {
+            subjectResult = subject;
+
+            // Render content
+            API.admin.post('email/template_render', contentParams, function(content) {
+                contentResult = content;
+                showEmailPreview(subjectResult, contentResult);
+            }, function(error) {
+                FOSSBilling.message(`{{ 'Failed to render email content'|trans }}: ${error.message}`, 'error');
+            });
+        }, function(error) {
+            FOSSBilling.message(`{{ 'Failed to render email subject'|trans }}: ${error.message}`, 'error');
         });
     });
 
-    $('#preview-button').on('click', function() {
-        var params = { _tpl: $('#email-template').val(), id: '{{ template.id }}', CSRFToken: "{{ CSRFToken }}" };
+    // Preview button for the examples tab
+    document.querySelector('.epb').addEventListener('click', function(e) {
+        e.preventDefault();
 
-        bb.post('admin/email/template_render', params, function(result) {
-            $('#preview').show();
-            $('#preview .econtent').html(result);
+        const params = {
+            _tpl: document.getElementById('email-sample-template').value,
+            id: '{{ template.id }}',
+        };
+
+        API.admin.post('email/template_render', params, function(result) {
+            showEmailPreview('<em class="text-muted">{{ "No subject for example preview"|trans }}</em>', result);
+        }, function(error) {
+            FOSSBilling.message(`{{ 'Failed to render template'|trans }}: ${error.message}`, 'error');
         });
-
-        var params = { _tpl: $('#email-subject').val(), id: '{{ template.id }}', CSRFToken: "{{ CSRFToken }}" };
-
-        bb.post('admin/email/template_render', params, function(result) {
-            $('#preview').show();
-            $('#preview .esubject').html(result);
-        });
-
-        return false;
     });
 });
 </script>
