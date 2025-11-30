@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "antcms/antloader",
-            "version": "2.0.4",
+            "version": "2.0.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/AntCMS-org/AntLoader.git",
-                "reference": "4104de096f079e67fb6a30067f99a66fedce0727"
+                "reference": "af3775052780f7c8c1e7f78d7df5f6615886ea0a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AntCMS-org/AntLoader/zipball/4104de096f079e67fb6a30067f99a66fedce0727",
-                "reference": "4104de096f079e67fb6a30067f99a66fedce0727",
+                "url": "https://api.github.com/repos/AntCMS-org/AntLoader/zipball/af3775052780f7c8c1e7f78d7df5f6615886ea0a",
+                "reference": "af3775052780f7c8c1e7f78d7df5f6615886ea0a",
                 "shasum": ""
             },
             "require": {
@@ -25,10 +25,10 @@
                 "php": ">=8.0"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "^3.49",
-                "pestphp/pest": "^1.23",
-                "phpstan/phpstan": "^1.10",
-                "rector/rector": "1.0.0"
+                "friendsofphp/php-cs-fixer": "^3.85.1",
+                "pestphp/pest": "^1.22.6",
+                "phpstan/phpstan": "^2.1.22",
+                "rector/rector": "2.1.2"
             },
             "type": "library",
             "autoload": {
@@ -49,9 +49,9 @@
             "description": "A small and simple autoloader for PHP applications",
             "support": {
                 "issues": "https://github.com/AntCMS-org/AntLoader/issues",
-                "source": "https://github.com/AntCMS-org/AntLoader/tree/2.0.4"
+                "source": "https://github.com/AntCMS-org/AntLoader/tree/2.0.5"
             },
-            "time": "2024-03-12T22:17:58+00:00"
+            "time": "2025-11-29T02:22:56+00:00"
         },
         {
             "name": "composer/class-map-generator",
