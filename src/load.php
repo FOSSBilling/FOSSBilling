@@ -240,6 +240,14 @@ function init(): void
     // Initialize required Symfony components.
     global $filesystem, $request;
     $filesystem = new Filesystem();
+
+    // Client IP Detection for Cloudflare
+    if (isset($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+        $_SERVER['REMOTE_ADDR'] = $_SERVER['HTTP_CF_CONNECTING_IP'];
+    } elseif (isset($_SERVER['HTTP_CF_CONNECTING_IPV6'])) {
+        $_SERVER['REMOTE_ADDR'] = $_SERVER['HTTP_CF_CONNECTING_IPV6'];
+    }
+    
     $request = Request::createFromGlobals();
 
     // Check config exists, redirecting to installer or throwing an exception if not.
