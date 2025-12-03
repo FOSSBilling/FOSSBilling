@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 'Perform Spellcheck'
         uses: streetsidesoftware/cspell-action@3294df585d3d639e30f3bc019cb11940b9866e95 # v8
@@ -31,7 +31,7 @@ jobs:
       matrix:
         php: [8.2, 8.3, 8.4]
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 'PHP Build' 
         uses: FOSSBilling/.workflows/.github/actions/php-build@efee8f85e827627b74fb052aab440e2125955bd4
