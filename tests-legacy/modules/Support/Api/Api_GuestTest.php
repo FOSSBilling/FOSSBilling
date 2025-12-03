@@ -1,15 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Support\Api;
 
-class Api_GuestTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class Api_GuestTest extends \BBTestCase
 {
-    /**
-     * @var \Box\Mod\Support\Api\Guest
-     */
-    protected $guestApi;
+    protected ?\Box\Mod\Support\Api\Guest $guestApi;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->guestApi = new \Box\Mod\Support\Api\Guest();
     }
@@ -219,7 +219,7 @@ class Api_GuestTest extends \BBTestCase
         $guestApi->setService($supportService);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $guestApi->kb_article_get($data);
         $this->assertIsArray($result);
@@ -296,7 +296,7 @@ class Api_GuestTest extends \BBTestCase
         $guestApi->setService($kbService);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $di = new \Pimple\Container();
@@ -411,7 +411,7 @@ class Api_GuestTest extends \BBTestCase
         $guestApi->setService($kbService);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $di = new \Pimple\Container();
@@ -486,7 +486,7 @@ class Api_GuestTest extends \BBTestCase
         $guestApi->setService($kbService);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $di = new \Pimple\Container();

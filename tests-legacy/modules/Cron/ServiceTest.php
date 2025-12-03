@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Cron;
 
-class ServiceTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $service = new Service();
@@ -13,9 +16,9 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetCronInfo(): void
+    public function testGetCronInfo(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())->method('getParamValue');
 
         $di = new \Pimple\Container();
@@ -27,9 +30,9 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetLastExecutionTime(): void
+    public function testGetLastExecutionTime(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->willReturn('2012-12-12 12:12:12');
@@ -43,7 +46,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsString($result);
     }
 
-    public function testisLate(): void
+    public function testIsLate(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
             ->onlyMethods(['getLastExecutionTime'])

@@ -1,20 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\System\Api;
 
-class AdminTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class AdminTest extends \BBTestCase
 {
-    /**
-     * @var Admin
-     */
-    protected $api;
+    protected ?Admin $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,12 +22,12 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetParams(): void
+    public function testGetParams(): void
     {
         $data = [
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getParams')
             ->willReturn([]);
@@ -38,12 +38,12 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testupdateParams(): void
+    public function testUpdateParams(): void
     {
         $data = [
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateParams')
             ->willReturn(true);
@@ -55,7 +55,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testmessages(): void
+    public function testMessages(): void
     {
         $data = [
         ];
@@ -64,7 +64,7 @@ class AdminTest extends \BBTestCase
 
         $this->api->setDi($di);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getMessages')
             ->willReturn([]);
@@ -75,13 +75,13 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtemplateExists(): void
+    public function testTemplateExists(): void
     {
         $data = [
             'file' => 'testing.txt',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('templateExists')
             ->willReturn(true);
@@ -93,13 +93,13 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function teststringRender(): void
+    public function testStringRender(): void
     {
         $data = [
             '_tpl' => 'default',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('renderString')
             ->willReturn('returnStringType');
@@ -112,11 +112,11 @@ class AdminTest extends \BBTestCase
         $this->assertIsString($result);
     }
 
-    public function testenv(): void
+    public function testEnv(): void
     {
         $data = [];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getEnv')
             ->willReturn([]);
@@ -130,13 +130,13 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testisAllowed(): void
+    public function testIsAllowed(): void
     {
         $data = [
             'mod' => 'extension',
         ];
 
-        $staffServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->atLeastOnce())
             ->method('hasPermission')
             ->willReturn(true);

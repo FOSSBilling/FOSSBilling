@@ -1,20 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicelicense\Api;
 
-class GuestTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class GuestTest extends \BBTestCase
 {
-    /**
-     * @var Guest
-     */
-    protected $api;
+    protected ?Guest $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Guest();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testcheckLicenseDetails(): void
+    public function testCheckLicenseDetails(): void
     {
         $data = [
             'license' => 'license1234',
@@ -36,7 +36,7 @@ class GuestTest extends \BBTestCase
             'expires_at' => '2020-01+01',
             'valid' => true,
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicelicense\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('checkLicenseDetails')
             ->willReturn($licenseResult);
