@@ -625,7 +625,7 @@ final class ServiceTest extends \BBTestCase
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
-        $result = $this->service->checkIfTaskAlreadyExists($client, 1, 1, 1);
+        $result = $this->service->checkIfTaskAlreadyExists($client, 1, \Model_SupportTicket::REL_TYPE_ORDER, \Model_SupportTicket::REL_TASK_UPGRADE);
         $this->assertTrue($result);
     }
 
@@ -643,7 +643,7 @@ final class ServiceTest extends \BBTestCase
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
-        $result = $this->service->checkIfTaskAlreadyExists($client, 1, 1, 'Task');
+        $result = $this->service->checkIfTaskAlreadyExists($client, 1, \Model_SupportTicket::REL_TYPE_ORDER, \Model_SupportTicket::REL_TASK_CANCEL);
         $this->assertFalse($result);
     }
 
