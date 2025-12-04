@@ -22,14 +22,14 @@ jobs:
       language: 'javascript'
     steps:
     - name: 'Checkout Repository'
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
     - name: 'Initialize CodeQL'
-      uses: github/codeql-action/init@fdbfb4d2750291e159f0156def62b853c2798ca2 # v4
+      uses: github/codeql-action/init@fe4161a26a8629af62121b670040955b330f9af2 # v4
       with:
         languages: ${{ env.language }}
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@fdbfb4d2750291e159f0156def62b853c2798ca2 # v4
+      uses: github/codeql-action/analyze@fe4161a26a8629af62121b670040955b330f9af2 # v4
       with:
         category: "/language:${{ env.language }}"
