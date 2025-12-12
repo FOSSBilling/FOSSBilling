@@ -2833,22 +2833,22 @@
         },
         {
             "name": "prinsfrank/standards",
-            "version": "v3.14.1",
+            "version": "v3.15.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PrinsFrank/standards.git",
-                "reference": "fafb089d9eb38e5ed685e5e632117c6ebc6a4d10"
+                "reference": "dbcac6e448424cc930a60a156bf39260984b76d0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PrinsFrank/standards/zipball/fafb089d9eb38e5ed685e5e632117c6ebc6a4d10",
-                "reference": "fafb089d9eb38e5ed685e5e632117c6ebc6a4d10",
+                "url": "https://api.github.com/repos/PrinsFrank/standards/zipball/dbcac6e448424cc930a60a156bf39260984b76d0",
+                "reference": "dbcac6e448424cc930a60a156bf39260984b76d0",
                 "shasum": ""
             },
             "require": {
                 "ext-intl": "*",
                 "ext-mbstring": "*",
-                "php": "~8.1.0 || ~8.2.0 || ~8.3.0 || ~8.4.0",
+                "php": "~8.1.0 || ~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
                 "prinsfrank/enums": "^1.4"
             },
             "require-dev": {
@@ -2882,7 +2882,7 @@
             "description": "A collection of standards as PHP Enums: ISO3166, ISO4217, ISO639...",
             "support": {
                 "issues": "https://github.com/PrinsFrank/standards/issues",
-                "source": "https://github.com/PrinsFrank/standards/tree/v3.14.1"
+                "source": "https://github.com/PrinsFrank/standards/tree/v3.15.0"
             },
             "funding": [
                 {
@@ -2890,7 +2890,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-12-01T18:03:25+00:00"
+            "time": "2025-12-10T21:16:59+00:00"
         },
         {
             "name": "psr/cache",
