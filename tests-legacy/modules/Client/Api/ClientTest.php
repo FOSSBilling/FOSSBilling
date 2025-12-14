@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Client\Api;
 
-class ClientTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class ClientTest extends \BBTestCase
 {
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $client = new Client();
@@ -13,14 +16,14 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testbalanceGetList(): void
+    public function testBalanceGetList(): void
     {
         $data = [];
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Client\ServiceBalance::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['sql', []]);
@@ -41,7 +44,7 @@ class ClientTest extends \BBTestCase
 
         $model = new \Model_ClientBalance();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -61,13 +64,13 @@ class ClientTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testbalanceGetTotal(): void
+    public function testBalanceGetTotal(): void
     {
         $balanceAmount = 0.00;
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Client\ServiceBalance::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->willReturn($balanceAmount);
@@ -85,11 +88,11 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($balanceAmount, $result);
     }
 
-    public function testisTaxable(): void
+    public function testIsTaxable(): void
     {
         $clientIsTaxable = true;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('isClientTaxable')
             ->willReturn($clientIsTaxable);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Extension;
 
 class PdoMock extends \PDO
@@ -15,19 +17,17 @@ class PdoStatmentsMock extends \PDOStatement
     }
 }
 
-class ServiceTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
-    /**
-     * @var Service
-     */
-    protected $service;
+    protected ?Service $service;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -35,7 +35,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testisCoreModule(): void
+    public function testIsCoreModule(): void
     {
         $coreModules = ['extension', 'cron', 'staff'];
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
@@ -53,7 +53,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisExtensionActiveModNotFound(): void
+    public function testIsExtensionActiveModNotFound(): void
     {
         $coreModules = ['extension', 'cron', 'staff'];
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
@@ -61,7 +61,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCoreModules')
             ->willReturn($coreModules);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn(null);
@@ -77,7 +77,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testremoveNotExistingModules(): void
+    public function testRemoveNotExistingModules(): void
     {
         $model = new \Model_Extension();
         $model->loadBean(new \DummyBean());
@@ -87,7 +87,7 @@ class ServiceTest extends \BBTestCase
         $modMock->expects($this->atLeastOnce())
             ->method('getManifest')->willThrowException(new \Exception());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([$model]);
@@ -113,7 +113,7 @@ class ServiceTest extends \BBTestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
+    public function testGetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $di = new \Pimple\Container();
 
@@ -124,10 +124,10 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($params);
 
         $this->assertTrue(str_contains($sql, $expectedStr), $sql);
-        $this->assertTrue(array_diff_key($params, $expectedParams) == []);
+        $this->assertEquals([], array_diff_key($params, $expectedParams));
     }
 
-    public function testgetExtensionsList(): void
+    public function testGetExtensionsList(): void
     {
         $data = [
             'has_settings' => true,
@@ -144,7 +144,7 @@ class ServiceTest extends \BBTestCase
         $modelFind->loadBean(new \DummyBean());
         $modelFind->name = 'extensionName';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn([$model]);
@@ -175,7 +175,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetExtensionsListOnlyInstalled(): void
+    public function testGetExtensionsListOnlyInstalled(): void
     {
         $data = [
             'installed' => true,
@@ -191,7 +191,7 @@ class ServiceTest extends \BBTestCase
         $modelFind->loadBean(new \DummyBean());
         $modelFind->name = 'extensionName';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn([$model]);
@@ -218,33 +218,33 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetAdminNavigation(): void
+    public function testGetAdminNavigation(): void
     {
         $extensionServiceMock = $this->getMockBuilder(Service::class)->onlyMethods(['getConfig'])->getMock();
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
 
-        $staffServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->atLeastOnce())
             ->method('hasPermission')
             ->willReturn(true);
 
-        $pdoStatment = $this->getMockBuilder('\\' . PdoStatmentsMock::class)->getMock();
+        $pdoStatment = $this->createMock(PdoStatmentsMock::class);
         $pdoStatment->expects($this->atLeastOnce())
             ->method('execute');
         $pdoStatment->expects($this->atLeastOnce())
             ->method('fetchAll')
             ->willReturn([]);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatment);
 
         $link = 'extension';
 
-        $urlMock = $this->getMockBuilder('Box_Url')->getMock();
+        $urlMock = $this->createMock('Box_Url');
         $urlMock->expects($this->atLeastOnce())
             ->method('adminLink')
             ->willReturn('http://fossbilling.org/index.php?_url=/' . $link);
@@ -274,9 +274,9 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testfindExtension(): void
+    public function testFindExtension(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(new \Model_Extension());
@@ -289,7 +289,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Extension', $result);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $model = new \Model_Extension();
         $model->loadBean(new \DummyBean());
@@ -297,9 +297,9 @@ class ServiceTest extends \BBTestCase
         $model->name = 'testExtension';
         $model->version = '2';
 
-        $extensionMock = $this->getMockBuilder('\\' . \FOSSBilling\ExtensionManager::class)->getMock();
+        $extensionMock = $this->createMock(\FOSSBilling\ExtensionManager::class);
 
-        $staffService = $this->getMockBuilder(\Box\Mod\Staff\Service::class)->getMock();
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -313,7 +313,7 @@ class ServiceTest extends \BBTestCase
         $this->service->update($model);
     }
 
-    public function testactivate(): void
+    public function testActivate(): void
     {
         $ext = new \Model_Extension();
         $ext->loadBean(new \DummyBean());
@@ -327,7 +327,7 @@ class ServiceTest extends \BBTestCase
             'has_settings' => true,
         ];
 
-        $staffService = $this->getMockBuilder(\Box\Mod\Staff\Service::class)->getMock();
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
@@ -343,7 +343,7 @@ class ServiceTest extends \BBTestCase
             ->method('hasSettingsPage')
             ->willReturn(true);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(1);
@@ -359,14 +359,14 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expectedResult, $result);
     }
 
-    public function testdeactivate(): void
+    public function testDeactivate(): void
     {
         $ext = new \Model_Extension();
         $ext->loadBean(new \DummyBean());
         $ext->type = 'mod';
         $ext->name = 'extensionTest';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
@@ -375,7 +375,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCoreModules')
             ->willReturn([]);
 
-        $staffService = $this->getMockBuilder(\Box\Mod\Staff\Service::class)->getMock();
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -390,7 +390,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdeactivateCoreModuleException(): void
+    public function testDeactivateCoreModuleException(): void
     {
         $ext = new \Model_Extension();
         $ext->loadBean(new \DummyBean());
@@ -402,7 +402,7 @@ class ServiceTest extends \BBTestCase
             ->method('getCoreModules')
             ->willReturn([$ext->name]);
 
-        $staffService = $this->getMockBuilder(\Box\Mod\Staff\Service::class)->getMock();
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -417,18 +417,18 @@ class ServiceTest extends \BBTestCase
         $this->service->deactivate($ext);
     }
 
-    public function testdeactivateExtensionHook(): void
+    public function testDeactivateExtensionHook(): void
     {
         $ext = new \Model_Extension();
         $ext->loadBean(new \DummyBean());
         $ext->type = 'hook';
         $ext->name = 'extensionTest';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $staffService = $this->getMockBuilder(\Box\Mod\Staff\Service::class)->getMock();
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -440,9 +440,9 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testuninstall(): void
+    public function testUninstall(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
@@ -453,7 +453,7 @@ class ServiceTest extends \BBTestCase
             ->method('uninstall')
             ->willReturn(true);
 
-        $staffService = $this->getMockBuilder(\Box\Mod\Staff\Service::class)->getMock();
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -469,15 +469,15 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdownloadAndExtractDownloadUrlMissing(): void
+    public function testDownloadAndExtractDownloadUrlMissing(): void
     {
-        $extensionMock = $this->getMockBuilder(\FOSSBilling\ExtensionManager::class)->getMock();
+        $extensionMock = $this->createMock(\FOSSBilling\ExtensionManager::class);
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getLatestExtensionRelease')
             ->willReturn([]);
 
-        $staffService = $this->getMockBuilder(\Box\Mod\Staff\Service::class)->getMock();
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = new \Pimple\Container();
@@ -490,16 +490,16 @@ class ServiceTest extends \BBTestCase
         $this->service->downloadAndExtract('mod', 'extensionId');
     }
 
-    public function testgetInstalledMods(): void
+    public function testGetInstalledMods(): void
     {
-        $pdoStatment = $this->getMockBuilder(PdoStatmentsMock::class)->getMock();
+        $pdoStatment = $this->createMock(PdoStatmentsMock::class);
         $pdoStatment->expects($this->atLeastOnce())
             ->method('execute');
         $pdoStatment->expects($this->atLeastOnce())
             ->method('fetchAll')
             ->willReturn([]);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatment);
@@ -509,10 +509,10 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->getInstalledMods();
-        $this->assertEquals([], $result);
+        $this->assertSame([], $result);
     }
 
-    public function testactivateExistingExtension(): void
+    public function testActivateExistingExtension(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -532,7 +532,7 @@ class ServiceTest extends \BBTestCase
             ->method('activate')
             ->willReturn([]);
 
-        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($model);
@@ -540,7 +540,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $di = new \Pimple\Container();
@@ -554,7 +554,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testactivateException(): void
+    public function testActivateException(): void
     {
         $data = [
             'id' => 'extensionId',
@@ -574,7 +574,7 @@ class ServiceTest extends \BBTestCase
             ->method('activate')
             ->will($this->throwException(new \Exception()));
 
-        $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $di = new \Pimple\Container();
@@ -586,7 +586,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->activateExistingExtension($data);
     }
 
-    public function testgetConfig(): void
+    public function testGetConfig(): void
     {
         $data = [
             'ext' => 'extensionName',
@@ -595,12 +595,12 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($model);
 
-        $cryptMock = $this->getMockBuilder(\Box_Crypt::class)->getMock();
+        $cryptMock = $this->createMock(\Box_Crypt::class);
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
 
@@ -615,7 +615,7 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetConfigExtensionMetaNotFound(): void
+    public function testGetConfigExtensionMetaNotFound(): void
     {
         $data = [
             'ext' => 'extensionName',
@@ -624,7 +624,7 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(null);
@@ -646,7 +646,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals(['ext' => 'extensionName'], $result);
     }
 
-    public function testsetConfig(): void
+    public function testSetConfig(): void
     {
         $data = [
             'ext' => 'extensionName',
@@ -657,24 +657,24 @@ class ServiceTest extends \BBTestCase
             ->method('getConfig')
             ->willReturn([]);
 
-        $toolsMock = $this->getMockBuilder(\FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
 
-        $cryptMock = $this->getMockBuilder(\Box_Crypt::class)->getMock();
+        $cryptMock = $this->createMock(\Box_Crypt::class);
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt')
             ->willReturn('encryptedConfig');
 
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('exec')
             ->willReturn([]);
 
-        $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $staffMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)->getMock();
+        $staffMock = $this->createMock(\Box\Mod\Staff\Service::class);
 
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())->method('getCoreModules')->willReturn([]);

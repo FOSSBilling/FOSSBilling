@@ -1,20 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Paidsupport;
 
-class ServiceTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
-    /**
-     * @var Service
-     */
-    protected $service;
+    protected ?Service $service;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->service->setDi($di);
@@ -22,14 +22,14 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testenoughInBalanceToOpenTicket(): void
+    public function testEnoughInBalanceToOpenTicket(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
         $clientTotalAmount = 25.0;
 
-        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $clientBalanceMock = $this->createMock(\Box\Mod\Client\ServiceBalance::class);
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->with($clientModel)
@@ -64,7 +64,7 @@ class ServiceTest extends \BBTestCase
 
         $clientTotalAmount = 0.0;
 
-        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $clientBalanceMock = $this->createMock(\Box\Mod\Client\ServiceBalance::class);
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->with($clientModel)
@@ -101,7 +101,7 @@ class ServiceTest extends \BBTestCase
 
         $clientTotalAmount = 4.0;
 
-        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $clientBalanceMock = $this->createMock(\Box\Mod\Client\ServiceBalance::class);
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->with($clientModel)
@@ -136,7 +136,7 @@ class ServiceTest extends \BBTestCase
 
         $clientTotalAmount = 4.0;
 
-        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $clientBalanceMock = $this->createMock(\Box\Mod\Client\ServiceBalance::class);
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('getClientBalance')
             ->with($clientModel)
@@ -161,21 +161,21 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testonBeforeClientOpenTicketPaidSupportForHelpdeskEnabled(): void
+    public function testOnBeforeClientOpenTicketPaidSupportForHelpdeskEnabled(): void
     {
         $di = new \Pimple\Container();
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->with('Client')
             ->willReturn($clientModel);
         $di['db'] = $dbMock;
 
-        $paidSupportMock = $this->getMockBuilder('\\' . Service::class)->getMock();
+        $paidSupportMock = $this->createMock(Service::class);
         $paidSupportMock->expects($this->atLeastOnce())
             ->method('hasHelpdeskPaidSupport')
             ->willReturn(true);
@@ -205,21 +205,21 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testonBeforeClientOpenTicketPaidSupportForHelpdeskDisabled(): void
+    public function testOnBeforeClientOpenTicketPaidSupportForHelpdeskDisabled(): void
     {
         $di = new \Pimple\Container();
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->with('Client')
             ->willReturn($clientModel);
         $di['db'] = $dbMock;
 
-        $paidSupportMock = $this->getMockBuilder('\\' . Service::class)->getMock();
+        $paidSupportMock = $this->createMock(Service::class);
         $paidSupportMock->expects($this->atLeastOnce())
             ->method('hasHelpdeskPaidSupport')
             ->willReturn(false);
@@ -249,7 +249,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetTicketPrice(): void
+    public function testGetTicketPrice(): void
     {
         $di = new \Pimple\Container();
         $paidSupportConfig = [
@@ -267,7 +267,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($paidSupportConfig['ticket_price'], $result);
     }
 
-    public function testgetTicketPriceNotSet(): void
+    public function testGetTicketPriceNotSet(): void
     {
         $di = new \Pimple\Container();
         $paidSupportConfig = [];
@@ -283,7 +283,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals(0, $result);
     }
 
-    public function testgetErrorMessage(): void
+    public function testGetErrorMessage(): void
     {
         $di = new \Pimple\Container();
         $errorMessage = 'Not enough funds';
@@ -302,7 +302,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($errorMessage, $result);
     }
 
-    public function testgetErrorMessageNotSet(): void
+    public function testGetErrorMessageNotSet(): void
     {
         $di = new \Pimple\Container();
         $errorMessage = 'Configure paid support module!';
@@ -319,7 +319,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($errorMessage, $result);
     }
 
-    public function testonAfterClientOpenTicket(): void
+    public function testOnAfterClientOpenTicket(): void
     {
         $di = new \Pimple\Container();
 
@@ -329,7 +329,7 @@ class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturnCallback(fn (...$args): \Model_SupportTicket|\Model_Client => match ($args[0]) {
@@ -338,7 +338,7 @@ class ServiceTest extends \BBTestCase
             });
         $di['db'] = $dbMock;
 
-        $paidSupportMock = $this->getMockBuilder('\\' . Service::class)->getMock();
+        $paidSupportMock = $this->createMock(Service::class);
         $paidSupportMock->expects($this->atLeastOnce())
             ->method('hasHelpdeskPaidSupport')
             ->willReturn(true);
@@ -346,7 +346,7 @@ class ServiceTest extends \BBTestCase
             ->method('enoughInBalanceToOpenTicket')
             ->with($clientModel);
 
-        $clientBalanceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $clientBalanceMock = $this->createMock(\Box\Mod\Client\ServiceBalance::class);
         $clientBalanceMock->expects($this->atLeastOnce())
             ->method('deductFunds');
 
@@ -376,7 +376,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testonAfterClientOpenTicketPaidSupportDisabledForHelpdesk(): void
+    public function testOnAfterClientOpenTicketPaidSupportDisabledForHelpdesk(): void
     {
         $di = new \Pimple\Container();
 
@@ -386,7 +386,7 @@ class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturnCallback(fn (...$args): \Model_SupportTicket|\Model_Client => match ($args[0]) {
@@ -395,7 +395,7 @@ class ServiceTest extends \BBTestCase
             });
         $di['db'] = $dbMock;
 
-        $paidSupportMock = $this->getMockBuilder('\\' . Service::class)->getMock();
+        $paidSupportMock = $this->createMock(Service::class);
         $paidSupportMock->expects($this->atLeastOnce())
             ->method('hasHelpdeskPaidSupport')
             ->willReturn(false);
@@ -426,7 +426,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetPaidHelpdeskConfig(): void
+    public function testGetPaidHelpdeskConfig(): void
     {
         $di = new \Pimple\Container();
         $helpdeskId = 2;
@@ -450,7 +450,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($helpdeskConfig, $result);
     }
 
-    public function testgetPaidHelpdeskConfigIsNotSet(): void
+    public function testGetPaidHelpdeskConfigIsNotSet(): void
     {
         $di = new \Pimple\Container();
         $paidSupportConfig = [];
@@ -467,7 +467,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEmpty($result);
     }
 
-    public function testhasHelpdeskPaidSupportTurnedOff(): void
+    public function testHasHelpdeskPaidSupportTurnedOff(): void
     {
         $helpdeskId = 1;
         $helpdeskConfig = [
@@ -484,7 +484,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testhasHelpdeskPaidSupportTurnedOn(): void
+    public function testHasHelpdeskPaidSupportTurnedOn(): void
     {
         $helpdeskId = 1;
         $helpdeskConfig = [
@@ -501,7 +501,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testhasHelpdeskPaidSupportConfigNotConfigured(): void
+    public function testHasHelpdeskPaidSupportConfigNotConfigured(): void
     {
         $helpdeskId = 1;
         $helpdeskConfig = [];
@@ -545,7 +545,7 @@ class ServiceTest extends \BBTestCase
     {
         $di = new \Pimple\Container();
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_ExtensionMeta();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
@@ -566,7 +566,7 @@ class ServiceTest extends \BBTestCase
     {
         $di = new \Pimple\Container();
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_ExtensionMeta();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
@@ -585,7 +585,7 @@ class ServiceTest extends \BBTestCase
     {
         $di = new \Pimple\Container();
 
-        $extensionServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Extension\Service::class)->getMock();
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('setConfig')
             ->willReturn(true);

@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Theme\Model;
 
-class ThemeTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class ThemeTest extends \BBTestCase
 {
     private ?string $existingTheme = 'huraga';
 
-    public function testgetName(): void
+    public function testGetName(): void
     {
         $themeModel = new Theme($this->existingTheme);
         $this->assertEquals($this->existingTheme, $themeModel->getName());
@@ -20,63 +23,63 @@ class ThemeTest extends \BBTestCase
         new Theme($themeName);
     }
 
-    public function testisAdminAreaTheme(): void
+    public function testIsAdminAreaTheme(): void
     {
         $theme = new Theme($this->existingTheme);
         $result = $theme->isAdminAreaTheme();
         $this->assertIsBool($result);
     }
 
-    public function testisAssetsPathWritable(): void
+    public function testIsAssetsPathWritable(): void
     {
         $theme = new Theme($this->existingTheme);
         $result = $theme->isAssetsPathWritable();
         $this->assertIsBool($result);
     }
 
-    public function testgetUploadedAssets(): void
+    public function testGetUploadedAssets(): void
     {
         $theme = new Theme($this->existingTheme);
         $result = $theme->getUploadedAssets();
         $this->assertIsArray($result);
     }
 
-    public function testgetSettingsPageHtml(): void
+    public function testGetSettingsPageHtml(): void
     {
         $theme = new Theme($this->existingTheme);
         $result = $theme->getSettingsPageHtml();
         $this->assertIsString($result);
     }
 
-    public function testgetPresetsFromSettingsDataFile(): void
+    public function testGetPresetsFromSettingsDataFile(): void
     {
         $theme = new Theme($this->existingTheme);
         $result = $theme->getPresetsFromSettingsDataFile();
         $this->assertIsArray($result);
     }
 
-    public function testgetCurrentPreset(): void
+    public function testGetCurrentPreset(): void
     {
         $theme = new Theme($this->existingTheme);
         $result = $theme->getCurrentPreset();
         $this->assertIsString($result);
     }
 
-    public function testgetPresetFromSettingsDataFile(): void
+    public function testGetPresetFromSettingsDataFile(): void
     {
         $theme = new Theme($this->existingTheme);
         $result = $theme->getPresetFromSettingsDataFile('default');
         $this->assertIsArray($result);
     }
 
-    public function testgetUrl(): void
+    public function testGetUrl(): void
     {
         $theme = new Theme($this->existingTheme);
         $result = $theme->getUrl();
         $this->assertIsString($result);
     }
 
-    public function testgetPathConfig(): void
+    public function testGetPathConfig(): void
     {
         $theme = new Theme($this->existingTheme);
         $result = $theme->getPathConfig();
@@ -84,7 +87,7 @@ class ThemeTest extends \BBTestCase
         $this->assertTrue(str_contains($result, 'config'));
     }
 
-    public function testgetPathAssets(): void
+    public function testGetPathAssets(): void
     {
         $theme = new Theme($this->existingTheme);
         $result = $theme->getPathAssets();
@@ -92,7 +95,7 @@ class ThemeTest extends \BBTestCase
         $this->assertTrue(str_contains($result, 'assets'));
     }
 
-    public function testgetPathHtml(): void
+    public function testGetPathHtml(): void
     {
         $theme = new Theme($this->existingTheme);
         $result = $theme->getPathHtml();
@@ -100,7 +103,7 @@ class ThemeTest extends \BBTestCase
         $this->assertTrue(str_contains($result, 'html'));
     }
 
-    public function testgetPathSettingsDataFile(): void
+    public function testGetPathSettingsDataFile(): void
     {
         $theme = new Theme($this->existingTheme);
         $result = $theme->getPathSettingsDataFile();
