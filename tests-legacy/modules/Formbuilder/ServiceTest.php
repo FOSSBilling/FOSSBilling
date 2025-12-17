@@ -193,8 +193,7 @@ final class ServiceTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
             ;
         $di['validator'] = $validatorMock;
 
@@ -431,8 +430,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
             ;
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;

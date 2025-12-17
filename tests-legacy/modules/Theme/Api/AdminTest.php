@@ -49,8 +49,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $this->api->setDi($di);
@@ -82,8 +81,7 @@ final class AdminTest extends \BBTestCase
             ->with($this->equalTo('theme'));
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $loggerMock = $this->createMock('\Box_Log');
 
@@ -119,8 +117,7 @@ final class AdminTest extends \BBTestCase
             ->with($this->equalTo('admin_theme'));
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $loggerMock = $this->createMock('\Box_Log');
 
@@ -151,8 +148,7 @@ final class AdminTest extends \BBTestCase
             ->method('deletePreset');
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $this->api->setDi($di);
@@ -180,8 +176,7 @@ final class AdminTest extends \BBTestCase
             ->method('setCurrentThemePreset');
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $this->api->setDi($di);

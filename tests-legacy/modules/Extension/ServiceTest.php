@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Box\Mod\Extension;
 use PHPUnit\Framework\Attributes\DataProvider; 
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\Filesystem\Filesystem;
 
 class PdoMock extends \PDO
 {
@@ -23,10 +24,12 @@ class PdoStatmentsMock extends \PDOStatement
 final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
+    protected $filesystemMock;
 
     public function setUp(): void
     {
-        $this->service = new Service();
+        $this->filesystemMock = $this->createMock(Filesystem::class);
+        $this->service = new Service($this->filesystemMock);
     }
 
     public function testGetDi(): void
@@ -463,9 +466,19 @@ final class ServiceTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
+        $di['mod_service'] = $di->protect(function ($name) use ($staffService) {
+            if ($name === 'Staff') {
+                return $staffService;
+            }
+
+            return null;
+        });
 
         $this->service->setDi($di);
+
+        $this->filesystemMock->expects($this->atLeastOnce())
+            ->method('exists')
+            ->willReturn(true);
 
         $result = $this->service->uninstall('mod', 'Branding');
         $this->assertTrue($result);

@@ -112,7 +112,7 @@ final class Api_GuestTest extends \BBTestCase
         ];
         $result = $this->guestApi->ticket_close($data);
 
-        $this->assertIsArray($result);
+        $this->assertTrue($result);
     }
 
     public function testTicketReply(): void

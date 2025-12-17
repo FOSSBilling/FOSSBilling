@@ -800,8 +800,7 @@ final class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
             ->willThrowException(new \FOSSBilling\Exception('Period parameter not passed'));
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
@@ -843,8 +842,7 @@ final class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
             ;
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);

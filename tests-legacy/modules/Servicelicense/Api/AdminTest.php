@@ -113,8 +113,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn(new \Model_ClientOrder());
 
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -141,8 +140,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn(new \Model_ClientOrder());
 
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;

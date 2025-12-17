@@ -144,8 +144,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {

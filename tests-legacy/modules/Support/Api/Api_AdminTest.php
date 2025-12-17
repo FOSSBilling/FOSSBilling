@@ -212,7 +212,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['closeTicket'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('closeTicket')
-            ;
+            ->willReturn(true);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -957,7 +957,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
         $result = $this->adminApi->canned_delete($data);
 
-        $this->assertIsArray($result);
+        $this->assertTrue($result);
     }
 
     public function testCannedCreate(): void
@@ -1009,7 +1009,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
         $result = $this->adminApi->canned_update($data);
 
-        $this->assertIsInt($result);
+        $this->assertTrue($result);
     }
 
     public function testCannedCategoryPairs(): void
@@ -1091,7 +1091,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
         $result = $this->adminApi->canned_category_update($data);
 
-        $this->assertIsArray($result);
+        $this->assertTrue($result);
     }
 
     public function testCannedCategoryDelete(): void
@@ -1122,7 +1122,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
         $result = $this->adminApi->canned_category_delete($data);
 
-        $this->assertIsArray($result);
+        $this->assertTrue($result);
     }
 
     public function testCannedCategoryCreate(): void
@@ -1200,7 +1200,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
         $result = $this->adminApi->note_delete($data);
 
-        $this->assertIsArray($result);
+        $this->assertTrue($result);
     }
 
     public function testTaskComplete(): void
@@ -1619,7 +1619,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
 
         $result = $adminApi->kb_category_update($data);
-        $this->assertIsArray($result);
+        $this->assertTrue($result);
     }
 
     public function testKbCategoryUpdateIdNotSet(): void
@@ -1709,7 +1709,7 @@ final class Api_AdminTest extends \BBTestCase
             'id' => 1,
         ];
         $result = $adminApi->kb_category_delete($data);
-        $this->assertIsArray($result);
+        $this->assertTrue($result);
     }
 
     public function testKbCategoryDeleteIdNotSet(): void

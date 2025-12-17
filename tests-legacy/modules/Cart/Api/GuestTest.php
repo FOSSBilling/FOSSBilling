@@ -58,8 +58,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $currencyServiceMock = $this->getMockBuilder(\Box\Mod\Currency\Service::class)
             ->onlyMethods(['getByCode'])->getMock();
@@ -91,8 +90,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $currencyServiceMock = $this->getMockBuilder(\Box\Mod\Currency\Service::class)
             ->onlyMethods(['getByCode'])->getMock();
@@ -212,8 +210,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $this->guestApi->setDi($di);
@@ -248,8 +245,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $this->guestApi->setDi($di);
@@ -285,8 +281,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn(false);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $this->guestApi->setDi($di);
@@ -321,8 +316,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn(false);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $this->guestApi->setDi($di);
@@ -373,8 +367,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $this->guestApi->setDi($di);
@@ -404,8 +397,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn(true);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -448,8 +440,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn($cart);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())

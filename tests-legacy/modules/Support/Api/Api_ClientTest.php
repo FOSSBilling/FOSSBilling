@@ -240,6 +240,6 @@ final class Api_ClientTest extends \BBTestCase
         ];
         $result = $this->clientApi->ticket_close($data);
 
-        $this->assertIsInt($result);
+        $this->assertTrue($result);
     }
 }

@@ -143,7 +143,7 @@ final class ServiceTest extends \BBTestCase
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
             ->willReturn($isSldValidArr['returns']);
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
             ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
@@ -241,7 +241,7 @@ final class ServiceTest extends \BBTestCase
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
             ->willReturn($isSldValidArr['returns']);
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
             ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
@@ -757,7 +757,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;

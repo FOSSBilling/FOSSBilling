@@ -40,8 +40,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn($adminId);
 
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())

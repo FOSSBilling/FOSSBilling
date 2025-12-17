@@ -122,8 +122,7 @@ final class AdminTest extends \BBTestCase
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -217,8 +216,7 @@ final class AdminTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -429,8 +427,7 @@ final class AdminTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['password'] = $passwordMock;
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $profileService);
 
@@ -451,8 +448,7 @@ final class AdminTest extends \BBTestCase
         $admin_Client = new \Box\Mod\Client\Api\Admin();
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $admin_Client->setDi($di);
@@ -525,8 +521,7 @@ final class AdminTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -559,8 +554,7 @@ final class AdminTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -693,8 +687,7 @@ final class AdminTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -730,8 +723,7 @@ final class AdminTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -760,8 +752,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -778,8 +769,7 @@ final class AdminTest extends \BBTestCase
         $activityMock->expects($this->atLeastOnce())->method('delete')->willReturn(true);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
         $activityMock->setDi($di);

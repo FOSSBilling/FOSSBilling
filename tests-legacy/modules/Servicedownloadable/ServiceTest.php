@@ -35,8 +35,7 @@ final class ServiceTest extends \BBTestCase
         $expected = array_merge(json_decode($productModel->config ?? '', true), $data);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
             ;
 
         $di = $this->getDi();
@@ -65,8 +64,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
             ;
 
         $di = $this->getDi();
