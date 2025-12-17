@@ -1,20 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Invoice\Api;
 
-class GuestTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class GuestTest extends \BBTestCase
 {
-    /**
-     * @var Guest
-     */
-    protected $api;
+    protected ?Guest $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Guest();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,14 +22,14 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testget(): void
+    public function testGet(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
@@ -43,14 +43,14 @@ class GuestTest extends \BBTestCase
         $this->api->setService($serviceMock);
         $this->api->setIdentity(new \Model_Admin());
 
-        $data['hash'] = md5(1);
+        $data['hash'] = md5('1');
         $result = $this->api->get($data);
         $this->assertIsArray($result);
     }
 
-    public function testgetInvoiceNotFound(): void
+    public function testGetInvoiceNotFound(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
@@ -63,20 +63,20 @@ class GuestTest extends \BBTestCase
         $this->api->setDi($di);
         $this->api->setIdentity(new \Model_Admin());
 
-        $data['hash'] = md5(1);
+        $data['hash'] = md5('1');
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invoice was not found');
         $this->api->get($data);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateInvoice')
             ->willReturn(true);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
@@ -90,15 +90,15 @@ class GuestTest extends \BBTestCase
         $this->api->setService($serviceMock);
         $this->api->setIdentity(new \Model_Admin());
 
-        $data['hash'] = md5(1);
+        $data['hash'] = md5('1');
         $result = $this->api->update($data);
         $this->assertIsBool($result);
         $this->assertTrue(true);
     }
 
-    public function testupdateInvoiceNotFound(): void
+    public function testUpdateInvoiceNotFound(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
@@ -111,15 +111,15 @@ class GuestTest extends \BBTestCase
         $this->api->setDi($di);
         $this->api->setIdentity(new \Model_Admin());
 
-        $data['hash'] = md5(1);
+        $data['hash'] = md5('1');
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Invoice was not found');
         $this->api->update($data);
     }
 
-    public function testupdateInvoiceIsPaid(): void
+    public function testUpdateInvoiceIsPaid(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
         $model->status = 'paid';
@@ -133,15 +133,15 @@ class GuestTest extends \BBTestCase
         $this->api->setDi($di);
         $this->api->setIdentity(new \Model_Admin());
 
-        $data['hash'] = md5(1);
+        $data['hash'] = md5('1');
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Paid Invoice cannot be modified');
         $this->api->update($data);
     }
 
-    public function testgateways(): void
+    public function testGateways(): void
     {
-        $gatewayServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\ServicePayGateway::class)->getMock();
+        $gatewayServiceMock = $this->createMock(\Box\Mod\Invoice\ServicePayGateway::class);
         $gatewayServiceMock->expects($this->atLeastOnce())
             ->method('getActive')
             ->willReturn([]);
@@ -155,13 +155,13 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testpayment(): void
+    public function testPayment(): void
     {
         $data = [
             'hash' => '',
             'gateway_id' => '',
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('processInvoice')
             ->willReturn([]);
@@ -172,7 +172,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testpaymentMissingHashParam(): void
+    public function testPaymentMissingHashParam(): void
     {
         $data = [
             'gateway_id' => '',
@@ -184,7 +184,7 @@ class GuestTest extends \BBTestCase
         $this->api->payment($data);
     }
 
-    public function testpaymentMissingGatewayIdParam(): void
+    public function testPaymentMissingGatewayIdParam(): void
     {
         $data = [
             'hash' => '',
@@ -196,12 +196,12 @@ class GuestTest extends \BBTestCase
         $this->api->payment($data);
     }
 
-    public function testpdf(): void
+    public function testPdf(): void
     {
         $data = [
             'hash' => '',
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Invoice\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('generatePDF');
 

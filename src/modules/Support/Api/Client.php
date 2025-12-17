@@ -28,7 +28,7 @@ class Client extends \Api_Abstract
      *
      * @return array
      */
-    public function ticket_get_list($data)
+    public function ticket_get_list(array $data): array
     {
         $identity = $this->getIdentity();
         $data['client_id'] = $identity->id;
@@ -50,7 +50,7 @@ class Client extends \Api_Abstract
      * @return array
      */
     #[RequiredParams(['id' => 'Ticket ID was not passed'])]
-    public function ticket_get($data)
+    public function ticket_get(array $data): array
     {
         $ticket = $this->getService()->findOneByClient($this->getIdentity(), $data['id']);
 
@@ -62,7 +62,7 @@ class Client extends \Api_Abstract
      *
      * @return array
      */
-    public function helpdesk_get_pairs()
+    public function helpdesk_get_pairs(): array
     {
         return $this->getService()->helpdeskGetPairs();
     }
@@ -83,9 +83,10 @@ class Client extends \Api_Abstract
         'subject' => 'Ticket subject required',
         'support_helpdesk_id' => 'Ticket support_helpdesk_id required',
     ])]
-    public function ticket_create($data)
+    public function ticket_create(array $data): int
     {
-        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', $data['content']);
+        // Sanitize content to prevent XSS attacks
+        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
 
         $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
 
@@ -98,9 +99,10 @@ class Client extends \Api_Abstract
      * Add new conversation message to ticket. Ticket will be reopened if closed.
      */
     #[RequiredParams(['id' => 'Ticket ID was not passed', 'content' => 'Ticket content required'])]
-    public function ticket_reply($data)
+    public function ticket_reply(array $data): bool
     {
-        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', $data['content']);
+        // Sanitize content to prevent XSS attacks
+        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
 
         $client = $this->getIdentity();
 
@@ -129,7 +131,7 @@ class Client extends \Api_Abstract
      * @return bool
      */
     #[RequiredParams(['id' => 'Ticket ID was not passed'])]
-    public function ticket_close($data)
+    public function ticket_close(array $data): bool
     {
         $client = $this->getIdentity();
 

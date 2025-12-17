@@ -1,20 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicehosting\Api;
 
-class ClientTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class ClientTest extends \BBTestCase
 {
-    /**
-     * @var Client
-     */
-    protected $api;
+    protected ?Client $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Client();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class ClientTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testchangeUsername(): void
+    public function testChangeUsername(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Client::class)
@@ -33,7 +33,7 @@ class ClientTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountUsername')
             ->willReturn(true);
@@ -45,7 +45,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangeDomain(): void
+    public function testChangeDomain(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Client::class)
@@ -56,7 +56,7 @@ class ClientTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountDomain')
             ->willReturn(true);
@@ -68,7 +68,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangePassword(): void
+    public function testChangePassword(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
         $apiMock = $this->getMockBuilder('\\' . Client::class)
@@ -79,7 +79,7 @@ class ClientTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountPassword')
             ->willReturn(true);
@@ -91,9 +91,9 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testhpGetPairs(): void
+    public function testHpGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getHpPairs')
             ->willReturn([]);
@@ -110,13 +110,13 @@ class ClientTest extends \BBTestCase
         ];
 
         $clientOrderModel = new \Model_ClientOrder();
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($clientOrderModel);
 
         $model = new \Model_ServiceHosting();
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
@@ -144,13 +144,13 @@ class ClientTest extends \BBTestCase
         ];
 
         $clientOrderModel = new \Model_ClientOrder();
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($clientOrderModel);
 
         $model = null;
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
@@ -178,7 +178,7 @@ class ClientTest extends \BBTestCase
         ];
 
         $clientOrderModel = null;
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($clientOrderModel);

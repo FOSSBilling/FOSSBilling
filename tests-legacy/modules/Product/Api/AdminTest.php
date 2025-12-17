@@ -1,20 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Product\Api;
 
-class AdminTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class AdminTest extends \BBTestCase
 {
-    /**
-     * @var Admin
-     */
-    protected $api;
+    protected ?Admin $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,9 +22,9 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList(): void
+    public function testGetList(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSearchQuery')
@@ -47,9 +47,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetPairs(): void
+    public function testGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPairs')
@@ -60,19 +60,19 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testget(): void
+    public function testGet(): void
     {
         $data = ['id' => 1];
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
         ->method('toApiArray')
         ->willReturn([]);
@@ -86,9 +86,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetTypes(): void
+    public function testGetTypes(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTypes')
             ->willReturn([]);
@@ -98,14 +98,14 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testprepareDomainProductAlreadyCreated(): void
+    public function testPrepareDomainProductAlreadyCreated(): void
     {
         $data = [
             'title' => 'testTitle',
             'type' => 'domain',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('getMainDomainProduct')
             ->willReturn(new \Model_ProductDomain());
@@ -115,13 +115,13 @@ class AdminTest extends \BBTestCase
 
         $this->api->setService($serviceMock);
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(\"FOSSBilling\Exception::class");
         $this->expectExceptionCode(413);
         $this->expectExceptionMessage('You have already created domain product');
         $this->api->prepare($data);
     }
 
-    public function testprepareTypeIsNotRecognized(): void
+    public function testPrepareTypeIsNotRecognized(): void
     {
         $data = [
             'title' => 'testTitle',
@@ -133,7 +133,7 @@ class AdminTest extends \BBTestCase
             'domain' => 'Domain',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTypes')
             ->willReturn($typeArray);
@@ -143,13 +143,13 @@ class AdminTest extends \BBTestCase
 
         $this->api->setService($serviceMock);
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(\"FOSSBilling\Exception::class");
         $this->expectExceptionCode(413);
         $this->expectExceptionMessage("Product type {$data['type']} is not registered.");
         $this->api->prepare($data);
     }
 
-    public function testprepare(): void
+    public function testPrepare(): void
     {
         $data = [
             'title' => 'testTitle',
@@ -163,7 +163,7 @@ class AdminTest extends \BBTestCase
 
         $newProductId = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTypes')
             ->willReturn($typeArray);
@@ -181,18 +181,18 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newProductId, $result);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $data = ['id' => 1];
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateProduct')
             ->willReturn(true);
@@ -208,22 +208,22 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdatePriorityMissingPriorityParam(): void
+    public function testUpdatePriorityMissingPriorityParam(): void
     {
         $data = [];
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(\"FOSSBilling\Exception::class");
         $this->expectExceptionMessage('priority params is missing');
         $this->api->update_priority($data);
     }
 
-    public function testupdatePriority(): void
+    public function testUpdatePriority(): void
     {
         $data = [
             'priority' => [],
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('updatePriority')
             ->willReturn(true);
@@ -235,18 +235,18 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdateConfig(): void
+    public function testUpdateConfig(): void
     {
         $data = ['id' => 1];
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateConfig')
             ->willReturn(true);
@@ -262,9 +262,9 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testaddonGetPairs(): void
+    public function testAddonGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAddons')
             ->willReturn([]);
@@ -274,11 +274,11 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testaddonCreate(): void
+    public function testAddonCreate(): void
     {
         $data = ['title' => 'Title4test'];
         $newAddonId = 1;
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('createAddon')
             ->willReturn($newAddonId);
@@ -294,7 +294,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newAddonId, $result);
     }
 
-    public function testaddonGet(): void
+    public function testAddonGet(): void
     {
         $data = ['id' => 1];
 
@@ -302,12 +302,12 @@ class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->is_addon = true;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
@@ -322,7 +322,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testaddonUpdate(): void
+    public function testAddonUpdate(): void
     {
         $data = ['id' => 1];
 
@@ -338,7 +338,7 @@ class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->is_addon = true;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($model);
@@ -353,7 +353,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testaddonDelete(): void
+    public function testAddonDelete(): void
     {
         $apiMock = $this->getMockBuilder('\\' . Admin::class)
             ->onlyMethods(['delete'])
@@ -368,19 +368,19 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testdelete(): void
+    public function testDelete(): void
     {
         $data = ['id' => 1];
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteProduct')
             ->willReturn(true);
@@ -396,9 +396,9 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcategoryGetPairs(): void
+    public function testCategoryGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductCategoryPairs')
             ->willReturn([]);
@@ -408,19 +408,19 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testcategoryUpdate(): void
+    public function testCategoryUpdate(): void
     {
         $data = ['id' => 1];
 
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateCategory')
             ->willReturn(true);
@@ -436,19 +436,19 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testcategoryGet(): void
+    public function testCategoryGet(): void
     {
         $data = ['id' => 1];
 
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('toProductCategoryApiArray')
             ->willReturn([]);
@@ -463,12 +463,12 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testcategoryCreate(): void
+    public function testCategoryCreate(): void
     {
         $data = ['title' => 'test Title'];
         $newCategoryId = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('createCategory')
             ->willReturn($newCategoryId);
@@ -483,19 +483,19 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newCategoryId, $result);
     }
 
-    public function testcategoryDelete(): void
+    public function testCategoryDelete(): void
     {
         $data = ['id' => 1];
 
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('removeProductCategory')
             ->willReturn(true);
@@ -511,9 +511,9 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpromoGetList(): void
+    public function testPromoGetList(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPromoSearchQuery')
@@ -536,7 +536,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testpromoCreate(): void
+    public function testPromoCreate(): void
     {
         $data = [
             'code' => 'test',
@@ -547,7 +547,7 @@ class AdminTest extends \BBTestCase
         ];
         $newPromoId = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('createPromo')
             ->willReturn($newPromoId);
@@ -566,19 +566,19 @@ class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(\"FOSSBilling\Exception::class");
         $this->expectExceptionMessage('Promo ID is missing');
         $this->api->promo_get($data);
     }
 
-    public function testpromoGet(): void
+    public function testPromoGet(): void
     {
         $data = ['id' => 1];
 
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -586,7 +586,7 @@ class AdminTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('toPromoApiArray')
             ->willReturn([]);
@@ -598,19 +598,19 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testpromoUpdate(): void
+    public function testPromoUpdate(): void
     {
         $data = ['id' => 1];
 
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('updatePromo')
             ->willReturn(true);
@@ -625,18 +625,18 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpromoDelete(): void
+    public function testPromoDelete(): void
     {
         $data = ['id' => 1];
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
         $serviceMock->expects($this->atLeastOnce())
             ->method('deletePromo')
             ->willReturn(true);

@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Client\Api;
 
-class AdminTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class AdminTest extends \BBTestCase
 {
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -13,7 +16,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList(): void
+    public function testGetList(): void
     {
         $simpleResultArr = [
             'list' => [
@@ -21,7 +24,7 @@ class AdminTest extends \BBTestCase
             ],
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['String', []]);
@@ -39,7 +42,7 @@ class AdminTest extends \BBTestCase
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -59,9 +62,8 @@ class AdminTest extends \BBTestCase
 
     public function testGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('getPairs')->willReturn([]);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('getPairs')->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
@@ -74,14 +76,13 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testget(): void
+    public function testGet(): void
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('get')->willReturn($model);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('get')->willReturn($model);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
@@ -93,11 +94,11 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testlogin(): void
+    public function testLogin(): void
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
@@ -107,13 +108,11 @@ class AdminTest extends \BBTestCase
             'name' => 'John Smith',
             'role' => 'client',
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('toSessionArray')->willReturn($sessionArray);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('toSessionArray')->willReturn($sessionArray);
 
         $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
-        $sessionMock->expects($this->atLeastOnce())->
-        method('set');
+        $sessionMock->expects($this->atLeastOnce())->method('set');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -143,17 +142,14 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('emailAlreadyRegistered')->willReturn(false);
-        $serviceMock->expects($this->atLeastOnce())->
-        method('adminCreateClient')->willReturn(1);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(false);
+        $serviceMock->expects($this->atLeastOnce())->method('adminCreateClient')->willReturn(1);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock = $this->createMock('\\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();
@@ -176,11 +172,10 @@ class AdminTest extends \BBTestCase
             'first_name' => 'John',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('emailAlreadyRegistered')->willReturn(true);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(true);
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();
@@ -195,20 +190,19 @@ class AdminTest extends \BBTestCase
         $admin_Client->create($data);
     }
 
-    public function testdelete(): void
+    public function testDelete(): void
     {
         $data = ['id' => 1];
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock = $this->createMock('\\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
             ->onlyMethods(['remove'])
@@ -232,7 +226,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $data = [
             'id' => 1,
@@ -278,23 +272,20 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')->willReturn(1);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('emailAlreadyRegistered')->willReturn(false);
-        $serviceMock->expects($this->atLeastOnce())->
-        method('canChangeCurrency')->willReturn(true);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(false);
+        $serviceMock->expects($this->atLeastOnce())->method('canChangeCurrency')->willReturn(true);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock = $this->createMock('\\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Pimple\Container();
@@ -310,7 +301,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdateEmailALreadyRegistered(): void
+    public function testUpdateEmailALreadyRegistered(): void
     {
         $data = [
             'id' => 1,
@@ -356,19 +347,16 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('emailAlreadyRegistered')->willReturn(true);
-        $serviceMock->expects($this->never())->
-        method('canChangeCurrency')->willReturn(true);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(true);
+        $serviceMock->expects($this->never())->method('canChangeCurrency')->willReturn(true);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->never())->
-        method('fire');
+        $eventMock = $this->createMock('\\Box_EventManager');
+        $eventMock->expects($this->never())->method('fire');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -377,7 +365,7 @@ class AdminTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['validator'] = new \FOSSBilling\Validate();
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
@@ -405,7 +393,7 @@ class AdminTest extends \BBTestCase
         $admin_Client->update($data);
     }
 
-    public function testchangePassword(): void
+    public function testChangePassword(): void
     {
         $data = [
             'id' => 1,
@@ -416,23 +404,22 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store')->willReturn(1);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock = $this->createMock('\\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);
 
-        $profileService = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
+        $profileService = $this->createMock(\Box\Mod\Profile\Service::class);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -452,7 +439,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangePasswordPasswordMismatch(): void
+    public function testChangePasswordPasswordMismatch(): void
     {
         $data = [
             'id' => 1,
@@ -473,7 +460,7 @@ class AdminTest extends \BBTestCase
         $admin_Client->change_password($data);
     }
 
-    public function testbalanceGetList(): void
+    public function testBalanceGetList(): void
     {
         $simpleResultArr = [
             'list' => [
@@ -489,7 +476,7 @@ class AdminTest extends \BBTestCase
 
         $data = [];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Client\ServiceBalance::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['String', []]);
@@ -516,7 +503,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testbalanceDelete(): void
+    public function testBalanceDelete(): void
     {
         $data = [
             'id' => 1,
@@ -525,7 +512,7 @@ class AdminTest extends \BBTestCase
         $model = new \Model_ClientBalance();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
@@ -547,7 +534,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testbalanceAddFunds(): void
+    public function testBalanceAddFunds(): void
     {
         $data = [
             'id' => 1,
@@ -558,13 +545,12 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('addFunds');
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('addFunds');
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -582,19 +568,18 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testbatchExpirePasswordReminders(): void
+    public function testBatchExpirePasswordReminders(): void
     {
         $expiredArr = [
             new \Model_ClientPasswordReset(),
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('getExpiredPasswordReminders')->willReturn($expiredArr);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('getExpiredPasswordReminders')->willReturn($expiredArr);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
@@ -608,14 +593,14 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testloginHistoryGetList(): void
+    public function testLoginHistoryGetList(): void
     {
         $data = [];
         $pagerResultSet = [
             'list' => [],
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getHistorySearchQuery')
             ->willReturn(['String', []]);
@@ -639,11 +624,10 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetStatuses(): void
+    public function testGetStatuses(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('counter')->willReturn([]);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('counter')->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
@@ -655,11 +639,10 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgroupGetPairs(): void
+    public function testGroupGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('getGroupPairs')->willReturn([]);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('getGroupPairs')->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
@@ -671,15 +654,13 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgroupCreate(): void
+    public function testGroupCreate(): void
     {
         $data['title'] = 'test Group';
 
         $newGroupId = 1;
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('createGroup')
-            ->willReturn($newGroupId);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('createGroup')->willReturn($newGroupId);
 
         $di = new \Pimple\Container();
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -691,7 +672,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newGroupId, $result);
     }
 
-    public function testgroupUpdate(): void
+    public function testGroupUpdate(): void
     {
         $data['id'] = '2';
         $data['title'] = 'test Group updated';
@@ -699,7 +680,7 @@ class AdminTest extends \BBTestCase
         $model = new \Model_ClientGroup();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
@@ -710,7 +691,7 @@ class AdminTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
+        $validatorMock->expects($this->atLeastLeastOnce())
             ->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
@@ -722,14 +703,14 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgroupDelete(): void
+    public function testGroupDelete(): void
     {
         $data['id'] = '2';
 
         $model = new \Model_ClientGroup();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
         $dbMock->expects($this->once())
@@ -760,14 +741,14 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgroupGet(): void
+    public function testGroupGet(): void
     {
         $data['id'] = '2';
 
         $model = new \Model_ClientGroup();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 

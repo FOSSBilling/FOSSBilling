@@ -1,15 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Cart\Api;
 
-class AdminTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class AdminTest extends \BBTestCase
 {
-    /**
-     * @var \Box\Mod\Cart\Api\Admin
-     */
-    protected $adminApi;
+    protected ?\Box\Mod\Cart\Api\Admin $adminApi;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->adminApi = new \Box\Mod\Cart\Api\Admin();
     }
@@ -40,7 +40,7 @@ class AdminTest extends \BBTestCase
 
         $model = new \Model_Cart();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -82,7 +82,7 @@ class AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->get($data);
 
@@ -94,18 +94,18 @@ class AdminTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc')
-            ->willReturn([random_int(1, 100), date('Y-m-d H:i:s')]);
+            ->willReturn([1, date('Y-m-d H:i:s')]);
         $dbMock->expects($this->atLeastOnce())
             ->method('exec')
             ->willReturn(null);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['logger'] = $this->createMock('Box_Log');
         $this->adminApi->setDi($di);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->batch_expire($data);
 

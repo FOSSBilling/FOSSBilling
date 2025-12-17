@@ -1,15 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Support\Api;
 
-class Api_ClientTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class Api_ClientTest extends \BBTestCase
 {
-    /**
-     * @var \Box\Mod\Support\Api\Client
-     */
-    protected $clientApi;
+    protected ?\Box\Mod\Support\Api\Client $clientApi;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->clientApi = new \Box\Mod\Support\Api\Client();
     }
@@ -39,7 +39,7 @@ class Api_ClientTest extends \BBTestCase
 
         $model = new \Model_SupportTicket();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -52,7 +52,7 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
 
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
@@ -78,13 +78,13 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
 
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->clientApi->ticket_get($data);
 
@@ -110,7 +110,7 @@ class Api_ClientTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['ticketCreateForClient'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForClient')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -124,7 +124,7 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
 
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
@@ -132,7 +132,7 @@ class Api_ClientTest extends \BBTestCase
         $data = [
             'content' => 'Content',
             'subject' => 'Subject',
-            'support_helpdesk_id' => random_int(1, 100),
+            'support_helpdesk_id' => 1,
         ];
         $result = $this->clientApi->ticket_create($data);
 
@@ -146,7 +146,7 @@ class Api_ClientTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('canBeReopened')
             ->willReturn(true);
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -160,14 +160,14 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
 
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
         $data = [
             'content' => 'Content',
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->clientApi->ticket_reply($data);
 
@@ -182,7 +182,7 @@ class Api_ClientTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('canBeReopened')
             ->willReturn(false);
         $serviceMock->expects($this->never())->method('ticketReply')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -192,18 +192,19 @@ class Api_ClientTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;
+
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
 
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
         $data = [
             'content' => 'Content',
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $this->clientApi->ticket_reply($data);
@@ -226,14 +227,14 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
 
         $this->clientApi->setService($serviceMock);
         $this->clientApi->setIdentity($client);
 
         $data = [
             'content' => 'Content',
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->clientApi->ticket_close($data);
 

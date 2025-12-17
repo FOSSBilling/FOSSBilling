@@ -1,15 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Servicedomain\Api;
 
-class Api_ClientTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class Api_ClientTest extends \BBTestCase
 {
-    /**
-     * @var \Box\Mod\Servicedomain\Api\Client
-     */
-    protected $clientApi;
+    protected ?\Box\Mod\Servicedomain\Api\Client $clientApi;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->clientApi = new \Box\Mod\Servicedomain\Api\Client();
     }
@@ -31,7 +31,7 @@ class Api_ClientTest extends \BBTestCase
 
         $clientApiMock->setService($serviceMock);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
@@ -185,7 +185,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testGetService(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('lock')
             ->willReturn(true);
 
@@ -206,7 +206,7 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setIdentity(new \Model_Client());
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
         ];
         $result = $this->clientApi->lock($data);
 
@@ -215,7 +215,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testGetServiceOrderIdMissingException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->never())->method('lock')
             ->willReturn(true);
 
@@ -245,7 +245,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testGetServiceOrderNotFoundException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->never())->method('lock')
             ->willReturn(true);
 
@@ -266,7 +266,7 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setIdentity(new \Model_Client());
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -277,7 +277,7 @@ class Api_ClientTest extends \BBTestCase
 
     public function testGetServiceOrderNotActivatedException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->never())->method('lock')
             ->willReturn(true);
 
@@ -298,7 +298,7 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setIdentity(new \Model_Client());
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);

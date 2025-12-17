@@ -40,7 +40,6 @@ class Admin extends \Api_Abstract
                 'content_html' => $item['content_html'],
                 'content_text' => $item['content_text'],
                 'created_at' => $item['created_at'],
-                'updated_at' => $item['updated_at'],
             ];
         }
 
@@ -264,7 +263,7 @@ class Admin extends \Api_Abstract
         $vars['_tpl'] = $data['_tpl'] ?? $t['content'];
         $systemService = $this->di['mod_service']('System');
 
-        return $systemService->renderString($vars['_tpl'], true, $vars);
+        return $systemService->renderString($vars['_tpl'], false, $vars);
     }
 
     /**

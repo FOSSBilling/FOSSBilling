@@ -1,15 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Cart\Api;
 
-class ClientTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class ClientTest extends \BBTestCase
 {
-    /**
-     * @var \Box\Mod\Cart\Api\Client
-     */
-    protected $clientApi;
+    protected ?\Box\Mod\Cart\Api\Client $clientApi;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->clientApi = new \Box\Mod\Cart\Api\Client();
     }
@@ -43,7 +43,7 @@ class ClientTest extends \BBTestCase
         $this->clientApi->setIdentity($client);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $di = new \Pimple\Container();
 
