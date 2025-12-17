@@ -396,7 +396,7 @@ final class ServiceTest extends \BBTestCase
     //        $dbMock = $this->createMock('\Box_Database');
     //        $dbMock->expects($this->atLeastOnce())
     //            ->method('getExistingModelById')
-    //            ->will($this->onConsecutiveCalls($hostingServerModel, $hostingPlansModel));
+    //            ->willReturn($hostingServerModel, $hostingPlansModel);
     //
     //        $servhostingModel = new \Model_ServiceHosting();
     //        $servhostingModel->loadBean(new \DummyBean());

@@ -88,7 +88,7 @@ final class Api_AdminTest extends BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->exactly(2))
             ->method('getExistingModelById')
-            ->will($this->onConsecutiveCalls(new Model_Client(), new Model_Product()));
+            ->willReturn(new Model_Client(), new Model_Product());
 
         $di = $this->getDi();
         $di['db'] = $dbMock;

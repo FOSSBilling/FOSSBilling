@@ -795,9 +795,6 @@ final class ServiceTest extends \BBTestCase
 
     public static function isClientTaxableProvider(): array
     {
-        $self = new ServiceTest('ServiceTest');
-        $self->assertTrue(true);
-
         return [
             [
                 false,

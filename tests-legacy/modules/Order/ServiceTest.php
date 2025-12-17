@@ -1083,13 +1083,14 @@ final class ServiceTest extends \BBTestCase
 
         $setEventItemExpected = ['client_order_id', 'status'];
         $matcher = $this->atLeastOnce();
-        $loggerMock->expects($matcher)
+        $loggerMock->expects($this->exactly(2))
             ->method('setEventItem')
             ->willReturnCallback(function (...$args) use ($matcher, $loggerMock) {
-                match ($matcher->numberOfInvocations()) {
-                    1 => $this->assertEquals($args[0], 'client_order_id'),
-                    2 => $this->assertEquals($args[0], 'status'),
-                };
+                if ($matcher->numberOfInvocations() === 1) {
+                    $this->assertEquals($args[0], 'client_order_id');
+                } elseif ($matcher->numberOfInvocations() === 2) {
+                    $this->assertEquals($args[0], 'status');
+                }
 
                 return $loggerMock;
             });

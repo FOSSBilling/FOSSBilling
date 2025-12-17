@@ -11,6 +11,10 @@ class BBTestCase extends PHPUnit\Framework\TestCase
         $di['tools'] = function () use ($di) {
             return new \FOSSBilling\Tools();
         };
+        $di['config'] = [
+            'salt' => 'test_salt',
+            'url' => 'http://localhost/',
+        ];
 
         return $di;
     }

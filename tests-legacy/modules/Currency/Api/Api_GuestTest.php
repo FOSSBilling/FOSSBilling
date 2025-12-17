@@ -34,7 +34,7 @@ final class Api_GuestTest extends \BBTestCase
 
     public static function getProvider(): array
     {
-        $self = new Api_GuestTest('Api_GuestTest');
+        
 
         $model = new \Model_Currency();
 
@@ -44,20 +44,20 @@ final class Api_GuestTest extends \BBTestCase
                     'code' => 'EUR',
                 ],
                 $model,
-                $self->atLeastOnce(),
-                $self->never(),
+                'atLeastOnce',
+                'never',
             ],
             [
                 [],
                 $model,
-                $self->never(),
-                $self->atLeastOnce(),
+                'never',
+                'atLeastOnce',
             ],
         ];
     }
 
     #[DataProvider('getProvider')]
-    public function testGet(array $data, \Model_Currency $model, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $expectsGetByCode, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $expectsGetDefault): void
+    public function testGet(array $data, \Model_Currency $model, $expectsGetByCode, $expectsGetDefault): void
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
 
@@ -71,11 +71,11 @@ final class Api_GuestTest extends \BBTestCase
         ];
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
-        $service->expects($expectsGetByCode)
+        $service->expects($this->$expectsGetByCode())
             ->method('getByCode')
             ->willReturn($model);
 
-        $service->expects($expectsGetDefault)
+        $service->expects($this->$expectsGetDefault())
             ->method('getDefault')
             ->willReturn($model);
 

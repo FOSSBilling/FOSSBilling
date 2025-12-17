@@ -289,7 +289,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public static function CreateExceptionProvider(): array
     {
-        $self = new Api_AdminTest('Api_AdminTest');
+        
 
         $model = new \Model_Currency();
         $model->loadBean(new \DummyBean());
@@ -301,33 +301,33 @@ final class Api_AdminTest extends \BBTestCase
                     'code' => 'EUR',
                     'format' => '€{{price}}',
                 ],
-                $self->atLeastOnce(),
+                'atLeastOnce',
                 $model, // currency exists already
-                $self->never(),
+                'never',
             ],
             [
                 [
                     'code' => 'NON', // Non existing currency
                     'format' => '€{{price}}',
                 ],
-                $self->atLeastOnce(),
+                'atLeastOnce',
                 null,
-                $self->atLeastOnce(),
+                'atLeastOnce',
             ],
         ];
     }
 
     #[DataProvider('CreateExceptionProvider')]
-    public function testCreateException(array $data, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $getByCodeCalled, ?\Model_Currency $getByCodeReturn, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $getAvailableCurrenciesCalled): void
+    public function testCreateException(array $data, $getByCodeCalled, ?\Model_Currency $getByCodeReturn, $getAvailableCurrenciesCalled): void
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
-        $service->expects($getByCodeCalled)
+        $service->expects($this->$getByCodeCalled())
             ->method('getByCode')
             ->willReturn($getByCodeReturn);
 
-        $service->expects($getAvailableCurrenciesCalled)
+        $service->expects($this->$getAvailableCurrenciesCalled())
             ->method('getAvailableCurrencies')
             ->willReturn($this->availableCurrencies);
 
@@ -456,7 +456,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public static function SetDefaultExceptionProvider(): array
     {
-        $self = new Api_AdminTest('Api_AdminTest');
+        
 
         $model = new \Model_Currency();
         $model->loadBean(new \DummyBean());
@@ -467,7 +467,7 @@ final class Api_AdminTest extends \BBTestCase
                 [
                     'code' => 'EUR', // model is not instance of \Model_Currency
                 ],
-                $self->atLeastOnce(),
+                'atLeastOnce',
                 null,
             ],
         ];
@@ -477,12 +477,12 @@ final class Api_AdminTest extends \BBTestCase
      * @expectedException \FOSSBilling\Exception
      */
     #[DataProvider('SetDefaultExceptionProvider')]
-    public function testSetDefaultException(array $data, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $getByCodeCalled, $getByCodeReturn): void
+    public function testSetDefaultException(array $data, $getByCodeCalled, $getByCodeReturn): void
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
-        $service->expects($getByCodeCalled)
+        $service->expects($this->$getByCodeCalled())
             ->method('getByCode')
             ->willReturn($getByCodeReturn);
 

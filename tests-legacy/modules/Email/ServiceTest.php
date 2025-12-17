@@ -393,8 +393,6 @@ final class ServiceTest extends \BBTestCase
 
     public static function sendTemplateExistsStaffProvider()
     {
-        $self = new ServiceTest('ServiceTest');
-
         return [
             [
                 [
@@ -405,8 +403,8 @@ final class ServiceTest extends \BBTestCase
                     'default_description' => 'DESCRIPTION',
                     'to_staff' => 1,
                 ],
-                $self->never(),
-                $self->atLeastOnce(),
+                'never',
+                'atLeastOnce',
             ],
             [
                 [
@@ -417,8 +415,8 @@ final class ServiceTest extends \BBTestCase
                     'default_description' => 'DESCRIPTION',
                     'to_client' => 1,
                 ],
-                $self->atLeastOnce(),
-                $self->never(),
+                'atLeastOnce',
+                'never',
             ],
         ];
     }
@@ -456,7 +454,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn('value');
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
-        $staffServiceMock->expects($staffgetListExpects)
+        $staffServiceMock->expects($this->$staffgetListExpects())
             ->method('getList')
             ->willReturn(
                 [
@@ -474,7 +472,7 @@ final class ServiceTest extends \BBTestCase
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
-        $clientServiceMock->expects($clientGetExpects)
+        $clientServiceMock->expects($this->$clientGetExpects())
             ->method('get')
             ->willReturn($clientModel);
         $clientApiArray = [
@@ -483,7 +481,7 @@ final class ServiceTest extends \BBTestCase
             'first_name' => 'John',
             'last_name' => 'Smith',
         ];
-        $clientServiceMock->expects($clientGetExpects)
+        $clientServiceMock->expects($this->$clientGetExpects())
             ->method('toApiArray')
             ->willReturn($clientApiArray);
 
@@ -728,8 +726,6 @@ final class ServiceTest extends \BBTestCase
 
     public static function template_updateProvider()
     {
-        $self = new ServiceTest('ServiceTest');
-
         return [
             [
                 [
@@ -739,7 +735,7 @@ final class ServiceTest extends \BBTestCase
                     'subject' => null,
                     'content' => null,
                 ],
-                $self->never(),
+                'never',
             ],
             [
                 [
@@ -749,7 +745,7 @@ final class ServiceTest extends \BBTestCase
                     'subject' => 'Subject',
                     'content' => 'Content',
                 ],
-                $self->atLeastOnce(),
+                'atLeastOnce',
             ],
         ];
     }
@@ -762,7 +758,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = $id;
 
-        $emailServiceMock = $this->getMockBuilder(\Box\Mod\Email\Service::class)->addMethods(['template_render'])->getMock();
+        $emailService = new \Box\Mod\Email\Service();
 
         $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
@@ -785,15 +781,17 @@ final class ServiceTest extends \BBTestCase
         $di['twig'] = $twigMock;
 
         $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
+        $systemServiceMock->expects($this->$templateRenderExpects())
+            ->method('renderString');
 
         $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
 
-        $emailServiceMock->setDi($di);
+        $emailService->setDi($di);
 
         $templateModel = new \Model_EmailTemplate();
         $templateModel->loadBean(new \DummyBean());
 
-        $result = $emailServiceMock->updateTemplate($templateModel, $data['enabled'], $data['category'], $data['subject'], @$data['content']);
+        $result = $emailService->updateTemplate($templateModel, $data['enabled'], $data['category'], $data['subject'], @$data['content']);
         $this->assertTrue($result);
     }
 
@@ -873,14 +871,12 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($emailTemplateModel, $result);
     }
 
-    public static function batchTemplateGenerateProvider()
+    public static function batchTemplateGenerateProvider(): array
     {
-        $self = new ServiceTest('ServiceTest');
-
         return [
-            [true, false, $self->never(), $self->never()],
-            [false, true, $self->atLeastOnce(), $self->atLeastOnce()],
-            [true, true, $self->atLeastOnce(), $self->never()],
+            [true, false, 'never', 'never'],
+            [false, true, 'atLeastOnce', 'atLeastOnce'],
+            [true, true, 'atLeastOnce', 'never'],
         ];
     }
 
@@ -890,13 +886,13 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Email\Service();
 
         $db = $this->createMock('Box_Database');
-        $db->expects($findOneExpects)
+        $db->expects($this->$findOneExpects())
             ->method('findOne')
             ->willReturn($findOneReturn);
 
         $emailTemplateModel = new \Model_EmailTemplate();
         $emailTemplateModel->loadBean(new \DummyBean());
-        $db->expects($dispenseExpects)
+        $db->expects($this->$dispenseExpects())
             ->method('dispense')
             ->willReturn($emailTemplateModel);
 

@@ -102,7 +102,7 @@ final class ServiceTest extends \BBTestCase
 
     public static function getCurrencyByClientIdProvider(): array
     {
-        $self = new ServiceTest('ServiceTest');
+        
 
         $model = new \Model_Currency();
         $bean = new \DummyBean();
@@ -112,20 +112,20 @@ final class ServiceTest extends \BBTestCase
             [
                 $model,
                 'USD',
-                $self->atLeastOnce(),
-                $self->never(),
+                'atLeastOnce',
+                'never',
             ],
             [
                 $model,
                 null,
-                $self->never(),
-                $self->atLeastOnce(),
+                'never',
+                'atLeastOnce',
             ],
         ];
     }
 
     #[DataProvider('getCurrencyByClientIdProvider')]
-    public function testGetCurrencyByClientId(\Model_Currency $row, ?string $currency, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $expectsGetByCode, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $getDefaultCalled): void
+    public function testGetCurrencyByClientId(\Model_Currency $row, ?string $currency, $expectsGetByCode, $getDefaultCalled): void
     {
         $di = $this->getDi();
         $db = $this->createMock('Box_Database');
@@ -136,11 +136,11 @@ final class ServiceTest extends \BBTestCase
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Currency\Service::class)->onlyMethods(['getDefault', 'getByCode'])->getMock();
 
-        $serviceMock->expects($getDefaultCalled)
+        $serviceMock->expects($this->$getDefaultCalled())
             ->method('getDefault')
             ->willReturn($row);
 
-        $serviceMock->expects($expectsGetByCode)
+        $serviceMock->expects($this->$expectsGetByCode())
             ->method('getByCode')
             ->willReturn($row);
 
@@ -258,7 +258,7 @@ final class ServiceTest extends \BBTestCase
 
     public static function setAsDefaultProvider(): array
     {
-        $self = new ServiceTest('ServiceTest');
+        
 
         $firstModel = new \Model_Currency();
         $firstModel->loadBean(new \DummyBean());
@@ -270,19 +270,19 @@ final class ServiceTest extends \BBTestCase
         $secondModel->is_default = 1;
 
         return [
-            [$firstModel, $self->atLeastOnce()],
-            [$secondModel, $self->never()],
+            [$firstModel, 'atLeastOnce'],
+            [$secondModel, 'never'],
         ];
     }
 
     #[DataProvider('setAsDefaultProvider')]
-    public function testSetAsDefault(\Model_Currency $model, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $expects): void
+    public function testSetAsDefault(\Model_Currency $model, $expects): void
     {
         $service = new \Box\Mod\Currency\Service();
 
         $di = $this->getDi();
         $db = $this->createMock('Box_Database');
-        $db->expects($expects)
+        $db->expects($this->$expects())
             ->method('exec')
             ->willReturn(true);
 

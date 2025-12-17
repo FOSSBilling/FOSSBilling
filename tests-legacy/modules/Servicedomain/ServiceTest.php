@@ -89,7 +89,7 @@ final class ServiceTest extends \BBTestCase
 
     public static function validateOrderDateTransferExceptionsProvider()
     {
-        $self = new ServiceTest('ServiceTest');
+        
 
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
@@ -103,15 +103,15 @@ final class ServiceTest extends \BBTestCase
                     'transfer_tld' => '.com',
                 ],
                 [ // isSldValidArr
-                    'called' => $self->atLeastOnce(),
+                    'called' => 'atLeastOnce',
                     'returns' => true,
                 ],
                 [ // tldFindOneByTldArr
-                    'called' => $self->atLeastOnce(),
+                    'called' => 'atLeastOnce',
                     'returns' => null,
                 ],
                 [ // canBeTransferred
-                    'called' => $self->never(),
+                    'called' => 'never',
                     'returns' => true,
                 ],
             ],
@@ -122,15 +122,15 @@ final class ServiceTest extends \BBTestCase
                     'transfer_tld' => '.com',
                 ],
                 [ // isSldValidArr
-                    'called' => $self->atLeastOnce(),
+                    'called' => 'atLeastOnce',
                     'returns' => true,
                 ],
                 [ // tldFindOneByTldArr
-                    'called' => $self->atLeastOnce(),
+                    'called' => 'atLeastOnce',
                     'returns' => $tldModel,
                 ],
                 [ // canBeTransferred
-                    'called' => $self->atLeastOnce(),
+                    'called' => 'atLeastOnce',
                     'returns' => false,
                 ],
             ],
@@ -141,16 +141,16 @@ final class ServiceTest extends \BBTestCase
     public function testValidateOrderDateTransferExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBeTransferred): void
     {
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
+        $validatorMock->expects($this->{$isSldValidArr['called']}())->method('isSldValid')
             ->willReturn($isSldValidArr['returns']);
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
             ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'canBeTransferred'])->getMock();
-        $serviceMock->expects($tldFindOneByTldArr['called'])->method('tldFindOneByTld')
+        $serviceMock->expects($this->{$tldFindOneByTldArr['called']}())->method('tldFindOneByTld')
             ->willReturn($tldFindOneByTldArr['returns']);
-        $serviceMock->expects($canBeTransferred['called'])->method('canBeTransferred')
+        $serviceMock->expects($this->{$canBeTransferred['called']}())->method('canBeTransferred')
             ->willReturn($canBeTransferred['returns']);
 
         $di = $this->getDi();
@@ -164,7 +164,7 @@ final class ServiceTest extends \BBTestCase
 
     public static function validateOrderDateRegisterExceptionsProvider()
     {
-        $self = new ServiceTest('ServiceTest');
+        
 
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
@@ -180,15 +180,15 @@ final class ServiceTest extends \BBTestCase
                     'register_tld' => '.com',
                 ],
                 [ // isSldValidArr
-                    'called' => $self->atLeastOnce(),
+                    'called' => 'atLeastOnce',
                     'returns' => true,
                 ],
                 [ // tldFindOneByTldArr
-                    'called' => $self->atLeastOnce(),
+                    'called' => 'atLeastOnce',
                     'returns' => null,
                 ],
                 [ // isDomainAvailable
-                    'called' => $self->never(),
+                    'called' => 'never',
                     'returns' => true,
                 ],
             ],
@@ -200,15 +200,15 @@ final class ServiceTest extends \BBTestCase
                     'register_tld' => '.com',
                 ],
                 [ // isSldValidArr
-                    'called' => $self->atLeastOnce(),
+                    'called' => 'atLeastOnce',
                     'returns' => true,
                 ],
                 [ // tldFindOneByTldArr
-                    'called' => $self->atLeastOnce(),
+                    'called' => 'atLeastOnce',
                     'returns' => $tldModel,
                 ],
                 [ // isDomainAvailable
-                    'called' => $self->never(),
+                    'called' => 'never',
                     'returns' => true,
                 ],
             ],
@@ -220,15 +220,15 @@ final class ServiceTest extends \BBTestCase
                     'register_years' => 2,
                 ],
                 [ // isSldValidArr
-                    'called' => $self->atLeastOnce(),
+                    'called' => 'atLeastOnce',
                     'returns' => true,
                 ],
                 [ // tldFindOneByTldArr
-                    'called' => $self->atLeastOnce(),
+                    'called' => 'atLeastOnce',
                     'returns' => $tldModel,
                 ],
                 [ // isDomainAvailable
-                    'called' => $self->atLeastOnce(),
+                    'called' => 'atLeastOnce',
                     'returns' => false,
                 ],
             ],
@@ -236,28 +236,27 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('validateOrderDateRegisterExceptionsProvider')]
-    public function testValidateOrderDateRegisterExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBeTransferred): void
+    public function testValidateOrderDateRegisterExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $isDomainAvailable): void
     {
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
+        $validatorMock->expects($this->{$isSldValidArr['called']}())->method('isSldValid')
             ->willReturn($isSldValidArr['returns']);
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
             ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'isDomainAvailable'])->getMock();
-        $serviceMock->expects($tldFindOneByTldArr['called'])->method('tldFindOneByTld')
+        $serviceMock->expects($this->{$tldFindOneByTldArr['called']}())->method('tldFindOneByTld')
             ->willReturn($tldFindOneByTldArr['returns']);
-        $serviceMock->expects($canBeTransferred['called'])->method('isDomainAvailable')
-            ->willReturn($canBeTransferred['returns']);
+        $serviceMock->expects($this->{$isDomainAvailable['called']}())->method('isDomainAvailable')
+            ->willReturn($isDomainAvailable['returns']);
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $serviceMock->validateOrderData($data);
-        $this->assertNull($result);
+        $serviceMock->validateOrderData($data);
     }
 
     public function testActionCreate(): void
@@ -389,18 +388,18 @@ final class ServiceTest extends \BBTestCase
 
     public static function actionActivateProvider()
     {
-        $self = new ServiceTest('ServiceTest');
+        
 
         return [
             [
                 'register',
-                $self->atLeastOnce(),
-                $self->never(),
+                'atLeastOnce',
+                'never',
             ],
             [
                 'transfer',
-                $self->never(),
-                $self->atLeastOnce(),
+                'never',
+                'atLeastOnce',
             ],
         ];
     }
@@ -424,9 +423,9 @@ final class ServiceTest extends \BBTestCase
 
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
-        $registrarAdapterMock->expects($registerDomainCalled)->method('registerDomain')
+        $registrarAdapterMock->expects($this->$registerDomainCalled())->method('registerDomain')
             ;
-        $registrarAdapterMock->expects($transferDomainCalled)->method('transferDomain')
+        $registrarAdapterMock->expects($this->$transferDomainCalled())->method('transferDomain')
             ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
@@ -1072,7 +1071,7 @@ final class ServiceTest extends \BBTestCase
 
     public static function toApiArrayProvider()
     {
-        $self = new ServiceTest('ServiceTest');
+        
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -1080,11 +1079,11 @@ final class ServiceTest extends \BBTestCase
         return [
             [
                 $model,
-                $self->atLeastOnce(),
+                'atLeastOnce',
             ],
             [
                 null,
-                $self->never(),
+                'never',
             ],
         ];
     }
@@ -1127,7 +1126,7 @@ final class ServiceTest extends \BBTestCase
         $tldRegistrar->name = 'ResellerClub';
 
         $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($dbLoadCalled)
+        $dbMock->expects($this->$dbLoadCalled())
             ->method('load')
             ->willReturn($tldRegistrar);
 

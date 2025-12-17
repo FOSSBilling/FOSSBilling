@@ -989,7 +989,7 @@ final class AdminTest extends \BBTestCase
 
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->onConsecutiveCalls($client, $model));
+            ->willReturn($client, $model);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -1019,7 +1019,7 @@ final class AdminTest extends \BBTestCase
 
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->will($this->onConsecutiveCalls($client, $model));
+            ->willReturn($client, $model);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;

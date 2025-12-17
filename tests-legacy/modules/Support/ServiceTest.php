@@ -1787,22 +1787,22 @@ final class ServiceTest extends \BBTestCase
 
     public static function publicToApiArrayProvider(): array
     {
-        $self = new ServiceTest('ServiceTest');
+        
 
         return [
             [
                 new \Model_SupportPTicketMessage(),
-                $self->atLeastOnce(),
+                'atLeastOnce',
             ],
             [
                 null,
-                $self->never(),
+                'never',
             ],
         ];
     }
 
     #[DataProvider('publicToApiArrayProvider')]
-    public function testPublicToApiArray(?\Model_SupportPTicketMessage $findOne, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $publicMessageGetAuthorDetailsCalled): void
+    public function testPublicToApiArray(?\Model_SupportPTicketMessage $findOne, $publicMessageGetAuthorDetailsCalled): void
     {
         $ticketMessages = [new \Model_SupportPTicketMessage(), new \Model_SupportPTicketMessage()];
 

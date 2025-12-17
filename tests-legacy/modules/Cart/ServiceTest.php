@@ -75,24 +75,24 @@ final class ServiceTest extends \BBTestCase
 
     public static function getSessionCartDoesNotExistProvider(): array
     {
-        $self = new ServiceTest('ServiceTest');
+        
 
         return [
             [
                 100,
-                $self->atLeastOnce(),
-                $self->never(),
+                'atLeastOnce',
+                'never',
             ],
             [
                 null,
-                $self->never(),
-                $self->atLeastOnce(),
+                'never',
+                'atLeastOnce',
             ],
         ];
     }
 
     #[DataProvider('getSessionCartDoesNotExistProvider')]
-    public function testGetSessionCartDoesNotExist(?int $sessionGetWillReturn, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $getCurrencyByClientIdExpects, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $getDefaultExpects): void
+    public function testGetSessionCartDoesNotExist(?int $sessionGetWillReturn, $getCurrencyByClientIdExpects, $getDefaultExpects): void
     {
         $service = new \Box\Mod\Cart\Service();
 
@@ -126,10 +126,10 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($sessionGetWillReturn);
 
         $currencyServiceMock = $this->getMockBuilder(\Box\Mod\Currency\Service::class)->onlyMethods(['getCurrencyByClientId', 'getDefault'])->getMock();
-        $currencyServiceMock->expects($getCurrencyByClientIdExpects)
+        $currencyServiceMock->expects($this->$getCurrencyByClientIdExpects())
             ->method('getCurrencyByClientId')
             ->willReturn($curencyModel);
-        $currencyServiceMock->expects($getDefaultExpects)
+        $currencyServiceMock->expects($this->$getDefaultExpects())
             ->method('getDefault')
             ->willReturn($curencyModel);
 
