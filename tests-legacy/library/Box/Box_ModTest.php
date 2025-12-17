@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
-final class Box_ModTest extends PHPUnit\Framework\TestCase
+#[Group('Core')]
+final class Box_ModTest extends \BBTestCase
 {
     public function testEmptyConfig(): void
     {
@@ -12,7 +12,7 @@ final class Box_ModTest extends PHPUnit\Framework\TestCase
             ->method('findOne')
             ->willReturn(null);
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
 
         $mod = new Box_Mod('api');
@@ -35,7 +35,7 @@ final class Box_ModTest extends PHPUnit\Framework\TestCase
 
     public function testManifest(): void
     {
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $di['url'] = new Box_Url();
 
         $mod = new Box_Mod('Cookieconsent');
@@ -53,7 +53,7 @@ final class Box_ModTest extends PHPUnit\Framework\TestCase
         $mod = new Box_Mod('Invoice');
         $subServiceName = 'transaction';
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $mod->setDi($di);
 
         $subService = $mod->getService($subServiceName);

@@ -3,13 +3,15 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Client\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $client = new Guest();
         $client->setDi($di);
         $getDi = $client->getDi();
@@ -29,7 +31,7 @@ final class GuestTest extends \BBTestCase
             'password_confirm' => 'testpaswword',
         ];
 
-        $serviceMock = $this->createMock("Box\Mod\Client\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('clientAlreadyExists')
             ->willReturn(false);
@@ -46,13 +48,13 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('checkCustomFields');
 
-        $validatorMock = $this->createMock("FOSSBilling\Validate::class");
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
 
-        $toolsMock = $this->createMock("FOSSBilling\Tools::class");
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($name) => $configArr);
         $di['validator'] = $validatorMock;
         $di['tools'] = $toolsMock;
@@ -79,7 +81,7 @@ final class GuestTest extends \BBTestCase
             'password_confirm' => 'testpaswword',
         ];
 
-        $serviceMock = $this->createMock("Box\Mod\Client\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('clientAlreadyExists')
             ->willReturn(true);
@@ -91,14 +93,14 @@ final class GuestTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $validatorMock = $this->createMock("FOSSBilling\Validate::class");
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($name) => $configArr);
         $di['validator'] = $validatorMock;
 
-        $toolsMock = $this->createMock("FOSSBilling\Tools::class");
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
@@ -106,7 +108,7 @@ final class GuestTest extends \BBTestCase
         $client->setDi($di);
         $client->setService($serviceMock);
 
-        $this->expectException("FOSSBilling\Exception::class");
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('This email address is already registered.');
         $client->create($data);
     }
@@ -124,11 +126,11 @@ final class GuestTest extends \BBTestCase
         ];
 
         $client = new Guest();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($name) => $configArr);
         $client->setDi($di);
 
-        $this->expectException("FOSSBilling\Exception::class");
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('New registrations are temporary disabled');
         $client->create($data);
     }
@@ -146,11 +148,11 @@ final class GuestTest extends \BBTestCase
         ];
 
         $client = new Guest();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($name) => $configArr);
         $client->setDi($di);
 
-        $this->expectException("FOSSBilling\Exception::class");
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Passwords do not match.');
         $client->create($data);
     }
@@ -165,7 +167,7 @@ final class GuestTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->createMock("Box\Mod\Client\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('authorizeClient')
             ->with($data['email'], $data['password'])
@@ -177,22 +179,22 @@ final class GuestTest extends \BBTestCase
         $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $sessionMock = $this->getMockBuilder('\' . \FOSSBilling\Session::class)
+        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
 
         $sessionMock->expects($this->atLeastOnce())
             ->method('set');
 
-        $cartServiceMock = $this->createMock("Box\Mod\Cart\Service::class");
+        $cartServiceMock = $this->createMock(\Box\Mod\Cart\Service::class);
         $cartServiceMock->expects($this->once())
             ->method('transferFromOtherSession')
             ->willReturn(true);
 
-        $toolsMock = $this->createMock("FOSSBilling\Tools::class");
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         // $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
@@ -233,14 +235,14 @@ final class GuestTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')->willReturn(1);
 
-        $emailServiceMock = $this->createMock("Box\Mod\Email\Service::class");
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate');
 
-        $toolsMock = $this->createMock("FOSSBilling\Tools::class");
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->once())
             ->method('validateAndSanitizeEmail')->willReturn($data['email']);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name) => $emailServiceMock);
@@ -265,11 +267,11 @@ final class GuestTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
 
-        $toolsMock = $this->createMock("FOSSBilling\Tools::class");
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
@@ -315,15 +317,15 @@ final class GuestTest extends \BBTestCase
         $eventMock->expects($this->exactly(2))
             ->method('fire');
 
-        $passwordMock = $this->createMock("FOSSBilling\PasswordManager::class");
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->once())
             ->method('hashIt');
 
-        $emailServiceMock = $this->createMock("Box\Mod\Email\Service::class");
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->once())
             ->method('sendTemplate');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['password'] = $passwordMock;
@@ -356,7 +358,7 @@ final class GuestTest extends \BBTestCase
             ->method('fire');
 
         // Dependency injection container setup
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
 
@@ -364,7 +366,7 @@ final class GuestTest extends \BBTestCase
         $client->setDi($di);
 
         // Expect a FOSSBilling\Exception to be thrown with a specific message
-        $this->expectException("FOSSBilling\Exception::class");
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('The link has expired or you have already reset your password.');
         $client->update_password($data);
     }
@@ -373,7 +375,7 @@ final class GuestTest extends \BBTestCase
     {
         $configArr = [];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($name) => $configArr);
 
         $client = new Guest();

@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Servicedomain\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class Api_GuestTest extends \BBTestCase
 {
     protected ?\Box\Mod\Servicedomain\Api\Guest $guestApi;
@@ -16,7 +18,7 @@ final class Api_GuestTest extends \BBTestCase
 
     public function testTlds(): void
     {
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldToApiArray')
             ->willReturn([]);
@@ -28,7 +30,7 @@ final class Api_GuestTest extends \BBTestCase
             ->method('find')
             ->willReturn([new \Model_Tld()]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->guestApi->setDi($di);
@@ -40,14 +42,14 @@ final class Api_GuestTest extends \BBTestCase
 
     public function testPricing(): void
     {
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'tldToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
         $serviceMock->expects($this->atLeastOnce())->method('tldToApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);
 
@@ -61,16 +63,16 @@ final class Api_GuestTest extends \BBTestCase
 
     public function testPricingTldNotFoundException(): void
     {
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'tldToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(null);
         $serviceMock->expects($this->never())->method('tldToApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);
@@ -86,7 +88,7 @@ final class Api_GuestTest extends \BBTestCase
 
     public function testCheck(): void
     {
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'isDomainAvailable'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
@@ -99,7 +101,7 @@ final class Api_GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -118,7 +120,7 @@ final class Api_GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -133,7 +135,7 @@ final class Api_GuestTest extends \BBTestCase
 
     public function testCheckTldNotFoundException(): void
     {
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'isDomainAvailable'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(null);
@@ -146,7 +148,7 @@ final class Api_GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -161,7 +163,7 @@ final class Api_GuestTest extends \BBTestCase
 
     public function testCheckDomainNotAvailableException(): void
     {
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'isDomainAvailable'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
@@ -174,7 +176,7 @@ final class Api_GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -189,16 +191,16 @@ final class Api_GuestTest extends \BBTestCase
 
     public function testCanBeTransferred(): void
     {
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'canBeTransferred'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
         $serviceMock->expects($this->atLeastOnce())->method('canBeTransferred')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
 
@@ -215,16 +217,16 @@ final class Api_GuestTest extends \BBTestCase
 
     public function testCanBeTransferredTldNotFoundException(): void
     {
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'canBeTransferred'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(null);
         $serviceMock->expects($this->never())->method('canBeTransferred')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);
@@ -240,16 +242,16 @@ final class Api_GuestTest extends \BBTestCase
 
     public function testCanBeTransferredCanNotBeTransferredException(): void
     {
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'canBeTransferred'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
         $serviceMock->expects($this->atLeastOnce())->method('canBeTransferred')
             ->willReturn(false);
 
-        $validatorMock = $this->getMockBuilder('\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);

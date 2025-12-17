@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
     protected ?Admin $api;
@@ -16,7 +18,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -29,7 +31,7 @@ final class AdminTest extends \BBTestCase
         ];
 
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder('\' . Admin::class)
+        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -37,7 +39,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountPlan')
             ->willReturn(true);
@@ -47,7 +49,7 @@ final class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ServiceHostingHp());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $apiMock->setDi($di);
@@ -62,9 +64,9 @@ final class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $validatorMock = $this->getMockBuilder('\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
@@ -76,7 +78,7 @@ final class AdminTest extends \BBTestCase
     public function testChangeUsername(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder('\' . Admin::class)
+        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -84,7 +86,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountUsername')
             ->willReturn(true);
@@ -99,7 +101,7 @@ final class AdminTest extends \BBTestCase
     public function testChangeIp(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder('\' . Admin::class)
+        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -107,7 +109,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountIp')
             ->willReturn(true);
@@ -122,7 +124,7 @@ final class AdminTest extends \BBTestCase
     public function testChangeDomain(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder('\' . Admin::class)
+        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -130,7 +132,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountDomain')
             ->willReturn(true);
@@ -145,7 +147,7 @@ final class AdminTest extends \BBTestCase
     public function testChangePassword(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder('\' . Admin::class)
+        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -153,7 +155,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountPassword')
             ->willReturn(true);
@@ -168,7 +170,7 @@ final class AdminTest extends \BBTestCase
     public function testSync(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder('\' . Admin::class)
+        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -176,7 +178,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('sync')
             ->willReturn(true);
@@ -191,7 +193,7 @@ final class AdminTest extends \BBTestCase
     public function testUpdate(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder('\' . Admin::class)
+        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -199,7 +201,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
@@ -213,7 +215,7 @@ final class AdminTest extends \BBTestCase
 
     public function testManagerGetPairs(): void
     {
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServerManagers')
             ->willReturn([]);
@@ -226,7 +228,7 @@ final class AdminTest extends \BBTestCase
 
     public function testServerGetPairs(): void
     {
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServerPairs')
             ->willReturn([]);
@@ -239,12 +241,12 @@ final class AdminTest extends \BBTestCase
 
     public function testAccountGetList(): void
     {
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAccountsSearchQuery')
             ->willReturn(['SQLstring', []]);
 
-        $pagerMock = $this->getMockBuilder('\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -252,8 +254,8 @@ final class AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
-        $di = new \Pimple\Container();
-        $systemServiceMock = $this->createMock("Box\Mod\System\Service::class");
+        $di = $this->getDi();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $dbMock = $this->createMock('Box_Database');
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['pager'] = $pagerMock;
@@ -268,12 +270,12 @@ final class AdminTest extends \BBTestCase
 
     public function testServerGetList(): void
     {
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServersSearchQuery')
             ->willReturn(['SQLstring', []]);
 
-        $pagerMock = $this->getMockBuilder('\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -281,7 +283,7 @@ final class AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pagerMock;
         $dbMock = $this->createMock('Box_Database');
         $di['db'] = $dbMock;
@@ -303,13 +305,13 @@ final class AdminTest extends \BBTestCase
 
         $newServerId = 1;
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('createServer')
             ->willReturn($newServerId);
 
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -323,7 +325,7 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toHostingServerApiArray')
             ->willReturn([]);
@@ -334,7 +336,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn(new \Model_ServiceHostingServer());
 
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -348,7 +350,7 @@ final class AdminTest extends \BBTestCase
         // Test case 1: Server can be deleted
         $data['id'] = 1;
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteServer')
             ->willReturn(true);
@@ -359,7 +361,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn(new \Model_ServiceHostingServer());
 
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -381,7 +383,7 @@ final class AdminTest extends \BBTestCase
             ->method('find')
             ->willReturn(['dummy_data']);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->api->setDi($di);
 
@@ -396,7 +398,7 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateServer')
             ->willReturn(true);
@@ -406,7 +408,7 @@ final class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ServiceHostingServer());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -420,7 +422,7 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('testConnection')
             ->willReturn(true);
@@ -430,7 +432,7 @@ final class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ServiceHostingServer());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -442,7 +444,7 @@ final class AdminTest extends \BBTestCase
 
     public function testHpGetPairs(): void
     {
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getHpPairs')
             ->willReturn([]);
@@ -454,12 +456,12 @@ final class AdminTest extends \BBTestCase
 
     public function testHpGetList(): void
     {
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getHpSearchQuery')
             ->willReturn(['SQLstring', []]);
 
-        $pagerMock = $this->getMockBuilder('\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -467,7 +469,7 @@ final class AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pagerMock;
 
         $this->api->setDi($di);
@@ -485,7 +487,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_ServiceHostingHp();
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteHp')
             ->willReturn(true);
@@ -495,7 +497,7 @@ final class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -521,7 +523,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_ServiceHostingHp();
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toHostingHpApiArray')
             ->willReturn([]);
@@ -532,7 +534,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn($model);
 
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -549,7 +551,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_ServiceHostingHp();
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateHp')
             ->willReturn(true);
@@ -560,7 +562,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn($model);
 
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -578,13 +580,13 @@ final class AdminTest extends \BBTestCase
 
         $newHpId = 2;
 
-        $serviceMock = $this->createMock("Box\Mod\Servicehosting\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('createHp')
             ->willReturn($newHpId);
 
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -607,16 +609,16 @@ final class AdminTest extends \BBTestCase
             ->willReturn($clientOrderModel);
 
         $model = new \Model_ServiceHosting();
-        $orderServiceMock = $this->createMock("Box\Mod\Order\Service::class");
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
-        $validatorMock = $this->getMockBuilder('\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ;
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
         $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
@@ -642,14 +644,14 @@ final class AdminTest extends \BBTestCase
             ->willReturn($clientOrderModel);
 
         $model = null;
-        $orderServiceMock = $this->createMock("Box\Mod\Order\Service::class");
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
 
-        $validatorMock = $this->getMockBuilder('\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
         $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;

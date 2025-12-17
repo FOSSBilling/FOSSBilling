@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Support\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class Api_AdminTest extends \BBTestCase
 {
     protected ?\Box\Mod\Support\Api\Admin $adminApi;
@@ -21,7 +23,7 @@ final class Api_AdminTest extends \BBTestCase
                 ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\' . \FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -29,7 +31,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($simpleResultArr);
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['getSearchQuery', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->willReturn(['query', []]);
@@ -44,7 +46,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
@@ -66,12 +68,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicket());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -93,12 +95,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicket());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['ticketUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketUpdate')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -120,12 +122,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicketMessage());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['ticketMessageUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketMessageUpdate')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -148,12 +150,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicket());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['rm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('rm')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -175,12 +177,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicket());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['ticketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -207,12 +209,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($ticket);
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['closeTicket'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('closeTicket')
-            ->willReturn(true);
+            ;
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -239,12 +241,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($ticket);
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['closeTicket'])->getMock();
         $serviceMock->expects($this->never())->method('closeTicket')
-            ->willReturn(true);
+            ;
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -277,7 +279,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForAdmin')
             ->willReturn($randID);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -298,7 +300,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testBatchTicketAutoClose(): void
     {
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['getExpired', 'autoClose'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getExpired')
             ->willReturn([['id' => 1], ['id' => 2]]);
@@ -315,7 +317,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn($ticket);
 
         $this->adminApi->setService($serviceMock);
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $this->adminApi->setDi($di);
@@ -332,12 +334,12 @@ final class Api_AdminTest extends \BBTestCase
         $ticket->loadBean(new \DummyBean());
         $ticket->id = 1;
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['getExpired', 'autoClose'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getExpired')
             ->willReturn([['id' => 1], ['id' => 2]]);
         $serviceMock->expects($this->atLeastOnce())->method('autoClose')
-            ->willReturn(null);
+            ;
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -345,7 +347,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn($ticket);
 
         $this->adminApi->setService($serviceMock);
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = $this->createMock('Box_Log');
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
@@ -356,7 +358,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testBatchPublicTicketAutoClose(): void
     {
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicGetExpired', 'publicAutoClose'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicGetExpired')
             ->willReturn([new \Model_SupportPTicket(), new \Model_SupportPTicket()]);
@@ -376,15 +378,15 @@ final class Api_AdminTest extends \BBTestCase
         $ticket->loadBean(new \DummyBean());
         $ticket->id = 1;
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicGetExpired', 'publicAutoClose'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicGetExpired')
             ->willReturn([$ticket, $ticket]);
         $serviceMock->expects($this->atLeastOnce())->method('publicAutoClose')
-            ->willReturn(null);
+            ;
 
         $this->adminApi->setService($serviceMock);
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = $this->createMock('Box_Log');
         $this->adminApi->setDi($di);
         $result = $this->adminApi->batch_public_ticket_auto_close([]);
@@ -399,7 +401,7 @@ final class Api_AdminTest extends \BBTestCase
             \Model_SupportPTicket::ONHOLD => 'On hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['getStatuses', 'counter'])->getMock();
         $serviceMock->expects($this->never())->method('getStatuses')
             ->willReturn($statuses);
@@ -420,7 +422,7 @@ final class Api_AdminTest extends \BBTestCase
             \Model_SupportPTicket::ONHOLD => 'On hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['getStatuses', 'counter'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getStatuses')
             ->willReturn($statuses);
@@ -444,7 +446,7 @@ final class Api_AdminTest extends \BBTestCase
                 0 => ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\' . \FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -452,7 +454,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($resultSet);
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicGetSearchQuery', 'publicToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicGetSearchQuery')
             ->willReturn(['query', []]);
@@ -466,7 +468,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
@@ -484,12 +486,12 @@ final class Api_AdminTest extends \BBTestCase
     {
 
         $randID = 1;
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicTicketCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketCreate')
             ->willReturn($randID);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -517,12 +519,12 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn(new \Model_SupportPTicket());
 
         $randID = 1;
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -544,12 +546,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPTicket());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicRm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicRm')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -571,12 +573,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPTicket());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicCloseTicket'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicCloseTicket')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -599,12 +601,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPTicket());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicTicketUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketUpdate')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -627,12 +629,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPTicket());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicTicketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketReply')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -655,7 +657,7 @@ final class Api_AdminTest extends \BBTestCase
             \Model_SupportPTicket::ONHOLD => 'On hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicGetStatuses', 'publicCounter'])->getMock();
         $serviceMock->expects($this->never())->method('publicGetStatuses')
             ->willReturn($statuses);
@@ -676,7 +678,7 @@ final class Api_AdminTest extends \BBTestCase
             \Model_SupportPTicket::ONHOLD => 'On hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicGetStatuses', 'publicCounter'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicGetStatuses')
             ->willReturn($statuses);
@@ -695,7 +697,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testHelpdeksGetList(): void
     {
-        $paginatorMock = $this->getMockBuilder('\' . \FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -703,12 +705,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn([]);
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['helpdeskGetSearchQuery'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskGetSearchQuery')
             ->willReturn(['query', []]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $paginatorMock;
 
         $this->adminApi->setDi($di);
@@ -723,7 +725,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testHelpdeksGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['helpdeskGetPairs'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskGetPairs')
             ->willReturn([]);
@@ -744,12 +746,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportHelpdesk());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['helpdeskToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskToApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -772,12 +774,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportHelpdesk());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['helpdeskUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskUpdate')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -795,12 +797,12 @@ final class Api_AdminTest extends \BBTestCase
     public function testHelpdeskCreate(): void
     {
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['helpdeskCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskCreate')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -822,12 +824,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportHelpdesk());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['helpdeskRm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskRm')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -849,7 +851,7 @@ final class Api_AdminTest extends \BBTestCase
                 0 => ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\' . \FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -857,7 +859,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($resultSet);
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedGetSearchQuery', 'cannedToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedGetSearchQuery')
             ->willReturn(['query', []]);
@@ -871,7 +873,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
@@ -892,7 +894,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getAssoc')
             ->willReturn([1 => 'Title']);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -910,12 +912,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPr());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedToApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -938,12 +940,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPr());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedRm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedRm')
-            ->willReturn([]);
+            ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -961,12 +963,12 @@ final class Api_AdminTest extends \BBTestCase
     public function testCannedCreate(): void
     {
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCreate')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -985,17 +987,17 @@ final class Api_AdminTest extends \BBTestCase
     public function testCannedUpdate(): void
     {
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedUpdate')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(true);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPr());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -1017,7 +1019,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getAssoc')
             ->willReturn([1 => 'Category 1']);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -1039,12 +1041,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPrCategory());
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedCategoryToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryToApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -1070,12 +1072,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($supportCategory);
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedCategoryUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryUpdate')
-            ->willReturn([]);
+            ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->adminApi->setDi($di);
@@ -1103,12 +1105,12 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($supportCategory);
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedCategoryRm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryRm')
-            ->willReturn([]);
+            ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -1126,12 +1128,12 @@ final class Api_AdminTest extends \BBTestCase
     public function testCannedCategoryCreate(): void
     {
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedCategoryCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryCreate')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -1147,17 +1149,17 @@ final class Api_AdminTest extends \BBTestCase
     public function testCannedNoteCreate(): void
     {
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['noteCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('noteCreate')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicket());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -1176,17 +1178,17 @@ final class Api_AdminTest extends \BBTestCase
     public function testCannedNoteDelete(): void
     {
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['noteRm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('noteRm')
-            ->willReturn([]);
+            ->willReturn(true);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicketNote());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -1204,7 +1206,7 @@ final class Api_AdminTest extends \BBTestCase
     public function testTaskComplete(): void
     {
 
-        $serviceMock = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['ticketTaskComplete'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketTaskComplete')
             ->willReturn(true);
@@ -1214,7 +1216,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportTicket());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->adminApi->setDi($di);
 
@@ -1230,11 +1232,11 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testBatchDelete(): void
     {
-        $activityMock = $this->getMockBuilder('\' . \Box\Mod\Support\Api\Admin::class)->onlyMethods(['ticket_delete'])->getMock();
+        $activityMock = $this->getMockBuilder(\Box\Mod\Support\Api\Admin::class)->onlyMethods(['ticket_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('ticket_delete')->willReturn(true);
 
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $activityMock->setDi($di);
 
         $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);
@@ -1243,11 +1245,11 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testBatchDeletePublic(): void
     {
-        $activityMock = $this->getMockBuilder('\' . \Box\Mod\Support\Api\Admin::class)->onlyMethods(['public_ticket_delete'])->getMock();
+        $activityMock = $this->getMockBuilder(\Box\Mod\Support\Api\Admin::class)->onlyMethods(['public_ticket_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('public_ticket_delete')->willReturn(true);
 
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $activityMock->setDi($di);
 
         $result = $activityMock->batch_delete_public(['ids' => [1, 2, 3]]);
@@ -1260,7 +1262,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleGetList(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $adminApi = new \Box\Mod\Support\Api\Admin();
         $adminApi->setDi($di);
@@ -1300,7 +1302,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $admin->id = 5;
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['loggedin_admin'] = $admin;
         $di['db'] = $db;
         
@@ -1329,7 +1331,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         
         $adminApi->setDi($di);
@@ -1348,7 +1350,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $id = 1;
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCreateArticle'])->getMock();
         $kbService->expects($this->atLeastOnce())
@@ -1381,7 +1383,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService->expects($this->atLeastOnce())
             ->method('kbUpdateArticle')
             ->willReturn(true);
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $adminApi->setDi($di);
 
@@ -1404,7 +1406,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticle());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
 
         $adminApi->setDi($di);
@@ -1412,7 +1414,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbRm'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbRm')
-            ->willReturn(true);
+            ;
         $adminApi->setService($kbService);
 
         $result = $adminApi->kb_article_delete($data);
@@ -1428,7 +1430,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
 
         $adminApi->setDi($di);
@@ -1436,7 +1438,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbRm'])->getMock();
         $kbService->expects($this->never())
             ->method('kbRm')
-            ->willReturn(true);
+            ;
         $adminApi->setService($kbService);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -1456,12 +1458,12 @@ final class Api_AdminTest extends \BBTestCase
             'list' => [],
         ];
 
-        $kbService = $this->getMockBuilder('\' . \Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryGetSearchQuery'])->getMock();
+        $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryGetSearchQuery'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCategoryGetSearchQuery')
             ->willReturn(['String', []]);
 
-        $pager = $this->getMockBuilder('\' . \FOSSBilling\Pagination::class)
+        $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
             ->onlyMethods(['getPaginatedResultSet'])
             ->getMock();
 
@@ -1469,7 +1471,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($willReturn);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pager;
 
         $adminApi->setDi($di);
@@ -1489,7 +1491,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticleCategory());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $di['validator'] = new \FOSSBilling\Validate();
 
@@ -1517,7 +1519,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticleCategory());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $di['validator'] = new \FOSSBilling\Validate();
 
@@ -1544,7 +1546,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $di['db'] = $db;
         $di['validator'] = new \FOSSBilling\Validate();
@@ -1572,7 +1574,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCreateCategory'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCreateCategory')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
         $adminApi->setService($kbService);
 
         $data = [
@@ -1580,7 +1582,7 @@ final class Api_AdminTest extends \BBTestCase
             'description' => 'Description',
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $adminApi->setDi($di);
 
@@ -1595,7 +1597,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbUpdateCategory'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbUpdateCategory')
-            ->willReturn([]);
+            ->willReturn(true);
         $adminApi->setService($kbService);
 
         $db = $this->createMock('Box_Database');
@@ -1603,7 +1605,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticleCategory());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $di['validator'] = new \FOSSBilling\Validate();
 
@@ -1627,7 +1629,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbUpdateCategory'])->getMock();
         $kbService->expects($this->never())
             ->method('kbUpdateCategory')
-            ->willReturn([]);
+            ->willReturn(true);
         $adminApi->setService($kbService);
 
         $db = $this->createMock('Box_Database');
@@ -1635,7 +1637,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticleCategory());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $di['validator'] = new \FOSSBilling\Validate();
 
@@ -1656,7 +1658,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbUpdateCategory'])->getMock();
         $kbService->expects($this->never())
             ->method('kbUpdateCategory')
-            ->willReturn([]);
+            ->willReturn(true);
         $adminApi->setService($kbService);
 
         $db = $this->createMock('Box_Database');
@@ -1664,7 +1666,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $di['validator'] = new \FOSSBilling\Validate();
 
@@ -1689,7 +1691,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryRm'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCategoryRm')
-            ->willReturn([]);
+            ->willReturn(true);
         $adminApi->setService($kbService);
 
         $db = $this->createMock('Box_Database');
@@ -1697,7 +1699,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticleCategory());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $di['validator'] = new \FOSSBilling\Validate();
 
@@ -1717,7 +1719,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryRm'])->getMock();
         $kbService->expects($this->never())
             ->method('kbCategoryRm')
-            ->willReturn([]);
+            ->willReturn(true);
         $adminApi->setService($kbService);
 
         $db = $this->createMock('Box_Database');
@@ -1725,7 +1727,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_SupportKbArticleCategory());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $di['validator'] = new \FOSSBilling\Validate();
 
@@ -1745,7 +1747,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryRm'])->getMock();
         $kbService->expects($this->never())
             ->method('kbCategoryRm')
-            ->willReturn([]);
+            ->willReturn(true);
         $adminApi->setService($kbService);
 
         $db = $this->createMock('Box_Database');
@@ -1753,7 +1755,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $di['validator'] = new \FOSSBilling\Validate();
 

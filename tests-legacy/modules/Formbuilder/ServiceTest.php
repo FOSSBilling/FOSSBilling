@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Formbuilder;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
@@ -16,7 +18,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -44,7 +46,7 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #["PHPUnit\Framework\Attributes\DataProvider"('typeValidationData')]
+    #[DataProvider('typeValidationData')]
     public function testTypeValidation(string $type, bool $expected): void
     {
         $result = $this->service->typeValidation($type);
@@ -60,7 +62,7 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #["PHPUnit\Framework\Attributes\DataProvider"('isArrayUniqueData')]
+    #[DataProvider('isArrayUniqueData')]
     public function testIsArrayUnique(array $data, bool $expected): void
     {
         $result = $this->service->isArrayUnique($data);
@@ -87,7 +89,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($newFormId);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -124,7 +126,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->willReturn(0);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -144,7 +146,7 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #["PHPUnit\Framework\Attributes\DataProvider"('updateFieldTypeData')]
+    #[DataProvider('updateFieldTypeData')]
     public function testUpdateField(string $fieldType): void
     {
         $updateFIeldId = 2;
@@ -186,14 +188,14 @@ final class ServiceTest extends \BBTestCase
             ->method('toArray')
             ->willReturn($modelArray);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
-        $validatorMock = $this->getMockBuilder('\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ;
         $di['validator'] = $validatorMock;
 
         $this->service->setDi($di);
@@ -212,7 +214,7 @@ final class ServiceTest extends \BBTestCase
             'type' => 'select',
         ];
 
-        $serviceMock = $this->getMockBuilder('\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['formFieldNameExists', 'getField'])
             ->getMock();
 
@@ -241,7 +243,7 @@ final class ServiceTest extends \BBTestCase
             'name' => 'testFIeld',
         ];
 
-        $serviceMock = $this->getMockBuilder('\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['formFieldNameExists', 'getField'])
             ->getMock();
 
@@ -270,7 +272,7 @@ final class ServiceTest extends \BBTestCase
             'name' => 'testFIeld',
         ];
 
-        $serviceMock = $this->getMockBuilder('\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['formFieldNameExists', 'getField'])
             ->getMock();
 
@@ -301,7 +303,7 @@ final class ServiceTest extends \BBTestCase
             'textarea_option' => [''], // textarea_size & textarea_option should have an equal number of elements
         ];
 
-        $serviceMock = $this->getMockBuilder('\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['formFieldNameExists', 'getField'])
             ->getMock();
 
@@ -347,7 +349,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->willReturn($getAllResult);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $formId = 1;
@@ -365,7 +367,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -381,7 +383,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -397,7 +399,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getAssoc')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -427,11 +429,11 @@ final class ServiceTest extends \BBTestCase
             ->method('toArray')
             ->willReturn($modelArray);
 
-        $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $di = $this->getDi();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ;
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -447,7 +449,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->exactly(4))
             ->method('exec');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -472,7 +474,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -494,7 +496,7 @@ final class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_FormField());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -509,7 +511,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -530,7 +532,7 @@ final class ServiceTest extends \BBTestCase
             'options' => [],
         ];
 
-        $serviceMock = $this->getMockBuilder('\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getFormFields', 'addNewForm', 'addNewField'])
             ->getMock();
 
@@ -546,7 +548,7 @@ final class ServiceTest extends \BBTestCase
             ->method('addNewField')
             ->willReturn($newFieldId);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -567,7 +569,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->exactly(2))
             ->method('exec');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 

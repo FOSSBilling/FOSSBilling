@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ClientTest extends \BBTestCase
 {
     protected ?Client $api;
@@ -16,7 +18,7 @@ final class ClientTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -28,14 +30,14 @@ final class ClientTest extends \BBTestCase
             'order_id' => 1,
         ];
 
-        $apiMock = $this->getMockBuilder('\' . Admin::class)
+        $apiMock = $this->getMockBuilder(\Box\Mod\Servicelicense\Api\Client::class)
             ->onlyMethods(['_getService'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')
             ->willReturn(new \Model_ServiceLicense());
 
-        $serviceMock = $this->createMock("Box\Mod\Servicelicense\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('reset')
             ->willReturn(true);
@@ -51,7 +53,7 @@ final class ClientTest extends \BBTestCase
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock = $this->createMock("Box\Mod\Order\Service::class");
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceLicense());
@@ -62,7 +64,7 @@ final class ClientTest extends \BBTestCase
             ->with('ClientOrder')
             ->willReturn(new \Model_ClientOrder());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
@@ -80,7 +82,7 @@ final class ClientTest extends \BBTestCase
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock = $this->createMock("Box\Mod\Order\Service::class");
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(null);
@@ -91,7 +93,7 @@ final class ClientTest extends \BBTestCase
             ->with('ClientOrder')
             ->willReturn(new \Model_ClientOrder());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
@@ -101,7 +103,7 @@ final class ClientTest extends \BBTestCase
         $clientModel->loadBean(new \DummyBean());
         $this->api->setIdentity($clientModel);
 
-        $this->expectException("FOSSBilling\Exception::class");
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order is not activated');
         $this->api->_getService($data);
     }

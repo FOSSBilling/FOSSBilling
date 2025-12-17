@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ClientTest extends \BBTestCase
 {
     protected ?Client $api;
@@ -16,7 +18,7 @@ final class ClientTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -44,7 +46,7 @@ final class ClientTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setIdentity($modelClient);
@@ -73,7 +75,7 @@ final class ClientTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_ClientOrder());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
@@ -113,7 +115,7 @@ final class ClientTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($mockOrder);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 

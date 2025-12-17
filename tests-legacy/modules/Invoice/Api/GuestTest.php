@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
     protected ?Guest $api;
@@ -16,7 +18,7 @@ final class GuestTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -36,7 +38,7 @@ final class GuestTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -57,7 +59,7 @@ final class GuestTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -83,7 +85,7 @@ final class GuestTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -105,7 +107,7 @@ final class GuestTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -127,7 +129,7 @@ final class GuestTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -146,7 +148,7 @@ final class GuestTest extends \BBTestCase
             ->method('getActive')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn () => $gatewayServiceMock);
 
         $this->api->setDi($di);
@@ -205,7 +207,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('generatePDF');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);

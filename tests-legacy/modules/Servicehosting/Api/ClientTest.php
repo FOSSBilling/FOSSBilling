@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ClientTest extends \BBTestCase
 {
     protected ?Client $api;
@@ -16,7 +18,7 @@ final class ClientTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -25,7 +27,7 @@ final class ClientTest extends \BBTestCase
     public function testChangeUsername(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder('\\' . Client::class)
+        $apiMock = $this->getMockBuilder(Client::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -48,7 +50,7 @@ final class ClientTest extends \BBTestCase
     public function testChangeDomain(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder('\\' . Client::class)
+        $apiMock = $this->getMockBuilder(Client::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -71,7 +73,7 @@ final class ClientTest extends \BBTestCase
     public function testChangePassword(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder('\\' . Client::class)
+        $apiMock = $this->getMockBuilder(Client::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -121,7 +123,7 @@ final class ClientTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
 
@@ -155,7 +157,7 @@ final class ClientTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
 
@@ -183,7 +185,7 @@ final class ClientTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($clientOrderModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);

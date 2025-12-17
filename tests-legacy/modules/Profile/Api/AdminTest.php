@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Profile\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
     public function testGet(): void
@@ -44,11 +46,11 @@ final class AdminTest extends \BBTestCase
 
     public function testLogout(): void
     {
-        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
+        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
 
@@ -62,7 +64,7 @@ final class AdminTest extends \BBTestCase
     {
         $model = new \Model_Admin();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Profile\Service::class)
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('updateAdmin')
@@ -79,7 +81,7 @@ final class AdminTest extends \BBTestCase
     {
         $model = new \Model_Admin();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Profile\Service::class)
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('generateNewApiKey')
@@ -94,7 +96,7 @@ final class AdminTest extends \BBTestCase
 
     public function testChangePasswordExceptions(): never
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = new \FOSSBilling\Validate();
 
         $adminApi = new \Box\Mod\Profile\Api\Admin();
@@ -113,7 +115,7 @@ final class AdminTest extends \BBTestCase
 
     public function testChangePassword(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = new \FOSSBilling\Validate();
         $di['password'] = new \FOSSBilling\PasswordManager();
 
@@ -121,7 +123,7 @@ final class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->pass = $di['password']->hashIt('oldpw');
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Profile\Service::class)
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('changeAdminPassword')

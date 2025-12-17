@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
     protected ?Guest $api;
@@ -16,7 +18,7 @@ final class GuestTest extends \BBTestCase
 
     public function testFreeTlds(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
@@ -42,7 +44,7 @@ final class GuestTest extends \BBTestCase
 
     public function testFreeTldsProductTypeIsNotHosting(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
@@ -51,7 +53,7 @@ final class GuestTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
         $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;

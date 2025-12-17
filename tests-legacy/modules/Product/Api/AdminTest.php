@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Product\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
     protected ?Admin $api;
@@ -16,7 +18,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -24,13 +26,13 @@ final class AdminTest extends \BBTestCase
 
     public function testGetList(): void
     {
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSearchQuery')
             ->willReturn(['sqlString', []]);
 
-        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -38,7 +40,7 @@ final class AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pagerMock;
 
         $this->api->setService($serviceMock);
@@ -49,7 +51,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetPairs(): void
     {
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPairs')
@@ -67,17 +69,17 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
         ->method('toApiArray')
         ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         
         $this->api->setDi($di);
@@ -88,7 +90,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetTypes(): void
     {
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTypes')
             ->willReturn([]);
@@ -105,17 +107,17 @@ final class AdminTest extends \BBTestCase
             'type' => 'domain',
         ];
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getMainDomainProduct')
             ->willReturn(new \Model_ProductDomain());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
 
-        $this->expectException(\"FOSSBilling\Exception::class");
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(413);
         $this->expectExceptionMessage('You have already created domain product');
         $this->api->prepare($data);
@@ -133,17 +135,17 @@ final class AdminTest extends \BBTestCase
             'domain' => 'Domain',
         ];
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTypes')
             ->willReturn($typeArray);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
 
-        $this->expectException(\"FOSSBilling\Exception::class");
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(413);
         $this->expectExceptionMessage("Product type {$data['type']} is not registered.");
         $this->api->prepare($data);
@@ -163,7 +165,7 @@ final class AdminTest extends \BBTestCase
 
         $newProductId = 1;
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTypes')
             ->willReturn($typeArray);
@@ -171,7 +173,7 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('createProduct')
             ->willReturn($newProductId);
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -187,17 +189,17 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateProduct')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         
         $this->api->setDi($di);
@@ -212,7 +214,7 @@ final class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $this->expectException(\"FOSSBilling\Exception::class");
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('priority params is missing');
         $this->api->update_priority($data);
     }
@@ -223,7 +225,7 @@ final class AdminTest extends \BBTestCase
             'priority' => [],
         ];
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updatePriority')
             ->willReturn(true);
@@ -241,17 +243,17 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateConfig')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         
         $this->api->setDi($di);
@@ -264,7 +266,7 @@ final class AdminTest extends \BBTestCase
 
     public function testAddonGetPairs(): void
     {
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAddons')
             ->willReturn([]);
@@ -278,12 +280,12 @@ final class AdminTest extends \BBTestCase
     {
         $data = ['title' => 'Title4test'];
         $newAddonId = 1;
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('createAddon')
             ->willReturn($newAddonId);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->api->setDi($di);
 
@@ -302,17 +304,17 @@ final class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->is_addon = true;
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($model);
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         
         $this->api->setDi($di);
@@ -326,7 +328,7 @@ final class AdminTest extends \BBTestCase
     {
         $data = ['id' => 1];
 
-        $apiMock = $this->getMockBuilder('\\' . Admin::class)
+        $apiMock = $this->getMockBuilder(\Box\Mod\Product\Api\Admin::class)
             ->onlyMethods(['update'])
             ->getMock();
 
@@ -338,12 +340,12 @@ final class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->is_addon = true;
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         
@@ -355,7 +357,7 @@ final class AdminTest extends \BBTestCase
 
     public function testAddonDelete(): void
     {
-        $apiMock = $this->getMockBuilder('\\' . Admin::class)
+        $apiMock = $this->getMockBuilder(\Box\Mod\Product\Api\Admin::class)
             ->onlyMethods(['delete'])
             ->getMock();
 
@@ -375,17 +377,17 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteProduct')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         
         $this->api->setService($serviceMock);
@@ -398,7 +400,7 @@ final class AdminTest extends \BBTestCase
 
     public function testCategoryGetPairs(): void
     {
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductCategoryPairs')
             ->willReturn([]);
@@ -415,17 +417,17 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateCategory')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setService($serviceMock);
@@ -443,17 +445,17 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toProductCategoryApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         
         $this->api->setService($serviceMock);
@@ -468,12 +470,12 @@ final class AdminTest extends \BBTestCase
         $data = ['title' => 'test Title'];
         $newCategoryId = 1;
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('createCategory')
             ->willReturn($newCategoryId);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -490,17 +492,17 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('removeProductCategory')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         
         $this->api->setService($serviceMock);
@@ -513,13 +515,13 @@ final class AdminTest extends \BBTestCase
 
     public function testPromoGetList(): void
     {
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPromoSearchQuery')
             ->willReturn(['sqlString', []]);
 
-        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -527,7 +529,7 @@ final class AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pagerMock;
 
         $this->api->setService($serviceMock);
@@ -547,12 +549,12 @@ final class AdminTest extends \BBTestCase
         ];
         $newPromoId = 1;
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('createPromo')
             ->willReturn($newPromoId);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -566,7 +568,7 @@ final class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $this->expectException(\"FOSSBilling\Exception::class");
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Promo ID is missing');
         $this->api->promo_get($data);
     }
@@ -578,15 +580,15 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toPromoApiArray')
             ->willReturn([]);
@@ -605,17 +607,17 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updatePromo')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         
         $this->api->setDi($di);
@@ -631,17 +633,17 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $serviceMock = $this->createMock(\"Box\Mod\Product\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('deletePromo')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         
         $di['db'] = $dbMock;
 

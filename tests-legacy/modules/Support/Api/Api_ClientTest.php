@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Support\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class Api_ClientTest extends \BBTestCase
 {
     protected ?\Box\Mod\Support\Api\Client $clientApi;
@@ -21,7 +23,7 @@ final class Api_ClientTest extends \BBTestCase
                 ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -29,7 +31,7 @@ final class Api_ClientTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($simpleResultArr);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['getSearchQuery', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->willReturn(['query', []]);
@@ -44,7 +46,7 @@ final class Api_ClientTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
@@ -65,7 +67,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testTicketGet(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['findOneByClient', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findOneByClient')
             ->willReturn(new \Model_SupportTicket());
@@ -73,7 +75,7 @@ final class Api_ClientTest extends \BBTestCase
             ->willReturn([]);
 
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
@@ -93,7 +95,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testHelpdeskGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['helpdeskGetPairs'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskGetPairs')
             ->willReturn([0 => 'General']);
@@ -107,7 +109,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testTicketCreate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['ticketCreateForClient'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForClient')
             ->willReturn(1);
@@ -118,7 +120,7 @@ final class Api_ClientTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportHelpdesk());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->clientApi->setDi($di);
 
@@ -141,7 +143,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testTicketReply(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['canBeReopened', 'ticketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('canBeReopened')
             ->willReturn(true);
@@ -154,7 +156,7 @@ final class Api_ClientTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_SupportTicket());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->clientApi->setDi($di);
 
@@ -177,7 +179,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testTicketReplyCanNotBeReopenedException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['canBeReopened', 'ticketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('canBeReopened')
             ->willReturn(false);
@@ -190,7 +192,7 @@ final class Api_ClientTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(new \Model_SupportTicket());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->clientApi->setDi($di);
@@ -214,15 +216,15 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testTicketClose(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['findOneByClient', 'closeTicket'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findOneByClient')
             ->willReturn(new \Model_SupportTicket());
         $serviceMock->expects($this->atLeastOnce())->method('closeTicket')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(true);
 
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();

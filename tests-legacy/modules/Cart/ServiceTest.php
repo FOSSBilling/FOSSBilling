@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Cart;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
 use Symfony\Component\HttpFoundation\Request;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
     protected ?\Box\Mod\Cart\Service $service;
@@ -20,7 +22,7 @@ final class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Cart\Service();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
@@ -53,14 +55,14 @@ final class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($model);
 
-        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
+        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('getId')
             ->willReturn($session_id);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['session'] = $sessionMock;
         $service->setDi($di);
@@ -89,7 +91,7 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('getSessionCartDoesNotExistProvider')]
+    #[DataProvider('getSessionCartDoesNotExistProvider')]
     public function testGetSessionCartDoesNotExist(?int $sessionGetWillReturn, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $getCurrencyByClientIdExpects, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $getDefaultExpects): void
     {
         $service = new \Box\Mod\Cart\Service();
@@ -113,7 +115,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
+        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
         $sessionMock->expects($this->atLeastOnce())
@@ -123,7 +125,7 @@ final class ServiceTest extends \BBTestCase
             ->method('get')
             ->willReturn($sessionGetWillReturn);
 
-        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getCurrencyByClientId', 'getDefault'])->getMock();
+        $currencyServiceMock = $this->getMockBuilder(\Box\Mod\Currency\Service::class)->onlyMethods(['getCurrencyByClientId', 'getDefault'])->getMock();
         $currencyServiceMock->expects($getCurrencyByClientIdExpects)
             ->method('getCurrencyByClientId')
             ->willReturn($curencyModel);
@@ -131,7 +133,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getDefault')
             ->willReturn($curencyModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['session'] = $sessionMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyServiceMock);
@@ -253,7 +255,7 @@ final class ServiceTest extends \BBTestCase
             ->method('trash')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $this->service->setDi($di);
@@ -274,7 +276,7 @@ final class ServiceTest extends \BBTestCase
             ->method('trash')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $this->service->setDi($di);
@@ -299,7 +301,7 @@ final class ServiceTest extends \BBTestCase
         $currency = new \Model_Currency();
         $currency->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $this->service->setDi($di);
@@ -324,7 +326,7 @@ final class ServiceTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $this->service->setDi($di);
@@ -343,7 +345,7 @@ final class ServiceTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $this->service->setDi($di);
@@ -370,7 +372,7 @@ final class ServiceTest extends \BBTestCase
         $cart->loadBean(new \DummyBean());
         $cart->promo_id = 1;
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $this->service->setDi($di);
@@ -386,7 +388,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isEmptyCart'])->getMock();
         $serviceMock->expects($this->never())->method('isEmptyCart')
             ->willReturn(false);
@@ -399,7 +401,7 @@ final class ServiceTest extends \BBTestCase
         $cart->loadBean(new \DummyBean());
         $cart->promo_id = 5;
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
@@ -415,7 +417,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isEmptyCart'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('isEmptyCart')
             ->willReturn(true);
@@ -428,7 +430,7 @@ final class ServiceTest extends \BBTestCase
         $cart->loadBean(new \DummyBean());
         $cart->promo_id = 1;
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
@@ -451,7 +453,7 @@ final class ServiceTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $this->service->setDi($di);
@@ -462,7 +464,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsClientAbleToUsePromo(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['promoCanBeApplied', 'clientHadUsedPromo'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
             ->willReturn(true);
@@ -476,7 +478,7 @@ final class ServiceTest extends \BBTestCase
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
 
@@ -486,7 +488,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testClientHadUsedPromo(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['promoCanBeApplied'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
             ->willReturn(true);
@@ -503,7 +505,7 @@ final class ServiceTest extends \BBTestCase
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = $this->createMock('Box_Log');
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
@@ -514,7 +516,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsClientAbleToUsePromoOncePerClient(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['promoCanBeApplied', 'clientHadUsedPromo'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
             ->willReturn(true);
@@ -527,7 +529,7 @@ final class ServiceTest extends \BBTestCase
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
 
@@ -537,7 +539,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsClientAbleToUsePromoCanNotBeApplied(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['promoCanBeApplied', 'clientHadUsedPromo'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
             ->willReturn(false);
@@ -550,7 +552,7 @@ final class ServiceTest extends \BBTestCase
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
 
@@ -602,7 +604,7 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('promoCanBeAppliedProvider')]
+    #[DataProvider('promoCanBeAppliedProvider')]
     public function testPromoCanBeApplied(\Model_Promo $promo, bool $expectedResult): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -610,7 +612,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $this->service->setDi($di);
@@ -626,7 +628,7 @@ final class ServiceTest extends \BBTestCase
             ->method('find')
             ->willReturn([new \Model_CartProduct()]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -647,7 +649,7 @@ final class ServiceTest extends \BBTestCase
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['createFromCart', 'isClientAbleToUsePromo', 'rm', 'isPromoAvailableForClientGroup'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('createFromCart')
             ->willReturn([$order, 1, [1]]);
@@ -676,7 +678,7 @@ final class ServiceTest extends \BBTestCase
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
@@ -704,7 +706,7 @@ final class ServiceTest extends \BBTestCase
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isClientAbleToUsePromo'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('isClientAbleToUsePromo')
             ->willReturn(false);
@@ -718,7 +720,7 @@ final class ServiceTest extends \BBTestCase
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
@@ -743,7 +745,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -762,7 +764,7 @@ final class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($promo);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -787,17 +789,17 @@ final class ServiceTest extends \BBTestCase
             ->method('fire');
         $serviceHostingServiceMock = $this->getMockBuilder('\Box\Mod\Servicehosting')->getMock();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('isRecurrentPricing')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->willThrowException(new \FOSSBilling\Exception('Period parameter not passed'));
@@ -827,7 +829,7 @@ final class ServiceTest extends \BBTestCase
 
         $serviceHostingServiceMock = $this->getMockBuilder('\Box\Mod\Servicehosting')->getMock();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isPeriodEnabledForProduct'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -837,13 +839,13 @@ final class ServiceTest extends \BBTestCase
             ->method('isPeriodEnabledForProduct')
             ->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ;
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);
@@ -870,7 +872,7 @@ final class ServiceTest extends \BBTestCase
 
         $serviceHostingServiceMock = $this->getMockBuilder('\Box\Mod\Servicehosting')->getMock();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isStockAvailable'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -880,7 +882,7 @@ final class ServiceTest extends \BBTestCase
             ->method('isStockAvailable')
             ->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
 
@@ -919,7 +921,7 @@ final class ServiceTest extends \BBTestCase
             ->method('prependOrderConfig')
             ->willReturn([]);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isStockAvailable', 'addProduct'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -931,7 +933,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('addProduct');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $di['logger'] = new \Box_Log();
@@ -967,7 +969,7 @@ final class ServiceTest extends \BBTestCase
             ->method('validateOrderData')
             ->willReturn(true);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isStockAvailable', 'addProduct'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -984,7 +986,7 @@ final class ServiceTest extends \BBTestCase
             ->method('load')
             ->willReturn($productModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceLicenseServiceMock);
         $di['logger'] = new \Box_Log();
@@ -1016,7 +1018,7 @@ final class ServiceTest extends \BBTestCase
         $serviceCustomServiceMock->expects($this->atLeastOnce())
             ->method('validateCustomForm');
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isStockAvailable'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -1038,7 +1040,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceCustomServiceMock);
         $di['logger'] = new \Box_Log();
@@ -1059,7 +1061,7 @@ final class ServiceTest extends \BBTestCase
         $cartProductModel = new \Model_CartProduct();
         $cartProductModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['getCartProducts', 'cartProductToApiArray'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -1086,7 +1088,7 @@ final class ServiceTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyService);
 
@@ -1130,10 +1132,10 @@ final class ServiceTest extends \BBTestCase
             ->with('Promo')
             ->willReturn($promoModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['getRelatedItemsDiscount', 'getItemPromoDiscount', 'getItemConfig'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -1170,10 +1172,10 @@ final class ServiceTest extends \BBTestCase
             ->with('Cart')
             ->willReturn($modelCart);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['getRelatedItemsDiscount', 'getItemPromoDiscount', 'getItemConfig'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -1214,10 +1216,10 @@ final class ServiceTest extends \BBTestCase
             ->with('Promo')
             ->willReturn($promoModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['getRelatedItemsDiscount', 'getItemPromoDiscount', 'getItemConfig'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -1292,10 +1294,10 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('isPromoAvailableForClientGroupProvider')]
+    #[DataProvider('isPromoAvailableForClientGroupProvider')]
     public function testIsPromoAvailableForClientGroup(\Model_Promo $promo, ?\Model_Client $client, bool $expectedResult): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['loggedin_client'] = $client;
         $this->service->setDi($di);
 

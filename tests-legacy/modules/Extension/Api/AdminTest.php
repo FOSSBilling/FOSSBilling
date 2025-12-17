@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Extension\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
     protected ?\Box\Mod\Extension\Service $service;
@@ -18,7 +20,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -49,7 +51,7 @@ final class AdminTest extends \BBTestCase
             ->method('getExtensionList')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['extension_manager'] = $extensionMock;
 
         $this->api->setDi($di);
@@ -67,7 +69,7 @@ final class AdminTest extends \BBTestCase
             ->method('getExtensionList')
             ->willThrowException(new \Exception());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['extension_manager'] = $extensionMock;
         $di['logger'] = $this->createMock('Box_Log');
 
@@ -112,7 +114,7 @@ final class AdminTest extends \BBTestCase
             ->method('findExtension')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -133,7 +135,7 @@ final class AdminTest extends \BBTestCase
             ->method('activateExistingExtension')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -164,7 +166,7 @@ final class AdminTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
@@ -197,7 +199,7 @@ final class AdminTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         
@@ -233,7 +235,7 @@ final class AdminTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         
@@ -272,7 +274,7 @@ final class AdminTest extends \BBTestCase
 
         $dbMock = $this->createMock('\Box_Database');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
@@ -296,7 +298,7 @@ final class AdminTest extends \BBTestCase
             ->method('getConfig')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -319,7 +321,7 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->never())
             ->method('getConfig');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);

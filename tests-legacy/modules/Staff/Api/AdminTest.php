@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Staff\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
     protected ?Admin $api;
@@ -16,7 +18,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -26,7 +28,7 @@ final class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['sqlString', []]);
@@ -37,7 +39,7 @@ final class AdminTest extends \BBTestCase
         $resultSet = [
             'list' => ['id' => 1],
         ];
-        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -47,12 +49,12 @@ final class AdminTest extends \BBTestCase
 
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($adminModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
 
@@ -67,17 +69,17 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toModel_AdminApiArray')
             ->willReturn([]);
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_Admin());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setService($serviceMock);
@@ -91,17 +93,17 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_Admin());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -116,17 +118,17 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('delete')
             ->willReturn(true);
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_Admin());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -145,22 +147,22 @@ final class AdminTest extends \BBTestCase
             'password_confirm' => 'test!23A',
         ];
 
-        $validatorMock = $this->createMock(\"FOSSBilling\Validate::class");
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('isPasswordStrong')
             ->willReturn(true);
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changePassword')
             ->willReturn(true);
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_Admin());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
@@ -179,9 +181,9 @@ final class AdminTest extends \BBTestCase
             'password_confirm' => 'test',
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
-        $this->expectException(\"FOSSBilling\Exception::class");
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Passwords do not match');
         $this->api->change_password($data);
     }
@@ -197,20 +199,20 @@ final class AdminTest extends \BBTestCase
 
         $newStaffId = 1;
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('create')
             ->willReturn($newStaffId);
 
-        $validatorMock = $this->createMock(\"FOSSBilling\Validate::class");
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())
             ->method('isPasswordStrong')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
 
-        $toolsMock = $this->createMock(\"FOSSBilling\Tools::class");
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
@@ -229,17 +231,17 @@ final class AdminTest extends \BBTestCase
         $staffModel = new \Model_Admin();
         $staffModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPermissions')
             ->willReturn([]);
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($staffModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -256,7 +258,7 @@ final class AdminTest extends \BBTestCase
             'permissions' => 'default',
         ];
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('setPermissions')
             ->willReturn(true);
@@ -264,12 +266,12 @@ final class AdminTest extends \BBTestCase
         $staffModel = new \Model_Admin();
         $staffModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($staffModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -283,7 +285,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGroupGetPairs(): void
     {
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdminGroupPair')
             ->willReturn([]);
@@ -297,12 +299,12 @@ final class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdminGroupSearchQuery')
             ->willReturn(['sqlString', []]);
 
-        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -310,7 +312,7 @@ final class AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pagerMock;
 
         $this->api->setDi($di);
@@ -325,12 +327,12 @@ final class AdminTest extends \BBTestCase
         $data['name'] = 'Prime Group';
         $newGroupId = 1;
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('createGroup')
             ->willReturn($newGroupId);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -343,17 +345,17 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toAdminGroupApiArray')
             ->willReturn([]);
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_AdminGroup());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setIdentity(new \Model_Admin());
@@ -368,17 +370,17 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteGroup')
             ->willReturn(true);
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_AdminGroup());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setIdentity(new \Model_Admin());
@@ -394,17 +396,17 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateGroup')
             ->willReturn(true);
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_AdminGroup());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setIdentity(new \Model_Admin());
@@ -420,7 +422,7 @@ final class AdminTest extends \BBTestCase
     {
         $data = [];
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getActivityAdminHistorySearchQuery')
             ->willReturn(['sqlString', []]);
@@ -431,7 +433,7 @@ final class AdminTest extends \BBTestCase
         $resultSet = [
             'list' => ['id' => 1],
         ];
-        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -441,11 +443,11 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_ActivityAdminHistory();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->method('getExistingModelById')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
 
@@ -460,16 +462,16 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->createMock(\"Box\Mod\Staff\Service::class");
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->method('toActivityAdminHistoryApiArray')
             ->willReturn([]);
 
-        $dbMock = $this->createMock('\\Box_Database');
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ActivityAdminHistory());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setIdentity(new \Model_Admin());
@@ -484,17 +486,17 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteLoginHistory')
             ->willReturn(true);
 
-        $dbMock = $this->getMockBuilder('\\Box_Database')->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ActivityAdminHistory());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setIdentity(new \Model_Admin());
@@ -508,10 +510,10 @@ final class AdminTest extends \BBTestCase
 
     public function testBatchDelete(): void
     {
-        $activityMock = $this->getMockBuilder('\\' . Admin::class)->onlyMethods(['login_history_delete'])->getMock();
+        $activityMock = $this->getMockBuilder(Admin::class)->onlyMethods(['login_history_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('login_history_delete')->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $activityMock->setDi($di);
 
         $result = $activityMock->batch_delete_logs(['ids' => [1, 2, 3]]);

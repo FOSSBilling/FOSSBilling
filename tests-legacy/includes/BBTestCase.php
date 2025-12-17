@@ -2,6 +2,19 @@
 
 class BBTestCase extends PHPUnit\Framework\TestCase
 {
+    protected function getDi(): \Pimple\Container
+    {
+        $di = new \Pimple\Container();
+        $di['validator'] = function () use ($di) {
+            return new \FOSSBilling\Validate();
+        };
+        $di['tools'] = function () use ($di) {
+            return new \FOSSBilling\Tools();
+        };
+
+        return $di;
+    }
+
     /**
      * Helper method to validate required parameters for API methods with RequiredParams attribute.
      * This simulates the validation that happens in Api_Handler when methods are called through it.
