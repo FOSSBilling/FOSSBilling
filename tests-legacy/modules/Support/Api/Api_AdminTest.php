@@ -197,7 +197,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['ticketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
-            ->willReturn(true);
+            ->willReturn(random_int(1, 100));
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -205,6 +205,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
+        $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
@@ -212,7 +213,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
         $result = $this->adminApi->ticket_reply($data);
 
-        $this->assertTrue($result);
+        $this->assertIsInt($result);
     }
 
     public function testTicketClose(): void
@@ -240,6 +241,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
+        $this->adminApi->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
@@ -535,6 +537,7 @@ final class Api_AdminTest extends \BBTestCase
             'subject' => 'Subject',
             'message' => 'Message',
         ];
+
         $result = $this->adminApi->public_ticket_create($data);
 
         $this->assertIsInt($result);
@@ -682,7 +685,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['publicTicketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketReply')
-            ->willReturn(true);
+            ->willReturn(random_int(1, 100));
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -698,7 +701,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
         $result = $this->adminApi->public_ticket_reply($data);
 
-        $this->assertTrue($result);
+        $this->assertIsInt($result);
     }
 
     public function testPublicTicketGetStatuses(): void
@@ -803,7 +806,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['helpdeskToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskToApiArray')
-            ->willReturn(true);
+            ->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -818,7 +821,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
         $result = $this->adminApi->helpdesk_get($data);
 
-        $this->assertTrue($result);
+        $this->assertIsArray($result);
     }
 
     public function testHelpdeskUpdate(): void
@@ -862,7 +865,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['helpdeskCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskCreate')
-            ->willReturn(true);
+            ->willReturn(random_int(1, 100));
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -876,7 +879,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
         $result = $this->adminApi->helpdesk_create($data);
 
-        $this->assertTrue($result);
+        $this->assertIsInt($result);
     }
 
     public function testHelpdeskDelete(): void
@@ -985,7 +988,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedToApiArray')
-            ->willReturn(true);
+            ->willReturn([]);
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -1000,7 +1003,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
         $result = $this->adminApi->canned_get($data);
 
-        $this->assertTrue($result);
+        $this->assertIsArray($result);
     }
 
     public function testCannedDelete(): void
@@ -1056,7 +1059,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $data = [
             'title' => 'Title',
-            'category_id' => 'Title',
+            'category_id' => random_int(1, 100),
             'content' => 'Content',
         ];
         $result = $this->adminApi->canned_create($data);
@@ -1179,6 +1182,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $data = [
             'id' => 1,
+            'title' => 'Updated Title',
         ];
         $result = $this->adminApi->canned_category_update($data);
 
@@ -1229,7 +1233,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedCategoryCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryCreate')
-            ->willReturn([]);
+            ->willReturn(random_int(1, 100));
 
         $di = new \Pimple\Container();
         $di['validator'] = $validatorMock;
@@ -1242,7 +1246,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
         $result = $this->adminApi->canned_category_create($data);
 
-        $this->assertIsArray($result);
+        $this->assertIsInt($result);
     }
 
     public function testCannedNoteCreate(): void
@@ -1254,7 +1258,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['noteCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('noteCreate')
-            ->willReturn([]);
+            ->willReturn(random_int(1, 100));
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1275,7 +1279,7 @@ final class Api_AdminTest extends \BBTestCase
         ];
         $result = $this->adminApi->note_create($data);
 
-        $this->assertIsArray($result);
+        $this->assertIsInt($result);
     }
 
     public function testCannedNoteDelete(): void
@@ -1486,6 +1490,7 @@ final class Api_AdminTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
+
         $adminApi->setDi($di);
 
         $result = $adminApi->kb_article_create($data);
@@ -1720,7 +1725,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCreateCategory'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbCreateCategory')
-            ->willReturn([]);
+            ->willReturn(random_int(1, 100));
         $adminApi->setService($kbService);
 
         $data = [
@@ -1737,7 +1742,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $result = $adminApi->kb_category_create($data);
-        $this->assertIsArray($result);
+        $this->assertIsInt($result);
     }
 
     public function testKbCategoryUpdate(): void

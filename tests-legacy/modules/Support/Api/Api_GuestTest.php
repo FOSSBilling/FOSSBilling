@@ -19,7 +19,7 @@ final class Api_GuestTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Support\Service::class)
             ->onlyMethods(['ticketCreateForGuest'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForGuest')
-            ->willReturn(sha1(uniqid()));
+            ->willReturn(bin2hex(random_bytes(random_int(100, 127))));
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -40,7 +40,7 @@ final class Api_GuestTest extends \BBTestCase
         $result = $this->guestApi->ticket_create($data);
 
         $this->assertIsString($result);
-        $this->assertEquals(strlen($result), 40);
+        $this->assertGreaterThan(0, strlen($result));
     }
 
     public function testTicketCreateMessageTooShortException(): void
@@ -71,7 +71,7 @@ final class Api_GuestTest extends \BBTestCase
         $result = $this->guestApi->ticket_create($data);
 
         $this->assertIsString($result);
-        $this->assertEquals(strlen($result), 40);
+        $this->assertEquals(40, strlen($result));
     }
 
     public function testTicketGet(): void
@@ -119,6 +119,7 @@ final class Api_GuestTest extends \BBTestCase
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
+        $this->guestApi->setIdentity(new \Model_Guest());
 
         $data = [
             'hash' => sha1(uniqid()),
@@ -135,7 +136,7 @@ final class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicFindOneByHash')
             ->willReturn(new \Model_SupportPTicket());
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketReplyForGuest')
-            ->willReturn(true);
+            ->willReturn(sha1(uniqid()));
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -153,7 +154,8 @@ final class Api_GuestTest extends \BBTestCase
         ];
         $result = $this->guestApi->ticket_reply($data);
 
-        $this->assertTrue($result);
+        $this->assertIsString($result);
+        $this->assertEquals(40, strlen($result));
     }
 
     /*
@@ -282,7 +284,7 @@ final class Api_GuestTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbFindActiveArticleById', 'kbHitView', 'kbToApiArray', 'kbFindActiveArticleBySlug'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbFindActiveArticleById')
-            ->willReturn(false);
+            ->willReturn(null);
         $kbService->expects($this->never())
             ->method('kbFindActiveArticleBySlug')
             ->willReturn(new \Model_SupportKbArticle());
@@ -474,7 +476,7 @@ final class Api_GuestTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbFindCategoryById', 'kbHitView', 'kbCategoryToApiArray', 'kbFindCategoryBySlug'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbFindCategoryById')
-            ->willReturn(false);
+            ->willThrowException(new \FOSSBilling\Exception('Knowledge Base category not found'));
         $kbService->expects($this->never())
             ->method('kbFindCategoryBySlug')
             ->willReturn(new \Model_SupportKbArticleCategory());
