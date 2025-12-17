@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Profile;
 
 use Box\Mod\Profile\Service;
 
-class ServiceTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
@@ -15,7 +18,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetAdminIdentityArray(): void
+    public function testGetAdminIdentityArray(): void
     {
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -104,7 +107,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($password);
@@ -146,10 +149,10 @@ class ServiceTest extends \BBTestCase
                 'disable_change_email' => 0,
             ]);
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientServiceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->willReturn(false);
 
@@ -225,7 +228,7 @@ class ServiceTest extends \BBTestCase
                 'disable_change_email' => 1,
             ]);
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientServiceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $clientServiceMock->expects($this->never())->
         method('emailAlreadyRegistered')->willReturn(false);
 
@@ -271,10 +274,10 @@ class ServiceTest extends \BBTestCase
                 'disable_change_email' => 0,
             ]);
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientServiceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->willReturn(true);
 
@@ -338,7 +341,7 @@ class ServiceTest extends \BBTestCase
 
         $password = 'new password';
 
-        $passwordMock = $this->getMockBuilder(\FOSSBilling\PasswordManager::class)->getMock();
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($password);

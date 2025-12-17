@@ -20,10 +20,6 @@ class PhpConsole
     public static $ignoreRepeatedEvents = false;
     public static $callOldErrorHandler = true;
     public static $callOldExceptionsHandler = true;
-
-    /**
-     * @var PhpConsole
-     */
     protected static $instance;
 
     protected $handledMessagesHashes = [];
@@ -147,10 +143,6 @@ class PhpConsole
             self::flushMessagesBuffer();
         }
     }
-
-    /**
-     * @return mixed[]
-     */
     protected function convertTraceToArray($traceData, $eventFile = null, $eventLine = null): array
     {
         $trace = [];

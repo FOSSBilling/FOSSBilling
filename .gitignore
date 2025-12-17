@@ -17,3 +17,5 @@ node_modules
 
 ### friendsofphp/php-cs-fixer ###
 .php-cs-fixer.cache
+src/install/php_error.log
+src/themes/huraga/config/settings_data.json

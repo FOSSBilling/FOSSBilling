@@ -1,7 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_CryptTest extends PHPUnit\Framework\TestCase
+final class Box_CryptTest extends PHPUnit\Framework\TestCase
 {
     public function testCrypt(): void
     {

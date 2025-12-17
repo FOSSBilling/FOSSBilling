@@ -12,15 +12,15 @@ declare(strict_types=1);
 
 namespace Box\Mod\News\Api;
 
-use \Box\Mod\News\Entity\Post;
-use \Doctrine\ORM\EntityRepository;
+use Box\Mod\News\Entity\Post;
 
 class Guest extends \Api_Abstract
 {
     /**
-     * Get paginated list of active news items
+     * Get paginated list of active news items.
      *
      * @param array $data Filtering and pagination parameters
+     *
      * @return array Paginated list of news items
      */
     public function get_list(array $data): array
@@ -40,7 +40,7 @@ class Guest extends \Api_Abstract
      * Get a single news item by ID or slug.
      *
      * @param array $data ['id' => int|null, 'slug' => string|null]
-     * @return array
+     *
      * @throws \FOSSBilling\Exception if ID/slug is missing or news item not found
      */
     public function get(array $data): array

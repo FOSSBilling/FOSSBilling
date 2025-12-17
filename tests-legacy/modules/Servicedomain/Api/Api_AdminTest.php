@@ -1,15 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Servicedomain\Api;
 
-class Api_AdminTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class Api_AdminTest extends \BBTestCase
 {
-    /**
-     * @var \Box\Mod\Servicedomain\Api\Admin
-     */
-    protected $adminApi;
+    protected ?\Box\Mod\Servicedomain\Api\Admin $adminApi;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->adminApi = new \Box\Mod\Servicedomain\Api\Admin();
     }
@@ -228,7 +228,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testTldGet(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
         $serviceMock->expects($this->atLeastOnce())->method('tldToApiArray')
@@ -254,7 +254,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testTldGetTldNotFoundException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(null);
         $serviceMock->expects($this->never())->method('tldToApiArray')
@@ -283,13 +283,13 @@ class Api_AdminTest extends \BBTestCase
         $tldMock->loadBean(new \DummyBean());
         $tldMock->tld = '.com';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn($tldMock);
         $serviceMock->expects($this->atLeastOnce())->method('tldRm')
             ->willReturn(true);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->once())->method('find')
             ->with($this->equalTo('ServiceDomain'), $this->equalTo('tld = :tld'), $this->equalTo([':tld' => $tldMock->tld]))
             ->willReturn([]); // No domains found
@@ -315,7 +315,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testTldDeleteTldNotFoundException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(null);
         $serviceMock->expects($this->never())->method('tldRm')
@@ -341,11 +341,11 @@ class Api_AdminTest extends \BBTestCase
 
     public function testTldCreate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldAlreadyRegistered')
             ->willReturn(false);
         $serviceMock->expects($this->atLeastOnce())->method('tldCreate')
-            ->willReturn(random_int(1, 100));
+            ->willReturn(1);
 
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -359,10 +359,10 @@ class Api_AdminTest extends \BBTestCase
 
         $data = [
             'tld' => '.com',
-            'tld_registrar_id' => random_int(1, 100),
-            'price_registration' => random_int(1, 100),
-            'price_renew' => random_int(1, 100),
-            'price_transfer' => random_int(1, 100),
+            'tld_registrar_id' => 1,
+            'price_registration' => 1,
+            'price_renew' => 1,
+            'price_transfer' => 1,
         ];
 
         $result = $this->adminApi->tld_create($data);
@@ -371,7 +371,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testTldCreateAlreadyRegisteredException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldAlreadyRegistered')
             ->willReturn(true);
 
@@ -396,7 +396,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testTldUpdate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
         $serviceMock->expects($this->atLeastOnce())->method('tldUpdate')
@@ -422,7 +422,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testTldUpdateTldNotFoundException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(null);
         $serviceMock->expects($this->never())->method('tldUpdate')
@@ -461,7 +461,7 @@ class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetSearchQuery')
             ->willReturn(['query', []]);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([]);
@@ -482,7 +482,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testRegistrarGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetPairs')
             ->willReturn([]);
 
@@ -495,7 +495,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testRegistrarGetAvailable(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetAvailable')
             ->willReturn([]);
 
@@ -512,7 +512,7 @@ class Api_AdminTest extends \BBTestCase
             'ResellerClub', 'Custom',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetAvailable')
             ->willReturn($registrars);
         $serviceMock->expects($this->atLeastOnce())->method('registrarCreate')
@@ -542,7 +542,7 @@ class Api_AdminTest extends \BBTestCase
             'Custom',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetAvailable')
             ->willReturn($registrars);
         $serviceMock->expects($this->never())->method('registrarCreate')
@@ -572,12 +572,12 @@ class Api_AdminTest extends \BBTestCase
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->never())
             ->method('load')
             ->willReturn($registrar);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->never())->method('registrarRm')
             ->willReturn(true);
 
@@ -605,12 +605,12 @@ class Api_AdminTest extends \BBTestCase
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($registrar);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarCopy')
             ->willReturn(true);
 
@@ -625,7 +625,7 @@ class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->registrar_copy($data);
 
@@ -637,12 +637,12 @@ class Api_AdminTest extends \BBTestCase
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->never())
             ->method('load')
             ->willReturn($registrar);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->never())->method('registrarCopy')
             ->willReturn(true);
 
@@ -670,12 +670,12 @@ class Api_AdminTest extends \BBTestCase
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($registrar);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarToApiArray')
             ->willReturn([]);
 
@@ -690,7 +690,7 @@ class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->registrar_get($data);
 
@@ -702,12 +702,12 @@ class Api_AdminTest extends \BBTestCase
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->never())
             ->method('load')
             ->willReturn($registrar);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->never())->method('registrarToApiArray')
             ->willReturn([]);
 
@@ -732,7 +732,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testBatchSyncExpirationDates(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('batchSyncExpirationDates')
             ->willReturn(true);
 
@@ -748,12 +748,12 @@ class Api_AdminTest extends \BBTestCase
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($registrar);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarUpdate')
             ->willReturn(true);
 
@@ -768,7 +768,7 @@ class Api_AdminTest extends \BBTestCase
         $this->adminApi->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->adminApi->registrar_update($data);
 
@@ -780,12 +780,12 @@ class Api_AdminTest extends \BBTestCase
         $registrar = new \Model_TldRegistrar();
         $registrar->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->never())
             ->method('load')
             ->willReturn($registrar);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->never())->method('registrarUpdate')
             ->willReturn(true);
 
@@ -810,13 +810,13 @@ class Api_AdminTest extends \BBTestCase
 
     public function testGetService(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('updateDomain')
             ->willReturn(true);
 
         $this->adminApi->setService($serviceMock);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ClientOrder());
@@ -836,7 +836,7 @@ class Api_AdminTest extends \BBTestCase
         $this->adminApi->setDi($di);
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
         ];
         $result = $this->adminApi->update($data);
 
@@ -845,13 +845,13 @@ class Api_AdminTest extends \BBTestCase
 
     public function testGetServiceOrderIdMissingException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->never())->method('updateDomain')
             ->willReturn(true);
 
         $this->adminApi->setService($serviceMock);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->never())
             ->method('load')
             ->willReturn(new \Model_ClientOrder());
@@ -881,13 +881,13 @@ class Api_AdminTest extends \BBTestCase
 
     public function testGetServiceOrderNotActivatedException(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedomain\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
         $serviceMock->expects($this->never())->method('updateDomain')
             ->willReturn(true);
 
         $this->adminApi->setService($serviceMock);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ClientOrder());
@@ -907,7 +907,7 @@ class Api_AdminTest extends \BBTestCase
         $this->adminApi->setDi($di);
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);

@@ -157,7 +157,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete form and its form fields.
      *
-     *
      * @throws \FOSSBilling\Exception
      */
     public function delete_form($data): bool
@@ -175,7 +174,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete field by id.
-     *
      *
      * @throws \FOSSBilling\Exception
      */

@@ -31,7 +31,7 @@ FormData.prototype.serializeObject = function () {
     }
     // reformat input[] fields to arrays
     for (const pair of this.entries()) {
-        key = pair[0];
+        let key = pair[0];
         if (key.endsWith('[]')) {
             key = key.slice(0, -2);
             if (!obj[key]) {

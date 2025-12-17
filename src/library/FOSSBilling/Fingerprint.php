@@ -3,7 +3,7 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -236,8 +236,13 @@ class Fingerprint
         // Otherwise, instance the system's GeoIP reader and read the country from there.
         try {
             $reader = new GeoIP\Reader();
+            $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
 
-            return $reader->country($_SERVER['REMOTE_ADDR'])->name;
+            if (empty($remoteAddr)) {
+                return '';
+            }
+
+            return $reader->country($remoteAddr)->name;
         } catch (\Exception) {
             return '';
         }
@@ -246,10 +251,16 @@ class Fingerprint
     private function getIpAsn()
     {
         try {
+            $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+
+            if (empty($remoteAddr)) {
+                return '';
+            }
+
             $asnDb = GeoIP\Reader::getAsnDatabase();
             $reader = new GeoIP\Reader($asnDb);
 
-            return $reader->asn($_SERVER['REMOTE_ADDR'])->asnNumber;
+            return $reader->asn($remoteAddr)->asnNumber;
         } catch (\Exception) {
             return '';
         }

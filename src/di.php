@@ -11,13 +11,14 @@
 
 use Doctrine\ORM\EntityManager;
 use FOSSBilling\Config;
-use FOSSBilling\Environment;
 use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Environment;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
 use Lcharette\WebpackEncoreTwig\JsonManifest;
 use Lcharette\WebpackEncoreTwig\TagRenderer;
 use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
+use League\Csv\Writer;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\HttpFoundation\Request;
@@ -111,7 +112,7 @@ $di['pdo'] = function () {
         $pdo->exec("SET time_zone = '{$offset}'");
     }
 
-    return $pdo;
+    return new DebugBar\DataCollector\PDO\TraceablePDO($pdo);
 };
 
 /*
@@ -139,9 +140,7 @@ $di['db'] = function () use ($di) {
     return $db;
 };
 
-$di['em'] = function (): EntityManager {
-    return EntityManagerFactory::create();
-};
+$di['em'] = (fn (): EntityManager => EntityManagerFactory::create());
 
 /*
  *
@@ -765,7 +764,7 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
         $headers = array_keys(reset($rows));
     }
 
-    $csv = League\Csv\Writer::createFromFileObject(new SplTempFileObject());
+    $csv = Writer::from(new SplTempFileObject());
     $csv->addFormatter(new League\Csv\EscapeFormula());
     $csv->insertOne($headers);
     $csv->insertAll($rows);

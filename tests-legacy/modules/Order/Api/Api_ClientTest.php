@@ -6,19 +6,17 @@
  * Date: 8/5/14
  * Time: 4:52 PM.
  */
-class Api_ClientTest extends PHPUnit\Framework\TestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class Api_ClientTest extends PHPUnit\Framework\TestCase
 {
-    /**
-     * @var Box\Mod\Order\Api\Client
-     */
-    protected $api;
+    protected ?Box\Mod\Order\Api\Client $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Box\Mod\Order\Api\Client();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new Pimple\Container();
         $this->api->setDi($di);
@@ -51,7 +49,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $clientOrderMock = new Model_ClientOrder();
         $clientOrderMock->loadBean(new DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->with('ClientOrder')
@@ -65,7 +63,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
         $client = new Model_Client();
         $client->loadBean(new DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
 
         $this->api->setIdentity($client);
         $this->api->setService($serviceMock);
@@ -97,7 +95,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
         $client = new Model_Client();
         $client->loadBean(new DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
 
         $this->api->setIdentity($client);
         $this->api->setService($serviceMock);
@@ -128,7 +126,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->get($data);
 
@@ -185,7 +183,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $apiMock->setIdentity($client);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->service($data);
 
@@ -217,7 +215,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
         $di = new Pimple\Container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productServiceMock);
+        $di['mod_service'] = $di->protect(fn (): PHPUnit\Framework\MockObject\MockObject => $productServiceMock);
         $apiMock->setDi($di);
         $data = [];
 
@@ -244,7 +242,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->delete($data);
 
@@ -269,7 +267,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $this->expectException(FOSSBilling\Exception::class);
@@ -308,7 +306,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->api->setIdentity($client);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $this->api->get($data);
     }
@@ -340,7 +338,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->api->setIdentity($client);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
         $this->expectException(FOSSBilling\Exception::class);

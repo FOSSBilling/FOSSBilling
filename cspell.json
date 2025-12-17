@@ -412,7 +412,10 @@
         "CSRF",
         "undismissed",
         "filp",
-        "phpunit"
+        "phpunit",
+        "hcaptcha",
+        "hCaptcha",
+        "LEMP"
     ],
     "ignorePaths": [
         "tests-legacy/**",
@@ -446,7 +449,6 @@
         "src/vendor",
         "src/themes/*/build",
         "src/themes/*/node_modules",
-        "cypress",
         "phpstan.neon",
         "*.config.js",
         "src/modules/Wysiwyg/src/ckeditor.js",
