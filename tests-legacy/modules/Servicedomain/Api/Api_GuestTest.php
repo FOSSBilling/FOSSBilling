@@ -1,15 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Servicedomain\Api;
 
-class Api_GuestTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class Api_GuestTest extends \BBTestCase
 {
-    /**
-     * @var \Box\Mod\Servicedomain\Api\Guest
-     */
-    protected $guestApi;
+    protected ?\Box\Mod\Servicedomain\Api\Guest $guestApi;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->guestApi = new \Box\Mod\Servicedomain\Api\Guest();
     }
@@ -23,7 +23,7 @@ class Api_GuestTest extends \BBTestCase
 
         $this->guestApi->setService($serviceMock);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([new \Model_Tld()]);
@@ -102,7 +102,7 @@ class Api_GuestTest extends \BBTestCase
 
         $this->guestApi->setService($serviceMock);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->willReturn(true);
 
@@ -121,7 +121,7 @@ class Api_GuestTest extends \BBTestCase
 
     public function testCheckSldNotValidException(): void
     {
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->willReturn(false);
         $validatorMock->expects($this->atLeastOnce())
@@ -151,7 +151,7 @@ class Api_GuestTest extends \BBTestCase
 
         $this->guestApi->setService($serviceMock);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->willReturn(true);
         $validatorMock->expects($this->atLeastOnce())
@@ -181,7 +181,7 @@ class Api_GuestTest extends \BBTestCase
 
         $this->guestApi->setService($serviceMock);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
             ->willReturn(true);
         $validatorMock->expects($this->atLeastOnce())

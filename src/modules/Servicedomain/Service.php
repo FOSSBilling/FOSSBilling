@@ -909,7 +909,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $adapters = [];
 
         $finder = new Finder();
-        $finder->files()->in(Path::join(PATH_LIBRARY, 'Registrar', 'Adapter'))->name('*.php');
+        $finder->files()->in(Path::join(PATH_LIBRARY, 'Registrar', 'Adapter'))->name('*.php')->depth('== 0');
         foreach ($finder as $file) {
             $adapter = $file->getFilenameWithoutExtension();
             if (!array_key_exists($adapter, $exists)) {

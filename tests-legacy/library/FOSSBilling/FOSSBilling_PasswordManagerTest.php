@@ -1,8 +1,11 @@
 <?php
 
-class FOSSBilling_PasswordManagerTest extends PHPUnit\Framework\TestCase
+declare(strict_types=1);
+
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class FOSSBilling_PasswordManagerTest extends PHPUnit\Framework\TestCase
 {
-    public function testsetAlgo(): void
+    public function testSetAlgo(): void
     {
         $boxPassword = new FOSSBilling\PasswordManager();
         $algo = PASSWORD_BCRYPT;

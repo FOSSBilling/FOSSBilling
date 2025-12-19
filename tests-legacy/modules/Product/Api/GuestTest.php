@@ -1,20 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Product\Api;
 
-class GuestTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class GuestTest extends \BBTestCase
 {
-    /**
-     * @var Guest
-     */
-    protected $api;
+    protected ?Guest $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Guest();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
         $di = new \Pimple\Container();
         $this->api->setDi($di);
@@ -22,7 +22,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetWithSetId(): void
+    public function testGetWithSetId(): void
     {
         $data = [
             'id' => 1,
@@ -30,7 +30,7 @@ class GuestTest extends \BBTestCase
 
         $model = new \Model_Product();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveById')
             ->willReturn($model);
@@ -46,7 +46,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetWithSetSlug(): void
+    public function testGetWithSetSlug(): void
     {
         $data = [
             'slug' => 'product/1',
@@ -54,7 +54,7 @@ class GuestTest extends \BBTestCase
 
         $model = new \Model_Product();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveBySlug')
             ->willReturn($model);
@@ -70,7 +70,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetProductNotFound(): void
+    public function testGetProductNotFound(): void
     {
         $data = [
             'slug' => 'product/1',
@@ -78,7 +78,7 @@ class GuestTest extends \BBTestCase
 
         $model = null;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveBySlug')
             ->willReturn($model);
@@ -92,9 +92,9 @@ class GuestTest extends \BBTestCase
         $this->api->get($data);
     }
 
-    public function testcategoryGetList(): void
+    public function testCategoryGetList(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductCategorySearchQuery')
             ->willReturn(['sqlString', []]);
@@ -117,7 +117,7 @@ class GuestTest extends \BBTestCase
 
         $modelProductCategory = new \Model_ProductCategory();
         $modelProductCategory->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($modelProductCategory);
@@ -132,9 +132,9 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testcategoryGetPairs(): void
+    public function testCategoryGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductCategoryPairs')
             ->willReturn([]);
@@ -144,9 +144,9 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetSliderEmptyList(): void
+    public function testGetSliderEmptyList(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([]);
@@ -158,14 +158,14 @@ class GuestTest extends \BBTestCase
 
         $result = $this->api->get_slider([]);
         $this->assertIsArray($result);
-        $this->assertEquals([], $result);
+        $this->assertSame([], $result);
     }
 
-    public function testgetSlider(): void
+    public function testGetSlider(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([$productModel]);
@@ -182,7 +182,7 @@ class GuestTest extends \BBTestCase
             'pricing' => '1W',
             'config' => [],
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn($arr);
@@ -192,11 +192,11 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetSliderJsonFormat(): void
+    public function testGetSliderJsonFormat(): void
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([$productModel]);
@@ -213,7 +213,7 @@ class GuestTest extends \BBTestCase
             'pricing' => '1W',
             'config' => [],
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Product\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn($arr);
