@@ -2252,27 +2252,30 @@
         },
         {
             "name": "mattketmo/email-checker",
-            "version": "v2.4.0",
+            "version": "v2.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/MattKetmo/EmailChecker.git",
-                "reference": "230084a96537380704fb379da1cf42e19797a3f0"
+                "reference": "d21efd330e9ca78936c526959d5c34b5d8a8c06a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/MattKetmo/EmailChecker/zipball/230084a96537380704fb379da1cf42e19797a3f0",
-                "reference": "230084a96537380704fb379da1cf42e19797a3f0",
+                "url": "https://api.github.com/repos/MattKetmo/EmailChecker/zipball/d21efd330e9ca78936c526959d5c34b5d8a8c06a",
+                "reference": "d21efd330e9ca78936c526959d5c34b5d8a8c06a",
                 "shasum": ""
             },
             "require": {
-                "php": "^7.1 || ^8.0"
+                "php": "^8.0"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "^2.18",
-                "illuminate/support": "^5.0 || ^6.0 || ^7.0 || ^8.0",
-                "knplabs/gaufrette": "^0.10",
-                "phpunit/phpunit": "^7.5 || ^9.5",
-                "symfony/validator": "^3.0 || ^4.0 || ^5.0"
+                "friendsofphp/php-cs-fixer": "^3.91",
+                "illuminate/support": "^9.0 || ^10.0 || ^11.0 || ^12.0",
+                "knplabs/gaufrette": "^0.11",
+                "phpstan/phpstan": "^2.1",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "phpunit/phpunit": "^9.5",
+                "symfony/validator": "^5.4 || ^6.4 || ^7.3"
             },
             "suggest": {
                 "knplabs/gaufrette": "Use filesystem abstraction layer to read data",
@@ -2313,9 +2316,9 @@
             ],
             "support": {
                 "issues": "https://github.com/MattKetmo/EmailChecker/issues",
-                "source": "https://github.com/MattKetmo/EmailChecker/tree/v2.4.0"
+                "source": "https://github.com/MattKetmo/EmailChecker/tree/v2.5.0"
             },
-            "time": "2025-03-20T19:33:37+00:00"
+            "time": "2025-12-10T16:45:09+00:00"
         },
         {
             "name": "maxmind-db/reader",
