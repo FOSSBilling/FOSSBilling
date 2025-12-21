@@ -182,15 +182,31 @@
                 'guest/servicedomain/pricing',
                 {tld: tld},
                 function (result) {
-                    var s = $("#registration-years");
-                    s.find('option').remove();
-                    for (i = 1; i < 6; i++) {
-                        var price = bb.currency(result.price_registration, {{ currency.conversion_rate }}, "{{ currency.code }}", i);
+                    const $yearsSelect = $("#registration-years");
+                    $yearsSelect.empty();
 
-                        s.append(new Option(i + "{{ ' Year/s @ '|trans }}" + price, i));
+                    const regPrice = Number(result.price_registration);
+                    let renewPrice = Number(result.price_renew);
+
+                    if (isNaN(renewPrice) || renewPrice === null) {
+                        renewPrice = regPrice;
                     }
-                    $('#config-next').show();
-                    $( "#config-next" ).prop( "disabled", false );
+
+                    for (let i = 1; i <= 5; i++) {
+                        const totalPrice = (i === 1) ? regPrice : regPrice + (i - 1) * renewPrice;
+                        const priceFormatted = bb.currency(
+                            totalPrice,
+                            {{ currency.conversion_rate }},
+                            "{{ currency.code }}",
+                            1
+                        );
+
+                        $yearsSelect.append(
+                            new Option(i + "{{ ' Year/s @ '|trans }}" + priceFormatted, i)
+                        );
+                    }
+
+                    $('#config-next').show().prop('disabled', false);
                 }
             );
         }
