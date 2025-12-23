@@ -8,6 +8,6 @@
   },
   "devDependencies": {
     "ckeditor5": "47.3.0",
-    "esbuild": "0.27.1"
+    "esbuild": "0.27.2"
   }
 }
