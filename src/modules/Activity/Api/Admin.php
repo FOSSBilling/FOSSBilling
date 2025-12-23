@@ -15,8 +15,6 @@
 
 namespace Box\Mod\Activity\Api;
 
-use FOSSBilling\Validation\Api\RequiredParams;
-
 class Admin extends \Api_Abstract
 {
     /**
