@@ -40,11 +40,6 @@ class Box_EventDispatcher
             call_user_func($listener, $event);
         }
 
-        // Notify global listeners (onEveryEvent) too
-        foreach ($this->getListeners(Box_EventManager::GLOBAL_LISTENER_NAME) as $listener) {
-            call_user_func($listener, $event);
-        }
-
         return $event;
     }
 
