@@ -21,7 +21,7 @@ class CentralAlerts implements InjectionAwareInterface
 {
     protected ?Container $di = null;
 
-    private string $_url = 'https://fossbilling.org/api/central-alerts/';
+    private string $_url = 'https://api.fossbilling.net/central-alerts/v1/';
 
     public function setDi(Container $di): void
     {
