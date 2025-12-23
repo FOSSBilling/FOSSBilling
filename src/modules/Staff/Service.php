@@ -781,13 +781,6 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function deleteLoginHistory(\Model_ActivityAdminHistory $model): bool
-    {
-        $this->di['db']->trash($model);
-
-        return true;
-    }
-
     public function authorizeAdmin($email, $plainTextPassword)
     {
         $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ? AND role != ?', [$email, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON]);

@@ -523,21 +523,6 @@ class Admin extends \Api_Abstract
         return true;
     }
 
-    /**
-     * Deletes client login logs with given IDs.
-     *
-     * @return bool
-     */
-    #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete_log($data)
-    {
-        foreach ($data['ids'] as $id) {
-            $this->login_history_delete(['id' => $id]);
-        }
-
-        return true;
-    }
-
     public function export_csv($data)
     {
         $data['headers'] ??= [];

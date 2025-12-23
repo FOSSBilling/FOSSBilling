@@ -481,42 +481,4 @@ final class AdminTest extends \BBTestCase
         $result = $this->api->login_history_get($data);
         $this->assertIsArray($result);
     }
-
-    public function testloginHistoryDelete(): void
-    {
-        $data['id'] = '1';
-
-        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('deleteLoginHistory')
-            ->willReturn(true);
-
-        $dbMock = $this->createMock(\Box_Database::class);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn(new \Model_ActivityAdminHistory());
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-
-        $this->api->setIdentity(new \Model_Admin());
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-
-        $result = $this->api->login_history_delete($data);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
-    public function testBatchDelete(): void
-    {
-        $activityMock = $this->getMockBuilder(Admin::class)->onlyMethods(['login_history_delete'])->getMock();
-        $activityMock->expects($this->atLeastOnce())->method('login_history_delete')->willReturn(true);
-
-        $di = $this->getDi();
-        $activityMock->setDi($di);
-
-        $result = $activityMock->batch_delete_logs(['ids' => [1, 2, 3]]);
-        $this->assertTrue($result);
-    }
 }
