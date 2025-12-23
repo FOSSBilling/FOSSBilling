@@ -427,24 +427,6 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Remove log entry form clients logins history.
-     *
-     * @return bool
-     */
-    #[RequiredParams(['id' => 'ID was not passed'])]
-    public function login_history_delete($data)
-    {
-        $model = $this->di['db']->getExistingModelById('ActivityClientHistory', $data['id']);
-
-        if (!$model instanceof \Model_ActivityClientHistory) {
-            throw new \FOSSBilling\Exception('Event not found');
-        }
-        $this->di['db']->trash($model);
-
-        return true;
-    }
-
-    /**
      * Return client statuses with counter.
      *
      * @return array
