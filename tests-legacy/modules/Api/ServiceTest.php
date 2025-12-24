@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
@@ -16,7 +18,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -34,7 +36,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->willReturn($requestNumber);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);

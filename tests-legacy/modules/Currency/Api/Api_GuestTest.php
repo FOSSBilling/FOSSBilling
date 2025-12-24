@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Currency\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class Api_GuestTest extends \BBTestCase
 {
     public function testGetPairs(): void
@@ -32,7 +34,7 @@ final class Api_GuestTest extends \BBTestCase
 
     public static function getProvider(): array
     {
-        $self = new Api_GuestTest('Api_GuestTest');
+        
 
         $model = new \Model_Currency();
 
@@ -42,20 +44,20 @@ final class Api_GuestTest extends \BBTestCase
                     'code' => 'EUR',
                 ],
                 $model,
-                $self->atLeastOnce(),
-                $self->never(),
+                'atLeastOnce',
+                'never',
             ],
             [
                 [],
                 $model,
-                $self->never(),
-                $self->atLeastOnce(),
+                'never',
+                'atLeastOnce',
             ],
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('getProvider')]
-    public function testGet(array $data, \Model_Currency $model, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $expectsGetByCode, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $expectsGetDefault): void
+    #[DataProvider('getProvider')]
+    public function testGet(array $data, \Model_Currency $model, $expectsGetByCode, $expectsGetDefault): void
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
 
@@ -69,11 +71,11 @@ final class Api_GuestTest extends \BBTestCase
         ];
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
-        $service->expects($expectsGetByCode)
+        $service->expects($this->$expectsGetByCode())
             ->method('getByCode')
             ->willReturn($model);
 
-        $service->expects($expectsGetDefault)
+        $service->expects($this->$expectsGetDefault())
             ->method('getDefault')
             ->willReturn($model);
 
@@ -141,7 +143,7 @@ final class Api_GuestTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('formatPriceFormatProvider')]
+    #[DataProvider('formatPriceFormatProvider')]
     public function testFormatPriceFormat(int $price_format, string $expectedResult): void
     {
         $willReturn = [
@@ -158,14 +160,14 @@ final class Api_GuestTest extends \BBTestCase
             'price' => 100000,
             'without_currency' => false,
         ];
-        $guestApi = $this->getMockBuilder('\\' . \Box\Mod\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
+        $guestApi = $this->getMockBuilder(\Box\Mod\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
         $guestApi->expects($this->atLeastOnce())
             ->method('get')
             ->willReturn($willReturn);
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $guestApi->setDi($di);
         $guestApi->setService($service);
@@ -202,7 +204,7 @@ final class Api_GuestTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('formatProvider')]
+    #[DataProvider('formatProvider')]
     public function testFormat(array $data, string $expectedResult): void
     {
         $willReturn = [
@@ -214,14 +216,14 @@ final class Api_GuestTest extends \BBTestCase
             'default' => 1,
         ];
 
-        $guestApi = $this->getMockBuilder('\\' . \Box\Mod\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
+        $guestApi = $this->getMockBuilder(\Box\Mod\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
         $guestApi->expects($this->atLeastOnce())
             ->method('get')
             ->willReturn($willReturn);
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $guestApi->setDi($di);
         $guestApi->setService($service);

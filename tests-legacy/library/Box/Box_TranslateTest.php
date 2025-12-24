@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class Box_TranslateTest extends PHPUnit\Framework\TestCase
 {
     public function testSetLocale(): void

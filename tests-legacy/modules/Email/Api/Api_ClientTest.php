@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Email\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class Api_ClientTest extends \BBTestCase
 {
     public function testGetList(): void
@@ -17,7 +19,7 @@ final class Api_ClientTest extends \BBTestCase
                 'id' => 1,
             ],
         ];
-        $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -25,7 +27,7 @@ final class Api_ClientTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($willReturn);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pager;
 
         $clientApi->setDi($di);
@@ -61,12 +63,7 @@ final class Api_ClientTest extends \BBTestCase
             ->willReturn([]);
         $clientApi->setService($service);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $clientApi->setDi($di);
 
         $client = new \Model_Client();
@@ -92,12 +89,7 @@ final class Api_ClientTest extends \BBTestCase
         $client->id = 5;
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $clientApi->setDi($di);
 
         $clientApi->setService($service);
@@ -127,12 +119,7 @@ final class Api_ClientTest extends \BBTestCase
         $client->id = 5;
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $clientApi->setDi($di);
 
         $clientApi->setService($service);
@@ -156,12 +143,7 @@ final class Api_ClientTest extends \BBTestCase
 
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $clientApi->setDi($di);
 
         $clientApi->setService($service);
@@ -175,7 +157,7 @@ final class Api_ClientTest extends \BBTestCase
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
@@ -192,10 +174,6 @@ final class Api_ClientTest extends \BBTestCase
         $client->id = 5;
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
         $clientApi->setDi($di);
 
         $clientApi->setService($service);
@@ -219,12 +197,7 @@ final class Api_ClientTest extends \BBTestCase
 
         $clientApi->setIdentity($client);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $clientApi->setDi($di);
 
         $clientApi->setService($service);

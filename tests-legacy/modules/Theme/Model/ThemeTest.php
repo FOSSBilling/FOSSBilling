@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Theme\Model;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ThemeTest extends \BBTestCase
 {
     private ?string $existingTheme = 'huraga';

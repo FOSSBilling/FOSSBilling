@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Activity\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
     public function testLogGetList(): void
@@ -25,7 +27,7 @@ final class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['String', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
             ->onlyMethods(['getPaginatedResultSet'])
             ->getMock();
 
@@ -36,7 +38,7 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_ActivitySystem();
         $model->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
@@ -68,7 +70,7 @@ final class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['String', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
             ->onlyMethods(['getPaginatedResultSet'])
             ->getMock();
 
@@ -79,7 +81,7 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_ActivitySystem();
         $model->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
@@ -95,7 +97,7 @@ final class AdminTest extends \BBTestCase
 
     public function testLogEmptyMParam(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
@@ -105,12 +107,12 @@ final class AdminTest extends \BBTestCase
 
     public function testLogEmail(): void
     {
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Activity\Service::class)->onlyMethods(['logEmail'])->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Activity\Service::class)->onlyMethods(['logEmail'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('logEmail')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $adminApi = new \Box\Mod\Activity\Api\Admin();
         $adminApi->setService($service);

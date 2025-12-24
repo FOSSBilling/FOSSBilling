@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Product\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -81,14 +83,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function prepare($data): int
+    #[RequiredParams(['title' => 'You must specify a title', 'type' => 'Type was not passed'])]
+    public function prepare($data)
     {
-        $required = [
-            'title' => 'You must specify a title',
-            'type' => 'Type is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $service = $this->getService();
         // allow having only one domain product
         if ($data['type'] == 'domain') {
@@ -190,13 +187,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['title' => 'You must specify a title'])]
     public function addon_create($data)
     {
-        $required = [
-            'title' => 'You must specify a title',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $title = $data['title'];
         $status = $data['status'] ?? null;
         $setup = $data['setup'] ?? null;
@@ -215,13 +208,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_get($data)
     {
-        $required = [
-            'id' => 'Addon ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->load('Product', $data['id']);
         if (!$model instanceof \Model_Product || !$model->is_addon) {
             throw new \FOSSBilling\Exception('Addon not found');
@@ -254,13 +243,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_update($data)
     {
-        $required = [
-            'id' => 'Addon ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->load('Product', $data['id']);
         if (!$model instanceof \Model_Product || !$model->is_addon) {
             throw new \FOSSBilling\Exception('Addon not found');
@@ -314,13 +299,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_update($data)
     {
-        $required = [
-            'id' => 'Category ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
 
         $title = $data['title'] ?? null;
@@ -339,13 +320,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_get($data)
     {
-        $required = [
-            'id' => 'Category ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
 
         return $this->getService()->toProductCategoryApiArray($model);
@@ -361,13 +338,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function category_create($data): int
+    #[RequiredParams(['title' => 'Category title is required'])]
+    public function category_create($data)
     {
-        $required = [
-            'title' => 'Category title is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $service = $this->getService();
 
         $title = $data['title'] ?? null;
@@ -384,13 +357,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_delete($data)
     {
-        $required = [
-            'id' => 'Category ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
         $service = $this->getService();
 
@@ -433,15 +402,13 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function promo_create($data): int
+    #[RequiredParams([
+        'code' => 'Promo code is missing',
+        'type' => 'Promo type is missing',
+        'value' => 'Promo value is missing',
+    ])]
+    public function promo_create($data)
     {
-        $required = [
-            'code' => 'Promo code is missing',
-            'type' => 'Promo type is missing',
-            'value' => 'Promo value is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $products = [];
         if (isset($data['products']) && is_array($data['products'])) {
             $products = $data['products'];
@@ -467,13 +434,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_get($data)
     {
-        $required = [
-            'id' => 'Promo ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
 
         return $this->getService()->toPromoApiArray($model, true, $this->getIdentity());
@@ -500,13 +463,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_update($data)
     {
-        $required = [
-            'id' => 'Promo ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
 
         $service = $this->getService();
@@ -521,25 +480,17 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_delete($data)
     {
-        $required = [
-            'id' => 'Promo ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
 
         return $this->getService()->deletePromo($model);
     }
 
+    #[RequiredParams(['id' => 'Product ID was not passed'])]
     private function _getProduct($data)
     {
-        $required = [
-            'id' => 'Product ID not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         return $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
     }
 }

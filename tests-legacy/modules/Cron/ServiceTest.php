@@ -3,13 +3,15 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Cron;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $service = new Service();
         $service->setDi($di);
         $getDi = $service->getDi();
@@ -21,7 +23,7 @@ final class ServiceTest extends \BBTestCase
         $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())->method('getParamValue');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $service = new Service();
         $service->setDi($di);
@@ -37,7 +39,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getParamValue')
             ->willReturn('2012-12-12 12:12:12');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $service = new Service();
         $service->setDi($di);
@@ -48,7 +50,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsLate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getLastExecutionTime'])
             ->getMock();
 

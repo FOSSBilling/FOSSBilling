@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
-final class Box_EventManagerTest extends PHPUnit\Framework\TestCase
+#[Group('Core')]
+final class Box_EventManagerTest extends \BBTestCase
 {
-    #[PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
+    #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
     public function testEmptyFire(): void
     {
         $manager = new Box_EventManager();
@@ -19,7 +19,7 @@ final class Box_EventManagerTest extends PHPUnit\Framework\TestCase
             ->method('getAll')
             ->willReturn([]);
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new Box_Log();
         $di['db'] = $db_mock;
 

@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Product\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
     protected ?Guest $api;
@@ -16,7 +18,7 @@ final class GuestTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -38,7 +40,7 @@ final class GuestTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -62,7 +64,7 @@ final class GuestTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -82,7 +84,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveBySlug')
             ->willReturn($model);
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -107,7 +109,7 @@ final class GuestTest extends \BBTestCase
                 0 => ['id' => 1],
             ],
         ];
-        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -122,7 +124,7 @@ final class GuestTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($modelProductCategory);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['pager'] = $pagerMock;
 
@@ -151,7 +153,7 @@ final class GuestTest extends \BBTestCase
             ->method('find')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -170,7 +172,7 @@ final class GuestTest extends \BBTestCase
             ->method('find')
             ->willReturn([$productModel]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -201,7 +203,7 @@ final class GuestTest extends \BBTestCase
             ->method('find')
             ->willReturn([$productModel]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
