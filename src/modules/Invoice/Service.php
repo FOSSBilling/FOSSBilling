@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Currency\Entity\Currency;
 use Dompdf\Dompdf;
 use FOSSBilling\Environment;
 use FOSSBilling\InformationException;
@@ -398,11 +399,20 @@ class Service implements InjectionAwareInterface
         }
 
         $systemService = $this->di['mod_service']('system');
-        $ctable = $this->di['mod_service']('Currency');
+
+        $currencyService = $this->di['mod_service']('currency');
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
 
         $invoice->serie = $systemService->getParamValue('invoice_series_paid');
         $invoice->approved = true;
-        $invoice->currency_rate = $ctable->getRateByCode($invoice->currency);
+
+        $currencyRate = $currencyRepository->getRateByCode((string) $invoice->currency);
+        if ($currencyRate === null) {
+            throw new \FOSSBilling\Exception("Currency rate for code '{$invoice->currency}' is not configured.");
+        }
+        $invoice->currency_rate = $currencyRate;
+
         $invoice->status = \Model_Invoice::STATUS_PAID;
         $invoice->paid_at = date('Y-m-d H:i:s');
         $invoice->updated_at = date('Y-m-d H:i:s');
@@ -478,10 +488,18 @@ class Service implements InjectionAwareInterface
     {
         if (!$client->currency) {
             $currencyService = $this->di['mod_service']('Currency');
-            $currency = $currencyService->getDefault();
-            $client->currency = $currency->code;
+            /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+            $currencyRepository = $currencyService->getCurrencyRepository();
+            $currency = $currencyRepository->findDefault();
+
+            if (!$currency instanceof Currency) {
+                throw new \FOSSBilling\Exception('Default currency not found');
+            }
+
+            $currencyCode = $currency->getCode();
+            $client->currency = $currencyCode;
             $this->di['db']->store($client);
-            error_log("Client #{$client->id} currency was not defined. Set default currency {$currency->code}.");
+            error_log("Client #{$client->id} currency was not defined. Set default currency {$currencyCode}.");
         }
 
         $model = $this->di['db']->dispense('Invoice');

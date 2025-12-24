@@ -457,11 +457,19 @@ final class ServiceTest extends \BBTestCase
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue');
 
-        $currencyService = $this->createMock(\Box\Mod\Currency\Service::class);
-        $currencyService->expects($this->atLeastOnce())
-            ->method('getRateByCode');
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyRepositoryMock->expects($this->atLeastOnce())
+            ->method('getRateByCode')
+            ->willReturn(1.0);
 
-        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getCurrencyRepository'])->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())->method('getCurrencyRepository')
+            ->willReturn($currencyRepositoryMock);
+
+        $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
             ->method('fire');
 
@@ -473,15 +481,15 @@ final class ServiceTest extends \BBTestCase
             ->method('store');
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $itemInvoiceServiceMock, $currencyService) {
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $itemInvoiceServiceMock, $currencyServiceMock) {
             if ($serviceName == 'system') {
                 return $systemService;
             }
             if ($sub == 'InvoiceItem') {
                 return $itemInvoiceServiceMock;
             }
-            if ($serviceName == 'Currency') {
-                return $currencyService;
+            if ($serviceName == 'currency') {
+                return $currencyServiceMock;
             }
         });
         $di['db'] = $dbMock;
@@ -502,9 +510,14 @@ final class ServiceTest extends \BBTestCase
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
-        $currencyService = $this->createMock(\Box\Mod\Currency\Service::class);
+        $invoiceModel->currency = 'USD';
+        $invoiceModel->refund = 0;
+        $currencyService = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['toBaseCurrency'])
+            ->getMock();
         $currencyService->expects($this->atLeastOnce())
-            ->method('toBaseCurrency');
+            ->method('toBaseCurrency')
+            ->willReturn(0.0);
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -545,13 +558,27 @@ final class ServiceTest extends \BBTestCase
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
 
-        $currencyModel = new \Model_Currency();
-        $currencyModel->loadBean(new \DummyBean());
+        $currencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $defaultCurrencyCode = 'USD';
+        $currencyModel->expects($this->any())
+            ->method('getCode')
+            ->willReturn($defaultCurrencyCode);
 
-        $currencyService = $this->createMock(\Box\Mod\Currency\Service::class);
-        $currencyService->expects($this->atLeastOnce())
-            ->method('getDefault')
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyRepositoryMock->expects($this->atLeastOnce())
+            ->method('findDefault')
             ->willReturn($currencyModel);
+
+        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getCurrencyRepository'])
+            ->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())
+            ->method('getCurrencyRepository')
+            ->willReturn($currencyRepositoryMock);
 
         $itemInvoiceServiceMock = $this->createMock(ServiceInvoiceItem::class);
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
@@ -569,9 +596,9 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyService, $itemInvoiceServiceMock) {
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyServiceMock, $itemInvoiceServiceMock) {
             if ($serviceName == 'Currency') {
-                return $currencyService;
+                return $currencyServiceMock;
             }
             if ($sub == 'InvoiceItem') {
                 return $itemInvoiceServiceMock;
@@ -579,9 +606,12 @@ final class ServiceTest extends \BBTestCase
         });
         $di['logger'] = new \Box_Log();
 
+
+
         $serviceMock->setDi($di);
         $result = $serviceMock->prepareInvoice($clientModel, $data);
         $this->assertInstanceOf('Model_Invoice', $result);
+        $this->assertSame($result->currency, $defaultCurrencyCode);
     }
 
     public function testSetInvoiceDefaults(): void

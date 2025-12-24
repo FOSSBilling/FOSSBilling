@@ -96,9 +96,13 @@ final class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Cart\Service();
 
-        $curencyModel = new \Model_Currency();
-        $curencyModel->loadBean(new \DummyBean());
-        $curencyModel->id = random_int(0, 1000);
+        $currencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyId = random_int(0, 1000);
+        $currencyModel->expects($this->any())
+            ->method('getId')
+            ->willReturn($currencyId);
 
         $session_id = 'rrcpqo7tkjh14d2vmf0car64k7';
         $model = null; // Does not exist in database
@@ -125,13 +129,27 @@ final class ServiceTest extends \BBTestCase
             ->method('get')
             ->willReturn($sessionGetWillReturn);
 
-        $currencyServiceMock = $this->getMockBuilder(\Box\Mod\Currency\Service::class)->onlyMethods(['getCurrencyByClientId', 'getDefault'])->getMock();
+$currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        if ($sessionGetWillReturn === null) {
+            $currencyRepositoryMock->expects($this->atLeastOnce())
+                ->method('findDefault')
+                ->willReturn($currencyModel);
+        } else {
+            $currencyRepositoryMock->expects($this->never())
+                ->method('findDefault');
+        }
+
+        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getCurrencyByClientId', 'getCurrencyRepository'])
+            ->getMock();
         $currencyServiceMock->expects($this->$getCurrencyByClientIdExpects())
             ->method('getCurrencyByClientId')
-            ->willReturn($curencyModel);
-        $currencyServiceMock->expects($this->$getDefaultExpects())
-            ->method('getDefault')
-            ->willReturn($curencyModel);
+            ->willReturn($currencyModel);
+        $currencyServiceMock->expects($this->atLeastOnce())
+            ->method('getCurrencyRepository')
+            ->willReturn($currencyRepositoryMock);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -143,7 +161,7 @@ final class ServiceTest extends \BBTestCase
 
         $this->assertInstanceOf('Model_Cart', $result);
         $this->assertEquals($result->session_id, $session_id);
-        $this->assertEquals($result->currency_id, $curencyModel->id);
+        $this->assertEquals($currencyId, $result->currency_id);
     }
 
     public function testIsStockAvailable(): void
@@ -298,8 +316,9 @@ final class ServiceTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
 
-        $currency = new \Model_Currency();
-        $currency->loadBean(new \DummyBean());
+        $currency = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -1067,26 +1086,37 @@ final class ServiceTest extends \BBTestCase
             ->willReturn([$cartProductModel]);
         $cartProductApiArray = [
             'total' => 1,
-            'discount_price' => 0,
+            'setup_price' => 0,
+            'discount' => 0,
         ];
         $serviceMock->expects($this->atLeastOnce())
             ->method('cartProductToApiArray')
             ->willReturn($cartProductApiArray);
 
+        $currencyService = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->getMock();
+
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
-        $currencyModel = new \Model_Currency();
-        $currencyModel->loadBean(new \DummyBean());
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($currencyModel);
-
-        $currencyService = $this->createMock(\Box\Mod\Currency\Service::class);
-        $currencyService->expects($this->atLeastOnce())
+        $currencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyModel->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
 
-        $di = $this->getDi();
+$currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyRepositoryMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->willReturn($currencyModel);
+
+        $currencyService->expects($this->atLeastOnce())
+            ->method('getCurrencyRepository')
+            ->willReturn($currencyRepositoryMock);
+
+        $di = new \Pimple\Container();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyService);
 

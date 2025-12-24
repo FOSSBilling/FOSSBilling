@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Cart\Api;
 
+use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 /**
@@ -51,8 +52,10 @@ class Guest extends \Api_Abstract
     public function set_currency($data)
     {
         $currencyService = $this->di['mod_service']('currency');
-        $currency = $currencyService->getByCode($data['currency']);
-        if (!$currency instanceof \Model_Currency) {
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
+        $currency = $currencyRepository->findOneByCode($data['currency']);
+        if (!$currency instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found');
         }
         $cart = $this->getService()->getSessionCart();
@@ -70,12 +73,17 @@ class Guest extends \Api_Abstract
         $cart = $this->getService()->getSessionCart();
 
         $currencyService = $this->di['mod_service']('currency');
-        $currency = $this->di['db']->load('Currency', $cart->currency_id);
-        if (!$currency instanceof \Model_Currency) {
-            $currency = $currencyService->getDefault();
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
+        $currency = $currencyRepository->find($cart->currency_id);
+        if (!$currency instanceof Currency) {
+            $currency = $currencyRepository->findDefault();
+            if (!$currency instanceof Currency) {
+                throw new \FOSSBilling\Exception('No currency available');
+            }
         }
 
-        return $currencyService->toApiArray($currency);
+        return $currency->toApiArray();
     }
 
     /**
