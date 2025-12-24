@@ -279,29 +279,35 @@ class Service implements InjectionAwareInterface
 
         // Add order information for email templates
         $result['orders'] = [];
-        foreach ($lines as $line) {
-            if ($line['order_id']) {
-                $order = $this->di['db']->load('ClientOrder', $line['order_id']);
-                if ($order instanceof \Model_ClientOrder) {
-                    $orderInfo = [
-                        'id' => $order->id,
-                        'title' => $order->title,
-                        'expires_at' => $order->expires_at,
-                    ];
+        // Add order information for email templates
+        $result['orders'] = [];
+        $orderIds = array_unique(array_filter(array_column($lines, 'order_id')));
 
-                    // Get product name if available
-                    if ($order->product_id) {
-                        $product = $this->di['db']->load('Product', $order->product_id);
-                        if ($product instanceof \Model_Product) {
-                            $orderInfo['product_name'] = $product->title;
-                            $orderInfo['product_type'] = $product->type;
-                        }
-                    }
+        if (!empty($orderIds)) {
+            // Batch load orders
+            $orders = $this->di['db']->find('ClientOrder', 'id IN (' . implode(',', $orderIds) . ')');
 
-                    $result['orders'][] = $orderInfo;
+            // Batch load related products
+            $productIds = array_unique(array_filter(array_map(fn ($o) => $o->product_id, $orders)));
+            $products = !empty($productIds)
+            ? $this->di['db']->find('Product', 'id IN (' . implode(',', $productIds) . ')')
+            : [];
+
+            foreach ($orders as $order) {
+                $product = $products[$order->product_id] ?? null;
+                $orderData = [
+                    'id' => $order->id,
+                    'title' => $order->title,
+                    'expires_at' => $order->expires_at,
+                ];
+
+                if ($product) {
+                    $orderData['product_name'] = $product->title;
+                    $orderData['product_type'] = $product->type;
                 }
+
+                $result['orders'][] = $orderData;
             }
-        }
 
         return $result;
     }
