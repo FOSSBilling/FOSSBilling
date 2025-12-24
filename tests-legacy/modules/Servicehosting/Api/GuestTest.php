@@ -1,20 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicehosting\Api;
 
-class GuestTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class GuestTest extends \BBTestCase
 {
-    /**
-     * @var Guest
-     */
-    protected $api;
+    protected ?Guest $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Guest();
     }
 
-    public function testfreeTlds(): void
+    public function testFreeTlds(): void
     {
         $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
@@ -26,14 +26,14 @@ class GuestTest extends \BBTestCase
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
         $model->type = \Model_Product::HOSTING;
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getFreeTlds')
             ->with($model)
@@ -45,7 +45,7 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testfreeTldsProductTypeIsNotHosting(): void
+    public function testFreeTldsProductTypeIsNotHosting(): void
     {
         $di = new \Pimple\Container();
         $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
@@ -56,14 +56,14 @@ class GuestTest extends \BBTestCase
 
         $model = new \Model_Product();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->never())->method('getFreeTlds');
         $this->api->setService($serviceMock);
         $this->api->setDi($di);

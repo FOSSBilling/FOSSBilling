@@ -1,7 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 #[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_PeriodTest extends PHPUnit\Framework\TestCase
+final class Box_PeriodTest extends PHPUnit\Framework\TestCase
 {
     public function testException(): void
     {

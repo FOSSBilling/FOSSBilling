@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Email\Api;
 
-class Api_ClientTest extends \BBTestCase
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class Api_ClientTest extends \BBTestCase
 {
     public function testGetList(): void
     {
@@ -33,7 +36,7 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
         $clientApi->setIdentity($client);
 
         $result = $clientApi->get_list([]);
@@ -68,7 +71,7 @@ class Api_ClientTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->id = random_int(1, 100);
+        $client->id = 1;
         $clientApi->setIdentity($client);
 
         $result = $clientApi->get(['id' => 1]);

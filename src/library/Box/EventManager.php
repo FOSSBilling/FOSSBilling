@@ -12,6 +12,8 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
 {
     protected ?Pimple\Container $di = null;
 
+    public const GLOBAL_LISTENER_NAME = 'onEveryEvent';
+
     public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
@@ -39,7 +41,10 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
         $e = new Box_Event($subject, $event, $params);
         $e->setDi($this->di);
         $disp = new Box_EventDispatcher();
+        
         $this->_connectDatabaseHooks($disp, $e->getName());
+        $this->_connectDatabaseHooks($disp, self::GLOBAL_LISTENER_NAME); // Also connect the global listeners (onEveryEvent)
+        
         $disp->notify($e);
 
         return $e->getReturnValue();
