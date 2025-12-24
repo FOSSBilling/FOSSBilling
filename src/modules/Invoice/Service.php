@@ -279,8 +279,6 @@ class Service implements InjectionAwareInterface
 
         // Add order information for email templates
         $result['orders'] = [];
-        // Add order information for email templates
-        $result['orders'] = [];
         $orderIds = array_unique(array_filter(array_column($lines, 'order_id')));
 
         if (!empty($orderIds)) {
@@ -308,6 +306,7 @@ class Service implements InjectionAwareInterface
 
                 $result['orders'][] = $orderData;
             }
+        }
 
         return $result;
     }
