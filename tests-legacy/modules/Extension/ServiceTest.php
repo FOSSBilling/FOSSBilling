@@ -257,7 +257,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['mod'] = $di->protect(function ($name) use ($di) {
-            $mod = new \Box_Mod($name);
+            $mod = new \FOSSBilling\Module($name);
             $mod->setDi($di);
 
             return $mod;
