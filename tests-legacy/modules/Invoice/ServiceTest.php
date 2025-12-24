@@ -662,11 +662,15 @@ final class ServiceTest extends \BBTestCase
     public function testApproveInvoice(): void
     {
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
-            ->onlyMethods(['tryPayWithCredits'])
+            ->onlyMethods(['tryPayWithCredits', 'toApiArray'])
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('tryPayWithCredits');
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturn(['id' => 1]);
 
         $data['use_credits'] = true;
 
@@ -752,7 +756,7 @@ final class ServiceTest extends \BBTestCase
         $total = 10.0;
         $tax = 2.2;
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
-            ->onlyMethods(['getTotal', 'getTax', 'countIncome', 'addNote'])
+            ->onlyMethods(['getTotal', 'getTax', 'countIncome', 'addNote', 'toApiArray'])
             ->getMock();
 
         $serviceMock->expects($this->once())
@@ -765,6 +769,9 @@ final class ServiceTest extends \BBTestCase
             ->method('countIncome');
         $serviceMock->expects($this->exactly(3))
             ->method('addNote');
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturn(['id' => $newId]);
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -867,9 +874,17 @@ final class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
-        $this->service->setDi($di);
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+            ->onlyMethods(['toApiArray'])
+            ->getMock();
 
-        $result = $this->service->updateInvoice($invoiceModel, $data);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturn(['id' => 1]);
+
+        $serviceMock->setDi($di);
+
+        $result = $serviceMock->updateInvoice($invoiceModel, $data);
         $this->assertTrue($result);
     }
 
