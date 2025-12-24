@@ -128,7 +128,7 @@ class Service
      *
      * @throws \InvalidArgumentException
      */
-    public function lookupIP(string $ip)
+    public function lookupIP(string $ip): array
     {
         if (!filter_var($ip, FILTER_VALIDATE_IP)) {
             throw new \InvalidArgumentException('The provided input was not a valid IP address.');

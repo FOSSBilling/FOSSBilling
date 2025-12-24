@@ -1,4 +1,4 @@
-FROM php:8.4-apache
+FROM php:8.4-apache@sha256:fdf06fd4d78afcd6474df5f5c70ea8faf8a03eebfddc705910ea7d0cf4b91549
 
 # Install required packages, configure Apache, install PHP extensions, and clean-up.
 RUN apt-get update \

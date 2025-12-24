@@ -1,28 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Servicedownloadable\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-class ClientTest extends \BBTestCase
+#[Group('Core')]
+final class ClientTest extends \BBTestCase
 {
-    /**
-     * @var Client
-     */
-    protected $api;
+    protected ?Client $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Client();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testsendFileMissingOrderId(): void
+    public function testSendFileMissingOrderId(): void
     {
         $data = [];
 
@@ -31,7 +33,7 @@ class ClientTest extends \BBTestCase
         $this->api->send_file($data);
     }
 
-    public function testsendFileOrderNotFound(): void
+    public function testSendFileOrderNotFound(): void
     {
         $data = [
             'order_id' => 1,
@@ -40,11 +42,11 @@ class ClientTest extends \BBTestCase
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setIdentity($modelClient);
@@ -55,7 +57,7 @@ class ClientTest extends \BBTestCase
         $this->api->send_file($data);
     }
 
-    public function testsendFileOrderNotActivated(): void
+    public function testSendFileOrderNotActivated(): void
     {
         $data = [
             'order_id' => 1,
@@ -64,18 +66,18 @@ class ClientTest extends \BBTestCase
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(new \Model_ClientOrder());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->api->setDi($di);
         $this->api->setIdentity($modelClient);
@@ -85,7 +87,7 @@ class ClientTest extends \BBTestCase
         $this->api->send_file($data);
     }
 
-    public function testsendFile(): void
+    public function testSendFile(): void
     {
         $data = [
             'order_id' => 1,
@@ -94,12 +96,12 @@ class ClientTest extends \BBTestCase
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedownloadable\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendFile')
             ->willReturn(true);
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceDownloadable());
@@ -108,14 +110,14 @@ class ClientTest extends \BBTestCase
         $mockOrder->loadBean(new \DummyBean());
         $mockOrder->status = 'active';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($mockOrder);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->api->setDi($di);
         $this->api->setIdentity($modelClient);

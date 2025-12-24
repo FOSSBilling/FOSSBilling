@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Cart\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 /**
  * Shopping cart management.
  */
@@ -42,13 +44,9 @@ class Admin extends \Api_Abstract
      *
      * @return array Contents of the shopping cart
      */
+    #[RequiredParams(['id' => 'Shopping cart ID is missing'])]
     public function get($data)
     {
-        $required = [
-            'id' => 'Shopping cart id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $cart = $this->di['db']->getExistingModelById('Cart', $data['id'], 'Shopping cart not found');
 
         return $this->getService()->toApiArray($cart);
@@ -58,10 +56,8 @@ class Admin extends \Api_Abstract
      * Remove shopping carts that are older than a week and was not ordered.
      *
      * @BOXBILLING_CRON
-     *
-     * @return bool
      */
-    public function batch_expire($data)
+    public function batch_expire($data): bool
     {
         $this->di['logger']->info('Executed action to clear expired shopping carts from database');
 

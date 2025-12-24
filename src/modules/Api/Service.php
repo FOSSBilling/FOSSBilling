@@ -53,10 +53,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * @param int         $since - timestamp
      * @param string|null $ip
-     *
-     * @return int
      */
-    public function getRequestCount($since, $ip = null, $isLoginMethod = false)
+    public function getRequestCount($since, $ip = null, $isLoginMethod = false): int
     {
         if (!is_numeric($since)) {
             $since = strtotime($since);

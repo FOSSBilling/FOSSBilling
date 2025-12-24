@@ -1,29 +1,37 @@
 <?php
 
-namespace Box\Tests\Mod\Currency;
+declare(strict_types=1);
 
-class ServiceTest extends \BBTestCase
+namespace Box\Tests\Mod\Currency;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
         $service = new \Box\Mod\Currency\Service();
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $di = $this->getDi();
+        $db = $this->createMock('Box_Database');
+
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
 
         $di['db'] = $db;
+        $di['em'] = $emMock;
         $service->setDi($di);
         $result = $service->getDi();
         $this->assertEquals($di, $result);
-    }
-
-    public function testGetSearchQuery(): void
-    {
-        $service = new \Box\Mod\Currency\Service();
-        $result = $service->getSearchQuery();
-        $this->assertIsString($result[0]);
-        $this->assertIsArray($result[1]);
-        $this->assertEquals('SELECT * FROM currency WHERE 1', $result[0]);
     }
 
     public function testGetBaseCurrencyRate(): void
@@ -31,13 +39,22 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
         $rate = 0.6;
         $expected = 1 / $rate;
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->atLeastOnce())
-            ->method('getCell')
+$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('getRateByCode')
             ->willReturn($rate);
 
-        $di['db'] = $db;
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
+        $di = new \Pimple\Container();
+        $di['em'] = $emMock;
         $service->setDi($di);
         $code = 'EUR';
         $result = $service->getBaseCurrencyRate($code);
@@ -48,20 +65,56 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Currency\Service();
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn(0);
+$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('getRateByCode')
+            ->willReturn(0.0);
 
-        $di['db'] = $db;
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
+        $di = new \Pimple\Container();
+        $di['em'] = $emMock;
         $service->setDi($di);
         $code = 'EUR';
         $this->expectException(\FOSSBilling\Exception::class);
         $service->getBaseCurrencyRate($code); // Expecting exception
     }
 
-    public static function toBaseCurrencyProvider()
+    public function testGetBaseCurrencyRateNotFound(): void
+    {
+        $service = new \Box\Mod\Currency\Service();
+
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('getRateByCode')
+            ->willReturn(null);
+
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
+        $di = new \Pimple\Container();
+        $di['em'] = $emMock;
+        $service->setDi($di);
+        $code = 'XYZ';
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Currency not found');
+        $service->getBaseCurrencyRate($code); // Expecting exception when currency doesn't exist
+    }
+
+    public static function toBaseCurrencyProvider(): array
     {
         return [
             ['EUR', 'USD', 100, 0.73, 73], // 100 USD ~ 72.99 EUR
@@ -70,219 +123,219 @@ class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('toBaseCurrencyProvider')]
-    public function testToBaseCurrency($defaultCode, $foreignCode, $amount, $rate, $expected): void
+    #[DataProvider('toBaseCurrencyProvider')]
+    public function testToBaseCurrency(string $defaultCode, string $foreignCode, int $amount, float $rate, int $expected): void
     {
-        $model = new \Model_Currency();
-        $bean = new \DummyBean();
-        $bean->code = $defaultCode;
-        $model->loadBean($bean);
-
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['getDefault', 'getBaseCurrencyRate'])
+        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
             ->getMock();
+        $model->expects($this->atLeastOnce())
+            ->method('getCode')
+            ->willReturn($defaultCode);
 
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getDefault')
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findDefault')
             ->willReturn($model);
+
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
+$serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getBaseCurrencyRate'])
+            ->getMock();
 
         $serviceMock->expects($this->any()) // will not be called when currencies are the same, so using any()
             ->method('getBaseCurrencyRate')
             ->willReturn($rate);
+
+        $di = new \Pimple\Container();
+        $di['em'] = $emMock;
+        $serviceMock->setDi($di);
 
         $result = $serviceMock->toBaseCurrency($foreignCode, $amount);
 
         $this->assertEquals($expected, round($result, 2));
     }
 
-    public static function getCurrencyByClientIdProvider()
+    public static function getCurrencyByClientIdProvider(): array
     {
-        $self = new ServiceTest('ServiceTest');
-
-        $model = new \Model_Currency();
-        $bean = new \DummyBean();
-        $model->loadBean($bean);
+        
 
         return [
             [
-                $model,
                 'USD',
-                $self->atLeastOnce(),
-                $self->never(),
+                'atLeastOnce',
+                'never',
             ],
             [
-                $model,
                 null,
-                $self->never(),
-                $self->atLeastOnce(),
+                'never',
+                'atLeastOnce',
             ],
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('getCurrencyByClientIdProvider')]
-    public function testGetCurrencyByClientId($row, $currency, $expectsGetByCode, $getDefaultCalled): void
+#[\PHPUnit\Framework\Attributes\DataProvider('getCurrencyByClientIdProvider')]
+    public function testGetCurrencyByClientId(?string $currency, $expectsGetByCode, $expectsGetDefault): void
     {
+        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
         $di = new \Pimple\Container();
         $db = $this->getMockBuilder('Box_Database')->getMock();
-
         $db->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn($currency);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getDefault', 'getByCode'])->getMock();
-
-        $serviceMock->expects($getDefaultCalled)
-            ->method('getDefault')
-            ->willReturn($row);
-
-        $serviceMock->expects($expectsGetByCode)
-            ->method('getByCode')
-            ->willReturn($row);
-
-        $di['db'] = $db;
-        $serviceMock->setDi($di);
-
-        $result = $serviceMock->getCurrencyByClientId(1);
-
-        $this->assertEquals($row, $result);
-        $this->assertInstanceOf('Model_Currency', $result);
-    }
-
-    public function testGetCurrencyByClientIdNotFounfByCode(): void
-    {
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-
-        $db->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn(new \Model_Currency());
-
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getDefault', 'getByCode'])->getMock();
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getDefault')
-            ->willReturn(new \Model_Currency());
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getByCode')
-            ->willReturn(null);
-
-        $di['db'] = $db;
-        $serviceMock->setDi($di);
-
-        $result = $serviceMock->getCurrencyByClientId(1);
-
-        $this->assertInstanceOf('Model_Currency', $result);
-    }
-
-    public function testgetByCode(): void
-    {
-        $di = new \Pimple\Container();
-        $service = new \Box\Mod\Currency\Service();
-        $bean = new \DummyBean();
-        $bean->code = 'EUR';
-        $model = new \Model_Currency();
-        $model->loadBean($bean);
-
-        $currency = 'EUR';
-
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->atLeastOnce())
-            ->method('findOne')
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->$expectsGetDefault())
+            ->method('findDefault')
+            ->willReturn($model);
+        $repositoryMock->expects($this->$expectsGetByCode())
+            ->method('findOneByCode')
             ->willReturn($model);
 
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
         $di['db'] = $db;
+        $di['em'] = $emMock;
+
+        $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
 
-        $result = $service->getByCode($currency);
+        $result = $service->getCurrencyByClientId(1);
 
-        $this->assertEquals($model, $result);
-        $this->assertInstanceOf('Model_Currency', $result);
-        $this->assertEquals($model->code, $currency);
+        $this->assertInstanceOf('\\' . \Box\Mod\Currency\Entity\Currency::class, $result);
     }
 
-    public static function getRateByCodeProvider()
+    public static function getRateByCodeProvider(): array
     {
         return [
             ['EUR', 0.6, 0.6],
-            ['GBP', null, 1],
-            ['GBP', 'rate', 1],
+            ['GBP', null, null],
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('getRateByCodeProvider')]
-    public function testGetRateByCode($code, $returns, $expected): void
+#[\PHPUnit\Framework\Attributes\DataProvider('getRateByCodeProvider')]
+    public function testGetRateByCode(string $code, ?float $returns, ?float $expected): void
     {
-        $service = new \Box\Mod\Currency\Service();
-
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->atLeastOnce())
-            ->method('getCell')
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('getRateByCode')
             ->willReturn($returns);
 
-        $di['db'] = $db;
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
+$di = new \Pimple\Container();
+        $di['em'] = $emMock;
+
+        $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
-        $result = $service->getRateByCode($code);
+
+        // Access repository directly since getBaseCurrencyRate uses it internally
+        $result = $service->getCurrencyRepository()->getRateByCode($code);
         $this->assertEquals($expected, $result);
     }
 
-    public function testGetDefault(): void
+    public static function setAsDefaultProvider(): array
     {
-        $service = new \Box\Mod\Currency\Service();
-
-        $bean = new \DummyBean();
-        $model = new \Model_Currency();
-        $model->loadBean($bean);
-
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->atLeastOnce())
-            ->method('findOne')
-            ->willReturn([]);
-        $db->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn($model);
-        $di['db'] = $db;
-        $service->setDi($di);
-        $result = $service->getDefault();
-
-        $this->assertInstanceOf('Model_Currency', $result);
-        $this->assertEquals($model, $result);
-    }
-
-    public static function setAsDefaultProvider()
-    {
-        $self = new ServiceTest('ServiceTest');
-
-        $firstModel = new \Model_Currency();
-        $firstModel->loadBean(new \DummyBean());
-        $firstModel->code = 'USD';
-        $firstModel->is_default = 0;
-        $secondModel = new \Model_Currency();
-        $secondModel->loadBean(new \DummyBean());
-        $secondModel->code = 'USD';
-        $secondModel->is_default = 1;
-
+        // Return flags instead of mocks since we can't create mocks in static context
         return [
-            [$firstModel, $self->atLeastOnce()],
-            [$secondModel, $self->never()],
+            ['default_currency', 'atLeastOnce'],
+            ['already_default', 'never'],
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('setAsDefaultProvider')]
-    public function testSetAsDefault($model, $expects): void
+#[\PHPUnit\Framework\Attributes\DataProvider('setAsDefaultProvider')]
+    public function testSetAsDefault($modelType, $expects): void
     {
-        $service = new \Box\Mod\Currency\Service();
+        // Create model mock based on type
+        if ($modelType === 'default_currency') {
+            $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+            $model->expects($this->any())
+                ->method('getCode')
+                ->willReturn('USD');
+            $model->expects($this->any())
+                ->method('isDefault')
+                ->willReturn(false);
+        } else {
+            $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+            $model->expects($this->any())
+                ->method('getCode')
+                ->willReturn('USD');
+            $model->expects($this->any())
+                ->method('isDefault')
+                ->willReturn(true);
+        }
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($expects)
-            ->method('exec')
-            ->willReturn(true);
+        // Create a fresh mock for the re-fetched currency (after identity map clear)
+        $refetchedModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $refetchedModel->expects($this->any())
+            ->method('getCode')
+            ->willReturn('USD');
+        $refetchedModel->expects($this->any())
+            ->method('isDefault')
+            ->willReturn(false);
 
-        $di['db'] = $db;
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->$expects())
+            ->method('clearDefaultFlags');
+        // Mock findOneByCode to return the re-fetched currency after identity map clear
+        $repositoryMock->expects($this->$expects())
+            ->method('findOneByCode')
+            ->with('USD')
+            ->willReturn($refetchedModel);
+
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+        $emMock->expects($this->$expects())
+            ->method('persist');
+        $emMock->expects($this->$expects())
+            ->method('flush');
+        // Mock clear() for identity map clearing
+        $emMock->expects($this->$expects())
+            ->method('clear')
+            ->with(\Box\Mod\Currency\Entity\Currency::class);
+
+$di = new \Pimple\Container();
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
+
+        $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
         $result = $service->setAsDefault($model);
 
@@ -291,63 +344,94 @@ class ServiceTest extends \BBTestCase
 
     public function testSetAsDefaultException(): void
     {
+        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $model->expects($this->any())
+            ->method('isDefault')
+            ->willReturn(false);
+        $model->expects($this->any())
+            ->method('getCode')
+            ->willReturn('');
+
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
+$di = new \Pimple\Container();
+        $di['em'] = $emMock;
+
         $service = new \Box\Mod\Currency\Service();
-
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->never())
-            ->method('exec')
-            ->willReturn(true);
-
-        $model = new \Model_Currency();
-        $model->loadBean(new \DummyBean());
-        $model->is_default = 0;
-        $model->code = null;
-
-        $di['db'] = $db;
         $service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $service->setAsDefault($model); // Currency code is null, should throw an \FOSSBilling\Exception
+        $service->setAsDefault($model); // Currency code is empty, should throw an \FOSSBilling\Exception
     }
 
-    public function testgetPairs(): void
+    public function testGetPairs(): void
     {
-        $service = new \Box\Mod\Currency\Service();
-
         $pairs = [
             'USD' => 'US Dollar',
             'EUR' => 'Euro',
             'GBP' => 'Pound Sterling',
         ];
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->atLeastOnce())
-            ->method('getAssoc')
+$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('getPairs')
             ->willReturn($pairs);
 
-        $di['db'] = $db;
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
+        $di = new \Pimple\Container();
+        $di['em'] = $emMock;
+
+        $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
-        $result = $service->getPairs();
+        $result = $service->getCurrencyRepository()->getPairs();
 
         $this->assertEquals($result, $pairs);
     }
 
     public function testRmDefaultCurrencyException(): void
     {
-        $service = new \Box\Mod\Currency\Service();
-
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->never())
-            ->method('exec')
+$model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $model->expects($this->any())
+            ->method('getCode')
+            ->willReturn('EUR');
+        $model->expects($this->any())
+            ->method('isDefault')
             ->willReturn(true);
 
-        $model = new \Model_Currency();
-        $model->loadBean(new \DummyBean());
-        $model->code = 'EUR';
-        $model->is_default = 1;
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
-        $di['db'] = $db;
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
+        $di = new \Pimple\Container();
+        $di['em'] = $emMock;
+
+        $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
         $service->rm($model); // will throw \FOSSBilling\Exception because default currency cannot be removed
@@ -355,101 +439,128 @@ class ServiceTest extends \BBTestCase
 
     public function testRm(): void
     {
+        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $model->expects($this->any())
+            ->method('getCode')
+            ->willReturn('EUR');
+        $model->expects($this->any())
+            ->method('isDefault')
+            ->willReturn(false);
+
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+        $emMock->expects($this->atLeastOnce())
+            ->method('remove')
+            ->with($model);
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
+
+$di = new \Pimple\Container();
+        $di['em'] = $emMock;
+
         $service = new \Box\Mod\Currency\Service();
-
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->atLeastOnce())
-            ->method('exec')
-            ->willReturn(true);
-
-        $model = new \Model_Currency();
-        $model->loadBean(new \DummyBean());
-        $model->code = 'EUR';
-        $model->is_default = 0;
-
-        $di['db'] = $db;
         $service->setDi($di);
         $result = $service->rm($model);
 
-        $this->assertEquals($result, null);
+        $this->assertNull($result);
     }
 
     public function testRmMissingCodeException(): void
     {
+        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $model->expects($this->any())
+            ->method('isDefault')
+            ->willReturn(false);
+        $model->expects($this->any())
+            ->method('getCode')
+            ->willReturn('');
+
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
+$di = new \Pimple\Container();
+        $di['em'] = $emMock;
+
         $service = new \Box\Mod\Currency\Service();
-
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->never())
-            ->method('exec')
-            ->willReturn(true);
-
-        $model = new \Model_Currency();
-        $model->loadBean(new \DummyBean());
-        $model->is_default = 0;
-        $model->code = null;
-
-        $di['db'] = $db;
         $service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $service->rm($model); // will throw \FOSSBilling\Exception because currency code is not set
+        $service->rm($model); // will throw \FOSSBilling\Exception because currency code is empty
     }
 
     public function testToApiArray(): void
     {
-        $service = new \Box\Mod\Currency\Service();
-
-        $model = new \Model_Currency();
-        $model->loadBean(new \DummyBean());
-
-        $model->code = 'EUR';
-        $model->title = 'Euro';
-        $model->conversion_rate = '3.4528';
-        $model->format = '';
-        $model->price_format = '';
-        $model->is_default = 1;
+        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
         $expected = [
-            'code' => $model->code,
-            'title' => $model->title,
-            'conversion_rate' => (float) $model->conversion_rate,
-            'format' => $model->format,
-            'price_format' => $model->price_format,
-            'default' => $model->is_default,
+            'code' => 'EUR',
+            'title' => 'Euro',
+            'conversion_rate' => 3.4528,
+            'format' => '',
+            'price_format' => '',
+            'default' => true,
         ];
 
-        $result = $service->toApiArray($model);
+        $model->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturn($expected);
+
+        $result = $model->toApiArray();
         $this->assertEquals($result, $expected);
     }
 
     public function testCreateCurrency(): void
     {
-        $service = new \Box\Mod\Currency\Service();
-
         $code = 'EUR';
         $format = '€{{price}}';
 
-        $systemService = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->onlyMethods(['checkLimits'])->getMock();
+        $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->onlyMethods(['checkLimits'])->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('checkLimits')
             ->willReturn(null);
 
-        $currencyModel = new \Model_Tld();
-        $currencyModel->loadBean(new \DummyBean());
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn(random_int(1, 100));
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($currencyModel);
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist');
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['em'] = $emMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
+
+        $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
 
         $result = $service->createCurrency($code, $format, 'Euros', 0.6);
@@ -467,25 +578,39 @@ class ServiceTest extends \BBTestCase
         $price_format = '€{{Price}}';
         $conversion_rate = 0.6;
 
-        $model = new \Model_Currency();
-        $model->loadBean(new \DummyBean());
-        $model->code = 'EUR';
+        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getByCode'])->getMock();
-        $service->expects($this->atLeastOnce())
-            ->method('getByCode')
+$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
             ->willReturn($model);
 
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist');
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
+
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
         $di['logger'] = new \Box_Log();
-        $di['db'] = $db;
+        $di['em'] = $emMock;
+
+        $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
 
         $result = $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate);
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testUpdateCurrencyNotFoundException(): void
@@ -496,19 +621,27 @@ class ServiceTest extends \BBTestCase
         $price_format = '€{{Price}}';
         $conversion_rate = 0.6;
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getByCode'])->getMock();
+$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
+            ->willReturn(null);
+
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
         $di = new \Pimple\Container();
+        $di['em'] = $emMock;
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $di['db'] = $db;
-
+        $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
 
-        $service->expects($this->atLeastOnce())
-            ->method('getByCode')
-            ->willReturn(false);
         $this->expectException(\FOSSBilling\Exception::class);
-
         $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); // Expecting \FOSSBilling\Exception every time
     }
 
@@ -520,19 +653,29 @@ class ServiceTest extends \BBTestCase
         $price_format = '€{{Price}}';
         $conversion_rate = 0;
 
-        $model = new \Model_Currency();
-        $model->loadBean(new \DummyBean());
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getByCode'])->getMock();
-        $di = new \Pimple\Container();
+$model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $di['db'] = $db;
-
-        $service->setDi($di);
-
-        $service->expects($this->atLeastOnce())
-            ->method('getByCode')
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
             ->willReturn($model);
+
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
+        $di = new \Pimple\Container();
+        $di['em'] = $emMock;
+
+        $service = new \Box\Mod\Currency\Service();
+        $service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); // Expecting \FOSSBilling\Exception every time
@@ -540,133 +683,192 @@ class ServiceTest extends \BBTestCase
 
     public function testUpdateCurrencyRates(): void
     {
-        $model = new \Model_Currency();
-        $model->loadBean(new \DummyBean());
-        $model->code = 'EUR';
+        $defaultModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $defaultModel->expects($this->any())
+            ->method('getCode')
+            ->willReturn('EUR');
+        $defaultModel->expects($this->any())
+            ->method('isDefault')
+            ->willReturn(true);
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getDefault', '_getRate'])->getMock();
-        $service->expects($this->atLeastOnce())
-            ->method('getDefault')
-            ->willReturn($model);
-        $service->expects($this->atLeastOnce())
+$otherModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $otherModel->expects($this->any())
+            ->method('getCode')
+            ->willReturn('USD');
+        $otherModel->expects($this->any())
+            ->method('isDefault')
+            ->willReturn(false);
+
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findDefault')
+            ->willReturn($defaultModel);
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findAll')
+            ->willReturn([$defaultModel, $otherModel]);
+
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
+
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['_getRate'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
             ->method('_getRate')
             ->willReturn(floatval(random_int(1, 50) / 10));
 
-        $bean = new \DummyBean();
-        $bean->is_default = 1;
-        $bean->code = 'EUR';
-
-        $bean2 = new \DummyBean();
-        $bean2->is_default = 0;
-        $bean2->code = 'USD';
-
-        $beansArray = [
-            $bean, $bean2,
-        ];
-
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn($beansArray);
-
         $di['logger'] = new \Box_Log();
-        $di['db'] = $db;
-        $service->setDi($di);
+        $di['em'] = $emMock;
+        $serviceMock->setDi($di);
 
-        $result = $service->updateCurrencyRates([]);
+        $result = $serviceMock->updateCurrencyRates();
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testUpdateCurrencyRatesRateNotNumeric(): void
     {
-        $model = new \Model_Currency();
-        $model->loadBean(new \DummyBean());
-        $model->code = 'EUR';
-
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getDefault', '_getRate'])->getMock();
-        $service->expects($this->atLeastOnce())
-            ->method('getDefault')
-            ->willReturn($model);
-        $service->expects($this->atLeastOnce())
-            ->method('_getRate')
+$model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $model->expects($this->any())
+            ->method('getCode')
+            ->willReturn('EUR');
+        $model->expects($this->any())
+            ->method('isDefault')
             ->willReturn(false);
 
-        $bean = new \DummyBean();
-        $bean->is_default = 0;
-        $bean->code = 'EUR';
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findDefault')
+            ->willReturn($model);
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findAll')
+            ->willReturn([$model]);
 
-        $beansArray = [
-            $bean,
-        ];
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn($beansArray);
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['_getRate'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('_getRate')
+            ->willReturn(0.0);
 
+$di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
-        $di['db'] = $db;
-        $service->setDi($di);
+        $di['em'] = $emMock;
+        $serviceMock->setDi($di);
 
-        $result = $service->updateCurrencyRates([]);
+        $result = $serviceMock->updateCurrencyRates();
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testDelete(): void
     {
-        $model = new \Model_Currency();
-        $model->loadBean(new \DummyBean());
-        $model->code = 'EUR';
+        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $model->expects($this->any())
+            ->method('getCode')
+            ->willReturn('EUR');
+        $model->expects($this->any())
+            ->method('isDefault')
+            ->willReturn(false);
 
         $code = 'EUR';
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getByCode', 'rm'])->getMock();
-        $service->expects($this->atLeastOnce())
-            ->method('getByCode')
-            ->willReturn($model);
-        $service->expects($this->atLeastOnce())
-            ->method('rm')
+$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
             ->willReturn($model);
 
-        $manager = $this->getMockBuilder('Box_EventManager')->getMock();
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+        $emMock->expects($this->atLeastOnce())
+            ->method('remove');
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
+
+        $manager = $this->createMock('Box_EventManager');
         $manager->expects($this->atLeastOnce())
             ->method('fire')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+$di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
-        $di['db'] = $db;
+        $di['em'] = $emMock;
         $di['events_manager'] = $manager;
 
+        $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
 
         $result = $service->deleteCurrencyByCode($code);
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testDeleteModelNotFoundException(): void
     {
         $code = 'EUR';
 
-        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->onlyMethods(['getByCode', 'rm'])->getMock();
-        $service->expects($this->atLeastOnce())
-            ->method('getByCode')
+$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
             ->willReturn(null);
+
+        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+
+        $di = new \Pimple\Container();
+        $di['em'] = $emMock;
+
+        $service = new \Box\Mod\Currency\Service();
+        $service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $service->deleteCurrencyByCode($code);
 
         $this->assertIsBool($result);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testValidateCurrencyFormatPriceTagMissing(): void

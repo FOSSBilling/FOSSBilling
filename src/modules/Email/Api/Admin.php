@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Email\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -38,7 +40,6 @@ class Admin extends \Api_Abstract
                 'content_html' => $item['content_html'],
                 'content_text' => $item['content_text'],
                 'created_at' => $item['created_at'],
-                'updated_at' => $item['updated_at'],
             ];
         }
 
@@ -50,13 +51,9 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
+    #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_get($data)
     {
-        $required = [
-            'id' => 'Email ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $service = $this->getService();
         $model = $service->getEmailById($data['id']);
 
@@ -70,17 +67,16 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams([
+        'to' => 'Receiver email is required',
+        'to_name' => 'Receiver name is required',
+        'from' => 'Sender name is required',
+        'from_name' => 'Sender email is required',
+        'subject' => 'Email subject is required',
+        'content' => 'Email content is required',
+    ])]
     public function send($data = [])
     {
-        $required = [
-            'to' => 'Receiver Email is required',
-            'to_name' => 'Receiver Name is required',
-            'from' => 'Sender Name is required',
-            'from_name' => 'Sender email is required',
-            'subject' => 'Email subject is required',
-            'content' => 'Email content is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $client_id = $data['client_id'] ?? null;
         $emailService = $this->getService();
 
@@ -102,13 +98,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_resend($data)
     {
-        $required = [
-            'id' => 'Email ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_ActivityClientEmail) {
@@ -121,17 +113,11 @@ class Admin extends \Api_Abstract
     /**
      * Delete sent email from logs.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_delete($data)
     {
-        $required = [
-            'id' => 'Email ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_ActivityClientEmail) {
@@ -178,13 +164,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_get($data)
     {
-        $required = [
-            'id' => 'Email ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('EmailTemplate', $data['id'], 'Email template not found');
 
         return $this->getService()->templateToApiArray($model, true);
@@ -193,17 +175,11 @@ class Admin extends \Api_Abstract
     /**
      * Delete email template.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_delete($data)
     {
-        $required = [
-            'id' => 'Email ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->findOne('EmailTemplate', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_EmailTemplate) {
@@ -226,15 +202,13 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams([
+        'action_code' => 'Email template code is required',
+        'subject' => 'Email template subject is required',
+        'content' => 'Email template content is required',
+    ])]
     public function template_create($data)
     {
-        $required = [
-            'action_code' => 'Email template code is required',
-            'subject' => 'Email template subject is required',
-            'content' => 'Email template content is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $enabled = $data['enabled'] ?? 0;
         $category = $data['category'] ?? null;
 
@@ -249,14 +223,11 @@ class Admin extends \Api_Abstract
      * @return bool
      *
      * @throws \FOSSBilling\Exception
-     * =     */
+     *
+     */
+    #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_update($data)
     {
-        $required = [
-            'id' => 'Email ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $enabled = $data['enabled'] ?? null;
         $category = $data['category'] ?? null;
         $subject = $data['subject'] ?? null;
@@ -272,13 +243,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['code' => 'Email template code was not passed'])]
     public function template_reset($data)
     {
-        $required = [
-            'code' => 'Email template code was not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         return $this->getService()->resetTemplateByCode($data['code']);
     }
 
@@ -296,7 +263,7 @@ class Admin extends \Api_Abstract
         $vars['_tpl'] = $data['_tpl'] ?? $t['content'];
         $systemService = $this->di['mod_service']('System');
 
-        return $systemService->renderString($vars['_tpl'], true, $vars);
+        return $systemService->renderString($vars['_tpl'], false, $vars);
     }
 
     /**
@@ -375,13 +342,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['code' => 'Template code not passed'])]
     public function template_send($data)
     {
-        $required = [
-            'code' => 'Template code not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
             throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff parameter');
         }
@@ -391,16 +354,10 @@ class Admin extends \Api_Abstract
 
     /**
      * Deletes email logs with given IDs.
-     *
-     * @return bool
      */
+    #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data)
     {
-        $required = [
-            'ids' => 'IDs not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         foreach ($data['ids'] as $id) {
             $this->email_delete(['id' => $id]);
         }

@@ -1,15 +1,28 @@
 <?php
 
-namespace Box\Tests\Mod\Email;
+declare(strict_types=1);
 
-class ServiceTest extends \BBTestCase
+namespace Box\Tests\Mod\Email;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
+
+class ServiceEmailTestDouble extends \Box\Mod\Email\Service
+{
+    public function template_render(...$args): string
+    {
+        return '';
+    }
+}
+
+#[Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
         $service = new \Box\Mod\Email\Service();
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $di = $this->getDi();
+        $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
         $service->setDi($di);
@@ -66,11 +79,11 @@ class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('getSearchQueryProvider')]
+    #[DataProvider('getSearchQueryProvider')]
     public function testGetSearchQuery($data, $query, $bindings): void
     {
         $service = new \Box\Mod\Email\Service();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $service->setDi($di);
         $result = $service->getSearchQuery($data);
@@ -85,7 +98,7 @@ class ServiceTest extends \BBTestCase
     public function testEmailFindOneForClientById(): void
     {
         $service = new \Box\Mod\Email\Service();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $id = 5;
         $client_id = 1;
 
@@ -94,7 +107,7 @@ class ServiceTest extends \BBTestCase
         $activityEmail->client_id = $client_id;
         $activityEmail->id = $id;
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($activityEmail);
@@ -117,12 +130,12 @@ class ServiceTest extends \BBTestCase
     public function testEmailRmByClient(): void
     {
         $service = new \Box\Mod\Email\Service();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([$model]);
@@ -145,9 +158,9 @@ class ServiceTest extends \BBTestCase
     public function testEmailRm(): void
     {
         $service = new \Box\Mod\Email\Service();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('trash')
             ->willReturn(null);
@@ -210,10 +223,10 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $di = $this->getDi();
+        $db = $this->createMock('Box_Database');
 
-        $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
+        $cryptMock = $this->createMock('\Box_Crypt');
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
 
@@ -234,10 +247,10 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $di = $this->getDi();
+        $db = $this->createMock('Box_Database');
 
-        $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
+        $cryptMock = $this->createMock('\Box_Crypt');
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt')
             ->willReturn('{"param1":"value1"}');
@@ -259,7 +272,7 @@ class ServiceTest extends \BBTestCase
     public function testSendTemplateNotExists(): void
     {
         $service = new \Box\Mod\Email\Service();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $data = [
             'code' => 'mod_email_test_not_existing',
@@ -271,7 +284,7 @@ class ServiceTest extends \BBTestCase
         $emailTemplate = new \Model_EmailTemplate();
         $emailTemplate->loadBean(new \DummyBean());
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($emailTemplate);
@@ -279,7 +292,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
+        $cryptMock = $this->createMock('\Box_Crypt');
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
 
@@ -292,10 +305,9 @@ class ServiceTest extends \BBTestCase
             return $api;
         };
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
+            ;
         $di['validator'] = $validatorMock;
         $service->setDi($di);
 
@@ -313,19 +325,19 @@ class ServiceTest extends \BBTestCase
             'default_template' => 'TEMPLATE',
             'default_description' => 'DESCRIPTION',
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Email\Service::class)
             ->onlyMethods(['sendMail'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendMail')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $emailTemplate = new \Model_EmailTemplate();
         $emailTemplate->loadBean(new \DummyBean());
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($emailTemplate);
@@ -333,12 +345,12 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->createMock(\Box\Mod\System\Service::class);
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->willReturn('value');
 
-        $twig = $this->getMockBuilder('\\' . \Twig\Environment::class)->disableOriginalConstructor()->getMock();
+        $twig = $this->getMockBuilder(\Twig\Environment::class)->disableOriginalConstructor()->getMock();
 
         $di['api_admin'] = function () use ($di) {
             $api = new \Api_Handler(new \Model_Admin());
@@ -346,10 +358,9 @@ class ServiceTest extends \BBTestCase
 
             return $api;
         };
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
+            ;
         $di['validator'] = $validatorMock;
 
         $cryptMock = $this->getMockBuilder('\Box_Crypt')
@@ -382,8 +393,6 @@ class ServiceTest extends \BBTestCase
 
     public static function sendTemplateExistsStaffProvider()
     {
-        $self = new ServiceTest('ServiceTest');
-
         return [
             [
                 [
@@ -394,8 +403,8 @@ class ServiceTest extends \BBTestCase
                     'default_description' => 'DESCRIPTION',
                     'to_staff' => 1,
                 ],
-                $self->never(),
-                $self->atLeastOnce(),
+                'never',
+                'atLeastOnce',
             ],
             [
                 [
@@ -406,28 +415,28 @@ class ServiceTest extends \BBTestCase
                     'default_description' => 'DESCRIPTION',
                     'to_client' => 1,
                 ],
-                $self->atLeastOnce(),
-                $self->never(),
+                'atLeastOnce',
+                'never',
             ],
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('sendTemplateExistsStaffProvider')]
+    #[DataProvider('sendTemplateExistsStaffProvider')]
     public function testSendTemplateExistsStaff($data, $clientGetExpects, $staffgetListExpects): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Email\Service::class)
             ->onlyMethods(['sendMail'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendMail')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $emailTemplate = new \Model_EmailTemplate();
         $emailTemplate->loadBean(new \DummyBean());
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($emailTemplate);
@@ -435,7 +444,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $system = $this->getMockBuilder(\Box\Mod\System\Service::class)->getMock();
+        $system = $this->createMock(\Box\Mod\System\Service::class);
         $system->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->willReturn('value');
@@ -444,8 +453,8 @@ class ServiceTest extends \BBTestCase
             ->method('renderString')
             ->willReturn('value');
 
-        $staffServiceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)->getMock();
-        $staffServiceMock->expects($staffgetListExpects)
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->$staffgetListExpects())
             ->method('getList')
             ->willReturn(
                 [
@@ -459,11 +468,11 @@ class ServiceTest extends \BBTestCase
                 ]
             );
 
-        $clientServiceMock = $this->getMockBuilder(\Box\Mod\Client\Service::class)->getMock();
+        $clientServiceMock = $this->createMock(\Box\Mod\Client\Service::class);
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
-        $clientServiceMock->expects($clientGetExpects)
+        $clientServiceMock->expects($this->$clientGetExpects())
             ->method('get')
             ->willReturn($clientModel);
         $clientApiArray = [
@@ -472,7 +481,7 @@ class ServiceTest extends \BBTestCase
             'first_name' => 'John',
             'last_name' => 'Smith',
         ];
-        $clientServiceMock->expects($clientGetExpects)
+        $clientServiceMock->expects($this->$clientGetExpects())
             ->method('toApiArray')
             ->willReturn($clientApiArray);
 
@@ -492,10 +501,9 @@ class ServiceTest extends \BBTestCase
             return $api;
         };
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
+            ;
         $di['validator'] = $validatorMock;
 
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
@@ -532,8 +540,8 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $di = $this->getDi();
+        $db = $this->createMock('Box_Database');
 
         $emailSettings = [
             'mailer' => 'sendmail',
@@ -546,15 +554,16 @@ class ServiceTest extends \BBTestCase
         ];
 
         $di['db'] = $db;
-        $extension = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->getMock();
+        $isExtensionActiveReturn = false;
+        $extension = $this->createMock(\Box\Mod\Extension\Service::class);
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')
             ->willReturn($isExtensionActiveReturn);
 
         $config = [];
-        $di['mod_config'] = $di->protect(fn ($modName) => $config);
-        $di['mod_service'] = $di->protect(fn () => $extension);
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['mod_config'] = $di->protect(fn ($modName): array => $config);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extension);
+        $di['logger'] = $this->createMock('Box_Log');
 
         $service->setDi($di);
 
@@ -616,11 +625,11 @@ class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('templateGetSearchQueryProvider')]
+    #[DataProvider('templateGetSearchQueryProvider')]
     public function testTemplateGetSearchQuery($data, $query, $bindings): void
     {
         $service = new \Box\Mod\Email\Service();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $service->setDi($di);
         $result = $service->templateGetSearchQuery($data);
@@ -701,7 +710,7 @@ class ServiceTest extends \BBTestCase
             ],
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Service::class)->onlyMethods(['getVars'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getVars'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getVars')
             ->willReturn(['param1' => 'value1']);
@@ -717,8 +726,6 @@ class ServiceTest extends \BBTestCase
 
     public static function template_updateProvider()
     {
-        $self = new ServiceTest('ServiceTest');
-
         return [
             [
                 [
@@ -728,7 +735,7 @@ class ServiceTest extends \BBTestCase
                     'subject' => null,
                     'content' => null,
                 ],
-                $self->never(),
+                'never',
             ],
             [
                 [
@@ -738,69 +745,71 @@ class ServiceTest extends \BBTestCase
                     'subject' => 'Subject',
                     'content' => 'Content',
                 ],
-                $self->atLeastOnce(),
+                'atLeastOnce',
             ],
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('template_updateProvider')]
+    #[DataProvider('template_updateProvider')]
     public function testTemplateUpdate($data, $templateRenderExpects): void
     {
-        $id = random_int(1, 100);
+        $id = 1;
         $model = new \Model_EmailTemplate();
         $model->loadBean(new \DummyBean());
         $model->id = $id;
 
-        $emailServiceMock = $this->getMockBuilder(\Box\Mod\Email\Service::class)->addMethods(['template_render'])->getMock();
+        $emailService = new \Box\Mod\Email\Service();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('store');
 
-        $loggerMock = $this->getMockBuilder('Box_Log')->getMock();
+        $loggerMock = $this->createMock('Box_Log');
 
-        $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
+        $cryptMock = $this->createMock('\Box_Crypt');
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
         $configMock = ['salt' => md5(random_bytes(13))];
 
         $twigMock = $this->getMockBuilder(\Twig\Environment::class)->disableOriginalConstructor()->getMock();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $di['logger'] = $loggerMock;
         $di['crypt'] = $cryptMock;
         $di['config'] = $configMock;
         $di['twig'] = $twigMock;
 
-        $systemServiceMock = $this->getMockBuilder(\Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
+        $systemServiceMock->expects($this->$templateRenderExpects())
+            ->method('renderString');
 
         $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
 
-        $emailServiceMock->setDi($di);
+        $emailService->setDi($di);
 
         $templateModel = new \Model_EmailTemplate();
         $templateModel->loadBean(new \DummyBean());
 
-        $result = $emailServiceMock->updateTemplate($templateModel, $data['enabled'], $data['category'], $data['subject'], @$data['content']);
-        $this->assertEquals($result, true);
+        $result = $emailService->updateTemplate($templateModel, $data['enabled'], $data['category'], $data['subject'], @$data['content']);
+        $this->assertTrue($result);
     }
 
     public function testGetEmailById(): void
     {
         $service = new \Box\Mod\Email\Service();
 
-        $id = random_int(1, 100);
+        $id = 1;
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
         $model->id = $id;
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -813,12 +822,12 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -830,12 +839,12 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $id = random_int(1, 100);
+        $id = 1;
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
         $model->id = $id;
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn($id);
@@ -845,9 +854,9 @@ class ServiceTest extends \BBTestCase
             ->method('dispense')
             ->willReturn($emailTemplateModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['logger'] = $this->createMock('Box_Log');
         $service->setDi($di);
 
         $data = [
@@ -862,42 +871,40 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($emailTemplateModel, $result);
     }
 
-    public static function batchTemplateGenerateProvider()
+    public static function batchTemplateGenerateProvider(): array
     {
-        $self = new ServiceTest('ServiceTest');
-
         return [
-            [true, false, $self->never(), $self->never()],
-            [false, true, $self->atLeastOnce(), $self->atLeastOnce()],
-            [true, true, $self->atLeastOnce(), $self->never()],
+            [true, false, 'never', 'never'],
+            [false, true, 'atLeastOnce', 'atLeastOnce'],
+            [true, true, 'atLeastOnce', 'never'],
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('batchTemplateGenerateProvider')]
+    #[DataProvider('batchTemplateGenerateProvider')]
     public function testBatchTemplateGenerate($findOneReturn, $isExtensionActiveReturn, $findOneExpects, $dispenseExpects): void
     {
         $service = new \Box\Mod\Email\Service();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($findOneExpects)
+        $db = $this->createMock('Box_Database');
+        $db->expects($this->$findOneExpects())
             ->method('findOne')
             ->willReturn($findOneReturn);
 
         $emailTemplateModel = new \Model_EmailTemplate();
         $emailTemplateModel->loadBean(new \DummyBean());
-        $db->expects($dispenseExpects)
+        $db->expects($this->$dispenseExpects())
             ->method('dispense')
             ->willReturn($emailTemplateModel);
 
-        $extension = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->getMock();
+        $extension = $this->createMock(\Box\Mod\Extension\Service::class);
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')
             ->willReturn($isExtensionActiveReturn);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service'] = $di->protect(fn () => $extension);
+        $di['logger'] = $this->createMock('Box_Log');
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extension);
 
         $service->setDi($di);
 
@@ -910,41 +917,41 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('exec')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['logger'] = $this->createMock('Box_Log');
         $service->setDi($di);
 
         $result = $service->templateBatchDisable();
 
-        $this->assertTrue($result, true);
+        $this->assertTrue($result);
     }
 
     public function testTemplateBatchEnable(): void
     {
         $service = new \Box\Mod\Email\Service();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('exec')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['logger'] = $this->createMock('Box_Log');
         $service->setDi($di);
 
         $result = $service->templateBatchEnable();
 
-        $this->assertTrue($result, true);
+        $this->assertTrue($result);
     }
 
-    public function testbatchSend(): void
+    public function testBatchSend(): void
     {
         $service = new \Box\Mod\Email\Service();
 
@@ -959,7 +966,7 @@ class ServiceTest extends \BBTestCase
         $queueModel->from_name = 'From Name';
         $queueModel->to_name = 'To Name';
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->exactly(1))
             ->method('findAll')->willReturn([$queueModel]);
         $db->expects($this->atLeastOnce())
@@ -974,14 +981,15 @@ class ServiceTest extends \BBTestCase
                 'cancel_after' => 1,
             ]);
 
-        $extension = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->getMock();
+        $extension = $this->createMock(\Box\Mod\Extension\Service::class);
+        $isExtensionActiveReturn = false;
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')
             ->willReturn($isExtensionActiveReturn);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($name) use ($extension) {
             if ($name == 'extension') {
                 return $extension;
@@ -1002,29 +1010,29 @@ class ServiceTest extends \BBTestCase
 
         $templateModel = new \Model_EmailTemplate();
         $templateModel->loadBean(new \DummyBean());
-        $templateModel->id = random_int(1, 100);
+        $templateModel->id = 1;
         $templateModel->action_code = 'mod_email_test';
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($templateModel);
 
-        $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
+        $cryptMock = $this->createMock('\Box_Crypt');
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
         $configMock = ['salt' => md5(random_bytes(13))];
 
         $twigMock = $this->getMockBuilder(\Twig\Environment::class)->disableOriginalConstructor()->getMock();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['logger'] = $this->createMock('Box_Log');
         $di['crypt'] = $cryptMock;
         $di['config'] = $configMock;
         $di['twig'] = $twigMock;
 
-        $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->getMock();
+        $systemService = $this->createMock(\Box\Mod\System\Service::class);
 
         $di['mod_service'] = $di->protect(fn () => $systemService);
 
@@ -1039,12 +1047,12 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $service->setDi($di);
 
@@ -1052,9 +1060,9 @@ class ServiceTest extends \BBTestCase
         $service->resetTemplateByCode('mod_email_test');
     }
 
-    public function testsendMail(): void
+    public function testSendMail(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
 
         $queueEmail = new \Model_ModEmailQueue();
         $queueEmail->loadBean(new \DummyBean());
@@ -1066,11 +1074,13 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['logger'] = $this->createMock('Box_Log');
+        $modMock = $this->createMock('\stdClass');
+        $extension = $this->createMock(\Box\Mod\Extension\Service::class);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['mod_service'] = $di->protect(function ($name) use ($extension) {
             if ($name == 'system') {
             } elseif ($name == 'extension') {

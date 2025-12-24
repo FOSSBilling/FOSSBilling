@@ -1,9 +1,14 @@
 <?php
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
-class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
+declare(strict_types=1);
+
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 {
-    public static function domains()
+    public static function domains(): array
     {
         return [
             ['google', true],
@@ -19,8 +24,8 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         ];
     }
 
-    #[PHPUnit\Framework\Attributes\DataProvider('domains')]
-    public function testValidator($domain, $valid): void
+    #[DataProvider('domains')]
+    public function testValidator(string $domain, bool $valid): void
     {
         $v = new FOSSBilling\Validate();
         $this->assertEquals($valid, $v->isSldValid($domain));
@@ -29,7 +34,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     public function testCheckRequiredParamsForArray(): void
     {
         $data = [
-            'id' => random_int(1, 10),
+            'id' => 1,
             'key' => 'KEY must be set',
         ];
         $required = [
@@ -47,7 +52,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
             'id' => 'ID must be set',
         ];
         $v = new FOSSBilling\Validate();
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('ID must be set');
         $v->checkRequiredParamsForArray($required, $data);
@@ -56,14 +61,14 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     public function testCheckRequiredParamsForArrayOneKeyNotExists(): void
     {
         $data = [
-            'id' => random_int(1, 10),
+            'id' => 1,
         ];
         $required = [
             'id' => 'ID must be set',
             'key' => 'KEY must be set',
         ];
         $v = new FOSSBilling\Validate();
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('KEY must be set');
         $v->checkRequiredParamsForArray($required, $data);
@@ -72,7 +77,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     public function testCheckRequiredParamsForArrayMessagePlaceholder(): void
     {
         $data = [
-            'id' => random_int(1, 10),
+            'id' => 1,
         ];
         $required = [
             'id' => 'ID must be set',
@@ -81,7 +86,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 
         $variables = [':key' => 'placeholder_key'];
         $v = new FOSSBilling\Validate();
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('KEY placeholder_key must be set');
         $v->checkRequiredParamsForArray($required, $data, $variables);
@@ -90,7 +95,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     public function testCheckRequiredParamsForArrayMessagePlaceholders(): void
     {
         $data = [
-            'id' => random_int(1, 10),
+            'id' => 1,
         ];
         $required = [
             'id' => 'ID must be set',
@@ -102,7 +107,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
             ':array' => 'config',
         ];
         $v = new FOSSBilling\Validate();
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('KEY placeholder_key must be set for array config');
         $v->checkRequiredParamsForArray($required, $data, $variables);
@@ -111,7 +116,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     public function testCheckRequiredParamsForArrayErrorCode(): void
     {
         $data = [
-            'id' => random_int(1, 10),
+            'id' => 1,
         ];
         $required = [
             'id' => 'ID must be set',
@@ -120,7 +125,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 
         $variables = [':key' => 'placeholder_key'];
         $v = new FOSSBilling\Validate();
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(12345);
         $this->expectExceptionMessage('KEY placeholder_key must be set');
         $v->checkRequiredParamsForArray($required, $data, $variables, 12345);
@@ -129,7 +134,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
     public function testCheckRequiredParamsForArrayErrorCodeVariablesNotSet(): void
     {
         $data = [
-            'id' => random_int(1, 10),
+            'id' => 1,
         ];
         $required = [
             'id' => 'ID must be set',
@@ -137,13 +142,13 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         ];
 
         $v = new FOSSBilling\Validate();
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(54321);
         $this->expectExceptionMessage('KEY must be set');
         $v->checkRequiredParamsForArray($required, $data, [], 54321);
     }
 
-    public function testcheckRequiredParamsForArrayKeyValueIsZero(): void
+    public function testCheckRequiredParamsForArrayKeyValueIsZero(): void
     {
         $data = [
             'amount' => 0,
@@ -159,7 +164,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         $this->assertTrue(true);
     }
 
-    public function testcheckRequiredParamsForArrayEmptyString(): void
+    public function testCheckRequiredParamsForArrayEmptyString(): void
     {
         $data = [
             'message' => '',
@@ -170,13 +175,13 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 
         $v = new FOSSBilling\Validate();
 
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage($required['message']);
 
         $v->checkRequiredParamsForArray($required, $data);
     }
 
-    public function testcheckRequiredParamsForArrayEmptyStringFilledWithSpaces(): void
+    public function testCheckRequiredParamsForArrayEmptyStringFilledWithSpaces(): void
     {
         $data = [
             'message' => '    ',
@@ -187,7 +192,7 @@ class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 
         $v = new FOSSBilling\Validate();
 
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage($required['message']);
 
         $v->checkRequiredParamsForArray($required, $data);

@@ -1,19 +1,24 @@
 <?php
 
-namespace Box\Mod\Cron\Api;
+declare(strict_types=1);
 
-class GuestTest extends \BBTestCase
+namespace Box\Mod\Cron\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class GuestTest extends \BBTestCase
 {
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $api = new Guest();
         $api->setDi($di);
         $getDi = $api->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testsettings(): void
+    public function testSettings(): void
     {
         $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())->method('getConfig')->willReturn([]);
@@ -25,9 +30,9 @@ class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testisLate(): void
+    public function testIsLate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Cron\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('isLate')->willReturn(true);
 
         $api = new Guest();

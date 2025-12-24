@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -8,6 +9,12 @@
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Model_Post extends RedBeanPHP\SimpleModel
+
+namespace FOSSBilling\Interfaces;
+
+interface TimestampInterface
 {
+    public function setCreatedAt(\DateTime $createdAt): void;
+
+    public function setUpdatedAt(\DateTime $updatedAt): void;
 }

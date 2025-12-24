@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -52,7 +51,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $currentConfig = Config::getConfig();
 
-        if (!is_array($currentConfig)) {
+        if (empty($currentConfig)) {
             throw new Exception('Unable to load existing configuration');
         }
 
@@ -80,8 +79,8 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['api']['CSRFPrevention'] ??= true;
         $newConfig['api']['rate_limit_whitelist'] ??= [];
         $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
-        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
-        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
+        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'];
+        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'];
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
 
         // Instance ID handling
@@ -410,6 +409,28 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
+            44 => function (): void {
+                // Add ipn_hash column to transaction table and index it for fast duplicate detection.
+                $q = 'ALTER TABLE `transaction`
+                        ADD COLUMN `ipn_hash` VARCHAR(64) DEFAULT NULL,
+                        ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));';
+                $this->executeSql($q);
+            },
+            45 => function (): void {
+                // Drop updated_at column from activity tables
+                // Activity logs are never meant to be updated, only created
+                $q = 'ALTER TABLE `activity_admin_history` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `activity_client_email` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `activity_client_history` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `activity_system` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -421,7 +442,7 @@ class UpdatePatcher implements InjectionAwareInterface
      * As a workaround, we can register AntLoader and point it at the Vendor folder which will then act as fallback to find the needed classes.
      * This isn't particularly fast though as it'll scan the entire vendor, so only use it if we know a needed class is missing.
      */
-    private function registerFallbackAutoloader()
+    private function registerFallbackAutoloader(): void
     {
         $loader = new \AntCMS\AntLoader([
             'mode' => 'filesystem',

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -83,9 +82,9 @@ class i18n
                 return null;
             }
             foreach (self::getLocales() as $locale) {
-                if (str_starts_with($locale, substr($detectedLocale, 0, 2))) {
+                if (str_starts_with((string) $locale, substr($detectedLocale, 0, 2))) {
                     if (!headers_sent()) {
-                        setcookie('BBLANG', $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
+                        setcookie('BBLANG', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
                     }
 
                     return $locale;
@@ -94,7 +93,7 @@ class i18n
         }
 
         if (!headers_sent()) {
-            setcookie('BBLANG', $matchingLocale, ['expires' => strtotime('+1 month'), 'path' => '/']);
+            setcookie('BBLANG', (string) $matchingLocale, ['expires' => strtotime('+1 month'), 'path' => '/']);
         }
 
         return $matchingLocale;
