@@ -1,6 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Stats;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
 class PdoMock extends \PDO
 {
@@ -15,35 +19,33 @@ class PdoStatmentsMock extends \PDOStatement
     }
 }
 
-class ServiceTest extends \BBTestCase
+#[Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
-    /**
-     * @var Service
-     */
-    protected $service;
+    protected ?Service $service;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetOrdersStatuses(): void
+    public function testGetOrdersStatuses(): void
     {
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->getMock();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('counter')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
 
@@ -51,16 +53,16 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetProductSummary(): void
+    public function testGetProductSummary(): void
     {
         $data = [];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -68,9 +70,9 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetSummary(): void
+    public function testGetSummary(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
+        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -103,12 +105,12 @@ class ServiceTest extends \BBTestCase
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('fetchColumn');
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pdo'] = $pdoMock;
         $this->service->setDi($di);
 
@@ -117,21 +119,21 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetSummaryIncome(): void
+    public function testGetSummaryIncome(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
+        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('fetchColumn');
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pdo'] = $pdoMock;
         $this->service->setDi($di);
 
@@ -148,9 +150,9 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetProductSales(): void
+    public function testGetProductSales(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
+        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -162,12 +164,12 @@ class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn($res);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pdo'] = $pdoMock;
         $this->service->setDi($di);
 
@@ -179,9 +181,9 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testincomeAndRefundStats(): void
+    public function testIncomeAndRefundStats(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
+        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -196,12 +198,12 @@ class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn($res);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pdo'] = $pdoMock;
         $this->service->setDi($di);
 
@@ -210,9 +212,9 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($res[0], $result);
     }
 
-    public function testgetRefunds(): void
+    public function testGetRefunds(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
+        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -221,12 +223,12 @@ class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn([]);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pdo'] = $pdoMock;
 
         $this->service->setDi($di);
@@ -239,9 +241,9 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetIncome(): void
+    public function testGetIncome(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
+        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -250,12 +252,12 @@ class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn([]);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pdo'] = $pdoMock;
 
         $this->service->setDi($di);
@@ -268,9 +270,9 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetClientCountries(): void
+    public function testGetClientCountries(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
+        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -279,12 +281,12 @@ class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn([]);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pdo'] = $pdoMock;
 
         $this->service->setDi($di);
@@ -293,9 +295,9 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetSalesByCountry(): void
+    public function testGetSalesByCountry(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
+        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -304,12 +306,12 @@ class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn([]);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pdo'] = $pdoMock;
 
         $this->service->setDi($di);
@@ -318,9 +320,9 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetTableStats(): void
+    public function testGetTableStats(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder('\\' . PdoStatmentsMock::class)
+        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
             ->getMock();
         $pdoStatmentMock->expects($this->atLeastOnce())
             ->method('execute');
@@ -329,12 +331,12 @@ class ServiceTest extends \BBTestCase
             ->method('fetchAll')
             ->willReturn([]);
 
-        $pdoMock = $this->getMockBuilder('\\' . PdoMock::class)->getMock();
+        $pdoMock = $this->createMock(PdoMock::class);
         $pdoMock->expects($this->atLeastOnce())
             ->method('prepare')
             ->willReturn($pdoStatmentMock);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pdo'] = $pdoMock;
 
         $this->service->setDi($di);

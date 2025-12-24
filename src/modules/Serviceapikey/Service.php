@@ -151,8 +151,8 @@ class Service implements InjectionAwareInterface
 
         // Then loop through it and only select the custom parameters, removing the 'custom_' prefix & converting numerical strings to a float.
         foreach ($rawConfig as $key => $value) {
-            if (str_starts_with($key, 'custom_')) {
-                $name = substr($key, 7);
+            if (str_starts_with((string) $key, 'custom_')) {
+                $name = substr((string) $key, 7);
                 if (is_numeric($value)) {
                     $strippedConfig[$name] = floatval($value);
                 } else {

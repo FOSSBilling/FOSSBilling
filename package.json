@@ -9,8 +9,7 @@
     "build-modules": "npm run build-wysiwyg",
     "build-huraga": "npm run build -w huraga",
     "build-admin_default": "npm run build -w admin_default",
-    "build-wysiwyg": "npm run build -w wysiwyg",
-    "cypress:open": "cypress open"
+    "build-wysiwyg": "npm run build -w wysiwyg"
   },
   "repository": {
     "type": "git",
@@ -26,18 +25,18 @@
     "tom-select": "^2.3.1"
   },
   "devDependencies": {
-    "@symfony/webpack-encore": "^5.0.1",
-    "autoprefixer": "^10.4.20",
-    "core-js": "^3.38.1",
-    "cypress": "^15.0.0",
-    "postcss": "^8.4.47",
-    "postcss-loader": "^8.1.1",
-    "sass-embedded": "^1.79.4",
-    "sass-loader": "^16.0.2",
-    "svg-sprite-loader": "^6.0.11",
-    "svgo-loader": "^4.0.0",
-    "webpack": "^5.95.0",
-    "webpack-cli": "^6.0.0"
+    "@symfony/webpack-encore": "5.3.1",
+    "autoprefixer": "10.4.23",
+    "core-js": "3.47.0",
+    "postcss": "8.5.6",
+    "postcss-loader": "8.2.0",
+    "sass": "1.97.1",
+    "sass-embedded": "1.97.1",
+    "sass-loader": "16.0.6",
+    "svg-sprite-loader": "6.0.11",
+    "svgo-loader": "4.0.0",
+    "webpack": "5.104.1",
+    "webpack-cli": "6.0.1"
   },
   "workspaces": [
     "src/themes/huraga",
@@ -53,9 +52,6 @@
     "npm": ">=10"
   },
   "overrides": {
-    "@ckeditor/ckeditor5-dev-utils": {
-      "serialize-javascript": "^6.0.2"
-    },
     "@melloware/coloris": "^0.25.0",
     "@tabler/core": {
       "apexcharts": "^5.0.0"

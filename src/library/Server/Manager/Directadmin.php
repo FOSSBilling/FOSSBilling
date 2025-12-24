@@ -501,10 +501,10 @@ class Server_Manager_Directadmin extends Server_Manager
         $username = preg_replace('/[^A-Za-z0-9]/', '', $prefix . $domain);
 
         // Username must start with a-z.
-        $username = is_numeric(substr($username, 0, 1)) ? substr_replace($username, chr(random_int(97, 122)), 0, 1) : $username;
+        $username = is_numeric(substr((string) $username, 0, 1)) ? substr_replace($username, chr(random_int(97, 122)), 0, 1) : $username;
 
         // Username must be at most 10 characters long, and sufficiently random to avoid collisions.
-        $username = substr($username, 0, 7);
+        $username = substr((string) $username, 0, 7);
 
         $random_number = random_int(0, 99);
 
@@ -752,7 +752,7 @@ class Server_Manager_Directadmin extends Server_Manager
         } catch (TransportExceptionInterface|HttpExceptionInterface $error) {
             // If there is an error while sending the request, throw an exception
             $exception = new Server_Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
-            $this->getLog()->err($exception);
+            $this->getLog()->err($exception->getMessage());
 
             throw $exception;
         }
@@ -801,7 +801,7 @@ class Server_Manager_Directadmin extends Server_Manager
         // Replace certain HTML entities in the data with their corresponding characters
         $data = str_replace('&#39', '"', $data);
         $data = preg_replace('|(\&\#\d+)|', '$1;', $data);
-        $data = html_entity_decode($data);
+        $data = html_entity_decode((string) $data);
 
         // Parse the data into an array
         parse_str($data, $response);

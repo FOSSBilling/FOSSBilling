@@ -27,7 +27,7 @@ class Admin implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function fetchNavigation()
+    public function fetchNavigation(): array
     {
         return [
             'subpages' => [
@@ -42,7 +42,7 @@ class Admin implements InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app)
+    public function register(\Box_App &$app): void
     {
         $app->get('/staff/login', 'get_login', [], static::class);
         $app->get('/staff/manage/:id', 'get_manage', ['id' => '[0-9]+'], static::class);
@@ -68,14 +68,14 @@ class Admin implements InjectionAwareInterface
         return $app->render('mod_staff_login', ['create_admin' => $create]);
     }
 
-    public function get_profile(\Box_App $app)
+    public function get_profile(\Box_App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_staff_profile');
     }
 
-    public function get_manage(\Box_App $app, $id)
+    public function get_manage(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $staff = $api->staff_get(['id' => $id]);
@@ -86,7 +86,7 @@ class Admin implements InjectionAwareInterface
         return $app->render('mod_staff_manage', ['staff' => $staff, 'mods' => $mods]);
     }
 
-    public function get_group(\Box_App $app, $id)
+    public function get_group(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $group = $api->staff_group_get(['id' => $id]);
@@ -97,19 +97,19 @@ class Admin implements InjectionAwareInterface
         return $app->render('mod_staff_group', ['group' => $group, 'mods' => $mods]);
     }
 
-    public function get_history(\Box_App $app)
+    public function get_history(\Box_App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_staff_login_history');
     }
 
-    public function get_passwordreset(\Box_App $app)
+    public function get_passwordreset(\Box_App $app): string
     {
         return $app->render('mod_staff_password_reset');
     }
 
-    public function get_updatepassword(\Box_App $app, $hash)
+    public function get_updatepassword(\Box_App $app, $hash): string
     {
         $data = [];
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);

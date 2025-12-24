@@ -264,7 +264,7 @@ class ServicePayGateway implements InjectionAwareInterface
         return (bool) $model->allow_recurrent;
     }
 
-    public function getPaymentAdapter(\Model_PayGateway $pg, ?\Model_Invoice $model = null, $optional = [])
+    public function getPaymentAdapter(\Model_PayGateway $pg, ?\Model_Invoice $model = null, $optional = []): object
     {
         $config = json_decode($pg->config ?? '', true) ?? [];
         $defaults = [];
@@ -352,9 +352,11 @@ class ServicePayGateway implements InjectionAwareInterface
     public function getAcceptedCurrencies(\Model_PayGateway $model): array
     {
         if ($model->accepted_currencies === null || empty($model->accepted_currencies)) {
-            $currencyService = $this->di['mod_service']('Currency');
+            $currencyService = $this->di['mod_service']('currency');
+            /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+            $currencyRepository = $currencyService->getCurrencyRepository();
 
-            return array_keys($currencyService->getPairs());
+            return array_keys($currencyRepository->getPairs());
         }
 
         return json_decode($model->accepted_currencies ?? '', true);

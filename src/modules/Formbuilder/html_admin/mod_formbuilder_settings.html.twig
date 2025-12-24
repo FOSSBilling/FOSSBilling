@@ -132,8 +132,7 @@
                         <label class="col-md-3 col-form-label" for="form_type">{{ 'Labels position'|trans }}</label>
                         <div class="col-md-8">
                             <select class="form-select" name="type" id="form_type">
-                                <option value="default" {% if form.style.type=='default' %} selected {% endif %}>{{ 'Labels on
-                            top'|trans }}</option>
+                                <option value="default" {% if form.style.type=='default' %} selected {% endif %}>{{ 'Labels on top'|trans }}</option>
                                 <option
                                     value="horizontal" {% if form.style.type=='horizontal' %} selected {% endif %}>{{ 'Labels on the left'|trans }}</option>
                             </select>
@@ -143,10 +142,8 @@
                         <label class="col-md-3 col-form-label" for="show_title">{{ 'Form title visibility'|trans }}</label>
                         <div class="col-md-8">
                             <select class="form-select" name="show_title" id="show_title">
-                                <option value="1" {% if form.style.show_title=='1' %} selected {% endif %}>{{ 'Show form
-                            title'|trans }}</option>
-                                <option value="0" {% if form.style.show_title=='0' %} selected {% endif %}>{{ 'Do not show form
-                            title'|trans }}</option>
+                                <option value="1" {% if form.style.show_title=='1' %} selected {% endif %}>{{ 'Show form title'|trans }}</option>
+                                <option value="0" {% if form.style.show_title=='0' %} selected {% endif %}>{{ 'Do not show form title'|trans }}</option>
                             </select>
                         </div>
                     </div>

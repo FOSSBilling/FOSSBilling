@@ -1,13 +1,11 @@
-{{ 'ckeditor/ckeditor.js' | mod_asset_url('wysiwyg') | script_tag }}
+{{ 'ckeditor.js' | mod_asset_url('wysiwyg') | script_tag }}
+{{ 'ckeditor.css' | mod_asset_url('wysiwyg') | stylesheet_tag }}
 <script type="text/javascript">
     const editors = [];
     document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll('.{{ class }}').forEach(function (element) {
             let required = false;
-            CKEditor
-                .create(element, {
-                    licenseKey: 'GPL'
-                })
+            CKEditor.default.create(element)
                 .then(editor => {
                     if (element.hasAttribute('required')) {
                         element.removeAttribute('required');

@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Client\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Guest extends \Api_Abstract
 {
     /**
@@ -51,6 +53,7 @@ class Guest extends \Api_Abstract
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
      */
+    #[RequiredParams(['email' => 'Email required', 'first_name' => 'First name required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function create($data = [])
     {
         $config = $this->di['mod_config']('client');
@@ -58,14 +61,6 @@ class Guest extends \Api_Abstract
         if (isset($config['disable_signup']) && $config['disable_signup']) {
             throw new \FOSSBilling\InformationException('New registrations are temporary disabled');
         }
-
-        $required = [
-            'email' => 'Email required',
-            'first_name' => 'First name required',
-            'password' => 'Password required',
-            'password_confirm' => 'Password confirmation required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if ($data['password'] != $data['password_confirm']) {
             throw new \FOSSBilling\InformationException('Passwords do not match.');
@@ -79,7 +74,7 @@ class Guest extends \Api_Abstract
 
         $email = $data['email'] ?? null;
         $email = $this->di['tools']->validateAndSanitizeEmail($email);
-        $email = strtolower(trim($email));
+        $email = strtolower(trim((string) $email));
         if ($service->clientAlreadyExists($email)) {
             throw new \FOSSBilling\InformationException('This email address is already registered.');
         }
@@ -108,13 +103,9 @@ class Guest extends \Api_Abstract
      *
      * @throws \FOSSBilling\InformationException
      */
+    #[RequiredParams(['email' => 'Email required', 'password' => 'Password required'])]
     public function login($data)
     {
-        $required = [
-            'email' => 'Email required',
-            'password' => 'Password required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
         $event_params = $data;
@@ -148,16 +139,12 @@ class Guest extends \Api_Abstract
     /**
      * Password reset confirmation email will be sent to email.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['email' => 'Email required'])]
     public function reset_password($data)
     {
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
-
-        // Validate required parameters
-        $this->di['validator']->checkRequiredParamsForArray(['email' => 'Email required'], $data);
 
         // Sanitize email
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
@@ -198,7 +185,7 @@ class Guest extends \Api_Abstract
         // Send the email if the reset request has the same created_at and updated_at or if at least 1 full minute has passed since the last request.
         if ($reset->created_at == $reset->updated_at) {
             $emailService->sendTemplate($email);
-        } elseif (strtotime($reset->updated_at) - time() + 60 < 0) {
+        } elseif (strtotime((string) $reset->updated_at) - time() + 60 < 0) {
             $emailService->sendTemplate($email);
         }
 
@@ -211,17 +198,10 @@ class Guest extends \Api_Abstract
         return true;
     }
 
+    #[RequiredParams(['hash' => 'No Hash provided', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function update_password($data)
     {
-        $required = [
-            'hash' => 'No Hash provided',
-            'password' => 'Password required',
-            'password_confirm' => 'Password confirmation required',
-        ];
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
-
-        $validator = $this->di['validator'];
-        $validator->checkRequiredParamsForArray($required, $data);
 
         if ($data['password'] != $data['password_confirm']) {
             throw new \FOSSBilling\InformationException('Passwords do not match');
@@ -261,14 +241,9 @@ class Guest extends \Api_Abstract
      *
      * @return bool true if VAT is valid, false if not
      */
+    #[RequiredParams(['country' => 'Country code', 'vat' => 'Country VAT is required'])]
     public function is_vat($data)
     {
-        $required = [
-            'country' => 'Country code',
-            'vat' => 'Country VAT is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $cc = $data['country'];
         $vatnum = $data['vat'];
 

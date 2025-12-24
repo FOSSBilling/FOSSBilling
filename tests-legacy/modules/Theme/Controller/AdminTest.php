@@ -1,15 +1,20 @@
 <?php
 
-namespace Box\Mod\Theme\Controller;
+declare(strict_types=1);
 
-class AdminTest extends \BBTestCase
+namespace Box\Mod\Theme\Controller;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class AdminTest extends \BBTestCase
 {
     public function testDi(): void
     {
         $controller = new Admin();
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $di = $this->getDi();
+        $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
         $controller->setDi($di);
@@ -17,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public function testregister(): void
+    public function testRegister(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->exactly(1))
@@ -27,7 +32,7 @@ class AdminTest extends \BBTestCase
         $controller->register($boxAppMock);
     }
 
-    public function testgetTheme(): void
+    public function testGetTheme(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
@@ -35,7 +40,7 @@ class AdminTest extends \BBTestCase
             ->with('mod_theme_preset')
             ->willReturn('Rendering ...');
 
-        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder(\Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getSettingsPageHtml')
             ->willReturn('');
@@ -47,7 +52,7 @@ class AdminTest extends \BBTestCase
             ->method('isAssetsPathWritable')
             ->willReturn(false);
 
-        $themeServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $themeServiceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
@@ -64,7 +69,7 @@ class AdminTest extends \BBTestCase
             ->method('getService')
             ->willReturn($themeServiceMock);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod'] = $di->protect(function ($name) use ($modMock) {
             if ($name == 'theme') {
                 return $modMock;

@@ -1,21 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Profile;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
 use Box\Mod\Profile\Service;
 
-class ServiceTest extends \BBTestCase
+#[Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
         $service = new Service();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $service->setDi($di);
         $getDi = $service->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetAdminIdentityArray(): void
+    public function testGetAdminIdentityArray(): void
     {
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -39,7 +44,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
@@ -73,7 +78,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
@@ -104,12 +109,12 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($password);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
@@ -146,19 +151,19 @@ class ServiceTest extends \BBTestCase
                 'disable_change_email' => 0,
             ]);
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientServiceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $clientServiceMock);
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['tools'] = $toolsMock;
 
         $model = new \Model_Client();
@@ -225,16 +230,16 @@ class ServiceTest extends \BBTestCase
                 'disable_change_email' => 1,
             ]);
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientServiceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $clientServiceMock->expects($this->never())->
         method('emailAlreadyRegistered')->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $clientServiceMock);
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -271,19 +276,19 @@ class ServiceTest extends \BBTestCase
                 'disable_change_email' => 0,
             ]);
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $clientServiceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $clientServiceMock);
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['tools'] = $toolsMock;
 
         $model = new \Model_Client();
@@ -308,7 +313,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
         $di['tools'] = new \FOSSBilling\Tools();
@@ -338,12 +343,12 @@ class ServiceTest extends \BBTestCase
 
         $password = 'new password';
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($password);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
@@ -360,14 +365,14 @@ class ServiceTest extends \BBTestCase
 
     public function testLogoutClient(): void
     {
-        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
+        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
 
         $sessionMock->expects($this->atLeastOnce())
             ->method('destroy');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['session'] = $sessionMock;
 

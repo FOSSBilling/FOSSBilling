@@ -239,11 +239,11 @@ class Service implements InjectionAwareInterface
         $time_to = strtotime('+1 day');
 
         if (isset($data['date_from']) && !empty($data['date_from'])) {
-            $time_from = strtotime($data['date_from']);
+            $time_from = strtotime((string) $data['date_from']);
         }
 
         if (isset($data['date_to']) && !empty($data['date_to'])) {
-            $time_to = strtotime($data['date_to']);
+            $time_to = strtotime((string) $data['date_to']);
         }
 
         $pdo = $this->di['pdo'];
@@ -275,11 +275,11 @@ class Service implements InjectionAwareInterface
         $time_to = strtotime('+1 day');
 
         if (isset($data['date_from']) && !empty($data['date_from'])) {
-            $time_from = strtotime($data['date_from']);
+            $time_from = strtotime((string) $data['date_from']);
         }
 
         if (isset($data['date_to']) && !empty($data['date_to'])) {
-            $time_to = strtotime($data['date_to']);
+            $time_to = strtotime((string) $data['date_to']);
         }
 
         $pdo = $this->di['pdo'];
@@ -340,17 +340,17 @@ class Service implements InjectionAwareInterface
         return $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
     }
 
-    private function _getDateInterval($data)
+    private function _getDateInterval($data): array
     {
         $time_from = strtotime('-1 month');
         $time_to = strtotime('+1 day');
 
         if (isset($data['date_from']) && !empty($data['date_from'])) {
-            $time_from = strtotime($data['date_from']);
+            $time_from = strtotime((string) $data['date_from']);
         }
 
         if (isset($data['date_to']) && !empty($data['date_to'])) {
-            $time_to = strtotime($data['date_to']);
+            $time_to = strtotime((string) $data['date_to']);
         }
 
         return [$time_from, $time_to];
@@ -362,11 +362,11 @@ class Service implements InjectionAwareInterface
         $time_to = strtotime('+1 day');
 
         if (isset($data['date_from']) && !empty($data['date_from'])) {
-            $time_from = strtotime($data['date_from']);
+            $time_from = strtotime((string) $data['date_from']);
         }
 
         if (isset($data['date_to']) && !empty($data['date_to'])) {
-            $time_to = strtotime($data['date_to']);
+            $time_to = strtotime((string) $data['date_to']);
         }
 
         $pdo = $this->di['pdo'];

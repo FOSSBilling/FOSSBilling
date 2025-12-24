@@ -13,7 +13,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 final class Api_Handler implements InjectionAwareInterface
 {
-    protected $type;
+    protected string|array $type;
     protected $ip;
     protected ?Pimple\Container $di = null;
 
@@ -41,7 +41,7 @@ final class Api_Handler implements InjectionAwareInterface
 
     public function __call($method, $arguments)
     {
-        if (!str_contains($method, '_')) {
+        if (!str_contains((string) $method, '_')) {
             throw new FOSSBilling\Exception('Method :method must contain underscore', [':method' => $method], 710);
         }
 
@@ -49,7 +49,7 @@ final class Api_Handler implements InjectionAwareInterface
             $arguments = $arguments[0];
         }
 
-        $e = explode('_', $method);
+        $e = explode('_', (string) $method);
         $mod = strtolower($e[0]);
         unset($e[0]);
         $method_name = implode('_', $e);
@@ -80,7 +80,7 @@ final class Api_Handler implements InjectionAwareInterface
             }
         }
 
-        $api_class = '\Box\Mod\\' . ucfirst($mod) . '\\Api\\' . ucfirst($this->type);
+        $api_class = '\Box\Mod\\' . ucfirst($mod) . '\\Api\\' . ucfirst((string) $this->type);
 
         $api = new $api_class();
 
@@ -101,10 +101,63 @@ final class Api_Handler implements InjectionAwareInterface
         if (!method_exists($api, $method_name) || !is_callable([$api, $method_name])) {
             $reflector = new ReflectionClass($api);
             if (!$reflector->hasMethod('__call')) {
-                throw new FOSSBilling\Exception(':type API call :method does not exist in module :module', [':type' => ucfirst($this->type), ':method' => $method_name, ':module' => $mod], 740);
+                throw new FOSSBilling\Exception(':type API call :method does not exist in module :module', [':type' => ucfirst((string) $this->type), ':method' => $method_name, ':module' => $mod], 740);
             }
         }
 
+        // Validate required parameters using attributes
+        $data = is_array($arguments) ? $arguments : [];
+
+        $this->validateRequiredParams($api, $method_name, $data);
+
         return $api->{$method_name}($arguments);
+    }
+
+    /**
+     * Validate required parameters for an API method using attributes.
+     *
+     * @param Api_Abstract $api The API instance
+     * @param string $method_name The method name
+     * @param array $data The data array passed to the method
+     * @return void
+     * @throws FOSSBilling\InformationException If required parameters are missing
+     */
+    public function validateRequiredParams(Api_Abstract $api, string $method_name, array $data): void
+    {
+        try {
+            $reflection = new ReflectionMethod($api, $method_name);
+        } catch (ReflectionException) {
+            // Method doesn't exist, skip validation
+            return;
+        }
+
+        // Get RequiredParams attributes
+        $attributes = $reflection->getAttributes(FOSSBilling\Validation\Api\RequiredParams::class);
+
+        if (empty($attributes)) {
+            return; // No validation attributes found
+        }
+
+        foreach ($attributes as $attribute) {
+            $instance = $attribute->newInstance();
+
+            // Validate each required parameter
+            foreach ($instance->params as $paramName => $errorMessage) {
+                // Check if parameter exists in data array
+                if (!isset($data[$paramName])) {
+                    throw new FOSSBilling\InformationException($errorMessage);
+                }
+
+                // Check if the parameter is an empty string
+                if (is_string($data[$paramName]) && strlen(trim($data[$paramName])) === 0) {
+                    throw new FOSSBilling\InformationException($errorMessage);
+                }
+
+                // Check if the parameter is empty (but allow numeric 0)
+                if (!is_numeric($data[$paramName]) && empty($data[$paramName])) {
+                    throw new FOSSBilling\InformationException($errorMessage);
+                }
+            }
+        }
     }
 }

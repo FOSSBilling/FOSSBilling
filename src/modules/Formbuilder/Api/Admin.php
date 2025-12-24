@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Formbuilder\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -26,13 +28,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['name' => 'Form name was not provided'])]
     public function create_form($data)
     {
-        $required = [
-            'name' => 'Form name was not provided',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         if (isset($data['type']) && (strtolower($data['type']) != 'horizontal' || strtolower($data['type']) != 'default')) {
             throw new \FOSSBilling\Exception('Form style was not found in predefined list', null, 3657);
         }
@@ -157,11 +155,9 @@ class Admin extends \Api_Abstract
     /**
      * Delete form and its form fields.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function delete_form($data)
+    public function delete_form($data): bool
     {
         $required = [
             'id' => 'Form id was not passed',
@@ -177,11 +173,9 @@ class Admin extends \Api_Abstract
     /**
      * Delete field by id.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function delete_field($data)
+    public function delete_field($data): bool
     {
         $required = [
             'id' => 'Field id was not passed',
