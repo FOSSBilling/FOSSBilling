@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Extension;
-use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -422,6 +422,63 @@ final class ServiceTest extends \BBTestCase
         $this->service->deactivate($ext);
     }
 
+<<<<<<<<< Temporary merge branch 1
+    {
+        $ext = new \Model_Extension();
+        $ext->loadBean(new \DummyBean());
+        $ext->type = 'hook';
+        $ext->name = 'extensionTest';
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('trash');
+
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
+
+        $this->service->setDi($di);
+        $result = $this->service->deactivate($ext);
+        $this->assertTrue($result);
+    }
+
+    public function testDeactivateUninstallException(): void
+    {
+        $ext = new \Model_Extension();
+        $ext->loadBean(new \DummyBean());
+        $ext->type = 'mod';
+        $ext->name = 'extensionTest';
+
+        $exceptionMessage = 'testException';
+
+        $modMock = $this->getMockBuilder('\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
+        $modMock->expects($this->atLeastOnce())
+            ->method('getCoreModules')
+            ->willReturn([]);
+
+        $modMock->expects($this->atLeastOnce())
+            ->method('uninstall')
+            ->willThrowException(new \FOSSBilling\Exception($exceptionMessage));
+
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
+
+        $di = $this->getDi();
+        $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
+
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
+
+        $this->service->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage($exceptionMessage);
+        $this->service->deactivate($ext);
+    }
+=========
+>>>>>>>>> Temporary merge branch 2
     public function testDeactivateExtensionHook(): void
     {
         $ext = new \Model_Extension();
