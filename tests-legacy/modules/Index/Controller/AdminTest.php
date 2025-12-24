@@ -3,15 +3,17 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Index\Controller;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
     public function testDi(): void
     {
         $controller = new Admin();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
@@ -42,7 +44,7 @@ final class AdminTest extends \BBTestCase
             ->method('isAdminLoggedIn')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['auth'] = $authorizationMock;
 
         $controller = new Admin();

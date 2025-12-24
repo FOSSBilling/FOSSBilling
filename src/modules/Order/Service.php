@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Order;
 
+use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 
@@ -486,14 +487,17 @@ class Service implements InjectionAwareInterface
     public function createOrder(\Model_Client $client, \Model_Product $product, array $data)
     {
         $currencyService = $this->di['mod_service']('currency');
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
+
         if (isset($data['currency']) && !empty($data['currency'])) {
-            $currency = $currencyService->getByCode($data['currency']);
+            $currency = $currencyRepository->findOneByCode($data['currency']);
         } elseif ($client->currency) {
-            $currency = $currencyService->getByCode($client->currency);
+            $currency = $currencyRepository->findOneByCode($client->currency);
         } else {
-            $currency = $currencyService->getDefault();
+            $currency = $currencyRepository->findDefault();
         }
-        if (!$currency instanceof \Model_Currency) {
+        if (!$currency instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency could not be determined for order');
         }
 
@@ -560,7 +564,7 @@ class Service implements InjectionAwareInterface
         $order->group_id = ($parent_order) ? $parent_order->group_id : uniqid();
         $order->group_master = ($parent_order) ? 0 : 1;
         $order->title = $generatedOrderTitle ?? $data['title'] ?? $product->title;
-        $order->currency = $currency->code;
+        $order->currency = $currency->getCode();
         $order->quantity = $qty;
         $order->service_type = $product->type;
         $order->unit = $product->unit;
@@ -577,7 +581,10 @@ class Service implements InjectionAwareInterface
             $order->price = $data['price'];
         } else {
             $repo = $product->getTable();
-            $rate = $currencyService->getRateByCode($currency->code);
+            $rate = $currencyRepository->getRateByCode($currency->getCode());
+            if ($rate === null) {
+                throw new \FOSSBilling\Exception("Currency rate for '{$currency->getCode()}' is not configured");
+            }
             $order->price = $repo->getProductPrice($product, $config) * $rate;
         }
 

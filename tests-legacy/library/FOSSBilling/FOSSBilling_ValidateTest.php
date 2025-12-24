@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
 final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 {
     public static function domains(): array
@@ -21,7 +24,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         ];
     }
 
-    #[PHPUnit\Framework\Attributes\DataProvider('domains')]
+    #[DataProvider('domains')]
     public function testValidator(string $domain, bool $valid): void
     {
         $v = new FOSSBilling\Validate();
@@ -49,7 +52,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
             'id' => 'ID must be set',
         ];
         $v = new FOSSBilling\Validate();
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('ID must be set');
         $v->checkRequiredParamsForArray($required, $data);
@@ -65,7 +68,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
             'key' => 'KEY must be set',
         ];
         $v = new FOSSBilling\Validate();
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('KEY must be set');
         $v->checkRequiredParamsForArray($required, $data);
@@ -83,7 +86,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 
         $variables = [':key' => 'placeholder_key'];
         $v = new FOSSBilling\Validate();
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('KEY placeholder_key must be set');
         $v->checkRequiredParamsForArray($required, $data, $variables);
@@ -104,7 +107,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
             ':array' => 'config',
         ];
         $v = new FOSSBilling\Validate();
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(0);
         $this->expectExceptionMessage('KEY placeholder_key must be set for array config');
         $v->checkRequiredParamsForArray($required, $data, $variables);
@@ -122,7 +125,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 
         $variables = [':key' => 'placeholder_key'];
         $v = new FOSSBilling\Validate();
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(12345);
         $this->expectExceptionMessage('KEY placeholder_key must be set');
         $v->checkRequiredParamsForArray($required, $data, $variables, 12345);
@@ -139,7 +142,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
         ];
 
         $v = new FOSSBilling\Validate();
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(54321);
         $this->expectExceptionMessage('KEY must be set');
         $v->checkRequiredParamsForArray($required, $data, [], 54321);
@@ -172,7 +175,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 
         $v = new FOSSBilling\Validate();
 
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage($required['message']);
 
         $v->checkRequiredParamsForArray($required, $data);
@@ -189,7 +192,7 @@ final class FOSSBilling_ValidateTest extends PHPUnit\Framework\TestCase
 
         $v = new FOSSBilling\Validate();
 
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage($required['message']);
 
         $v->checkRequiredParamsForArray($required, $data);

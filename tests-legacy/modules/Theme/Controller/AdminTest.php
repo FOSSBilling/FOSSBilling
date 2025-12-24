@@ -3,15 +3,17 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Theme\Controller;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
     public function testDi(): void
     {
         $controller = new Admin();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
@@ -38,7 +40,7 @@ final class AdminTest extends \BBTestCase
             ->with('mod_theme_preset')
             ->willReturn('Rendering ...');
 
-        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder(\Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getSettingsPageHtml')
             ->willReturn('');
@@ -67,7 +69,7 @@ final class AdminTest extends \BBTestCase
             ->method('getService')
             ->willReturn($themeServiceMock);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod'] = $di->protect(function ($name) use ($modMock) {
             if ($name == 'theme') {
                 return $modMock;

@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
     protected ?Guest $api;
@@ -16,7 +18,7 @@ final class GuestTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -29,10 +31,6 @@ final class GuestTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
@@ -40,8 +38,7 @@ final class GuestTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -55,10 +52,6 @@ final class GuestTest extends \BBTestCase
 
     public function testGetInvoiceNotFound(): void
     {
-        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
@@ -66,8 +59,7 @@ final class GuestTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -86,10 +78,6 @@ final class GuestTest extends \BBTestCase
             ->method('updateInvoice')
             ->willReturn(true);
 
-        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
@@ -97,8 +85,7 @@ final class GuestTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -113,10 +100,6 @@ final class GuestTest extends \BBTestCase
 
     public function testUpdateInvoiceNotFound(): void
     {
-        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
@@ -124,8 +107,7 @@ final class GuestTest extends \BBTestCase
             ->method('findOne')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -139,10 +121,6 @@ final class GuestTest extends \BBTestCase
 
     public function testUpdateInvoiceIsPaid(): void
     {
-        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
         $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
@@ -151,8 +129,7 @@ final class GuestTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -171,8 +148,8 @@ final class GuestTest extends \BBTestCase
             ->method('getActive')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayServiceMock);
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn () => $gatewayServiceMock);
 
         $this->api->setDi($di);
 
@@ -230,12 +207,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('generatePDF');
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);

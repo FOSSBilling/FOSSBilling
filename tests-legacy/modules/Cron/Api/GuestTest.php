@@ -3,13 +3,15 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Cron\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $api = new Guest();
         $api->setDi($di);
         $getDi = $api->getDi();

@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Product;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
@@ -16,7 +18,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -46,7 +48,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->willReturn($execArray);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -58,7 +60,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testToApiArray(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods([
                 'getStartingFromPrice',
                 'getUpgradablePairs',
@@ -96,7 +98,7 @@ final class ServiceTest extends \BBTestCase
             ->method('load')
             ->willReturnOnConsecutiveCalls($modelProductPayment, $modelProductCategory);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
@@ -128,7 +130,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getInstalledMods')
             ->willReturn($modArray);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extensionServiceMock);
 
         $this->service->setDi($di);
@@ -146,7 +148,7 @@ final class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -199,7 +201,7 @@ final class ServiceTest extends \BBTestCase
         $toolMock->expects($this->atLeastOnce())
             ->method('slug');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['db'] = $dbMock;
         $di['tools'] = $toolMock;
@@ -213,7 +215,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testUpdateProductMissngPricingType(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getPaymentTypes'])
             ->getMock();
 
@@ -243,7 +245,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getPaymentTypes'])
             ->getMock();
 
@@ -299,7 +301,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -329,7 +331,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -359,7 +361,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -387,7 +389,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->willReturn($addonsRows);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -420,7 +422,7 @@ final class ServiceTest extends \BBTestCase
         $toolMock->expects($this->atLeastOnce())
             ->method('slug');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolMock;
@@ -441,7 +443,7 @@ final class ServiceTest extends \BBTestCase
             ->method('productHasOrders')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
@@ -469,7 +471,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->willReturn($execArray);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -488,7 +490,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -519,7 +521,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($newCategoryId);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['logger'] = new \Box_Log();
@@ -545,7 +547,7 @@ final class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($modelProduct);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -570,7 +572,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -589,7 +591,7 @@ final class ServiceTest extends \BBTestCase
             'status' => 'active',
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->service->setDi($di);
 
@@ -618,7 +620,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($newPromoId);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['logger'] = new \Box_Log();
@@ -641,7 +643,7 @@ final class ServiceTest extends \BBTestCase
             ->method('toArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['tools'] = $this->createMock(\FOSSBilling\Tools::class);
 
@@ -676,7 +678,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -697,7 +699,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -716,7 +718,7 @@ final class ServiceTest extends \BBTestCase
             'show_hidden' => true,
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->service->setDi($di);
 
@@ -738,7 +740,7 @@ final class ServiceTest extends \BBTestCase
             $modelProduct,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getCategoryProducts', 'toApiArray'])
             ->getMock();
 
@@ -758,7 +760,7 @@ final class ServiceTest extends \BBTestCase
             ->method('toArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
@@ -781,7 +783,7 @@ final class ServiceTest extends \BBTestCase
             $modelProduct,
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getCategoryProducts', 'toApiArray'])
             ->getMock();
 
@@ -813,7 +815,7 @@ final class ServiceTest extends \BBTestCase
             ->method('toArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
@@ -831,7 +833,7 @@ final class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -848,7 +850,7 @@ final class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -880,7 +882,7 @@ final class ServiceTest extends \BBTestCase
             ->method('load')
             ->willReturn($productPaymentModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -907,7 +909,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->type = Service::DOMAIN;
         $productModel->product_payment_id = 1;
 
-        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getStartingDomainPrice', 'getStartingPrice'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -958,7 +960,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -980,7 +982,7 @@ final class ServiceTest extends \BBTestCase
             ->method('find')
             ->willReturn([$productModel]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -1027,7 +1029,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testCanUpgradeToReturnsTrue(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getUpgradablePairs'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -1048,7 +1050,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testCanUpgradeToUpgradeIsImposible(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getUpgradablePairs'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())

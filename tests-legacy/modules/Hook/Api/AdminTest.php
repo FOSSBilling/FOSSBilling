@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Hook\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
     protected ?Admin $api;
@@ -16,7 +18,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -30,7 +32,7 @@ final class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -38,7 +40,7 @@ final class AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $paginatorMock;
 
         $this->api->setDi($di);
@@ -58,7 +60,7 @@ final class AdminTest extends \BBTestCase
             ->method('fire')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventManager;
 
@@ -84,7 +86,7 @@ final class AdminTest extends \BBTestCase
             ->method('batchConnect')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->api->setDi($di);
 

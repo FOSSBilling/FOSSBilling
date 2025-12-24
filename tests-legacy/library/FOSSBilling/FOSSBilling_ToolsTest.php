@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class FOSSBilling_ToolsTest extends PHPUnit\Framework\TestCase
 {
     // sanitizeContent tests
