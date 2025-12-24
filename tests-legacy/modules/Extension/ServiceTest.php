@@ -462,6 +462,18 @@ final class ServiceTest extends \BBTestCase
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = $this->getDi();
+        // Create temp directory that actually exists
+        $tmpDir = sys_get_temp_dir() . '/fb_test_ext_' . uniqid();
+        mkdir($tmpDir, 0755, true);
+
+        // Only mock getExtensionPath to return our temp dir, let other methods work normally
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)
+            ->onlyMethods(['getExtensionPath'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getExtensionPath')
+            ->willReturn($tmpDir);
+
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
@@ -474,7 +486,14 @@ final class ServiceTest extends \BBTestCase
             return null;
         });
 
-        $this->service->setDi($di);
+        $serviceMock->setDi($di);
+
+        $result = $serviceMock->uninstall('mod', 'TestExtension');
+
+        // Clean up temp directory
+        if (is_dir($tmpDir)) {
+            rmdir($tmpDir);
+        }
 
         $this->filesystemMock->expects($this->atLeastOnce())
             ->method('exists')
