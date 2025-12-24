@@ -864,7 +864,7 @@ final class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($data['password']);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
