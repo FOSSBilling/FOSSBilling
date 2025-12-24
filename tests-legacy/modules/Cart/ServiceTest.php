@@ -144,7 +144,7 @@ $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Reposit
         $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
             ->onlyMethods(['getCurrencyByClientId', 'getCurrencyRepository'])
             ->getMock();
-        $currencyServiceMock->expects($getCurrencyByClientIdExpects)
+        $currencyServiceMock->expects($this->$getCurrencyByClientIdExpects())
             ->method('getCurrencyByClientId')
             ->willReturn($currencyModel);
         $currencyServiceMock->expects($this->atLeastOnce())

@@ -171,21 +171,19 @@ $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
         return [
             [
                 'USD',
-'findOneByCode',
-                $self->atLeastOnce(),
-                $self->never(),
+                'atLeastOnce',
+                'never',
             ],
             [
                 null,
-'findDefault',
-                $self->never(),
-                $self->atLeastOnce(),
+                'never',
+                'atLeastOnce',
             ],
         ];
     }
 
 #[\PHPUnit\Framework\Attributes\DataProvider('getCurrencyByClientIdProvider')]
-    public function testGetCurrencyByClientId(?string $currency, string $expectedMethod, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $expectsFindOneByCode, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $expectsFindDefault): void
+    public function testGetCurrencyByClientId(?string $currency, $expectsGetByCode, $expectsGetDefault): void
     {
         $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->disableOriginalConstructor()
@@ -197,13 +195,13 @@ $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
             ->method('getCell')
             ->willReturn($currency);
 
-$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $repositoryMock->expects($expectsFindDefault)
+        $repositoryMock->expects($this->$expectsGetDefault())
             ->method('findDefault')
             ->willReturn($model);
-        $repositoryMock->expects($expectsFindOneByCode)
+        $repositoryMock->expects($this->$expectsGetByCode())
             ->method('findOneByCode')
             ->willReturn($model);
 
@@ -263,37 +261,39 @@ $di = new \Pimple\Container();
 
     public static function setAsDefaultProvider(): array
     {
-        
-
-        $firstModel = $self->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $firstModel->expects($self->any())
-            ->method('getCode')
-            ->willReturn('USD');
-        $firstModel->expects($self->any())
-            ->method('isDefault')
-            ->willReturn(false);
-
-        $secondModel = $self->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $secondModel->expects($self->any())
-            ->method('getCode')
-            ->willReturn('USD');
-        $secondModel->expects($self->any())
-            ->method('isDefault')
-            ->willReturn(true);
-
+        // Return flags instead of mocks since we can't create mocks in static context
         return [
-            [$firstModel, 'atLeastOnce'],
-            [$secondModel, 'never'],
+            ['default_currency', 'atLeastOnce'],
+            ['already_default', 'never'],
         ];
     }
 
 #[\PHPUnit\Framework\Attributes\DataProvider('setAsDefaultProvider')]
-    public function testSetAsDefault($model, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $expects): void
+    public function testSetAsDefault($modelType, $expects): void
     {
+        // Create model mock based on type
+        if ($modelType === 'default_currency') {
+            $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+            $model->expects($this->any())
+                ->method('getCode')
+                ->willReturn('USD');
+            $model->expects($this->any())
+                ->method('isDefault')
+                ->willReturn(false);
+        } else {
+            $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+            $model->expects($this->any())
+                ->method('getCode')
+                ->willReturn('USD');
+            $model->expects($this->any())
+                ->method('isDefault')
+                ->willReturn(true);
+        }
+
         // Create a fresh mock for the re-fetched currency (after identity map clear)
         $refetchedModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->disableOriginalConstructor()
@@ -308,10 +308,10 @@ $di = new \Pimple\Container();
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $repositoryMock->expects($expects)
+        $repositoryMock->expects($this->$expects())
             ->method('clearDefaultFlags');
         // Mock findOneByCode to return the re-fetched currency after identity map clear
-        $repositoryMock->expects($expects)
+        $repositoryMock->expects($this->$expects())
             ->method('findOneByCode')
             ->with('USD')
             ->willReturn($refetchedModel);
@@ -322,12 +322,12 @@ $di = new \Pimple\Container();
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
             ->willReturn($repositoryMock);
-        $emMock->expects($expects)
+        $emMock->expects($this->$expects())
             ->method('persist');
-        $emMock->expects($expects)
+        $emMock->expects($this->$expects())
             ->method('flush');
         // Mock clear() for identity map clearing
-        $emMock->expects($expects)
+        $emMock->expects($this->$expects())
             ->method('clear')
             ->with(\Box\Mod\Currency\Entity\Currency::class);
 

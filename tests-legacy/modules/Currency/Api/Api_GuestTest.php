@@ -41,8 +41,6 @@ final class Api_GuestTest extends \BBTestCase
 
     public static function getProvider(): array
     {
-        
-
         $willReturn = [
             'code' => 'EUR',
             'title' => 'Euro',
@@ -52,18 +50,17 @@ final class Api_GuestTest extends \BBTestCase
             'default' => true,
         ];
 
+        // Use a placeholder since we can't create mocks in static context
         return [
             [
-                [
-                    'code' => 'EUR',
-                ],
-                $model,
+                ['code' => 'EUR'],
+                'has_model', // flag to indicate model should be created
                 'atLeastOnce',
                 'never',
             ],
             [
                 [],
-                $model,
+                'has_model', // flag to indicate model should be created
                 'never',
                 'atLeastOnce',
             ],
@@ -71,7 +68,7 @@ final class Api_GuestTest extends \BBTestCase
     }
 
     #[DataProvider('getProvider')]
-    public function testGet(array $data, \Model_Currency $model, $expectsGetByCode, $expectsGetDefault): void
+    public function testGet(array $data, $modelFlag, $expectsGetByCode, $expectsGetDefault): void
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
 
@@ -84,13 +81,27 @@ final class Api_GuestTest extends \BBTestCase
             'default' => 1,
         ];
 
+        // Create model mock based on flag
+        $model = ($modelFlag === 'has_model') 
+            ? $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+                ->disableOriginalConstructor()
+                ->getMock()
+            : null;
+
+        // Configure the entity mock to return expected values
+        if ($model !== null) {
+            $model->expects($this->atLeastOnce())
+                ->method('toApiArray')
+                ->willReturn($willReturn);
+        }
+
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $repositoryMock->expects($expectsGetByCode)
+        $repositoryMock->expects($this->$expectsGetByCode())
             ->method('findOneByCode')
             ->willReturn($model);
-        $repositoryMock->expects($expectsGetDefault)
+        $repositoryMock->expects($this->$expectsGetDefault())
             ->method('findDefault')
             ->willReturn($model);
 
@@ -99,11 +110,9 @@ final class Api_GuestTest extends \BBTestCase
             ->method('getCurrencyRepository')
             ->willReturn($repositoryMock);
 
-        $service->expects($this->atLeastOnce())
-            ->method('toApiArray')
-            ->willReturn($willReturn);
-
         $guestApi->setService($service);
+        $di = $this->getDi();
+        $guestApi->setDi($di);
 
         $result = $guestApi->get($data);
         $this->assertIsArray($result);

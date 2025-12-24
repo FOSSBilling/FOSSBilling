@@ -313,12 +313,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public static function CreateExceptionProvider(): array
     {
-        
-
-        $model = $self->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
         return [
             [
                 [
@@ -326,7 +320,7 @@ final class Api_AdminTest extends \BBTestCase
                     'format' => '€{{price}}',
                 ],
                 'atLeastOnce',
-                $model, // currency exists already
+                'currency_exists', // use string flag instead of mock
                 'never',
             ],
             [
@@ -349,7 +343,15 @@ final class Api_AdminTest extends \BBTestCase
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $repositoryMock->expects($findOneByCodeCalled)
+        
+        // Create mock if needed
+        if ($findOneByCodeReturn === 'currency_exists') {
+            $findOneByCodeReturn = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+        }
+        
+        $repositoryMock->expects($this->$findOneByCodeCalled())
             ->method('findOneByCode')
             ->willReturn($findOneByCodeReturn);
 
@@ -489,10 +491,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public static function SetDefaultExceptionProvider(): array
     {
-        $model = new \Model_Currency();
-        $model->loadBean(new \DummyBean());
-        $model->code = 'EUR';
-
         return [
             [
                 [
