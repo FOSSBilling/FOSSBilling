@@ -277,6 +277,37 @@ class Service implements InjectionAwareInterface
             ];
         }
 
+        // Add order information for email templates
+        $result['orders'] = [];
+        $orderIds = array_unique(array_filter(array_column($lines, 'order_id')));
+
+        if (!empty($orderIds)) {
+            // Batch load orders
+            $orders = $this->di['db']->find('ClientOrder', 'id IN (' . implode(',', $orderIds) . ')');
+
+            // Batch load related products
+            $productIds = array_unique(array_filter(array_map(fn ($o) => $o->product_id, $orders)));
+            $products = !empty($productIds)
+            ? $this->di['db']->find('Product', 'id IN (' . implode(',', $productIds) . ')')
+            : [];
+
+            foreach ($orders as $order) {
+                $product = $products[$order->product_id] ?? null;
+                $orderData = [
+                    'id' => $order->id,
+                    'title' => $order->title,
+                    'expires_at' => $order->expires_at,
+                ];
+
+                if ($product) {
+                    $orderData['product_name'] = $product->title;
+                    $orderData['product_type'] = $product->type;
+                }
+
+                $result['orders'][] = $orderData;
+            }
+        }
+
         return $result;
     }
 
