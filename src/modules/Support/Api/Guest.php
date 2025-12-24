@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Support\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Guest extends \Api_Abstract
 {
     /**
@@ -22,17 +24,15 @@ class Guest extends \Api_Abstract
      *
      * @return string - ticket hash
      */
+    #[RequiredParams([
+        'name' => 'Please enter your name',
+        'email' => 'Please enter your email address',
+        'subject' => 'Please enter the subject',
+        'message' => 'Please enter your message',
+    ])]
     public function ticket_create(array $data): string
     {
-        $required = [
-            'name' => 'Please enter your name',
-            'email' => 'Please enter your email',
-            'subject' => 'Please enter your subject',
-            'message' => 'Please enter your message',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
-        if (strlen((string) $data['message']) < 4) {
+        if (strlen($data['message']) < 4) {
             throw new \FOSSBilling\InformationException('Please enter your message');
         }
 
@@ -47,13 +47,9 @@ class Guest extends \Api_Abstract
      *
      * @return array - ticket details
      */
+    #[RequiredParams(['hash' => 'Public ticket hash required'])]
     public function ticket_get(array $data): array
     {
-        $required = [
-            'hash' => 'Public ticket hash required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
 
         return $this->getService()->publicToApiArray($publicTicket);
@@ -64,13 +60,9 @@ class Guest extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['hash' => 'Public ticket hash required'])]
     public function ticket_close(array $data): bool
     {
-        $required = [
-            'hash' => 'Public ticket hash required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
 
         return $this->getService()->publicCloseTicket($publicTicket, $this->getIdentity());
@@ -81,14 +73,9 @@ class Guest extends \Api_Abstract
      *
      * @return string - ticket hash
      */
+    #[RequiredParams(['hash' => 'Public ticket hash required', 'message' => 'Message cannot be empty'])]
     public function ticket_reply(array $data): string
     {
-        $required = [
-            'hash' => 'Public ticket hash required',
-            'message' => 'Message is required and cannot be blank',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
 
         // Sanitize message to prevent XSS attacks

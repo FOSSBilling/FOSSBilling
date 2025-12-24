@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Paidsupport;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
@@ -16,7 +18,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -40,7 +42,7 @@ final class ServiceTest extends \BBTestCase
             'error_msg' => 'Insufficient funds to open ticket',
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($serviceName, $subService) use ($clientBalanceMock) {
             if ($serviceName == 'Client' && $subService == 'Balance') {
                 return $clientBalanceMock;
@@ -75,7 +77,7 @@ final class ServiceTest extends \BBTestCase
             'error_msg' => 'Insufficient funds to open ticket',
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($serviceName, $subService) use ($clientBalanceMock) {
             if ($serviceName == 'Client' && $subService == 'Balance') {
                 return $clientBalanceMock;
@@ -112,7 +114,7 @@ final class ServiceTest extends \BBTestCase
             'error_msg' => 'Insufficient funds to open ticket',
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($serviceName, $subService) use ($clientBalanceMock) {
             if ($serviceName == 'Client' && $subService == 'Balance') {
                 return $clientBalanceMock;
@@ -144,7 +146,7 @@ final class ServiceTest extends \BBTestCase
 
         $paidSupportConfig = [];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($serviceName, $subService) use ($clientBalanceMock) {
             if ($serviceName == 'Client' && $subService == 'Balance') {
                 return $clientBalanceMock;
@@ -163,7 +165,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testOnBeforeClientOpenTicketPaidSupportForHelpdeskEnabled(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -207,7 +209,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testOnBeforeClientOpenTicketPaidSupportForHelpdeskDisabled(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -251,7 +253,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetTicketPrice(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $paidSupportConfig = [
             'ticket_price' => 1,
         ];
@@ -269,7 +271,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetTicketPriceNotSet(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $paidSupportConfig = [];
 
         $di['mod_config'] = $di->protect(function ($serviceName) use ($paidSupportConfig) {
@@ -285,7 +287,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetErrorMessage(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $errorMessage = 'Not enough funds';
         $paidSupportConfig = [
             'error_msg' => $errorMessage,
@@ -304,7 +306,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetErrorMessageNotSet(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $errorMessage = 'Configure paid support module!';
         $paidSupportConfig = [];
 
@@ -321,7 +323,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testOnAfterClientOpenTicket(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
@@ -378,7 +380,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testOnAfterClientOpenTicketPaidSupportDisabledForHelpdesk(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \DummyBean());
@@ -428,7 +430,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetPaidHelpdeskConfig(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $helpdeskId = 2;
         $helpdeskConfig = [
             $helpdeskId => 0,
@@ -452,7 +454,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetPaidHelpdeskConfigIsNotSet(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $paidSupportConfig = [];
 
         $di['mod_config'] = $di->protect(function ($serviceName) use ($paidSupportConfig) {
@@ -473,7 +475,7 @@ final class ServiceTest extends \BBTestCase
         $helpdeskConfig = [
             $helpdeskId => 0,
         ];
-        $paidSupportServiceMock = $this->getMockBuilder('\\' . Service::class)
+        $paidSupportServiceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getPaidHelpdeskConfig'])
             ->getMock();
         $paidSupportServiceMock->expects($this->atLeastOnce())
@@ -490,7 +492,7 @@ final class ServiceTest extends \BBTestCase
         $helpdeskConfig = [
             $helpdeskId => 1,
         ];
-        $paidSupportServiceMock = $this->getMockBuilder('\\' . Service::class)
+        $paidSupportServiceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getPaidHelpdeskConfig'])
             ->getMock();
         $paidSupportServiceMock->expects($this->atLeastOnce())
@@ -506,7 +508,7 @@ final class ServiceTest extends \BBTestCase
         $helpdeskId = 1;
         $helpdeskConfig = [];
 
-        $paidSupportServiceMock = $this->getMockBuilder('\\' . Service::class)
+        $paidSupportServiceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getPaidHelpdeskConfig'])
             ->getMock();
         $paidSupportServiceMock->expects($this->atLeastOnce())
@@ -519,7 +521,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testPaidSupportAppliedForAllHelpdesksAllHelpdesksAreNotChecked(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $helpdeskId = 2;
         $helpdeskId1 = 3;
         $helpdeskConfig = [
@@ -543,7 +545,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testUninstall(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_ExtensionMeta();
@@ -564,7 +566,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testUninstallConfigNotFound(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_ExtensionMeta();
@@ -583,7 +585,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testInstall(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
         $extensionServiceMock->expects($this->atLeastOnce())

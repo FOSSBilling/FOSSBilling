@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Currency\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class Api_GuestTest extends \BBTestCase
 {
     public function testGetPairs(): void
@@ -39,7 +41,7 @@ final class Api_GuestTest extends \BBTestCase
 
     public static function getProvider(): array
     {
-        $self = new Api_GuestTest('Api_GuestTest');
+        
 
         $willReturn = [
             'code' => 'EUR',
@@ -55,40 +57,40 @@ final class Api_GuestTest extends \BBTestCase
                 [
                     'code' => 'EUR',
                 ],
-                'findOneByCode',
-                $self->atLeastOnce(),
-                $self->never(),
-                $willReturn,
+                $model,
+                'atLeastOnce',
+                'never',
             ],
             [
                 [],
-                'findDefault',
-                $self->never(),
-                $self->atLeastOnce(),
-                $willReturn,
+                $model,
+                'never',
+                'atLeastOnce',
             ],
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('getProvider')]
-    public function testGet(array $data, string $expectedMethod, \PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce|\PHPUnit\Framework\MockObject\Rule\InvokedCount $expectsFindOneByCode, \PHPUnit\Framework\MockObject\Rule\InvokedCount|\PHPUnit\Framework\MockObject\Rule\InvokedAtLeastOnce $expectsFindDefault, array $willReturn): void
+    #[DataProvider('getProvider')]
+    public function testGet(array $data, \Model_Currency $model, $expectsGetByCode, $expectsGetDefault): void
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
 
-        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $model->expects($this->atLeastOnce())
-            ->method('toApiArray')
-            ->willReturn($willReturn);
+        $willReturn = [
+            'code' => 'EUR',
+            'title' => 'Euro',
+            'conversion_rate' => 1,
+            'format' => '{{price}}',
+            'price_format' => 1,
+            'default' => 1,
+        ];
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $repositoryMock->expects($expectsFindOneByCode)
+        $repositoryMock->expects($expectsGetByCode)
             ->method('findOneByCode')
             ->willReturn($model);
-        $repositoryMock->expects($expectsFindDefault)
+        $repositoryMock->expects($expectsGetDefault)
             ->method('findDefault')
             ->willReturn($model);
 
@@ -96,6 +98,10 @@ final class Api_GuestTest extends \BBTestCase
         $service->expects($this->atLeastOnce())
             ->method('getCurrencyRepository')
             ->willReturn($repositoryMock);
+
+        $service->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturn($willReturn);
 
         $guestApi->setService($service);
 
@@ -153,7 +159,7 @@ final class Api_GuestTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('formatPriceFormatProvider')]
+    #[DataProvider('formatPriceFormatProvider')]
     public function testFormatPriceFormat(int $price_format, string $expectedResult): void
     {
         $willReturn = [
@@ -170,14 +176,14 @@ final class Api_GuestTest extends \BBTestCase
             'price' => 100000,
             'without_currency' => false,
         ];
-        $guestApi = $this->getMockBuilder('\\' . \Box\Mod\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
+        $guestApi = $this->getMockBuilder(\Box\Mod\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
         $guestApi->expects($this->atLeastOnce())
             ->method('get')
             ->willReturn($willReturn);
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $guestApi->setDi($di);
         $guestApi->setService($service);
@@ -214,7 +220,7 @@ final class Api_GuestTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('formatProvider')]
+    #[DataProvider('formatProvider')]
     public function testFormat(array $data, string $expectedResult): void
     {
         $willReturn = [
@@ -226,14 +232,14 @@ final class Api_GuestTest extends \BBTestCase
             'default' => 1,
         ];
 
-        $guestApi = $this->getMockBuilder('\\' . \Box\Mod\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
+        $guestApi = $this->getMockBuilder(\Box\Mod\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
         $guestApi->expects($this->atLeastOnce())
             ->method('get')
             ->willReturn($willReturn);
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $guestApi->setDi($di);
         $guestApi->setService($service);

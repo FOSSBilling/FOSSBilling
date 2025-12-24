@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ServiceInvoiceItemTest extends \BBTestCase
 {
     protected ?ServiceInvoiceItem $service;
@@ -16,7 +18,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -27,7 +29,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)
+        $serviceMock = $this->getMockBuilder(ServiceInvoiceItem::class)
             ->onlyMethods(['creditInvoiceItem', 'getOrderId'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -39,7 +41,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \DummyBean());
 
-        $orderServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)
+        $orderServiceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('unsetUnpaidInvoice')
@@ -52,7 +54,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
             ->method('load')
             ->willReturn($clientOrder);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $serviceMock->setDi($di);
@@ -77,7 +79,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceItemModel->type = \Model_InvoiceItem::TYPE_ORDER;
         $orderId = 22;
 
-        $serviceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)
+        $serviceMock = $this->getMockBuilder(ServiceInvoiceItem::class)
             ->onlyMethods(['getOrderId'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -89,7 +91,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
             ->method('load')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -105,7 +107,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceItemModel->type = \Model_InvoiceItem::TYPE_HOOK_CALL;
         $invoiceItemModel->rel_id = '{}';
 
-        $serviceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)
+        $serviceMock = $this->getMockBuilder(ServiceInvoiceItem::class)
             ->onlyMethods(['markAsExecuted'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -115,7 +117,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $eventManagerMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventManagerMock;
         $serviceMock->setDi($di);
 
@@ -134,7 +136,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $dbMock = $this->createMock('\Box_Database');
         $di['db'] = $dbMock;
 
@@ -145,7 +147,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
             }
         });
 
-        $serviceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)
+        $serviceMock = $this->getMockBuilder(ServiceInvoiceItem::class)
             ->onlyMethods(['markAsExecuted'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -161,7 +163,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->type = \Model_InvoiceItem::TYPE_CUSTOM;
 
-        $serviceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)
+        $serviceMock = $this->getMockBuilder(ServiceInvoiceItem::class)
             ->onlyMethods(['markAsExecuted'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -191,7 +193,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -234,7 +236,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
             ->method('getCell')
             ->willReturn($rate);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -259,7 +261,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -282,7 +284,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $this->service->setDi($di);
@@ -304,7 +306,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -313,7 +315,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
 
     public function testCreditInvoiceItem(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)
+        $serviceMock = $this->getMockBuilder(ServiceInvoiceItem::class)
             ->onlyMethods(['getTotalWithTax'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -343,7 +345,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceServiceMock->expects($this->atLeastOnce())
             ->method('addNote');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $invoiceServiceMock);
 
@@ -360,7 +362,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->quantity = $quantity;
 
-        $serviceMock = $this->getMockBuilder('\\' . ServiceInvoiceItem::class)
+        $serviceMock = $this->getMockBuilder(ServiceInvoiceItem::class)
             ->onlyMethods(['getTotal', 'getTax'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -402,7 +404,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
 
     public function testGetAllNotExecutePaidItems(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())

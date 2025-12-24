@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Spamchecker\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
     protected ?Guest $api;
@@ -16,7 +18,7 @@ final class GuestTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -113,10 +115,10 @@ final class GuestTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('datarecaptchaConfig')]
+    #[DataProvider('datarecaptchaConfig')]
     public function testRecaptcha(array $config, array $expected): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn (): array => $config);
 
         $this->api->setDi($di);

@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ServiceTransactionTest extends \BBTestCase
 {
     protected ?ServiceTransaction $service;
@@ -16,7 +18,7 @@ final class ServiceTransactionTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -27,7 +29,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . ServiceTransaction::class)
+        $serviceMock = $this->getMockBuilder(ServiceTransaction::class)
             ->onlyMethods(['getReceived', 'preProcessTransaction'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -42,7 +44,7 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturnOnConsecutiveCalls($transactionModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
@@ -65,7 +67,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventsMock;
         $di['logger'] = new \Box_Log();
@@ -94,7 +96,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventsMock;
 
         $this->service->setDi($di);
@@ -115,7 +117,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventsMock;
 
         $this->service->setDi($di);
@@ -137,7 +139,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
@@ -158,7 +160,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($payGatewayModel);
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -232,10 +234,10 @@ final class ServiceTransactionTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
+    #[DataProvider('searchQueryData')]
     public function testGetSearchQuery(array $data, array $expectedParams, string $expectedStringPart): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
@@ -254,7 +256,7 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('getAll')
             ->willReturn($queryResult);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -331,7 +333,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . ServiceTransaction::class)
+        $serviceMock = $this->getMockBuilder(ServiceTransaction::class)
             ->onlyMethods(['processTransaction'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -342,7 +344,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $serviceMock->setDi($di);
@@ -358,7 +360,7 @@ final class ServiceTransactionTest extends \BBTestCase
 
         $exceptionMessage = 'Exception created with PHPUnit Test';
 
-        $serviceMock = $this->getMockBuilder('\\' . ServiceTransaction::class)
+        $serviceMock = $this->getMockBuilder(ServiceTransaction::class)
             ->onlyMethods(['processTransaction'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -369,7 +371,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -385,7 +387,7 @@ final class ServiceTransactionTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('paymentsAdapterProvider_withprocessTransaction')]
+    #[DataProvider('paymentsAdapterProvider_withprocessTransaction')]
     public function testProcessTransactionSupportProcessTransaction(string $adapter): void
     {
         $id = 1;
@@ -414,7 +416,7 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('getPaymentAdapter')
             ->willReturn($paymentAdapterMock);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $payGatewayService);
         $di['api_system'] = new \Api_Handler(new \Model_Admin());
@@ -425,7 +427,7 @@ final class ServiceTransactionTest extends \BBTestCase
 
     public function getReceived(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . ServiceTransaction::class)
+        $serviceMock = $this->getMockBuilder(ServiceTransaction::class)
             ->onlyMethods(['getSearchQuery'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -449,7 +451,7 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('getAll')
             ->willReturn([[]]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -485,7 +487,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -494,7 +496,7 @@ final class ServiceTransactionTest extends \BBTestCase
 
     public function testCreateAndProcess(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . ServiceTransaction::class)
+        $serviceMock = $this->getMockBuilder(ServiceTransaction::class)
             ->onlyMethods(['create', 'processTransaction'])
             ->getMock();
         $serviceMock->expects($this->once())
@@ -522,7 +524,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventsMock;
         $di['logger'] = new \Box_Log();

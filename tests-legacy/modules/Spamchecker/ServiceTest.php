@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Spamchecker;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
 use Symfony\Component\HttpFoundation\Request;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
@@ -18,7 +20,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -32,7 +34,7 @@ final class ServiceTest extends \BBTestCase
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isSpam');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $spamCheckerService);
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
@@ -51,7 +53,7 @@ final class ServiceTest extends \BBTestCase
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isSpam');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $spamCheckerService);
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
@@ -70,7 +72,7 @@ final class ServiceTest extends \BBTestCase
             'blocked_ips' => '1.1.1.1' . PHP_EOL . '2.2.2.2',
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['request'] = Request::createFromGlobals();
         $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
             if ($modName == 'Spamchecker') {
@@ -93,7 +95,7 @@ final class ServiceTest extends \BBTestCase
             'block_ips' => false,
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
             if ($modName == 'Spamchecker') {
                 return $modConfig;

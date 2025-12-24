@@ -1,12 +1,14 @@
 .vscode
 ._*
 .DS_Store
-src/config.php
-src/data/log/*
-src/data/cache/*
-src/vendor/*
+/cache
+/src/config.php
+/src/data/log/*
+/src/data/cache/*
+!/src/data/cache/.gitkeep
+/src/vendor/*
 build
-cache
+
 
 ### phpunit/phpunit ###
 .phpunit.result.cache
