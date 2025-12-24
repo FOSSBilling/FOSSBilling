@@ -64,7 +64,7 @@ final class AdminTest extends \BBTestCase
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('getThemePresets');
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getService')
             ->willReturn($themeServiceMock);
