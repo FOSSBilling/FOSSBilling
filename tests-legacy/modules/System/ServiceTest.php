@@ -252,7 +252,24 @@ final class ServiceTest extends \BBTestCase
 
     public function testClearCache(): void
     {
+        // Create cache directory with .gitkeep if it doesn't exist
+        $cacheDir = PATH_CACHE;
+        if (!is_dir($cacheDir)) {
+            mkdir($cacheDir, 0755, true);
+        }
+        $gitkeepFile = $cacheDir . '/.gitkeep';
+        $gitkeepExists = file_exists($gitkeepFile);
+        if (!$gitkeepExists) {
+            file_put_contents($gitkeepFile, '');
+        }
+
         $result = $this->service->clearCache();
+
+        // Restore .gitkeep file if it was present before test
+        if ($gitkeepExists || !$gitkeepExists) {
+            file_put_contents($gitkeepFile, '');
+        }
+
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }

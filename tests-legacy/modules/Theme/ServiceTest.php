@@ -281,15 +281,28 @@ final class ServiceTest extends \BBTestCase
             ->method('getCurrentThemePreset')
             ->willReturn('default');
 
+        $tmpDir = sys_get_temp_dir() . '/fb_test_' . uniqid();
+        mkdir($tmpDir, 0755, true);
+        $testFile = $tmpDir . '/test_settings.json';
+
         $themeMock = $this->getMockBuilder('\\' . Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getPathSettingsDataFile')
-            ->willReturn('location/Of/Assets/file');
+            ->willReturn($testFile);
 
         $di = new \Pimple\Container();
 
         $serviceMock->setDi($di);
         $result = $serviceMock->regenerateThemeSettingsDataFile($themeMock);
+
+        // Clean up temp file
+        if (file_exists($testFile)) {
+            unlink($testFile);
+        }
+        if (is_dir($tmpDir)) {
+            rmdir($tmpDir);
+        }
+
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
@@ -297,14 +310,24 @@ final class ServiceTest extends \BBTestCase
     public function testRegenerateThemeCssAndJsFilesEmptyFiles(): void
     {
         $themeMock = $this->getMockBuilder('\\' . Model\Theme::class)->disableOriginalConstructor()->getMock();
+
+        $tmpDir = sys_get_temp_dir() . '/fb_test_assets_' . uniqid();
+        mkdir($tmpDir, 0755, true);
+
         $themeMock->expects($this->atLeastOnce())
             ->method('getPathAssets')
-            ->willReturn('location/Of/');
+            ->willReturn($tmpDir . '/');
 
         $di = new \Pimple\Container();
         $this->service->setDi($di);
 
         $result = $this->service->regenerateThemeCssAndJsFiles($themeMock, 'default', new \Model_Admin());
+
+        // Clean up temp directory
+        if (is_dir($tmpDir)) {
+            rmdir($tmpDir);
+        }
+
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
