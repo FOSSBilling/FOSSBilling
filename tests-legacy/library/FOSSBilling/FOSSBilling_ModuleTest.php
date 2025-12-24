@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
+namespace FOSSBilling;
+
+use PHPUnit\Framework\Attributes\Group;
+
 #[Group('Core')]
-final class Box_ModTest extends \BBTestCase
+final class FOSSBilling_ModuleTest extends \BBTestCase
 {
     public function testEmptyConfig(): void
     {
@@ -15,7 +19,7 @@ final class Box_ModTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $db;
 
-        $mod = new Box_Mod('api');
+        $mod = new Module('api');
         $mod->setDi($di);
         $array = $mod->getConfig();
         $this->assertSame([], $array);
@@ -23,22 +27,22 @@ final class Box_ModTest extends \BBTestCase
 
     public function testCoreMod(): void
     {
-        $mod = new Box_Mod('api');
+        $mod = new Module('api');
         $this->assertTrue($mod->isCore());
 
         $array = $mod->getCoreModules();
         $this->assertIsArray($array);
 
-        $mod = new Box_Mod('Cookieconsent');
+        $mod = new Module('Cookieconsent');
         $this->assertFalse($mod->isCore());
     }
 
     public function testManifest(): void
     {
         $di = $this->getDi();
-        $di['url'] = new Box_Url();
+        $di['url'] = new \Box_Url();
 
-        $mod = new Box_Mod('Cookieconsent');
+        $mod = new Module('Cookieconsent');
         $mod->setDi($di);
 
         $bool = $mod->hasManifest();
@@ -50,13 +54,13 @@ final class Box_ModTest extends \BBTestCase
 
     public function testGetServiceSub(): void
     {
-        $mod = new Box_Mod('Invoice');
+        $mod = new Module('Invoice');
         $subServiceName = 'transaction';
 
         $di = $this->getDi();
         $mod->setDi($di);
 
         $subService = $mod->getService($subServiceName);
-        $this->assertInstanceOf(Box\Mod\Invoice\ServiceTransaction::class, $subService);
+        $this->assertInstanceOf(\Box\Mod\Invoice\ServiceTransaction::class, $subService);
     }
 }

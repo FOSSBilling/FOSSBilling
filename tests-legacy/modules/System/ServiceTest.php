@@ -288,7 +288,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetCountries(): void
     {
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn(['countries' => 'US']);
@@ -303,7 +303,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetEuCountries(): void
     {
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn(['countries' => 'US']);

@@ -123,7 +123,7 @@ final class GuestTest extends \BBTestCase
 
     public function testSuccessfulLogin(): void
     {
-        $modMock = $this->getMockBuilder('Box_Mod')
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
             ->disableOriginalConstructor()
             ->getMock();
         $modMock->expects($this->atLeastOnce())
@@ -158,7 +158,7 @@ final class GuestTest extends \BBTestCase
 
     public function testLoginCheckIpException(): void
     {
-        $modMock = $this->getMockBuilder('\Box_Mod')
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
             ->disableOriginalConstructor()
             ->getMock();
         $configArr = [

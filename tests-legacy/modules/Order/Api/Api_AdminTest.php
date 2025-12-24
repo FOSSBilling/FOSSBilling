@@ -60,7 +60,7 @@ final class Api_AdminTest extends BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn(['show_addons' => 0]);

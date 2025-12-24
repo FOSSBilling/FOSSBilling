@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Extension;
-use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -43,7 +43,7 @@ final class ServiceTest extends \BBTestCase
     public function testIsCoreModule(): void
     {
         $coreModules = ['extension', 'cron', 'staff'];
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getCoreModules')
             ->willReturn($coreModules);
@@ -61,7 +61,7 @@ final class ServiceTest extends \BBTestCase
     public function testIsExtensionActiveModNotFound(): void
     {
         $coreModules = ['extension', 'cron', 'staff'];
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getCoreModules')
             ->willReturn($coreModules);
@@ -88,7 +88,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->name = 'extensionName';
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getManifest')->willThrowException(new \Exception());
 
@@ -159,7 +159,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn([$modelFind]);
 
         $coreModules = ['extension', 'cron', 'staff'];
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getCoreModules')
             ->willReturn($coreModules);
@@ -205,7 +205,7 @@ final class ServiceTest extends \BBTestCase
             ->method('find')
             ->willReturn([$modelFind]);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getManifest')
             ->willReturn([]);
@@ -257,7 +257,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['mod'] = $di->protect(function ($name) use ($di) {
-            $mod = new \Box_Mod($name);
+            $mod = new \FOSSBilling\Module($name);
             $mod->setDi($di);
 
             return $mod;
@@ -335,7 +335,7 @@ final class ServiceTest extends \BBTestCase
         $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getManifest')
             ->willReturn(['version' => 1]);
@@ -375,7 +375,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getCoreModules')
             ->willReturn([]);
@@ -402,7 +402,7 @@ final class ServiceTest extends \BBTestCase
         $ext->type = 'mod';
         $ext->name = 'extensionTest';
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getCoreModules')
             ->willReturn([$ext->name]);
@@ -410,7 +410,10 @@ final class ServiceTest extends \BBTestCase
         $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
+        $dbMock = $this->createMock('\Box_Database');
+
         $di = $this->getDi();
+        $di['db'] = $dbMock;
         $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
@@ -422,7 +425,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->deactivate($ext);
     }
 
-    public function testDeactivateExtensionHook(): void
+    public function testDeactivateHookExtension(): void
     {
         $ext = new \Model_Extension();
         $ext->loadBean(new \DummyBean());
@@ -445,11 +448,42 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
+    public function testDeactivateModule(): void
+    {
+        $ext = new \Model_Extension();
+        $ext->loadBean(new \DummyBean());
+        $ext->type = 'mod';
+        $ext->name = 'extensionTest';
+
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
+        $modMock->expects($this->atLeastOnce())
+            ->method('getCoreModules')
+            ->willReturn([]);
+
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('trash');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
+
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
+
+        $this->service->setDi($di);
+
+        $result = $this->service->deactivate($ext);
+        $this->assertTrue($result);
+    }
+
     public function testUninstall(): void
     {
         $dbMock = $this->createMock('\Box_Database');
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getCoreModules')
             ->willReturn([]);
@@ -716,7 +750,7 @@ final class ServiceTest extends \BBTestCase
 
         $staffMock = $this->createMock(\Box\Mod\Staff\Service::class);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())->method('getCoreModules')->willReturn([]);
 
         $di = $this->getDi();
