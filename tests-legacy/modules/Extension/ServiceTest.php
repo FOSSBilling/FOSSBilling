@@ -462,14 +462,18 @@ final class ServiceTest extends \BBTestCase
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = $this->getDi();
-        // Create temp directory that actually exists
-        $tmpDir = sys_get_temp_dir() . '/fb_test_ext_' . uniqid();
-        mkdir($tmpDir, 0755, true);
 
         // Only mock getExtensionPath to return our temp dir, let other methods work normally
         $serviceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)
             ->onlyMethods(['getExtensionPath'])
+            ->setConstructorArgs([$this->filesystemMock])
             ->getMock();
+
+        // Create temp directory that actually exists for the first test
+        $tmpDir = sys_get_temp_dir() . '/fb_test_ext_' . uniqid();
+        mkdir($tmpDir, 0755, true);
+
+        // Configure getExtensionPath to return the temp directory
         $serviceMock->expects($this->atLeastOnce())
             ->method('getExtensionPath')
             ->willReturn($tmpDir);
@@ -488,18 +492,20 @@ final class ServiceTest extends \BBTestCase
 
         $serviceMock->setDi($di);
 
+        // Set up filesystem mock to return true for exists() before calling uninstall
+        $this->filesystemMock->expects($this->atLeastOnce())
+            ->method('exists')
+            ->willReturn(true);
+
         $result = $serviceMock->uninstall('mod', 'TestExtension');
+        $this->assertTrue($result);
 
         // Clean up temp directory
         if (is_dir($tmpDir)) {
             rmdir($tmpDir);
         }
 
-        $this->filesystemMock->expects($this->atLeastOnce())
-            ->method('exists')
-            ->willReturn(true);
-
-        $result = $this->service->uninstall('mod', 'Branding');
+        $result = $serviceMock->uninstall('mod', 'Branding');
         $this->assertTrue($result);
     }
 

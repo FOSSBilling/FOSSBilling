@@ -664,7 +664,7 @@ final class ServiceTest extends \BBTestCase
     public function testApproveInvoice(): void
     {
         $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['tryPayWithCredits'])
+            ->onlyMethods(['tryPayWithCredits', 'toApiArray'])
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -758,7 +758,7 @@ final class ServiceTest extends \BBTestCase
         $total = 10.0;
         $tax = 2.2;
         $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['getTotal', 'getTax', 'countIncome', 'addNote'])
+            ->onlyMethods(['getTotal', 'getTax', 'countIncome', 'addNote', 'toApiArray'])
             ->getMock();
 
         $serviceMock->expects($this->once())
