@@ -7,7 +7,7 @@ namespace FOSSBilling;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
-final class ModuleTest extends \BBTestCase
+final class FOSSBilling_ModuleTest extends \BBTestCase
 {
     public function testEmptyConfig(): void
     {
