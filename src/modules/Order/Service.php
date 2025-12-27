@@ -214,7 +214,6 @@ class Service implements InjectionAwareInterface
                 \Model_ProductTable::LICENSE,
                 \Model_ProductTable::DOWNLOADABLE,
                 \Model_ProductTable::HOSTING,
-                \Model_ProductTable::MEMBERSHIP,
                 \Model_ProductTable::DOMAIN,
             ];
             if (in_array($order->service_type, $core_services)) {
@@ -781,7 +780,6 @@ class Service implements InjectionAwareInterface
             \Model_ProductTable::LICENSE,
             \Model_ProductTable::DOWNLOADABLE,
             \Model_ProductTable::HOSTING,
-            \Model_ProductTable::MEMBERSHIP,
             \Model_ProductTable::DOMAIN,
         ];
 
