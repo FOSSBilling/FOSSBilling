@@ -2,22 +2,20 @@
 
 declare(strict_types=1);
 
-namespace CurrencyTests;
+dataset('major_currencies', [
+    'US Dollar' => ['USD', 'US Dollar', '$', 2],
+    'Euro' => ['EUR', 'Euro', '€', 2],
+    'British Pound' => ['GBP', 'Pound Sterling', '£', 2],
+    'Japanese Yen' => ['JPY', 'Yen', '¥', 0],
+]);
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+it('returns correct defaults for {data}', function (string $code, string $name, string $symbol, int $minorUnits) {
+    $defaults = api('guest/currency/get_currency_defaults', ['code' => $code])->getResult();
 
-final class GuestTest extends TestCase
-{
-    public function testCurrencyDefaults(): void
-    {
-        $result = Request::makeRequest('guest/currency/get_currency_defaults', ['code' => 'USD']);
-        $this->assertTrue($result->wasSuccessful());
-
-        $defaults = $result->getResult();
-        $this->assertEquals($defaults['code'], 'USD');
-        $this->assertEquals($defaults['name'], 'US Dollar');
-        $this->assertEquals($defaults['symbol'], '$');
-        $this->assertEquals($defaults['minorUnits'], 2);
-    }
-}
+    expect($defaults)
+        ->toHaveKeys(['code', 'name', 'symbol', 'minorUnits'])
+        ->and($defaults['code'])->toBe($code)
+        ->and($defaults['name'])->toBe($name)
+        ->and($defaults['symbol'])->toBe($symbol)
+        ->and($defaults['minorUnits'])->toBe($minorUnits);
+})->with('major_currencies');

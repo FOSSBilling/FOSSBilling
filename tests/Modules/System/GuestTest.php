@@ -2,59 +2,33 @@
 
 declare(strict_types=1);
 
-namespace SystemTests;
+describe('Template System', function () {
+    it('finds existing templates', function () {
+        expect(api('guest/system/template_exists', ['file' => 'layout_default.html.twig']))
+            ->toHaveResult()
+            ->toBeTrue();
+    });
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+    it('returns false for non-existent templates', function () {
+        expect(api('guest/system/template_exists', ['file' => 'thisfiledoesnotexist.txt']))
+            ->toHaveResult()
+            ->toBeFalse();
+    });
+});
 
-final class GuestTest extends TestCase
-{
-    public function testTemplateExists(): void
-    {
-        $result = Request::makeRequest('guest/system/template_exists', ['file' => 'layout_default.html.twig']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
-    }
+describe('Localization Data', function () {
+    dataset('localization_endpoints', [
+        'billing periods' => 'periods',
+        'countries list' => 'countries',
+        'EU countries' => 'countries_eunion',
+        'states/provinces' => 'states',
+        'phone codes' => 'phone_codes',
+    ]);
 
-    public function testTemplateDoesNotExist(): void
-    {
-        $result = Request::makeRequest('guest/system/template_exists', ['file' => 'thisfiledoesnotexist.txt']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertFalse($result->getResult());
-    }
-
-    public function testPeriods(): void
-    {
-        $result = Request::makeRequest('guest/system/periods');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
-
-    public function testCountries(): void
-    {
-        $result = Request::makeRequest('guest/system/countries');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
-
-    public function testCountriesEunion(): void
-    {
-        $result = Request::makeRequest('guest/system/countries_eunion');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
-
-    public function testStates(): void
-    {
-        $result = Request::makeRequest('guest/system/states');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
-
-    public function testPhoneCodes(): void
-    {
-        $result = Request::makeRequest('guest/system/phone_codes');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
-}
+    it('returns {data} as array', function (string $endpoint) {
+        expect(api("guest/system/{$endpoint}"))
+            ->toHaveResult()
+            ->toBeArray()
+            ->not->toBeEmpty();
+    })->with('localization_endpoints');
+});

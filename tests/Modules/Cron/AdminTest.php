@@ -2,39 +2,44 @@
 
 declare(strict_types=1);
 
-namespace CronTests;
+describe('Cron Execution', function () {
+    it('can execute cron jobs', function () {
+        expect(api('admin/cron/run'))
+            ->toBeSuccessfulResponse();
+    });
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+    it('provides cron information', function () {
+        $cronInfo = api('admin/cron/info')->getResult();
 
-final class AdminTest extends TestCase
-{
-    public function testDoesCronWork(): void
-    {
-        // Get when cron was last run
-        $result = Request::makeRequest('admin/cron/info');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        if (!empty($result->getResult()['last_cron_exec'])) {
-            $firstDate = new \DateTime($result->getResult()['last_cron_exec']);
-        } else {
-            // Cron didn't have a last execution set, so let's just make up that it was an hour ago
-            $firstDate = new \DateTime();
-            $firstDate->modify('-1 hour');
-        }
+        expect($cronInfo)
+            ->toBeArray()
+            ->toHaveKeys(['cron_path', 'last_cron_exec']);
+    });
 
-        // Then run it
-        $result = Request::makeRequest('admin/cron/run');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+    it('tracks last execution timestamp', function () {
+        // Set cron to execute by moving last execution far into the past
+        $pastTime = date('Y-m-d H:i:s', time() - 7200); // 2 hours ago
+        api('admin/system/update_params', [
+            'last_cron_exec' => $pastTime,
+        ]);
 
-        // This seems to be failing for no real reason, so let's try a slight delay incase we are trying to pull from the DB too soon or something
-        sleep(2);
+        // Verify the timestamp was actually updated to the past time
+        $preRunInfo = api('admin/cron/info')->getResult();
+        expect($preRunInfo['last_cron_exec'])
+            ->toBe($pastTime, 'Timestamp should be set to 2 hours ago before running cron');
 
-        // Validate the last run date was moved up
-        $result = Request::makeRequest('admin/cron/info');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertNotEmpty($result->getResult()['last_cron_exec']);
+        // Execute cron
+        expect(api('admin/cron/run'))
+            ->toBeSuccessfulResponse();
 
-        $newDate = new \DateTime($result->getResult()['last_cron_exec']);
-        $this->assertGreaterThan($firstDate, $newDate, "Cron's last execution time was not incremented");
-    }
-}
+        // Allow time for database update
+        sleep(3);
+
+        // Verify the execution timestamp was updated
+        $postRunInfo = api('admin/cron/info')->getResult();
+
+        expect($postRunInfo['last_cron_exec'])
+            ->not->toBeEmpty('Cron execution timestamp should be set')
+            ->not->toBe($pastTime, 'Timestamp should have been updated after cron execution');
+    });
+});
