@@ -443,6 +443,27 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->executeSql($q1);
                 $this->executeSql($q2);
             },
+            47 => function (): void {
+                // Migrate "membership" product type to "custom" product type
+                // This is part of removing the Servicemembership module
+                // @see https://github.com/FOSSBilling/FOSSBilling/pull/3066
+
+                // Migrate products to the 'custom' product type
+                $q = 'UPDATE `product` SET `type` = "custom" WHERE `type` = "membership";';
+                $this->executeSql($q);
+
+                // Before migrating existing orders to the 'custom' product type,
+                // set service_id to NULL for orders with service_type = "membership"
+                $q = 'UPDATE `client_order` SET `service_id` = NULL WHERE `service_type` = "membership";';
+                $this->executeSql($q);
+                // Migrate existing orders to the 'custom' product type
+                $q = 'UPDATE `client_order` SET `service_type` = "custom" WHERE `service_type` = "membership";';
+                $this->executeSql($q);
+
+                // Drop the service_membership table as it's no longer needed
+                $q = 'DROP TABLE IF EXISTS `service_membership`;';
+                $this->executeSql($q);              
+            },
         ];
         ksort($patches, SORT_NATURAL);
 
