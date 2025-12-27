@@ -417,6 +417,21 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->executeSql($q);
             },
             45 => function (): void {
+                // Drop updated_at column from activity tables
+                // Activity logs are never meant to be updated, only created
+                $q = 'ALTER TABLE `activity_admin_history` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `activity_client_email` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `activity_client_history` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `activity_system` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+            },
+            46 => function (): void {
                 // Change gender column to ENUM type
                 $q1 = 'ALTER TABLE `client`
                     MODIFY COLUMN `gender` ENUM("male", "female", "nonbinary", "other") DEFAULT NULL;';

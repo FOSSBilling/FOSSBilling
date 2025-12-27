@@ -1,21 +1,26 @@
 <?php
 
-namespace Box\Mod\Cron\Api;
+declare(strict_types=1);
 
-class AdminTest extends \BBTestCase
+namespace Box\Mod\Cron\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class AdminTest extends \BBTestCase
 {
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $api_admin = new Admin();
         $api_admin->setDi($di);
         $getDi = $api_admin->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testinfo(): void
+    public function testInfo(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cron\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Cron\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('getCronInfo')->willReturn([]);
 
         $api_admin = new Admin();
