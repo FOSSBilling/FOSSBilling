@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Staff\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -55,13 +57,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'ID was not passed'])]
     public function get($data)
     {
-        $required = [
-            'id' => 'ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         return $this->getService()->toModel_AdminApiArray($model);
@@ -80,13 +78,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'ID was not passed'])]
     public function update($data)
     {
-        $required = [
-            'id' => 'ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         if (!is_null($data['email'])) {
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
         }
@@ -103,13 +97,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'ID was not passed'])]
     public function delete($data)
     {
-        $required = [
-            'id' => 'ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         return $this->getService()->delete($model);
@@ -122,21 +112,18 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\InformationException
      */
+    #[RequiredParams([
+        'id' => 'ID was not passed',
+        'password' => 'Password required',
+        'password_confirm' => 'Password confirmation required'
+    ])]
     public function change_password($data)
     {
-        $required = [
-            'id' => 'ID is missing',
-            'password' => 'Password required',
-            'password_confirm' => 'Password confirmation required',
-        ];
-        $validator = $this->di['validator'];
-        $validator->checkRequiredParamsForArray($required, $data);
-
         if ($data['password'] != $data['password_confirm']) {
             throw new \FOSSBilling\InformationException('Passwords do not match');
         }
 
-        $validator->isPasswordStrong($data['password']);
+        $this->di['validator']->isPasswordStrong($data['password']);
 
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
@@ -152,20 +139,17 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams([
+        'email' => 'Email address was not passed',
+        'password' => 'Password was not passed',
+        'name' => 'Name was not passed',
+        'admin_group_id' => 'Group ID was not passed',
+    ])]
     public function create($data)
     {
-        $required = [
-            'email' => 'Email param is missing',
-            'password' => 'Password param is missing',
-            'name' => 'Name param is missing',
-            'admin_group_id' => 'Group id is missing',
-        ];
-        $validator = $this->di['validator'];
-        $validator->checkRequiredParamsForArray($required, $data);
-
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
-        $validator->isPasswordStrong($data['password']);
+        $this->di['validator']->isPasswordStrong($data['password']);
 
         return $this->getService()->create($data);
     }
@@ -175,13 +159,9 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
+    #[RequiredParams(['id' => 'ID was not passed'])]
     public function permissions_get($data)
     {
-        $required = [
-            'id' => 'ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         return $this->getService()->getPermissions($model->id);
@@ -190,14 +170,9 @@ class Admin extends \Api_Abstract
     /**
      * Update staff member permissions.
      */
-    public function permissions_update($data): bool
+    #[RequiredParams(['id' => 'ID was not passed', 'permissions' => 'Missing "permissions" parameter'])]
+    public function permissions_update($data)
     {
-        $required = [
-            'id' => 'ID is missing',
-            'permissions' => 'Permissions parameter missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         $this->getService()->setPermissions($model->id, $data['permissions']);
@@ -242,13 +217,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['name' => 'Group name was not passed'])]
     public function group_create($data)
     {
-        $required = [
-            'name' => 'Staff group is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         return $this->getService()->createGroup($data['name']);
     }
 
@@ -259,13 +230,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_get($data)
     {
-        $required = [
-            'id' => 'Group id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
 
         return $this->getService()->toAdminGroupApiArray($model, true, $this->getIdentity());
@@ -278,13 +245,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_delete($data)
     {
-        $required = [
-            'id' => 'Group id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
 
         return $this->getService()->deleteGroup($model);
@@ -299,13 +262,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_update($data)
     {
-        $required = [
-            'id' => 'Group id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
 
         return $this->getService()->updateGroup($model, $data);
@@ -336,13 +295,9 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
+    #[RequiredParams(['id' => 'Event ID was not passed'])]
     public function login_history_get($data)
     {
-        $required = [
-            'id' => 'Id not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ActivityAdminHistory', $data['id'], 'Event not found');
 
         return $this->getService()->toActivityAdminHistoryApiArray($model);

@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\System\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
     protected ?Admin $api;
@@ -16,7 +18,7 @@ final class AdminTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -60,7 +62,7 @@ final class AdminTest extends \BBTestCase
         $data = [
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->api->setDi($di);
 
@@ -103,7 +105,7 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('renderString')
             ->willReturn('returnStringType');
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -121,7 +123,7 @@ final class AdminTest extends \BBTestCase
             ->method('getEnv')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -141,11 +143,10 @@ final class AdminTest extends \BBTestCase
             ->method('hasPermission')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
             if ($serviceName == 'Staff') {
                 return $staffServiceMock;
@@ -153,9 +154,6 @@ final class AdminTest extends \BBTestCase
 
             return false;
         });
-
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
 
         $result = $this->api->is_allowed($data);

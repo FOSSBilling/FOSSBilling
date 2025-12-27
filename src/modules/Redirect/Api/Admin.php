@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Redirect\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 /**
  * Redirects management.
  */
@@ -29,13 +31,9 @@ class Admin extends \Api_Abstract
     /**
      * Get redirect by id.
      */
-    public function get($data): array
+    #[RequiredParams(['id' => 'Redirect ID was not passed'])]
+    public function get($data)
     {
-        $required = [
-            'id' => 'Redirect ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $bean = $this->_getRedirect($data['id']);
 
         return [
@@ -50,14 +48,9 @@ class Admin extends \Api_Abstract
      *
      * @return int redirect id
      */
-    public function create($data): int
+    #[RequiredParams(['path' => 'Redirect path was not passed', 'target' => 'Redirect target was not passed'])]
+    public function create($data)
     {
-        $required = [
-            'path' => 'Redirect path not passed',
-            'target' => 'Redirect target not passed',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $bean = $this->di['db']->dispense('extension_meta');
         $bean->extension = 'mod_redirect';
         $bean->meta_key = trim(htmlspecialchars((string) $data['path'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
@@ -81,13 +74,9 @@ class Admin extends \Api_Abstract
      *
      * @return true
      */
-    public function update($data): bool
+    #[RequiredParams(['id' => 'Redirect ID was not passed'])]
+    public function update($data)
     {
-        $required = [
-            'id' => 'Redirect ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $bean = $this->_getRedirect($data['id']);
 
         $bean->meta_key = trim(htmlspecialchars($data['path'] ?? $bean->meta_key, ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
@@ -105,13 +94,9 @@ class Admin extends \Api_Abstract
      *
      * @return true
      */
-    public function delete($data): bool
+    #[RequiredParams(['id' => 'Redirect ID was not passed'])]
+    public function delete($data)
     {
-        $required = [
-            'id' => 'Redirect ID is required',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $bean = $this->_getRedirect($data['id']);
         $this->di['db']->trash($bean);
 

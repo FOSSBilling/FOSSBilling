@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\System\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
     protected ?Guest $api;
@@ -16,7 +18,7 @@ final class GuestTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -29,7 +31,7 @@ final class GuestTest extends \BBTestCase
             ->method('isAdminLoggedIn')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['auth'] = $authorizationMock;
 
         $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
@@ -52,7 +54,7 @@ final class GuestTest extends \BBTestCase
             ->method('isAdminLoggedIn')
             ->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['auth'] = $authorizationMock;
         $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -79,7 +81,7 @@ final class GuestTest extends \BBTestCase
             ->method('isAdminLoggedIn')
             ->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['auth'] = $authorizationMock;
 
         $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
@@ -113,7 +115,7 @@ final class GuestTest extends \BBTestCase
             ->with('hide_company_public')
             ->willReturn(0);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['auth'] = $authMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -150,7 +152,7 @@ final class GuestTest extends \BBTestCase
             ->with('hide_company_public')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['auth'] = $authMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -175,7 +177,7 @@ final class GuestTest extends \BBTestCase
         $servuceMock->expects($this->atLeastOnce())
             ->method('getPeriod')
             ->willReturn('periodTtitleValue');
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->api->setDi($di);
         $this->api->setService($servuceMock);
@@ -188,7 +190,7 @@ final class GuestTest extends \BBTestCase
     {
         $data = [];
         $expected = '-';
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->api->setDi($di);
         $result = $this->api->period_title($data);

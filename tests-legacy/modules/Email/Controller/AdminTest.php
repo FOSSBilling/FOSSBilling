@@ -3,15 +3,17 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Email\Controller;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
     public function testDi(): void
     {
         $controller = new Admin();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
@@ -38,7 +40,7 @@ final class AdminTest extends \BBTestCase
             ->with('mod_email_history');
 
         $controllerAdmin = new Admin();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['is_admin_logged'] = true;
 
         $controllerAdmin->setDi($di);

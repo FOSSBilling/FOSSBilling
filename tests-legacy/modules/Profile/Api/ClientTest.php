@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Profile\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ClientTest extends \BBTestCase
 {
     protected ?\Box\Mod\Profile\Api\Client $clientApi;
@@ -21,8 +23,8 @@ final class ClientTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $clientService);
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn () => $clientService);
         $this->clientApi->setDi($di);
         $this->clientApi->setIdentity(new \Model_Client());
 
@@ -79,11 +81,12 @@ final class ClientTest extends \BBTestCase
             ->method('changeClientPassword')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+            ->method('isPasswordStrong')
+            ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $di['password'] = new \FOSSBilling\PasswordManager();
 
@@ -111,11 +114,8 @@ final class ClientTest extends \BBTestCase
             ->method('changeClientPassword')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
+        
         $this->clientApi->setDi($di);
         $this->clientApi->setService($service);
         $this->clientApi->setIdentity(new \Model_Client());

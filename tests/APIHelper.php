@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace APIHelper;
 
 use Symfony\Component\Filesystem\Filesystem;
