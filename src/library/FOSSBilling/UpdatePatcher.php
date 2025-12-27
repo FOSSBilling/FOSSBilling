@@ -432,6 +432,18 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->executeSql($q);
             },
             46 => function (): void {
+                // Change gender column to ENUM type
+                $q1 = 'ALTER TABLE `client`
+                    MODIFY COLUMN `gender` ENUM("male", "female", "nonbinary", "other") DEFAULT NULL;';
+
+                // Change document_type column to ENUM type
+                $q2 = 'ALTER TABLE `client`
+                    MODIFY COLUMN `document_type` ENUM("passport") DEFAULT NULL;';
+
+                $this->executeSql($q1);
+                $this->executeSql($q2);
+            },
+            47 => function (): void {
                 // Migrate "membership" product type to "custom" product type
                 // This is part of removing the Servicemembership module
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/3066
@@ -450,7 +462,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
                 // Drop the service_membership table as it's no longer needed
                 $q = 'DROP TABLE IF EXISTS `service_membership`;';
-                $this->executeSql($q);
+                $this->executeSql($q);              
             },
         ];
         ksort($patches, SORT_NATURAL);
