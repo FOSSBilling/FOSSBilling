@@ -415,7 +415,8 @@
         "phpunit",
         "hcaptcha",
         "hCaptcha",
-        "LEMP"
+        "LEMP",
+        "Servicemembership"
     ],
     "ignorePaths": [
         "tests-legacy/**",
