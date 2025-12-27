@@ -431,6 +431,18 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = 'ALTER TABLE `activity_system` DROP COLUMN `updated_at`;';
                 $this->executeSql($q);
             },
+            46 => function (): void {
+                // Change gender column to ENUM type
+                $q1 = 'ALTER TABLE `client`
+                    MODIFY COLUMN `gender` ENUM("male", "female", "nonbinary", "other") DEFAULT NULL;';
+
+                // Change document_type column to ENUM type
+                $q2 = 'ALTER TABLE `client`
+                    MODIFY COLUMN `document_type` ENUM("passport") DEFAULT NULL;';
+
+                $this->executeSql($q1);
+                $this->executeSql($q2);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 
