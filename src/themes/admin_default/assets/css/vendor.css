@@ -1,0 +1,4 @@
+@import "@tabler/core/dist/css/tabler.css";
+@import "@tabler/core/dist/css/tabler-vendors.css";
+@import "tom-select/dist/css/tom-select.bootstrap5.css";
+@import "sortable-tablesort/dist/sortable-base.css";

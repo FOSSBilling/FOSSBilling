@@ -1,5 +1,4 @@
-@use "~flag-icons/sass/variables" as flagicons-variables;
-@use "~@tabler/core/scss/variables.scss" as tabler-variables;
+@use "flag-icons/sass/variables" as flagicons-variables;
 
 $flag-icons-path: "../../../../../node_modules/flag-icons/flags";
 
@@ -9,8 +8,8 @@ $flag-icons-path: "../../../../../node_modules/flag-icons/flags";
     height: 1em;
     aspect-ratio: 1.33333;
     background: no-repeat center/cover;
-    box-shadow: tabler-variables.$flag-box-shadow;
-    border-radius: tabler-variables.$flag-border-radius;
+    box-shadow: var(--tblr-shadow-border);
+    border-radius: var(--tblr-border-radius);
     vertical-align: bottom;
 
     &.flag-country-np {
@@ -27,10 +26,4 @@ $flag-icons-path: "../../../../../node_modules/flag-icons/flags";
 
 @each $country in flagicons-variables.$flag-icons-included-countries {
     @include flag-icon($country);
-}
-
-@each $flag-size, $size in tabler-variables.$avatar-sizes {
-    .flag-#{$flag-size} {
-        height: map-get($size, size);
-    }
 }

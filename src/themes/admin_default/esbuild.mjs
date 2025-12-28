@@ -2,7 +2,7 @@ import autoprefixer from 'autoprefixer';
 import * as esbuild from 'esbuild';
 import postcss from 'postcss';
 import * as sass from 'sass';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
 import { dirname, resolve, relative, join } from 'path';
 import { readFile, readdir, copyFile, mkdir, writeFile, rm } from 'fs/promises';
 
@@ -10,14 +10,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
-const nodeModulesUrl = pathToFileURL(`${nodeModulesDir}/`);
-
-const sassImporter = {
-  findFileUrl(url) {
-    if (!url.startsWith('~')) return null;
-    return new URL(url.slice(1), nodeModulesUrl);
-  }
-};
 
 function sassPlugin() {
   return {
@@ -26,7 +18,6 @@ function sassPlugin() {
       build.onLoad({ filter: /\.scss$/ }, async (args) => {
         const result = await sass.compileAsync(args.path, {
           loadPaths: [nodeModulesDir],
-          importers: [sassImporter],
           style: 'expanded',
           sourceMap: !isProduction,
           sourceMapIncludeSources: !isProduction
@@ -38,17 +29,6 @@ function sassPlugin() {
           resolveDir: dirname(args.path)
         };
       });
-    }
-  };
-}
-
-function tildeResolverPlugin() {
-  return {
-    name: 'tilde-resolver',
-    setup(build) {
-      build.onResolve({ filter: /^~(.+)/ }, (args) => ({
-        path: resolve(nodeModulesDir, args.path.slice(1))
-      }));
     }
   };
 }
@@ -116,6 +96,8 @@ async function generateManifest() {
   
   manifest['themes/admin_default/build/fossbilling.js'] = 
     '/themes/admin_default/build/js/fossbilling.js';
+  manifest['themes/admin_default/build/vendor.css'] =
+    '/themes/admin_default/build/css/vendor.css';
   manifest['themes/admin_default/build/fossbilling.css'] = 
     '/themes/admin_default/build/css/fossbilling.css';
   
@@ -205,7 +187,7 @@ async function buildScss() {
     entryPoints: [resolve(__dirname, 'assets/scss/fossbilling.scss')],
     bundle: true,
     outfile: resolve(__dirname, 'build/css/fossbilling.css'),
-    plugins: [sassPlugin(), tildeResolverPlugin()],
+    plugins: [sassPlugin()],
     loader: {
       '.svg': 'dataurl',
       '.woff': 'file',
@@ -224,6 +206,29 @@ async function buildScss() {
   }
 
   await postprocessCss(resolve(__dirname, 'build/css/fossbilling.css'));
+}
+
+async function buildVendorCss() {
+  const result = await esbuild.build({
+    entryPoints: [resolve(__dirname, 'assets/css/vendor.css')],
+    bundle: true,
+    outfile: resolve(__dirname, 'build/css/vendor.css'),
+    loader: {
+      '.svg': 'dataurl',
+      '.woff': 'file',
+      '.woff2': 'file',
+      '.ttf': 'file',
+      '.eot': 'file'
+    },
+    minify: isProduction,
+    sourcemap: !isProduction,
+    logLevel: 'silent'
+  });
+
+  if (result.errors.length > 0) {
+    console.error(result.errors);
+    throw new Error('Vendor CSS build failed');
+  }
 }
 
 async function buildJavaScript() {
@@ -300,6 +305,7 @@ async function build() {
     
     await Promise.all([
       buildScss(),
+      buildVendorCss(),
       buildJavaScript()
     ]);
     
@@ -324,6 +330,7 @@ async function watch() {
   const watcher = chokidar.watch([
     resolve(__dirname, 'assets/**/*.js'),
     resolve(__dirname, 'assets/**/*.scss'),
+    resolve(__dirname, 'assets/**/*.css'),
     resolve(__dirname, 'assets/icons/*.svg')
   ], {
     ignored: /node_modules/,

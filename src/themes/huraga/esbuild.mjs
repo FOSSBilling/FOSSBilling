@@ -2,7 +2,7 @@ import autoprefixer from 'autoprefixer';
 import * as esbuild from 'esbuild';
 import postcss from 'postcss';
 import * as sass from 'sass';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
 import { dirname, resolve, join } from 'path';
 import { readdir, readFile, copyFile, mkdir, writeFile } from 'fs/promises';
 
@@ -10,14 +10,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
-const nodeModulesUrl = pathToFileURL(`${nodeModulesDir}/`);
-
-const sassImporter = {
-  findFileUrl(url) {
-    if (!url.startsWith('~')) return null;
-    return new URL(url.slice(1), nodeModulesUrl);
-  }
-};
 
 function sassPlugin() {
   return {
@@ -26,7 +18,6 @@ function sassPlugin() {
       build.onLoad({ filter: /\.scss$/ }, async (args) => {
         const result = await sass.compileAsync(args.path, {
           loadPaths: [nodeModulesDir],
-          importers: [sassImporter],
           style: 'expanded',
           sourceMap: !isProduction,
           sourceMapIncludeSources: !isProduction
@@ -38,17 +29,6 @@ function sassPlugin() {
           resolveDir: dirname(args.path)
         };
       });
-    }
-  };
-}
-
-function tildeResolverPlugin() {
-  return {
-    name: 'tilde-resolver',
-    setup(build) {
-      build.onResolve({ filter: /^~(.+)/ }, (args) => ({
-        path: resolve(nodeModulesDir, args.path.slice(1))
-      }));
     }
   };
 }
@@ -80,16 +60,18 @@ async function ensureDir(dir) {
   await mkdir(dir, { recursive: true });
 }
 
-async function copyAssets(srcDir, destDir) {
+async function copyAssets(srcDir, destDir, options = {}) {
+  const exclude = options.exclude || new Set();
   try {
     const entries = await readdir(srcDir, { withFileTypes: true });
     for (const entry of entries) {
+      if (exclude.has(entry.name)) continue;
       const srcPath = join(srcDir, entry.name);
       const destPath = join(destDir, entry.name);
       
       if (entry.isDirectory()) {
         await ensureDir(destPath);
-        await copyAssets(srcPath, destPath);
+        await copyAssets(srcPath, destPath, options);
       } else {
         await copyFile(srcPath, destPath);
       }
@@ -138,13 +120,10 @@ async function buildAssets() {
     
     if (jsResult.errors.length > 0) throw new Error('JavaScript build failed');
     
-    const cssResult = await esbuild.build({
-      entryPoints: [
-        resolve(__dirname, 'assets/scss/huraga.scss'),
-        resolve(__dirname, 'assets/scss/markdown.scss')
-      ],
+    const themeCssResult = await esbuild.build({
+      entryPoints: [resolve(__dirname, 'assets/scss/huraga.scss')],
       bundle: true,
-      outdir: cssDir,
+      outfile: join(cssDir, 'huraga.css'),
       loader: {
         '.svg': 'dataurl',
         '.woff': 'file',
@@ -152,22 +131,57 @@ async function buildAssets() {
         '.ttf': 'file',
         '.eot': 'file'
       },
-      plugins: [sassPlugin(), tildeResolverPlugin()],
+      plugins: [sassPlugin()],
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'silent'
     });
-    
-    if (cssResult.errors.length > 0) throw new Error('CSS build failed');
 
-    await Promise.all([
-      postprocessCss(join(cssDir, 'huraga.css')),
-      postprocessCss(join(cssDir, 'markdown.css'))
-    ]);
+    if (themeCssResult.errors.length > 0) throw new Error('Theme CSS build failed');
+
+    await postprocessCss(join(cssDir, 'huraga.css'));
+
+    const vendorCssResult = await esbuild.build({
+      entryPoints: [resolve(__dirname, 'assets/css/vendor.css')],
+      bundle: true,
+      outfile: join(cssDir, 'vendor.css'),
+      loader: {
+        '.svg': 'dataurl',
+        '.woff': 'file',
+        '.woff2': 'file',
+        '.ttf': 'file',
+        '.eot': 'file'
+      },
+      minify: isProduction,
+      sourcemap: !isProduction,
+      logLevel: 'silent'
+    });
+
+    if (vendorCssResult.errors.length > 0) throw new Error('Vendor CSS build failed');
+
+    const markdownCssResult = await esbuild.build({
+      entryPoints: [resolve(__dirname, 'assets/css/markdown.css')],
+      bundle: true,
+      outfile: join(cssDir, 'markdown.css'),
+      loader: {
+        '.svg': 'dataurl',
+        '.woff': 'file',
+        '.woff2': 'file',
+        '.ttf': 'file',
+        '.eot': 'file'
+      },
+      minify: isProduction,
+      sourcemap: !isProduction,
+      logLevel: 'silent'
+    });
+
+    if (markdownCssResult.errors.length > 0) throw new Error('Markdown CSS build failed');
     
     const cssSrc = resolve(__dirname, 'assets/css');
     const cssDest = join(buildDir, 'css');
-    await copyAssets(cssSrc, cssDest);
+    await copyAssets(cssSrc, cssDest, {
+      exclude: new Set(['vendor.css', 'markdown.css'])
+    });
     
     const imagesSrc = resolve(__dirname, 'assets/images');
     const imagesDest = imagesDir;
@@ -175,6 +189,7 @@ async function buildAssets() {
     
     const manifest = {
       'themes/huraga/build/huraga.js': '/themes/huraga/build/js/huraga.js',
+      'themes/huraga/build/vendor.css': '/themes/huraga/build/css/vendor.css',
       'themes/huraga/build/huraga.css': '/themes/huraga/build/css/huraga.css',
       'themes/huraga/build/markdown.css': '/themes/huraga/build/css/markdown.css'
     };

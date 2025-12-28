@@ -11,6 +11,7 @@
 
     {{ include('partial_bb_meta.html.twig') }}
 
+    <link rel="stylesheet" href="{{ '/themes/admin_default/build/css/vendor.css' | asset_url }}">
     <link rel="stylesheet" href="{{ '/themes/admin_default/build/css/fossbilling.css' | asset_url }}">
     {{ "Api/API.js" | library_url | script_tag }}
     <script src="{{ '/themes/admin_default/build/js/fossbilling.js' | asset_url }}"></script>
