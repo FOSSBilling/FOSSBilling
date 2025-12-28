@@ -1,15 +1,20 @@
 <?php
 
-namespace Box\Tests\Mod\Activity;
+declare(strict_types=1);
 
-class ServiceTest extends \BBTestCase
+namespace Box\Tests\Mod\Activity;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
         $service = new \Box\Mod\Activity\Service();
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $di = $this->getDi();
+        $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
         $service->setDi($di);
@@ -33,10 +38,10 @@ class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('searchFilters')]
-    public function testgetSearchQuery(array $filterKey, string $search, bool $expected): void
+    #[DataProvider('searchFilters')]
+    public function testGetSearchQuery(array $filterKey, string $search, bool $expected): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $service = new \Box\Mod\Activity\Service();
         $service->setDi($di);
         $result = $service->getSearchQuery($filterKey);
@@ -49,7 +54,7 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Activity\Service();
         $data = [
-            'client_id' => random_int(1, 100),
+            'client_id' => 1,
             'sender' => 'sender',
             'recipients' => 'recipients',
             'subject' => 'subject',
@@ -60,8 +65,8 @@ class ServiceTest extends \BBTestCase
         $model = new \Model_ActivityClientEmail();
         $model->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $di = $this->getDi();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($model);
@@ -76,7 +81,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtoApiArray(): void
+    public function testToApiArray(): void
     {
         $clientHistoryModel = new \Model_ActivityClientHistory();
         $clientHistoryModel->loadBean(new \DummyBean());
@@ -86,13 +91,13 @@ class ServiceTest extends \BBTestCase
         $clientModel->loadBean(new \DummyBean());
 
         $expectionError = 'Client not found';
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->with('Client', $clientHistoryModel->client_id, $expectionError)
             ->willReturn($clientModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $service = new \Box\Mod\Activity\Service();
@@ -111,7 +116,7 @@ class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey('email', $result['client']);
     }
 
-    public function testrmByClient(): void
+    public function testRmByClient(): void
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
@@ -120,7 +125,7 @@ class ServiceTest extends \BBTestCase
         $activitySystemModel = new \Model_ActivitySystem();
         $activitySystemModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->with('ActivitySystem', 'client_id = ?', [$clientModel->id])
@@ -129,7 +134,7 @@ class ServiceTest extends \BBTestCase
             ->method('trash')
             ->with($activitySystemModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $service = new \Box\Mod\Activity\Service();

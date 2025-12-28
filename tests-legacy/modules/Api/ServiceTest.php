@@ -1,40 +1,42 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-class ServiceTest extends \BBTestCase
+#[Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
-    /**
-     * @var Service
-     */
-    protected $service;
+    protected ?Service $service;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->service = new Service();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetRequestCount(): void
+    public function testGetRequestCount(): void
     {
         $since = 674_690_401; // timestamp == '1991-05-20 00:00:01';
         $ip = '1.2.3.4';
 
         $requestNumber = 11;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn($requestNumber);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);

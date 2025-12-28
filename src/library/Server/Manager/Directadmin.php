@@ -752,7 +752,7 @@ class Server_Manager_Directadmin extends Server_Manager
         } catch (TransportExceptionInterface|HttpExceptionInterface $error) {
             // If there is an error while sending the request, throw an exception
             $exception = new Server_Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
-            $this->getLog()->err($exception);
+            $this->getLog()->err($exception->getMessage());
 
             throw $exception;
         }

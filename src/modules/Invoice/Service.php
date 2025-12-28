@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Currency\Entity\Currency;
 use Dompdf\Dompdf;
 use FOSSBilling\Environment;
 use FOSSBilling\InformationException;
@@ -276,6 +277,37 @@ class Service implements InjectionAwareInterface
             ];
         }
 
+        // Add order information for email templates
+        $result['orders'] = [];
+        $orderIds = array_unique(array_filter(array_column($lines, 'order_id')));
+
+        if (!empty($orderIds)) {
+            // Batch load orders
+            $orders = $this->di['db']->find('ClientOrder', 'id IN (' . implode(',', $orderIds) . ')');
+
+            // Batch load related products
+            $productIds = array_unique(array_filter(array_map(fn ($o) => $o->product_id, $orders)));
+            $products = !empty($productIds)
+            ? $this->di['db']->find('Product', 'id IN (' . implode(',', $productIds) . ')')
+            : [];
+
+            foreach ($orders as $order) {
+                $product = $products[$order->product_id] ?? null;
+                $orderData = [
+                    'id' => $order->id,
+                    'title' => $order->title,
+                    'expires_at' => $order->expires_at,
+                ];
+
+                if ($product) {
+                    $orderData['product_name'] = $product->title;
+                    $orderData['product_type'] = $product->type;
+                }
+
+                $result['orders'][] = $orderData;
+            }
+        }
+
         return $result;
     }
 
@@ -398,11 +430,20 @@ class Service implements InjectionAwareInterface
         }
 
         $systemService = $this->di['mod_service']('system');
-        $ctable = $this->di['mod_service']('Currency');
+
+        $currencyService = $this->di['mod_service']('currency');
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
 
         $invoice->serie = $systemService->getParamValue('invoice_series_paid');
         $invoice->approved = true;
-        $invoice->currency_rate = $ctable->getRateByCode($invoice->currency);
+
+        $currencyRate = $currencyRepository->getRateByCode((string) $invoice->currency);
+        if ($currencyRate === null) {
+            throw new \FOSSBilling\Exception("Currency rate for code '{$invoice->currency}' is not configured.");
+        }
+        $invoice->currency_rate = $currencyRate;
+
         $invoice->status = \Model_Invoice::STATUS_PAID;
         $invoice->paid_at = date('Y-m-d H:i:s');
         $invoice->updated_at = date('Y-m-d H:i:s');
@@ -478,10 +519,18 @@ class Service implements InjectionAwareInterface
     {
         if (!$client->currency) {
             $currencyService = $this->di['mod_service']('Currency');
-            $currency = $currencyService->getDefault();
-            $client->currency = $currency->code;
+            /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+            $currencyRepository = $currencyService->getCurrencyRepository();
+            $currency = $currencyRepository->findDefault();
+
+            if (!$currency instanceof Currency) {
+                throw new \FOSSBilling\Exception('Default currency not found');
+            }
+
+            $currencyCode = $currency->getCode();
+            $client->currency = $currencyCode;
             $this->di['db']->store($client);
-            error_log("Client #{$client->id} currency was not defined. Set default currency {$currency->code}.");
+            error_log("Client #{$client->id} currency was not defined. Set default currency {$currencyCode}.");
         }
 
         $model = $this->di['db']->dispense('Invoice');
@@ -573,13 +622,13 @@ class Service implements InjectionAwareInterface
 
     public function approveInvoice(\Model_Invoice $invoice, array $data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceApprove', 'params' => ['id' => $invoice->id]]);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
 
         $invoice->approved = 1;
         $invoice->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($invoice);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceApprove', 'params' => ['id' => $invoice->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
 
         if (isset($data['use_credits']) && $data['use_credits']) {
             $this->tryPayWithCredits($invoice);
@@ -674,7 +723,7 @@ class Service implements InjectionAwareInterface
 
     public function refundInvoice(\Model_Invoice $invoice, $note = null): ?int
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceRefund', 'params' => ['id' => $invoice->id]]);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceRefund', 'params' => $this->toApiArray($invoice)]);
 
         $systemService = $this->di['mod_service']('system');
         $logic = $systemService->getParamValue('invoice_refund_logic', 'manual');
@@ -853,7 +902,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['db']->store($model);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceUpdate', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceUpdate', 'params' => $this->toApiArray($model)]);
 
         $this->di['logger']->info("Updated invoice {$model->id}.");
 

@@ -1,28 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Invoice;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-class ServiceSubscriptionTest extends \BBTestCase
+#[Group('Core')]
+final class ServiceSubscriptionTest extends \BBTestCase
 {
-    /**
-     * @var ServiceSubscription
-     */
-    protected $service;
+    protected ?ServiceSubscription $service;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->service = new ServiceSubscription();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testcreate(): void
+    public function testCreate(): void
     {
         $subscriptionModel = new \Model_Subscription();
         $subscriptionModel->loadBean(new \DummyBean());
@@ -42,7 +44,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventsMock;
@@ -59,7 +61,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $subscriptionModel = new \Model_Subscription();
         $subscriptionModel->loadBean(new \DummyBean());
@@ -76,7 +78,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -86,7 +88,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtoApiArray(): void
+    public function testToApiArray(): void
     {
         $subscriptionModel = new \Model_Subscription();
         $subscriptionModel->loadBean(new \DummyBean());
@@ -97,24 +99,24 @@ class ServiceSubscriptionTest extends \BBTestCase
         $gatewayModel = new \Model_PayGateway();
         $gatewayModel->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturnOnConsecutiveCalls($clientModel, $gatewayModel);
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
+        $clientServiceMock = $this->getMockBuilder(\Box\Mod\Client\Service::class)
             ->getMock();
         $clientServiceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
 
-        $payGatewayService = $this->getMockBuilder('\\' . ServicePayGateway::class)
+        $payGatewayService = $this->getMockBuilder(ServicePayGateway::class)
             ->getMock();
         $payGatewayService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($clientServiceMock, $payGatewayService) {
             if ($serviceName == 'Client') {
                 return $clientServiceMock;
@@ -146,7 +148,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testdelete(): void
+    public function testDelete(): void
     {
         $subscriptionModel = new \Model_Subscription();
         $subscriptionModel->loadBean(new \DummyBean());
@@ -161,7 +163,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventsMock;
@@ -207,10 +209,10 @@ class ServiceSubscriptionTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
-    public function testgetSearchQuery(array $data, string $expectedSqlPart, array $expectedParams): void
+    #[DataProvider('searchQueryData')]
+    public function testGetSearchQuery(array $data, string $expectedSqlPart, array $expectedParams): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
@@ -223,7 +225,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertTrue(str_contains($result[0], $expectedSqlPart));
     }
 
-    public function testisSubscribableisNotSusbcribable(): void
+    public function testIsSubscribableisNotSusbcribable(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -231,7 +233,7 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->method('getCell')
             ->willReturn(['']);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -241,7 +243,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testisSubscribable(): void
+    public function testIsSubscribable(): void
     {
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -256,7 +258,7 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->method('getAll')
             ->willReturn($getAllResults);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -266,9 +268,9 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetSubscriptionPeriod(): void
+    public function testGetSubscriptionPeriod(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . ServiceSubscription::class)
+        $serviceMock = $this->getMockBuilder(ServiceSubscription::class)
             ->onlyMethods(['isSubscribable'])
             ->getMock();
 
@@ -277,12 +279,12 @@ class ServiceSubscriptionTest extends \BBTestCase
             ->willReturn(true);
 
         $period = '1W';
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->willReturn($period);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -294,15 +296,15 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->assertEquals($period, $result);
     }
 
-    public function testunsubscribe(): void
+    public function testUnsubscribe(): void
     {
         $subscribtionModel = new \Model_Subscription();
         $subscribtionModel->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 

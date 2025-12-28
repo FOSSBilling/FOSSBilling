@@ -139,19 +139,8 @@ class Service implements InjectionAwareInterface
 
         $client->first_name = $data['first_name'] ?? $client->first_name;
         $client->last_name = $data['last_name'] ?? $client->last_name;
-        $client->gender = $data['gender'] ?? $client->gender;
-
-        $birthday = $data['birthday'] ?? null;
-
-        // Special handling for the birthday field
-        if (is_string($birthday) && strlen(trim($birthday)) === 0) {
-            $birthday = null;
-        } elseif ($birthday !== null && strtotime($birthday) === false) {
-            throw new \FOSSBilling\InformationException('Invalid birthdate value');
-        }
-
-        $client->birthday = $birthday ?? $client->birthday;
-
+        $client->gender = ClientValidator::validateGender($data['gender'] ?? $client->gender);
+        $client->birthday = ClientValidator::validateBirthday($data['birthday'] ?? $client->birthday);
         $client->company = $data['company'] ?? $client->company;
         $client->company_vat = $data['company_vat'] ?? $client->company_vat;
         $client->company_number = $data['company_number'] ?? $client->company_number;
@@ -168,7 +157,9 @@ class Service implements InjectionAwareInterface
         $client->document_nr = $data['document_nr'] ?? $client->document_nr;
 
         if (isset($client->document_nr)) {
-            $client->document_type = $data['document_type'] ?? 'passport';
+            $client->document_type = ClientValidator::validateDocument(
+                $data['document_type'] ?? \Model_Client::DOC_PASSPORT,
+            );
         }
         $client->lang = $data['lang'] ?? $client->lang;
         $client->notes = $data['notes'] ?? $client->notes;

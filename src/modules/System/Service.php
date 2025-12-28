@@ -472,15 +472,17 @@ class Service
         try {
             $twig = $this->di['twig'];
             $template = $twig->createTemplate($tpl);
-            $parsed = $template->render($vars);
-        } catch (\Exception $e) {
-            $parsed = $tpl;
-            if (!$try_render) {
-                throw $e;
-            }
-        }
 
-        return $parsed;
+            return $template->render($vars);
+        } catch (\Exception $e) {
+            if (!$try_render) {
+                $errorMsg = 'Template rendering failed: ' . $e->getMessage();
+                throw new \FOSSBilling\InformationException($errorMsg, null, $e->getCode());
+            }
+
+            // Return the original template string instead
+            return $tpl;
+        }
     }
 
     public function clearCache(): bool

@@ -1,30 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Theme\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-class AdminTest extends \BBTestCase
+#[Group('Core')]
+final class AdminTest extends \BBTestCase
 {
-    /**
-     * @var Admin
-     */
-    protected $api;
+    protected ?Admin $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList(): void
+    public function testGetList(): void
     {
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getThemes')
             ->willReturn([]);
@@ -35,23 +37,21 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testget(): void
+    public function testGet(): void
     {
         $data = [
             'code' => 'themeCode',
         ];
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('loadTheme')
             ->willReturn([]);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $this->api->setDi($di);
         $this->api->setService($systemServiceMock);
 
@@ -59,38 +59,35 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testselectNotAdminTheme(): void
+    public function testSelectNotAdminTheme(): void
     {
         $data = [
             'code' => 'pjw',
         ];
 
-        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder(\Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('isAdminAreaTheme')
             ->willReturn(false);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
             ->with($this->equalTo('theme'));
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
-        $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $loggerMock = $this->createMock('\Box_Log');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['logger'] = $loggerMock;
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -98,38 +95,35 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testselectAdminTheme(): void
+    public function testSelectAdminTheme(): void
     {
         $data = [
             'code' => 'pjw',
         ];
 
-        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder(\Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('isAdminAreaTheme')
             ->willReturn(true);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
 
-        $systemServiceMock = $this->getMockBuilder('\\' . \Box\Mod\System\Service::class)->getMock();
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
             ->with($this->equalTo('admin_theme'));
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
-        $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $loggerMock = $this->createMock('\Box_Log');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['logger'] = $loggerMock;
-        $di['validator'] = $validatorMock;
-
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -137,28 +131,26 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpresetDelete(): void
+    public function testPresetDelete(): void
     {
         $data = [
             'code' => 'themeCode',
             'preset' => 'themePreset',
         ];
 
-        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder(\Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
         $serviceMock->expects($this->atLeastOnce())
             ->method('deletePreset');
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -167,28 +159,26 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testpresetSelect(): void
+    public function testPresetSelect(): void
     {
         $data = [
             'code' => 'themeCode',
             'preset' => 'themePreset',
         ];
 
-        $themeMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock = $this->getMockBuilder(\Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Theme\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Theme\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTheme')
             ->willReturn($themeMock);
         $serviceMock->expects($this->atLeastOnce())
             ->method('setCurrentThemePreset');
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);

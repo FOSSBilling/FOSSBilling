@@ -1,15 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Servicecustom\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-class Api_AdminTest extends \BBTestCase
+#[Group('Core')]
+final class Api_AdminTest extends \BBTestCase
 {
-    /**
-     * @var \Box\Mod\Servicecustom\Api\Admin
-     */
-    protected $api;
+    protected ?\Box\Mod\Servicecustom\Api\Admin $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new \Box\Mod\Servicecustom\Api\Admin();
     }
@@ -21,7 +23,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('updateConfig');
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
             'config' => [
                 'param1' => 'value1',
             ],
@@ -58,7 +60,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('updateConfig');
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
         ];
 
         $this->api->setService($serviceMock);
@@ -74,7 +76,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('updateConfig');
 
         $data = [
-            'order_id' => random_int(1, 100),
+            'order_id' => 1,
             'config' => 'NotArray',
         ];
 
@@ -86,7 +88,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testCall(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());
@@ -96,7 +98,7 @@ class Api_AdminTest extends \BBTestCase
 
         $arguments = [
             0 => [
-                'order_id' => random_int(1, 100),
+                'order_id' => 1,
             ],
         ];
 
@@ -107,7 +109,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testCallArgumentsNotSetException(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());
@@ -124,7 +126,7 @@ class Api_AdminTest extends \BBTestCase
 
     public function testCallOrderIdNotSetException(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());
