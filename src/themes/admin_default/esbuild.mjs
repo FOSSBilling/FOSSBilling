@@ -2,10 +2,8 @@ import * as esbuild from 'esbuild';
 import { fileURLToPath } from 'url';
 import { dirname, resolve, relative, join } from 'path';
 import { readFile, readdir, copyFile, mkdir, writeFile, rm } from 'fs/promises';
-import { createRequire } from 'module';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
 const isProduction = process.env.NODE_ENV === 'production';
 
 async function ensureDir(dir) {
