@@ -188,7 +188,7 @@
                     const regPrice = Number(result.price_registration);
                     let renewPrice = Number(result.price_renew);
 
-                    if (isNaN(renewPrice) || renewPrice === null) {
+                    if (result.price_renew === null || typeof result.price_renew === 'undefined' || isNaN(renewPrice)) {
                         renewPrice = regPrice;
                     }
 
