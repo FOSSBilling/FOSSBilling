@@ -173,7 +173,7 @@ jobs:
         run: curl http://localhost/admin
 
       - name: Run the API test suite
-        run: php ./src/vendor/bin/phpunit --configuration phpunit-live.xml
+        run: php ./src/vendor/bin/pest --configuration phpunit-live.xml
 
       - name: Display the FOSSBilling PHP error log, if it exists
         if: always()

@@ -2,31 +2,23 @@
 
 declare(strict_types=1);
 
-namespace HookTests;
+describe('Hook Management', function () {
+    it('can batch connect all hooks', function () {
+        expect(api('admin/hook/batch_connect'))
+            ->toHaveResult()
+            ->toBeTrue();
+    });
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+    it('returns list of registered hooks', function () {
+        $hooks = api('admin/hook/get_list')->getResult();
 
-final class AdminTest extends TestCase
-{
-    public function testBatchConnect(): void
-    {
-        $result = Request::makeRequest('admin/hook/batch_connect');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
-    }
+        expect($hooks)
+            ->toBeArray()
+            ->not->toBeEmpty('Should have at least one registered hook');
+    });
 
-    public function testGetHookList(): void
-    {
-        $result = Request::makeRequest('admin/hook/get_list');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-        $this->assertNotEmpty($result->getResult());
-    }
-
-    public function testHookCall(): void
-    {
-        $result = Request::makeRequest('admin/hook/call', ['event' => 'onBeforeAdminCronRun']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-    }
-}
+    it('can trigger hook events', function () {
+        expect(api('admin/hook/call', ['event' => 'onBeforeAdminCronRun']))
+            ->toBeSuccessfulResponse();
+    });
+});
