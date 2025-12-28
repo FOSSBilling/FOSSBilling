@@ -1,7 +1,7 @@
 import autoprefixer from 'autoprefixer';
 import * as esbuild from 'esbuild';
 import postcss from 'postcss';
-import sass from 'sass';
+import * as sass from 'sass';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, resolve, join } from 'path';
 import { readdir, readFile, copyFile, mkdir, writeFile } from 'fs/promises';
