@@ -1,92 +1,120 @@
 # Project Governance
-*Last updated March 06, 2023*
+
+*Last updated: 04 October 2025*
+*Version: 1.1*
 
 ## Overview
 
-FOSSBilling is an open source project which builds and maintains a free, open source billing and client management solution. 
+FOSSBilling is an open source project that builds and maintains a free, self-hostable billing and client management platform. The project is developed collaboratively by a global community of contributors and users. Anyone (individuals, teams, or organizations) with an interest in FOSSBilling is welcome to join the community, contribute in any capacity, and participate in shaping the project's future. Contributions can include code, documentation, design, testing, financial support, or community engagement.
 
-Anybody with an interest can join the community, contribute to the project, and be a part of the informal decision-making process. 
+There are no barriers to participation. Whether you're a developer, a user, or simply curious, your involvement is valued. For ways to get involved, see the [Contribution Guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md).
 
-If you have dev skills, opinions, or the ability to support the project financially, then please do contribute. There are no barriers to entry and there are many different ways to be a part of the future of FOSSBilling. See the [Contribution Guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md). 
-
-In the next few paragraphs, we will explain how project roles are assigned and how the decision-making process takes place.
-
-__TLDR; Project decisions are made by a consensus of the projects steering committee and informed by community discussion.__
+> **TL;DR**: Major project decisions are made by consensus of the Steering Committee, informed by transparent and inclusive community discussion.
 
 ## Community
 
-The FOSSBilling community is made up of individuals, companies, or groups who use and/or contribute to the FOSSBilling software.
+The FOSSBilling community includes anyone who uses, contributes to, or supports the project, whether occasionally or regularly. The core FOSSBilling software is licensed under the [Apache License Version 2.0](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE) and is **free to use, modify, and distribute**, now and forever. No fees, registration, or special permissions are required for basic usage.
 
-Anybody is free to use the core FOSSBilling software within the terms of the [license](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE). There are not and never will be any fees for usage, and no special requirements. 
+We encourage, but do not require, creators of third-party modules, themes, or integrations to share their work with the community (e.g., via GitHub, Discord, the Forum) so it can be included in the extension directory. However, all use of the **FOSSBilling name, logo, or branding** must comply with the [FOSSBilling Branding Guidelines](https://github.com/FOSSBilling/branding#readme). Any use beyond what is explicitly permitted requires prior written permission from the Steering Committee.
 
-We really appreciate user contributions but if you just want to download, install, and go, then you have the complete freedom to do that.
+To get involved:
 
-Third-party modules and integrations for FOSSBilling are welcomed. We would appreciate if your third-party work was announced to the community so that it can be added to the list of known working extensions, however this is not mandatory. In all cases, please be aware of the restrictions attached to usage of the [FOSSBilling name and branding](https://github.com/FOSSBilling/branding#readme), and approach us for permission if you wish to use the branding in any way other than explicitly listed. 
+- Explore the code and report issues on [GitHub](https://github.com/FOSSBilling/FOSSBilling)
+- Join real-time discussions on [Discord](https://discord.gg/fossbilling) or engage in discussions on the [Forum](https://forum.fossbilling.org/)
+- Contribute via [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or [Open Collective](https://opencollective.com/FOSSBilling)
 
-If you do want to be more involved in the community then the project [GitHub](https://github.com/FOSSBilling/FOSSBilling) page, the [Contribution Guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md), and [Discord](https://fossbilling.org/discord) are great places to start. You can also sponsor the project on [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or with [Open Collective](https://opencollective.com/FOSSBilling).
+## Maintainers
 
-## Team Members (Maintainers)
+Maintainers are trusted contributors who have demonstrated consistent, high-quality involvement in the project over time. They help review code, triage issues, improve documentation, and guide the project's evolution.
 
-Contributors who show a history of valid and high-quality contributions for over a period of time may be granted the status of Maintainer. Existing Maintainers or Steering Committee members may nominate contributors who they feel are suitable to be added to the team.
+### Becoming a Maintainer
 
-Although there is no concrete expectation of participation, contributions are what enable the FOSSBilling project to move forward and progress. Participation can take many forms, for example:
+- Nominations may be made by existing Maintainers or Steering Committee (SC) members. The SC evaluates nominees based on the quality, consistency, and collaborative nature of their contributions.
+- New Maintainers are granted **provisional status for one month**, during which their engagement is observed.
+- After this period, status is made permanent unless concerns are raised.
 
-* Participate in discussions on GitHub issues and pull requests.
-* Submit fixes and new features to FOSSBilling code repositories.
-* Submit documentation improvements to help others use FOSSBilling.
-* Create quality content for FOSSBilling communications: website improvements, newsletter articles, etc.
+Contributions may include, but are not limited to:
 
-There are no specific skill requirements and no formal selection process. A contributor's elevation to the role of maintainer will be done after nomination by a team member, and then discussion by, and at the discretion of, the steering committee.
+- Participating in GitHub discussions (issues, pull requests)
+- Submitting bug fixes or new features
+- Improving documentation or user guides
+- Creating educational or promotional content (e.g., blog posts, videos)
 
-Acceptance to the maintainer role is initially provisional, and well be made permanent after a period of one month. 
+There are no formal skill requirements; what matters is sustained, constructive participation.
 
-Maintainer status can be removed if somebody demonstrates disruptive behavior, if they resign, or if they do not participate in the community or contribute to the project for 6 months. This would be decided by a majority consensus of the steering committee.
+### Stepping Down or Removal
+
+Maintainer status may be removed if a person:
+
+- Resigns voluntarily;
+- Is inactive for **six consecutive months** without prior notice; or
+- Engages in behavior that violates the project's [Code of Conduct](https://github.com/FOSSBilling/FOSSBilling/blob/main/CODE_OF_CONDUCT.md) or disrupts the community.
+
+Removal (except for resignation) requires discussion and a majority vote of the SC. A grace period or warning may be offered in cases of inactivity.
+
+### Defining Activity
+
+To ensure clarity, "activity" is defined as meaningful participation in the project. This includes, but is not limited to: committing code, reviewing pull requests, triaging issues, contributing to documentation, or actively participating in project discussions on GitHub, Discord, or the Forum.
 
 ## Steering Committee
 
-The steering committee is made up of community members and developers who make a sustained contribution to, and are recognised as being interested in, the long-term health of the FOSSBilling project. 
+The Steering Committee (SC) is responsible for the long-term health, direction, and sustainability of FOSSBilling. Its members are active contributors who hold administrative access to the FOSSBilling GitHub organization to ensure project continuity, even if individual members become unavailable.
 
-Each member of the steering committee also takes ownership of the project on GitHub. This ensures that in the event of any one person abandoning FOSSBilling or being unavailable for some reason the project does not stagnate or stop.
+### Current Members
 
-At this moment the Steering Committee includes six members - identified here by their GitHub usernames:
+As of this writing, the SC consists of the following individuals (listed by GitHub username):
 
-* [admdly](https://github.com/admdly)
-* [BelleNottelling](https://github.com/BelleNottelling)
-* [evrifaessa](https://github.com/evrifaessa)
-* [HunterNyan](https://github.com/HunterNyan)
-* [jaapmarcus](https://github.com/jaapmarcus)
-* [j-a-pope](https://github.com/j-a-pope)
+- [admdly](https://github.com/admdly)
+- [BelleNottelling](https://github.com/BelleNottelling)
+- [evrifaessa](https://github.com/evrifaessa)
+- [HunterNyan](https://github.com/HunterNyan)
+- [jaapmarcus](https://github.com/jaapmarcus)
 
-Members of the steering committee may recommend and appoint new members from the community at any time. A nomination for a new member will result in a discussion and a vote by the existing committee members. 
+### Appointments and Removals
 
-Members may be removed from the committee if they demonstrate disruptive behavior, if they resign, or if they do not participate in the community or contribute to the project for 6 months. In each of these cases except for resignation, removal can only be decided on after discussion and a clear majority consensus between the other committee members (committee members who are the subject of a removal vote are excluded from the right to vote). 
+- New SC members may be nominated by existing members or recommended by Maintainers.
+- Appointments require discussion and at least a two-thirds majority of current SC members (unanimity preferred).
+- A member may resign at any time.
+- Removal for inactivity (6+ months, as defined under the Maintainer section) or disruptive conduct follows the same process as Maintainer removal, with the affected member recused from voting.
 
-## Decision-making process
+## Decision-Making Process
 
-Major decisions about the future of FOSSBilling will be made after community discussion and by consensus of the steering committee. 
+FOSSBilling operates on principles of **transparency, collaboration, and efficiency**.
 
-We aim to resolve all issues and proposals through discussion, debate and collaboration. We are not saying that we will never resort to polls or votes but we will use them with care. Poll results will be used to help inform debate and consensus but they will not be taken as binding and definitive, and will not be the sole deciding factors.
+### Lazy Consensus
 
-Because we aim to be transparent in our decision-making, all discussion on any issues and proposals, with the exception of security and sensitive governance issues, will take place in public on GitHub and Discord.
+Most decisions are made using **lazy consensus**:
+> If a proposal is made and no objections are raised within a reasonable timeframe (typically 5-7 days), it is considered accepted. Silence is interpreted as consent.
 
-Ideologically it would be great to involve all community members in every decision, but in practical terms, it is simply not possible if we want to be able to move forward at a reasonable speed.
+This enables progress without requiring explicit approval from every participant.
 
-For the same reasons, to allow faster decision-making and development, the project operates a policy of **‘lazy consensus'** which allows for much faster decision-making within the community and means that most decisions can be made without the need for a formal vote.
+### Formal Decision Pathway
 
-Decision-making normally passes through these steps:
+For significant or contentious matters, decisions follow this process:
 
-1. Proposal (which may be formal or informal)
-1. Discussion (with the wider community and within the steering committee)
-1. Vote (if consensus has not been reached during discussion)
-1. Discussion (informed by the result of the vote)
-1. Decision
+1. **Proposal**: Any community member may submit a formal proposal as a GitHub issue.
+2. **Discussion**: The community and Steering Committee discuss the proposal publicly on GitHub (or Discord for early ideation).
+3. **Vote (if needed)**: If consensus isn't reached after discussion, the Steering Committee may hold a vote.
+4. **Final Decision**: The SC makes a final determination, informed by both discussion and any vote results. For a formal SC vote, a motion is considered passed if it receives approval from a majority (>50%) of the voting Steering Committee members. In the event of a tie, the proposal is not approved and may be revisited after further discussion.
 
-Any member of the FOSSBilling community is free to make proposals for consideration. You can make a new proposal by starting an issue on the project [GitHub page](https://github.com/FOSSBilling/FOSSBilling). Feel free to discuss and share ideas in the official [Discord chat](https://fossbilling.org/discord), but only issues created on GitHub will be considered as active proposals.
+> Note: Polls and votes are **advisory**, not binding. The Steering Committee retains final responsibility for project direction.
 
-In general, if nobody explicitly opposes a proposal, it is recognised as having the support of the community. This is the principle of lazy consensus, meaning that anyone who has not explicitly stated their opinion has implicitly supported the proposal. 
+### Scope of Public Discussion
 
-## Changes to this governance policy
+All non-sensitive discussions occur in public (GitHub issues, public Discord channels, Forum threads). Exceptions include:
 
-Any community member is free to propose changes to this governance policy by submitting a proposed change to this document, via a GitHub pull request. The steering committee will discuss any proposed changes and aim to reject or accept the changes by consensus.
+- Security vulnerabilities (handled via private channels)
+- Personal or personnel matters (e.g., Code of Conduct violations)
 
-If the committee is unable to agree on the proposal then the wider community will be asked to vote on the changes, with a clear majority vote needed for the governance changes to take effect.
+Only proposals filed as **GitHub issues** are considered formal. Discord is excellent for brainstorming but lacks the permanence and accessibility required for official records.
+
+## Amending This Governance Document
+
+This document is a living policy. Any community member may propose changes by submitting a pull request to this file.
+
+1. Proposed changes must include a clear rationale.
+2. The Steering Committee will discuss the proposal and seek consensus.
+3. If consensus cannot be reached, the change will be put to a **community-wide vote**.
+4. A **two-thirds majority** of valid votes is required for adoption.
+
+Approved changes will be merged and this document updated accordingly.

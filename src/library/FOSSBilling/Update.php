@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -235,7 +234,7 @@ class Update implements InjectionAwareInterface
         if ($updateBranch !== 'preview') {
             $allowed = false;
             foreach ($this->allowedDownloadPrefixes as $prefix) {
-                $allowed = $allowed ? true : str_starts_with($releaseInfo['download_url'], $prefix);
+                $allowed = $allowed ? true : str_starts_with((string) $releaseInfo['download_url'], (string) $prefix);
             }
 
             if (!$allowed) {

@@ -1,20 +1,20 @@
 <?php
 
-class Api_AdminTest extends BBTestCase
-{
-    /**
-     * @var Box\Mod\Order\Api\Admin
-     */
-    protected $api;
+declare(strict_types=1);
 
-    public function setup(): void
+#[Group('Core')]
+final class Api_AdminTest extends BBTestCase
+{
+    protected ?Box\Mod\Order\Api\Admin $api;
+
+    public function setUp(): void
     {
         $this->api = new Box\Mod\Order\Api\Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -25,12 +25,12 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);
@@ -38,7 +38,7 @@ class Api_AdminTest extends BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->get($data);
 
@@ -47,12 +47,12 @@ class Api_AdminTest extends BBTestCase
 
     public function testGetList(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['getSearchQuery'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->willReturn(['query', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder(FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -60,12 +60,12 @@ class Api_AdminTest extends BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn(['show_addons' => 0]);
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $paginatorMock;
         $di['mod'] = $di->protect(fn () => $modMock);
 
@@ -80,30 +80,24 @@ class Api_AdminTest extends BBTestCase
 
     public function testCreate(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['createOrder'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('createOrder')
-            ->willReturn(random_int(1, 100));
-
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+            ->willReturn(1);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->exactly(2))
             ->method('getExistingModelById')
-            ->will($this->onConsecutiveCalls(new Model_Client(), new Model_Product()));
+            ->willReturn(new Model_Client(), new Model_Product());
 
-        $di = new Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $data = [
-            'client_id' => random_int(1, 100),
-            'product_id' => random_int(1, 100),
+            'client_id' => 1,
+            'product_id' => 1,
         ];
         $result = $this->api->create($data);
 
@@ -115,12 +109,12 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['updateOrder'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateOrder')
             ->willReturn(true);
@@ -128,8 +122,8 @@ class Api_AdminTest extends BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'client_id' => random_int(1, 100),
-            'product_id' => random_int(1, 100),
+            'client_id' => 1,
+            'product_id' => 1,
         ];
         $result = $apiMock->update($data);
 
@@ -141,12 +135,12 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['activateOrder'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('activateOrder')
             ->willReturn(true);
@@ -154,8 +148,8 @@ class Api_AdminTest extends BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'client_id' => random_int(1, 100),
-            'product_id' => random_int(1, 100),
+            'client_id' => 1,
+            'product_id' => 1,
         ];
         $result = $apiMock->activate($data);
 
@@ -167,12 +161,12 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['renewOrder'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('renewOrder')
             ->willReturn(true);
@@ -191,7 +185,7 @@ class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
         $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder', 'activate'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder', 'activate'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -210,17 +204,17 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['suspendFromOrder'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('suspendFromOrder')
             ->willReturn(true);
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
 
         $apiMock->setDi($di);
 
@@ -238,12 +232,12 @@ class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
         $order->status = Model_ClientOrder::STATUS_SUSPENDED;
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['unsuspendFromOrder'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('unsuspendFromOrder')
             ->willReturn(true);
@@ -262,12 +256,12 @@ class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
         $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['unsuspendFromOrder'])->getMock();
         $serviceMock->expects($this->never())->method('unsuspendFromOrder')
             ->willReturn(true);
@@ -275,7 +269,7 @@ class Api_AdminTest extends BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [];
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $apiMock->unsuspend($data);
 
         $this->assertTrue($result);
@@ -286,17 +280,17 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['cancelFromOrder'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cancelFromOrder')
             ->willReturn(true);
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
 
         $apiMock->setDi($di);
         $apiMock->setService($serviceMock);
@@ -313,12 +307,12 @@ class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
         $order->status = Model_ClientOrder::STATUS_CANCELED;
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['uncancelFromOrder'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('uncancelFromOrder')
             ->willReturn(true);
@@ -337,12 +331,12 @@ class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
         $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['uncancelFromOrder'])->getMock();
         $serviceMock->expects($this->never())->method('uncancelFromOrder')
             ->willReturn(true);
@@ -350,7 +344,7 @@ class Api_AdminTest extends BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [];
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $apiMock->uncancel($data);
 
         $this->assertTrue($result);
@@ -361,12 +355,12 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['deleteFromOrder'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('deleteFromOrder')
             ->willReturn(true);
@@ -384,12 +378,12 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['deleteFromOrder', 'getOrderAddonsList'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('deleteFromOrder')
             ->willReturn(true);
@@ -408,7 +402,7 @@ class Api_AdminTest extends BBTestCase
 
     public function testBatchSuspendExpired(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['batchSuspendExpired'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('batchSuspendExpired')
             ->willReturn(true);
@@ -423,7 +417,7 @@ class Api_AdminTest extends BBTestCase
 
     public function testBatchCancelSuspended(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['batchCancelSuspended'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('batchCancelSuspended')
             ->willReturn(true);
@@ -441,12 +435,12 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['updateOrderConfig'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateOrderConfig')
             ->willReturn(true);
@@ -466,12 +460,12 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['updateOrderConfig'])->getMock();
         $serviceMock->expects($this->never())->method('updateOrderConfig')
             ->willReturn(true);
@@ -479,7 +473,7 @@ class Api_AdminTest extends BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = [];
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $apiMock->update_config($data);
 
         $this->assertTrue($result);
@@ -490,12 +484,12 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['getOrderServiceData'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getOrderServiceData')
             ->willReturn([]);
@@ -507,7 +501,7 @@ class Api_AdminTest extends BBTestCase
         $apiMock->setIdentity($admin);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->service($data);
 
@@ -519,17 +513,17 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['getOrderStatusSearchQuery'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getOrderStatusSearchQuery')
             ->willReturn(['query', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder(FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -537,7 +531,7 @@ class Api_AdminTest extends BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn([]);
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
 
         $di['pager'] = $paginatorMock;
 
@@ -552,27 +546,20 @@ class Api_AdminTest extends BBTestCase
 
     public function testStatusHistoryAdd(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['orderStatusAdd'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('orderStatusAdd')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $di = new Pimple\Container();
-        $di['validator'] = $validatorMock;
-
+        $di = $this->getDi();
         $apiMock->setDi($di);
         $apiMock->setService($serviceMock);
 
@@ -586,26 +573,20 @@ class Api_AdminTest extends BBTestCase
 
     public function testStatusHistoryDelete(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['orderStatusRm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('orderStatusRm')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $di = new Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->api->status_history_delete($data);
 
@@ -614,7 +595,7 @@ class Api_AdminTest extends BBTestCase
 
     public function testGetStatuses(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['counter'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('counter')
             ->willReturn([]);
@@ -639,7 +620,7 @@ class Api_AdminTest extends BBTestCase
 
     public function testAddons(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['getOrderAddonsList', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getOrderAddonsList')
             ->willReturn([new Model_ClientOrder()]);
@@ -649,7 +630,7 @@ class Api_AdminTest extends BBTestCase
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -667,12 +648,11 @@ class Api_AdminTest extends BBTestCase
 
     public function testGetOrder(): void
     {
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
+            ;
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);
@@ -685,7 +665,7 @@ class Api_AdminTest extends BBTestCase
             ->method('getExistingModelById')
             ->willReturn($order);
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
         $this->api->setDi($di);
@@ -693,24 +673,19 @@ class Api_AdminTest extends BBTestCase
         $this->api->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $this->api->get($data);
     }
 
     public function testBatchDelete(): void
     {
-        $activityMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['delete'])->getMock();
-        $activityMock->expects($this->atLeastOnce())->
-        method('delete')->
-        willReturn(true);
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $activityMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['delete'])->getMock();
+        $activityMock->expects($this->atLeastOnce())
+            ->method('delete')
+            ->willReturn(true);
 
-        $di = new Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $activityMock->setDi($di);
 
         $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);

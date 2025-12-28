@@ -1,30 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Stats\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-class AdminTest extends \BBTestCase
+#[Group('Core')]
+final class AdminTest extends \BBTestCase
 {
-    /**
-     * @var Admin
-     */
-    protected $api;
+    protected ?Admin $api;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->api = new Admin();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetSummary(): void
+    public function testGetSummary(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSummary')
             ->willReturn([]);
@@ -35,9 +37,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetSummaryIncome(): void
+    public function testGetSummaryIncome(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSummaryIncome')
             ->willReturn([]);
@@ -48,9 +50,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetOrdersStatuses(): void
+    public function testGetOrdersStatuses(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrdersStatuses')
             ->willReturn([]);
@@ -62,9 +64,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetProductSummary(): void
+    public function testGetProductSummary(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSummary')
             ->willReturn([]);
@@ -76,9 +78,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetProductSales(): void
+    public function testGetProductSales(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getProductSales')
             ->willReturn([]);
@@ -90,9 +92,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetIncomeVsRefunds(): void
+    public function testGetIncomeVsRefunds(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('incomeAndRefundStats')
             ->willReturn([]);
@@ -104,9 +106,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetRefunds(): void
+    public function testGetRefunds(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getRefunds')
             ->willReturn([]);
@@ -118,9 +120,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetIncome(): void
+    public function testGetIncome(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getIncome')
             ->willReturn([]);
@@ -132,9 +134,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetOrders(): void
+    public function testGetOrders(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->willReturn([]);
@@ -146,9 +148,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetClients(): void
+    public function testGetClients(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->willReturn([]);
@@ -160,9 +162,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testclientCountries(): void
+    public function testClientCountries(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getClientCountries')
             ->willReturn([]);
@@ -174,9 +176,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testsalesCountries(): void
+    public function testSalesCountries(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSalesByCountry')
             ->willReturn([]);
@@ -188,9 +190,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetInvoices(): void
+    public function testGetInvoices(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->willReturn([]);
@@ -202,9 +204,9 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetTickets(): void
+    public function testGetTickets(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Stats\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Stats\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTableStats')
             ->willReturn([]);

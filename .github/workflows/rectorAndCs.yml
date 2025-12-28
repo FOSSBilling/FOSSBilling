@@ -10,16 +10,16 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
             - name: Validate composer.json and composer.lock
-              uses: php-actions/composer@v6
+              uses: php-actions/composer@8a65f0d3c6a1d17ca4800491a40b5756a4c164f3 # v6
               with:
                   command: validate
 
             - name: Cache Composer Dependencies
               id: composer-cache
-              uses: actions/cache@v4
+              uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5
               with:
                   path: ./src/vendor
                   key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -34,31 +34,24 @@ jobs:
 
             - name: Install Composer Dependencies
               if: steps.composer-cache.outputs.cache-hit != 'true'
-              uses: php-actions/composer@v6
+              uses: php-actions/composer@8a65f0d3c6a1d17ca4800491a40b5756a4c164f3 # v6
               with:
                   php_version: 8.3
 
             - name: Setup PHP
-              uses: shivammathur/setup-php@v2
+              uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2
               with:
                   php-version: 8.3
 
             - name: Restore Rector Cache
-              uses: actions/cache@v4
+              uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5
               with:
                   path: ./var/cache/rector
                   key: ${{ env.MONTH }}-rector
                   restore-keys: ${{ env.MONTH }}-rector
 
-            - name: Restore Rector Cache for the Tests
-              uses: actions/cache@v4
-              with:
-                  path: ./var/cache/rector_tests
-                  key: ${{ env.MONTH }}-rector_tests
-                  restore-keys: ${{ env.MONTH }}-rector_tests
-
             - name: Restore CS-Fixer Cache
-              uses: actions/cache@v4
+              uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5
               with:
                   path: .php-cs-fixer.cache
                   key: ${{ env.MONTH }}-csfixer
@@ -67,13 +60,12 @@ jobs:
             - name: Run Rector
               run: |
                   php src/vendor/bin/rector
-                  php src/vendor/bin/rector --config=rectorTests.php
 
             - name: Run PHP CS Fixer
               run: php src/vendor/bin/php-cs-fixer fix
 
             - name: Create a Pull Request
-              uses: peter-evans/create-pull-request@v7
+              uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725 # v8
               with:
                   title: Apply PHP Code Styling & Quality Changes
                   commit-message: Apply PHP Code Styling & Quality Changes

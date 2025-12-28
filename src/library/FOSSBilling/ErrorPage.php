@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -255,7 +254,7 @@ class ErrorPage
             .list-horizontal li {
                 display:inline-block;
             }
-            
+
             .list-horizontal li:before {
                 content: "\2022";
                 color:#fff;

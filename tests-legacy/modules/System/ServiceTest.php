@@ -1,22 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\System;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
 use Twig\Environment;
 
-class ServiceTest extends \BBTestCase
+#[Group('Core')]
+final class ServiceTest extends \BBTestCase
 {
-    /**
-     * @var Service
-     */
-    protected $service;
+    protected ?Service $service;
 
-    public function setup(): void
+    public function setUp(): void
     {
         $this->service = new Service();
     }
 
-    public function testgetParamValueMissingKeyParam(): void
+    public function testGetParamValueMissingKeyParam(): void
     {
         $param = [];
         $this->expectException(\FOSSBilling\Exception::class);
@@ -25,7 +27,7 @@ class ServiceTest extends \BBTestCase
         $this->service->getParamValue($param);
     }
 
-    public function testgetCompany(): void
+    public function testGetCompany(): void
     {
         $expected = [
             'www' => 'https://localhost/',
@@ -61,12 +63,12 @@ class ServiceTest extends \BBTestCase
                 'value' => 'work@example.eu',
             ],
         ];
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn($multParamsResults);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -76,13 +78,13 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testgetLanguages(): void
+    public function testGetLanguages(): void
     {
         $result = $this->service->getLanguages(true);
         $this->assertIsArray($result);
     }
 
-    public function testgetParams(): void
+    public function testGetParams(): void
     {
         $expected = [
             'company_name' => 'Inc. Test',
@@ -98,12 +100,12 @@ class ServiceTest extends \BBTestCase
                 'value' => 'work@example.eu',
             ],
         ];
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn($multParamsResults);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -113,24 +115,24 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testupdateParams(): void
+    public function testUpdateParams(): void
     {
         $data = [
             'company_name' => 'newValue',
         ];
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $logMock = $this->getMockBuilder('\Box_Log')->getMock();
+        $logMock = $this->createMock('\Box_Log');
 
-        $systemServiceMock = $this->getMockBuilder('\\' . Service::class)->onlyMethods(['setParamValue'])->getMock();
+        $systemServiceMock = $this->getMockBuilder(Service::class)->onlyMethods(['setParamValue'])->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = $logMock;
 
@@ -140,17 +142,17 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgetMessages(): void
+    public function testGetMessages(): void
     {
         $latestVersion = '1.0.0';
         $type = 'info';
 
-        $systemServiceMock = $this->getMockBuilder('\\' . Service::class)->onlyMethods(['getParamValue'])->getMock();
+        $systemServiceMock = $this->getMockBuilder(Service::class)->onlyMethods(['getParamValue'])->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->willReturn(false);
 
-        $updaterMock = $this->getMockBuilder('\\' . \FOSSBilling\Update::class)->getMock();
+        $updaterMock = $this->createMock(\FOSSBilling\Update::class);
         $updaterMock->expects($this->atLeastOnce())
             ->method('isUpdateAvailable')
             ->willReturn(true);
@@ -158,9 +160,9 @@ class ServiceTest extends \BBTestCase
             ->method('getLatestVersion')
             ->willReturn($latestVersion);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['updater'] = $updaterMock;
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $systemServiceMock->setDi($di);
 
@@ -168,16 +170,15 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testtemplateExistsEmptyPaths(): void
+    public function testTemplateExistsEmptyPaths(): void
     {
         $getThemeResults = ['paths' => []];
-        $systemServiceMock = $this->getMockBuilder('\\' . Service::class)->addMethods(['getThemeConfig'])->getMock();
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('getThemeConfig')
+        $themeServiceMock = $this->getMockBuilder(\Box\Mod\Theme\Service::class)->onlyMethods(['getThemeConfig'])->getMock();
+        $themeServiceMock->expects($this->atLeastOnce())->method('getThemeConfig')
             ->willReturn($getThemeResults);
 
-        $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeServiceMock);
         $this->service->setDi($di);
 
         $result = $this->service->templateExists('defaultFile.cp');
@@ -185,7 +186,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testrenderStringTemplateException(): void
+    public function testRenderStringTemplateException(): void
     {
         $vars = [
             '_client_id' => 1,
@@ -196,18 +197,18 @@ class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $twigMock = $this->getMockBuilder('\\' . Environment::class)->disableOriginalConstructor()->getMock();
+        $twigMock = $this->getMockBuilder(Environment::class)->disableOriginalConstructor()->getMock();
         $twigMock->expects($this->atLeastOnce())
             ->method('addGlobal');
         $twigMock->method('createTemplate')
             ->will($this->throwException(new \Error('Error')));
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn(new \Model_Client());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['twig'] = $twigMock;
         $di['api_client'] = new \Model_Client();
@@ -217,7 +218,7 @@ class ServiceTest extends \BBTestCase
         $this->service->renderString('test', false, $vars);
     }
 
-    public function testrenderStringTemplate(): void
+    public function testRenderStringTemplate(): void
     {
         $vars = [
             '_client_id' => 1,
@@ -236,12 +237,12 @@ class ServiceTest extends \BBTestCase
         $twigMock->method('render')
             ->willReturn('');
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn(new \Model_Client());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['twig'] = $twigMock;
         $di['api_client'] = new \Model_Client();
@@ -251,14 +252,31 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($string, 'test');
     }
 
-    public function testclearCache(): void
+    public function testClearCache(): void
     {
+        // Create cache directory with .gitkeep if it doesn't exist
+        $cacheDir = PATH_CACHE;
+        if (!is_dir($cacheDir)) {
+            mkdir($cacheDir, 0755, true);
+        }
+        $gitkeepFile = $cacheDir . '/.gitkeep';
+        $gitkeepExists = file_exists($gitkeepFile);
+        if (!$gitkeepExists) {
+            file_put_contents($gitkeepFile, '');
+        }
+
         $result = $this->service->clearCache();
+
+        // Restore .gitkeep file if it was present before test
+        if ($gitkeepExists || !$gitkeepExists) {
+            file_put_contents($gitkeepFile, '');
+        }
+
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
-    public function testgetPeriod(): void
+    public function testGetPeriod(): void
     {
         $code = '1W';
         $expexted = 'Every week';
@@ -268,61 +286,61 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expexted, $result);
     }
 
-    public function testgetCountries(): void
+    public function testGetCountries(): void
     {
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn(['countries' => 'US']);
 
-        $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di = $this->getDi();
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $this->service->setDi($di);
         $result = $this->service->getCountries();
         $this->assertIsArray($result);
     }
 
-    public function testgetEuCountries(): void
+    public function testGetEuCountries(): void
     {
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn(['countries' => 'US']);
 
-        $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di = $this->getDi();
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $this->service->setDi($di);
         $result = $this->service->getEuCountries();
         $this->assertIsArray($result);
     }
 
-    public function testgetStates(): void
+    public function testGetStates(): void
     {
         $result = $this->service->getStates();
         $this->assertIsArray($result);
     }
 
-    public function testgetPhoneCodes(): void
+    public function testGetPhoneCodes(): void
     {
         $data = [];
         $result = $this->service->getPhoneCodes($data);
         $this->assertIsArray($result);
     }
 
-    public function testgetVersion(): void
+    public function testGetVersion(): void
     {
         $result = $this->service->getVersion();
         $this->assertIsString($result);
         $this->assertEquals(\FOSSBilling\Version::VERSION, $result);
     }
 
-    public function testgetPendingMessages(): void
+    public function testGetPendingMessages(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
-        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('get')
             ->with('pending_messages')
@@ -335,11 +353,11 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetPendingMessagesGetReturnsNotArray(): void
+    public function testGetPendingMessagesGetReturnsNotArray(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
-        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('get')
             ->with('pending_messages')
@@ -352,18 +370,18 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testsetPendingMessage(): void
+    public function testSetPendingMessage(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getPendingMessages'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPendingMessages')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
-        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('set')
             ->with('pending_messages');
@@ -377,11 +395,11 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testclearPendingMessages(): void
+    public function testClearPendingMessages(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
-        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
+        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())
             ->method('delete')
             ->with('pending_messages');

@@ -19,7 +19,6 @@ class Model_Product extends RedBeanPHP\SimpleModel implements FOSSBilling\Inject
     final public const DOMAIN = 'domain';
     final public const DOWNLOADABLE = 'downloadable';
     final public const HOSTING = 'hosting';
-    final public const MEMBERSHIP = 'membership';
     final public const VPS = 'vps';
 
     final public const SETUP_AFTER_ORDER = 'after_order';
@@ -38,7 +37,7 @@ class Model_Product extends RedBeanPHP\SimpleModel implements FOSSBilling\Inject
         return $this->di;
     }
 
-    public function getTable()
+    public function getTable(): object
     {
         $tableName = 'Model_Product' . ucfirst($this->type) . 'Table';
         if (!class_exists($tableName)) {

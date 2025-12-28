@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Profile\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -47,10 +49,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Clear session data and logout from system.
-     *
-     * @return bool
      */
-    public function logout()
+    public function logout(): bool
     {
         unset($_COOKIE['BOXADMR']);
         $this->di['session']->destroy('admin');
@@ -96,16 +96,14 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams([
+        'current_password' => 'Current password is required',
+        'new_password' => 'New password is required',
+        'confirm_password' => 'New password confirmation is required',
+    ])]
     public function change_password($data)
     {
-        $required = [
-            'current_password' => 'Current password required',
-            'new_password' => 'New password required',
-            'confirm_password' => 'New password confirmation required',
-        ];
-        $validator = $this->di['validator'];
-        $validator->checkRequiredParamsForArray($required, $data);
-        $validator->isPasswordStrong($data['new_password']);
+        $this->di['validator']->isPasswordStrong($data['new_password']);
 
         if ($data['new_password'] != $data['confirm_password']) {
             throw new \FOSSBilling\InformationException('Passwords do not match');
@@ -143,13 +141,9 @@ class Admin extends \Api_Abstract
      *
      * @return string the new API key for the client
      */
+    #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function api_key_reset($data): string
     {
-        $required = [
-            'id' => 'Client ID not passed',
-        ];
-
-        $validator = $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $client = $this->di['db']->getExistingModelById('Client', $data['di']);
 
         return $this->getService()->resetApiKey($client);

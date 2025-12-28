@@ -49,27 +49,9 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         return $_SERVER[$key] ?? $default;
     }
 
-    private function getIp($checkProxy = true)
+    public function process($data): array
     {
-        $ip = null;
-        if ($checkProxy && $this->getServer('HTTP_CLIENT_IP') != null) {
-            $ip = $this->getServer('HTTP_CLIENT_IP');
-        } else {
-            if ($checkProxy && $this->getServer('HTTP_X_FORWARDED_FOR') != null) {
-                $ip = $this->getServer('HTTP_X_FORWARDED_FOR');
-            } else {
-                $ip = $this->getServer('REMOTE_ADDR');
-            }
-        }
-
-        $ips_arr = explode(',', $ip);
-
-        return trim($ips_arr[0]);
-    }
-
-    public function process($data)
-    {
-        $data = (!is_array($data)) ? json_decode($data ?? '', true) : [];
+        $data = is_array($data) ? $data : (json_decode($data ?? '', true) ?: []);
 
         if (empty($data)) {
             throw new \LogicException('Invalid request. Parameters missing?', 1000);
@@ -101,7 +83,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
             throw new \LogicException('Path key is not present in call', 1004);
         }
 
-        $ip = $this->getIp();
+        $ip = $this->di['request']->getClientIp();
         $host = $data['host'];
         $version = $data['version'];
         $path = $data['path'];

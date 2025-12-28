@@ -1,7 +1,9 @@
 <?php
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_TwigLoaderTest extends PHPUnit\Framework\TestCase
+declare(strict_types=1);
+
+#[Group('Core')]
+final class Box_TwigLoaderTest extends PHPUnit\Framework\TestCase
 {
     public function testTemplates(): void
     {

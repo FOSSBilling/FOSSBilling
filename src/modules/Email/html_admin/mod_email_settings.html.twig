@@ -196,6 +196,7 @@
                                 <th>{{ 'Tries'|trans }}</th>
                                 <th>{{ 'Created at'|trans }}</th>
                                 <th>{{ 'Updated at'|trans }}</th>
+                                <th class="w-1"></th>
                             </tr>
                             </thead>
                             <tbody>
@@ -228,10 +229,20 @@
                                     <td>
                                         {{ queuedEmail.updated_at|format_date }}
                                     </td>
+                                    <td>
+                                        <button class="btn btn-icon email-preview-btn"
+                                            data-email-subject="{{ queuedEmail.subject }}"
+                                            data-email-content="{{ queuedEmail.content|e('html_attr') }}"
+                                            title="{{ 'Preview'|trans }}">
+                                            <svg class="icon">
+                                                <use xlink:href="#eye" />
+                                            </svg>
+                                        </button>
+                                    </td>
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td class="text-muted" colspan="5">{{ 'The list is empty.'|trans }}</td>
+                                    <td class="text-muted" colspan="8">{{ 'The list is empty.'|trans }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -244,6 +255,24 @@
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Configure email options'|trans }}</h3>
                             <p class="card-subtitle">{{ 'FOSSBilling sends emails using <em>sendmail</em> by default or you can configure your own SMTP server'|trans|raw }}</p>
+                            
+                            <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'From name'|trans }}</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="text" name="from_name" value="{{ params.from_name }}" placeholder="{{ company.name }}">
+                                    <small class="form-hint">{{ 'Leave blank to use company public name'|trans }}</small>
+                                </div>
+                            </div>
+
+                            <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'From email'|trans }}</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="email" name="from_email" value="{{ params.from_email }}" placeholder="{{ company.email }}">
+                                    <small class="form-hint">{{ 'Leave blank to use company public email'|trans }}</small>
+                                </div>
+                            </div>
+
+                            <hr />
 
                             <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Queue options'|trans }}</label>
@@ -262,6 +291,9 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <hr />
+                            
                             <div class="mb-3 row">
                                 <label class="col-md-3 form-label">{{ 'Log sent emails to database'|trans }}</label>
                                 <div class="col-md-6">
@@ -364,6 +396,7 @@
 {% endblock %}
 
 {% block js %}
+{{ include('partial_email_preview.html.twig') }}
 <script>
 $(function() {
     $('#emailTest').on('click', function() {

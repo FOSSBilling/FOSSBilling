@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -12,10 +11,10 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Uid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
 {
@@ -52,7 +51,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $currentConfig = Config::getConfig();
 
-        if (!is_array($currentConfig)) {
+        if (empty($currentConfig)) {
             throw new Exception('Unable to load existing configuration');
         }
 
@@ -80,15 +79,15 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['api']['CSRFPrevention'] ??= true;
         $newConfig['api']['rate_limit_whitelist'] ??= [];
         $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
-        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
-        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
+        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'];
+        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'];
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
 
         // Instance ID handling
-        if (!class_exists('Uuid')) {
+        if (!class_exists(Uuid::class)) {
             $this->registerFallbackAutoloader();
         }
-        $newConfig['info']['instance_id'] ??= Uuid::uuid4()->toString();
+        $newConfig['info']['instance_id'] ??= Uuid::v4()->toString();
         $newConfig['info']['salt'] ??= $newConfig['salt'];
 
         // Remove the hardcoded protocol
@@ -410,6 +409,61 @@ class UpdatePatcher implements InjectionAwareInterface
                 ];
                 $this->executeFileActions($fileActions);
             },
+            44 => function (): void {
+                // Add ipn_hash column to transaction table and index it for fast duplicate detection.
+                $q = 'ALTER TABLE `transaction`
+                        ADD COLUMN `ipn_hash` VARCHAR(64) DEFAULT NULL,
+                        ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));';
+                $this->executeSql($q);
+            },
+            45 => function (): void {
+                // Drop updated_at column from activity tables
+                // Activity logs are never meant to be updated, only created
+                $q = 'ALTER TABLE `activity_admin_history` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `activity_client_email` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `activity_client_history` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `activity_system` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+            },
+            46 => function (): void {
+                // Change gender column to ENUM type
+                $q1 = 'ALTER TABLE `client`
+                    MODIFY COLUMN `gender` ENUM("male", "female", "nonbinary", "other") DEFAULT NULL;';
+
+                // Change document_type column to ENUM type
+                $q2 = 'ALTER TABLE `client`
+                    MODIFY COLUMN `document_type` ENUM("passport") DEFAULT NULL;';
+
+                $this->executeSql($q1);
+                $this->executeSql($q2);
+            },
+            47 => function (): void {
+                // Migrate "membership" product type to "custom" product type
+                // This is part of removing the Servicemembership module
+                // @see https://github.com/FOSSBilling/FOSSBilling/pull/3066
+
+                // Migrate products to the 'custom' product type
+                $q = 'UPDATE `product` SET `type` = "custom" WHERE `type` = "membership";';
+                $this->executeSql($q);
+
+                // Before migrating existing orders to the 'custom' product type,
+                // set service_id to NULL for orders with service_type = "membership"
+                $q = 'UPDATE `client_order` SET `service_id` = NULL WHERE `service_type` = "membership";';
+                $this->executeSql($q);
+                // Migrate existing orders to the 'custom' product type
+                $q = 'UPDATE `client_order` SET `service_type` = "custom" WHERE `service_type` = "membership";';
+                $this->executeSql($q);
+
+                // Drop the service_membership table as it's no longer needed
+                $q = 'DROP TABLE IF EXISTS `service_membership`;';
+                $this->executeSql($q);              
+            },
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -421,7 +475,7 @@ class UpdatePatcher implements InjectionAwareInterface
      * As a workaround, we can register AntLoader and point it at the Vendor folder which will then act as fallback to find the needed classes.
      * This isn't particularly fast though as it'll scan the entire vendor, so only use it if we know a needed class is missing.
      */
-    private function registerFallbackAutoloader()
+    private function registerFallbackAutoloader(): void
     {
         $loader = new \AntCMS\AntLoader([
             'mode' => 'filesystem',

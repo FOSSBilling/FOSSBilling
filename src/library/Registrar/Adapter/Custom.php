@@ -24,7 +24,7 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
         }
     }
 
-    public static function getConfig()
+    public static function getConfig(): array
     {
         return [
             'label' => 'Custom Registrar always responds with positive results. Useful if no other registrar is suitable.',
@@ -38,7 +38,7 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
         ];
     }
 
-    public function isDomaincanBeTransferred(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain): bool
     {
         $this->getLog()->debug('Checking if domain can be transferred: ' . $domain->getName());
 
@@ -58,7 +58,7 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
         return true;
     }
 
-    public function modifyNs(Registrar_Domain $domain)
+    public function modifyNs(Registrar_Domain $domain): bool
     {
         $this->getLog()->debug('Modifying nameservers: ' . $domain->getName());
         $this->getLog()->debug('Ns1: ' . $domain->getNs1());
@@ -69,7 +69,7 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
         return true;
     }
 
-    public function transferDomain(Registrar_Domain $domain)
+    public function transferDomain(Registrar_Domain $domain): bool
     {
         $this->getLog()->debug('Transfering domain: ' . $domain->getName());
         $this->getLog()->debug('Epp code: ' . $domain->getEpp());
@@ -92,63 +92,63 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
         return $domain;
     }
 
-    public function deleteDomain(Registrar_Domain $domain)
+    public function deleteDomain(Registrar_Domain $domain): bool
     {
         $this->getLog()->debug('Removing domain: ' . $domain->getName());
 
         return true;
     }
 
-    public function registerDomain(Registrar_Domain $domain)
+    public function registerDomain(Registrar_Domain $domain): bool
     {
         $this->getLog()->debug('Registering domain: ' . $domain->getName() . ' for ' . $domain->getRegistrationPeriod() . ' years');
 
         return true;
     }
 
-    public function renewDomain(Registrar_Domain $domain)
+    public function renewDomain(Registrar_Domain $domain): bool
     {
         $this->getLog()->debug('Renewing domain: ' . $domain->getName());
 
         return true;
     }
 
-    public function modifyContact(Registrar_Domain $domain)
+    public function modifyContact(Registrar_Domain $domain): bool
     {
         $this->getLog()->debug('Updating contact info: ' . $domain->getName());
 
         return true;
     }
 
-    public function enablePrivacyProtection(Registrar_Domain $domain)
+    public function enablePrivacyProtection(Registrar_Domain $domain): bool
     {
         $this->getLog()->debug('Enabling Privacy protection: ' . $domain->getName());
 
         return true;
     }
 
-    public function disablePrivacyProtection(Registrar_Domain $domain)
+    public function disablePrivacyProtection(Registrar_Domain $domain): bool
     {
         $this->getLog()->debug('Disabling Privacy protection: ' . $domain->getName());
 
         return true;
     }
 
-    public function getEpp(Registrar_Domain $domain)
+    public function getEpp(Registrar_Domain $domain): string
     {
         $this->getLog()->debug('Retrieving domain transfer code: ' . $domain->getName());
 
         return '';
     }
 
-    public function lock(Registrar_Domain $domain)
+    public function lock(Registrar_Domain $domain): bool
     {
         $this->getLog()->debug('Locking domain: ' . $domain->getName());
 
         return true;
     }
 
-    public function unlock(Registrar_Domain $domain)
+    public function unlock(Registrar_Domain $domain): bool
     {
         $this->getLog()->debug('Unlocking: ' . $domain->getName());
 

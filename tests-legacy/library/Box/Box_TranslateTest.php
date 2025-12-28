@@ -1,9 +1,11 @@
 <?php
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_TranslateTest extends PHPUnit\Framework\TestCase
+declare(strict_types=1);
+
+#[Group('Core')]
+final class Box_TranslateTest extends PHPUnit\Framework\TestCase
 {
-    public function testsetLocale(): void
+    public function testSetLocale(): void
     {
         $locale = 'en_US';
         $translateObj = new Box_Translate();

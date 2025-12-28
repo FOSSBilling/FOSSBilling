@@ -16,6 +16,7 @@
 namespace Box\Mod\System\Api;
 
 use FOSSBilling\i18n;
+use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \Api_Abstract
 {
@@ -108,17 +109,24 @@ class Guest extends \Api_Abstract
     }
 
     /**
+     * Return the code of the default country, if set.
+     */
+    public function default_country(): ?string
+    {
+        $mod = $this->di['mod']('system');
+        $cfg = $mod->getConfig();
+
+        return $cfg['default_country'] ?? null;
+    }
+
+    /**
      * Returns system parameter by key.
      *
      * @return string
      */
+    #[RequiredParams(['key' => '"key" parameter was not passed'])]
     public function param($data)
     {
-        $required = [
-            'key' => 'Parameter key is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         return $this->getService()->getPublicParamValue($data['key']);
     }
 
@@ -191,10 +199,8 @@ class Guest extends \Api_Abstract
 
     /**
      * Get current client locale.
-     *
-     * @return string
      */
-    public function locale()
+    public function locale(): string
     {
         return i18n::getActiveLocale();
     }
