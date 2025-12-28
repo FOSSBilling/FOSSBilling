@@ -12,6 +12,7 @@
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use FOSSBilling\Config;
+use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
@@ -88,7 +89,8 @@ $di['pdo'] = function () {
     ];
 
     $connection = DriverManagerFactory::getConnection($driverOptions);
-    $pdo = (object) $connection->getNativeConnection();
+    /** @var \PDO $pdo */
+    $pdo = $connection->getNativeConnection();
 
     if (isset($debugConfig['debug']) && $debugConfig['debug']) {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
