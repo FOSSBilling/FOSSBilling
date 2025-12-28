@@ -3,7 +3,6 @@ import { fileURLToPath } from 'url';
 import { dirname, resolve, relative, join } from 'path';
 import { readFile, readdir, copyFile, mkdir, writeFile, rm } from 'fs/promises';
 import { createRequire } from 'module';
-import { pathToFileURL } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
