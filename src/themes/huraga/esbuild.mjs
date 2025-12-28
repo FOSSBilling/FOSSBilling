@@ -1,10 +1,80 @@
+import autoprefixer from 'autoprefixer';
 import * as esbuild from 'esbuild';
-import { fileURLToPath } from 'url';
+import postcss from 'postcss';
+import sass from 'sass';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, resolve, join } from 'path';
-import { readdir, copyFile, mkdir, writeFile } from 'fs/promises';
+import { readdir, readFile, copyFile, mkdir, writeFile } from 'fs/promises';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
+const rootDir = resolve(__dirname, '../../..');
+const nodeModulesDir = resolve(rootDir, 'node_modules');
+const nodeModulesUrl = pathToFileURL(`${nodeModulesDir}/`);
+
+const sassImporter = {
+  findFileUrl(url) {
+    if (!url.startsWith('~')) return null;
+    return new URL(url.slice(1), nodeModulesUrl);
+  }
+};
+
+function sassPlugin() {
+  return {
+    name: 'sass',
+    setup(build) {
+      build.onLoad({ filter: /\.scss$/ }, async (args) => {
+        const result = await sass.compileAsync(args.path, {
+          loadPaths: [nodeModulesDir],
+          importers: [sassImporter],
+          style: 'expanded',
+          sourceMap: !isProduction,
+          sourceMapIncludeSources: !isProduction
+        });
+
+        return {
+          contents: result.css,
+          loader: 'css',
+          resolveDir: dirname(args.path)
+        };
+      });
+    }
+  };
+}
+
+function tildeResolverPlugin() {
+  return {
+    name: 'tilde-resolver',
+    setup(build) {
+      build.onResolve({ filter: /^~(.+)/ }, (args) => ({
+        path: resolve(nodeModulesDir, args.path.slice(1))
+      }));
+    }
+  };
+}
+
+async function postprocessCss(cssPath) {
+  const css = await readFile(cssPath, 'utf8');
+  const mapPath = `${cssPath}.map`;
+  let prevMap;
+
+  if (!isProduction) {
+    try {
+      prevMap = await readFile(mapPath, 'utf8');
+    } catch (error) {}
+  }
+
+  const result = await postcss([autoprefixer]).process(css, {
+    from: cssPath,
+    to: cssPath,
+    map: isProduction ? false : { inline: false, annotation: true, prev: prevMap || undefined }
+  });
+
+  await writeFile(cssPath, result.css);
+  if (result.map) {
+    await writeFile(mapPath, result.map.toString());
+  }
+}
 
 async function ensureDir(dir) {
   await mkdir(dir, { recursive: true });
@@ -56,8 +126,7 @@ async function buildAssets() {
         '.woff': 'file',
         '.woff2': 'file',
         '.ttf': 'file',
-        '.eot': 'file',
-        '.scss': 'css'
+        '.eot': 'file'
       },
       define: {
         'process.env.NODE_ENV': isProduction ? '"production"' : '"development"'
@@ -77,17 +146,24 @@ async function buildAssets() {
       bundle: true,
       outdir: cssDir,
       loader: {
-        '.scss': 'css',
-        '.css': 'css'
+        '.svg': 'dataurl',
+        '.woff': 'file',
+        '.woff2': 'file',
+        '.ttf': 'file',
+        '.eot': 'file'
       },
-      nodePaths: [resolve(__dirname, 'node_modules'), resolve(__dirname, '../../node_modules')],
-      absWorkingDir: resolve(__dirname),
+      plugins: [sassPlugin(), tildeResolverPlugin()],
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'silent'
     });
     
     if (cssResult.errors.length > 0) throw new Error('CSS build failed');
+
+    await Promise.all([
+      postprocessCss(join(cssDir, 'huraga.css')),
+      postprocessCss(join(cssDir, 'markdown.css'))
+    ]);
     
     const cssSrc = resolve(__dirname, 'assets/css');
     const cssDest = join(buildDir, 'css');

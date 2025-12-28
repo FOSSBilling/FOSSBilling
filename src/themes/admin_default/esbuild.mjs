@@ -1,10 +1,80 @@
+import autoprefixer from 'autoprefixer';
 import * as esbuild from 'esbuild';
-import { fileURLToPath } from 'url';
+import postcss from 'postcss';
+import sass from 'sass';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, resolve, relative, join } from 'path';
 import { readFile, readdir, copyFile, mkdir, writeFile, rm } from 'fs/promises';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
+const rootDir = resolve(__dirname, '../../..');
+const nodeModulesDir = resolve(rootDir, 'node_modules');
+const nodeModulesUrl = pathToFileURL(`${nodeModulesDir}/`);
+
+const sassImporter = {
+  findFileUrl(url) {
+    if (!url.startsWith('~')) return null;
+    return new URL(url.slice(1), nodeModulesUrl);
+  }
+};
+
+function sassPlugin() {
+  return {
+    name: 'sass',
+    setup(build) {
+      build.onLoad({ filter: /\.scss$/ }, async (args) => {
+        const result = await sass.compileAsync(args.path, {
+          loadPaths: [nodeModulesDir],
+          importers: [sassImporter],
+          style: 'expanded',
+          sourceMap: !isProduction,
+          sourceMapIncludeSources: !isProduction
+        });
+
+        return {
+          contents: result.css,
+          loader: 'css',
+          resolveDir: dirname(args.path)
+        };
+      });
+    }
+  };
+}
+
+function tildeResolverPlugin() {
+  return {
+    name: 'tilde-resolver',
+    setup(build) {
+      build.onResolve({ filter: /^~(.+)/ }, (args) => ({
+        path: resolve(nodeModulesDir, args.path.slice(1))
+      }));
+    }
+  };
+}
+
+async function postprocessCss(cssPath) {
+  const css = await readFile(cssPath, 'utf8');
+  const mapPath = `${cssPath}.map`;
+  let prevMap;
+
+  if (!isProduction) {
+    try {
+      prevMap = await readFile(mapPath, 'utf8');
+    } catch (error) {}
+  }
+
+  const result = await postcss([autoprefixer]).process(css, {
+    from: cssPath,
+    to: cssPath,
+    map: isProduction ? false : { inline: false, annotation: true, prev: prevMap || undefined }
+  });
+
+  await writeFile(cssPath, result.css);
+  if (result.map) {
+    await writeFile(mapPath, result.map.toString());
+  }
+}
 
 async function ensureDir(dir) {
   await mkdir(dir, { recursive: true });
@@ -135,8 +205,13 @@ async function buildScss() {
     entryPoints: [resolve(__dirname, 'assets/scss/fossbilling.scss')],
     bundle: true,
     outfile: resolve(__dirname, 'build/css/fossbilling.css'),
+    plugins: [sassPlugin(), tildeResolverPlugin()],
     loader: {
-      '.scss': 'css'
+      '.svg': 'dataurl',
+      '.woff': 'file',
+      '.woff2': 'file',
+      '.ttf': 'file',
+      '.eot': 'file'
     },
     minify: isProduction,
     sourcemap: !isProduction,
@@ -147,6 +222,8 @@ async function buildScss() {
     console.error(result.errors);
     throw new Error('SCSS build failed');
   }
+
+  await postprocessCss(resolve(__dirname, 'build/css/fossbilling.css'));
 }
 
 async function buildJavaScript() {
@@ -161,8 +238,7 @@ async function buildJavaScript() {
       '.woff': 'file',
       '.woff2': 'file',
       '.ttf': 'file',
-      '.eot': 'file',
-      '.scss': 'css'
+      '.eot': 'file'
     },
     define: {
       'globalThis.jQuery': 'jQuery',
