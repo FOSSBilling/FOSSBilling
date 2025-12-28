@@ -35,7 +35,7 @@
         ]
     },
     "require": {
-        "php": ">=8.2",
+        "php": ">=8.3",
         "ext-curl": "*",
         "ext-intl": "*",
         "ext-mbstring": "*",
@@ -72,8 +72,8 @@
         "symfony/http-client": "^7.2",
         "symfony/http-foundation": "^7.2",
         "symfony/mailer": "^7.2",
-        "symfony/polyfill-php83": "^1.29",
         "symfony/polyfill-php84": "^1.31",
+        "symfony/polyfill-php85": "^1.31",
         "symfony/property-access": "^7.2",
         "symfony/property-info": "^7.2",
         "symfony/sendgrid-mailer": "^7.0",
@@ -107,6 +107,7 @@
         "symfony/polyfill-php80": "*",
         "symfony/polyfill-php81": "*",
         "symfony/polyfill-php82": "*",
+        "symfony/polyfill-php83": "*",
         "symfony/polyfill-intl-icu": "*",
         "symfony/polyfill-intl-idn": "*"
     },

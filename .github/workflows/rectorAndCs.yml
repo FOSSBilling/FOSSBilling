@@ -36,12 +36,12 @@ jobs:
               if: steps.composer-cache.outputs.cache-hit != 'true'
               uses: php-actions/composer@8a65f0d3c6a1d17ca4800491a40b5756a4c164f3 # v6
               with:
-                  php_version: 8.3
+                  php_version: 8.5
 
             - name: Setup PHP
               uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2
               with:
-                  php-version: 8.3
+                  php-version: 8.5
 
             - name: Restore Rector Cache
               uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5

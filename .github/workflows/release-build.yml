@@ -28,7 +28,7 @@ jobs:
         with:
           cache-deps: 'false'
           composer-args: '--prefer-dist --no-dev --optimize-autoloader'
-          php-version: 8.2
+          php-version: 8.3
 
       - name: 'Install Node.js and Enable Caching'
         uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6

@@ -6,7 +6,7 @@ FOSSBilling is a free and open-source billing and client management solution des
 
 ### Key Technologies
 
-* **Backend:** PHP 8.2+ with dependencies managed by Composer. Key libraries include:
+* **Backend:** PHP 8.3+ with dependencies managed by Composer. Key libraries include:
   * [Symfony Components](https://symfony.com/): Console, cache, filesystem, HTTP client, and other core functionalities. See `composer.json` for a list of imported components.
     * Prefer Symfony components wherever you can.
   * [Twig](https://twig.symfony.com/): Template engine for rendering views
@@ -58,7 +58,7 @@ The application uses a modern PHP architecture with dependency injection, event-
 
 ### Prerequisites
 
-* **PHP 8.2 or higher** with required extensions:
+* **PHP 8.3 or higher** with required extensions:
   * curl, intl, mbstring, pdo, zlib
 * **Composer** for PHP dependency management
 * **Node.js and npm** for frontend asset management
@@ -231,6 +231,6 @@ tests-legacy/                  # Legacy PHPUnit tests
 
 ## Important Notes
 
-* **PHP Version:** Requires PHP 8.2 or higher
+* **PHP Version:** Requires PHP 8.3 or higher
 * **Database:** Requires MySQL/MariaDB database server
 * **License:** Apache License 2.0
