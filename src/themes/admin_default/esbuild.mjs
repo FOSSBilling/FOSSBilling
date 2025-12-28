@@ -1,7 +1,7 @@
 import * as esbuild from 'esbuild';
 import { fileURLToPath } from 'url';
 import { dirname, resolve, relative, join } from 'path';
-import { readFile, readdir, copyFile, mkdir, writeFile, stat, rm } from 'fs/promises';
+import { readFile, readdir, copyFile, mkdir, writeFile, rm } from 'fs/promises';
 import { createRequire } from 'module';
 import { pathToFileURL } from 'url';
 
