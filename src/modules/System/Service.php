@@ -86,7 +86,7 @@ class Service
         $query
             ->select('value')
             ->from('setting')
-            ->where('param', ':param')
+            ->where('param = :param')
             ->setParameter('param', $param);
 
         $result = $query->executeQuery()->fetchOne();
@@ -109,7 +109,7 @@ class Service
             $query
                 ->update('setting')
                 ->set('value', ':value')
-                ->where('param', ':param')
+                ->where('param = :param')
                 ->setParameter('param', $param)
                 ->setParameter('value', $value)
                 ->executeStatement();
@@ -145,7 +145,7 @@ class Service
         $query
             ->select('id')
             ->from('setting')
-            ->where('param', ':param')
+            ->where('param = :param')
             ->setParameter('param', $param);
 
         $result = $query->executeQuery()->fetchOne();
@@ -547,7 +547,7 @@ class Service
         $query
             ->select('value')
             ->from('setting')
-            ->where('param', ':param')
+            ->where('param = :param')
             ->andWhere('public = 1')
             ->setParameter('param', $param);
 
