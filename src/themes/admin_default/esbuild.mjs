@@ -1,7 +1,7 @@
 import * as esbuild from 'esbuild';
 import { fileURLToPath } from 'url';
 import { dirname, resolve, relative, join } from 'path';
-import { readFile, readdir, copyFile, mkdir, writeFile, stat } from 'fs/promises';
+import { readFile, readdir, copyFile, mkdir, writeFile, stat, rm } from 'fs/promises';
 import { createRequire } from 'module';
 import { pathToFileURL } from 'url';
 
@@ -11,6 +11,18 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 async function ensureDir(dir) {
   await mkdir(dir, { recursive: true });
+}
+
+async function removeDirContents(dir) {
+  try {
+    const entries = await readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const entryPath = join(dir, entry.name);
+      await rm(entryPath, { recursive: true, force: true });
+    }
+  } catch (error) {
+    // Ignore errors when the directory does not exist or cannot be read
+  }
 }
 
 async function copyAssets(srcDir, destDir) {
@@ -189,9 +201,9 @@ async function copyStaticAssets() {
 }
 
 async function cleanBuild() {
-  const { execSync } = await import('child_process');
   try {
-    execSync(`rm -rf ${resolve(__dirname, 'build')}/*`);
+    const buildDir = resolve(__dirname, 'build');
+    await removeDirContents(buildDir);
   } catch (error) {}
 }
 
