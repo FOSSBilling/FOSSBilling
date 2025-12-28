@@ -180,7 +180,7 @@ class Service implements InjectionAwareInterface
                 FROM `client_order` o
                 RIGHT JOIN `product` p ON(p.id = o.product_id)
                 WHERE o.status = 'active'
-                GROUP BY o.product_id
+                GROUP BY p.id, p.title
                 ORDER BY orders DESC
                 ";
 
@@ -197,7 +197,7 @@ class Service implements InjectionAwareInterface
                 FROM `client_order`
                 WHERE status = :status
                 AND `created_at` BETWEEN :date_from AND :date_to
-                GROUP BY product_id
+                GROUP BY product_id, title
                 ';
 
         $stmt = $pdo->prepare($query);
