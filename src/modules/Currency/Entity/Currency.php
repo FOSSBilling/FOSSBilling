@@ -35,20 +35,9 @@ class Currency implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: "boolean", options: ["default" => false])]
     private bool $isDefault = false;
 
-    /**
-     * Conversion rate stored as string to preserve database decimal precision (13,6).
-     * Use getConversionRate() to access the cached float value for calculations.
-     * Note: Float conversion may introduce small precision differences for values
-     * beyond float's ~15-17 significant digits, but this is acceptable for currency
-     * conversion rates which typically don't require such extreme precision.
-     */
     #[ORM\Column(type: "decimal", precision: 13, scale: 6, options: ["default" => "1.000000"])]
     private string $conversionRate = "1.000000";
 
-    /**
-     * Cached float value of conversionRate to avoid repeated string-to-float conversions.
-     * This is not persisted to the database.
-     */
     private ?float $conversionRateFloat = null;
 
     #[ORM\Column(type: "string", length: 30, nullable: true)]
@@ -116,16 +105,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
         return $this->isDefault;
     }
 
-    /**
-     * Get the conversion rate as a float value.
-     * The float value is cached to avoid repeated string-to-float conversions.
-     *
-     * Note: While the database stores the value as decimal(13,6) for precision,
-     * PHP's float type is used for calculations. Float precision (~15-17 significant
-     * digits) is sufficient for currency conversion rates in practical use cases.
-     *
-     * @return float The conversion rate
-     */
     public function getConversionRate(): float
     {
         if ($this->conversionRateFloat === null) {
@@ -134,13 +113,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
         return $this->conversionRateFloat;
     }
 
-    /**
-     * Get the raw string value of the conversion rate.
-     * Use this method when you need the exact decimal precision stored in the database,
-     * for example when performing calculations that require arbitrary precision arithmetic.
-     *
-     * @return string The conversion rate as a string (e.g., "1.234567")
-     */
     public function getConversionRateRaw(): string
     {
         return $this->conversionRate;
