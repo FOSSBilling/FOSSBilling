@@ -87,11 +87,10 @@ class Service
             ->select('value')
             ->from('setting')
             ->where('param', ':param')
-            ->setParameter('param', $param)
-            ->executeQuery();
+            ->setParameter('param', $param);
 
-        $result = $query->fetchFirstColumn();
-        if (empty($result)) {
+        $result = $query->executeQuery()->fetchOne();
+        if ($result === false) {
             return $default;
         }
 
@@ -147,10 +146,9 @@ class Service
             ->select('id')
             ->from('setting')
             ->where('param', ':param')
-            ->setParameter('param', $param)
-            ->executeQuery();
+            ->setParameter('param', $param);
 
-        $result = $query->fetchFirstColumn();
+        $result = $query->executeQuery()->fetchOne();
 
         return (bool) $result;
     }
@@ -551,10 +549,9 @@ class Service
             ->from('setting')
             ->where('param', ':param')
             ->andWhere('public = 1')
-            ->setParameter('param', $param)
-            ->executeQuery();
+            ->setParameter('param', $param);
 
-        $result = $query->fetchFirstColumn();
+        $result = $query->executeQuery()->fetchOne();
         if ($result === false) {
             throw new \FOSSBilling\Exception('Parameter :param does not exist', [':param' => $param]);
         }

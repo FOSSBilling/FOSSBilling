@@ -558,9 +558,8 @@ class Service implements InjectionAwareInterface
             ->where('type = :type')
             ->andWhere('status = :status')
             ->setParameter('type', 'mod')
-            ->setParameter('status', 'installed')
-            ->executeQuery();
-        $result = $query->fetchFirstColumn();
+            ->setParameter('status', 'installed');
+        $result = $query->executeQuery()->fetchFirstColumn();
 
         return $result;
     }
