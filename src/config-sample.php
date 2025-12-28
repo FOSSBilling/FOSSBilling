@@ -14,7 +14,7 @@
  */
 
 return [
-    /* 
+    /*
      * These configuration options allow you to configure the security options inside of FOSSBilling.
      * The default values are what we recommended running unless they are causing issues.
      */
@@ -97,7 +97,7 @@ return [
      */
     'disable_auto_cron' => true,
 
-    /* 
+    /*
      * These configuration options allow you to configure the default localisation.
      */
     'i18n' => [
@@ -109,7 +109,7 @@ return [
         'date_format' => 'medium',
         'time_format' => 'short',
 
-        // Specifying a pattern will override the above date/time options. 
+        // Specifying a pattern will override the above date/time options.
         // @see https://unicode-org.github.io/icu/userguide/format_parse/datetime/#datetime-format-syntax
         'datetime_pattern' => '',
     ],
@@ -123,7 +123,7 @@ return [
         /*
          * Database type. Don't change this if in doubt.
          */
-        'type' => 'mysql',
+        'driver' => 'pdo_mysql',
 
         /*
          * Database hostname. Don't change this if in doubt.

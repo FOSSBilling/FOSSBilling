@@ -587,9 +587,12 @@ class Service implements InjectionAwareInterface
         $table = $this->di['table']('ClientPasswordReset');
         $table->rmByClient($model);
 
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare('DELETE FROM extension_meta WHERE client_id = :id');
-        $stmt->execute(['id' => $model->id]);
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->delete('extension_meta')
+            ->where('client_id = :id')
+            ->setParameter('id', $model->id);
+        $query->executeStatement();
 
         $this->di['db']->trash($model);
     }
