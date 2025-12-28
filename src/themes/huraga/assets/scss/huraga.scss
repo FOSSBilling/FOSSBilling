@@ -6,9 +6,9 @@ $body-bg: #f5f5f5;
 $accordion-button-active-bg: rgba($primary, .05);
 $accordion-button-focus-border-color: rgba($primary, .08);
 
-@import "~bootstrap/scss/bootstrap";
-@import "~tom-select/dist/css/tom-select.bootstrap5.css";
-@import "flags";
+@import "../../../../../node_modules/bootstrap/scss/bootstrap";
+@import "../../../../../node_modules/tom-select/dist/css/tom-select.bootstrap5.css";
+@import "flags"; 
 
 html,
 body {

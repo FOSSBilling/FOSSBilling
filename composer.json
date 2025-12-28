@@ -48,7 +48,6 @@
         "filp/whoops": "^2.14",
         "gabordemooij/redbean": "^5.7",
         "io-developer/php-whois": "^4.1",
-        "lcharette/webpack-encore-twig": "^1.2.0",
         "league/commonmark": "^2.3",
         "league/csv": "^9.8",
         "liborm85/composer-vendor-cleaner": "^1.7",
@@ -79,7 +78,6 @@
         "symfony/sendgrid-mailer": "^7.0",
         "symfony/serializer": "^7.2",
         "symfony/uid": "^7.3",
-        "symfony/webpack-encore-bundle": "^2.1",
         "twig/intl-extra": "^3.5",
         "twig/twig": "^3.3.9"
     },

@@ -17,11 +17,11 @@
 
     {% block opengraph %}{% endblock %}
     <link rel='stylesheet' type='text/css' href="{{ 'css/font-awesome.css' | asset_url }}">
-    {{ encore_entry_link_tags('huraga') }}
+    <link rel="stylesheet" href="{{ '/themes/huraga/build/css/huraga.css' | asset_url }}">
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
     {{ "Api/API.js" | library_url | script_tag }}
-    {{ encore_entry_script_tags('huraga') }}
+    <script src="{{ '/themes/huraga/build/js/huraga.js' | asset_url }}"></script>
 
     {{ DebugBar_renderHead() }}
 
