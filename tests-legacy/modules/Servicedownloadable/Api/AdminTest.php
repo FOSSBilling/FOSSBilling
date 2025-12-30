@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -82,7 +82,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testconfigSave(): void
+    public function testConfigSave(): void
     {
         $data = [
             'id' => 1,
@@ -116,7 +116,29 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testconfigSaveProductNotFound(): void
+    public function testConfigSaveMissingId(): void
+    {
+        $data = [
+            'update_orders' => true,
+        ];
+
+        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->with(['id' => 'Product ID is missing'], $data)
+            ->willThrowException(new \FOSSBilling\Exception('Product ID is missing'));
+
+        $di = new \Pimple\Container();
+        $di['validator'] = $validatorMock;
+
+        $this->api->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Product ID is missing');
+        $this->api->config_save($data);
+    }
+
+    public function testConfigSaveProductNotFound(): void
     {
         $data = [
             'id' => 999,

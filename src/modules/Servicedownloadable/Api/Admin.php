@@ -80,6 +80,12 @@ class Admin extends \Api_Abstract
 
     /**
      * Send file for download for a specific product.
+     *
+     * @param array{id:int|string} $data Data required to send the product file, must contain the product ID as `id`.
+     *
+     * @return bool True if the product file was successfully sent.
+     *
+     * @throws \FOSSBilling\Exception If the product cannot be found or the file cannot be sent.
      */
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function send_file($data)

@@ -159,7 +159,7 @@ class Service implements InjectionAwareInterface
         $request = $this->di['request'];
 
         if ($request->files->count() == 0) {
-            throw new \FOSSBilling\Exception('Error uploading file - no files in request.');
+            throw new \FOSSBilling\Exception('File upload failed: no files in request.');
         }
         $file = $request->files->get('file_data');
         $fileName = $file->getClientOriginalName();
@@ -322,7 +322,23 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Send product file for download.
+     * Sends the file associated with a product for download.
+     *
+     * In a non-testing environment, this method reads the product file from disk,
+     * constructs an HTTP response with appropriate headers, and sends it directly
+     * to the client. In a testing environment ({@see Environment::isTesting()}),
+     * no response is sent, but the method will still perform logging and return
+     * a boolean indicating that the operation completed.
+     *
+     * @param \Model_Product $product The product model whose associated file should be downloaded.
+     *
+     * @return bool True if the download operation completed successfully, regardless of whether
+     *              a response was actually sent (e.g. in a testing environment).
+     *
+     * @throws \FOSSBilling\Exception If no file is associated with the product configuration
+     *                                or if the associated file cannot be found or read. In both
+     *                                cases, the exception is thrown with an HTTP-style error
+     *                                code of 404.
      */
     public function sendProductFile(\Model_Product $product)
     {

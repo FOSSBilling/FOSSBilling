@@ -97,7 +97,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->action_delete($clientOrderModel);
     }
 
-    public function testsaveProductConfig(): void
+    public function testSaveProductConfig(): void
     {
         $data = [
             'update_orders' => true,
@@ -130,7 +130,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertNotNull($productModel->updated_at);
     }
 
-    public function testsaveProductConfigWithExistingConfig(): void
+    public function testSaveProductConfigWithExistingConfig(): void
     {
         $data = [
             'update_orders' => false,
@@ -163,7 +163,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertNotNull($productModel->updated_at);
     }
 
-    public function testsaveProductConfigWithNoExistingConfig(): void
+    public function testSaveProductConfigWithNoExistingConfig(): void
     {
         $data = [
             'update_orders' => true,
