@@ -200,7 +200,6 @@
         "copyfields",
         "mydomain",
         "WHOIS",
-        "Paidsupport",
         "supportticket",
         "massmailer",
         "kbcategories",
@@ -220,7 +219,6 @@
         "onsubmit",
         "rgba",
         "autofocus",
-        "Servicemembership",
         "uniqid",
         "Bluepay",
         "gettext",
@@ -412,7 +410,11 @@
         "CSRF",
         "undismissed",
         "filp",
-        "phpunit"
+        "phpunit",
+        "hcaptcha",
+        "hCaptcha",
+        "LEMP",
+        "Servicemembership"
     ],
     "ignorePaths": [
         "tests-legacy/**",
@@ -446,7 +448,6 @@
         "src/vendor",
         "src/themes/*/build",
         "src/themes/*/node_modules",
-        "cypress",
         "phpstan.neon",
         "*.config.js",
         "src/modules/Wysiwyg/src/ckeditor.js",

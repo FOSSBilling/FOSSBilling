@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Servicehosting\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 /**
  * Hosting service management.
  */
@@ -201,15 +203,13 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function server_create($data): int
+    #[RequiredParams([
+        'name' => 'Server name was not passed',
+        'ip' => 'Server IP was not passed',
+        'manager' => 'Server manager was not specified',
+    ])]
+    public function server_create($data)
     {
-        $required = [
-            'name' => 'Server name is missing',
-            'ip' => 'Server IP is missing',
-            'manager' => 'Server manager is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $service = $this->getService();
 
         return (int) $service->createServer($data['name'], $data['ip'], $data['manager'], $data);
@@ -222,13 +222,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_get($data)
     {
-        $required = [
-            'id' => 'Server id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
 
@@ -238,16 +234,11 @@ class Admin extends \Api_Abstract
     /**
      * Delete server.
      *
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function server_delete($data): bool
+    #[RequiredParams(['id' => 'Server ID was not passed'])]
+    public function server_delete($data)
     {
-        $required = [
-            'id' => 'Server id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
         // check if server is not used by any service_hostings
@@ -278,16 +269,11 @@ class Admin extends \Api_Abstract
      * @optional bool $secure - flag to define whether to use secure connection (https) to server or not (http)
      * @optional bool $active - flag to enable/disable server
      *
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function server_update($data): bool
+    #[RequiredParams(['id' => 'Server ID was not passed'])]
+    public function server_update($data)
     {
-        $required = [
-            'id' => 'Server id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
 
@@ -301,16 +287,11 @@ class Admin extends \Api_Abstract
     /**
      * Test connection to server.
      *
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function server_test_connection($data): bool
+    #[RequiredParams(['id' => 'Server ID was not passed'])]
+    public function server_test_connection($data)
     {
-        $required = [
-            'id' => 'Server id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
         return (bool) $this->getService()->testConnection($model);
@@ -347,16 +328,11 @@ class Admin extends \Api_Abstract
     /**
      * Delete hosting plan.
      *
-     *
      * @throws \FOSSBilling\InformationException
      */
-    public function hp_delete($data): bool
+    #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
+    public function hp_delete($data)
     {
-        $required = [
-            'id' => 'Hosting plan ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
         // check if hosting plan is not used by any service_hostings
@@ -378,13 +354,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
     public function hp_get($data)
     {
-        $required = [
-            'id' => 'Hosting plan ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
         return $this->getService()->toHostingHpApiArray($model, true, $this->getIdentity());
@@ -395,16 +367,11 @@ class Admin extends \Api_Abstract
      *
      * @optional string $name - hosting plan name. Used as identifier on server
      *
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function hp_update($data): bool
+    #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
+    public function hp_update($data)
     {
-        $required = [
-            'id' => 'Hosting plan ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
         $service = $this->getService();
@@ -419,13 +386,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    public function hp_create($data): int
+    #[RequiredParams(['name' => 'Hosting plan name was not passed'])]
+    public function hp_create($data)
     {
-        $required = [
-            'name' => 'Hosting plan name is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $service = $this->getService();
 
         return (int) $service->createHp($data['name'], $data);

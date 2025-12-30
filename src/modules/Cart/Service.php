@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Cart;
 
+use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -66,18 +67,28 @@ class Service implements InjectionAwareInterface
             return $cart;
         }
 
-        $cc = $this->di['mod_service']('currency');
+        $currencyService = $this->di['mod_service']('currency');
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
 
-        if ($this->di['session']->get('client_id')) {
-            $client_id = $this->di['session']->get('client_id');
-            $currency = $cc->getCurrencyByClientId($client_id);
-        } else {
-            $currency = $cc->getDefault();
+        // Try to get client's currency if client is logged in
+        $currency = null;
+        $clientId = $this->di['session']->get('client_id');
+        if ($clientId) {
+            $currency = $currencyService->getCurrencyByClientId($clientId);
+        }
+
+        // Fallback to default currency
+        if (!$currency instanceof Currency) {
+            $currency = $currencyRepository->findDefault();
+            if (!$currency instanceof Currency) {
+                throw new \FOSSBilling\Exception('Default currency not found');
+            }
         }
 
         $cart = $this->di['db']->dispense('Cart');
         $cart->session_id = $sessionID;
-        $cart->currency_id = $currency->id;
+        $cart->currency_id = $currency->getId();
         $cart->created_at = date('Y-m-d H:i:s');
         $cart->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($cart);
@@ -260,12 +271,12 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeCartCurrency(\Model_Cart $cart, \Model_Currency $currency): bool
+    public function changeCartCurrency(\Model_Cart $cart, Currency $currency): bool
     {
-        $cart->currency_id = $currency->id;
+        $cart->currency_id = $currency->getId();
         $this->di['db']->store($cart);
 
-        $this->di['logger']->info('Changed shopping cart #%s currency to %s', $cart->id, $currency->title);
+        $this->di['logger']->info('Changed shopping cart #%s currency to %s', $cart->id, $currency->getTitle());
 
         return true;
     }
@@ -336,7 +347,17 @@ class Service implements InjectionAwareInterface
     {
         $products = $this->getCartProducts($model);
 
-        $currency = $this->di['db']->getExistingModelById('Currency', $model->currency_id);
+        $currencyService = $this->di['mod_service']('currency');
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
+        $currency = $currencyRepository->find($model->currency_id);
+        if (!$currency instanceof Currency) {
+            $currency = $currencyRepository->findDefault();
+        }
+
+        if (!$currency instanceof Currency) {
+            throw new \FOSSBilling\Exception('Currency not found and no default currency is configured');
+        }
 
         $items = [];
         $total = 0;
@@ -356,15 +377,13 @@ class Service implements InjectionAwareInterface
             $promocode = null;
         }
 
-        $currencyService = $this->di['mod_service']('currency');
-
         return [
             'promocode' => $promocode,
             'discount' => $items_discount,
             'subtotal' => $total,
             'total' => $total - $items_discount,
             'items' => $items,
-            'currency' => $currencyService->toApiArray($currency),
+            'currency' => $currency->toApiArray(),
         ];
     }
 
@@ -508,16 +527,26 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Cannot checkout an empty cart');
         }
 
-        $currency = $this->di['db']->getExistingModelById('Currency', $cart->currency_id, 'Currency not found.');
+        $currencyService = $this->di['mod_service']('currency');
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
+        $currency = $currencyRepository->find($cart->currency_id);
+        if (!$currency instanceof Currency) {
+            $currency = $currencyRepository->findDefault();
+            if (!$currency instanceof Currency) {
+                throw new \FOSSBilling\Exception('Default currency not found.');
+            }
+        }
+        $currencyCode = $currency->getCode();
 
-        // set default client currency
+        // Set default client currency
         if (!$client->currency) {
-            $client->currency = $currency->code;
+            $client->currency = $currencyCode;
             $this->di['db']->store($client);
         }
 
-        if ($client->currency != $currency->code) {
-            throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currency->code, ':code' => $client->currency]);
+        if ($client->currency != $currencyCode) {
+            throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $client->currency]);
         }
 
         $clientService = $this->di['mod_service']('client');
@@ -564,13 +593,13 @@ class Service implements InjectionAwareInterface
             $order->group_master = ($i == 0);
             $order->invoice_option = 'issue-invoice';
             $order->title = $item['title'];
-            $order->currency = $currency->code;
+            $order->currency = $currencyCode;
             $order->service_type = $item['type'];
             $order->unit = $item['unit'] ?? null;
             $order->period = $item['period'] ?? null;
             $order->quantity = $item['quantity'] ?? null;
-            $order->price = $item['price'] * $currency->conversion_rate;
-            $order->discount = $item['discount_price'] * $currency->conversion_rate;
+            $order->price = $item['price'] * $currency->getConversionRate();
+            $order->discount = $item['discount_price'] * $currency->getConversionRate();
             $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
             $order->notes = $item['notes'] ?? null;
             $order->config = json_encode($item);
@@ -618,7 +647,7 @@ class Service implements InjectionAwareInterface
             }
 
             if ($item['setup_price'] > 0) {
-                $setup_price = ($item['setup_price'] * $currency->conversion_rate) - ($item['discount_setup'] * $currency->conversion_rate);
+                $setup_price = ($item['setup_price'] * $currency->getConversionRate()) - ($item['discount_setup'] * $currency->getConversionRate());
                 $invoice_items[] = [
                     'title' => __trans(':product setup', [':product' => $order->title]),
                     'price' => $setup_price,

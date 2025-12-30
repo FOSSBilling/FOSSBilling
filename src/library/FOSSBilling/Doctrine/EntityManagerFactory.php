@@ -12,11 +12,11 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Doctrine;
 
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\ORMSetup;
-use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
-use Doctrine\ORM\Proxy\ProxyFactory;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
+use Doctrine\ORM\ORMSetup;
+use Doctrine\ORM\Proxy\ProxyFactory;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Path;
@@ -30,7 +30,7 @@ class EntityManagerFactory
         $finder = new Finder();
         $finder->directories()->in(PATH_MODS . '/*/Entity')->depth('== 0');
         $moduleEntityPaths = iterator_to_array($finder);
-        
+
         $config = ORMSetup::createAttributeMetadataConfiguration(
             paths: $moduleEntityPaths,
             isDevMode: Environment::isDevelopment()
@@ -53,13 +53,13 @@ class EntityManagerFactory
         }
 
         $connectionParams = [
-            'driver'   => 'pdo_mysql',
-            'host'     => $dbc['host'],
-            'port'     => $dbc['port'],
-            'dbname'   => $dbc['name'],
-            'user'     => $dbc['user'],
+            'driver' => 'pdo_mysql',
+            'host' => $dbc['host'],
+            'port' => $dbc['port'],
+            'dbname' => $dbc['name'],
+            'user' => $dbc['user'],
             'password' => $dbc['password'],
-            'charset'  => 'utf8',
+            'charset' => 'utf8',
         ];
 
         $connection = DriverManager::getConnection($connectionParams, $config);

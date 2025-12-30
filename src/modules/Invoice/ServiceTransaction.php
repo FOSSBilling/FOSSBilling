@@ -98,6 +98,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $existing = $this->di['db']->findOne('Transaction', 'txn_id = ? AND gateway_id = ?', [$txnIdCandidate, $data['gateway_id']]);
             if ($existing instanceof \Model_Transaction && $existing->status == \Model_Transaction::STATUS_PROCESSED) {
                 $this->di['logger']->info('Duplicate transaction ignored, returning existing processed transaction #%s', $existing->id);
+
                 return $existing->id;
             }
         }

@@ -50,7 +50,6 @@ class Guest extends \Api_Abstract
     /**
      * Retrieve extension public settings.
      *
-     *
      * @throws \FOSSBilling\Exception
      */
     public function settings($data): array

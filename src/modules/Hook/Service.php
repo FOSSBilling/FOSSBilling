@@ -130,7 +130,6 @@ class Service implements InjectionAwareInterface
     /**
      * Connect event for module.
      *
-     *
      * @throws \FOSSBilling\Exception
      */
     private function connect($data): bool

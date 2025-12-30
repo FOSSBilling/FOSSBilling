@@ -11,13 +11,14 @@
 
 use Doctrine\ORM\EntityManager;
 use FOSSBilling\Config;
-use FOSSBilling\Environment;
 use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Environment;
 use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
 use Lcharette\WebpackEncoreTwig\JsonManifest;
 use Lcharette\WebpackEncoreTwig\TagRenderer;
 use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
+use League\Csv\Writer;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\HttpFoundation\Request;
@@ -111,7 +112,7 @@ $di['pdo'] = function () {
         $pdo->exec("SET time_zone = '{$offset}'");
     }
 
-    return $pdo;
+    return new DebugBar\DataCollector\PDO\TraceablePDO($pdo);
 };
 
 /*
@@ -139,9 +140,7 @@ $di['db'] = function () use ($di) {
     return $db;
 };
 
-$di['em'] = function (): EntityManager {
-    return EntityManagerFactory::create();
-};
+$di['em'] = (fn (): EntityManager => EntityManagerFactory::create());
 
 /*
  *
@@ -171,14 +170,14 @@ $di['url'] = function () use ($di) {
 };
 
 /*
- * Returns a new Box_Mod object, created with the provided module name.
+ * Returns a new Module object, created with the provided module name.
  *
  * @param string $name The name of the module to create the object with.
  *
- * @return \Box_Mod The new Box_Mod object that was just created.
+ * @return \Module The new Module object that was just created.
  */
 $di['mod'] = $di->protect(function ($name) use ($di) {
-    $mod = new Box_Mod($name);
+    $mod = new FOSSBilling\Module($name);
     $mod->setDi($di);
 
     return $mod;
@@ -765,7 +764,7 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
         $headers = array_keys(reset($rows));
     }
 
-    $csv = League\Csv\Writer::createFromFileObject(new SplTempFileObject());
+    $csv = Writer::from(new SplTempFileObject());
     $csv->addFormatter(new League\Csv\EscapeFormula());
     $csv->insertOne($headers);
     $csv->insertAll($rows);

@@ -16,6 +16,7 @@
 namespace Box\Mod\System\Api;
 
 use FOSSBilling\i18n;
+use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \Api_Abstract
 {
@@ -115,7 +116,7 @@ class Guest extends \Api_Abstract
         $mod = $this->di['mod']('system');
         $cfg = $mod->getConfig();
 
-        return $cfg['default_country'];
+        return $cfg['default_country'] ?? null;
     }
 
     /**
@@ -123,13 +124,9 @@ class Guest extends \Api_Abstract
      *
      * @return string
      */
+    #[RequiredParams(['key' => '"key" parameter was not passed'])]
     public function param($data)
     {
-        $required = [
-            'key' => 'Parameter key is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         return $this->getService()->getPublicParamValue($data['key']);
     }
 

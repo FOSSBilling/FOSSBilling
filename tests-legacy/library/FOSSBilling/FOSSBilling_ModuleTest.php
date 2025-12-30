@@ -1,42 +1,48 @@
 <?php
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
-class Box_ModTest extends PHPUnit\Framework\TestCase
+declare(strict_types=1);
+
+namespace FOSSBilling;
+
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class FOSSBilling_ModuleTest extends \BBTestCase
 {
     public function testEmptyConfig(): void
     {
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(null);
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
 
-        $mod = new Box_Mod('api');
+        $mod = new Module('api');
         $mod->setDi($di);
         $array = $mod->getConfig();
-        $this->assertEquals([], $array);
+        $this->assertSame([], $array);
     }
 
     public function testCoreMod(): void
     {
-        $mod = new Box_Mod('api');
+        $mod = new Module('api');
         $this->assertTrue($mod->isCore());
 
         $array = $mod->getCoreModules();
         $this->assertIsArray($array);
 
-        $mod = new Box_Mod('Cookieconsent');
+        $mod = new Module('Cookieconsent');
         $this->assertFalse($mod->isCore());
     }
 
     public function testManifest(): void
     {
-        $di = new Pimple\Container();
-        $di['url'] = new Box_Url();
+        $di = $this->getDi();
+        $di['url'] = new \Box_Url();
 
-        $mod = new Box_Mod('Cookieconsent');
+        $mod = new Module('Cookieconsent');
         $mod->setDi($di);
 
         $bool = $mod->hasManifest();
@@ -46,15 +52,15 @@ class Box_ModTest extends PHPUnit\Framework\TestCase
         $this->assertIsArray($array);
     }
 
-    public function testgetServiceSub(): void
+    public function testGetServiceSub(): void
     {
-        $mod = new Box_Mod('Invoice');
+        $mod = new Module('Invoice');
         $subServiceName = 'transaction';
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $mod->setDi($di);
 
         $subService = $mod->getService($subServiceName);
-        $this->assertInstanceOf(Box\Mod\Invoice\ServiceTransaction::class, $subService);
+        $this->assertInstanceOf(\Box\Mod\Invoice\ServiceTransaction::class, $subService);
     }
 }
