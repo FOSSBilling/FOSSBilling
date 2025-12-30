@@ -739,7 +739,7 @@ class Service implements InjectionAwareInterface
         $modules = [];
 
         foreach ($enabledModules as $module) {
-            if ($module == 'index' || $module == 'dashboard') {
+            if ($module == 'index') {
                 continue;
             }
 
