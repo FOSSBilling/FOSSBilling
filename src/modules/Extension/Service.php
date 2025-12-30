@@ -255,8 +255,7 @@ class Service implements InjectionAwareInterface
         $mods = [];
         $handle = opendir(PATH_MODS);
         while ($name = readdir($handle)) {
-            // Explicitly check the type to help static analysis tools like PHPStan
-            if (is_string($name) && ctype_alnum($name)) {
+            if ($name && ctype_alnum($name)) {
                 $m = $name;
                 $mod = $this->di['mod']($m);
                 if ($mod->isCore()) {

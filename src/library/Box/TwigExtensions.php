@@ -10,8 +10,10 @@
  */
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Path;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
+use Twig\TwigFunction;
 
 class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInterface
 {
@@ -77,6 +79,18 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             'map' => new TwigFilter('map', $this->filteredMap(...)),
             'reduce' => new TwigFilter('reduce', $this->filteredReduce(...)),
             'sort' => new TwigFilter('sort', $this->filteredSort(...)),
+        ];
+    }
+
+    /**
+     * Returns a list of functions to add to the existing list.
+     *
+     * @return array An array of functions
+     */
+    public function getFunctions()
+    {
+        return [
+            new TwigFunction('svg_sprite', $this->twig_svg_sprite(...), ['needs_environment' => true, 'is_safe' => ['html']]),
         ];
     }
 
@@ -370,5 +384,23 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         $link = $this->di['url']->adminLink('security/iplookup', ['ip' => $ip]);
 
         return "<a href='{$link}' target='_blank' class='iplookuplink'>{$ip}</a>";
+    }
+
+    public function twig_svg_sprite(Twig\Environment $env): string
+    {
+        $globals = $env->getGlobals();
+        $themeCode = $globals['theme']['code'] ?? null;
+
+        if ($themeCode === null) {
+            return '';
+        }
+
+        $spritePath = Path::join(PATH_THEMES, $themeCode, 'assets/build/symbol/icons-sprite.svg');
+
+        if (!file_exists($spritePath)) {
+            return '';
+        }
+
+        return file_get_contents($spritePath);
     }
 }

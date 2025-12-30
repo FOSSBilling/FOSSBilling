@@ -30,9 +30,10 @@ FOSSBilling is a free and open-source billing and client management solution des
   * [Flag Icons](https://flagicons.lipis.dev/): Country flag icon library
   * jQuery is being slowly phased out. Avoid it and use vanilla JavaScript for new pieces of code.
 * **Build Tools:**
-  * [Symfony Webpack Encore](https://symfony.com/doc/current/frontend.html): Asset management and building
+  * [esbuild](https://esbuild.github.io/): Fast JavaScript/CSS bundler and minifier
   * [Sass](https://sass-lang.com/): CSS preprocessing
   * [PostCSS](https://postcss.org/) with Autoprefixer: CSS post-processing
+  * [svg-sprite](https://github.com/svg-sprite/svg-sprite): SVG sprite generation for icons
 * **Testing:**
   * [PHPUnit](https://phpunit.de/): Unit and integration testing framework
 * **Code Quality & Analysis:**
@@ -80,7 +81,7 @@ npm install
 
 ### Building Frontend Assets
 
-FOSSBilling uses Symfony Webpack Encore for asset compilation. Build frontend assets for themes and modules:
+FOSSBilling uses esbuild for fast asset compilation. Build frontend assets for themes and modules:
 
 ```bash
 npm run build
@@ -92,7 +93,7 @@ This command builds assets for:
 * `huraga` theme  
 * `Wysiwyg` module
 
-You can also build specific components:
+Build scripts are defined in each theme/module's `package.json` and use `esbuild.mjs` for configuration:
 
 ```bash
 # Build only themes
@@ -101,12 +102,24 @@ npm run build-themes
 # Build only modules
 npm run build-modules
 
-# Build specific theme
+# Build specific theme (uses workspace scripts)
 npm run build-admin_default
 npm run build-huraga
 
 # Build specific module
 npm run build-wysiwyg
+```
+
+**Theme Structure:**
+- **admin_default**: Uses `esbuild.mjs` with SVG sprite generation, SCSS compilation, and multiple asset types
+- **huraga**: Uses simplified `esbuild.mjs` for basic JS/CSS bundling
+- **Wysiwyg**: Uses esbuild to build CKEditor from source
+
+**Development Mode:**
+```bash
+# Watch mode for active development (rebuilds on file changes)
+cd src/themes/admin_default && npm run dev
+cd src/themes/huraga && npm run dev
 ```
 
 ### Testing

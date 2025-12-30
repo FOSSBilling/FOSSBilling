@@ -414,7 +414,11 @@
         "hcaptcha",
         "hCaptcha",
         "LEMP",
-        "Servicemembership"
+        "Servicemembership",
+        "Spriter",
+        "spriter",
+        "dataurl",
+        "tomselect"
     ],
     "ignorePaths": [
         "tests-legacy/**",
