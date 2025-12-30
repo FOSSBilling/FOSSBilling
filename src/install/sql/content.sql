@@ -310,12 +310,12 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','48',0,NULL,NULL,'2024-01-04 12:00:00','2024-01-04 12:00:00'),
+	(1,'last_patch','49',0,NULL,NULL,'2024-12-30 12:00:00','2024-12-30 12:00:00'),
 	(2,'company_name','Company Name',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(3,'company_email','support@yourcompany.com',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(5,'company_logo','themes/huraga/assets/img/logo.svg',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(6,'company_logo_dark','themes/huraga/assets/img/logo_white.svg',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(5,'company_logo','themes/huraga/assets/build/img/logo.svg',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(6,'company_logo_dark','themes/huraga/assets/build/img/logo_white.svg',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(7,'company_address_1','Demo address line 1',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(8,'company_address_2','Demo address line 2',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(9,'company_address_3','Demo address line 3',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
@@ -339,7 +339,7 @@ VALUES
 	(27,'nameserver_4',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(28,'funds_min_amount','10',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(29,'funds_max_amount','200',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(30,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00'),
+	(30,'company_favicon','themes/huraga/assets/build/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00'),
     (31,'hide_version_public',1,0,NULL,NULL,'2023-07-31 12:00:00', '2023-07-31 12:00:00'),
     (32,'hide_company_public',1,0,NULL,NULL,'2023-07-31 12:00:00', '2023-07-31 12:00:00');
 

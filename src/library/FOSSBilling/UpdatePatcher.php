@@ -571,6 +571,19 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
                 }
             },
+            49 => function (): void {
+                // Patch to update logo and favicon paths from assets/ to assets/build/ for huraga theme
+                // This is needed because the esbuild migration moved assets to a build directory
+                // @see https://github.com/FOSSBilling/FOSSBilling/pull/XXXX
+                $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo.svg' WHERE param = 'company_logo' AND value = 'themes/huraga/assets/img/logo.svg';";
+                $this->executeSql($q);
+
+                $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo_white.svg' WHERE param = 'company_logo_dark' AND value = 'themes/huraga/assets/img/logo_white.svg';";
+                $this->executeSql($q);
+
+                $q = "UPDATE setting SET value = 'themes/huraga/assets/build/favicon.ico' WHERE param = 'company_favicon' AND value = 'themes/huraga/assets/favicon.ico';";
+                $this->executeSql($q);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

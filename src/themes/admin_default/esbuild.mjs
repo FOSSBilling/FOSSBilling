@@ -1,6 +1,6 @@
 import * as esbuild from 'esbuild';
 import { fileURLToPath } from 'url';
-import { dirname, resolve, relative, join } from 'path';
+import { dirname, resolve, relative, join, basename } from 'path';
 import { readFile, readdir, copyFile, writeFile } from 'fs/promises';
 import { sassPlugin, postprocessCssFile } from '@fossbilling/frontend-build-utils/plugins';
 import { ensureDir, copyAssets, removeDirContents } from '@fossbilling/frontend-build-utils/helpers';
@@ -9,19 +9,20 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
+const jqueryShim = resolve(rootDir, 'frontend-build-utils/jquery-shim.js');
 
 async function generateManifest() {
   const manifest = {};
 
-  manifest['themes/admin_default/build/fossbilling.js'] =
-    '/themes/admin_default/build/js/fossbilling.js';
-  manifest['themes/admin_default/build/vendor.css'] =
-    '/themes/admin_default/build/css/vendor.css';
-  manifest['themes/admin_default/build/fossbilling.css'] =
-    '/themes/admin_default/build/css/fossbilling.css';
+  manifest['build/fossbilling.js'] =
+    '/themes/admin_default/assets/build/js/fossbilling.js';
+  manifest['build/vendor.css'] =
+    '/themes/admin_default/assets/build/css/vendor.css';
+  manifest['build/fossbilling.css'] =
+    '/themes/admin_default/assets/build/css/fossbilling.css';
 
   const imagesSrc = resolve(__dirname, 'assets/images');
-  const imagesDest = resolve(__dirname, 'build/images');
+  const imagesDest = resolve(__dirname, 'assets/build/images');
 
   try {
     await ensureDir(imagesDest);
@@ -34,8 +35,8 @@ async function generateManifest() {
           join(imagesDest, file)
         );
 
-        const outputPath = `themes/admin_default/build/images/${file}`;
-        const publicPath = `/themes/admin_default/build/images/${file}`;
+        const outputPath = `build/images/${file}`;
+        const publicPath = `/themes/admin_default/assets/build/images/${file}`;
         manifest[outputPath] = publicPath;
       }
     }
@@ -43,10 +44,10 @@ async function generateManifest() {
     if (error.code !== 'ENOENT') throw error;
   }
 
-  manifest['themes/admin_default/build/symbol/icons-sprite.svg'] =
-    '/themes/admin_default/build/symbol/icons-sprite.svg';
+  manifest['build/symbol/icons-sprite.svg'] =
+    '/themes/admin_default/assets/build/symbol/icons-sprite.svg';
 
-  const manifestPath = resolve(__dirname, 'build/manifest.json');
+  const manifestPath = resolve(__dirname, 'assets/build/manifest.json');
   await writeFile(manifestPath, JSON.stringify(manifest, null, 2));
 }
 
@@ -54,7 +55,7 @@ async function generateSvgSprite() {
   const { default: SVGSpriter } = await import('svg-sprite');
 
   const iconsDir = resolve(__dirname, 'assets/icons');
-  const outputDir = resolve(__dirname, 'build/symbol');
+  const outputDir = resolve(__dirname, 'assets/build/symbol');
 
   await ensureDir(outputDir);
 
@@ -68,7 +69,7 @@ async function generateSvgSprite() {
     },
     shape: {
       id: {
-        generator: (name) => relative(iconsDir, name).replace(/\.svg$/, '')
+        generator: (name) => basename(name, '.svg')
       }
     }
   });
@@ -103,17 +104,17 @@ async function generateSvgSprite() {
 
 async function copyStaticAssets() {
   const fontsSrc = resolve(__dirname, 'assets/fonts');
-  const fontsDest = resolve(__dirname, 'build/fonts');
+  const fontsDest = resolve(__dirname, 'assets/build/fonts');
   await copyAssets(fontsSrc, fontsDest);
 
   const imagesSrc = resolve(__dirname, 'assets/images');
-  const imagesDest = resolve(__dirname, 'build/images');
+  const imagesDest = resolve(__dirname, 'assets/build/images');
   await copyAssets(imagesSrc, imagesDest);
 }
 
 async function cleanBuild() {
   try {
-    const buildDir = resolve(__dirname, 'build');
+    const buildDir = resolve(__dirname, 'assets/build');
     await removeDirContents(buildDir);
   } catch (error) {
     // Ignore errors
@@ -128,10 +129,10 @@ async function build() {
   try {
     await cleanBuild();
 
-    await ensureDir(resolve(__dirname, 'build/js'));
-    await ensureDir(resolve(__dirname, 'build/css'));
-    await ensureDir(resolve(__dirname, 'build/symbol'));
-    await ensureDir(resolve(__dirname, 'build/images'));
+    await ensureDir(resolve(__dirname, 'assets/build/js'));
+    await ensureDir(resolve(__dirname, 'assets/build/css'));
+    await ensureDir(resolve(__dirname, 'assets/build/symbol'));
+    await ensureDir(resolve(__dirname, 'assets/build/images'));
 
     await Promise.all([
       generateSvgSprite(),
@@ -142,7 +143,7 @@ async function build() {
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/scss/fossbilling.scss')],
       bundle: true,
-      outfile: resolve(__dirname, 'build/css/fossbilling.css'),
+      outfile: resolve(__dirname, 'assets/build/css/fossbilling.css'),
       plugins: [sassPlugin(nodeModulesDir, isProduction)],
       loader: {
         '.svg': 'dataurl',
@@ -156,13 +157,13 @@ async function build() {
       logLevel: 'info'
     });
 
-    await postprocessCssFile(resolve(__dirname, 'build/css/fossbilling.css'), isProduction);
+    await postprocessCssFile(resolve(__dirname, 'assets/build/css/fossbilling.css'), isProduction);
 
     // Build vendor CSS
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/css/vendor.css')],
       bundle: true,
-      outfile: resolve(__dirname, 'build/css/vendor.css'),
+      outfile: resolve(__dirname, 'assets/build/css/vendor.css'),
       loader: {
         '.svg': 'dataurl',
         '.woff': 'file',
@@ -179,9 +180,10 @@ async function build() {
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/fossbilling.js')],
       bundle: true,
-      outfile: resolve(__dirname, 'build/js/fossbilling.js'),
+      outfile: resolve(__dirname, 'assets/build/js/fossbilling.js'),
       platform: 'browser',
       target: 'es2018',
+      inject: [jqueryShim],
       loader: {
         '.svg': 'dataurl',
         '.woff': 'file',
@@ -190,12 +192,7 @@ async function build() {
         '.eot': 'file'
       },
       define: {
-        'globalThis.jQuery': 'jQuery',
-        'globalThis.$': 'jQuery',
         'process.env.NODE_ENV': isProduction ? '"production"' : '"development"'
-      },
-      banner: {
-        js: `import jQuery from 'jquery'; globalThis.$ = globalThis.jQuery = jQuery;`
       },
       minify: isProduction,
       sourcemap: !isProduction,
@@ -224,7 +221,7 @@ async function watch() {
   const scssContext = await esbuild.context({
     entryPoints: [resolve(__dirname, 'assets/scss/fossbilling.scss')],
     bundle: true,
-    outfile: resolve(__dirname, 'build/css/fossbilling.css'),
+    outfile: resolve(__dirname, 'assets/build/css/fossbilling.css'),
     plugins: [sassPlugin(nodeModulesDir, isProduction)],
     loader: {
       '.svg': 'dataurl',
@@ -241,7 +238,7 @@ async function watch() {
   const vendorCssContext = await esbuild.context({
     entryPoints: [resolve(__dirname, 'assets/css/vendor.css')],
     bundle: true,
-    outfile: resolve(__dirname, 'build/css/vendor.css'),
+    outfile: resolve(__dirname, 'assets/build/css/vendor.css'),
     loader: {
       '.svg': 'dataurl',
       '.woff': 'file',
@@ -257,9 +254,10 @@ async function watch() {
   const jsContext = await esbuild.context({
     entryPoints: [resolve(__dirname, 'assets/fossbilling.js')],
     bundle: true,
-    outfile: resolve(__dirname, 'build/js/fossbilling.js'),
+    outfile: resolve(__dirname, 'assets/build/js/fossbilling.js'),
     platform: 'browser',
     target: 'es2018',
+    inject: [jqueryShim],
     loader: {
       '.svg': 'dataurl',
       '.woff': 'file',
@@ -268,12 +266,7 @@ async function watch() {
       '.eot': 'file'
     },
     define: {
-      'globalThis.jQuery': 'jQuery',
-      'globalThis.$': 'jQuery',
       'process.env.NODE_ENV': isProduction ? '"production"' : '"development"'
-    },
-    banner: {
-      js: `import jQuery from 'jquery'; globalThis.$ = globalThis.jQuery = jQuery;`
     },
     minify: isProduction,
     sourcemap: !isProduction,
@@ -286,10 +279,10 @@ async function watch() {
 
   // Initial build to set up static assets
   await cleanBuild();
-  await ensureDir(resolve(__dirname, 'build/js'));
-  await ensureDir(resolve(__dirname, 'build/css'));
-  await ensureDir(resolve(__dirname, 'build/symbol'));
-  await ensureDir(resolve(__dirname, 'build/images'));
+  await ensureDir(resolve(__dirname, 'assets/build/js'));
+  await ensureDir(resolve(__dirname, 'assets/build/css'));
+  await ensureDir(resolve(__dirname, 'assets/build/symbol'));
+  await ensureDir(resolve(__dirname, 'assets/build/images'));
 
   await Promise.all([
     generateSvgSprite(),
@@ -305,7 +298,7 @@ async function watch() {
 
   // Post-process CSS after SCSS builds
   scssContext.watch().then(() => {
-    postprocessCssFile(resolve(__dirname, 'build/css/fossbilling.css'), isProduction);
+    postprocessCssFile(resolve(__dirname, 'assets/build/css/fossbilling.css'), isProduction);
   });
 
   console.log('✓ Watching for changes ...\n');

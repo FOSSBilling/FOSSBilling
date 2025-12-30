@@ -1,7 +1,7 @@
 import * as esbuild from 'esbuild';
 import { fileURLToPath } from 'url';
 import { dirname, resolve, join } from 'path';
-import { writeFile } from 'fs/promises';
+import { writeFile, copyFile } from 'fs/promises';
 import { sassPlugin, postprocessCssFile } from '@fossbilling/frontend-build-utils/plugins';
 import { ensureDir, copyAssets } from '@fossbilling/frontend-build-utils/helpers';
 
@@ -9,6 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
+const jqueryShim = resolve(rootDir, 'frontend-build-utils/jquery-shim.js');
 
 async function build() {
   console.log(`Building huraga theme (${isProduction ? 'production' : 'development'}) with esbuild ...`);
@@ -16,14 +17,14 @@ async function build() {
   const startTime = Date.now();
 
   try {
-    const buildDir = resolve(__dirname, 'build');
+    const buildDir = resolve(__dirname, 'assets/build');
     const jsDir = join(buildDir, 'js');
     const cssDir = join(buildDir, 'css');
-    const imagesDir = join(buildDir, 'images');
+    const imgDir = join(buildDir, 'img');
 
     await ensureDir(jsDir);
     await ensureDir(cssDir);
-    await ensureDir(imagesDir);
+    await ensureDir(imgDir);
 
     // Build JavaScript
     await esbuild.build({
@@ -32,7 +33,7 @@ async function build() {
       outfile: join(jsDir, 'huraga.js'),
       platform: 'browser',
       target: 'es2018',
-      format: 'esm',
+      inject: [jqueryShim],
       loader: {
         '.svg': 'dataurl',
         '.woff': 'file',
@@ -110,16 +111,20 @@ async function build() {
     });
 
     // Copy image assets
-    const imagesSrc = resolve(__dirname, 'assets/images');
-    const imagesDest = imagesDir;
-    await copyAssets(imagesSrc, imagesDest);
+    await copyAssets(resolve(__dirname, 'assets/img'), imgDir);
+
+    // Copy favicon
+    await copyFile(
+      resolve(__dirname, 'assets/favicon.ico'),
+      join(buildDir, 'favicon.ico')
+    );
 
     // Generate manifest
     const manifest = {
-      'themes/huraga/build/huraga.js': '/themes/huraga/build/js/huraga.js',
-      'themes/huraga/build/vendor.css': '/themes/huraga/build/css/vendor.css',
-      'themes/huraga/build/huraga.css': '/themes/huraga/build/css/huraga.css',
-      'themes/huraga/build/markdown.css': '/themes/huraga/build/css/markdown.css'
+      'build/huraga.js': '/themes/huraga/assets/build/js/huraga.js',
+      'build/vendor.css': '/themes/huraga/assets/build/css/vendor.css',
+      'build/huraga.css': '/themes/huraga/assets/build/css/huraga.css',
+      'build/markdown.css': '/themes/huraga/assets/build/css/markdown.css'
     };
 
     await writeFile(
@@ -139,14 +144,14 @@ async function build() {
 async function watch() {
   console.log('Starting watch mode ...\n');
 
-  const buildDir = resolve(__dirname, 'build');
+  const buildDir = resolve(__dirname, 'assets/build');
   const jsDir = join(buildDir, 'js');
   const cssDir = join(buildDir, 'css');
-  const imagesDir = join(buildDir, 'images');
+  const imgDir = join(buildDir, 'img');
 
   await ensureDir(jsDir);
   await ensureDir(cssDir);
-  await ensureDir(imagesDir);
+  await ensureDir(imgDir);
 
   // Copy static assets initially
   const cssSrc = resolve(__dirname, 'assets/css');
@@ -155,9 +160,13 @@ async function watch() {
     exclude: new Set(['vendor.css', 'markdown.css'])
   });
 
-  const imagesSrc = resolve(__dirname, 'assets/images');
-  const imagesDest = imagesDir;
-  await copyAssets(imagesSrc, imagesDest);
+  await copyAssets(resolve(__dirname, 'assets/img'), imgDir);
+
+  // Copy favicon
+  await copyFile(
+    resolve(__dirname, 'assets/favicon.ico'),
+    join(buildDir, 'favicon.ico')
+  );
 
   // Create esbuild contexts for incremental rebuilds
   const jsContext = await esbuild.context({
@@ -166,7 +175,7 @@ async function watch() {
     outfile: join(jsDir, 'huraga.js'),
     platform: 'browser',
     target: 'es2018',
-    format: 'esm',
+    inject: [jqueryShim],
     loader: {
       '.svg': 'dataurl',
       '.woff': 'file',
