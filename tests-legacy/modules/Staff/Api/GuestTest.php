@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Staff\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
     protected ?\Box\Mod\Staff\Api\Guest $api;
@@ -16,7 +18,7 @@ final class GuestTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -26,7 +28,7 @@ final class GuestTest extends \BBTestCase
     {
         $adminId = 1;
 
-        $apiMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Api\Guest::class)
+        $apiMock = $this->getMockBuilder(\Box\Mod\Staff\Api\Guest::class)
             ->onlyMethods(['login'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -38,15 +40,14 @@ final class GuestTest extends \BBTestCase
             ->willReturn($adminId);
 
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -72,7 +73,7 @@ final class GuestTest extends \BBTestCase
             ->method('findOne')
             ->willReturn([[]]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -95,11 +96,12 @@ final class GuestTest extends \BBTestCase
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = new \FOSSBilling\Validate();
 
         $guestApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($guestApi, 'login', []);
         $guestApi->login([]);
     }
 
@@ -110,44 +112,41 @@ final class GuestTest extends \BBTestCase
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = new \FOSSBilling\Validate();
 
         $guestApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
+        $this->validateRequiredParams($guestApi, 'login', ['email' => 'email@domain.com']);
         $guestApi->login(['email' => 'email@domain.com']);
     }
 
     public function testSuccessfulLogin(): void
     {
-        $modMock = $this->getMockBuilder('Box_Mod')
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
             ->disableOriginalConstructor()
             ->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('login')
             ->willReturn([]);
 
-        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
+        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
         $di['session'] = $sessionMock;
+        $di['validator'] = new \FOSSBilling\Validate();
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);
@@ -159,7 +158,7 @@ final class GuestTest extends \BBTestCase
 
     public function testLoginCheckIpException(): void
     {
-        $modMock = $this->getMockBuilder('\Box_Mod')
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
             ->disableOriginalConstructor()
             ->getMock();
         $configArr = [
@@ -170,16 +169,12 @@ final class GuestTest extends \BBTestCase
             ->method('getConfig')
             ->willReturn($configArr);
 
-        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
+        $di['validator'] = new \FOSSBilling\Validate();
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);

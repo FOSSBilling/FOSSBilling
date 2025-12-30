@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Servicecustom;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
     protected ?\Box\Mod\Servicecustom\Service $service;
@@ -16,7 +18,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -41,7 +43,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getForm')
             ->willReturn($form);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
         $this->service->setDi($di);
@@ -76,7 +78,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getForm')
             ->willReturn($form);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
         $this->service->setDi($di);
@@ -109,7 +111,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getForm')
             ->willReturn($form);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
         $this->service->setDi($di);
@@ -152,7 +154,7 @@ final class ServiceTest extends \BBTestCase
             ->method('dispense')
             ->willReturn($serviceCustomModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -171,12 +173,12 @@ final class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
@@ -191,12 +193,12 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
         $order->config = 'config';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
@@ -214,7 +216,7 @@ final class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -224,7 +226,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
@@ -241,12 +243,12 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
         $order->config = 'config';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
@@ -265,7 +267,7 @@ final class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -275,7 +277,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
@@ -295,7 +297,7 @@ final class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -305,7 +307,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
@@ -325,7 +327,7 @@ final class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -335,7 +337,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
@@ -355,7 +357,7 @@ final class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -365,7 +367,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
@@ -385,7 +387,7 @@ final class ServiceTest extends \BBTestCase
         $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
@@ -395,7 +397,7 @@ final class ServiceTest extends \BBTestCase
             ->method('trash')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
@@ -411,7 +413,7 @@ final class ServiceTest extends \BBTestCase
             0 => 'N',
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
 
         $model = new \Model_ServiceCustom();
@@ -425,7 +427,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testToApiArray(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $this->service->setDi($di);
 
         $model = new \Model_ServiceCustom();
@@ -459,12 +461,12 @@ final class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ClientOrder());
 
-        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $orderService = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceCustom());
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $this->service->setDi($di);
@@ -481,12 +483,12 @@ final class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ClientOrder());
 
-        $orderService = $this->getMockBuilder('\\' . \Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
+        $orderService = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $this->service->setDi($di);
@@ -510,7 +512,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
@@ -536,7 +538,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);

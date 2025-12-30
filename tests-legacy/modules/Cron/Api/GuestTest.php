@@ -3,13 +3,15 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Cron\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $api = new Guest();
         $api->setDi($di);
         $getDi = $api->getDi();
@@ -18,7 +20,7 @@ final class GuestTest extends \BBTestCase
 
     public function testSettings(): void
     {
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())->method('getConfig')->willReturn([]);
 
         $api = new Guest();

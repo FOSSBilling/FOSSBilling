@@ -221,7 +221,7 @@ CREATE TABLE `client` (
   `type` varchar(100) DEFAULT NULL,
   `first_name` varchar(100) DEFAULT NULL,
   `last_name` varchar(100) DEFAULT NULL,
-  `gender` varchar(20) DEFAULT NULL,
+  `gender` ENUM('male', 'female', 'nonbinary', 'other') DEFAULT NULL,
   `birthday` date DEFAULT NULL,
   `phone_cc` varchar(10) DEFAULT NULL,
   `phone` varchar(100) DEFAULT NULL,
@@ -234,7 +234,7 @@ CREATE TABLE `client` (
   `state` varchar(100) DEFAULT NULL,
   `postcode` varchar(100) DEFAULT NULL,
   `country` varchar(100) DEFAULT NULL,
-  `document_type` varchar(100) DEFAULT NULL,
+  `document_type` ENUM('passport') DEFAULT NULL,
   `document_nr` varchar(20) DEFAULT NULL,
   `notes` text,
   `currency` varchar(10) DEFAULT NULL,
@@ -1110,23 +1110,6 @@ CREATE TABLE `service_license` (
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `license_key` (`license_key`),
-  KEY `client_id_idx` (`client_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `service_membership`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `service_membership` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `client_id` bigint(20) DEFAULT NULL,
-  `config` text,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;

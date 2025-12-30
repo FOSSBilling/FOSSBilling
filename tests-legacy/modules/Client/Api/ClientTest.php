@@ -3,13 +3,15 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Client\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ClientTest extends \BBTestCase
 {
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $client = new Client();
         $client->setDi($di);
         $getDi = $client->getDi();
@@ -34,7 +36,7 @@ final class ClientTest extends \BBTestCase
             ],
         ];
 
-        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -49,7 +51,7 @@ final class ClientTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
@@ -75,7 +77,7 @@ final class ClientTest extends \BBTestCase
             ->method('getClientBalance')
             ->willReturn($balanceAmount);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn ($name, $sub): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
         $api = new Client();

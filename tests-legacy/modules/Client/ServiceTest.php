@@ -3,13 +3,15 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Client;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
     public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
         $getDi = $service->getDi();
@@ -24,7 +26,7 @@ final class ServiceTest extends \BBTestCase
 
         $database->expects($this->atLeastOnce())->method('exec');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -40,7 +42,7 @@ final class ServiceTest extends \BBTestCase
         $database->expects($this->atLeastOnce())
             ->method('getRow')->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -67,7 +69,7 @@ final class ServiceTest extends \BBTestCase
         $toolsMock->expects($this->atLeastOnce())->method('url')
             ->willReturn('fossbilling.org/index.php/client/confirm-email/');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
         $di['tools'] = $toolsMock;
 
@@ -97,7 +99,7 @@ final class ServiceTest extends \BBTestCase
             ->method('sendTemplate')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
         $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => false]);
 
@@ -129,11 +131,11 @@ final class ServiceTest extends \BBTestCase
             ->method('sendTemplate')
             ->willReturn(true);
 
-        $clientServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->onlyMethods(['generateEmailConfirmationLink'])->getMock();
+        $clientServiceMock = $this->getMockBuilder(\Box\Mod\Client\Service::class)->onlyMethods(['generateEmailConfirmationLink'])->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
             method('generateEmailConfirmationLink')->willReturn('Link_string');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($service, $clientServiceMock) {
             if ($serviceName == 'email') {
                 return $service;
@@ -168,7 +170,7 @@ final class ServiceTest extends \BBTestCase
         $service->expects($this->atLeastOnce())->
             method('sendTemplate')->will($this->throwException(new \Exception('exception created in unit test')));
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
         $di['mod_config'] = $di->protect(function ($name): void {
             ['require_email_confirmation' => false];
@@ -251,7 +253,7 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('searchQueryData')]
+    #[DataProvider('searchQueryData')]
     public function testGetSearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $clientService = new \Box\Mod\Client\Service();
@@ -283,7 +285,7 @@ final class ServiceTest extends \BBTestCase
         $database->expects($this->atLeastOnce())->method('getAssoc')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -319,7 +321,7 @@ final class ServiceTest extends \BBTestCase
         $database->expects($this->atLeastOnce())->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -354,7 +356,7 @@ final class ServiceTest extends \BBTestCase
         $database->expects($this->atLeastOnce())->method('findOne')
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -413,7 +415,7 @@ final class ServiceTest extends \BBTestCase
                  ->method('findOne')
             ->willReturn($invoiceModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -440,7 +442,7 @@ final class ServiceTest extends \BBTestCase
         $database->expects($this->exactly(2))->method('findOne')
             ->willReturnOnConsecutiveCalls(null, null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -477,10 +479,10 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('searchBalanceQueryData')]
+    #[DataProvider('searchBalanceQueryData')]
     public function testGetBalanceSearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $clientBalanceService = new \Box\Mod\Client\ServiceBalance();
         $clientBalanceService->setDi($di);
@@ -509,7 +511,7 @@ final class ServiceTest extends \BBTestCase
         $database->expects($this->atLeastOnce())->method('dispense')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -573,7 +575,7 @@ final class ServiceTest extends \BBTestCase
         $database->expects($this->atLeastOnce())->method('find')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -603,11 +605,11 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('searchHistoryQueryData')]
+    #[DataProvider('searchHistoryQueryData')]
     public function testGetHistorySearchQuery(array $data, string $expectedStr, array $expectedParams): void
     {
         $clientService = new \Box\Mod\Client\Service();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $clientService->setDi($di);
         [$sql, $params] = $clientService->getHistorySearchQuery($data);
@@ -625,7 +627,7 @@ final class ServiceTest extends \BBTestCase
         $database->expects($this->atLeastOnce())->method('getAssoc')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -648,7 +650,7 @@ final class ServiceTest extends \BBTestCase
         $database->expects($this->atLeastOnce())->method('getAssoc')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -666,7 +668,7 @@ final class ServiceTest extends \BBTestCase
         $database->expects($this->atLeastOnce())->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -684,7 +686,7 @@ final class ServiceTest extends \BBTestCase
         $database->expects($this->atLeastOnce())->method('findOne')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -702,7 +704,7 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('getProvider')]
+    #[DataProvider('getProvider')]
     public function testGet(string $fieldName, int|string $fieldValue): void
     {
         $model = new \Model_Client();
@@ -712,7 +714,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $service = new \Box\Mod\Client\Service();
@@ -729,7 +731,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $service = new \Box\Mod\Client\Service();
@@ -750,7 +752,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')->willReturn(1.0);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $service = new \Box\Mod\Client\Service();
@@ -776,10 +778,10 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('load')->willReturn($clientGroup);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Client\Service::class)
             ->onlyMethods(['getClientBalance'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -793,9 +795,6 @@ final class ServiceTest extends \BBTestCase
 
     public static function isClientTaxableProvider(): array
     {
-        $self = new ServiceTest('ServiceTest');
-        $self->assertTrue(true);
-
         return [
             [
                 false,
@@ -815,7 +814,7 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('isClientTaxableProvider')]
+    #[DataProvider('isClientTaxableProvider')]
     public function testIsClientTaxable(bool $getParamValueReturn, bool $tax_exempt, bool $expected): void
     {
         $service = $this->createMock(\Box\Mod\System\Service::class);
@@ -823,7 +822,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getParamValue')
             ->willReturn($getParamValueReturn);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
 
         $service = new \Box\Mod\Client\Service();
@@ -865,12 +864,12 @@ final class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($data['password']);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
@@ -892,7 +891,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->once())
             ->method('trash');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -913,7 +912,7 @@ final class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($clientModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $service = new \Box\Mod\Client\Service();
@@ -943,7 +942,7 @@ final class ServiceTest extends \BBTestCase
             ->with(null, $password)
             ->willReturn(null);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['auth'] = $authMock;
 
@@ -974,7 +973,7 @@ final class ServiceTest extends \BBTestCase
             ->with($clientModel, $password)
             ->willReturn($clientModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['auth'] = $authMock;
         $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => false]);
@@ -1006,7 +1005,7 @@ final class ServiceTest extends \BBTestCase
             ->with($clientModel, $password)
             ->willReturn($clientModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['auth'] = $authMock;
         $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => true]);
@@ -1027,7 +1026,7 @@ final class ServiceTest extends \BBTestCase
             'disable_change_email' => false,
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($modName): array => $config);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -1048,7 +1047,7 @@ final class ServiceTest extends \BBTestCase
             'disable_change_email' => false,
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($modName): array => $config);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -1065,7 +1064,7 @@ final class ServiceTest extends \BBTestCase
 
         $config = [];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($modName): array => $config);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -1084,7 +1083,7 @@ final class ServiceTest extends \BBTestCase
             'disable_change_email' => true,
         ];
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($modName): array => $config);
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -1100,7 +1099,7 @@ final class ServiceTest extends \BBTestCase
         $data = [];
 
         $config['required'] = $required;
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($modName): array => $config);
 
         $service = new \Box\Mod\Client\Service();
@@ -1120,7 +1119,7 @@ final class ServiceTest extends \BBTestCase
             ],
         ];
         $config['custom_fields'] = $custom_field;
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($modName): array => $config);
 
         $data = [];
@@ -1141,7 +1140,7 @@ final class ServiceTest extends \BBTestCase
             ],
         ];
         $config['custom_fields'] = $custom_field;
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($modName): array => $config);
 
         $data = [];

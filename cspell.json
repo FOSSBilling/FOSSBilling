@@ -200,7 +200,6 @@
         "copyfields",
         "mydomain",
         "WHOIS",
-        "Paidsupport",
         "supportticket",
         "massmailer",
         "kbcategories",
@@ -220,7 +219,6 @@
         "onsubmit",
         "rgba",
         "autofocus",
-        "Servicemembership",
         "uniqid",
         "Bluepay",
         "gettext",
@@ -415,7 +413,8 @@
         "phpunit",
         "hcaptcha",
         "hCaptcha",
-        "LEMP"
+        "LEMP",
+        "Servicemembership"
     ],
     "ignorePaths": [
         "tests-legacy/**",

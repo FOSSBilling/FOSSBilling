@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Cart\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ClientTest extends \BBTestCase
 {
     protected ?\Box\Mod\Cart\Api\Client $clientApi;
@@ -19,7 +21,7 @@ final class ClientTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
              ->onlyMethods(['getSessionCart', 'checkoutCart'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
@@ -45,7 +47,7 @@ final class ClientTest extends \BBTestCase
         $data = [
             'id' => 1,
         ];
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $this->clientApi->setDi($di);
         $result = $this->clientApi->checkout($data);

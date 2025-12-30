@@ -3,16 +3,18 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Profile;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
 
 use Box\Mod\Profile\Service;
 
-#[PHPUnit\Framework\Attributes\Group('Core')]
+#[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
     public function testDi(): void
     {
         $service = new Service();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $service->setDi($di);
         $getDi = $service->getDi();
         $this->assertEquals($di, $getDi);
@@ -42,7 +44,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
@@ -76,7 +78,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
@@ -112,7 +114,7 @@ final class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($password);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
@@ -142,7 +144,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([
@@ -156,7 +158,7 @@ final class ServiceTest extends \BBTestCase
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
@@ -171,7 +173,7 @@ final class ServiceTest extends \BBTestCase
             'email' => 'email@example.com',
             'first_name' => 'string',
             'last_name' => 'string',
-            'gender' => 'string',
+            'gender' => 'other',
             'birthday' => '1981-01-01',
             'company' => 'string',
             'company_vat' => 'string',
@@ -185,7 +187,7 @@ final class ServiceTest extends \BBTestCase
             'postcode' => 'string',
             'city' => 'string',
             'state' => 'string',
-            'document_type' => 'string',
+            'document_type' => 'passport',
             'document_nr' => random_int(100000, 900000),
             'lang' => 'string',
             'notes' => 'string',
@@ -221,7 +223,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([
@@ -232,7 +234,7 @@ final class ServiceTest extends \BBTestCase
         $clientServiceMock->expects($this->never())->
         method('emailAlreadyRegistered')->willReturn(false);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
@@ -267,7 +269,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([
@@ -281,7 +283,7 @@ final class ServiceTest extends \BBTestCase
         $clientServiceMock->expects($this->atLeastOnce())->
         method('emailAlreadyRegistered')->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
@@ -311,7 +313,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
         $di['tools'] = new \FOSSBilling\Tools();
@@ -346,7 +348,7 @@ final class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($password);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
@@ -363,14 +365,14 @@ final class ServiceTest extends \BBTestCase
 
     public function testLogoutClient(): void
     {
-        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)
+        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
 
         $sessionMock->expects($this->atLeastOnce())
             ->method('destroy');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['session'] = $sessionMock;
 
