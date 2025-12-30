@@ -82,7 +82,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testconfigSave(): void
+    public function testConfigSave(): void
     {
         $data = [
             'id' => 1,
@@ -122,7 +122,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testconfigSaveMissingId(): void
+    public function testConfigSaveMissingId(): void
     {
         $data = [
             'update_orders' => true,
@@ -144,7 +144,7 @@ final class AdminTest extends \BBTestCase
         $this->api->config_save($data);
     }
 
-    public function testconfigSaveProductNotFound(): void
+    public function testConfigSaveProductNotFound(): void
     {
         $data = [
             'id' => 999,
