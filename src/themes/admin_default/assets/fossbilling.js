@@ -1,4 +1,3 @@
-import './js/sprite';
 import $ from 'jquery';
 import './js/ui/modals';
 import { coloris, init } from '@melloware/coloris';

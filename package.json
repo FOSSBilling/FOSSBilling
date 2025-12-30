@@ -31,6 +31,7 @@
     "sass-embedded": "1.97.1"
   },
   "workspaces": [
+    "frontend-build-utils",
     "src/themes/huraga",
     "src/themes/admin_default",
     "src/modules/Wysiwyg"
