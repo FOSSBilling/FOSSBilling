@@ -22,7 +22,7 @@
     <h3>{{ 'Upload new file for this order'|trans }}</h3>
     <p class="text-muted">{{ 'Use this function to update existing order file. Client will be able to download new file from client area'|trans }}</p>
 
-    <form method="post" action="" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
+    <form method="post" action="admin/servicedownloadable/update" enctype="multipart/form-data" target="uploadframe" id="upload-form">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Upload new file'|trans }}:</label>
@@ -31,7 +31,7 @@
             </div>
         </div>
 
-        <input type="submit" value="{{ 'Upload'|trans }}" class="btn btn-primary submitForm" id="bb-upload-button">
+        <input type="submit" value="{{ 'Upload'|trans }}" class="btn btn-primary submitForm" id="upload-button">
 
         <input type="hidden" name="order_id" value="{{ order.id }}">
     </form>
@@ -41,12 +41,16 @@
 $(function() {
     $('body').append('<iframe id="uploadframe" name="uploadframe" style="display:none" />');
 
-    $('#bb-upload-form').on('submit', function(){
-        $(this).attr('action', bb.restUrl('admin/servicedownloadable/update'));
-
-        iframe = $('#uploadframe').load(function() {
-            response = iframe.contents().find('body');
-            data = $.parseJSON(response.text());
+    $('#upload-form').on('submit', function(){
+        $('#uploadframe').on('load', function() {
+            var responseText = $(this).contents().find('body').text();
+            var data;
+            try {
+                data = $.parseJSON(responseText);
+            } catch (e) {
+                FOSSBilling.message("Server returned non-JSON response", "error");
+                return;
+            }
 
             if (data.error) {
                 bb.error(data.error.message, data.error.code);
@@ -55,8 +59,6 @@ $(function() {
             if (data.result) {
                 FOSSBilling.message("{{ 'File was uploaded'|trans }}");
             }
-
-            setTimeout(function (){	response.html(''); }, 1);
         });
     });
 });
