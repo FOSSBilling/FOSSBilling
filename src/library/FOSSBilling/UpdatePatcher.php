@@ -465,80 +465,59 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->executeSql($q);
             },
             48 => function (): void {
-                // Patch to fix servicedownloadable products where filename was lost from config
-                // due to bug in saveProductConfig that reset config to empty array.
-                // @see https://github.com/FOSSBilling/FOSSBilling/pull/2822
                 $filesystem = new Filesystem();
 
-                $stats = [
-                    'products_processed' => 0,
-                    'products_already_valid' => 0,
-                    'products_recovered' => 0,
-                    'products_failed' => 0,
-                    'services_updated' => 0,
-                    'orders_updated' => 0,
-                    'orphans_cleaned' => 0,
-                ];
+                $oldUploadsPath = Path::join(PATH_ROOT, 'uploads');
+                $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
 
-                // Find all downloadable products
-                $q = "SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'";
-                $products = $this->di['pdo']->query($q)->fetchAll(\PDO::FETCH_ASSOC);
+                if ($filesystem->exists($oldUploadsPath) && $filesystem->exists($newUploadsPath)) {
+                    foreach (glob($oldUploadsPath . '/*') as $oldFile) {
+                        if (is_file($oldFile)) {
+                            $filename = basename($oldFile);
+                            $newFilePath = Path::join($newUploadsPath, $filename);
+                            if (!$filesystem->exists($newFilePath)) {
+                                $filesystem->rename($oldFile, $newFilePath);
+                            }
+                        }
+                    }
+                }
+
+                $products = $this->di['pdo']->query("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'")->fetchAll(\PDO::FETCH_ASSOC);
 
                 foreach ($products as $product) {
-                    ++$stats['products_processed'];
+                    $productConfig = json_decode($product['config'], true) ?: [];
 
-                    $productConfig = json_decode($product['config'], true);
-                    if (!is_array($productConfig)) {
-                        $productConfig = [];
-                    }
-
-                    // Skip if product already has a filename configured
                     if (isset($productConfig['filename']) && !empty($productConfig['filename'])) {
-                        ++$stats['products_already_valid'];
-
                         continue;
                     }
 
                     $foundFilename = null;
 
-                    // First, try to recover from order configs
-                    $orderQuery = 'SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id';
-                    $orderStmt = $this->di['pdo']->prepare($orderQuery);
+                    $orderStmt = $this->di['pdo']->prepare('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id');
                     $orderStmt->execute(['product_id' => $product['id']]);
                     $orders = $orderStmt->fetchAll(\PDO::FETCH_ASSOC);
 
                     foreach ($orders as $order) {
-                        $orderConfig = json_decode($order['config'], true);
+                        $orderConfig = json_decode($order['config'] ?? '', true);
                         if (!is_array($orderConfig) || !isset($orderConfig['filename'])) {
                             continue;
                         }
 
-                        $order_filename = $orderConfig['filename'];
-                        $hashedFilename = md5($order_filename);
-                        $filePath = Path::join(PATH_UPLOADS, $hashedFilename);
-
+                        $filePath = Path::join(PATH_UPLOADS, md5($orderConfig['filename']));
                         if ($filesystem->exists($filePath)) {
-                            $foundFilename = $order_filename;
+                            $foundFilename = $orderConfig['filename'];
 
                             break;
                         }
                     }
 
-                    // If not found, try to recover from service_downloadable table
                     if ($foundFilename === null) {
-                        $serviceQuery = 'SELECT id, filename FROM service_downloadable WHERE product_id = :product_id AND filename IS NOT NULL AND filename != ""';
-                        $serviceStmt = $this->di['pdo']->prepare($serviceQuery);
+                        $serviceStmt = $this->di['pdo']->prepare('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""');
                         $serviceStmt->execute(['product_id' => $product['id']]);
                         $services = $serviceStmt->fetchAll(\PDO::FETCH_ASSOC);
 
                         foreach ($services as $service) {
-                            if (empty($service['filename'])) {
-                                continue;
-                            }
-
-                            $hashedFilename = md5($service['filename']);
-                            $filePath = Path::join(PATH_UPLOADS, $hashedFilename);
-
+                            $filePath = Path::join(PATH_UPLOADS, md5($service['filename']));
                             if ($filesystem->exists($filePath)) {
                                 $foundFilename = $service['filename'];
 
@@ -547,31 +526,19 @@ class UpdatePatcher implements InjectionAwareInterface
                         }
                     }
 
-                    // If we found a valid filename, update all data sources
                     if ($foundFilename !== null) {
-                        // Update product config
                         $productConfig['filename'] = $foundFilename;
-                        $newConfigJson = json_encode($productConfig);
-                        $updateProductQuery = 'UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id';
-                        $updateProductStmt = $this->di['pdo']->prepare($updateProductQuery);
+                        $updateProductStmt = $this->di['pdo']->prepare('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id');
                         $updateProductStmt->execute([
-                            'config' => $newConfigJson,
+                            'config' => json_encode($productConfig),
                             'updated_at' => date('Y-m-d H:i:s'),
                             'id' => $product['id'],
                         ]);
 
-                        // Update all service_downloadable records for this product
-                        $updateAllServicesQuery = 'UPDATE service_downloadable SET filename = :filename WHERE product_id = :product_id';
-                        $updateAllServicesStmt = $this->di['pdo']->prepare($updateAllServicesQuery);
-                        $updateAllServicesStmt->execute([
-                            'filename' => $foundFilename,
-                            'product_id' => $product['id'],
-                        ]);
-                        ++$stats['services_updated'];
+                        $updateAllServicesStmt = $this->di['pdo']->prepare('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id');
+                        $updateAllServicesStmt->execute(['filename' => $foundFilename, 'product_id' => $product['id']]);
 
-                        // Update all order configs for this product using PHP-based JSON update
-                        $updateOrdersQuery = 'SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"';
-                        $updateOrdersStmt = $this->di['pdo']->prepare($updateOrdersQuery);
+                        $updateOrdersStmt = $this->di['pdo']->prepare('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"');
                         $updateOrdersStmt->execute(['product_id' => $product['id']]);
                         $ordersToUpdate = $updateOrdersStmt->fetchAll(\PDO::FETCH_ASSOC);
 
@@ -579,50 +546,30 @@ class UpdatePatcher implements InjectionAwareInterface
                             $orderConfig = json_decode($orderToUpdate['config'] ?? '', true);
                             if (is_array($orderConfig) && isset($orderConfig['filename'])) {
                                 $orderConfig['filename'] = $foundFilename;
-                                $newOrderConfigJson = json_encode($orderConfig);
-                                $saveOrderQuery = 'UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id';
-                                $saveOrderStmt = $this->di['pdo']->prepare($saveOrderQuery);
+                                $saveOrderStmt = $this->di['pdo']->prepare('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id');
                                 $saveOrderStmt->execute([
-                                    'config' => $newOrderConfigJson,
+                                    'config' => json_encode($orderConfig),
                                     'updated_at' => date('Y-m-d H:i:s'),
                                     'id' => $orderToUpdate['id'],
                                 ]);
-                                ++$stats['orders_updated'];
                             }
                         }
-
-                        ++$stats['products_recovered'];
-                    } else {
-                        ++$stats['products_failed'];
                     }
                 }
 
-                // Clean up orphaned service_downloadable records with NULL or empty filename
-                $orphanQuery = 'SELECT sd.id, co.config as order_config
-                                FROM service_downloadable sd
-                                LEFT JOIN client_order co ON sd.id = co.service_id
-                                WHERE (sd.filename IS NULL OR sd.filename = "") AND sd.product_id IS NOT NULL';
-                $orphanStmt = $this->di['pdo']->query($orphanQuery);
+                $orphanStmt = $this->di['pdo']->query('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""');
                 $orphans = $orphanStmt->fetchAll(\PDO::FETCH_ASSOC);
 
                 foreach ($orphans as $orphan) {
                     $orderConfig = json_decode($orphan['order_config'] ?? '', true);
                     if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
-                        $filename = $orderConfig['filename'];
-                        $hashedFilename = md5($filename);
-                        $filePath = Path::join(PATH_UPLOADS, $hashedFilename);
-
+                        $filePath = Path::join(PATH_UPLOADS, md5($orderConfig['filename']));
                         if ($filesystem->exists($filePath)) {
-                            $recoverQuery = 'UPDATE service_downloadable SET filename = :filename WHERE id = :id';
-                            $recoverStmt = $this->di['pdo']->prepare($recoverQuery);
-                            $recoverStmt->execute(['filename' => $filename, 'id' => $orphan['id']]);
-                            ++$stats['orphans_cleaned'];
+                            $recoverStmt = $this->di['pdo']->prepare('UPDATE service_downloadable SET filename = :filename WHERE id = :id');
+                            $recoverStmt->execute(['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
                         }
                     }
                 }
-
-                // Log final statistics
-                $this->di['logger']->info('Patch 48 completed. Downloadable product recovery stats: ' . json_encode($stats));
             },
         ];
         ksort($patches, SORT_NATURAL);

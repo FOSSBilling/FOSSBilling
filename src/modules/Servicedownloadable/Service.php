@@ -159,10 +159,16 @@ class Service implements InjectionAwareInterface
         $request = $this->di['request'];
 
         if ($request->files->count() == 0) {
-            throw new \FOSSBilling\Exception('Error uploading file.');
+            throw new \FOSSBilling\Exception('Error uploading file - no files in request.');
         }
         $file = $request->files->get('file_data');
         $fileName = $file->getClientOriginalName();
+
+        $errorCode = $file->getError();
+        if ($errorCode !== UPLOAD_ERR_OK) {
+            throw new \FOSSBilling\Exception('File upload failed: ' . $this->_error_message($errorCode));
+        }
+
         $fileNameHash = md5((string) $fileName);
         $fileSavePath = PATH_UPLOADS;
         $file->move($fileSavePath, $fileNameHash);
@@ -196,7 +202,8 @@ class Service implements InjectionAwareInterface
                 $ordermodel->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($ordermodel);
 
-                $this->updateProductFile($serviceDownloadable, $ordermodel);
+                // Pass the filename since the file was already uploaded and moved
+                $this->updateProductFile($serviceDownloadable, $ordermodel, $fileName);
             }
         }
 
@@ -213,18 +220,38 @@ class Service implements InjectionAwareInterface
     /**
      * @throws \FOSSBilling\Exception
      */
-    public function updateProductFile(\Model_ServiceDownloadable $serviceDownloadable, \Model_ClientOrder $order): bool
+    public function updateProductFile(\Model_ServiceDownloadable $serviceDownloadable, \Model_ClientOrder $order, ?string $filename = null): bool
     {
         $request = $this->di['request'];
 
-        if ($request->files->count() == 0) {
-            throw new \FOSSBilling\Exception('Error uploading file.');
+        // If filename is provided, use it directly (file was already uploaded in uploadProductFile)
+        if ($filename !== null) {
+            $fileName = $filename;
+        } elseif ($request->files->count() > 0) {
+            $file = $request->files->get('file_data');
+            $fileName = $file->getClientOriginalName();
+
+            $errorCode = $file->getError();
+            if ($errorCode !== UPLOAD_ERR_OK) {
+                throw new \FOSSBilling\Exception('File upload failed: ' . $this->_error_message($errorCode));
+            }
+
+            $fileNameHash = md5((string) $fileName);
+            $fileSavePath = PATH_UPLOADS;
+            $file->move($fileSavePath, $fileNameHash);
+        } else {
+            $fileName = null;
+            if (isset($order->config)) {
+                $config = json_decode($order->config, true);
+                $fileName = $config['filename'] ?? null;
+            }
+            if (!$fileName && isset($serviceDownloadable->filename)) {
+                $fileName = $serviceDownloadable->filename;
+            }
+            if (!$fileName) {
+                throw new \FOSSBilling\Exception('No filename available for order file update');
+            }
         }
-        $file = $request->files->get('file_data');
-        $fileName = $file->getClientOriginalName();
-        $fileNameHash = md5((string) $fileName);
-        $fileSavePath = PATH_UPLOADS;
-        $file->move($fileSavePath, $fileNameHash);
 
         $serviceDownloadable->filename = $fileName;
         $serviceDownloadable->updated_at = date('Y-m-d H:i:s');
@@ -296,12 +323,6 @@ class Service implements InjectionAwareInterface
 
     /**
      * Send product file for download.
-     * This method sends a file attached to a product for admin download.
-     * Unlike the regular sendFile method, this doesn't increment download counts.
-     *
-     * @return bool
-     *
-     * @throws \FOSSBilling\Exception
      */
     public function sendProductFile(\Model_Product $product)
     {
@@ -312,17 +333,15 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('No file associated with this product.', null, 404);
         }
 
-        $filesystem = new Filesystem();
         $fileName = $config['filename'];
         $filePath = Path::join(PATH_UPLOADS, md5($fileName));
 
-        if (!$filesystem->exists($filePath)) {
+        if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
-        // Send the file for download, unless in testing environment.
         if (!Environment::isTesting()) {
-            $response = new Response($filesystem->readFile($filePath));
+            $response = new Response($this->filesystem->readFile($filePath));
 
             $disposition = $response->headers->makeDisposition(
                 HeaderUtils::DISPOSITION_ATTACHMENT,

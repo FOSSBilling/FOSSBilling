@@ -42,9 +42,15 @@ $(function() {
     $('body').append('<iframe id="uploadframe" name="uploadframe" style="display:none" />');
 
     $('#upload-form').on('submit', function(){
-        iframe = $('#uploadframe').load(function() {
-            response = iframe.contents().find('body');
-            data = $.parseJSON(response.text());
+        $('#uploadframe').on('load', function() {
+            var responseText = $(this).contents().find('body').text();
+            var data;
+            try {
+                data = $.parseJSON(responseText);
+            } catch (e) {
+                FOSSBilling.message("Server returned non-JSON response", "error");
+                return;
+            }
 
             if (data.error) {
                 bb.error(data.error.message, data.error.code);
@@ -53,8 +59,6 @@ $(function() {
             if (data.result) {
                 FOSSBilling.message("{{ 'File was uploaded'|trans }}");
             }
-
-            setTimeout(function (){	response.html(''); }, 1);
         });
     });
 });

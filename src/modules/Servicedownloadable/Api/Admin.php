@@ -85,18 +85,10 @@ class Admin extends \Api_Abstract
 
     /**
      * Send file for download for a specific product.
-     * This is similar to the client send_file but uses product instead of order.
-     *
-     * @return bool
      */
+    #[RequiredParams(['id' => 'Product ID is missing'])]
     public function send_file($data)
     {
-        $required = [
-            'id' => 'Product ID is missing',
-        ];
-
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         $service = $this->getService();
