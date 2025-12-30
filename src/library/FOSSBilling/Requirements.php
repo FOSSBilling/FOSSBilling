@@ -40,7 +40,7 @@ class Requirements
             'simplexml' => 'the Plesk integration',
             'xml' => 'the Plesk integration',
         ],
-        'min_version' => '8.2',
+        'min_version' => '8.3',
     ];
 
     private readonly Filesystem $filesystem;

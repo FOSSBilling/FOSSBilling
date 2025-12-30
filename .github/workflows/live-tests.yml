@@ -29,7 +29,7 @@ jobs:
         with:
           cache-deps: 'true'
           composer-args: '--prefer-dist --optimize-autoloader'
-          php-version: 8.2
+          php-version: 8.3
 
       - name: Make Needed Directories
         run: |
@@ -84,17 +84,17 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: imagick, gd, intl, xml, dom, curl, iconv, json, opcache, mbstring, bz2, simplexml, pdo, pdo_mysql
 
       - name: Setup Apache
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends \
-            libapache2-mod-php8.3 php8.3 php8.3-common php8.3-intl \
-            php8.3-mysql php8.3-xml php8.3-curl php8.3-fpm php8.3-mbstring \
-            php8.3-opcache php8.3-gd
-          sudo a2enmod php8.3
+            libapache2-mod-php8.4 php8.4 php8.4-common php8.4-intl \
+            php8.4-mysql php8.4-xml php8.4-curl php8.4-fpm php8.4-mbstring \
+            php8.4-opcache php8.4-gd
+          sudo a2enmod php8.4
           sudo systemctl start apache2
           sudo a2enmod rewrite
           sudo mkdir /var/www/localhost
