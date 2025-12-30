@@ -40,7 +40,6 @@ class SentryHelper
         'cron',
         'currency',
         'custompages',
-        'dashboard',
         'email',
         'embed',
         'extension',
