@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-#[Group('Core')]
-final class Api_AdminTest extends BBTestCase
+class Api_AdminTest extends BBTestCase
 {
     protected ?Box\Mod\Order\Api\Admin $api;
 
@@ -694,29 +693,29 @@ final class Api_AdminTest extends BBTestCase
 
     /**
      * Regression test for admin-created orders with formbuilder fields.
-     * Verifies that order_get returns product_id, which allows the template
-     * to retrieve the product's form_id and display all formbuilder fields
-     * in the "Edit order config" tab, not just existing config keys.
+     * Verifies that order_get returns product_id and product_form_id, which allows the template
+     * to display all formbuilder fields in the "Edit order config" tab, not just existing config keys.
      */
     public function testGetOrderReturnsProductIdForFormbuilderAccess(): void
     {
         $order = new Model_ClientOrder();
         $order->loadBean(new DummyBean());
         $order->product_id = 123;
-        $order->form_id = null; // Admin-created orders don't set form_id
+        $order->form_id = null;
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([
                 'id' => 1,
                 'product_id' => 123,
                 'form_id' => null,
+                'product_form_id' => 5,
                 'config' => ['period' => '1M'],
             ]);
 
@@ -729,8 +728,8 @@ final class Api_AdminTest extends BBTestCase
 
         $this->assertIsArray($result);
         $this->assertArrayHasKey('product_id', $result);
+        $this->assertArrayHasKey('product_form_id', $result);
         $this->assertEquals(123, $result['product_id']);
-        // product_id is required for template to fetch product.form_id
-        // and display all formbuilder fields, not just existing config keys
+        $this->assertEquals(5, $result['product_form_id']);
     }
 }

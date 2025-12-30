@@ -348,8 +348,10 @@ class Service implements InjectionAwareInterface
             $productModel = $this->di['db']->load('Product', $model->product_id);
             if ($productModel instanceof \Model_Product) {
                 $data['plugin'] = $productModel->plugin;
+                $data['product_form_id'] = $productModel->form_id;
             } else {
                 $data['plugin'] = null;
+                $data['product_form_id'] = null;
             }
         }
 
@@ -1242,6 +1244,20 @@ class Service implements InjectionAwareInterface
 
     public function updateOrderConfig(\Model_ClientOrder $order, array $config): bool
     {
+        $formId = $order->form_id;
+        if (!$formId && $order->product_id) {
+            $product = $this->di['db']->load('Product', $order->product_id);
+            if ($product instanceof \Model_Product) {
+                $formId = $product->form_id;
+            }
+        }
+
+        if ($formId) {
+            $formbuilderService = $this->di['mod_service']('formbuilder');
+            $form = $formbuilderService->getForm($formId);
+            $this->validateConfigAgainstForm($config, $form);
+        }
+
         $oldConfig = $order->config;
 
         $order->config = json_encode($config);
@@ -1251,6 +1267,43 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info(sprintf("Order #%s config changes:\n%s\n%s", $order->id, $oldConfig, $order->config));
 
         return true;
+    }
+
+    private function validateConfigAgainstForm(array $config, array $form): void
+    {
+        $fieldDefinitions = [];
+        foreach ($form['fields'] as $field) {
+            $fieldDefinitions[$field['name']] = $field;
+        }
+
+        foreach ($config as $key => $value) {
+            if (!isset($fieldDefinitions[$key])) {
+                continue;
+            }
+
+            $field = $fieldDefinitions[$key];
+
+            if ($field['required'] && ($value === null || $value === '' || (is_array($value) && count($value) === 0))) {
+                throw new \FOSSBilling\Exception('Field ":field" is required', [':field' => $field['label']], 4892);
+            }
+
+            $options = $field['options'] ?? [];
+            if (!empty($options)) {
+                if ($field['type'] === 'select' || $field['type'] === 'radio') {
+                    if ($value !== null && $value !== '' && !array_key_exists($value, $options) && !in_array($value, $options, true)) {
+                        throw new \FOSSBilling\Exception('Invalid value for field ":field"', [':field' => $field['label']], 4893);
+                    }
+                } elseif ($field['type'] === 'checkbox') {
+                    if (is_array($value)) {
+                        foreach ($value as $v) {
+                            if (!in_array($v, $options, true)) {
+                                throw new \FOSSBilling\Exception('Invalid value for field ":field"', [':field' => $field['label']], 4894);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public function getOrderStatusSearchQuery($data): array

@@ -443,19 +443,12 @@
                 <h5>{{ 'Order config management'|trans }}</h5>
                 <p class="text-muted">{{ 'Please be cautious and make sure you know what you are doing when editing order config! FOSSBilling relies on these parameters and you might get unexpected results if you change some of them.'|trans }}</p>
 
-                {# Get product form_id if order doesn't have it (for admin-created orders) #}
-                {% set product_form_id = null %}
-                {% if not order.form_id and order.product_id %}
-                    {% set product = admin.product_get({ 'id': order.product_id }) %}
-                    {% set product_form_id = product.form_id %}
-                {% else %}
-                    {% set product_form_id = order.form_id %}
-                {% endif %}
+                {% set product_form_id = order.product_form_id ?: order.form_id %}
 
                 {# Use formbuilder form if available #}
                 {% if product_form_id and guest.extension_is_on({ 'mod': 'formbuilder' }) %}
                     {% set form = guest.formbuilder_get({ "id": product_form_id }) %}
-                    {% set config = order.config %}
+                    {% set form_field_names = form.fields|map(f => f.name)|list %}
                     <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="api-form" data-api-reload="1">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <input type="hidden" name="id" value="{{ order.id }}"/>
@@ -467,7 +460,7 @@
                                         <div class="col-md-3">
                                             {% if field.hide_label!=1 %}
                                                 <label class="col-form-label {% if field.required == 1 %}required{% endif %}"
-                                                       for="{{ field.name }}">{{ field.label }}</label>
+                                                       for="{{ field.name|e('html') }}">{{ field.label }}</label>
                                             {% endif %}
                                         </div>
                                         <div class="col-md-6">
@@ -477,8 +470,8 @@
                                                         <span class="input-group-text">{{ field.prefix }}</span>
                                                     {% endif %}
                                                     <input class="form-control" type="text"
-                                                           name="config[{{ field.name }}]" id="{{ field.name }}"
-                                                           value="{{ order.config[field.name]|default('') }}"
+                                                           name="config[{{ field.name|e('html') }}]" id="{{ field.name|e('html') }}"
+                                                           value="{{ order.config[field.name]|default('')|e('html') }}"
                                                            {% if field.required %}required="required"{% endif %}
                                                            {% if field.readonly %}readonly="readonly"{% endif %}>
                                                     {% if field.suffix %}
@@ -486,38 +479,38 @@
                                                     {% endif %}
                                                 </div>
                                             {% elseif field.type == "select" %}
-                                                <select id="{{ field.name }}" class="form-select" name="config[{{ field.name }}]"
+                                                <select id="{{ field.name|e('html') }}" class="form-select" name="config[{{ field.name|e('html') }}]"
                                                         {% if field.required %}required="required"{% endif %}>
                                                     {% for k,v in field.options %}
-                                                        <option value="{{ v }}"
+                                                        <option value="{{ v|e('html') }}"
                                                                 {% if v == order.config[field.name] %}selected="selected"{% endif %}>{{ k }}</option>
                                                     {% endfor %}
                                                 </select>
                                             {% elseif field.type == "checkbox" %}
                                                 {% for k,v in field.options %}
                                                     <label class="form-check form-check-inline">
-                                                        <input id="{{ field.name }}_{{ loop.index }}" class="form-check-input" type="checkbox"
-                                                               name="config[{{ field.name }}][]"
-                                                               value="{{ v }}"
-                                                               {% if v in config[field.name]|default([]) %}checked="checked"{% endif %}>
+                                                        <input id="{{ field.name|e('html') }}_{{ loop.index }}" class="form-check-input" type="checkbox"
+                                                               name="config[{{ field.name|e('html') }}][]"
+                                                               value="{{ v|e('html') }}"
+                                                               {% if v in (order.config[field.name]|default([])) %}checked="checked"{% endif %}>
                                                         <span class="form-check-label">{{ k }}</span>
                                                     </label>
                                                 {% endfor %}
                                             {% elseif field.type == "radio" %}
                                                 {% for k,v in field.options %}
                                                     <label class="form-check form-check-inline">
-                                                        <input id="{{ field.name }}_{{ loop.index }}" class="form-check-input" type="radio"
-                                                               name="config[{{ field.name }}]" value="{{ v }}"
+                                                        <input id="{{ field.name|e('html') }}_{{ loop.index }}" class="form-check-input" type="radio"
+                                                               name="config[{{ field.name|e('html') }}]" value="{{ v|e('html') }}"
                                                                {% if order.config[field.name] == v %}checked{% endif %}>
                                                         <span class="form-check-label">{{ k }}</span>
                                                     </label>
                                                 {% endfor %}
                                             {% elseif field.type == "textarea" %}
                                                 <textarea class="form-control" rows="5"
-                                                          name="config[{{ field.name }}]"
-                                                          id="{{ field.name }}"
+                                                          name="config[{{ field.name|e('html') }}]"
+                                                          id="{{ field.name|e('html') }}"
                                                           {% if field.required==1 %}required="required"{% endif %}
-                                                          {% if field.readonly==1 %}readonly="readonly"{% endif %}>{{ order.config[field.name]|default('') }}</textarea>
+                                                          {% if field.readonly==1 %}readonly="readonly"{% endif %}>{{ order.config[field.name]|default('')|e('html') }}</textarea>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -525,22 +518,16 @@
 
                                 {# Also show any additional config keys that aren't in the formbuilder form (e.g., period) #}
                                 {% for key, value in order.config %}
-                                    {% set is_form_field = false %}
-                                    {% for field in form.fields %}
-                                        {% if field.name == key %}
-                                            {% set is_form_field = true %}
-                                        {% endif %}
-                                    {% endfor %}
-                                    {% if not is_form_field %}
+                                    {% if key not in form_field_names %}
                                         <div class="mb-3 row">
                                             <label class="form-label col-3 col-form-label">{{ key }}</label>
                                             <div class="col">
                                                 {% if value is iterable %}
                                                     {% for key2, config2 in value %}
-                                                        <input class="form-control" type="text" name="config[{{ key }}][{{ key2 }}]" value="{{ config2 }}"{% if config2 is null %} placeholder="null"{% endif %}>
+                                                        <input class="form-control" type="text" name="config[{{ key|e('html') }}][{{ key2|e('html') }}]" value="{{ config2|e('html') }}"{% if config2 is null %} placeholder="null"{% endif %}>
                                                     {% endfor %}
                                                 {% else %}
-                                                    <input class="form-control" type="text" name="config[{{ key }}]" value="{{ value }}"{% if value is null %} placeholder="null"{% endif %}>
+                                                    <input class="form-control" type="text" name="config[{{ key|e('html') }}]" value="{{ value|e('html') }}"{% if value is null %} placeholder="null"{% endif %}>
                                                 {% endif %}
                                             </div>
                                         </div>
@@ -561,10 +548,10 @@
                             <div class="col">
                                 {% if config is iterable %}
                                     {% for key2, config2 in config %}
-                                        <input class="form-control" type="text" name="config[{{ key }}][{{ key2 }}]" value="{{ config2 }}"{% if config2 is null %} placeholder="null"{% endif %}>
+                                        <input class="form-control" type="text" name="config[{{ key|e('html') }}][{{ key2|e('html') }}]" value="{{ config2|e('html') }}"{% if config2 is null %} placeholder="null"{% endif %}>
                                     {% endfor %}
                                 {% else %}
-                                    <input class="form-control" type="text" name="config[{{ key }}]" value="{{ config }}"{% if config is null %} placeholder="null"{% endif %}>
+                                    <input class="form-control" type="text" name="config[{{ key|e('html') }}]" value="{{ config|e('html') }}"{% if config is null %} placeholder="null"{% endif %}>
                                 {% endif %}
                             </div>
                         </div>
