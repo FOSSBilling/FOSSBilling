@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -78,6 +78,176 @@ final class AdminTest extends \BBTestCase
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->update($data);
+        $this->assertIsBool($result);
+        $this->assertTrue($result);
+    }
+
+    public function testConfigSave(): void
+    {
+        $data = [
+            'id' => 1,
+            'update_orders' => true,
+        ];
+
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->config = '{"filename": "test.txt"}';
+
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedownloadable\Service::class)->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('saveProductConfig')
+            ->with($productModel, $data)
+            ->willReturn(true);
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->with('Product', $data['id'], 'Product not found')
+            ->willReturn($productModel);
+
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $result = $this->api->config_save($data);
+        $this->assertIsBool($result);
+        $this->assertTrue($result);
+    }
+
+    public function testConfigSaveProductNotFound(): void
+    {
+        $data = [
+            'id' => 999,
+            'update_orders' => true,
+        ];
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->with('Product', $data['id'], 'Product not found')
+            ->willThrowException(new \FOSSBilling\Exception('Product not found'));
+
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Product not found');
+        $this->api->config_save($data);
+    }
+
+    public function testSendFileProductNotFound(): void
+    {
+        $data = ['id' => 999];
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->with('Product', $data['id'], 'Product not found')
+            ->willThrowException(new \FOSSBilling\Exception('Product not found'));
+
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Product not found');
+        $this->api->send_file($data);
+    }
+
+    public function testSendFileNoFileConfigured(): void
+    {
+        $data = ['id' => 1];
+
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->config = '{}';
+
+        $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('sendProductFile')
+            ->with($productModel)
+            ->willThrowException(new \FOSSBilling\Exception('No file associated with this product.', null, 404));
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->with('Product', $data['id'], 'Product not found')
+            ->willReturn($productModel);
+
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('No file associated with this product.');
+        $this->api->send_file($data);
+    }
+
+    public function testSendFileFileNotFound(): void
+    {
+        $data = ['id' => 1];
+
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->config = '{"filename": "test.txt"}';
+
+        $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('sendProductFile')
+            ->with($productModel)
+            ->willThrowException(new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404));
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->with('Product', $data['id'], 'Product not found')
+            ->willReturn($productModel);
+
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('File cannot be downloaded at the moment. Please contact support.');
+        $this->api->send_file($data);
+    }
+
+    public function testSendFile(): void
+    {
+        $data = ['id' => 1];
+
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->config = '{"filename": "test.txt"}';
+
+        $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('sendProductFile')
+            ->with($productModel)
+            ->willReturn(true);
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->with('Product', $data['id'], 'Product not found')
+            ->willReturn($productModel);
+
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $result = $this->api->send_file($data);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }

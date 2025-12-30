@@ -462,7 +462,114 @@ class UpdatePatcher implements InjectionAwareInterface
 
                 // Drop the service_membership table as it's no longer needed
                 $q = 'DROP TABLE IF EXISTS `service_membership`;';
-                $this->executeSql($q);              
+                $this->executeSql($q);
+            },
+            48 => function (): void {
+                $filesystem = new Filesystem();
+
+                $oldUploadsPath = Path::join(PATH_ROOT, 'uploads');
+                $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
+
+                if ($filesystem->exists($oldUploadsPath) && $filesystem->exists($newUploadsPath)) {
+                    foreach (glob($oldUploadsPath . '/*') as $oldFile) {
+                        if (is_file($oldFile)) {
+                            $filename = basename($oldFile);
+                            $newFilePath = Path::join($newUploadsPath, $filename);
+                            if (!$filesystem->exists($newFilePath)) {
+                                $filesystem->rename($oldFile, $newFilePath);
+                            }
+                        }
+                    }
+                }
+
+                $products = $this->di['pdo']->query("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'")->fetchAll(\PDO::FETCH_ASSOC);
+
+                foreach ($products as $product) {
+                    $productConfig = json_decode($product['config'], true) ?: [];
+
+                    if (isset($productConfig['filename']) && !empty($productConfig['filename'])) {
+                        continue;
+                    }
+
+                    $foundFilename = null;
+
+                    $orderStmt = $this->di['pdo']->prepare('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id');
+                    $orderStmt->execute(['product_id' => $product['id']]);
+                    $orders = $orderStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                    foreach ($orders as $order) {
+                        $orderConfig = json_decode($order['config'] ?? '', true);
+                        if (!is_array($orderConfig) || !isset($orderConfig['filename'])) {
+                            continue;
+                        }
+
+                        $filePath = Path::join(PATH_UPLOADS, md5($orderConfig['filename']));
+                        if ($filesystem->exists($filePath)) {
+                            $foundFilename = $orderConfig['filename'];
+
+                            break;
+                        }
+                    }
+
+                    if ($foundFilename === null) {
+                        $serviceStmt = $this->di['pdo']->prepare('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""');
+                        $serviceStmt->execute(['product_id' => $product['id']]);
+                        $services = $serviceStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                        foreach ($services as $service) {
+                            $filePath = Path::join(PATH_UPLOADS, md5($service['filename']));
+                            if ($filesystem->exists($filePath)) {
+                                $foundFilename = $service['filename'];
+
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($foundFilename !== null) {
+                        $productConfig['filename'] = $foundFilename;
+                        $updateProductStmt = $this->di['pdo']->prepare('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id');
+                        $updateProductStmt->execute([
+                            'config' => json_encode($productConfig),
+                            'updated_at' => date('Y-m-d H:i:s'),
+                            'id' => $product['id'],
+                        ]);
+
+                        $updateAllServicesStmt = $this->di['pdo']->prepare('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id');
+                        $updateAllServicesStmt->execute(['filename' => $foundFilename, 'product_id' => $product['id']]);
+
+                        $updateOrdersStmt = $this->di['pdo']->prepare('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"');
+                        $updateOrdersStmt->execute(['product_id' => $product['id']]);
+                        $ordersToUpdate = $updateOrdersStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                        foreach ($ordersToUpdate as $orderToUpdate) {
+                            $orderConfig = json_decode($orderToUpdate['config'] ?? '', true);
+                            if (is_array($orderConfig) && isset($orderConfig['filename'])) {
+                                $orderConfig['filename'] = $foundFilename;
+                                $saveOrderStmt = $this->di['pdo']->prepare('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id');
+                                $saveOrderStmt->execute([
+                                    'config' => json_encode($orderConfig),
+                                    'updated_at' => date('Y-m-d H:i:s'),
+                                    'id' => $orderToUpdate['id'],
+                                ]);
+                            }
+                        }
+                    }
+                }
+
+                $orphanStmt = $this->di['pdo']->query('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""');
+                $orphans = $orphanStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                foreach ($orphans as $orphan) {
+                    $orderConfig = json_decode($orphan['order_config'] ?? '', true);
+                    if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
+                        $filePath = Path::join(PATH_UPLOADS, md5($orderConfig['filename']));
+                        if ($filesystem->exists($filePath)) {
+                            $recoverStmt = $this->di['pdo']->prepare('UPDATE service_downloadable SET filename = :filename WHERE id = :id');
+                            $recoverStmt->execute(['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
+                        }
+                    }
+                }
             },
         ];
         ksort($patches, SORT_NATURAL);
