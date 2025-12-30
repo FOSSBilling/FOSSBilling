@@ -4,6 +4,7 @@ import { dirname, resolve, join, basename } from 'path';
 import { readFile, readdir, copyFile, writeFile } from 'fs/promises';
 import { sassPlugin, postprocessCssFile } from '@fossbilling/frontend-build-utils/plugins';
 import { ensureDir, copyAssets, removeDirContents } from '@fossbilling/frontend-build-utils/helpers';
+import { purgeCssFile } from '@fossbilling/frontend-build-utils/purgecss-plugin.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -158,6 +159,7 @@ async function build() {
     });
 
     await postprocessCssFile(resolve(__dirname, 'assets/build/css/fossbilling.css'), isProduction);
+    await purgeCssFile(resolve(__dirname, 'assets/build/css/fossbilling.css'), __dirname, isProduction);
 
     // Build vendor CSS
     await esbuild.build({
@@ -175,6 +177,8 @@ async function build() {
       sourcemap: !isProduction,
       logLevel: 'info'
     });
+
+    await purgeCssFile(resolve(__dirname, 'assets/build/css/vendor.css'), __dirname, isProduction);
 
     // Build JavaScript
     await esbuild.build({

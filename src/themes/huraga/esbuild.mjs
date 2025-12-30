@@ -4,6 +4,7 @@ import { dirname, resolve, join } from 'path';
 import { writeFile, copyFile } from 'fs/promises';
 import { sassPlugin, postprocessCssFile } from '@fossbilling/frontend-build-utils/plugins';
 import { ensureDir, copyAssets } from '@fossbilling/frontend-build-utils/helpers';
+import { purgeCssFile } from '@fossbilling/frontend-build-utils/purgecss-plugin.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -35,7 +36,7 @@ async function build() {
       target: 'es2018',
       inject: [jqueryShim],
       loader: {
-        '.svg': 'dataurl',
+        '.svg': 'file',
         '.woff': 'file',
         '.woff2': 'file',
         '.ttf': 'file',
@@ -55,7 +56,7 @@ async function build() {
       bundle: true,
       outfile: join(cssDir, 'huraga.css'),
       loader: {
-        '.svg': 'dataurl',
+        '.svg': 'file',
         '.woff': 'file',
         '.woff2': 'file',
         '.ttf': 'file',
@@ -68,6 +69,7 @@ async function build() {
     });
 
     await postprocessCssFile(join(cssDir, 'huraga.css'), isProduction);
+    await purgeCssFile(join(cssDir, 'huraga.css'), __dirname, isProduction);
 
     // Build vendor CSS
     await esbuild.build({
@@ -75,7 +77,7 @@ async function build() {
       bundle: true,
       outfile: join(cssDir, 'vendor.css'),
       loader: {
-        '.svg': 'dataurl',
+        '.svg': 'file',
         '.woff': 'file',
         '.woff2': 'file',
         '.ttf': 'file',
@@ -86,13 +88,15 @@ async function build() {
       logLevel: 'info'
     });
 
+    await purgeCssFile(join(cssDir, 'vendor.css'), __dirname, isProduction);
+
     // Build markdown CSS
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/css/markdown.css')],
       bundle: true,
       outfile: join(cssDir, 'markdown.css'),
       loader: {
-        '.svg': 'dataurl',
+        '.svg': 'file',
         '.woff': 'file',
         '.woff2': 'file',
         '.ttf': 'file',
@@ -177,7 +181,7 @@ async function watch() {
     target: 'es2018',
     inject: [jqueryShim],
     loader: {
-      '.svg': 'dataurl',
+      '.svg': 'file',
       '.woff': 'file',
       '.woff2': 'file',
       '.ttf': 'file',
@@ -196,7 +200,7 @@ async function watch() {
     bundle: true,
     outfile: join(cssDir, 'huraga.css'),
     loader: {
-      '.svg': 'dataurl',
+      '.svg': 'file',
       '.woff': 'file',
       '.woff2': 'file',
       '.ttf': 'file',
@@ -213,7 +217,7 @@ async function watch() {
     bundle: true,
     outfile: join(cssDir, 'vendor.css'),
     loader: {
-      '.svg': 'dataurl',
+      '.svg': 'file',
       '.woff': 'file',
       '.woff2': 'file',
       '.ttf': 'file',
@@ -229,7 +233,7 @@ async function watch() {
     bundle: true,
     outfile: join(cssDir, 'markdown.css'),
     loader: {
-      '.svg': 'dataurl',
+      '.svg': 'file',
       '.woff': 'file',
       '.woff2': 'file',
       '.ttf': 'file',
