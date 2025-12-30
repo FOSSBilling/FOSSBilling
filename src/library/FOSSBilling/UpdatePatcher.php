@@ -462,7 +462,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
                 // Drop the service_membership table as it's no longer needed
                 $q = 'DROP TABLE IF EXISTS `service_membership`;';
-                $this->executeSql($q);      
+                $this->executeSql($q);
             },
             48 => function (): void {
                 // Patch to fix servicedownloadable products where filename was lost from config
@@ -470,11 +470,23 @@ class UpdatePatcher implements InjectionAwareInterface
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/2822
                 $filesystem = new Filesystem();
 
+                $stats = [
+                    'products_processed' => 0,
+                    'products_already_valid' => 0,
+                    'products_recovered' => 0,
+                    'products_failed' => 0,
+                    'services_updated' => 0,
+                    'orders_updated' => 0,
+                    'orphans_cleaned' => 0,
+                ];
+
                 // Find all downloadable products
                 $q = "SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'";
                 $products = $this->di['pdo']->query($q)->fetchAll(\PDO::FETCH_ASSOC);
 
                 foreach ($products as $product) {
+                    ++$stats['products_processed'];
+
                     $productConfig = json_decode($product['config'], true);
                     if (!is_array($productConfig)) {
                         $productConfig = [];
@@ -482,18 +494,19 @@ class UpdatePatcher implements InjectionAwareInterface
 
                     // Skip if product already has a filename configured
                     if (isset($productConfig['filename']) && !empty($productConfig['filename'])) {
+                        ++$stats['products_already_valid'];
+
                         continue;
                     }
 
-                    // Find orders for this product
+                    $foundFilename = null;
+
+                    // First, try to recover from order configs
                     $orderQuery = 'SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id';
                     $orderStmt = $this->di['pdo']->prepare($orderQuery);
                     $orderStmt->execute(['product_id' => $product['id']]);
                     $orders = $orderStmt->fetchAll(\PDO::FETCH_ASSOC);
 
-                    $foundFilename = null;
-
-                    // Check each order for a valid filename
                     foreach ($orders as $order) {
                         $orderConfig = json_decode($order['config'], true);
                         if (!is_array($orderConfig) || !isset($orderConfig['filename'])) {
@@ -504,24 +517,39 @@ class UpdatePatcher implements InjectionAwareInterface
                         $hashedFilename = md5($order_filename);
                         $filePath = Path::join(PATH_UPLOADS, $hashedFilename);
 
-                        // Check if the file exists
                         if ($filesystem->exists($filePath)) {
                             $foundFilename = $order_filename;
-
-                            // Update the related servicedownloadable record that might have wrong filename
-                            $updateServiceQuery = 'UPDATE service_downloadable SET filename = :filename WHERE id = :service_id';
-                            $updateServiceStmt = $this->di['pdo']->prepare($updateServiceQuery);
-                            $updateServiceStmt->execute([
-                                'filename' => $foundFilename,
-                                'service_id' => $order['service_id'],
-                            ]);
 
                             break;
                         }
                     }
 
-                    // If we found a valid filename, update the product config
+                    // If not found, try to recover from service_downloadable table
+                    if ($foundFilename === null) {
+                        $serviceQuery = 'SELECT id, filename FROM service_downloadable WHERE product_id = :product_id AND filename IS NOT NULL AND filename != ""';
+                        $serviceStmt = $this->di['pdo']->prepare($serviceQuery);
+                        $serviceStmt->execute(['product_id' => $product['id']]);
+                        $services = $serviceStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                        foreach ($services as $service) {
+                            if (empty($service['filename'])) {
+                                continue;
+                            }
+
+                            $hashedFilename = md5($service['filename']);
+                            $filePath = Path::join(PATH_UPLOADS, $hashedFilename);
+
+                            if ($filesystem->exists($filePath)) {
+                                $foundFilename = $service['filename'];
+
+                                break;
+                            }
+                        }
+                    }
+
+                    // If we found a valid filename, update all data sources
                     if ($foundFilename !== null) {
+                        // Update product config
                         $productConfig['filename'] = $foundFilename;
                         $newConfigJson = json_encode($productConfig);
                         $updateProductQuery = 'UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id';
@@ -531,9 +559,71 @@ class UpdatePatcher implements InjectionAwareInterface
                             'updated_at' => date('Y-m-d H:i:s'),
                             'id' => $product['id'],
                         ]);
+
+                        // Update all service_downloadable records for this product
+                        $updateAllServicesQuery = 'UPDATE service_downloadable SET filename = :filename WHERE product_id = :product_id';
+                        $updateAllServicesStmt = $this->di['pdo']->prepare($updateAllServicesQuery);
+                        $updateAllServicesStmt->execute([
+                            'filename' => $foundFilename,
+                            'product_id' => $product['id'],
+                        ]);
+                        ++$stats['services_updated'];
+
+                        // Update all order configs for this product using PHP-based JSON update
+                        $updateOrdersQuery = 'SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"';
+                        $updateOrdersStmt = $this->di['pdo']->prepare($updateOrdersQuery);
+                        $updateOrdersStmt->execute(['product_id' => $product['id']]);
+                        $ordersToUpdate = $updateOrdersStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                        foreach ($ordersToUpdate as $orderToUpdate) {
+                            $orderConfig = json_decode($orderToUpdate['config'] ?? '', true);
+                            if (is_array($orderConfig) && isset($orderConfig['filename'])) {
+                                $orderConfig['filename'] = $foundFilename;
+                                $newOrderConfigJson = json_encode($orderConfig);
+                                $saveOrderQuery = 'UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id';
+                                $saveOrderStmt = $this->di['pdo']->prepare($saveOrderQuery);
+                                $saveOrderStmt->execute([
+                                    'config' => $newOrderConfigJson,
+                                    'updated_at' => date('Y-m-d H:i:s'),
+                                    'id' => $orderToUpdate['id'],
+                                ]);
+                                ++$stats['orders_updated'];
+                            }
+                        }
+
+                        ++$stats['products_recovered'];
+                    } else {
+                        ++$stats['products_failed'];
                     }
-                }            
-            }
+                }
+
+                // Clean up orphaned service_downloadable records with NULL or empty filename
+                $orphanQuery = 'SELECT sd.id, co.config as order_config
+                                FROM service_downloadable sd
+                                LEFT JOIN client_order co ON sd.id = co.service_id
+                                WHERE (sd.filename IS NULL OR sd.filename = "") AND sd.product_id IS NOT NULL';
+                $orphanStmt = $this->di['pdo']->query($orphanQuery);
+                $orphans = $orphanStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                foreach ($orphans as $orphan) {
+                    $orderConfig = json_decode($orphan['order_config'] ?? '', true);
+                    if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
+                        $filename = $orderConfig['filename'];
+                        $hashedFilename = md5($filename);
+                        $filePath = Path::join(PATH_UPLOADS, $hashedFilename);
+
+                        if ($filesystem->exists($filePath)) {
+                            $recoverQuery = 'UPDATE service_downloadable SET filename = :filename WHERE id = :id';
+                            $recoverStmt = $this->di['pdo']->prepare($recoverQuery);
+                            $recoverStmt->execute(['filename' => $filename, 'id' => $orphan['id']]);
+                            ++$stats['orphans_cleaned'];
+                        }
+                    }
+                }
+
+                // Log final statistics
+                $this->di['logger']->info('Patch 48 completed. Downloadable product recovery stats: ' . json_encode($stats));
+            },
         ];
         ksort($patches, SORT_NATURAL);
 
