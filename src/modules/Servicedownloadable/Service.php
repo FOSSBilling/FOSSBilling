@@ -159,7 +159,7 @@ class Service implements InjectionAwareInterface
         $request = $this->di['request'];
 
         if ($request->files->count() == 0) {
-            throw new \FOSSBilling\Exception('Error uploading file - no files in request.');
+            throw new \FOSSBilling\Exception('File upload failed: no files in request.');
         }
         $file = $request->files->get('file_data');
         $fileName = $file->getClientOriginalName();
