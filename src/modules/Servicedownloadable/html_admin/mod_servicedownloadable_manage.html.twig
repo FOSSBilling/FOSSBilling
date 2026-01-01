@@ -22,7 +22,7 @@
     <h3>{{ 'Upload new file for this order'|trans }}</h3>
     <p class="text-muted">{{ 'Use this function to update existing order file. Client will be able to download new file from client area'|trans }}</p>
 
-    <form method="post" action="admin/servicedownloadable/update" enctype="multipart/form-data" target="uploadframe" id="upload-form">
+    <form method="post" action="{{ 'api/admin/servicedownloadable/upload'|link }}" enctype="multipart/form-data" id="upload-form">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Upload new file'|trans }}:</label>
@@ -39,37 +39,34 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    let iframe = document.getElementById('uploadframe');
-    if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'uploadframe';
-        iframe.name = 'uploadframe';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
+    const form = document.getElementById('upload-form');
+    if (!form) {
+        return;
     }
 
-    const form = document.getElementById('upload-form');
-    form.addEventListener('submit', function() {
-        form.action = bb.restUrl('admin/servicedownloadable/upload');
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
 
-        iframe.addEventListener('load', function() {
-            const responseText = iframe.contentDocument?.body?.textContent || '';
-            let data;
-            try {
-                data = JSON.parse(responseText);
-            } catch (e) {
-                FOSSBilling.message("Server returned non-JSON response", "error");
-                return;
-            }
+        const submitButton = form.querySelector('input[type="submit"], button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
 
-            if (data.error) {
-                bb.error(data.error.message, data.error.code);
-            }
-
-            if (data.result) {
+        const formData = new FormData(form);
+        API.admin.post('servicedownloadable/upload', formData,
+            function () {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
                 FOSSBilling.message("{{ 'File was uploaded'|trans }}");
+            },
+            function (error) {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
+                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
             }
-        });
+        );
     });
 });
 </script>

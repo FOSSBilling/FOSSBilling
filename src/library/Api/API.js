@@ -20,8 +20,28 @@ const Tools = {
    * @returns {string} The complete URL for the API call.
    */
   getBaseURL: function (url) {
+    if (typeof url !== 'string' || !url.trim()) {
+      return `${window.location.origin}/api/`;
+    }
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+
+    if (url.includes('index.php?_url=/api/') || url.includes('?_url=/api/')) {
+      return new URL(url, `${window.location.origin}/`).toString();
+    }
+
     const base = `${window.location.origin}/api/`;
-    return new URL(url, base).toString();
+    let normalized = url;
+    if (normalized.startsWith('/')) {
+      normalized = normalized.slice(1);
+    }
+    if (normalized.startsWith('api/')) {
+      normalized = normalized.slice(4);
+    }
+
+    return new URL(normalized, base).toString();
   },
 
   /**
@@ -39,6 +59,9 @@ const Tools = {
    * @returns {boolean} True if the string is valid JSON, or false if it is not.
    */
   isJSON: function (jsonString) {
+    if (typeof jsonString !== 'string') {
+      return false;
+    }
     try {
       const parsed = JSON.parse(jsonString);
       return typeof parsed === 'object' && parsed !== null;
@@ -48,94 +71,166 @@ const Tools = {
   },
 
   /**
-   * Parses the data attribute value from a DOM element, validating against a predefined
-   * schema using JSON Type Definition (JTD).
+   * Parses the data attribute value from a DOM element and validates known fields.
    *
    * @param {string} dataAttrValue The value of the data attribute to parse.
    * @returns {object} The parsed and validated data.
    * @throws {Error} If the data attribute value is invalid or does not match the schema.
    **/
   parseDataAttr: function (dataAttrValue) {
-    const ajv = new Ajv();
+    if (!dataAttrValue) {
+      return {};
+    }
 
-    const schema = {
-      "optionalProperties": {
-        "href": { "type": "string" },
-        "callback": { "type": "string" },
-        "message": { "type": "string" },
-        "redirect": { "type": "string" },
-        "reload": { "type": "boolean" },
-        "modal": {
-          "discriminator": "type",
-          "mapping": {
-            "confirm": {
-              "properties": {
-                "title": { "type": "string" }
-              },
-              "optionalProperties": {
-                "content": { "type": "string" },
-                "button": { "type": "string" },
-                "buttonColor": { "type": "string" }
-              }
-            },
-            "danger": {
-              "properties": {
-                "title": { "type": "string" }
-              },
-              "optionalProperties": {
-                "content": { "type": "string" },
-                "button": { "type": "string" },
-                "buttonColor": { "type": "string" }
-              }
-            },
-            "prompt": {
-              "properties": {
-                "title": { "type": "string" }
-              },
-              "optionalProperties": {
-                "label": { "type": "string" },
-                "value": { "type": "string" },
-                "key": { "type": "string" }
-              }
-            }
-          }
-        }
+    let data;
+    try {
+      data = JSON.parse(dataAttrValue);
+    } catch (error) {
+      throw new Error('Invalid JSON in data-fb-api attribute.');
+    }
+
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+      throw new Error('data-fb-api must be a JSON object.');
+    }
+
+    const assertString = (value, key) => {
+      if (typeof value !== 'string') {
+        throw new Error(`data-fb-api.${key} must be a string.`);
+      }
+    };
+
+    const assertBoolean = (value, key) => {
+      if (typeof value !== 'boolean') {
+        throw new Error(`data-fb-api.${key} must be a boolean.`);
+      }
+    };
+
+    if (Object.prototype.hasOwnProperty.call(data, 'href')) {
+      assertString(data.href, 'href');
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'type')) {
+      assertString(data.type, 'type');
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'endpoint')) {
+      assertString(data.endpoint, 'endpoint');
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'callback')) {
+      assertString(data.callback, 'callback');
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'message')) {
+      assertString(data.message, 'message');
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'redirect')) {
+      assertString(data.redirect, 'redirect');
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'reload')) {
+      assertBoolean(data.reload, 'reload');
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'params')) {
+      if (typeof data.params !== 'object' || data.params === null || Array.isArray(data.params)) {
+        throw new Error('data-fb-api.params must be an object.');
       }
     }
-    // reformat input[] fields to arrays
-    for (const pair of this.entries()) {
-        let key = pair[0];
-        if (key.endsWith('[]')) {
-          const plainKey = key.slice(0, -2);
-          return [plainKey, formData.getAll(`${plainKey}[]`)];
-        }
-        return [key, value];
-      })
-    );
 
-    if (!obj.CSRFToken) {
-      obj.CSRFToken = Tools.getCSRFToken();
+    if (Object.prototype.hasOwnProperty.call(data, 'modal')) {
+      const modal = data.modal;
+      if (typeof modal !== 'object' || modal === null || Array.isArray(modal)) {
+        throw new Error('data-fb-api.modal must be an object.');
+      }
+      if (typeof modal.type !== 'string') {
+        throw new Error('data-fb-api.modal.type must be a string.');
+      }
+
+      const allowedTypes = ['confirm', 'danger', 'prompt'];
+      if (!allowedTypes.includes(modal.type)) {
+        throw new Error(`data-fb-api.modal.type must be one of: ${allowedTypes.join(', ')}.`);
+      }
+
+      if (modal.type === 'prompt' && typeof modal.key !== 'string') {
+        throw new Error('data-fb-api.modal.key is required for prompt modals.');
+      }
+
+      const modalStringFields = ['title', 'content', 'button', 'buttonColor', 'label', 'value', 'key'];
+      modalStringFields.forEach((field) => {
+        if (Object.prototype.hasOwnProperty.call(modal, field)) {
+          assertString(modal[field], `modal.${field}`);
+        }
+      });
+    }
+
+    return data;
+  },
+
+  /**
+   * Converts a FormData object into a urlencoded string.
+   *
+   * @param {FormData} formData The FormData object to serialize.
+   * @returns {string} Serialized string of the FormData.
+   */
+  serializeFormData: function (formData) {
+    const params = new URLSearchParams(formData);
+    if (!formData.has('CSRFToken')) {
+      const token = Tools.getCSRFToken();
+      if (token) {
+        params.append('CSRFToken', token);
+      }
+    }
+
+    return params.toString();
+  },
+
+  /**
+   * Converts a FormData object into a valid object.
+   *
+   * @param {FormData} formData The FormData object to serialize.
+   * @returns {object} The reformatted object.
+   */
+  serializeFormDataToObject: function (formData) {
+    const obj = {};
+
+    for (const [key, value] of formData.entries()) {
+      if (key.endsWith('[]')) {
+        const plainKey = key.slice(0, -2);
+        if (!obj[plainKey]) {
+          obj[plainKey] = [];
+        }
+        obj[plainKey].push(value);
+      } else if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        if (!Array.isArray(obj[key])) {
+          obj[key] = [obj[key]];
+        }
+        obj[key].push(value);
+      } else {
+        obj[key] = value;
+      }
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(obj, 'CSRFToken')) {
+      const token = Tools.getCSRFToken();
+      if (token) {
+        obj.CSRFToken = token;
+      }
     }
 
     const reformattedObj = {};
-      Object.keys(obj).forEach(function (originalKey) {
-        const parts = originalKey.match(/[^[\]]+/g) || [originalKey];
-        let currentContext = reformattedObj;
+    Object.keys(obj).forEach((originalKey) => {
+      const parts = originalKey.match(/[^[\]]+/g) || [originalKey];
+      let currentContext = reformattedObj;
 
-        for (let i = 0; i < parts.length; i++) {
-          let part = parts[i];
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
 
-          if (i === parts.length - 1) {
-            currentContext[part] = obj[originalKey];
-          } else {
-            if (!currentContext.hasOwnProperty(part) || typeof currentContext[part] !== 'object' || currentContext[part] === null) {
-              currentContext[part] = {};
-            }
-
-            currentContext = currentContext[part];
+        if (i === parts.length - 1) {
+          currentContext[part] = obj[originalKey];
+        } else {
+          if (!Object.prototype.hasOwnProperty.call(currentContext, part) || typeof currentContext[part] !== 'object' || currentContext[part] === null) {
+            currentContext[part] = {};
           }
+
+          currentContext = currentContext[part];
         }
-      });
+      }
+    });
 
     return reformattedObj;
   },
@@ -223,7 +318,18 @@ const API = {
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     url = new URL(url);
-    if (params && typeof params === 'object') {
+    const isFormData = params instanceof FormData;
+
+    if (isFormData) {
+      if (!params.has('CSRFToken')) {
+        const csrfToken = Tools.getCSRFToken();
+        if (csrfToken) {
+          params.append('CSRFToken', csrfToken);
+        } else {
+          console.warn('CSRF token is missing. Request might fail.');
+        }
+      }
+    } else if (params && typeof params === 'object') {
       if (!params.CSRFToken) {
         const csrfToken = Tools.getCSRFToken();
         if (csrfToken) {
@@ -235,23 +341,32 @@ const API = {
     }
 
     let body = null;
-    if (method.toLowerCase() === 'get') {
-      if (typeof params === 'object') {
+    const methodLower = method.toLowerCase();
+    if (methodLower === 'get') {
+      if (isFormData) {
+        for (const [key, value] of params.entries()) {
+          url.searchParams.append(key, value);
+        }
+      } else if (params && typeof params === 'object') {
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
       } else if (params) {
         url.search = params;
       }
-    } else if (['post', 'put', 'patch', 'delete'].includes(method.toLowerCase())) {
-      if (!Tools.isJSON(params)) {
-        params = JSON.stringify(params);
+    } else if (['post', 'put', 'patch', 'delete'].includes(methodLower)) {
+      if (isFormData) {
+        body = params;
+      } else {
+        if (!Tools.isJSON(params)) {
+          params = JSON.stringify(params);
+        }
+        body = params;
       }
-      body = params;
     }
 
     const headers = {
       'Accept': 'application/json',
     };
-    if (body) {
+    if (body && !isFormData) {
       headers['Content-Type'] = 'application/json';
     }
 
@@ -437,7 +552,8 @@ const API = {
             }
           }
 
-          const data = formElement.getAttribute('method').toLowerCase() !== 'get'
+          const formMethod = (formElement.getAttribute('method') || 'post').toLowerCase();
+          const data = formMethod !== 'get'
             ? Tools.serializeFormDataToJSON(formData)
             : Tools.serializeFormData(formData);
 
@@ -447,9 +563,16 @@ const API = {
           };
           toggleButtons(true);
 
+          const action = formElement.getAttribute('action');
+          if (!action) {
+            toggleButtons(false);
+            console.warn('Missing form action attribute. Skipping API call.');
+            return;
+          }
+
           API.makeRequest(
-            formElement.getAttribute('method'),
-            Tools.getBaseURL(formElement.getAttribute('action')),
+            formMethod,
+            Tools.getBaseURL(action),
             data,
             (result) => {
               toggleButtons(false);
@@ -484,9 +607,17 @@ const API = {
             return;
           }
 
+          const rawHref = linkElement.getAttribute('href') || '';
+          if (!apiData.href && (!rawHref || rawHref === '#')) {
+            return;
+          }
+
           const handleApiRequest = (method, href, params = {}) => {
             const url = apiData.href || href;
-            API.makeRequest(method, Tools.getBaseURL(url), params,
+            const mergedParams = apiData.params && typeof apiData.params === 'object'
+              ? Object.assign({}, apiData.params, params)
+              : params;
+            API.makeRequest(method, Tools.getBaseURL(url), mergedParams,
               (result) => API._afterComplete(linkElement, result),
               (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error')
             );

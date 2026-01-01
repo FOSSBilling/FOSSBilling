@@ -259,7 +259,6 @@ async function watch() {
     outfile: resolve(__dirname, 'assets/build/js/fossbilling.js'),
     platform: 'browser',
     target: 'es2018',
-    inject: [jqueryShim],
     loader: {
       '.svg': 'dataurl',
       '.woff': 'file',

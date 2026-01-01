@@ -150,6 +150,19 @@
             el.dispatchEvent(new Event('change'));
         });
 
+        const formatCurrency = (price, rate, code, multiply) => {
+            let total = parseFloat(price) * parseFloat(rate);
+            if (typeof multiply !== 'undefined') {
+                total *= multiply;
+            }
+            return `${total.toFixed(2)} ${code}`;
+        };
+
+        const showApiError = (error) => {
+            const message = error && error.message ? `${error.message} (${error.code})` : 'Unknown error occurred';
+            FOSSBilling.message(message, 'error');
+        };
+
         const transferCheck = document.getElementById('transfer-check');
         if (transferCheck) {
             transferCheck.addEventListener('click', function (event) {
@@ -158,8 +171,8 @@
                 document.getElementById('domain-action').value = 'transfer';
                 const domain = sld + tld;
 
-                bb.post(
-                    'guest/servicedomain/can_be_transferred',
+                API.guest.post(
+                    'servicedomain/can_be_transferred',
                     {sld: sld, tld: tld},
                     function (result) {
                         setTransferPricing(tld);
@@ -172,7 +185,8 @@
                         transferCheck.style.display = 'none';
                         const transferOrderButton = document.querySelector('#transfer .order-button');
                         if (transferOrderButton) transferOrderButton.style.display = '';
-                    }
+                    },
+                    showApiError
                 );
 
                 return false;
@@ -186,8 +200,8 @@
                 const tld = document.querySelector('select[name="register_tld"]').value;
                 const domain = sld + tld;
                 document.getElementById('domain-action').value = 'register';
-                bb.post(
-                    'guest/servicedomain/check',
+                API.guest.post(
+                    'servicedomain/check',
                     {sld: sld, tld: tld},
                     function (result) {
                         setPricing(tld);
@@ -198,7 +212,8 @@
                         domainCheck.style.display = 'none';
                         const registerOrderButton = document.querySelector('#register .order-button');
                         if (registerOrderButton) registerOrderButton.style.display = '';
-                    }
+                    },
+                    showApiError
                 );
 
                 return false;
@@ -206,8 +221,8 @@
         }
 
         function setPricing(tld) {
-            bb.post(
-                'guest/servicedomain/pricing',
+            API.guest.post(
+                'servicedomain/pricing',
                 {tld: tld},
                 function (result) {
                     const yearsSelect = document.getElementById('registration-years');
@@ -223,7 +238,7 @@
 
                     for (let i = 1; i <= 5; i++) {
                         const totalPrice = (i === 1) ? regPrice : regPrice + (i - 1) * renewPrice;
-                        const priceFormatted = bb.currency(
+                        const priceFormatted = formatCurrency(
                             totalPrice,
                             {{ currency.conversion_rate }},
                             "{{ currency.code }}",
@@ -237,21 +252,23 @@
 
                     configNext.style.display = '';
                     configNext.disabled = false;
-                }
+                },
+                showApiError
             );
         }
 
         function setTransferPricing(tld) {
-            bb.post(
-                'guest/servicedomain/pricing',
+            API.guest.post(
+                'servicedomain/pricing',
                 {tld: tld},
                 function (result) {
-                    const price = bb.currency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
+                    const price = formatCurrency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
                     const transferPriceEl = document.getElementById('transfer-price');
                     if (transferPriceEl) transferPriceEl.textContent = price;
                     configNext.style.display = '';
                     configNext.disabled = false;
-                }
+                },
+                showApiError
             );
         }
     });

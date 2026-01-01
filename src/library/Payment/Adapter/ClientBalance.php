@@ -70,19 +70,14 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
         return "<script>
                 document.addEventListener('DOMContentLoaded', function() {
-                    fetch('$ipnUrl', { method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({})
-                    }).then(() => {
+                    API.makeRequest('POST', '$ipnUrl', {}, function () {
                         window.location.href = '$invoiceUrl';
-                    }).catch((error) => {
-                        console.error('Error during fetch:', error);
+                    }, function (error) {
+                        console.error('Payment callback failed:', error);
                         if (window.confirm('An error occurred while processing your request. Would you like to return to the invoice page?')) {
                             window.location.href = '$invoiceUrl';
                         }
-                    });
+                    }, false);
                 });
                 </script>";
     }

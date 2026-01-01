@@ -228,6 +228,7 @@ class Box_App
             '/api/guest/staff/login',
             '/api/admin',
             'api/admin',
+            '/index.php?_url=/api/admin/',
         ];
 
         foreach ($adminApiPrefixes as $adminApiPrefix) {

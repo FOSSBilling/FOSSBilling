@@ -177,7 +177,6 @@ async function watch() {
     outfile: join(jsDir, 'huraga.js'),
     platform: 'browser',
     target: 'es2018',
-    inject: [jqueryShim],
     loader: {
       '.svg': 'file',
       '.woff': 'file',

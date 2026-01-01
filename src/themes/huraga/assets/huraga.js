@@ -25,9 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (message) {
       sessionStorage.setItem(key, message);
       if (typeof reload === 'boolean' && reload) {
-        bb.reload();
+        window.location.reload();
       } else if (typeof reload === 'string') {
-        bb.redirect(reload);
+        window.location.assign(reload);
       }
     }
   }

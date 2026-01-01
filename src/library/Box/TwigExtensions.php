@@ -96,7 +96,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             new TwigFunction('fb_api', $this->fb_api(...)),
             new TwigFunction('fb_api_form', $this->fb_api_form(...)),
             new TwigFunction('fb_api_link', $this->fb_api_link(...)),
-            new TwigFunction('fb_api_button', $this->fb_api_button(...)),
         ];
     }
 
@@ -454,7 +453,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         $tag = $config['tag'] ?? null;
         $content = $config['content'] ?? '';
         $action = $config['action'] ?? null;
-        unset($config['tag'], $config['content']);
+        unset($config['tag'], $config['content'], $config['action']);
 
         $config['type'] = 'form';
 
@@ -506,31 +505,9 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             return '<a ' . $hrefAttr . $attr . '>' . $content . '</a>';
         }
 
-        return $attr;
-    }
+        $hrefAttr = $href ? 'href="' . htmlspecialchars((string) $href, ENT_QUOTES, 'UTF-8') . '" ' : '';
 
-    /**
-     * Generate data-fb-api attribute for buttons that trigger API calls.
-     *
-     * Usage:
-     *   {{ fb_api_button({endpoint: 'api/admin/client/delete', params: {id: client.id}, modal: {type: 'confirm'}}) }}
-     *
-     * @param array $config API configuration (endpoint and params required)
-     *
-     * @return string HTML attribute string
-     *
-     * @throws RuntimeException on invalid configuration
-     */
-    public function fb_api_button(array $config): string
-    {
-        if (!isset($config['endpoint'])) {
-            throw new RuntimeException('fb_api_button: "endpoint" option is required');
-        }
-
-        $config['type'] = 'button';
-        $config['params'] ??= [];
-
-        return $this->fb_api($config);
+        return $hrefAttr . $attr;
     }
 
     /**
@@ -544,7 +521,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
      */
     private function validateFbApiConfig(array $config): array
     {
-        $allowedKeys = ['type', 'endpoint', 'params', 'message', 'redirect', 'reload', 'modal', 'callback'];
+        $allowedKeys = ['type', 'href', 'endpoint', 'params', 'message', 'redirect', 'reload', 'modal', 'callback'];
 
         foreach (array_keys($config) as $key) {
             if (!in_array($key, $allowedKeys, true)) {
@@ -557,6 +534,12 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
         if (isset($config['modal'])) {
             $config['modal'] = $this->validateModalConfig($config['modal']);
+        }
+
+        foreach (['href', 'message', 'redirect', 'callback'] as $key) {
+            if (isset($config[$key]) && !is_string($config[$key])) {
+                throw new RuntimeException(sprintf('fb_api: "%s" must be a string', $key));
+            }
         }
 
         if (isset($config['reload']) && !is_bool($config['reload'])) {
@@ -605,62 +588,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         return $modal;
-    }
-
-    /**
-     * Extract API endpoint and params from a FOSSBilling API URL.
-     *
-     * FOSSBilling URLs can be in these formats:
-     *   - ?_api=admin/support/ticket_close&id=123
-     *   - ?_api=admin/email/template_update
-     *   - /api/admin/client/delete?id=123 (with path prefix)
-     *
-     * @param string $url The full URL
-     *
-     * @return array ['endpoint' => string, 'params' => array]
-     */
-    private function extractEndpointAndParamsFromUrl(string $url): array
-    {
-        $params = [];
-        $endpoint = '';
-
-        // Parse the URL
-        $parsed = parse_url($url);
-
-        if (isset($parsed['query'])) {
-            parse_str($parsed['query'], $queryParams);
-
-            // Check for _api parameter (FOSSBilling format)
-            if (isset($queryParams['_api'])) {
-                $endpoint = $queryParams['_api'];
-                unset($queryParams['_api']);
-                $params = $queryParams;
-            } else {
-                // No _api parameter, try to infer endpoint from path
-                $endpoint = $this->inferEndpointFromPath($parsed['path'] ?? '');
-            }
-        } elseif (isset($parsed['path'])) {
-            // No query string, infer from path
-            $endpoint = $this->inferEndpointFromPath($parsed['path']);
-        }
-
-        return ['endpoint' => $endpoint, 'params' => $params];
-    }
-
-    /**
-     * Infer API endpoint from URL path.
-     *
-     * @param string $path URL path
-     *
-     * @return string Endpoint or empty string
-     */
-    private function inferEndpointFromPath(string $path): string
-    {
-        // Remove common prefixes
-        $path = preg_replace('#^/?api/#', '', $path);
-        $path = trim($path, '/');
-
-        return $path;
     }
 
     /**
