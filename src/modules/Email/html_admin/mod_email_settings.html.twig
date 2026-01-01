@@ -105,7 +105,7 @@
                                                 <use xlink:href="#edit" />
                                             </svg>
                                         </a>
-                                        <a class="btn btn-icon" href="{{ 'api/admin/email/template_delete'|link({ 'id': template.id }) }}"
+                                        <a class="btn btn-icon"
                                             data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
                                             {{ fb_api_link({href: 'api/admin/email/template_delete'|link({id: template.id}), modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'This action will delete the email template'|trans, button: 'Delete'|trans}, reload: true}) }}>
                                             <svg class="icon">

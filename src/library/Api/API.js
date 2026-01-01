@@ -60,6 +60,7 @@ const Tools = {
 
     const schema = {
       "optionalProperties": {
+        "href": { "type": "string" },
         "callback": { "type": "string" },
         "message": { "type": "string" },
         "redirect": { "type": "string" },
@@ -484,7 +485,8 @@ const API = {
           }
 
           const handleApiRequest = (method, href, params = {}) => {
-            API.makeRequest(method, Tools.getBaseURL(href), params,
+            const url = apiData.href || href;
+            API.makeRequest(method, Tools.getBaseURL(url), params,
               (result) => API._afterComplete(linkElement, result),
               (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error')
             );

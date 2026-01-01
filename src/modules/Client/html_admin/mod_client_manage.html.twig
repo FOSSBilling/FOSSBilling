@@ -143,7 +143,7 @@
                     </svg>
                     <span>{{ 'Login to client area'|trans }}</span>
                 </a>
-                <a class="btn btn-danger" href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}"
+                <a class="btn btn-danger"
                     {{ fb_api_link({href: 'api/admin/client/delete'|link({id: client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|alink}) }}>
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#delete" />
@@ -563,7 +563,7 @@
                 </table>
 
                 <div class="card-body">
-                    <a class="btn btn-primary" href="{{ 'api/admin/invoice/prepare'|link({ 'client_id': client.id }) }}" {{ fb_api_link({href: 'api/admin/invoice/prepare'|link({client_id: client.id}), callback: 'onAfterInvoicePrepared'}) }}>
+                    <a class="btn btn-primary" {{ fb_api_link({href: 'api/admin/invoice/prepare'|link({client_id: client.id}), callback: 'onAfterInvoicePrepared'}) }}>
                         <svg class="icon">
                             <use xlink:href="#plus" />
                         </svg>
@@ -660,7 +660,7 @@
                             <td>{{ tx.description }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
-                                <a class="btn btn-icon" href="{{ 'api/admin/client/balance_delete'|link({ 'id': tx.id }) }}"
+                                <a class="btn btn-icon"
                                     {{ fb_api_link({href: 'api/admin/client/balance_delete'|link({id: tx.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}) }}>
                                     <svg class="icon">
                                         <use xlink:href="#delete" />

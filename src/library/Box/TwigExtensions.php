@@ -433,43 +433,80 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     }
 
     /**
-     * Generate data-fb-api attribute for forms, extracting endpoint from action URL.
+     * Generate data-fb-api attribute for forms, or full <form> tag.
      *
-     * Usage - the action URL is parsed to extract the endpoint:
-     *   {{ fb_api_form({message: 'Saved'|trans}) }}
-     *   {{ fb_api_form({modal: {type: 'confirm', title: 'Are you sure?'}}) }}
+     * Usage - just attribute (backward compatible):
+     *   <form method="post" action="{{ 'api/admin/order/update'|link }}" {{ fb_api_form({reload: true}) }}>
+     *       ...fields...
+     *   </form>
      *
-     * @param array $config API configuration options (action is auto-extracted from rendered action URL)
+     * Usage - full tag (simplified):
+     *   {{ fb_api_form({tag: 'form', action: 'api/admin/order/update'|link, reload: true, content: '...fields...'}) }}
      *
-     * @return string HTML attribute string
+     * @param array $config Config with optional 'tag', 'action', 'content', and other API options
+     *
+     * @return string HTML attribute string or full <form> tag
      *
      * @throws RuntimeException on invalid configuration
      */
     public function fb_api_form(array $config = []): string
     {
+        $tag = $config['tag'] ?? null;
+        $content = $config['content'] ?? '';
+        $action = $config['action'] ?? null;
+        unset($config['tag'], $config['content']);
+
         $config['type'] = 'form';
 
-        return $this->fb_api($config);
+        try {
+            $json = json_encode($config, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        } catch (JsonException $e) {
+            throw new RuntimeException('fb_api_form: failed to encode JSON: ' . $e->getMessage());
+        }
+
+        $attr = 'method="post" data-fb-api=\'' . htmlspecialchars($json, ENT_QUOTES, 'UTF-8') . '\'';
+
+        if ($tag === 'form') {
+            $actionAttr = $action ? 'action="' . htmlspecialchars((string) $action, ENT_QUOTES, 'UTF-8') . '" ' : '';
+
+            return '<form ' . $actionAttr . $attr . '>' . $content . '</form>';
+        }
+
+        return $attr;
     }
 
     /**
-     * Generate data-fb-api attribute for links.
+     * Generate data-fb-api attribute for links, or full <a> tag.
      *
-     * Usage - the href URL is used by JavaScript to make the API call:
-     *   {{ fb_api_link({message: 'Deleted'|trans, redirect: 'support'|alink}) }}
-     *   {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'}}) }}
+     * Usage - just attribute (backward compatible):
+     *   <a href="{{ 'api/admin/client/delete'|link({id: client.id}) }}" {{ fb_api_link({reload: true}) }}>Delete</a>
      *
-     * @param array $config API configuration options (href is read from the link element by JavaScript)
+     * Usage - full tag (eliminates duplicate href):
+     *   {{ fb_api_link({tag: 'a', href: 'api/admin/client/delete'|link({id: client.id}), reload: true, content: '<svg class="icon"><use xlink:href="#delete"/></svg><span>Delete</span>'}) }}
      *
-     * @return string HTML attribute string
+     * @param array $config Config with optional 'tag', 'href', 'content', and other API options
+     *
+     * @return string HTML attribute string or full <a> tag
      *
      * @throws RuntimeException on invalid configuration
      */
     public function fb_api_link(array $config): string
     {
-        $config['type'] = 'link';
+        $tag = $config['tag'] ?? null;
+        $content = $config['content'] ?? '';
+        $href = $config['href'] ?? null;
+        unset($config['tag'], $config['content']);
 
-        return $this->fb_api($config);
+        $config['type'] = 'link';
+        $attr = $this->fb_api($config);
+
+        if ($tag === 'a') {
+            $hrefAttr = $href ? 'href="' . htmlspecialchars((string) $href, ENT_QUOTES, 'UTF-8') . '" ' : '';
+
+            return '<a ' . $hrefAttr . $attr . '>' . $content . '</a>';
+        }
+
+        return $attr;
     }
 
     /**
@@ -507,7 +544,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
      */
     private function validateFbApiConfig(array $config): array
     {
-        $allowedKeys = ['type', 'endpoint', 'href', 'params', 'message', 'redirect', 'reload', 'modal', 'callback'];
+        $allowedKeys = ['type', 'endpoint', 'params', 'message', 'redirect', 'reload', 'modal', 'callback'];
 
         foreach (array_keys($config) as $key) {
             if (!in_array($key, $allowedKeys, true)) {

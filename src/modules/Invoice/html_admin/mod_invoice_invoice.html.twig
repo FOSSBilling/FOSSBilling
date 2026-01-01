@@ -128,7 +128,7 @@
                     </svg>
                     <span>{{ 'View as Client'|trans }}</span>
                 </a>
-                <a href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}" class="btn btn-primary"
+                <a class="btn btn-primary"
                     {{ fb_api_link({href: 'api/admin/invoice/delete'|link({id: invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|alink}) }}>
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#delete" />
@@ -136,7 +136,7 @@
                     <span>{{ 'Delete'|trans }}</span>
                 </a>
                 {% if invoice.status == 'unpaid' %}
-                <a class="btn btn-primary" href="{{ 'api/admin/invoice/send_reminder'|link({ 'id': invoice.id }) }}" {{ fb_api_link({href: 'api/admin/invoice/send_reminder'|link({id: invoice.id}), message: 'Payment Reminder Sent'|trans}) }}>
+                <a class="btn btn-primary" {{ fb_api_link({href: 'api/admin/invoice/send_reminder'|link({id: invoice.id}), message: 'Payment Reminder Sent'|trans}) }}>
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#mail" />
                     </svg>
@@ -182,7 +182,7 @@
                 {% endif %}
 
                 {% if invoice.status == 'paid' %}
-                <a href="{{ 'api/admin/invoice/refund'|link({ 'id': invoice.id }) }}" class="btn btn-primary"
+                <a class="btn btn-primary"
                     {{ fb_api_link({href: 'api/admin/invoice/refund'|link({id: invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|alink}) }}>
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#receipt-refund" />

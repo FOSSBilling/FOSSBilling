@@ -168,7 +168,7 @@
             <div class="card-footer text-center">
                 {% set order_actions %}
                     {% if order.status == 'pending_setup' or order.status == 'failed_setup' %}
-                    <a class="btn btn-primary" href="{{ 'api/admin/order/activate'|link({ 'id': order.id }) }}"
+                    <a class="btn btn-primary"
                         {{ fb_api_link({href: 'api/admin/order/activate'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
@@ -179,7 +179,7 @@
 
                     {% if order.status == 'active' or order.status == 'failed_renew' %}
                     {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
-                    <a class="btn btn-primary" href="{{ 'api/admin/order/renew'|link({ 'id': order.id }) }}"
+                    <a class="btn btn-primary"
                         {{ fb_api_link({href: 'api/admin/order/renew'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#refresh" />
@@ -188,7 +188,7 @@
                     </a>
 
                     {% if params.suspend_reason_list|trim == null %}
-                    <a class="btn btn-primary" href="{{ 'api/admin/order/suspend'|link({ 'id': order.id }) }}"
+                    <a class="btn btn-primary"
                         {{ fb_api_link({href: 'api/admin/order/suspend'|link({id: order.id}), modal: {type: 'prompt', title: 'Suspension Reason'|trans, label: 'Reason for Suspension'|trans, key: 'reason'}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#pause" />
@@ -222,7 +222,7 @@
                         <span>{{ 'Suspend'|trans }}</span>
                     </a>
                     {% endif %}
-                    <a class="btn btn-primary" href="{{ 'api/admin/order/cancel'|link({ 'id': order.id }) }}"
+                    <a class="btn btn-primary"
                         {{ fb_api_link({href: 'api/admin/order/cancel'|link({id: order.id}), modal: {type: 'prompt', title: 'Cancellation Reason'|trans, label: 'Reason for Cancellation'|trans, key: 'reason'}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#close" />
@@ -232,7 +232,7 @@
                     {% endif %}
 
                     {% if order.status == 'suspended' %}
-                    <a class="btn btn-primary" href="{{ 'api/admin/order/unsuspend'|link({ 'id': order.id }) }}"
+                    <a class="btn btn-primary"
                         {{ fb_api_link({href: 'api/admin/order/unsuspend'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
@@ -242,7 +242,7 @@
                     {% endif %}
 
                     {% if order.status == 'canceled' %}
-                    <a class="btn btn-primary" href="{{ 'api/admin/order/uncancel'|link({ 'id': order.id }) }}"
+                    <a class="btn btn-primary"
                         {{ fb_api_link({href: 'api/admin/order/uncancel'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
@@ -259,7 +259,7 @@
                     </button>
 
                     {% if not order.unpaid_invoice_id %}
-                    <a class="btn btn-primary" href="{{ 'api/admin/invoice/renewal_invoice'|link({ 'id': order.id }) }}"
+                    <a class="btn btn-primary"
                         {{ fb_api_link({href: 'api/admin/invoice/renewal_invoice'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#plus" />
@@ -597,7 +597,7 @@
                         </td>
                         <td class="text-wrap">{{ sh.notes }}</td>
                         <td>
-                            <a class="btn btn-icon" href="{{ 'api/admin/order/status_history_delete'|link({ 'id': sh.id }) }}"
+                            <a class="btn btn-icon"
                                 {{ fb_api_link({href: 'api/admin/order/status_history_delete'|link({id: sh.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|alink}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />

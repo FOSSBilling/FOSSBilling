@@ -258,7 +258,7 @@
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon" href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}"
+                                    <a class="btn btn-icon"
                                         {{ fb_api_link({href: 'api/admin/client/delete'|link({id: client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
@@ -315,7 +315,7 @@
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
-                                <a class="btn btn-icon" href="{{ 'api/admin/client/group_delete'|link({ 'id': id }) }}"
+                                <a class="btn btn-icon"
                                     {{ fb_api_link({href: 'api/admin/client/group_delete'|link({id: id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
