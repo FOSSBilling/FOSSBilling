@@ -56,7 +56,7 @@
                     <td>{{ mf.q(gateway.allow_recurrent) }}</td>
                     <td>
                         <a class="btn btn-icon" href="{{ 'api/admin/invoice/gateway_copy'|link({ 'id': gateway.id }) }}" title="{{ 'Copy'|trans }}"
-                            data-fb-api='{ "redirect": "{{ 'invoice/gateways'|alink }}" }'>
+                            {{ fb_api_link({redirect: 'invoice/gateways'|alink}) }}>
                             <svg class="icon">
                                 <use xlink:href="#copy" />
                             </svg>
@@ -67,7 +67,7 @@
                             </svg>
                         </a>
                         <a class="btn btn-icon" href="{{ 'api/admin/invoice/gateway_delete'|link({ 'id': gateway.id }) }}"
-                            data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'invoice/gateways'|alink }}" }'>
+                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/gateways'|alink}) }}>
                             <svg class="icon">
                                 <use xlink:href="#delete" />
                             </svg>
@@ -114,7 +114,7 @@
                     <td>{{ gtw }}</td>
                     <td>
                         <a class="btn btn-icon" href="{{ 'api/admin/invoice/gateway_install'|link({ 'code': gtw }) }}" title="{{ 'Install'|trans }}"
-                            data-fb-api='{ "redirect": "{{ 'invoice/gateways'|alink }}" }'>
+                            {{ fb_api_link({redirect: 'invoice/gateways'|alink}) }}>
                             <svg class="icon">
                                 <use xlink:href="#cog" />
                             </svg>

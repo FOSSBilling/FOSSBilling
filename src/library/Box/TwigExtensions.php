@@ -91,6 +91,12 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     {
         return [
             new TwigFunction('svg_sprite', $this->twig_svg_sprite(...), ['needs_environment' => true, 'is_safe' => ['html']]),
+
+            // FOSSBilling API functions
+            new TwigFunction('fb_api', $this->fb_api(...)),
+            new TwigFunction('fb_api_form', $this->fb_api_form(...)),
+            new TwigFunction('fb_api_link', $this->fb_api_link(...)),
+            new TwigFunction('fb_api_button', $this->fb_api_button(...)),
         ];
     }
 
@@ -402,5 +408,245 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         return file_get_contents($spritePath);
+    }
+
+    /**
+     * Core function for generating data-fb-api attributes.
+     *
+     * @param array $config API configuration
+     *
+     * @return string HTML attribute string
+     *
+     * @throws RuntimeException on invalid configuration
+     */
+    public function fb_api(array $config): string
+    {
+        $config = $this->validateFbApiConfig($config);
+
+        try {
+            $json = json_encode($config, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        } catch (JsonException $e) {
+            throw new RuntimeException('fb_api: failed to encode JSON: ' . $e->getMessage());
+        }
+
+        return 'data-fb-api=\'' . htmlspecialchars($json, ENT_QUOTES, 'UTF-8') . '\'';
+    }
+
+    /**
+     * Generate data-fb-api attribute for forms, extracting endpoint from action URL.
+     *
+     * Usage - the action URL is parsed to extract the endpoint:
+     *   {{ fb_api_form({message: 'Saved'|trans}) }}
+     *   {{ fb_api_form({modal: {type: 'confirm', title: 'Are you sure?'}}) }}
+     *
+     * @param array $config API configuration options (action is auto-extracted from rendered action URL)
+     *
+     * @return string HTML attribute string
+     *
+     * @throws RuntimeException on invalid configuration
+     */
+    public function fb_api_form(array $config = []): string
+    {
+        $config['type'] = 'form';
+
+        return $this->fb_api($config);
+    }
+
+    /**
+     * Generate data-fb-api attribute for links.
+     *
+     * Usage - the href URL is used by JavaScript to make the API call:
+     *   {{ fb_api_link({message: 'Deleted'|trans, redirect: 'support'|alink}) }}
+     *   {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'}}) }}
+     *
+     * @param array $config API configuration options (href is read from the link element by JavaScript)
+     *
+     * @return string HTML attribute string
+     *
+     * @throws RuntimeException on invalid configuration
+     */
+    public function fb_api_link(array $config): string
+    {
+        $config['type'] = 'link';
+
+        return $this->fb_api($config);
+    }
+
+    /**
+     * Generate data-fb-api attribute for buttons that trigger API calls.
+     *
+     * Usage:
+     *   {{ fb_api_button({endpoint: 'api/admin/client/delete', params: {id: client.id}, modal: {type: 'confirm'}}) }}
+     *
+     * @param array $config API configuration (endpoint and params required)
+     *
+     * @return string HTML attribute string
+     *
+     * @throws RuntimeException on invalid configuration
+     */
+    public function fb_api_button(array $config): string
+    {
+        if (!isset($config['endpoint'])) {
+            throw new RuntimeException('fb_api_button: "endpoint" option is required');
+        }
+
+        $config['type'] = 'button';
+        $config['params'] ??= [];
+
+        return $this->fb_api($config);
+    }
+
+    /**
+     * Validate fb_api configuration and normalize values.
+     *
+     * @param array $config Raw configuration
+     *
+     * @return array Validated and normalized configuration
+     *
+     * @throws RuntimeException on invalid options
+     */
+    private function validateFbApiConfig(array $config): array
+    {
+        $allowedKeys = ['type', 'endpoint', 'href', 'params', 'message', 'redirect', 'reload', 'modal', 'callback'];
+
+        foreach (array_keys($config) as $key) {
+            if (!in_array($key, $allowedKeys, true)) {
+                $suggestion = $this->getClosestMatch($key, $allowedKeys);
+                $hint = $suggestion ? " Did you mean: '{$suggestion}'?" : '';
+
+                throw new RuntimeException("fb_api: unknown option '{$key}'{$hint}");
+            }
+        }
+
+        if (isset($config['modal'])) {
+            $config['modal'] = $this->validateModalConfig($config['modal']);
+        }
+
+        if (isset($config['reload']) && !is_bool($config['reload'])) {
+            throw new RuntimeException('fb_api: "reload" must be a boolean');
+        }
+
+        if (isset($config['params']) && !is_array($config['params'])) {
+            throw new RuntimeException('fb_api: "params" must be an array');
+        }
+
+        return $config;
+    }
+
+    /**
+     * Validate modal configuration.
+     *
+     * @param array $modal Modal configuration
+     *
+     * @return array Validated modal configuration
+     *
+     * @throws RuntimeException on invalid modal options
+     */
+    private function validateModalConfig(array $modal): array
+    {
+        $allowedModalKeys = ['type', 'title', 'content', 'button', 'buttonColor', 'label', 'value', 'key'];
+
+        foreach (array_keys($modal) as $key) {
+            if (!in_array($key, $allowedModalKeys, true)) {
+                throw new RuntimeException("fb_api.modal: unknown option '{$key}'");
+            }
+        }
+
+        $allowedTypes = ['confirm', 'danger', 'prompt'];
+        $modalType = $modal['type'] ?? null;
+
+        if ($modalType === null) {
+            throw new RuntimeException("fb_api.modal: 'type' is required");
+        }
+
+        if (!in_array($modalType, $allowedTypes, true)) {
+            throw new RuntimeException("fb_api.modal: invalid type '{$modalType}'. Allowed: " . implode(', ', $allowedTypes));
+        }
+
+        if ($modalType === 'prompt' && !isset($modal['key'])) {
+            throw new RuntimeException("fb_api.modal: 'key' is required for 'prompt' type");
+        }
+
+        return $modal;
+    }
+
+    /**
+     * Extract API endpoint and params from a FOSSBilling API URL.
+     *
+     * FOSSBilling URLs can be in these formats:
+     *   - ?_api=admin/support/ticket_close&id=123
+     *   - ?_api=admin/email/template_update
+     *   - /api/admin/client/delete?id=123 (with path prefix)
+     *
+     * @param string $url The full URL
+     *
+     * @return array ['endpoint' => string, 'params' => array]
+     */
+    private function extractEndpointAndParamsFromUrl(string $url): array
+    {
+        $params = [];
+        $endpoint = '';
+
+        // Parse the URL
+        $parsed = parse_url($url);
+
+        if (isset($parsed['query'])) {
+            parse_str($parsed['query'], $queryParams);
+
+            // Check for _api parameter (FOSSBilling format)
+            if (isset($queryParams['_api'])) {
+                $endpoint = $queryParams['_api'];
+                unset($queryParams['_api']);
+                $params = $queryParams;
+            } else {
+                // No _api parameter, try to infer endpoint from path
+                $endpoint = $this->inferEndpointFromPath($parsed['path'] ?? '');
+            }
+        } elseif (isset($parsed['path'])) {
+            // No query string, infer from path
+            $endpoint = $this->inferEndpointFromPath($parsed['path']);
+        }
+
+        return ['endpoint' => $endpoint, 'params' => $params];
+    }
+
+    /**
+     * Infer API endpoint from URL path.
+     *
+     * @param string $path URL path
+     *
+     * @return string Endpoint or empty string
+     */
+    private function inferEndpointFromPath(string $path): string
+    {
+        // Remove common prefixes
+        $path = preg_replace('#^/?api/#', '', $path);
+        $path = trim($path, '/');
+
+        return $path;
+    }
+
+    /**
+     * Find closest matching string from a list (for helpful error messages).
+     *
+     * @param string $input   User input
+     * @param array  $options Available options
+     *
+     * @return string|null Closest match or null
+     */
+    private function getClosestMatch(string $input, array $options): ?string
+    {
+        $closest = null;
+        $minDistance = PHP_INT_MAX;
+
+        foreach ($options as $option) {
+            $distance = levenshtein($input, $option);
+            if ($distance < $minDistance && $distance <= 3) {
+                $minDistance = $distance;
+                $closest = $option;
+            }
+        }
+
+        return $closest;
     }
 }

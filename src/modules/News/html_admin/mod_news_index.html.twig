@@ -66,7 +66,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'api/admin/news/delete'|link({ 'id': post.id }) }}"
-                                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'news'|alink }}" }'>
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'news'|alink}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -89,7 +89,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/news/create'|link }}" data-fb-api='{ "redirect": "{{ 'news'|alink }}" }'>
+                <form method="post" action="{{ 'api/admin/news/create'|link }}" {{ fb_api_form({redirect: 'news'|alink}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                         <div class="col">

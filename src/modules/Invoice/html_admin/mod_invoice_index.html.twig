@@ -255,7 +255,7 @@
                                     </svg>
                                 </a>
                                 <a class="btn btn-icon" href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}"
-                                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
+                                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
@@ -288,7 +288,7 @@
 
             <div class="tab-pane show" id="tab-new" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/admin/invoice/prepare'|link }}" data-fb-api='{ "callback": "onAfterInvoicePrepared" }'>
+                    <form method="post" action="{{ 'api/admin/invoice/prepare'|link }}" {{ fb_api_form({callback: 'onAfterInvoicePrepared'}) }}>
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
                             <div class="col">

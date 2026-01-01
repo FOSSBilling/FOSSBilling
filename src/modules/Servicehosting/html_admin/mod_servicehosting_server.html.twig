@@ -25,7 +25,7 @@
     <div class="card-body">
         <h3>{{ 'Server management'|trans }}</h3>
 
-        <form method="post" action="{{ 'api/admin/servicehosting/server_update'|link }}" id="server-update" data-fb-api='{ "message": "{{ 'Server Updated'|trans }}" }'>
+        <form method="post" action="{{ 'api/admin/servicehosting/server_update'|link }}" id="server-update" {{ fb_api_form({message: 'Server Updated'|trans}) }}>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
                 <div class="col">

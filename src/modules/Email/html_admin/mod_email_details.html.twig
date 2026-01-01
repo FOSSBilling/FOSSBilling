@@ -56,7 +56,7 @@
         </button>
         <a class="btn btn-primary"
             href="{{'api/admin/email/email_resend'|link({ 'id': email.id }) }}"
-            data-fb-api='{ "message": "{{ 'Email resent'|trans }}" }'>
+            {{ fb_api_link({href: 'api/admin/email/email_resend'|link({id: email.id}), message: 'Email resent'|trans}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
                 <use xlink:href="#refresh" />
             </svg>
@@ -64,7 +64,7 @@
         </a>
         <a class="btn btn btn-primary"
             href="{{'api/admin/email/email_delete'|link({ 'id': email.id }) }}"
-            data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'email/history'|alink }}" }'>
+            {{ fb_api_link({href: 'api/admin/email/email_delete'|link({id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|alink}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
                 <use xlink:href="#delete" />
             </svg>

@@ -126,7 +126,7 @@
                               href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
                            <div class="dropdown-divider"></div>
                            <a class="dropdown-item" href="{{ 'api/admin/profile/logout'|link }}"
-                              data-fb-api='{ "redirect": "{{ 'staff/login'|alink }}" }'>
+                               {{ fb_api_link({ redirect: 'staff/login'|alink }) }}>
                               {{ 'Logout'|trans }}
                             </a>
                         </div>

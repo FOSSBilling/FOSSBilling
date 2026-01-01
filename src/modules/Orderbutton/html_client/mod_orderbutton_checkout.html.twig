@@ -113,14 +113,14 @@
                             <a href="#" id="show-promo-field">{{ 'Have a coupon code?'|trans }}</a>
                         {% endif %}
 
-                        <form method="post" action="{{ 'api/guest/cart/apply_promo'|link }}" data-fb-api='{ "message": "{{ 'Promo Code Applied to Order'|trans }}", "reload": true }'
+                        <form method="post" action="{{ 'api/guest/cart/apply_promo'|link }}" {{ fb_api_form({message: 'Promo Code Applied to Order'|trans, reload: true}) }}
                             {% if not cart.promocode %}style="display:none"{% endif %} id="apply-promo">
                             <div class="control-group">
                                 <div class="form-controls">
                                     <div class="input-append">
                                         <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo.required %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
                                         {% if cart.promocode %}
-                                            <a class="btn btn-warning btn-sm mb-1" href="{{ 'api/guest/cart/remove_promo'|link }}" type="button" data-fb-api='{ "reload": true }'>{{ 'Remove'|trans }}</a>
+                                            <a class="btn btn-warning btn-sm mb-1" href="{{ 'api/guest/cart/remove_promo'|link }}" type="button" {{ fb_api_link({reload: true}) }}>{{ 'Remove'|trans }}</a>
                                         {% else %}
                                             <button class="btn btn-primary btn-sm mb-1" type="submit">{{ 'Apply'|trans }}</button>
                                         {% endif %}
@@ -160,7 +160,7 @@
 
                         </table>
 
-                        <form method="post" action="{{ 'api/client/cart/checkout'|link }}" data-fb-api='{ "callback": "onOrderCheckout" }'>
+                        <form method="post" action="{{ 'api/client/cart/checkout'|link }}" {{ fb_api_form({callback: 'onOrderCheckout'}) }}>
                             <fieldset>
                                 {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
                                 {% if cart.total and not enough_in_balance %}

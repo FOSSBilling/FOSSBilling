@@ -77,7 +77,7 @@
                             </svg>
                         </a>
                         <a class="btn btn-icon" href="{{ 'api/admin/support/canned_delete'|link({ 'id': response.id }) }}"
-                            data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'support/canned-responses'|alink }}" }'>
+                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/canned-responses'|alink}) }}>
                             <svg class="icon">
                                 <use xlink:href="#delete" />
                             </svg>
@@ -96,7 +96,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/canned_create'|link }}" data-fb-api='{ "redirect": "{{ 'support/canned-responses'|alink }}" }'>
+                <form method="post" action="{{ 'api/admin/support/canned_create'|link }}" {{ fb_api_form({redirect: 'support/canned-responses'|alink}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
                         <div class="col">
@@ -143,7 +143,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'api/admin/support/canned_category_delete'|link({ 'id': cat_id }) }}"
-                                data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'support/canned-responses'|alink }}" }'>
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/canned-responses'|alink}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -161,7 +161,7 @@
 
         <div class="tab-pane fade" id="tab-new-category" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/canned_category_create'|link }}" data-fb-api='{ "redirect": "{{ 'support/canned-responses'|alink }}" }'>
+                <form method="post" action="{{ 'api/admin/support/canned_category_create'|link }}" {{ fb_api_form({redirect: 'support/canned-responses'|alink}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                         <div class="col">

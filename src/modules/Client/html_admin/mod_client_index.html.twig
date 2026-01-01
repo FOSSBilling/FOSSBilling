@@ -259,7 +259,7 @@
                                         </svg>
                                     </a>
                                     <a class="btn btn-icon" href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}"
-                                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
+                                        {{ fb_api_link({href: 'api/admin/client/delete'|link({id: client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -316,7 +316,7 @@
                                     </svg>
                                 </a>
                                 <a class="btn btn-icon" href="{{ 'api/admin/client/group_delete'|link({ 'id': id }) }}"
-                                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "reload": true }'>
+                                    {{ fb_api_link({href: 'api/admin/client/group_delete'|link({id: id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
@@ -334,7 +334,7 @@
 
             <div class="tab-pane fade" id="tab-new-group" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/admin/client/group_create'|link }}" data-fb-api='{ "redirect": "{{ 'client'|alink }}" }'>
+                    <form method="post" action="{{ 'api/admin/client/group_create'|link }}" {{ fb_api_form({ redirect: 'client'|alink}) }}>
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                             <div class="col">

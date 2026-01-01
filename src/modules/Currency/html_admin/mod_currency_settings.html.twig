@@ -89,7 +89,7 @@
                                         </a>
                                         <a class="btn btn-icon" href="{{ 'api/admin/currency/delete'|link({ 'code': currency.code }) }}"
                                             data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                            data-fb-api='{ "modal": { "type": "danger", "title": "{{ 'Are you sure?'|trans }}", "button": "{{ 'Delete'|trans }}" }, "redirect": "{{ 'extension/settings/currency'|alink }}" }'>
+                                            {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, redirect: 'extension/settings/currency'|alink}) }}>
                                             <svg class="icon">
                                                 <use xlink:href="#delete" />
                                             </svg>
@@ -97,7 +97,7 @@
                                         {% if not currency.default %}
                                             <a class="btn btn-icon" href="{{'api/admin/currency/set_default'|link({ 'code': currency.code }) }}"
                                                 data-bs-toggle="tooltip" data-bs-title="{{ 'Set as default'|trans }}"
-                                                data-fb-api='{ "redirect": "{{ 'extension/settings/currency'|alink }}" }'>
+                                                {{ fb_api_link({redirect: 'extension/settings/currency'|alink}) }}>
                                                 <svg class="icon">
                                                     <use xlink:href="#check" />
                                                 </svg>
@@ -115,7 +115,7 @@
                     </div>
 
                     <div class="card-footer text-center">
-                        <a class="btn btn-primary" href="{{ 'api/admin/currency/update_rates'|link }}" data-fb-api='{ "redirect": "{{ 'extension/settings/currency'|alink }}" }'>
+                        <a class="btn btn-primary" href="{{ 'api/admin/currency/update_rates'|link }}" {{ fb_api_link({redirect: 'extension/settings/currency'|alink}) }}>
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#refresh" />
                             </svg>
@@ -128,7 +128,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-new-currency" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/currency/create'|link }}" data-fb-api='{ "redirect": "{{ 'extension/settings/currency'|alink }}" }'>
+                    <form method="post" action="{{ 'api/admin/currency/create'|link }}" {{ fb_api_form({redirect: 'extension/settings/currency'|alink}) }}>
 
                         <div class="card-body">
                             <div class="form-group mb-3 row">
@@ -163,7 +163,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-api-settings" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" data-fb-api='{ "message": "{{ 'Successfully Updated Settings'|trans }}" }'>
+                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({message: 'Successfully Updated Settings'|trans}) }}>
                         <input type="hidden" name="ext" value="mod_currency">
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Available exchange rate data providers'|trans }}</h3>

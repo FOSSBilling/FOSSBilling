@@ -87,7 +87,7 @@
 
                 <div class="body footer text-center">
                     <a class="btn btn-primary" href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id }) }}"
-                        data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'invoice/subscriptions'|alink }}" }'>
+                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/subscriptions'|alink}) }}>
                         <svg class="icon icon-tabler" width="24" height="24">
                             <use xlink:href="#delete" />
                         </svg>
@@ -98,7 +98,7 @@
 
             <div class="tab-pane fade" id="tab-manage" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/admin/invoice/subscription_update'|link }}" data-fb-api='{ "reload": true }'>
+                    <form method="post" action="{{ 'api/admin/invoice/subscription_update'|link }}" {{ fb_api_form({reload: true}) }}>
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>
                             <div class="col">

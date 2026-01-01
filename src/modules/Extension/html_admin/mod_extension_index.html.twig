@@ -70,7 +70,7 @@
                                             {% if ext.status == 'installed' %}
                                                 <a class="btn btn-icon" href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id }) }}"
                                                     data-bs-toggle="tooltip" data-bs-title="{{ 'Deactivate'|trans }}"
-                                                    data-fb-api='{ "modal": { "type": "danger", "title": "{{ 'Are you sure?'|trans }}", "button": "{{ 'Deactivate'|trans }}" }, "reload": true }'>
+                                                    {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Deactivate'|trans}, reload: true}) }}>
                                                     <svg class="icon">
                                                         <use xlink:href="#close" />
                                                     </svg>
@@ -79,9 +79,7 @@
                                                 <a class="btn btn-icon"
                                                     href="{{ 'api/admin/extension/uninstall'|link({ 'type': ext.type, 'id': ext.id }) }}"
                                                     data-bs-toggle="tooltip" data-bs-title="{{ 'Uninstall'|trans }}"
-                                                    data-fb-api='{ "modal": { "type": "danger", "title": "{{ 'Are you sure?'|trans }}", 
-                                                    "content": "{{ 'Uninstalling this module will permanently delete all its database tables and remove its files from the disk. This action cannot be undone.'|trans }}"
-                                                    "button": "{{ 'Uninstall'|trans }}" }, "callback": "onAfterModuleActivated" }'>
+                                                    {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'Uninstalling this module will permanently delete all its database tables and remove its files from the disk. This action cannot be undone.'|trans, button: 'Uninstall'|trans}, callback: 'onAfterModuleActivated'}) }}>
 
                                                     <svg class="icon">
                                                         <use xlink:href="#delete" />

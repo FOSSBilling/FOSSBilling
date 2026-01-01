@@ -79,7 +79,7 @@
                                     </a>
                                     <a class="btn btn-icon" href="{{ 'api/admin/custompages/delete'|link({ 'id': page.id }) }}" title="{{ 'Delete'|trans }}"
                                         data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                        data-fb-api='{ "modal": { "type": "danger", "title": "{{ 'Are you sure?'|trans }}", "button": "{{ 'Delete'|trans }}", }, "reload": true }'>
+                                        {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, reload: true}) }}>
                                         <svg class="icon">
                                             <use xlink:href="#delete"/>
                                         </svg>
@@ -101,7 +101,7 @@
             </div>
 
             <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                <form method="post" action="{{ 'api/admin/custompages/create'|link }}" data-fb-api='{ "redirect": "{{ 'custompages'|alink }}" }'>
+                <form method="post" action="{{ 'api/admin/custompages/create'|link }}" {{ fb_api_form({redirect: 'custompages'|alink}) }}>
                     <div class="card-body mt-2">
                         <div class="mb-3 row">
                             <label class="col-md-3 col-form-label">{{ 'Title'|trans }}</label>

@@ -17,7 +17,7 @@
             <div role="tablist">
                 <div class="tab-content" id="nav-tabContent">
                     <div class="tab-pane show active" id="sign-in" role="tabpanel" aria-labelledby="in-tab" tabindex="0">
-                        <form method="post" action="{{ 'api/guest/client/login'|link }}" data-fb-api='{ "callback": "onLogin" }'>
+                        <form method="post" action="{{ 'api/guest/client/login'|link }}" {{ fb_api_form({callback: 'onLogin'}) }}>
                             <div class="row">
                                 <div class="form-floating col-md-7 mb-3">
                                     <input class="form-control form-control-sm" type="email" name="email" id="email"
@@ -47,7 +47,7 @@
                         </form>
                     </div>
                     <div class="tab-pane" id="sign-up" role="tabpanel" aria-labelledby="up-tab" tabindex="0">
-                        <form method="post" action="{{ 'api/guest/client/create'|link }}" data-fb-api='{ "callback": "onAccountCreate" }'>
+                        <form method="post" action="{{ 'api/guest/client/create'|link }}" {{ fb_api_form({callback: 'onAccountCreate'}) }}>
                             {% set r = guest.client_required %}
                             <div class="row">
                                 <div class="form-floating col-md-7 mb-3">

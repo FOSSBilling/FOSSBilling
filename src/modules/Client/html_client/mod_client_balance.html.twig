@@ -18,7 +18,7 @@
                             <h1 class="mb-1">{{ 'Wallet'|trans }}</h1>
                             <span class="small text-muted">{{ 'Here you can manage and track your account balance.'|trans }}</span>
                         </div>
-                        <form method="post" class="form-inline d-flex gap-2 justify-content-end" action="{{ 'api/client/invoice/funds_invoice'|link }}" data-fb-api='{ "callback": "onAfterInvoiceCreated" }'>
+                        <form method="post" class="form-inline d-flex gap-2 justify-content-end" action="{{ 'api/client/invoice/funds_invoice'|link }}" {{ fb_api_form({callback: 'onAfterInvoiceCreated'}) }}>
                             <input id="appendedPrependedInput" class="form-control w-50" type="text" name="amount" placeholder="0" required="required">
                             <button class="btn btn-primary" type="submit">{{ 'Add fund'|trans }}</button>
                         </form>

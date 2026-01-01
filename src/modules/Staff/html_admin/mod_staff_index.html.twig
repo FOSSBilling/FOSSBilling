@@ -55,7 +55,7 @@
                             <img src="assets/icons/edit.svg" alt="">
                         </a>
                         <a class="btn btn14" href="{{ 'api/admin/staff/delete'|link({ 'id': member.id }) }}"
-                            data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'staff'|alink }}" }'>
+                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'staff'|alink}) }}
                             <img src="assets/icons/delete.svg" alt="">
                         </a>
                     </td>
@@ -74,7 +74,7 @@
 
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-new">
-            <form method="post" action="{{ 'api/admin/staff/create'|link }}" data-fb-api='{ "callback": "onAfterStaffCreate" }'>
+            <form method="post" action="{{ 'api/admin/staff/create'|link }}" {{ fb_api_form({callback: 'onAfterStaffCreate'}) }}>
                 <fieldset>
                     <div class="rowElem noborder">
                         <label>{{ 'Group'|trans }}</label>
@@ -148,7 +148,7 @@
                             <img src="assets/icons/edit.svg" alt="">
                         </a>
                         <a class="btn btn14" href="{{ 'api/admin/staff/group_delete'|link({'id' : group.id }) }}"
-                            data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'staff'|alink }}" }'>
+                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'staff'|alink}) }}
                             <img src="assets/icons/delete.svg"
                         </a>
                     </td>
@@ -166,7 +166,7 @@
 
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-new-group">
-            <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" data-fb-api='{ "redirect": "{{ 'staff'|alink }}" }'>
+            <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" {{ fb_api_form({redirect: 'staff'|alink}) }}>
                 <div class="rowElem noborder">
                     <label>{{ 'Name'|trans }}</label>
                     <div class="formRight">

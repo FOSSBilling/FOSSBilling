@@ -14,7 +14,7 @@
                 <span>{{ 'You must verify your email address before you may access our services.'|trans }}</span>
             </div>
             <a class="btn btn-primary" href="{{ 'api/client/client/resend_email_verification'|link }}"
-               data-fb-api='{ "message": "{{ 'Verification Email Re-sent'|trans }}" }'>{{ 'Resend Verification Email'|trans }}</a>
+               {{ fb_api_link({message: 'Verification Email Re-sent'|trans}) }}>{{ 'Resend Verification Email'|trans }}</a>
         </div>
     {% endif %}
 
@@ -37,7 +37,7 @@
                     <div class="card-body tab-pane active" id="details-tab-pane" role="tabpanel" tabindex="0">
                         <h5 class="card-title mb-1">{{ 'Update details'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'Keep your personal data up to date.'|trans }}</p>
-                        <form method="post" action="client/profile/update" id="profile-update" data-fb-api='{ "message": "{{ 'Profile Updated'|trans }}" }'>
+                        <form method="post" action="client/profile/update" id="profile-update" {{ fb_api_form({message: 'Profile Updated'|trans}) }}>
                             <div class="row mb-4 d-flex justify-content-center">
                                 <div class="col-md-2">
                                     <img class="img-fluid img-thumbnail" src="{{ profile.email|gravatar(100) }}"
@@ -170,7 +170,7 @@
                     <div class="card-body tab-pane" id="pass-tab-pane" role="tabpanel" tabindex="0">
                         <h5 class="card-title mb-1">{{ 'Change Password'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'Enter your new password twice to avoid mistakes. '|trans }}</p>
-                        <form method="post" action="{{ 'api/client/profile/change_password'|link }}" data-fb-api>
+                        <form method="post" action="{{ 'api/client/profile/change_password'|link }}" {{ fb_api_form() }}>
                             <div class="mb-3">
                                 <label class="form-label" for="current_password">{{ 'Current Password'|trans }}</label>
                                 <input class="form-control" type="password" name="current_password"
@@ -192,7 +192,7 @@
                     <div class="card-body tab-pane" id="apikey-tab-pane" role="tabpanel" tabindex="0">
                         <h5 class="card-title mb-1">{{ 'API Key'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'API key allows integration with external applications. You will need this key for authentication.'|trans }}</p>
-                        <form method="post" action="client/profile/api_key_reset" id="change-api-key" data-fb-api='{ "message": "{{ 'API Key Changed'|trans }}" }'>
+                        <form method="post" action="client/profile/api_key_reset" id="change-api-key" {{ fb_api_form({message: 'API Key Changed'|trans}) }}>
                             {% if client.profile_api_key_get %}
                                 <div class="alert alert-warning" role="alert">
                                     <strong>{{ 'Warning!'|trans }}</strong>&nbsp;{{ 'Resetting the key will break existing applications using it!'|trans }}

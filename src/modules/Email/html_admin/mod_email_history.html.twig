@@ -63,7 +63,7 @@
                     </svg>
                 </a>
                 <a class="btn btn-icon" href="{{ 'api/admin/email/email_delete'|link({ 'id': email.id }) }}"
-                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'email/history'|alink }}" }'>
+                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|alink}) }}>
                     <svg class="icon">
                         <use xlink:href="#delete" />
                     </svg>

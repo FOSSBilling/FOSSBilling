@@ -28,7 +28,7 @@
         </div>
         <div class="card-body border-bottom">
             <h3 class="card-title">{{ 'Create new redirect'|trans }}</h3>
-            <form method="post" action="{{ 'api/admin/redirect/create'|link }}" data-fb-api='{ "reload": true }'>
+            <form method="post" action="{{ 'api/admin/redirect/create'|link }}" {{ fb_api_form({reload: true}) }}>
                 <div class="row row-cards">
                     <div class="col-sm-5 col-md-4 mb-3">
                         <label class="form-label required" for="path">{{ 'Path'|trans }}</label>
@@ -95,7 +95,7 @@
                         </td>
                         <td>
                             <a class="btn btn-icon" href="{{ 'api/admin/redirect/delete'|link({ 'id': r.id }) }}"
-                                data-fb-api='{ "modal": { "type": "danger", "title": "{{ 'Are you sure?'|trans }}, "button": "{{ 'Delete'|trans }}" }, "reload": true }'
+                                {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, reload: true}) }}
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>

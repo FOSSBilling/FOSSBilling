@@ -36,7 +36,7 @@
         <div class="card">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" data-fb-api='{ "message": "{{ 'Configuration Updated'|trans }}" }'>
+                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({ message: 'Configuration Updated'|trans }) }}>
                         {% set params = admin.extension_config_get({ 'ext': 'mod_support' }) %}
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Auto Responder'|trans }}</h3>
@@ -166,7 +166,7 @@
                                     </a>
                                     <a class="btn btn-icon" href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}"
                                         data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                        data-fb-api='{ "modal": { "type": "danger", "title": "{{ 'Are you sure?'|trans }}", "button": "{{ 'Delete'|trans }}" }, "redirect": "{{ 'extension/settings/support'|alink }}" }'>
+                                        {{ fb_api_link({ message: 'Are you sure?'|trans, confirm: true, redirect: 'extension/settings/support'|alink }) }}>
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
