@@ -6,7 +6,7 @@ FOSSBilling is a free and open-source billing and client management solution des
 
 ### Key Technologies
 
-* **Backend:** PHP 8.2+ with dependencies managed by Composer. Key libraries include:
+* **Backend:** PHP 8.3+ with dependencies managed by Composer. Key libraries include:
   * [Symfony Components](https://symfony.com/): Console, cache, filesystem, HTTP client, and other core functionalities. See `composer.json` for a list of imported components.
     * Prefer Symfony components wherever you can.
   * [Twig](https://twig.symfony.com/): Template engine for rendering views
@@ -30,9 +30,10 @@ FOSSBilling is a free and open-source billing and client management solution des
   * [Flag Icons](https://flagicons.lipis.dev/): Country flag icon library
   * jQuery is being slowly phased out. Avoid it and use vanilla JavaScript for new pieces of code.
 * **Build Tools:**
-  * [Symfony Webpack Encore](https://symfony.com/doc/current/frontend.html): Asset management and building
+  * [esbuild](https://esbuild.github.io/): Fast JavaScript/CSS bundler and minifier
   * [Sass](https://sass-lang.com/): CSS preprocessing
   * [PostCSS](https://postcss.org/) with Autoprefixer: CSS post-processing
+  * [svg-sprite](https://github.com/svg-sprite/svg-sprite): SVG sprite generation for icons
 * **Testing:**
   * [PHPUnit](https://phpunit.de/): Unit and integration testing framework
 * **Code Quality & Analysis:**
@@ -58,7 +59,7 @@ The application uses a modern PHP architecture with dependency injection, event-
 
 ### Prerequisites
 
-* **PHP 8.2 or higher** with required extensions:
+* **PHP 8.3 or higher** with required extensions:
   * curl, intl, mbstring, pdo, zlib
 * **Composer** for PHP dependency management
 * **Node.js and npm** for frontend asset management
@@ -80,7 +81,7 @@ npm install
 
 ### Building Frontend Assets
 
-FOSSBilling uses Symfony Webpack Encore for asset compilation. Build frontend assets for themes and modules:
+FOSSBilling uses esbuild for fast asset compilation. Build frontend assets for themes and modules:
 
 ```bash
 npm run build
@@ -92,7 +93,7 @@ This command builds assets for:
 * `huraga` theme  
 * `Wysiwyg` module
 
-You can also build specific components:
+Build scripts are defined in each theme/module's `package.json` and use `esbuild.mjs` for configuration:
 
 ```bash
 # Build only themes
@@ -101,12 +102,24 @@ npm run build-themes
 # Build only modules
 npm run build-modules
 
-# Build specific theme
+# Build specific theme (uses workspace scripts)
 npm run build-admin_default
 npm run build-huraga
 
 # Build specific module
 npm run build-wysiwyg
+```
+
+**Theme Structure:**
+- **admin_default**: Uses `esbuild.mjs` with SVG sprite generation, SCSS compilation, and multiple asset types
+- **huraga**: Uses simplified `esbuild.mjs` for basic JS/CSS bundling
+- **Wysiwyg**: Uses esbuild to build CKEditor from source
+
+**Development Mode:**
+```bash
+# Watch mode for active development (rebuilds on file changes)
+cd src/themes/admin_default && npm run dev
+cd src/themes/huraga && npm run dev
 ```
 
 ### Testing
@@ -231,6 +244,6 @@ tests-legacy/                  # Legacy PHPUnit tests
 
 ## Important Notes
 
-* **PHP Version:** Requires PHP 8.2 or higher
+* **PHP Version:** Requires PHP 8.3 or higher
 * **Database:** Requires MySQL/MariaDB database server
 * **License:** Apache License 2.0

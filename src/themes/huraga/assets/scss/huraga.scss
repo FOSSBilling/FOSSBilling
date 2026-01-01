@@ -1,14 +1,26 @@
-$primary: #005fc5;
-$warning: #f59e0b;
-$danger: #dc2626;
-$body-bg: #f5f5f5;
+@use "flags";
 
-$accordion-button-active-bg: rgba($primary, .05);
-$accordion-button-focus-border-color: rgba($primary, .08);
-
-@import "~bootstrap/scss/bootstrap";
-@import "~tom-select/dist/css/tom-select.bootstrap5.css";
-@import "flags";
+:root {
+    --bs-primary: #005fc5;
+    --bs-primary-rgb: 0, 95, 197;
+    --bs-primary-text-emphasis: #00264f;
+    --bs-primary-bg-subtle: #ccdff3;
+    --bs-primary-border-subtle: #99bfe8;
+    --bs-warning: #f59e0b;
+    --bs-warning-rgb: 245, 158, 11;
+    --bs-warning-text-emphasis: #623f04;
+    --bs-warning-bg-subtle: #fdecce;
+    --bs-warning-border-subtle: #fbd89d;
+    --bs-danger: #dc2626;
+    --bs-danger-rgb: 220, 38, 38;
+    --bs-danger-text-emphasis: #580f0f;
+    --bs-danger-bg-subtle: #f8d4d4;
+    --bs-danger-border-subtle: #f1a8a8;
+    --bs-body-bg: #f5f5f5;
+    --bs-body-bg-rgb: 245, 245, 245;
+    --bs-accordion-active-bg: rgba(var(--bs-primary-rgb), 0.05);
+    --bs-accordion-btn-focus-box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.08);
+}
 
 html,
 body {
@@ -36,7 +48,7 @@ body {
     }
 
     >a {
-        color: $secondary;
+        color: var(--bs-secondary);
     }
 }
 
@@ -49,8 +61,8 @@ body {
         >thead {
             >tr {
                 >th {
-                    font-size: $font-size-sm * .875;
-                    color: $secondary;
+                    font-size: 0.765625rem;
+                    color: var(--bs-secondary);
                     font-weight: 600;
                     text-transform: uppercase;
                 }
@@ -75,8 +87,8 @@ body {
 
 // Remove order management accordion icons
 #orderManager {
-    --#{$prefix}accordion-btn-icon: none;
-    --#{$prefix}accordion-btn-active-icon: none;
+    --bs-accordion-btn-icon: none;
+    --bs-accordion-btn-active-icon: none;
 }
 
 // TomSelect dropdown
@@ -108,12 +120,12 @@ body {
         font-size: 14px;
 
         .active {
-            background-color: rgba($secondary, .06);
+            background-color: rgba(var(--bs-secondary-rgb), 0.06);
             color: inherit;
         }
 
         .selected {
-            background-color: rgba($secondary, .1);
+            background-color: rgba(var(--bs-secondary-rgb), 0.1);
         }
     }
 }
@@ -125,10 +137,10 @@ body {
 }
 
 .invoice-gateway {
-    border: 1px $border-color solid;
+    border: 1px solid var(--bs-border-color);
 
     &:hover {
-        border: 1px $primary solid;
+        border: 1px solid var(--bs-primary);
     }
 }
 
@@ -142,8 +154,8 @@ body {
 
         &.active {
             border-left: 2px solid var(--bs-primary-border-subtle);
-            background: rgba($primary, .1);
-            color: $dark;
+            background: rgba(var(--bs-primary-rgb), 0.1);
+            color: var(--bs-dark);
         }
     }
 }

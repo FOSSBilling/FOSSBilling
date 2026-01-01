@@ -6,6 +6,175 @@
 
 {% set active_menu = 'activity' %}
 
+{% block top_content %}
+{% if request.show_filter %}
+    <section class="card mb-3">
+        <div class="card-body">
+            <h5>{{ 'Filter activity logs'|trans }}</h5>
+            <form method="get">
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Search'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" name="search" value="{{ request.search }}" placeholder="{{ 'Search in message'|trans }}">
+                    </div>
+                </div>
+
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label" for="ip">{{ 'IP address'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" id="ip" name="ip" value="{{ request.ip }}" placeholder="{{ 'Filter by IP address'|trans }}">
+                        <small class="form-hint">{{ 'Show logs from a specific IP address'|trans }}</small>
+                    </div>
+                </div>
+
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'User type'|trans }}</label>
+                    <div class="col">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" id="userTypeAll" type="radio" name="user_filter" value=""{% if not request.user_filter %} checked{% endif %}>
+                            <label class="form-check-label" for="userTypeAll">{{ 'All users'|trans }}</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" id="userTypeStaff" type="radio" name="user_filter" value="only_staff"{% if request.user_filter == 'only_staff' %} checked{% endif %}>
+                            <label class="form-check-label" for="userTypeStaff">{{ 'Staff only'|trans }}</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" id="userTypeClients" type="radio" name="user_filter" value="only_clients"{% if request.user_filter == 'only_clients' %} checked{% endif %}>
+                            <label class="form-check-label" for="userTypeClients">{{ 'Clients only'|trans }}</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label" for="admin_id">{{ 'Specific admin'|trans }}</label>
+                    <div class="col">
+                        <select class="form-control autocomplete-selector"
+                                placeholder="{{ 'Start typing the admin name or ID'|trans }}"
+                                id="admin_id"
+                                name="admin_id"
+                                data-resturl="admin/staff/get_pairs">
+                        {% if not request.admin_id %}
+                        {% else %}
+                            {% set admin = admin.staff_get({ 'id': request.admin_id }) %}
+                            <option value="{{ request.admin_id }}" selected>{{ admin.name }} ({{ admin.email }})</option>
+                        {% endif %}
+                        </select>
+                        <small class="form-hint">{{ 'Leave empty to show all staff members'|trans }}</small>
+                    </div>
+                </div>
+
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label" for="client_id">{{ 'Specific client'|trans }}</label>
+                    <div class="col">
+                        <select class="form-control autocomplete-selector"
+                                placeholder="{{ 'Start typing the client name or ID'|trans }}"
+                                id="client_id"
+                                name="client_id"
+                                data-resturl="admin/client/get_pairs">
+                        {% if not request.client_id %}
+                        {% else %}
+                            {% set client = admin.client_get({ 'id': request.client_id }) %}
+                            <option value="{{ request.client_id }}" selected>{{ client.first_name }} {{ client.last_name }} ({{ client.email }})</option>
+                        {% endif %}
+                        </select>
+                        <small class="form-hint">{{ 'Leave empty to show all clients'|trans }}</small>
+                    </div>
+                </div>
+
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label" for="date_range">{{ 'Date range'|trans }}</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <div class="input-icon w-100">
+                                <input class="form-control datepicker"
+                                       id="date_range"
+                                       value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                       data-name-from="date_from"
+                                       data-name-to="date_to"
+                                >
+                                <span class="input-icon-addon">
+                                    <svg class="icon">
+                                        <use xlink:href="#calendar" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                        <small class="form-hint">{{ 'Filter activity logs by date range'|trans }}</small>
+                    </div>
+                </div>
+
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label" for="min_priority">{{ 'Minimum priority'|trans }}</label>
+                    <div class="col">
+                        <select class="form-select" id="min_priority" name="min_priority">
+                            <option value="0"{% if request.min_priority == '0' %} selected{% endif %}>{{ 'Emergency and above'|trans }}</option>
+                            <option value="1"{% if request.min_priority == '1' %} selected{% endif %}>{{ 'Alert and above'|trans }}</option>
+                            <option value="2"{% if request.min_priority == '2' %} selected{% endif %}>{{ 'Critical and above'|trans }}</option>
+                            <option value="3"{% if request.min_priority == '3' %} selected{% endif %}>{{ 'Error and above'|trans }}</option>
+                            <option value="4"{% if request.min_priority == '4' %} selected{% endif %}>{{ 'Warning and above'|trans }}</option>
+                            <option value="5"{% if request.min_priority == '5' %} selected{% endif %}>{{ 'Notice and above'|trans }}</option>
+                            <option value="6"{% if request.min_priority == '6' or request.min_priority == '' %} selected{% endif %}>{{ 'Info and above'|trans }}</option>
+                            <option value="7"{% if request.min_priority == '7' %} selected{% endif %}>{{ 'Debug and above'|trans }}</option>
+                        </select>
+                        <small class="form-hint">{{ 'Show logs with minimum priority level (disabled when exact priority is selected)'|trans }}</small>
+                    </div>
+                </div>
+
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label" for="priority">{{ 'Exact priority'|trans }}</label>
+                    <div class="col">
+                        <select class="form-select" id="priority" name="priority">
+                            <option value="">{{ 'All priorities'|trans }}</option>
+                            <option value="0"{% if request.priority == '0' %} selected{% endif %}>{{ 'Emergency'|trans }}</option>
+                            <option value="1"{% if request.priority == '1' %} selected{% endif %}>{{ 'Alert'|trans }}</option>
+                            <option value="2"{% if request.priority == '2' %} selected{% endif %}>{{ 'Critical'|trans }}</option>
+                            <option value="3"{% if request.priority == '3' %} selected{% endif %}>{{ 'Error'|trans }}</option>
+                            <option value="4"{% if request.priority == '4' %} selected{% endif %}>{{ 'Warning'|trans }}</option>
+                            <option value="5"{% if request.priority == '5' %} selected{% endif %}>{{ 'Notice'|trans }}</option>
+                            <option value="6"{% if request.priority == '6' %} selected{% endif %}>{{ 'Info'|trans }}</option>
+                            <option value="7"{% if request.priority == '7' %} selected{% endif %}>{{ 'Debug'|trans }}</option>
+                        </select>
+                        <small class="form-hint">{{ 'Show only logs with this exact priority level (takes precedence over minimum priority)'|trans }}</small>
+                    </div>
+                </div>
+
+                <input type="hidden" name="show_filter" value="1">
+                <button class="btn btn-primary w-100" type="submit">
+                    <svg class="icon">
+                        <use xlink:href="#filter" />
+                    </svg>
+                    {{ 'Filter'|trans }}
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const prioritySelect = document.getElementById('priority');
+            const minPrioritySelect = document.getElementById('min_priority');
+
+            function updatePriorityFields() {
+                // If exact priority is selected, disable min_priority
+                if (prioritySelect.value !== '') {
+                    minPrioritySelect.disabled = true;
+                    minPrioritySelect.classList.add('text-muted');
+                } else {
+                    minPrioritySelect.disabled = false;
+                    minPrioritySelect.classList.remove('text-muted');
+                }
+            }
+
+            // Update on page load
+            updatePriorityFields();
+
+            // Update when priority changes
+            prioritySelect.addEventListener('change', updatePriorityFields);
+        });
+    </script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="card overflow-auto">
     <div class="card-header">
@@ -18,25 +187,21 @@
     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
         <thead>
             <tr>
-                <th class="w-1 no-sort">
-                    <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
-                </th>
+                <th>{{ '#'|trans }}</th>
                 <th class="w-1 no-sort"></th>
                 <th>{{ 'User'|trans }}</th>
+                <th>{{ 'Priority'|trans }}</th>
                 <th>{{ 'Message'|trans }}</th>
                 <th>{{ 'IP'|trans }}</th>
                 <th>{{ 'Country'|trans }}</th>
                 <th>{{ 'Date'|trans }}</th>
-                <th class="w-1"></th>
             </tr>
         </thead>
         <tbody>
         {% set events = admin.activity_log_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
         {% for i, event in events.list %}
         <tr>
-            <td>
-                <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ event.id }}">
-            </td>
+            <td>{{ event.id }}</td>
             <td>
                 {% if event.client %}
                 <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
@@ -47,42 +212,73 @@
                     <span class="avatar avatar-sm d-none d-md-inline-block" style="background-image: url({{ event.staff.email|gravatar }}&size=24)"></span>
                 </a>
                 {% else %}
-                &nbsp;
+                <span class="avatar avatar-sm d-none d-md-inline-block" style="background-image: url({{ 'guest@fossbilling.org'|gravatar }}&size=24)"></span>
                 {% endif %}
             </td>
             <td>
                 {% if event.client %}
-                <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.name }}</a>
+                    <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.name }}</a>
+                    <a href="{{ request._url|link(request|merge({ 'client_id': event.client.id, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
+                        <svg class="icon icon-sm text-muted">
+                            <use xlink:href="#filter" />
+                        </svg>
+                    </a>
                 {% elseif event.staff %}
-                <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">{{ event.staff.name }}</a>
+                    <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">{{ event.staff.name }}</a>
+                    <a href="{{ request._url|link(request|merge({ 'admin_id': event.staff.id, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
+                        <svg class="icon icon-sm text-muted">
+                            <use xlink:href="#filter" />
+                        </svg>
+                    </a>
                 {% else %}
-                Guest
+                    {{ 'Guest'|trans }}
+                {% endif %}
+            </td>
+            <td>
+                {% if event.priority == 0 %}
+                    <span class="badge bg-red" title="Emergency">EMERG</span>
+                {% elseif event.priority == 1 %}
+                    <span class="badge bg-red-lt" title="Alert">ALERT</span>
+                {% elseif event.priority == 2 %}
+                    <span class="badge bg-orange" title="Critical">CRIT</span>
+                {% elseif event.priority == 3 %}
+                    <span class="badge bg-orange-lt" title="Error">ERR</span>
+                {% elseif event.priority == 4 %}
+                    <span class="badge bg-yellow" title="Warning">WARN</span>
+                {% elseif event.priority == 5 %}
+                    <span class="badge bg-blue" title="Notice">NOTICE</span>
+                {% elseif event.priority == 6 %}
+                    <span class="badge bg-cyan-lt" title="Info">INFO</span>
+                {% elseif event.priority == 7 %}
+                    <span class="badge bg-gray" title="Debug">DEBUG</span>
+                {% else %}
+                    <span class="badge bg-secondary">N/A</span>
                 {% endif %}
             </td>
             <td>{{ event.message }}</td>
-            <td>{{ event.ip|iplookup }}</td>
-            <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
-            <td>{{ event.created_at|format_datetime }}</td>
             <td>
-                <a class="btn btn-icon" href="{{ 'api/admin/activity/log_delete'|link({ 'id': event.id }) }}"
-                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'activity'|alink }}" }'>
-                    <svg class="icon">
-                        <use xlink:href="#delete" />
-                    </svg>
-                </a>
+                {{ event.ip|iplookup }}
+                {% if event.ip %}
+                    <a href="{{ request._url|link(request|merge({ 'ip': event.ip, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
+                        <svg class="icon icon-sm text-muted">
+                            <use xlink:href="#filter" />
+                        </svg>
+                    </a>
+                {% endif %}
             </td>
+            <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
+            <td title="{{ event.created_at|timeago }} ago">{{ event.created_at|format_datetime }}</td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="6">{{ 'The list is empty'|trans }}</td>
+            <td colspan="8">{{ 'The list is empty'|trans }}</td>
         </tr>
         {% endfor %}
         </tbody>
     </table>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
-        {% include 'partial_batch_delete.html.twig' with { 'action': 'activity/batch_delete' } %}
-        {% include 'partial_pagination.html.twig' with { 'list': events, 'url': 'activity' } %}
+        {{ include('partial_pagination.html.twig', { 'list': events, 'url': 'activity' }) }}
     </div>
 </div>
 {% endblock %}

@@ -1,0 +1,7 @@
+/* Shared vendor dependencies (also used by admin_default theme) */
+@import "@tabler/core/dist/css/tabler.css";
+@import "@tabler/core/dist/css/tabler-vendors.css";
+@import "tom-select/dist/css/tom-select.bootstrap5.css";
+
+/* Huraga theme-specific vendor dependencies */
+@import "flag-icons/css/flag-icons.css";

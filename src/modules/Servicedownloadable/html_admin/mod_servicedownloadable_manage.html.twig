@@ -22,7 +22,8 @@
     <h3>{{ 'Upload new file for this order'|trans }}</h3>
     <p class="text-muted">{{ 'Use this function to update existing order file. Client will be able to download new file from client area'|trans }}</p>
 
-    <form method="post" action="{{ 'api/admin/servicedownloadable/update'|link }}" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
+    <form method="post" action="admin/servicedownloadable/update" enctype="multipart/form-data" target="uploadframe" id="upload-form">
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Upload new file'|trans }}:</label>
             <div class="col">
@@ -30,42 +31,35 @@
             </div>
         </div>
 
-        <input type="submit" value="{{ 'Upload'|trans }}" class="btn btn-primary submitForm" id="bb-upload-button">
+        <input type="submit" value="{{ 'Upload'|trans }}" class="btn btn-primary submitForm" id="upload-button">
 
         <input type="hidden" name="order_id" value="{{ order.id }}">
     </form>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const iframe = document.createElement('iframe');
-        iframe.id = 'uploadframe';
-        iframe.name = 'uploadframe';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
+$(function() {
+    $('body').append('<iframe id="uploadframe" name="uploadframe" style="display:none" />');
 
-        const form = document.getElementById('bb-upload-form');
+    $('#upload-form').on('submit', function(){
+        $('#uploadframe').on('load', function() {
+            var responseText = $(this).contents().find('body').text();
+            var data;
+            try {
+                data = $.parseJSON(responseText);
+            } catch (e) {
+                FOSSBilling.message("Server returned non-JSON response", "error");
+                return;
+            }
 
-        form.addEventListener('submit', function() {
-            iframe.addEventListener('load', function handler() {
-                const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
-                const response = iframeDocument.body;
-                const data = JSON.parse(response.textContent);
+            if (data.error) {
+                bb.error(data.error.message, data.error.code);
+            }
 
-                if (data.error) {
-                    FOSSBilling.message(`${data.error.message} (${data.error.code})`, "error");
-                }
-
-                if (data.result) {
-                    FOSSBilling.message("{{ 'File was uploaded'|trans }}");
-                }
-
-                setTimeout(function() {
-                    response.innerHTML = '';
-                }, 1);
-
-                iframe.removeEventListener('load', handler);
-            });
+            if (data.result) {
+                FOSSBilling.message("{{ 'File was uploaded'|trans }}");
+            }
         });
     });
+});
 </script>

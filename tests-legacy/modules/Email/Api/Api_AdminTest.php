@@ -1,8 +1,13 @@
 <?php
 
-namespace Box\Tests\Mod\Email\Api;
+declare(strict_types=1);
 
-class Api_AdminTest extends \BBTestCase
+namespace Box\Tests\Mod\Email\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class Api_AdminTest extends \BBTestCase
 {
     public function testEmailGetList(): void
     {
@@ -15,7 +20,7 @@ class Api_AdminTest extends \BBTestCase
             ],
         ];
 
-        $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -23,7 +28,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($willReturn);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pager;
 
         $adminApi->setDi($di);
@@ -88,13 +93,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn($expected);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
+        $di = $this->getDi();
         $adminApi->setDi($di);
         $adminApi->setService($service);
 
@@ -126,11 +125,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('sendMail')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
-
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
 
         $adminApi->setDi($di);
         $adminApi->setService($emailService);
@@ -152,19 +147,13 @@ class Api_AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = 1;
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($model);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
-        $di['validator'] = $validatorMock;
-
         $adminApi->setDi($di);
 
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['resend'])->getMock();
@@ -187,18 +176,13 @@ class Api_AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(null);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
-        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -214,18 +198,13 @@ class Api_AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(null);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
-        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -246,7 +225,7 @@ class Api_AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = 1;
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($model);
@@ -254,16 +233,11 @@ class Api_AdminTest extends \BBTestCase
             ->method('trash')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $loggerMock = $this->createMock('Box_Log');
 
-        $loggerMock = $this->getMockBuilder('Box_Log')->getMock();
-
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
         $di['logger'] = $loggerMock;
-        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $adminApi->setService($emailService);
@@ -286,7 +260,7 @@ class Api_AdminTest extends \BBTestCase
             ],
         ];
 
-        $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -294,7 +268,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($willReturn);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pager;
 
         $adminApi->setDi($di);
@@ -321,18 +295,13 @@ class Api_AdminTest extends \BBTestCase
         $model = new \Model_EmailTemplate();
         $model->loadBean(new \DummyBean());
 
-        $db = $this->getMockBuilder('\Box_Database')->getMock();
+        $db = $this->createMock('\Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
-        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['templateToApiArray'])->getMock();
@@ -357,20 +326,15 @@ class Api_AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = 1;
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($model);
 
-        $loggerMock = $this->getMockBuilder('Box_Log')->getMock();
+        $loggerMock = $this->createMock('Box_Log');
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
-        $di['validator'] = $validatorMock;
         $di['logger'] = $loggerMock;
         $adminApi->setDi($di);
 
@@ -378,7 +342,7 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testtemplateDeleteTemplateNotFound(): void
+    public function testTemplateDeleteTemplateNotFound(): void
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
@@ -386,18 +350,13 @@ class Api_AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(null);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $db;
-        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -409,7 +368,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $modelId = random_int(1, 100);
+        $modelId = 1;
 
         $templateModel = new \Model_EmailTemplate();
         $templateModel->loadBean(new \DummyBean());
@@ -426,13 +385,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('templateCreate')
             ->willReturn($templateModel);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
+        $di = $this->getDi();
         $adminApi->setDi($di);
         $adminApi->setService($emailService);
 
@@ -443,12 +396,8 @@ class Api_AdminTest extends \BBTestCase
     public function testTemplateSendToNotSetException(): void
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $adminApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
         $adminApi->template_send(['code' => 'code']);
@@ -458,7 +407,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $id = random_int(1, 100);
+        $id = 1;
         $data = [
             'id' => $id,
             'enabled' => '1',
@@ -470,19 +419,13 @@ class Api_AdminTest extends \BBTestCase
 
         $emailTemplateModel = new \Model_EmailTemplate();
         $emailTemplateModel->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($emailTemplateModel);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['validator'] = $validatorMock;
-
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['updateTemplate'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('updateTemplate')
@@ -492,14 +435,14 @@ class Api_AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $result = $adminApi->template_update($data);
-        $this->assertEquals($result, true);
+        $this->assertTrue($result);
     }
 
     public function testTemplateReset(): void
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
-        $id = random_int(1, 100);
+        $id = 1;
         $data = [
             'code' => 'CODE',
         ];
@@ -508,13 +451,8 @@ class Api_AdminTest extends \BBTestCase
         $emailService->expects($this->atLeastOnce())
             ->method('resetTemplateByCode')
             ->willReturn(true);
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
+        $di = $this->getDi();
         $adminApi->setDi($di);
         $adminApi->setService($emailService);
 
@@ -583,17 +521,17 @@ class Api_AdminTest extends \BBTestCase
         $adminApi = new \Box\Mod\Email\Api\Admin();
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['batchSend'])->getMock();
         $emailService->expects($this->atLeastOnce())
-            ->method('batchSend');
+            ->method('batchSend')
+            ;
 
         $isExtensionActiveReturn = false;
-        $extension = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->getMock();
+        $extension = $this->createMock(\Box\Mod\Extension\Service::class);
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')
-            ->with('mod', 'demo')
-            ->willReturn(false);
+            ->willReturn($isExtensionActiveReturn);
 
-        $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $extension);
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn () => $extension);
 
         $adminApi->setService($emailService);
         $adminApi->setDi($di);
@@ -610,12 +548,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('sendTemplate')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $adminApi->setDi($di);
 
         $adminApi->setService($emailService);
@@ -640,9 +573,9 @@ class Api_AdminTest extends \BBTestCase
             ->willReturn(['vars' => [], 'content' => 'content']);
 
         $loader = new \Twig\Loader\ArrayLoader();
-        $twig = $this->getMockBuilder(\Twig\Environment::class)->setConstructorArgs([$loader, ['debug' => false]])->getMock();
+        $twig = $this->getMockBuilder("Twig\Environment")->setConstructorArgs([$loader, ['debug' => false]])->getMock();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['twig'] = $twig;
 
         $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->onlyMethods(['renderString'])->getMock();
@@ -650,7 +583,7 @@ class Api_AdminTest extends \BBTestCase
             ->method('renderString')
             ->willReturn('rendered');
 
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
+        $di['mod_service'] = $di->protect(fn () => $systemService);
 
         $adminApi->setDi($di);
 
@@ -660,15 +593,10 @@ class Api_AdminTest extends \BBTestCase
 
     public function testBatchDelete(): void
     {
-        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Email\Api\Admin::class)->onlyMethods(['email_delete'])->getMock();
+        $activityMock = $this->getMockBuilder(\Box\Mod\Email\Api\Admin::class)->onlyMethods(['email_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('email_delete')->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $activityMock->setDi($di);
 
         $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);

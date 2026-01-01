@@ -5,7 +5,7 @@
 {% block meta_title %}{{ ticket.subject }}{% endblock %}
 
 {% block head %}
-    {{ encore_entry_link_tags('markdown') }}
+    <link rel="stylesheet" href="{{ '/themes/huraga/build/css/markdown.css' | asset_url }}">
     {{ mf.wysiwyg('.editor-textarea') }}
 {% endblock %}
 

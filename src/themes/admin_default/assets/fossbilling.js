@@ -1,7 +1,3 @@
-import "@melloware/coloris/dist/coloris.css";
-import './scss/fossbilling.scss';
-
-import './js/sprite';
 import './js/ui/modals';
 import { coloris, init } from '@melloware/coloris';
 import ClipboardJS from "clipboard";
@@ -12,11 +8,9 @@ import ApexCharts from 'apexcharts';
 import './js/ui/theme_settings';
 import './js/fossbilling';
 import 'sortable-tablesort/dist/sortable.min.js';
-import Ajv from "ajv/dist/jtd";
 
 globalThis.ApexCharts = ApexCharts;
 globalThis.bootstrap = tabler.bootstrap;
-globalThis.Ajv = Ajv;
 
 init();
 coloris({

@@ -4,7 +4,6 @@
             <div class="ms-2 d-inline-block">
                 <div class="d-flex">
                     <form method="get">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <input type="hidden" name="_url" value="{{ request._url }}">
                         <div class="input-group input-group-flat">
                             <input class="form-control"
@@ -15,7 +14,7 @@
                                 aria-label="{{ 'Search'|trans }}">
                             <span class="input-group-text">
                                 <a class="link-secondary"
-                                    href="{{ request._url|link({ 'show_filter': 1 }) }}"
+                                    href="{{ request._url|link(request|merge({ 'show_filter': 1 })) }}"
                                     data-bs-toggle="tooltip"
                                     data-bs-original-title="{{ 'Search settings'|trans }}">
                                     <svg class="icon">

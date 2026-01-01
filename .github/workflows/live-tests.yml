@@ -22,14 +22,14 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 'PHP Build'
-        uses: FOSSBilling/.workflows/.github/actions/php-build@5effb8054706bc16b98d16bafb5ba540d6d1bc95
+        uses: FOSSBilling/.workflows/.github/actions/php-build@684dd307834c3066b5b95d3b971e1877d205c0de
         with:
           cache-deps: 'true'
           composer-args: '--prefer-dist --optimize-autoloader'
-          php-version: 8.2
+          php-version: 8.3
 
       - name: Make Needed Directories
         run: |
@@ -38,21 +38,21 @@ jobs:
 
       - name: Cache Built Admin Theme
         id: cache-admin_default
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5
         with:
           path: ./src/themes/admin_default/build
           key: admin_default-${{ hashFiles('./package-lock.json', './src/themes/admin_default/assets/fossbilling.js', './src/themes/admin_default/assets/scss/*.scss', './src/themes/admin_default/assets/js/*.js', './src/themes/admin_default/assets/js/ui/*.js') }}
 
       - name: Cache Built Huraga Theme
         id: cache-huraga
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5
         with:
           path: ./src/themes/huraga/build
           key: huraga-${{ hashFiles('./package-lock.json', './src/themes/huraga/assets/huraga.js', './src/themes/huraga/assets/scss/*.scss') }}
 
       - name: 'Install Node.js and Enable Caching'
         if: steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
-        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
         with:
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
@@ -82,19 +82,19 @@ jobs:
         run: sudo systemctl start mysql.service
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f # v2
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: imagick, gd, intl, xml, dom, curl, iconv, json, opcache, mbstring, bz2, simplexml, pdo, pdo_mysql
 
       - name: Setup Apache
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends \
-            libapache2-mod-php8.3 php8.3 php8.3-common php8.3-intl \
-            php8.3-mysql php8.3-xml php8.3-curl php8.3-fpm php8.3-mbstring \
-            php8.3-opcache php8.3-gd
-          sudo a2enmod php8.3
+            libapache2-mod-php8.4 php8.4 php8.4-common php8.4-intl \
+            php8.4-mysql php8.4-xml php8.4-curl php8.4-fpm php8.4-mbstring \
+            php8.4-opcache php8.4-gd
+          sudo a2enmod php8.4
           sudo systemctl start apache2
           sudo a2enmod rewrite
           sudo mkdir /var/www/localhost

@@ -23,9 +23,9 @@ class Service implements InjectionAwareInterface
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
 
-    public function __construct()
+    public function __construct(?Filesystem $filesystem = null)
     {
-        $this->filesystem = new Filesystem();
+        $this->filesystem = $filesystem ?? new Filesystem();
     }
 
     public function setDi(\Pimple\Container $di): void
@@ -255,7 +255,7 @@ class Service implements InjectionAwareInterface
         $mods = [];
         $handle = opendir(PATH_MODS);
         while ($name = readdir($handle)) {
-            if (ctype_alnum($name)) {
+            if ($name && ctype_alnum($name)) {
                 $m = $name;
                 $mod = $this->di['mod']($m);
                 if ($mod->isCore()) {
@@ -738,7 +738,7 @@ class Service implements InjectionAwareInterface
         $modules = [];
 
         foreach ($enabledModules as $module) {
-            if ($module == 'index' || $module == 'dashboard') {
+            if ($module == 'index') {
                 continue;
             }
 

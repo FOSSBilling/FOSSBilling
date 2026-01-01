@@ -13,16 +13,11 @@ use Doctrine\ORM\EntityManager;
 use FOSSBilling\Config;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
-use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
-use Lcharette\WebpackEncoreTwig\JsonManifest;
-use Lcharette\WebpackEncoreTwig\TagRenderer;
-use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
 use League\Csv\Writer;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
 use Twig\Extension\StringLoaderExtension;
@@ -170,14 +165,14 @@ $di['url'] = function () use ($di) {
 };
 
 /*
- * Returns a new Box_Mod object, created with the provided module name.
+ * Returns a new Module object, created with the provided module name.
  *
  * @param string $name The name of the module to create the object with.
  *
- * @return \Box_Mod The new Box_Mod object that was just created.
+ * @return \Module The new Module object that was just created.
  */
 $di['mod'] = $di->protect(function ($name) use ($di) {
-    $mod = new Box_Mod($name);
+    $mod = new FOSSBilling\Module($name);
     $mod->setDi($di);
 
     return $mod;
@@ -283,14 +278,6 @@ $di['twig'] = $di->factory(function () use ($di) {
 
     $box_extensions = new Box_TwigExtensions();
     $box_extensions->setDi($di);
-
-    if ($di['encore_info']['is_encore_theme']) {
-        $entryPoints = new EntrypointLookup($di['encore_info']['entrypoints']);
-        $tagRenderer = new TagRenderer($entryPoints);
-        $encoreExtensions = new EntrypointsTwigExtension($entryPoints, $tagRenderer);
-        $twig->addExtension($encoreExtensions);
-        $twig->addExtension(new VersionedAssetsTwigExtension(new JsonManifest($di['encore_info']['manifest'])));
-    }
 
     // $twig->addExtension(new OptimizerExtension());
     $twig->addExtension(new StringLoaderExtension());
@@ -650,16 +637,6 @@ $di['theme'] = function () use ($di) {
     $service = $di['mod_service']('theme');
 
     return $service->getCurrentClientAreaTheme();
-};
-
-/*
- * Gets the information of Webpack Encore for the current route theme.
- * @return string
- */
-$di['encore_info'] = function () use ($di) {
-    $service = $di['mod_service']('theme');
-
-    return $service->getEncoreInfo();
 };
 
 /*

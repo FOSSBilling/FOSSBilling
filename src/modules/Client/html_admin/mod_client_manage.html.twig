@@ -767,6 +767,14 @@
                             <td>{{ email.recipients }}</td>
                             <td>{{ email.created_at|format_datetime }}</td>
                             <td>
+                                <button class="btn btn-icon email-preview-btn"
+                                    data-email-subject="{{ email.subject }}"
+                                    data-email-content="{{ email.content_html|e('html_attr') }}"
+                                    title="{{ 'Preview'|trans }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#eye" />
+                                    </svg>
+                                </button>
                                 <a class="btn btn-icon" href="{{ 'email'|alink }}/{{ email.id }}">
                                     <svg class="icon">
                                         <use xlink:href="#edit"></use>
@@ -835,6 +843,7 @@
 {% endblock %}
 
 {% block js%}
+{{ include('partial_email_preview.html.twig') }}
 <script>
     function onAfterInvoicePrepared(id) {
         window.location = "{{ 'invoice/manage/'|alink }}/" + id;

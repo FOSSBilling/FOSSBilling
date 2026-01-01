@@ -1,12 +1,8 @@
-import './scss/huraga.scss';
-
 import * as bootstrap from 'bootstrap';
 import '../../admin_default/assets/js/tomselect';
 import '../../admin_default/assets/js/fossbilling';
-import Ajv from "ajv/dist/jtd";
 
 globalThis.bootstrap = bootstrap;
-globalThis.Ajv = Ajv;
 
 document.addEventListener('DOMContentLoaded', () => {
   /**
@@ -29,9 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (message) {
       sessionStorage.setItem(key, message);
       if (typeof reload === 'boolean' && reload) {
-        window.location.reload();
+        bb.reload();
       } else if (typeof reload === 'string') {
-        window.location = reload;
+        bb.redirect(reload);
       }
     }
   }
@@ -63,4 +59,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
-

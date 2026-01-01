@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Servicedownloadable\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 /**
  * Downloadable service management.
  */
@@ -22,14 +24,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function upload($data)
     {
-        $required = [
-            'id' => 'Product ID is missing',
-        ];
-
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         $request = $this->di['request'];
@@ -51,13 +48,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID (order_id) was not passed'])]
     public function update($data)
     {
-        $required = [
-            'order_id' => 'Order ID is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
 
         $orderService = $this->di['mod_service']('order');
@@ -75,18 +68,32 @@ class Admin extends \Api_Abstract
      * Save configuration for product.
      *
      **/
+    #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function config_save($data)
     {
-        $required = [
-            'id' => 'Product ID is missing',
-        ];
-
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         $service = $this->getService();
 
         return $service->saveProductConfig($model, $data);
+    }
+
+    /**
+     * Send file for download for a specific product.
+     *
+     * @param array{id:int|string} $data Data required to send the product file, must contain the product ID as `id`.
+     *
+     * @return bool True if the product file was successfully sent.
+     *
+     * @throws \FOSSBilling\Exception If the product cannot be found or the file cannot be sent.
+     */
+    #[RequiredParams(['id' => 'Product ID was not passed'])]
+    public function send_file($data)
+    {
+        $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+
+        $service = $this->getService();
+
+        return (bool) $service->sendProductFile($model);
     }
 }
