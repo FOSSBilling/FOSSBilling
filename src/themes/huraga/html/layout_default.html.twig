@@ -253,7 +253,7 @@
         <a href="#top" class="position-fixed btn btn-primary bottom-0 end-0 m-3">
             <span class="awe-arrow-up"></span> {{ 'Top'|trans }}</a>
     {% endif %}
-    <div class="wait" style="display:none" onclick="$(this).hide();">
+    <div class="wait" style="display:none" onclick="this.style.display='none'">
         <div class="spinner-border"
              style="width: 4rem; height: 4rem; top: 50%; left: 50%; position: fixed; z-index: 999"></div>
     </div>

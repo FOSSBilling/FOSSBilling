@@ -38,15 +38,25 @@
 </div>
 
 <script>
-$(function() {
-    $('body').append('<iframe id="uploadframe" name="uploadframe" style="display:none" />');
+document.addEventListener('DOMContentLoaded', function() {
+    let iframe = document.getElementById('uploadframe');
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'uploadframe';
+        iframe.name = 'uploadframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+    }
 
-    $('#upload-form').on('submit', function(){
-        $('#uploadframe').on('load', function() {
-            var responseText = $(this).contents().find('body').text();
-            var data;
+    const form = document.getElementById('upload-form');
+    form.addEventListener('submit', function() {
+        form.action = bb.restUrl('admin/servicedownloadable/upload');
+
+        iframe.addEventListener('load', function() {
+            const responseText = iframe.contentDocument?.body?.textContent || '';
+            let data;
             try {
-                data = $.parseJSON(responseText);
+                data = JSON.parse(responseText);
             } catch (e) {
                 FOSSBilling.message("Server returned non-JSON response", "error");
                 return;

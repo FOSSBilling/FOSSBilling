@@ -99,91 +99,120 @@
 
 {% set currency = guest.cart_get_currency %}
 <script type="text/javascript">
-    let nameserversCbEl = document.getElementById('nameserversCb');
-    let nameserversEl = document.getElementById('nameservers');
-    nameserversCbEl.addEventListener('change', () => {
-        if (nameserversCbEl.checked) {
-            nameserversEl.style.display = "flex";
-        } else {
-            nameserversEl.style.display = "none";
-        }
+    function fadeIn(el) {
+        el.style.removeProperty('display');
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.15s ease-in';
+        requestAnimationFrame(() => el.style.opacity = '1');
+    }
 
-    })
+    function slideDown(el) {
+        el.style.removeProperty('display');
+        el.style.overflow = 'hidden';
+        el.style.height = '0';
+        el.style.transition = 'height 0.2s ease-out';
+        requestAnimationFrame(() => el.style.height = el.scrollHeight + 'px');
+    }
 
-    $(function () {
-        $('ul.nav.nav-tabs > li.domain-tab a').on('click', function () {
-            $('#domain-action').val($(this).attr('rel'));
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('ul.nav.nav-tabs > li.domain-tab a').forEach(a => {
+            a.addEventListener('click', function () {
+                document.getElementById('domain-action').value = this.getAttribute('rel');
+            });
         });
 
-        $('#config-next').hide();
-        $( "#config-next" ).prop( "disabled", true );
+        const configNext = document.getElementById('config-next');
+        configNext.style.display = 'none';
+        configNext.disabled = true;
 
-        if ($(".addons").length) {
-            $('.order-button').one('click', function () {
-                $(this).hide();
-                $('.addons').slideDown('fast');
+        const addons = document.querySelector('.addons');
+        if (addons) {
+            const orderButton = document.querySelector('.order-button');
+            if (orderButton) {
+                orderButton.addEventListener('click', function () {
+                    this.style.display = 'none';
+                    slideDown(addons);
+                    return false;
+                });
+            }
+        }
+
+        document.querySelectorAll('.addon-period-selector').forEach(el => {
+            el.addEventListener('change', function () {
+                const r = this.getAttribute('rel');
+                const spans = document.querySelectorAll('#' + r + ' span');
+                spans.forEach(span => span.style.display = 'none');
+                const visibleSpan = document.querySelector('#' + r + ' span.' + this.value);
+                if (visibleSpan) {
+                    fadeIn(visibleSpan);
+                }
+            });
+            el.dispatchEvent(new Event('change'));
+        });
+
+        const transferCheck = document.getElementById('transfer-check');
+        if (transferCheck) {
+            transferCheck.addEventListener('click', function (event) {
+                const sld = document.querySelector('input[name="transfer_sld"]').value;
+                const tld = document.querySelector('select[name="transfer_tld"]').value;
+                document.getElementById('domain-action').value = 'transfer';
+                const domain = sld + tld;
+
+                bb.post(
+                    'guest/servicedomain/can_be_transferred',
+                    {sld: sld, tld: tld},
+                    function (result) {
+                        setTransferPricing(tld);
+                        const domainNameEl = document.getElementById('domain-name');
+                        if (domainNameEl) domainNameEl.textContent = domain;
+                        const transferConfig = document.getElementById('domain-transfer-config');
+                        if (transferConfig) fadeIn(transferConfig);
+                        const onAfterDomainCheck = document.querySelector('.onAfterDomainCheck');
+                        if (onAfterDomainCheck) fadeIn(onAfterDomainCheck);
+                        transferCheck.style.display = 'none';
+                        const transferOrderButton = document.querySelector('#transfer .order-button');
+                        if (transferOrderButton) transferOrderButton.style.display = '';
+                    }
+                );
 
                 return false;
             });
         }
 
-        $('.addon-period-selector').on('change', function () {
-            var r = $(this).attr('rel');
+        const domainCheck = document.getElementById('domain-check');
+        if (domainCheck) {
+            domainCheck.addEventListener('click', function (event) {
+                const sld = document.querySelector('input[name="register_sld"]').value.toLowerCase();
+                const tld = document.querySelector('select[name="register_tld"]').value;
+                const domain = sld + tld;
+                document.getElementById('domain-action').value = 'register';
+                bb.post(
+                    'guest/servicedomain/check',
+                    {sld: sld, tld: tld},
+                    function (result) {
+                        setPricing(tld);
+                        const domainNameEl = document.getElementById('domain-name');
+                        if (domainNameEl) domainNameEl.textContent = domain;
+                        const onAfterDomainCheck = document.querySelector('.onAfterDomainCheck');
+                        if (onAfterDomainCheck) fadeIn(onAfterDomainCheck);
+                        domainCheck.style.display = 'none';
+                        const registerOrderButton = document.querySelector('#register .order-button');
+                        if (registerOrderButton) registerOrderButton.style.display = '';
+                    }
+                );
 
-            $('#' + r + ' span').hide();
-            $('#' + r + ' span.' + $(this).val()).fadeIn();
-        }).trigger('change');
-
-        $('#transfer-check').on('click', function (event) {
-            var sld = $('input[name="transfer_sld"]').val();
-            var tld = $('select[name="transfer_tld"]').val();
-            $('#domain-action').val('transfer');
-            var domain = sld + tld;
-
-            bb.post(
-                'guest/servicedomain/can_be_transferred',
-                {sld: sld, tld: tld},
-                function (result) {
-                    setTransferPricing(tld);
-                    $('#domain-name').text(domain);
-                    $('#domain-transfer-config').fadeIn('fast');
-                    $('.onAfterDomainCheck').fadeIn('fast');
-                    $('#transfer-check').hide();
-                    $('#transfer .order-button').show();
-                }
-            );
-
-            return false;
-        });
-
-        $('#domain-check').on('click', function (event) {
-            var sld = $('input[name="register_sld"]').val();
-            sld = sld.toLowerCase();
-            var tld = $('select[name="register_tld"]').val();
-            var domain = sld + tld;
-            $('#domain-action').val('register');
-            bb.post(
-                'guest/servicedomain/check',
-                {sld: sld, tld: tld},
-                function (result) {
-                    setPricing(tld);
-                    $('#domain-name').text(domain);
-                    $('.onAfterDomainCheck').fadeIn('fast');
-                    $('#domain-check').hide();
-                    $('#register .order-button').show();
-                }
-            );
-
-            return false;
-        });
+                return false;
+            });
+        }
 
         function setPricing(tld) {
             bb.post(
                 'guest/servicedomain/pricing',
                 {tld: tld},
                 function (result) {
-                    const $yearsSelect = $("#registration-years");
-                    $yearsSelect.empty();
+                    const yearsSelect = document.getElementById('registration-years');
+                    if (!yearsSelect) return;
+                    yearsSelect.innerHTML = '';
 
                     const regPrice = Number(result.price_registration);
                     let renewPrice = Number(result.price_renew);
@@ -201,12 +230,13 @@
                             1
                         );
 
-                        $yearsSelect.append(
+                        yearsSelect.append(
                             new Option(i + "{{ ' Year/s @ '|trans }}" + priceFormatted, i)
                         );
                     }
 
-                    $('#config-next').show().prop('disabled', false);
+                    configNext.style.display = '';
+                    configNext.disabled = false;
                 }
             );
         }
@@ -216,10 +246,11 @@
                 'guest/servicedomain/pricing',
                 {tld: tld},
                 function (result) {
-                    var price = bb.currency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
-                    $('#transfer-price').text(price);
-                    $('#config-next').show();
-                    $( "#config-next" ).prop( "disabled", false );
+                    const price = bb.currency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
+                    const transferPriceEl = document.getElementById('transfer-price');
+                    if (transferPriceEl) transferPriceEl.textContent = price;
+                    configNext.style.display = '';
+                    configNext.disabled = false;
                 }
             );
         }

@@ -78,7 +78,7 @@
             params['show_custom_form_values'] = 1;
         {% endif %}
 
-        return "{{ "order" | link }}?"+jQuery.param(params);
+        return "{{ "order" | link }}?" + Object.entries(params).map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v)).join('&');
     };
 
     orderbutton.prototype.createIframe = function() {

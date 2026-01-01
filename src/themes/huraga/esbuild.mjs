@@ -10,7 +10,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
-const jqueryShim = resolve(rootDir, 'frontend-build-utils/jquery-shim.js');
 
 async function build() {
   console.log(`Building huraga theme (${isProduction ? 'production' : 'development'}) with esbuild ...`);
@@ -34,7 +33,6 @@ async function build() {
       outfile: join(jsDir, 'huraga.js'),
       platform: 'browser',
       target: 'es2018',
-      inject: [jqueryShim],
       loader: {
         '.svg': 'file',
         '.woff': 'file',
