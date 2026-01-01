@@ -51,8 +51,8 @@
             </table>
             <hr>
             <div class="row">
-                <button class="btn btn-primary btn-small ms-2 w-25" href="{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash, 'CSRFToken': CSRFToken })}}" id="new-ticket-button"
-                    data-fb-api='{ "reload": true }'> {{ 'Close ticket'|trans }}</button>
+                <button type="button" class="btn btn-primary btn-small ms-2 w-25" id="new-ticket-button"
+                    data-fb-api='{ "modal": { "type": "confirm", "title": "{{ 'Are you sure?'|trans }}" }, "redirect": "{{ 'support/contact-us'|alink }}" }'> {{ 'Close ticket'|trans }}</button>
                 <a class="btn btn-info btn-small ms-2 w-25" href="#reply-to">{{ 'Reply'|trans }}</a>
             </div>
         </div>
