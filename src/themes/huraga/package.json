@@ -8,7 +8,7 @@
     "github-markdown-css": "^5.7.0"
   },
   "devDependencies": {
-    "esbuild": "^0.27.2",
-    "sass": "^1.70.0"
+    "esbuild": "0.27.2",
+    "sass": "1.97.1"
   }
 }
