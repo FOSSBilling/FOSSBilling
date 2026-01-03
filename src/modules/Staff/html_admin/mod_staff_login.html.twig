@@ -16,8 +16,7 @@
             <div class="card-body">
                 {% if create_admin %}
                     <h2 class="card-title text-center mb-4">{{ 'Create main administrator account' | trans }}</h2>
-                    <form class="api-form" action="{{ 'api/guest/staff/create'|link }}" method="post" data-api-redirect="{{ 'index'|alink }}">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                    <form action="{{ 'api/guest/staff/create'|link }}" method="post" {{ fb_api_form({redirect: 'index'|alink}) }}>
                         <div class="mb-3">
                             <label class="form-label" for="inputEmail">{{ 'Email' | trans }}</label>
                             <div class="col">
@@ -37,8 +36,7 @@
                 {% else %}
                 {% set params = guest.extension_settings({ 'ext': 'mod_staff' }) %}
                     <h2 class="h2 text-center mb-4">{{ 'Log into your account' | trans }}</h2>
-                    <form class="api-form" action="{{ 'api/guest/staff/login'|link }}" method="post" data-api-redirect="{{ redirect_uri|default('/')|alink }}">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                    <form method="post" action="{{ 'api/guest/staff/login'|link }}" {{ fb_api_form({redirect: redirect_uri|default('/')|alink}) }}>
                         <div class="mb-3">
                             <label class="form-label" for="inputEmail">{{ 'Email' | trans }}</label>
                             <input class="form-control"

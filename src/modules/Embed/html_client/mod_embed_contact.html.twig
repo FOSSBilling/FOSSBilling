@@ -66,7 +66,7 @@
                         <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
                     {% else %}
                         {% set server = "https://www.google.com/recaptcha/api" %}
-                        <script type="text/javascript">
+                        <script>
                             var RecaptchaOptions = {
                             theme : 'custom',
                             custom_theme_widget: 'recaptcha_widget'
@@ -88,7 +88,7 @@
                            </p>
                          </div>
 
-                        <script type="text/javascript" src="{{ server }}/challenge?k={{ rc.publickey }}"></script>
+                        <script src="{{ server }}/challenge?k={{ rc.publickey }}"></script>
 
                         <noscript>
                             <iframe src="{{ server }}/noscript?k={{ rc.publickey }}" height="300" width="500" frameborder="0"></iframe><br/>
@@ -105,25 +105,35 @@
         <input type="hidden" name="anti-spam" value="1" id="anti-spam" required="required"/>
     </form>
 
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 <script>
-$(function() {
-    $('#anti-spam').remove();
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('anti-spam').remove();
 
-    $('#public-ticket-create').on('submit', function(event) {
-        $.post("{{ constant('SYSTEM_URL') }}api/guest/support/ticket_create",
-        $(this).serialize(),
-        function(json) {
-            if(json.error) {
-                alert(json.error.message);
-            } else {
-                parent.window.location = "{{ 'support/contact-us/conversation'|link }}" + '/' + json.result;
-            }
-        }, 'json');
+        document.getElementById('public-ticket-create').addEventListener('submit', function(event) {
+            event.preventDefault();
 
-        return false;
+            const form = event.target;
+            const formData = new FormData(form);
+            const data = new URLSearchParams(formData);
+
+            fetch("{{ constant('SYSTEM_URL') }}api/guest/support/ticket_create", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: data
+            })
+            .then(response => response.json())
+            .then(json => {
+                if(json.error) {
+                    alert(json.error.message);
+                } else {
+                    parent.window.location = "{{ 'support/contact-us/conversation'|link }}" + '/' + json.result;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
     });
-});
 </script>
 </body>
 </html>

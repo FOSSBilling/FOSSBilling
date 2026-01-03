@@ -56,7 +56,6 @@
         "endfor",
         "currentpage",
         "numpages",
-        "jquery",
         "jgrowl",
         "endmacro",
         "tlds",

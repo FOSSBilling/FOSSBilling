@@ -1,5 +1,5 @@
 {% import 'macro_functions.html.twig' as mf %}
-<form method="post" action="{{ 'api/admin/client/create'|link }}" class="api-form save" data-api-redirect="{{ 'client'|alink }}">
+<form method="post" action="{{ 'api/admin/client/create'|link }}" {{ fb_api_form({ redirect: 'client'|alink}) }}>
 	<div class="card">
 		<div class="card-header">
 			<h3 class="card-title">{{ 'Create a new client'|trans }}</h3>

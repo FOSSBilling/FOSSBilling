@@ -69,12 +69,12 @@
                                 <td>{{ form.order_count }}</td>
                                 <td>{{ form.product_count }}</td>
                                 <td>
-                                    <a class="btn btn-icon copy-form" href="#" data-api-reload="1" title="Copy"
-                                       data-form-id="{{ form.id }}">
-                                        <svg class="icon">
-                                            <use xlink:href="#copy" />
-                                        </svg>
-                                    </a>
+                                <a class="btn btn-icon copy-form" href="#" title="Copy" {{ fb_api_link({ reload: true}) }}
+                                   data-form-id="{{ form.id }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#copy" />
+                                    </svg>
+                                </a>
                                     <a class="btn btn-icon" href="{{ 'extension/settings/formbuilder'|alink({'id' : form.id}) }}" title="Edit">
                                         <svg class="icon">
                                             <use xlink:href="#edit" />
@@ -95,9 +95,7 @@
         </div>
 
 {#        <div class="tab-pane fade" id="tab-import" role="tabpanel">#}
-{#            <form method="post" action="{{ 'api/admin/formbuilder/import'|link }}" class="mainForm api-form save"#}
-{#                data-api-reload="1">#}
-{#                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />#}
+{#            <form method="post" action="{{ 'api/admin/formbuilder/import'|link }}" data-fb-api='{ "reload": true }'> #}
 {#                <fieldset>#}
 {#                    <div class="formBottom">#}
 {#                        <textarea name="form" cols="5" rows="5"#}
@@ -115,8 +113,7 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Form options'|trans }}</h3>
         </div>
-        <form method="POST" action="{{ 'api/admin/formbuilder/update_form_settings'|link }}" class="api-form"
-              data-api-msg="{{ 'Form options were updated'|trans }}">
+        <form method="post" action="{{ 'api/admin/formbuilder/update_form_settings'|link }}" {{ fb_api_form({message: 'Form Options Updated'|trans}) }}>
             <div class="row row-cards">
                 <div class="card-body col-12">
                     <input type="hidden" name="form_id" value="{{ form.id }}">
@@ -161,45 +158,40 @@
         </div>
         <div class="row row-cards">
             <div class="card-body col-12">
-                <div class="mb-3 row">
-                    <div class="d-flex gap-2 flex-wrap mb-3" id="fields">
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text'}) }}"
-                           class="btn btn-outline-primary api-link" data-api-reload="1">
-                            <svg class="icon">
-                                <use xlink:href="#plus"/>
-                            </svg>
-                            <span>{{ 'Text'|trans }}</span>
-                        </a>
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select'}) }}"
-                           class="btn btn-outline-primary api-link" data-api-reload="1">
-                            <svg class="icon">
-                                <use xlink:href="#plus"/>
-                            </svg>
-                            <span>{{ 'Dropdown'|trans }}</span>
-                        </a>
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio'}) }}"
-                           class="btn btn-outline-primary api-link" data-api-reload="1">
-                            <svg class="icon">
-                                <use xlink:href="#plus"/>
-                            </svg>
-                            <span>{{ 'Radio'|trans }}</span>
-                        </a>
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox'}) }}"
-                           class="btn btn-outline-primary api-link" data-api-reload="1">
-                            <svg class="icon">
-                                <use xlink:href="#plus"/>
-                            </svg>
-                            <span>{{ 'Checkbox'|trans }}</span>
-                        </a>
-                        <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea'}) }}"
-                           class="btn btn-outline-primary api-link" data-api-reload="1">
-                            <svg class="icon">
-                                <use xlink:href="#plus"/>
-                            </svg>
-                            <span>{{ 'Textarea'|trans }}</span>
-                        </a>
+                    <div class="mb-3 row">
+                        <div class="d-flex gap-2 flex-wrap mb-3" id="fields">
+                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text' }) }}" {{ fb_api_link({reload: true}) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#plus"/>
+                                </svg>
+                                <span>{{ 'Text'|trans }}</span>
+                            </a>
+                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select' }) }}" {{ fb_api_link({reload: true}) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#plus"/>
+                                </svg>
+                                <span>{{ 'Dropdown'|trans }}</span>
+                            </a>
+                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio' }) }}" {{ fb_api_link({reload: true}) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#plus"/>
+                                </svg>
+                                <span>{{ 'Radio'|trans }}</span>
+                            </a>
+                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox' }) }}" {{ fb_api_link({reload: true}) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#plus"/>
+                                </svg>
+                                <span>{{ 'Checkbox'|trans }}</span>
+                            </a>
+                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea' }) }}" {{ fb_api_link({reload: true}) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#plus"/>
+                                </svg>
+                                <span>{{ 'Textarea'|trans }}</span>
+                            </a>
+                        </div>
                     </div>
-                </div>
                 <fieldset>
                     {% for i,field in form.fields %}
                         <div class="wrap-field">
@@ -215,87 +207,110 @@
 {% endblock %}
 
 {% block js %}
-    <script type="text/javascript">
-        $('.new-field').on('click', function () {
-            const p = $(this).closest('.copy-field').prev();
-            p.clone().insertAfter(p);
-            p.next().find('input').val("");
-            return false;
+    <script>
+        document.addEventListener('click', function(event) {
+            if (event.target.matches('.new-field') || event.target.closest('.new-field')) {
+                const button = event.target.closest('.new-field');
+                const parentElement = button.closest('.copy-field');
+                const previousElement = parentElement.previousElementSibling;
+
+                // Clone the previous element and insert after it.
+                const clone = previousElement.cloneNode(true);
+                previousElement.after(clone);
+
+                // Clear any input in the clone.
+                const inputs = clone.querySelectorAll('input');
+                inputs.forEach(input => input.value = '');
+
+                event.preventDefault();
+            }
         });
 
-        $('.remove-item').on('click', function () {
-            const fid = $(this).attr('data-field-id');
-            const rm = $(this);
+        document.addEventListener('click', function(event) {
+            if (event.target.matches('.remove-item') || event.target.closest('.remove-item')) {
+                const button = event.target.closest('.remove-item');
+                const fid = button.getAttribute('data-field-id');
+                const wrapField = button.closest('.wrap-field');
+
+                Modals.create({
+                    type: 'danger',
+                    title: 'Delete field?',
+                    content: 'Are you sure you want to delete this custom field?',
+                    confirmButton: 'Delete',
+                    confirmCallback: () => {
+                        API.admin.post('formbuilder/delete_field', { id: fid },
+                            () => {
+                                wrapField.remove();
+                            });
+                    }
+                });
+
+                event.preventDefault();
+            }
+        });
+
+        document.addEventListener('click', function(event) {
+            if (event.target.matches('.remove-form') || event.target.closest('.remove-form')) {
+                const button = event.target.closest('.remove-form');
+                const fid = button.getAttribute('data-form-id');
+                console.log(fid);
+
+                Modals.create({
+                    type: 'danger',
+                    title: 'Delete Form?',
+                    content: 'Are you sure you want to delete this form?',
+                    confirmButton: 'Delete',
+                    confirmCallback: () => {
+                        API.admin.post('formbuilder/delete_form', { id: fid },
+                            () => {
+                                window.location = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}";
+                            });
+                    }
+                });
+
+                event.preventDefault();
+            }
+        });
+
+        document.getElementById('new-form').addEventListener('click', function(event) {
             Modals.create({
-                type: 'danger',
-                title: '{{ "Delete field?"|trans }}',
-                content: '{{ "Are you sure you want to delete this custom field?"|trans }}',
-                confirmButton: '{{ "Delete"|trans }}',
-                confirmCallback: function () {
-                    API.admin.post('formbuilder/delete_field', {id: fid}, function () {
-                        $(rm).parents('.wrap-field').slideUp("normal", function () {
-                            $(rm).remove();
+                type: 'prompt',
+                title: 'New Form',
+                label: 'Give your form a new title',
+                value: 'My new form',
+                promptConfirmButton: 'Create',
+                promptConfirmCallback: function(title) {
+                    API.admin.post('formbuilder/create_form', { name: title },
+                        (id) => {
+                            window.location = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id;
                         });
-                    });
                 }
             });
-            return false;
+
+            event.preventDefault();
         });
 
-        $('.remove-form').on('click', function () {
-            const fid = $(this).data('form-id');
-            console.log(fid)
-            const rm = $(this);
-            Modals.create({
-                type: 'danger',
-                title: '{{ "Delete Form?"|trans }}',
-                content: '{{ "Are you sure you want to delete this form?"|trans }}',
-                confirmButton: '{{ "Delete"|trans }}',
-                confirmCallback: function () {
-                    API.admin.post('formbuilder/delete_form', {id: fid}, function () {
-                        bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}");
-                    });
-                }
-            });
-            return false;
-        });
+        document.addEventListener('click', function(event) {
+            if (event.target.matches('.copy-form') || event.target.closest('.copy-form')) {
+                const button = event.target.closest('.copy-form');
+                const fid = button.getAttribute('data-form-id');
 
-        $('#new-form').on('click', function () {
-            Modals.create({
-                type: 'prompt',
-                title: '{{ "New form"|trans }}',
-                label: '{{ "Give your new form a title"|trans }}',
-                value: '{{ "My new form"|trans }}',
-                promptConfirmButton: '{{ "Create"|trans }}',
-                promptConfirmCallback: function (title) {
-                    API.admin.post('formbuilder/create_form', {
-                        name: title
-                    }, function (id) {
-                        bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id);
-                    });
-                }
-            });
-            return false;
-        });
+                Modals.create({
+                    type: 'prompt',
+                    title: 'Copy Form',
+                    label: 'Give your duplicate form a title',
+                    value: 'My duplicate form',
+                    promptConfirmButton: 'Copy',
+                    promptConfirmCallback: (title) => {
+                        API.admin.post('formbuilder/copy_form', { name: title, form_id: fid },
+                            (id) => {
+                                window.location = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id;
+                            });
+                    }
+                });
 
-        $('.copy-form').on('click', function () {
-            const fid = $(this).attr('data-form-id');
-            Modals.create({
-                type: 'prompt',
-                title: '{{ "Copy form"|trans }}',
-                label: '{{ "Give your duplicate form a title"|trans }}',
-                value: '{{ "My duplicate form"|trans }}',
-                promptConfirmButton: '{{ "Copy"|trans }}',
-                promptConfirmCallback: function (title) {
-                    API.admin.post('formbuilder/copy_form', {
-                        name: title,
-                        form_id: fid
-                    }, function (id) {
-                        bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id);
-                    });
-                }
-            });
-            return false;
-        })
+                event.preventDefault();
+            }
+        });
     </script>
 {% endblock %}

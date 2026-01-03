@@ -119,9 +119,3 @@ parameters:
 			identifier: method.notFound
 			count: 2
 			path: src/library/Server/Manager/Plesk.php
-
-		-
-			message: '#^Function ctype_alnum invoked with 1 parameter, 0 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: src/modules/Extension/Service.php

@@ -29,10 +29,8 @@
         </div>
 
         {% set params = admin.extension_config_get({ "ext": "mod_spamchecker" }) %}
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form"
-              data-api-msg="{{ 'Configuration updated'|trans }}">
+        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
             <div class="card-body">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                 <input type="hidden" name="ext" value="mod_spamchecker">
                 <div class="row">
                     <label class="col-md-3 col-form-label" for="block_ips_check">{{ 'Enable IP blocking'|trans }}</label>
