@@ -52,7 +52,10 @@ body {
     }
 }
 
-.card-header h1, .page-password-reset .card h1, .page-login .card h1, .page-signup .card h1 {
+.card-header h1,
+.page-password-reset .card h1,
+.page-login .card h1,
+.page-signup .card h1 {
     font-size: 1.25rem;
 }
 
@@ -161,3 +164,9 @@ body {
 }
 
 // TODO: Add custom color themes to Huraga. Bootstrap has a great example here: https://getbootstrap.com/docs/5.3/customize/color-modes/#custom-color-modes
+
+// Fix logo height being overridden by reboot
+.navbar-brand img {
+    height: 45px !important;
+    width: auto;
+}
