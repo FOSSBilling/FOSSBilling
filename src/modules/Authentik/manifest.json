@@ -1,0 +1,12 @@
+{
+    "id": "Authentik",
+    "type": "mod",
+    "name": "Authentik SSO",
+    "description": "Integration with Authentik for Single Sign-On (SSO)",
+    "icon_url": "icon.svg",
+    "homepage_url": "https://goauthentik.io/",
+    "author": "Antigravity",
+    "author_url": "https://google.com",
+    "license": "Apache-2.0",
+    "version": "0.1.0"
+}

@@ -1,0 +1,74 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}Authentik Settings{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul class="breadcrumb">
+    <li class="breadcrumb-item">
+        <a href="{{ '/'|alink }}">
+            <svg class="icon">
+                <use xlink:href="#home" />
+            </svg>
+        </a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Authentik Settings</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Authentik SSO Configuration</h3>
+    </div>
+
+    {% set params = admin.extension_config_get({ "ext": "mod_authentik" }) %}
+    
+    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+        <input type="hidden" name="ext" value="mod_authentik">
+        
+        <div class="card-body">
+            <div class="mb-3 row">
+                <label class="col-md-3 col-form-label">Authentik URL (Issuer)</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" name="issuer_url" value="{{ params.issuer_url }}" placeholder="https://auth.example.com" required>
+                    <small class="form-hint">The base URL of your Authentik instance (e.g., https://auth.example.com).</small>
+                </div>
+            </div>
+
+            <div class="mb-3 row">
+                <label class="col-md-3 col-form-label">Client ID</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" name="client_id" value="{{ params.client_id }}" required>
+                </div>
+            </div>
+
+            <div class="mb-3 row">
+                <label class="col-md-3 col-form-label">Client Secret</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="password" name="client_secret" value="{{ params.client_secret }}" required>
+                </div>
+            </div>
+            
+            <div class="mb-3 row">
+                <label class="col-md-3 col-form-label">Redirect URI</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" value="{{ 'authentik/callback'|link({absolute:1}) }}" readonly>
+                    <small class="form-hint">Copy this URL to your Authentik Application provider settings.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer text-end">
+            <button type="submit" class="btn btn-primary">{{ 'Save'|trans }}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
