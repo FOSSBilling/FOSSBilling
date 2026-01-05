@@ -223,7 +223,7 @@ class Service implements InjectionAwareInterface
 
     private function getRedirectUri(): string
     {
-        return $this->di['tools']->url('authentik/callback');
+        return $this->di['tools']->url('authentik/callback') . '?absolute=1';
     }
 
     private function validateConfig(?array $config): void
