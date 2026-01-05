@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Authentik\Controller;
+namespace Box\Mod\Auth\Controller;
 
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
@@ -18,14 +18,15 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function register(\Box_App &$app): void
     {
-        // Custom routes as requested by user
+        // Custom routes
         $app->get('/auth/login', 'get_login', [], static::class);
         $app->get('/auth/callback', 'get_callback', [], static::class);
     }
 
     public function get_login(\Box_App $app): never
     {
-        $service = $this->di['mod_service']('authentik');
+        // Get the service for 'auth'
+        $service = $this->di['mod_service']('auth');
 
         try {
             $url = $service->getLoginUrl();

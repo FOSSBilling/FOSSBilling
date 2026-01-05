@@ -37,7 +37,7 @@
                         <button type="submit" class="btn btn-primary w-100 mb-3">{{ 'Login'|trans }}</button>
                     </form>
 
-                    {% if guest.extension_is_on({ "mod": "authentik" }) %}
+                    {% if guest.extension_is_on({ "mod": "auth" }) %}
                         <div class="mb-3">
                             <a href="{{ 'auth/login'|link }}" class="btn w-100" style="background-color: #330000 !important; border-color: #F74040 !important; color: white !important; background-image: none !important;">
                                 <img src="{{ 'img/authentik_logo.png'|asset_url }}" alt="Authentik" style="height: 20px; margin-right: 8px;">

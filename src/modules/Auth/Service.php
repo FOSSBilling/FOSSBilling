@@ -1,6 +1,6 @@
 <?php
 
-namespace Box\Mod\Authentik;
+namespace Box\Mod\Auth;
 
 use FOSSBilling\InjectionAwareInterface;
 
@@ -35,7 +35,7 @@ class Service implements InjectionAwareInterface
 
     public function getModuleConfig()
     {
-        return $this->di['mod_config']('authentik');
+        return $this->di['mod_config']('auth');
     }
 
     /**
@@ -47,7 +47,7 @@ class Service implements InjectionAwareInterface
         $this->validateConfig($config);
 
         $state = bin2hex(random_bytes(16));
-        $this->di['session']->set('authentik_state', $state);
+        $this->di['session']->set('auth_state', $state);
 
         $params = [
             'client_id' => $config['client_id'],
@@ -72,13 +72,13 @@ class Service implements InjectionAwareInterface
         $this->validateConfig($config);
 
         // State validation
-        $storedState = $this->di['session']->get('authentik_state');
+        $storedState = $this->di['session']->get('auth_state');
         if (empty($storedState) || empty($data['state']) || $storedState !== $data['state']) {
             throw new \FOSSBilling\InformationException('Invalid state parameter. Please try again.');
         }
 
         if (isset($data['error'])) {
-            throw new \FOSSBilling\InformationException('Authentik Error: ' . ($data['error_description'] ?? $data['error']));
+            throw new \FOSSBilling\InformationException('Auth Error: ' . ($data['error_description'] ?? $data['error']));
         }
 
         if (empty($data['code'])) {
@@ -114,17 +114,13 @@ class Service implements InjectionAwareInterface
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-        // In production, SSL verification is critical. 
-        // If the user has self-signed certs and debugging, they might need to disable it manually.
-        // For now, we assume valid certs or system-level trust.
-
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
         curl_close($ch);
 
         if ($httpCode !== 200) {
-            error_log("Authentik Token Exchange Error [$httpCode]: " . $response . " Curl Error: " . $error);
+            error_log("Auth Token Exchange Error [$httpCode]: " . $response . " Curl Error: " . $error);
             throw new \FOSSBilling\InformationException('Failed to exchange code for token. Check system logs.');
         }
 
@@ -148,7 +144,7 @@ class Service implements InjectionAwareInterface
         curl_close($ch);
 
         if ($httpCode !== 200) {
-            error_log("Authentik UserInfo Error [$httpCode]: " . $response);
+            error_log("Auth UserInfo Error [$httpCode]: " . $response);
             throw new \FOSSBilling\InformationException('Failed to retrieve user information.');
         }
 
@@ -159,7 +155,7 @@ class Service implements InjectionAwareInterface
     {
         $email = $userInfo['email'] ?? null;
         if (empty($email)) {
-            throw new \FOSSBilling\InformationException('Authentik did not provide an email address.');
+            throw new \FOSSBilling\InformationException('Auth module did not provide an email address.');
         }
 
         $clientService = $this->di['mod_service']('client');
@@ -169,7 +165,6 @@ class Service implements InjectionAwareInterface
 
         if (!$client) {
             // Register new client
-            // We generate a random strong password since they use SSO
             $password = bin2hex(random_bytes(12));
 
             $newClientData = [
@@ -177,42 +172,38 @@ class Service implements InjectionAwareInterface
                 'first_name' => $userInfo['given_name'] ?? 'Authentik',
                 'last_name' => $userInfo['family_name'] ?? 'User',
                 'password' => $password,
-                'password_confirm' => $password, // Often required by validators
-                'auth_type' => 'authentik',
+                'password_confirm' => $password,
+                'auth_type' => 'auth',
             ];
 
             try {
-                // Using guestCreateClient to trigger standard registration events/validations
                 $client = $clientService->guestCreateClient($newClientData);
-                $this->di['logger']->info('New client created via Authentik SSO: ' . $email);
+                $this->di['logger']->info('New client created via Auth SSO: ' . $email);
             } catch (\Exception $e) {
-                error_log("Authentik Auto-Registration Failed: " . $e->getMessage());
+                error_log("Auth Auto-Registration Failed: " . $e->getMessage());
                 throw new \FOSSBilling\InformationException('Could not create account automatically: ' . $e->getMessage());
             }
         }
 
-        // Perform Login
-        // We replicate the logic from Client Controller login
         $this->di['events_manager']->fire(['event' => 'onBeforeClientLogin', 'params' => ['id' => $client->id]]);
 
         session_regenerate_id();
-        $this->di['session']->set('client_id', $client->id); // The core login session var
+        $this->di['session']->set('client_id', $client->id);
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->id, 'ip' => $this->di['request']->getClientIp()]]);
 
-        $this->di['logger']->info('Client logged in via Authentik: ' . $client->id);
+        $this->di['logger']->info('Client logged in via Auth: ' . $client->id);
     }
 
     public function getRedirectUri(): string
     {
-        // Must match the requested /auth/callback route
         return $this->di['tools']->url('auth/callback') . '?absolute=1';
     }
 
     private function validateConfig(?array $config): void
     {
         if (empty($config['client_id']) || empty($config['client_secret']) || empty($config['issuer_url'])) {
-            throw new \FOSSBilling\InformationException('Authentik module is not configured. Please check settings.');
+            throw new \FOSSBilling\InformationException('Auth module is not configured. Please check settings.');
         }
     }
 }

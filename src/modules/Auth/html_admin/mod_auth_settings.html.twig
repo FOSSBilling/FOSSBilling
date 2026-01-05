@@ -28,11 +28,11 @@
         <h3 class="card-title">Authentik SSO Configuration</h3>
     </div>
 
-    {% set params = admin.extension_config_get({ "ext": "mod_authentik" }) %}
+    {% set params = admin.extension_config_get({ "ext": "mod_auth" }) %}
     
     <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
-        <input type="hidden" name="ext" value="mod_authentik">
+        <input type="hidden" name="ext" value="mod_auth">
         
         <div class="card-body">
             <div class="alert alert-info">
