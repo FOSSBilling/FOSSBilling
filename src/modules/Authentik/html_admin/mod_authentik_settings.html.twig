@@ -35,6 +35,10 @@
         <input type="hidden" name="ext" value="mod_authentik">
         
         <div class="card-body">
+            <div class="alert alert-info">
+                This module enables <strong>Authentik SSO</strong> as an additional login method. Users can still login with their standard FOSSBilling credentials.
+            </div>
+
             <div class="mb-3 row">
                 <label class="col-md-3 col-form-label">Authentik URL (Issuer)</label>
                 <div class="col-md-6">
@@ -60,8 +64,9 @@
             <div class="mb-3 row">
                 <label class="col-md-3 col-form-label">Redirect URI</label>
                 <div class="col-md-6">
-                    <input class="form-control" type="text" value="{{ 'authentik/callback'|link({absolute:1}) }}" readonly>
-                    <small class="form-hint">Copy this URL to your Authentik Application provider settings.</small>
+                    {# Using manual string concatenation to ensure it matches the hardcoded route in Controller #}
+                    <input class="form-control" type="text" value="{{ 'auth/callback'|link({absolute:1}) }}" readonly>
+                    <small class="form-hint">Copy this <strong>exact</strong> URL to your Authentik Application provider settings.</small>
                 </div>
             </div>
         </div>

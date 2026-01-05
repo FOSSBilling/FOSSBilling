@@ -18,34 +18,42 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function register(\Box_App &$app): void
     {
-        $app->get('/authentik/login', 'get_login', [], static::class);
-        $app->get('/authentik/callback', 'get_callback', [], static::class);
+        // Custom routes as requested by user
+        $app->get('/auth/login', 'get_login', [], static::class);
+        $app->get('/auth/callback', 'get_callback', [], static::class);
     }
 
     public function get_login(\Box_App $app): never
     {
         $service = $this->di['mod_service']('authentik');
-        $url = $service->login();
-        // Use raw header to ensure external redirection works correctly without framework interference
-        header("Location: $url");
-        exit;
+
+        try {
+            $url = $service->getLoginUrl();
+            // Critical: Use raw PHP header redirect to avoid framework interference
+            // with external URLs (preventing double base URL issues).
+            header("Location: " . $url);
+            exit;
+        } catch (\Exception $e) {
+            $this->di['session']->set('flash_error', $e->getMessage());
+            $app->redirect('/login');
+        }
     }
 
     public function get_callback(\Box_App $app): never
     {
         $service = $this->di['mod_service']('authentik');
-        $data = $this->di['request']->getQuery();
+        $params = $this->di['request']->getQuery();
 
         try {
-            $service->callback($data);
-            $app->redirect('/client'); // Redirect to client dashboard on success
+            $service->callback($params);
+
+            // Login successful
+            $this->di['session']->set('flash_success', 'Logged in via Authentik successfully.');
+            $app->redirect('/client'); // Go to dashboard
         } catch (\Exception $e) {
-            // Log error and redirect to login with error message
-            error_log($e->getMessage());
-            // Debugging: Show error directly
-            die("Authentik Error: " . $e->getMessage());
-            //$this->di['session']->set('flash_error', $e->getMessage());
-            //$app->redirect('/login');
+            error_log("Authentik Callback Exception: " . $e->getMessage());
+            $this->di['session']->set('flash_error', $e->getMessage());
+            $app->redirect('/login');
         }
     }
 }
