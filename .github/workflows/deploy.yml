@@ -1,0 +1,57 @@
+name: Build and Deploy to HestiaCP
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Server via Rsync
+        uses: Burnett01/rsync-deployments@7.0.1
+        with:
+          # Sincronización rápida: se asume que las dependencias y assets se gestionan en el servidor
+          switches: >-
+            -avzr --delete 
+            --exclude=.git/ 
+            --exclude=.github/ 
+            --exclude=.editorconfig 
+            --exclude=.php-cs-fixer.dist.php 
+            --exclude=phpstan.neon 
+            --exclude=phpunit.xml.dist 
+            --exclude=tests/ 
+            --exclude=tests-legacy/ 
+            --exclude=Dockerfile 
+            --exclude=rector.php 
+            --exclude=src/config.php 
+            --exclude=src/data/cache/ 
+            --exclude=src/data/log/ 
+            --exclude=src/data/uploads/ 
+            --exclude=vendor/ 
+            --exclude=node_modules/ 
+            --exclude=src/themes/*/build/ 
+            --exclude=src/modules/*/build/
+          path: ./
+          remote_path: /home/webmaster/web/portal.enitysky.dev/public_html
+          remote_host: 188.138.28.139
+          remote_port: 22
+          remote_user: webmaster
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Post-deployment permissions
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 188.138.28.139
+          port: 22
+          username: webmaster
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Asegurar que las carpetas de datos existan y tengan permisos
+            cd /home/webmaster/web/portal.enitysky.dev/public_html
+            mkdir -p src/data/cache src/data/log src/data/uploads
+            chmod -R 775 src/data
