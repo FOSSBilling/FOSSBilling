@@ -18,8 +18,8 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function register(\Box_App &$app): void
     {
-        $app->get('/auth/login', 'get_login', [], static::class);
-        $app->get('/auth/callback', 'get_callback', [], static::class);
+        $app->get('/authentik/login', 'get_login', [], static::class);
+        $app->get('/authentik/callback', 'get_callback', [], static::class);
     }
 
     public function get_login(\Box_App $app): never
