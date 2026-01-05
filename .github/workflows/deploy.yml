@@ -24,11 +24,11 @@ jobs:
             git pull origin dev
             
             # PHP Dependencies
-            composer install --no-dev --optimize-autoloader
+            # composer install --no-dev --optimize-autoloader
             
             # Node Dependencies and Asset Build
-            npm install
-            npm run build
+            # npm install
+            # npm run build
             
             # Permissions and Cache Clearing
             mkdir -p src/data/cache src/data/log src/data/uploads
