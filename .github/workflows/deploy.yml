@@ -53,13 +53,12 @@ jobs:
             cd /home/webmaster/web/portal.enitysky.dev/public_html
             
             # Instalar dependencias de PHP
-            composer install --no-dev --optimize-autoloader
+            #composer install --no-dev --optimize-autoloader
             
             # Instalar dependencias de Node y compilar assets
-            npm install
-            npm run build
+            #npm install
+            #npm run build
             
             # Asegurar carpetas y permisos
             mkdir -p src/data/cache src/data/log src/data/uploads
             chmod -R 775 src/data
-
