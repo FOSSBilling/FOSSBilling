@@ -50,7 +50,7 @@
 
                         {% if guest.extension_is_on({ "mod": "authentik" }) %}
                             <div class="mt-3">
-                                <a href="{{ 'authentik/login'|link }}" class="btn btn-sm btn-secondary w-100">
+                                <a href="{{ 'auth/login'|link }}" class="btn btn-sm btn-secondary w-100">
                                     <img src="{{ 'modules/Authentik/icon.svg'|asset_url }}" alt="Authentik" style="height: 16px; margin-right: 8px;">
                                     {{ 'Login with Authentik'|trans }}
                                 </a>

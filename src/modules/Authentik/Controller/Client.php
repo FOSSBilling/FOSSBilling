@@ -18,15 +18,17 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function register(\Box_App &$app): void
     {
-        $app->get('/authentik/login', 'get_login', [], static::class);
-        $app->get('/authentik/callback', 'get_callback', [], static::class);
+        $app->get('/auth/login', 'get_login', [], static::class);
+        $app->get('/auth/callback', 'get_callback', [], static::class);
     }
 
     public function get_login(\Box_App $app): never
     {
         $service = $this->di['mod_service']('authentik');
         $url = $service->login();
-        $app->redirect($url);
+        // Use raw header to ensure external redirection works correctly without framework interference
+        header("Location: $url");
+        exit;
     }
 
     public function get_callback(\Box_App $app): never
