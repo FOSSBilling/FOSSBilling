@@ -47,6 +47,15 @@
                                         aria-selected="false">{{ 'Create account'|trans }}</button>
                             </div>
                         </form>
+
+                        {% if guest.extension_is_on({ "mod": "authentik" }) %}
+                            <div class="mt-3">
+                                <a href="{{ 'authentik/login'|link }}" class="btn btn-sm btn-secondary w-100">
+                                    <img src="{{ 'modules/Authentik/icon.svg'|asset_url }}" alt="Authentik" style="height: 16px; margin-right: 8px;">
+                                    {{ 'Login with Authentik'|trans }}
+                                </a>
+                            </div>
+                        {% endif %}
                     </div>
                     <div class="tab-pane" id="sign-up" role="tabpanel" aria-labelledby="up-tab" tabindex="0">
                         <form class="api-form" action="{{ 'api/guest/client/create'|link }}" method="post" data-api-jsonp="onAccountCreate">
