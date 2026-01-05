@@ -1,4 +1,4 @@
-name: Build and Deploy to HestiaCP
+name: Build and Deploy to portal.enitysky.dev
 
 on:
   push:
