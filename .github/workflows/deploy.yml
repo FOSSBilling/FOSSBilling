@@ -31,5 +31,6 @@ jobs:
             # npm run build
             
             # Permissions and Cache Clearing
+            rm -rf src/data/cache/*
             mkdir -p src/data/cache src/data/log src/data/uploads
             chmod -R 775 src/data
