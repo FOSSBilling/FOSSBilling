@@ -12,29 +12,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          extensions: mbstring, intl, pdo_mysql
-
-      - name: Install Composer dependencies
-        run: composer install --no-dev --optimize-autoloader
-        working-directory: ./
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install NPM dependencies
-        run: npm install
-
-      - name: Build frontend assets
-        run: npm run build
-
-      - name: Deploy to Server via Rsync
+      - name: Deploy Source to Server via Rsync
         uses: Burnett01/rsync-deployments@7.0.1
         with:
           switches: >-
@@ -53,6 +31,10 @@ jobs:
             --exclude=src/data/cache/ 
             --exclude=src/data/log/ 
             --exclude=src/data/uploads/
+            --exclude=src/vendor/
+            --exclude=node_modules/
+            --exclude=src/themes/*/assets/build/
+            --exclude=src/modules/*/assets/build/
           path: ./
           remote_path: /home/webmaster/web/portal.enitysky.dev/public_html
           remote_host: 188.138.28.139
@@ -60,7 +42,7 @@ jobs:
           remote_user: webmaster
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Post-deployment permissions
+      - name: Run Remote Build and Permissions
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 188.138.28.139
@@ -69,5 +51,15 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/webmaster/web/portal.enitysky.dev/public_html
-            mkdir -p data/cache data/log data/uploads
-            chmod -R 775 data
+            
+            # Instalar dependencias de PHP
+            composer install --no-dev --optimize-autoloader
+            
+            # Instalar dependencias de Node y compilar assets
+            npm install
+            npm run build
+            
+            # Asegurar carpetas y permisos
+            mkdir -p src/data/cache src/data/log src/data/uploads
+            chmod -R 775 src/data
+
