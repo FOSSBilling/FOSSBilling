@@ -42,8 +42,10 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         } catch (\Exception $e) {
             // Log error and redirect to login with error message
             error_log($e->getMessage());
-            $this->di['session']->set('flash_error', $e->getMessage());
-            $app->redirect('/login');
+            // Debugging: Show error directly
+            die("Authentik Error: " . $e->getMessage());
+            //$this->di['session']->set('flash_error', $e->getMessage());
+            //$app->redirect('/login');
         }
     }
 }
