@@ -1,4 +1,4 @@
-name: Build and Deploy to portal.enitysky.dev
+name: Deploy via Git Pull
 
 on:
   push:
@@ -9,40 +9,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy Source to Server via Rsync
-        uses: Burnett01/rsync-deployments@7.0.1
-        with:
-          switches: >-
-            -avzr --delete 
-            --exclude=.git/ 
-            --exclude=.github/ 
-            --exclude=.editorconfig 
-            --exclude=.php-cs-fixer.dist.php 
-            --exclude=phpstan.neon 
-            --exclude=phpunit.xml.dist 
-            --exclude=tests/ 
-            --exclude=tests-legacy/ 
-            --exclude=Dockerfile 
-            --exclude=rector.php 
-            --exclude=src/config.php 
-            --exclude=src/data/cache/ 
-            --exclude=src/data/log/ 
-            --exclude=src/data/uploads/
-            --exclude=src/vendor/
-            --exclude=node_modules/
-            --exclude=src/themes/*/assets/build/
-            --exclude=src/modules/*/assets/build/
-          path: ./
-          remote_path: /home/webmaster/web/portal.enitysky.dev/public_html
-          remote_host: 188.138.28.139
-          remote_port: 22
-          remote_user: webmaster
-          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Run Remote Build and Permissions
+      - name: Trigger Remote Git Pull and Build
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 188.138.28.139
@@ -52,13 +19,17 @@ jobs:
           script: |
             cd /home/webmaster/web/portal.enitysky.dev/public_html
             
-            # Instalar dependencias de PHP
-            #composer install --no-dev --optimize-autoloader
+            # Ensure we are on the correct branch and pull latest changes
+            git checkout dev
+            git pull origin dev
             
-            # Instalar dependencias de Node y compilar assets
-            #npm install
-            #npm run build
+            # PHP Dependencies
+            composer install --no-dev --optimize-autoloader
             
-            # Asegurar carpetas y permisos
+            # Node Dependencies and Asset Build
+            npm install
+            npm run build
+            
+            # Permissions and Cache Clearing
             mkdir -p src/data/cache src/data/log src/data/uploads
             chmod -R 775 src/data
