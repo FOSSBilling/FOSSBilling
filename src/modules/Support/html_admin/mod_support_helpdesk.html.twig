@@ -87,7 +87,7 @@
                     {{ 'Go Back'|trans }}
                 </a>
                 <a class="btn btn-icon btn-danger" href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}"
-                    {{ fb_api_link({ message: 'Are you sure?'|trans, confirm: true, redirect: 'extension/settings/support'|alink }) }}>
+                    {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/support'|alink }) }}>
                     <svg class="icon">
                         <use xlink:href="#delete" />
                     </svg>

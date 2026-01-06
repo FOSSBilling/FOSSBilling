@@ -93,9 +93,9 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             new TwigFunction('svg_sprite', $this->twig_svg_sprite(...), ['needs_environment' => true, 'is_safe' => ['html']]),
 
             // FOSSBilling API functions
-            new TwigFunction('fb_api', $this->fb_api(...)),
-            new TwigFunction('fb_api_form', $this->fb_api_form(...)),
-            new TwigFunction('fb_api_link', $this->fb_api_link(...)),
+            new TwigFunction('fb_api', $this->fb_api(...), ['is_safe' => ['html']]),
+            new TwigFunction('fb_api_form', $this->fb_api_form(...), ['is_safe' => ['html']]),
+            new TwigFunction('fb_api_link', $this->fb_api_link(...), ['is_safe' => ['html']]),
         ];
     }
 
@@ -428,7 +428,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             throw new RuntimeException('fb_api: failed to encode JSON: ' . $e->getMessage());
         }
 
-        return 'data-fb-api=\'' . htmlspecialchars($json, ENT_QUOTES, 'UTF-8') . '\'';
+        return 'data-fb-api=\'' . $json . '\'';
     }
 
     /**
@@ -463,7 +463,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             throw new RuntimeException('fb_api_form: failed to encode JSON: ' . $e->getMessage());
         }
 
-        $attr = 'method="post" data-fb-api=\'' . htmlspecialchars($json, ENT_QUOTES, 'UTF-8') . '\'';
+        $attr = 'method="post" data-fb-api=\'' . $json . '\'';
 
         if ($tag === 'form') {
             $actionAttr = $action ? 'action="' . htmlspecialchars((string) $action, ENT_QUOTES, 'UTF-8') . '" ' : '';

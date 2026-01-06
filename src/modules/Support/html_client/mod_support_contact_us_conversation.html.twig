@@ -52,7 +52,7 @@
             <hr>
             <div class="row">
                 <button type="button" class="btn btn-primary btn-small ms-2 w-25" id="new-ticket-button"
-                    {{ fb_api_link({ message: 'Are you sure?'|trans, confirm: true, redirect: 'support/contact-us'|alink }) }}> {{ 'Close ticket'|trans }}</button>
+                    {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/contact-us'|alink }) }}> {{ 'Close ticket'|trans }}</button>
                 <a class="btn btn-info btn-small ms-2 w-25" href="#reply-to">{{ 'Reply'|trans }}</a>
             </div>
         </div>

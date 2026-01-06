@@ -263,7 +263,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
-                                {{ fb_api_link({ message: 'Are you sure?'|trans, confirm: true, redirect: 'support'|alink }) }}>
+                                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|alink }) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>

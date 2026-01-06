@@ -39,7 +39,7 @@
         <div class="card-footer">
             {% if admin.system_update_available or update_info['branch'] == 'preview' %}
                 <a class="btn btn-primary" href="{{ 'api/admin/system/update_core'|link }}"
-                    {{ fb_api_link({ message: 'Are you sure?'|trans, confirm: true, reload: true }) }}>
+                    {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
                     <svg class="icon">
                         <use xlink:href="#download" />
                     </svg>
@@ -62,7 +62,7 @@
                 {{ 'Check for Updates'|trans }}
             </a>
             <a class="btn btn-primary" href="{{ 'api/admin/system/manual_update'|link }}"
-                {{ fb_api_link({ message: 'Patches Applied and Configuration Updated'|trans, confirm: true }) }}>
+                {{ fb_api_link({ message: 'Patches Applied and Configuration Updated'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
                 <svg class="icon">
                     <use xlink:href="#cog-play" />
                 </svg>

@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let localeSelector = new TomSelect(".js-language-selector", {
       copyClassesToDropdown: false,
       controlClass: "ts-control locale",
-      dropdownClass: "dropdown-menu ts-dropdown",
+      dropdownClass: "dropdown-menu ts-dropdown locale-selector-dropdown",
       optionClass: "dropdown-item",
       controlInput: false,
       items: [FOSSBilling.cookieRead("BBLANG")],

@@ -166,7 +166,7 @@
                                     </a>
                                     <a class="btn btn-icon" href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}"
                                         data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                        {{ fb_api_link({ message: 'Are you sure?'|trans, confirm: true, redirect: 'extension/settings/support'|alink }) }}>
+                                        {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/support'|alink }) }}>
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>

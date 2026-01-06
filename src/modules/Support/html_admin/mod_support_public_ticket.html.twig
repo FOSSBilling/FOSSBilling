@@ -95,7 +95,7 @@
                 </a>
                 {% endif %}
                 <a class="btn btn-primary" href="{{ 'api/admin/support/public_ticket_delete'|link({ 'id' : ticket.id  }) }}"
-                    {{ fb_api_link({ message: 'Are you sure?'|trans, confirm: true, redirect: 'support/public-tickets'|alink }) }}>
+                    {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/public-tickets'|alink }) }}>
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
@@ -191,7 +191,7 @@
 
             {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
             <a class="btn btn-danger w-25" href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id }) }}"
-                {{ fb_api_link({ message: 'Are you sure?'|trans, confirm: true, redirect: 'support/public-tickets'|alink({ 'status': 'open' }) }) }}>
+                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/public-tickets'|alink({ 'status': 'open' }) }) }}>
                 <svg class="icon">
                     <use xlink:href="#check" />
                 </svg>

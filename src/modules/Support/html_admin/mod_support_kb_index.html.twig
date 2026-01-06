@@ -88,7 +88,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'api/admin/support/kb_article_delete'|link({ 'id': post.id }) }}"
-                                {{ fb_api_link({ message: 'Are you sure?'|trans, confirm: true, redirect: 'support/kb'|alink }) }}>
+                                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb'|alink }) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -161,7 +161,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'api/admin/support/kb_category_delete'|link({ 'id': cat_id }) }}"
-                                {{ fb_api_link({ message: 'Are you sure?'|trans, confirm: true, redirect: 'support/kb'|alink }) }}>
+                                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb'|alink }) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
