@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -95,7 +94,7 @@ class Update implements InjectionAwareInterface
             $item->expiresAfter(3600);
 
             $httpClient = HttpClient::create(['bindto' => BIND_TO]);
-            $response = $httpClient->request('GET', "https://api.fossbilling.org/versions/build_changelog/{$end}");
+            $response = $httpClient->request('GET', "https://api.fossbilling.net/versions/v1/build_changelog/{$end}");
             $result = $response->toArray();
 
             return $result['result'];
@@ -144,7 +143,7 @@ class Update implements InjectionAwareInterface
                 $item->expiresAfter(3600);
 
                 try {
-                    $releaseInfoUrl = 'https://api.fossbilling.org/versions/latest';
+                    $releaseInfoUrl = 'https://api.fossbilling.net/versions/v1/latest';
                     $httpClient = HttpClient::create(['bindto' => BIND_TO]);
                     $response = $httpClient->request('GET', $releaseInfoUrl);
                     $releaseInfo = $response->toArray()['result'];
@@ -235,7 +234,7 @@ class Update implements InjectionAwareInterface
         if ($updateBranch !== 'preview') {
             $allowed = false;
             foreach ($this->allowedDownloadPrefixes as $prefix) {
-                $allowed = $allowed ? true : str_starts_with($releaseInfo['download_url'], $prefix);
+                $allowed = $allowed ? true : str_starts_with((string) $releaseInfo['download_url'], (string) $prefix);
             }
 
             if (!$allowed) {

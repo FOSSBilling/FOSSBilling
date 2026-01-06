@@ -1,7 +1,7 @@
 name: fossbilling.dev
 type: php
 docroot: src
-php_version: "8.2"
+php_version: "8.3"
 webserver_type: nginx-fpm
 xdebug_enabled: false
 additional_hostnames: []
@@ -15,6 +15,9 @@ web_environment:
     - IS_DDEV=true
     - APP_ENV=dev
 corepack_enable: false
+hooks:
+  post-start:
+    - exec: ".ddev/post-start.sh"
 
 # Key features of DDEV's config.yaml:
 

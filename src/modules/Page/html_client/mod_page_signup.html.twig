@@ -108,7 +108,7 @@
                                     <select class="form-select" id="country" name="country" required="required">
                                         <option value="">{{ '-- Select country --'|trans }}</option>
                                         {% for val,label in guest.system_countries %}
-                                            <option value="{{ val }}" label="{{ label|e }}">{{ label|e }}</option>
+                                            <option value="{{ val }}" label="{{ label|e }}" {% if guest.system_default_country == val %}selected{% endif %}>{{ label|e }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>

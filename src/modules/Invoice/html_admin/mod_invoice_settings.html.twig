@@ -135,7 +135,7 @@
                     <label class="col-md-3 col-form-label">{{ 'Refunds logic'|trans }}</label>
                     <div class="col-md-6">
                         <div class="form-check">
-                            <input class="form-check-input" id="radioNegativeInvoice" type="radio" name="invoice_refund_logic" value="negative_invoice"{% if params.invoice_refund_logic == "1" %} checked{% endif %}>
+                            <input class="form-check-input" id="radioNegativeInvoice" type="radio" name="invoice_refund_logic" value="negative_invoice"{% if params.invoice_refund_logic == "negative_invoice" %} checked{% endif %}>
                             <label class="form-check-label" for="radioNegativeInvoice">{{ 'Negative invoice. Generate refund invoice continuing paid invoices numbering'|trans }}</label>
                         </div>
                         <div class="form-check">

@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -36,7 +35,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function validateCustomForm(array &$data, array $product)
+    public function validateCustomForm(array &$data, array $product): void
     {
         if ($product['form_id']) {
             $formbuilderService = $this->di['mod_service']('formbuilder');
@@ -78,10 +77,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model;
     }
 
-    /**
-     * @return bool
-     */
-    public function action_activate(\Model_ClientOrder $order)
+    public function action_activate(\Model_ClientOrder $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -94,10 +90,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return bool
-     */
-    public function action_renew(\Model_ClientOrder $order)
+    public function action_renew(\Model_ClientOrder $order): bool
     {
         // move expiration period to future
         $model = $this->_getOrderService($order);
@@ -110,10 +103,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return bool
-     */
-    public function action_suspend(\Model_ClientOrder $order)
+    public function action_suspend(\Model_ClientOrder $order): bool
     {
         // move expiration period to future
         $model = $this->_getOrderService($order);
@@ -127,10 +117,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return bool
-     */
-    public function action_unsuspend(\Model_ClientOrder $order)
+    public function action_unsuspend(\Model_ClientOrder $order): bool
     {
         // move expiration period to future
         $model = $this->_getOrderService($order);
@@ -144,10 +131,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return bool
-     */
-    public function action_cancel(\Model_ClientOrder $order)
+    public function action_cancel(\Model_ClientOrder $order): bool
     {
         // move expiration period to future
         $model = $this->_getOrderService($order);
@@ -161,10 +145,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return bool
-     */
-    public function action_uncancel(\Model_ClientOrder $order)
+    public function action_uncancel(\Model_ClientOrder $order): bool
     {
         // move expiration period to future
         $model = $this->_getOrderService($order);
@@ -178,10 +159,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return bool
-     */
-    public function action_delete(\Model_ClientOrder $order)
+    public function action_delete(\Model_ClientOrder $order): bool
     {
         try {
             $model = $this->_getOrderService($order);
@@ -232,7 +210,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->callOnAdapter($model, $method, $params);
     }
 
-    public function updateConfig($orderId, $config)
+    public function updateConfig($orderId, $config): void
     {
         if (!is_array($config)) {
             throw new \FOSSBilling\Exception('Config must be an array');

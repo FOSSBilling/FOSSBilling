@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -71,7 +70,7 @@ class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
      *
      * @param mixed $value The return value
      */
-    public function setReturnValue(mixed $value)
+    public function setReturnValue(mixed $value): void
     {
         $this->value = $value;
     }
@@ -91,7 +90,7 @@ class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
      *
      * @param bool $processed The processed flag value
      */
-    public function setProcessed($processed)
+    public function setProcessed($processed): void
     {
         $this->processed = (bool) $processed;
     }

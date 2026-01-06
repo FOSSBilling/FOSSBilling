@@ -32,7 +32,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         }
     }
 
-    public static function getConfig()
+    public static function getConfig(): array
     {
         return [
             'supports_one_time_payments' => true,
@@ -55,7 +55,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         ];
     }
 
-    public function getHtml($api_admin, $invoice_id, $subscription)
+    public function getHtml($api_admin, $invoice_id, $subscription): string
     {
         $invoice = $api_admin->invoice_get(['id' => $invoice_id]);
 
@@ -71,7 +71,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return $this->_generateForm($url, $data);
     }
 
-    public function processTransaction($api_admin, $id, $data, $gateway_id)
+    public function processTransaction($api_admin, $id, $data, $gateway_id): void
     {
         if (!Environment::isTesting() && !$this->_isIpnValid($data)) {
             throw new Payment_Exception('IPN is invalid');
@@ -184,14 +184,14 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         $d = [
             'id' => $id,
             'error' => '',
-            'error_code' => '',
+            'error_code' => null,
             'status' => 'processed',
             'updated_at' => date('Y-m-d H:i:s'),
         ];
         $api_admin->invoice_transaction_update($d);
     }
 
-    private function serviceUrl()
+    private function serviceUrl(): string
     {
         if ($this->config['test_mode']) {
             return 'https://www.sandbox.paypal.com/cgi-bin/webscr';
@@ -200,10 +200,10 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         }
     }
 
-    private function _isIpnValid($data)
+    private function _isIpnValid($data): bool
     {
         // use http_raw_post_data instead of post due to encoding
-        parse_str($data['http_raw_post_data'], $post);
+        parse_str((string) $data['http_raw_post_data'], $post);
         $req = 'cmd=_notify-validate';
         foreach ($post as $key => $value) {
             $value = urlencode(stripslashes($value));
@@ -215,7 +215,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return $ret == 'VERIFIED';
     }
 
-    public function moneyFormat($amount, $currency = null)
+    public function moneyFormat($amount, $currency = null): string
     {
         // HUF currency do not accept decimal values
         if ($currency == 'HUF') {
@@ -228,13 +228,13 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
     /**
      * @param string $url
      */
-    private function download($url, $post_vars = false)
+    private function download($url, $post_vars = false): string
     {
         $post_contents = '';
         if ($post_vars) {
             if (is_array($post_vars)) {
                 foreach ($post_vars as $key => $val) {
-                    $post_contents .= ($post_contents ? '&' : '') . urlencode($key) . '=' . urlencode($val);
+                    $post_contents .= ($post_contents ? '&' : '') . urlencode((string) $key) . '=' . urlencode((string) $val);
                 }
             } else {
                 $post_contents = $post_vars;
@@ -256,7 +256,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
     /**
      * @param string $url
      */
-    private function _generateForm($url, $data, $method = 'post')
+    private function _generateForm($url, $data, $method = 'post'): string
     {
         $form = '';
         $form .= '<form name="payment_form" action="' . $url . '" method="' . $method . '">' . PHP_EOL;

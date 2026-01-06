@@ -17,9 +17,10 @@
 
     {{ include('partial_bb_meta.html.twig') }}
 
-    {{ encore_entry_link_tags('fossbilling') }}
+    <link rel="stylesheet" href="{{ 'build/css/vendor.css' | asset_url }}">
+    <link rel="stylesheet" href="{{ 'build/css/fossbilling.css' | asset_url }}">
     {{ "Api/API.js" | library_url | script_tag }}
-    {{ encore_entry_script_tags('fossbilling') }}
+    <script src="{{ 'build/js/fossbilling.js' | asset_url }}"></script>
     {{ DebugBar_renderHead() }}
 
     {% block head %}{% endblock %}
@@ -226,7 +227,7 @@
     <div class="loading dim"></div>
 
     <div class="d-none">
-        {{ include('../build/symbol/icons-sprite.svg') }}
+        {{ svg_sprite() }}
     </div>
 
     <button type="button" aria-label="{ 'Back to top'|trans }}" class="btn btn-floating btn-lg btn-icon hidden" id="back-to-top">

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -12,10 +11,10 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Uid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
 {
@@ -52,7 +51,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $currentConfig = Config::getConfig();
 
-        if (!is_array($currentConfig)) {
+        if (empty($currentConfig)) {
             throw new Exception('Unable to load existing configuration');
         }
 
@@ -80,15 +79,15 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['api']['CSRFPrevention'] ??= true;
         $newConfig['api']['rate_limit_whitelist'] ??= [];
         $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
-        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
-        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
+        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'];
+        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'];
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
 
         // Instance ID handling
-        if (!class_exists('Uuid')) {
+        if (!class_exists(Uuid::class)) {
             $this->registerFallbackAutoloader();
         }
-        $newConfig['info']['instance_id'] ??= Uuid::uuid4()->toString();
+        $newConfig['info']['instance_id'] ??= Uuid::v4()->toString();
         $newConfig['info']['salt'] ??= $newConfig['salt'];
 
         // Remove the hardcoded protocol
@@ -411,10 +410,180 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->executeFileActions($fileActions);
             },
             44 => function (): void {
-                // Patch to create a database table for the widgets.
-                $q = 'CREATE TABLE `widgets` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `mod_name` varchar(64) NOT NULL, `slot` varchar(64) NOT NULL, `template` varchar(64) NOT NULL, `priority` int(11) DEFAULT 10, `enabled` tinyint(1) NOT NULL DEFAULT 1, `options` JSON DEFAULT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), UNIQUE KEY `mod_slot_template_unique` (`mod_name`, `slot`, `template`)) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
+                // Add ipn_hash column to transaction table and index it for fast duplicate detection.
+                $q = 'ALTER TABLE `transaction`
+                        ADD COLUMN `ipn_hash` VARCHAR(64) DEFAULT NULL,
+                        ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));';
                 $this->executeSql($q);
-            }
+            },
+            45 => function (): void {
+                // Drop updated_at column from activity tables
+                // Activity logs are never meant to be updated, only created
+                $q = 'ALTER TABLE `activity_admin_history` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `activity_client_email` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `activity_client_history` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `activity_system` DROP COLUMN `updated_at`;';
+                $this->executeSql($q);
+            },
+            46 => function (): void {
+                // Change gender column to ENUM type
+                $q1 = 'ALTER TABLE `client`
+                    MODIFY COLUMN `gender` ENUM("male", "female", "nonbinary", "other") DEFAULT NULL;';
+
+                // Change document_type column to ENUM type
+                $q2 = 'ALTER TABLE `client`
+                    MODIFY COLUMN `document_type` ENUM("passport") DEFAULT NULL;';
+
+                $this->executeSql($q1);
+                $this->executeSql($q2);
+            },
+            47 => function (): void {
+                // Migrate "membership" product type to "custom" product type
+                // This is part of removing the Servicemembership module
+                // @see https://github.com/FOSSBilling/FOSSBilling/pull/3066
+
+                // Migrate products to the 'custom' product type
+                $q = 'UPDATE `product` SET `type` = "custom" WHERE `type` = "membership";';
+                $this->executeSql($q);
+
+                // Before migrating existing orders to the 'custom' product type,
+                // set service_id to NULL for orders with service_type = "membership"
+                $q = 'UPDATE `client_order` SET `service_id` = NULL WHERE `service_type` = "membership";';
+                $this->executeSql($q);
+                // Migrate existing orders to the 'custom' product type
+                $q = 'UPDATE `client_order` SET `service_type` = "custom" WHERE `service_type` = "membership";';
+                $this->executeSql($q);
+
+                // Drop the service_membership table as it's no longer needed
+                $q = 'DROP TABLE IF EXISTS `service_membership`;';
+                $this->executeSql($q);
+            },
+            48 => function (): void {
+                $filesystem = new Filesystem();
+
+                $oldUploadsPath = Path::join(PATH_ROOT, 'uploads');
+                $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
+
+                if ($filesystem->exists($oldUploadsPath) && $filesystem->exists($newUploadsPath)) {
+                    foreach (glob($oldUploadsPath . '/*') as $oldFile) {
+                        if (is_file($oldFile)) {
+                            $filename = basename($oldFile);
+                            $newFilePath = Path::join($newUploadsPath, $filename);
+                            if (!$filesystem->exists($newFilePath)) {
+                                $filesystem->rename($oldFile, $newFilePath);
+                            }
+                        }
+                    }
+                }
+
+                $products = $this->di['pdo']->query("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'")->fetchAll(\PDO::FETCH_ASSOC);
+
+                foreach ($products as $product) {
+                    $productConfig = json_decode($product['config'], true) ?: [];
+
+                    if (isset($productConfig['filename']) && !empty($productConfig['filename'])) {
+                        continue;
+                    }
+
+                    $foundFilename = null;
+
+                    $orderStmt = $this->di['pdo']->prepare('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id');
+                    $orderStmt->execute(['product_id' => $product['id']]);
+                    $orders = $orderStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                    foreach ($orders as $order) {
+                        $orderConfig = json_decode($order['config'] ?? '', true);
+                        if (!is_array($orderConfig) || !isset($orderConfig['filename'])) {
+                            continue;
+                        }
+
+                        $filePath = Path::join(PATH_UPLOADS, md5($orderConfig['filename']));
+                        if ($filesystem->exists($filePath)) {
+                            $foundFilename = $orderConfig['filename'];
+
+                            break;
+                        }
+                    }
+
+                    if ($foundFilename === null) {
+                        $serviceStmt = $this->di['pdo']->prepare('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""');
+                        $serviceStmt->execute(['product_id' => $product['id']]);
+                        $services = $serviceStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                        foreach ($services as $service) {
+                            $filePath = Path::join(PATH_UPLOADS, md5($service['filename']));
+                            if ($filesystem->exists($filePath)) {
+                                $foundFilename = $service['filename'];
+
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($foundFilename !== null) {
+                        $productConfig['filename'] = $foundFilename;
+                        $updateProductStmt = $this->di['pdo']->prepare('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id');
+                        $updateProductStmt->execute([
+                            'config' => json_encode($productConfig),
+                            'updated_at' => date('Y-m-d H:i:s'),
+                            'id' => $product['id'],
+                        ]);
+
+                        $updateAllServicesStmt = $this->di['pdo']->prepare('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id');
+                        $updateAllServicesStmt->execute(['filename' => $foundFilename, 'product_id' => $product['id']]);
+
+                        $updateOrdersStmt = $this->di['pdo']->prepare('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"');
+                        $updateOrdersStmt->execute(['product_id' => $product['id']]);
+                        $ordersToUpdate = $updateOrdersStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                        foreach ($ordersToUpdate as $orderToUpdate) {
+                            $orderConfig = json_decode($orderToUpdate['config'] ?? '', true);
+                            if (is_array($orderConfig) && isset($orderConfig['filename'])) {
+                                $orderConfig['filename'] = $foundFilename;
+                                $saveOrderStmt = $this->di['pdo']->prepare('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id');
+                                $saveOrderStmt->execute([
+                                    'config' => json_encode($orderConfig),
+                                    'updated_at' => date('Y-m-d H:i:s'),
+                                    'id' => $orderToUpdate['id'],
+                                ]);
+                            }
+                        }
+                    }
+                }
+
+                $orphanStmt = $this->di['pdo']->query('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""');
+                $orphans = $orphanStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                foreach ($orphans as $orphan) {
+                    $orderConfig = json_decode($orphan['order_config'] ?? '', true);
+                    if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
+                        $filePath = Path::join(PATH_UPLOADS, md5($orderConfig['filename']));
+                        if ($filesystem->exists($filePath)) {
+                            $recoverStmt = $this->di['pdo']->prepare('UPDATE service_downloadable SET filename = :filename WHERE id = :id');
+                            $recoverStmt->execute(['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
+                        }
+                    }
+                }
+            },
+            49 => function (): void {
+                // Patch to update logo and favicon paths from assets/ to assets/build/ for huraga theme
+                // This is needed because the esbuild migration moved assets to a build directory
+                // @see https://github.com/FOSSBilling/FOSSBilling/pull/XXXX
+                $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo.svg' WHERE param = 'company_logo' AND value = 'themes/huraga/assets/img/logo.svg';";
+                $this->executeSql($q);
+
+                $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo_white.svg' WHERE param = 'company_logo_dark' AND value = 'themes/huraga/assets/img/logo_white.svg';";
+                $this->executeSql($q);
+
+                $q = "UPDATE setting SET value = 'themes/huraga/assets/build/favicon.ico' WHERE param = 'company_favicon' AND value = 'themes/huraga/assets/favicon.ico';";
+                $this->executeSql($q);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -426,7 +595,7 @@ class UpdatePatcher implements InjectionAwareInterface
      * As a workaround, we can register AntLoader and point it at the Vendor folder which will then act as fallback to find the needed classes.
      * This isn't particularly fast though as it'll scan the entire vendor, so only use it if we know a needed class is missing.
      */
-    private function registerFallbackAutoloader()
+    private function registerFallbackAutoloader(): void
     {
         $loader = new \AntCMS\AntLoader([
             'mode' => 'filesystem',

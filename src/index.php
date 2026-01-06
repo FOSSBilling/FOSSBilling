@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -18,6 +17,22 @@ $debugBar = new DebugBar\StandardDebugBar();
 $debugBar['request']->useHtmlVarDumper();
 $debugBar['messages']->useHtmlVarDumper();
 
+// PDO collector
+$pdoCollector = new DebugBar\DataCollector\PDO\PDOCollector();
+
+// RedBean
+$pdoCollector->addConnection($di['pdo'], 'RedBeanPHP');
+
+// Doctrine
+$connection = $di['em']->getConnection();
+$native = $connection->getNativeConnection();
+
+if ($native instanceof \PDO) {
+    $pdoCollector->addConnection($native, 'Doctrine');
+}
+
+$debugBar->addCollector($pdoCollector);
+
 $config = FOSSBilling\Config::getConfig();
 $config['info']['salt'] = '********';
 $config['db'] = array_fill_keys(array_keys($config['db']), '********');
@@ -28,10 +43,10 @@ $configCollector->useHtmlVarDumper();
 $debugBar->addCollector($configCollector);
 
 // Get the request URL
-$url = $_GET['_url'] ?? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$url = $_GET['_url'] ?? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 // Rewrite for custom pages
-if (str_starts_with($url, '/page/')) {
+if (str_starts_with((string) $url, '/page/')) {
     $url = substr_replace($url, '/custompages/', 0, 6);
 }
 
@@ -52,9 +67,9 @@ if (!empty($_GET['restore_session'])) {
 $di['session'];
 $debugBar['time']->stopMeasure('session_start');
 
-if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
+if (strncasecmp((string) $url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     define('ADMIN_AREA', true);
-    $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', $url));
+    $appUrl = str_replace(ADMIN_PREFIX, '', preg_replace('/\?.+/', '', (string) $url));
     $app = new Box_AppAdmin([], $debugBar);
 } else {
     define('ADMIN_AREA', false);

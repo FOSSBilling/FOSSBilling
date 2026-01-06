@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -55,9 +54,9 @@ class Box_AppClient extends Box_App
     public function get_custom_page($page): string
     {
         $ext = $this->ext;
-        if (str_contains($page, '.')) {
-            $ext = substr($page, strpos($page, '.') + 1);
-            $page = substr($page, 0, strpos($page, '.'));
+        if (str_contains((string) $page, '.')) {
+            $ext = substr((string) $page, strpos((string) $page, '.') + 1);
+            $page = substr((string) $page, 0, strpos((string) $page, '.'));
         }
         $page = str_replace('/', '_', $page);
         $tpl = 'mod_page_' . $page;

@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,17 +9,15 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Doctrine\ORM\EntityManager;
 use FOSSBilling\Config;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
-use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
-use Lcharette\WebpackEncoreTwig\JsonManifest;
-use Lcharette\WebpackEncoreTwig\TagRenderer;
-use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
+use League\Csv\Writer;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
 use Twig\Extension\StringLoaderExtension;
@@ -110,7 +107,7 @@ $di['pdo'] = function () {
         $pdo->exec("SET time_zone = '{$offset}'");
     }
 
-    return $pdo;
+    return new DebugBar\DataCollector\PDO\TraceablePDO($pdo);
 };
 
 /*
@@ -137,6 +134,8 @@ $di['db'] = function () use ($di) {
 
     return $db;
 };
+
+$di['em'] = (fn (): EntityManager => EntityManagerFactory::create());
 
 /*
  *
@@ -166,14 +165,14 @@ $di['url'] = function () use ($di) {
 };
 
 /*
- * Returns a new Box_Mod object, created with the provided module name.
+ * Returns a new Module object, created with the provided module name.
  *
  * @param string $name The name of the module to create the object with.
  *
- * @return \Box_Mod The new Box_Mod object that was just created.
+ * @return \Module The new Module object that was just created.
  */
 $di['mod'] = $di->protect(function ($name) use ($di) {
-    $mod = new Box_Mod($name);
+    $mod = new FOSSBilling\Module($name);
     $mod->setDi($di);
 
     return $mod;
@@ -270,8 +269,8 @@ $di['twig'] = $di->factory(function () use ($di) {
     // missing required settings.
     $locale = FOSSBilling\i18n::getActiveLocale();
     $timezone = Config::getProperty('i18n.timezone', 'UTC');
-    $date_format = strtoupper(Config::getProperty('i18n.date_format', 'MEDIUM'));
-    $time_format = strtoupper(Config::getProperty('i18n.time_format', 'SHORT'));
+    $date_format = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
+    $time_format = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
     $datetime_pattern = Config::getProperty('i18n.datetime_pattern');
 
     $loader = new Twig\Loader\ArrayLoader();
@@ -279,14 +278,6 @@ $di['twig'] = $di->factory(function () use ($di) {
 
     $box_extensions = new Box_TwigExtensions();
     $box_extensions->setDi($di);
-
-    if ($di['encore_info']['is_encore_theme']) {
-        $entryPoints = new EntrypointLookup($di['encore_info']['entrypoints']);
-        $tagRenderer = new TagRenderer($entryPoints);
-        $encoreExtensions = new EntrypointsTwigExtension($entryPoints, $tagRenderer);
-        $twig->addExtension($encoreExtensions);
-        $twig->addExtension(new VersionedAssetsTwigExtension(new JsonManifest($di['encore_info']['manifest'])));
-    }
 
     // $twig->addExtension(new OptimizerExtension());
     $twig->addExtension(new StringLoaderExtension());
@@ -338,7 +329,7 @@ $di['is_client_logged'] = function () use ($di) {
         $api_str = '/api/';
         $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
 
-        if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+        if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Client is not logged in');
         } else {
@@ -379,7 +370,7 @@ $di['is_admin_logged'] = function () use ($di) {
     if (!$di['auth']->isAdminLoggedIn()) {
         $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
 
-        if (str_starts_with($url, '/api/')) {
+        if (str_starts_with((string) $url, '/api/')) {
             throw new Exception('Admin is not logged in');
         }
 
@@ -412,7 +403,7 @@ $di['loggedin_client'] = function () use ($di) {
         // Then either give an appropriate API response or redirect to the login page.
         $api_str = '/api/';
         $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
-        if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+        if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Client is not logged in');
         } else {
@@ -450,7 +441,7 @@ $di['loggedin_admin'] = function () use ($di) {
         // Then either give an appropriate API response or redirect to the login page.
         $api_str = '/api/';
         $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
-        if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+        if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Admin is not logged in');
         } else {
@@ -466,8 +457,8 @@ $di['set_return_uri'] = function () use ($di): void {
     $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
     unset($_GET['_url']);
 
-    if (str_starts_with($url, ADMIN_PREFIX)) {
-        $url = substr($url, strlen(ADMIN_PREFIX));
+    if (str_starts_with((string) $url, ADMIN_PREFIX)) {
+        $url = substr((string) $url, strlen(ADMIN_PREFIX));
     }
 
     if ($_GET) {
@@ -500,11 +491,11 @@ $di['api'] = $di->protect(function ($role) use ($di) {
         $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
 
         // If it's an API request, only allow requests to the "client" and "profile" modules so they can change their email address or resend the confirmation email.
-        if (strncasecmp($url, '/api/', strlen('/api/')) === 0) {
-            if (strncasecmp($url, '/api/client/client/', strlen('/api/client/client/')) !== 0 && strncasecmp($url, '/api/client/profile/', strlen('/api/client/profile/')) !== 0) {
+        if (strncasecmp((string) $url, '/api/', strlen('/api/')) === 0) {
+            if (strncasecmp((string) $url, '/api/client/client/', strlen('/api/client/client/')) !== 0 && strncasecmp((string) $url, '/api/client/profile/', strlen('/api/client/profile/')) !== 0) {
                 throw new Exception('Please check your mailbox and confirm your email address.');
             }
-        } elseif (strncasecmp($url, '/client', strlen('/client')) !== 0) {
+        } elseif (strncasecmp((string) $url, '/client', strlen('/client')) !== 0) {
             // If they aren't attempting to access their profile, redirect them to it.
             $login_url = $di['url']->link('client/profile');
             header("Location: $login_url");
@@ -618,7 +609,7 @@ $di['updater'] = function () use ($di) {
  * @return \Server_Manager The new server manager object that was just created.
  */
 $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
-    $class = sprintf('Server_Manager_%s', ucfirst($manager));
+    $class = sprintf('Server_Manager_%s', ucfirst((string) $manager));
 
     $s = new $class($config);
     $s->setLog($di['logger']);
@@ -646,16 +637,6 @@ $di['theme'] = function () use ($di) {
     $service = $di['mod_service']('theme');
 
     return $service->getCurrentClientAreaTheme();
-};
-
-/*
- * Gets the information of Webpack Encore for the current route theme.
- * @return string
- */
-$di['encore_info'] = function () use ($di) {
-    $service = $di['mod_service']('theme');
-
-    return $service->getEncoreInfo();
 };
 
 /*
@@ -760,7 +741,7 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
         $headers = array_keys(reset($rows));
     }
 
-    $csv = League\Csv\Writer::createFromFileObject(new SplTempFileObject());
+    $csv = Writer::from(new SplTempFileObject());
     $csv->addFormatter(new League\Csv\EscapeFormula());
     $csv->insertOne($headers);
     $csv->insertAll($rows);

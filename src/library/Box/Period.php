@@ -40,11 +40,11 @@ class Box_Period
 
     public function __construct($code)
     {
-        if (strlen($code) != 2) {
+        if (strlen((string) $code) != 2) {
             throw new FOSSBilling\Exception('Invalid period code. Period definition must be 2 chars length');
         }
 
-        [$qty, $unit] = str_split($code);
+        [$qty, $unit] = str_split((string) $code);
 
         $units = $this->getUnits();
         $qty = (int) $qty;
@@ -68,7 +68,7 @@ class Box_Period
         $this->qty = $qty;
     }
 
-    private function getUnits()
+    private function getUnits(): array
     {
         return [
             self::UNIT_DAY => [1, 90],
@@ -101,17 +101,17 @@ class Box_Period
         return $periods;
     }
 
-    public function getUnit()
+    public function getUnit(): string
     {
         return $this->unit;
     }
 
-    public function getQty()
+    public function getQty(): int
     {
         return $this->qty;
     }
 
-    public function getCode()
+    public function getCode(): string
     {
         return $this->qty . $this->unit;
     }
@@ -151,7 +151,7 @@ class Box_Period
         };
     }
 
-    public function getExpirationTime(?int $now = null)
+    public function getExpirationTime(?int $now = null): int|false
     {
         if ($now === null) {
             $now = time();

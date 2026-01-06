@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -20,7 +19,7 @@ class Api_Abstract implements InjectionAwareInterface
     protected $ip;
 
     /**
-     * @var Box_Mod
+     * @var FOSSBilling\Module
      */
     protected $mod;
 
@@ -45,15 +44,15 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @param Box_Mod $mod
+     * @param FOSSBilling\Module $mod
      */
-    public function setMod($mod)
+    public function setMod($mod): void
     {
         $this->mod = $mod;
     }
 
     /**
-     * @return Box_Mod
+     * @return FOSSBilling\Module
      */
     public function getMod()
     {
@@ -67,7 +66,7 @@ class Api_Abstract implements InjectionAwareInterface
     /**
      * @param Model_Admin|Model_Client|Model_Guest $identity
      */
-    public function setIdentity($identity)
+    public function setIdentity($identity): void
     {
         $this->identity = $identity;
     }
@@ -81,7 +80,7 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     // TODO: Find a way to correctly set the type. Maybe a module's service should extend a "Service" class?
-    public function setService($service)
+    public function setService($service): void
     {
         $this->service = $service;
     }
@@ -95,7 +94,7 @@ class Api_Abstract implements InjectionAwareInterface
     /**
      * @param string $ip
      */
-    public function setIp($ip)
+    public function setIp($ip): void
     {
         $this->ip = $ip;
     }

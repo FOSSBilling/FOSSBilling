@@ -16,7 +16,6 @@ class Model_ProductTable implements FOSSBilling\InjectionAwareInterface
     final public const DOMAIN = 'domain';
     final public const DOWNLOADABLE = 'downloadable';
     final public const HOSTING = 'hosting';
-    final public const MEMBERSHIP = 'membership';
     final public const VPS = 'vps';
 
     final public const SETUP_AFTER_ORDER = 'after_order';
@@ -40,10 +39,7 @@ class Model_ProductTable implements FOSSBilling\InjectionAwareInterface
         return $model->unit;
     }
 
-    /**
-     * @return string
-     */
-    private function _getPeriodKey(Box_Period $period)
+    private function _getPeriodKey(Box_Period $period): string
     {
         $code = $period->getCode();
 

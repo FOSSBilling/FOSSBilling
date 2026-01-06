@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace APIHelper;
 
 use Symfony\Component\Filesystem\Filesystem;
@@ -51,7 +53,7 @@ class Request
         return new Response($httpCode, $output);
     }
 
-    public static function resetCookies()
+    public static function resetCookies(): void
     {
         $filesystem = new Filesystem();
         $filesystem->remove(Path::join(sys_get_temp_dir(), 'cookie.txt'));

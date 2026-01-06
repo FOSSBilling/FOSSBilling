@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -29,19 +28,20 @@ class ServiceTransaction implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function processReceivedATransactions()
+    public function processReceivedATransactions(): bool
     {
         $this->di['logger']->info('Executed action to process received transactions');
         $received = $this->getReceived();
         foreach ($received as $transaction) {
-            $model = $this->di['db']->getExistingModelById('Transaction', $transaction['id']);
+            $txId = $transaction['id'] ?? null;
+            $model = $this->di['db']->getExistingModelById('Transaction', $txId);
             $this->preProcessTransaction($model);
         }
 
         return true;
     }
 
-    public function update(\Model_Transaction $model, array $data)
+    public function update(\Model_Transaction $model, array $data): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionUpdate', 'params' => ['id' => $model->id]]);
 
@@ -91,6 +91,18 @@ class ServiceTransaction implements InjectionAwareInterface
             $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
         }
 
+        // Early duplicate check: if gateway + txn_id already exists and is processed,
+        // return the existing transaction id to ensure idempotency for duplicate IPNs.
+        $txnIdCandidate = $data['txn_id'] ?? ($data['post']['txn_id'] ?? ($data['get']['txn_id'] ?? null));
+        if ($txnIdCandidate && !empty($data['gateway_id'])) {
+            $existing = $this->di['db']->findOne('Transaction', 'txn_id = ? AND gateway_id = ?', [$txnIdCandidate, $data['gateway_id']]);
+            if ($existing instanceof \Model_Transaction && $existing->status == \Model_Transaction::STATUS_PROCESSED) {
+                $this->di['logger']->info('Duplicate transaction ignored, returning existing processed transaction #%s', $existing->id);
+
+                return $existing->id;
+            }
+        }
+
         $ipn = [
             'get' => (isset($data['get']) && is_array($data['get'])) ? $data['get'] : null,
             'post' => (isset($data['post']) && is_array($data['post'])) ? $data['post'] : null,
@@ -98,10 +110,23 @@ class ServiceTransaction implements InjectionAwareInterface
             'server' => $data['server'] ?? null,
         ];
 
+        // Fallback dedupe: compute a canonical hash of the IPN payload and
+        // look up an existing transaction by (gateway_id, ipn_hash).
+        $ipn_hash = $this->ipnHash($ipn);
+        if (!empty($data['gateway_id']) && !empty($ipn_hash)) {
+            $existingByHash = $this->di['db']->findOne('Transaction', 'gateway_id = ? AND ipn_hash = ?', [$data['gateway_id'], $ipn_hash]);
+            if ($existingByHash instanceof \Model_Transaction) {
+                $this->di['logger']->info('Duplicate transaction detected by IPN hash, returning existing transaction #%s', $existingByHash->id);
+
+                return $existingByHash->id;
+            }
+        }
+
         $transaction = $this->di['db']->dispense('Transaction');
         $transaction->gateway_id = $data['gateway_id'] ?? null;
         $transaction->invoice_id = $data['invoice_id'] ?? null;
         $transaction->txn_id = $data['txn_id'] ?? null;
+        $transaction->ipn_hash = $ipn_hash ?? null;
         $transaction->status = 'received';
         $transaction->ip = $this->di['request']->getClientIp();
         $transaction->ipn = json_encode($ipn);
@@ -117,7 +142,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $newId;
     }
 
-    public function delete(\Model_Transaction $model)
+    public function delete(\Model_Transaction $model): bool
     {
         $id = $model->id;
         $this->di['db']->trash($model);
@@ -162,7 +187,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $result;
     }
 
-    public function getSearchQuery(array $data)
+    public function getSearchQuery(array $data): array
     {
         $sql = 'SELECT m.*
                 FROM transaction as m
@@ -231,12 +256,12 @@ class ServiceTransaction implements InjectionAwareInterface
 
         if ($date_from) {
             $sql .= ' AND UNIX_TIMESTAMP(m.created_at) >= :date_from';
-            $params['date_from'] = strtotime($date_from);
+            $params['date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $sql .= ' AND UNIX_TIMESTAMP(m.created_at) <= :date_to';
-            $params['date_to'] = strtotime($date_to);
+            $params['date_to'] = strtotime((string) $date_to);
         }
 
         if ($search) {
@@ -252,7 +277,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function counter()
+    public function counter(): array
     {
         $sql = 'SELECT status, count(id) as counter
             FROM transaction
@@ -272,7 +297,7 @@ class ServiceTransaction implements InjectionAwareInterface
         ];
     }
 
-    public function getStatusPairs()
+    public function getStatusPairs(): array
     {
         return [
             \Model_Transaction::STATUS_RECEIVED => 'Received',
@@ -282,7 +307,7 @@ class ServiceTransaction implements InjectionAwareInterface
         ];
     }
 
-    public function getStatuses()
+    public function getStatuses(): array
     {
         return [
             \Model_Transaction::STATUS_RECEIVED => 'Received',
@@ -292,7 +317,7 @@ class ServiceTransaction implements InjectionAwareInterface
         ];
     }
 
-    public function getGatewayStatuses()
+    public function getGatewayStatuses(): array
     {
         return [
             \Payment_Transaction::STATUS_PENDING => 'Pending validation',
@@ -301,7 +326,7 @@ class ServiceTransaction implements InjectionAwareInterface
         ];
     }
 
-    public function getTypes()
+    public function getTypes(): array
     {
         return [
             \Payment_Transaction::TXTYPE_PAYMENT => 'Payment',
@@ -379,7 +404,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $this->di['db']->getAll($sql, $params);
     }
 
-    public function process($tx)
+    public function process(\Model_Transaction $tx): \Model_Transaction
     {
         $transaction = $this->di['db']->load('Transaction', $tx->id);
 
@@ -404,7 +429,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $transaction->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($transaction);
 
-            if (DEBUG) {
+            if (defined('DEBUG')) {
                 error_log($e->getMessage());
             }
             if (Environment::isTesting()) {
@@ -415,7 +440,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $transaction;
     }
 
-    private function _isProcessed(\Model_Transaction $tx)
+    private function _isProcessed(\Model_Transaction $tx): bool
     {
         if ($tx->status == \Model_Transaction::STATUS_PROCESSED) {
             $tx->error = null;
@@ -439,6 +464,53 @@ class ServiceTransaction implements InjectionAwareInterface
         return false;
     }
 
+    /**
+     * Recursively sort array keys to produce a deterministic representation.
+     */
+    private function recursiveKsort($arr)
+    {
+        if (!is_array($arr)) {
+            return $arr;
+        }
+
+        foreach ($arr as $k => $v) {
+            if (is_array($v)) {
+                $arr[$k] = $this->recursiveKsort($v);
+            }
+        }
+
+        ksort($arr);
+
+        return $arr;
+    }
+
+    /**
+     * Normalize IPN payload into canonical JSON string.
+     */
+    private function normalizeIpn($ipn)
+    {
+        if (!is_array($ipn)) {
+            return '';
+        }
+
+        $sorted = $this->recursiveKsort($ipn);
+
+        return json_encode($sorted, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * Compute SHA-256 hash of normalized IPN payload.
+     */
+    private function ipnHash($ipn): ?string
+    {
+        $norm = $this->normalizeIpn($ipn);
+        if (empty($norm)) {
+            return null;
+        }
+
+        return hash('sha256', (string) $norm);
+    }
+
     private function hasProcessedTransaction(\Model_Transaction $tx)
     {
         if (!$tx->txn_id) {
@@ -447,10 +519,11 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $res = $this->di['db']->findOne('Transaction', 'status = "processed" and txn_id = ?', [$tx->txn_id]);
 
-        return empty($res);
+        // Return true when a processed transaction with the same txn_id exists.
+        return !empty($res);
     }
 
-    private function _markAsProcessed(\Model_Transaction $tx)
+    private function _markAsProcessed(\Model_Transaction $tx): void
     {
         $tx->error = null;
         $tx->error_code = null;
@@ -459,7 +532,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['db']->store($tx);
     }
 
-    private function _parseIpnAndApprove(\Model_Transaction &$tx)
+    private function _parseIpnAndApprove(\Model_Transaction &$tx): \Model_Transaction
     {
         if ($tx->status == \Model_Transaction::STATUS_APPROVED) {
             return $tx;
@@ -467,6 +540,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+
         $ipn = json_decode($tx->ipn ?? '', true) ?? [];
 
         if (empty($tx->gateway_id)) {
@@ -557,20 +631,19 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $this->_markAsProcessed($tx);
 
-        // try pay for invoice after debit
         if ($tx->invoice_id) {
             try {
                 $invoiceService = $this->di['mod_service']('Invoice');
                 $invoiceService->tryPayWithCredits($tx->Invoice);
             } catch (\Exception $e) {
-                if (DEBUG) {
+                if (defined('DEBUG')) {
                     error_log($e->getMessage());
                 }
             }
         }
     }
 
-    private function _refund(\Model_Transaction $tx)
+    private function _refund(\Model_Transaction $tx): \Model_Transaction
     {
         if ($this->_isProcessed($tx)) {
             return $tx;
@@ -589,7 +662,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $tx;
     }
 
-    private function _subscribe(\Model_Transaction $tx)
+    private function _subscribe(\Model_Transaction $tx): \Model_Transaction
     {
         if ($this->_isProcessed($tx)) {
             return $tx;
@@ -624,7 +697,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $tx;
     }
 
-    private function _unsubscribe(\Model_Transaction $tx)
+    private function _unsubscribe(\Model_Transaction $tx): \Model_Transaction
     {
         if ($this->_isProcessed($tx)) {
             return $tx;
@@ -643,7 +716,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $tx;
     }
 
-    private function _validateApprovedTransaction(\Model_Transaction $tx)
+    private function _validateApprovedTransaction(\Model_Transaction $tx): void
     {
         if ($tx->status != \Model_Transaction::STATUS_APPROVED) {
             throw new \FOSSBilling\Exception('Only approved transaction can be processed');
@@ -666,7 +739,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
     }
 
-    public function debitTransaction(\Model_Transaction $tx)
+    public function debitTransaction(\Model_Transaction $tx): void
     {
         $proforma = $this->di['db']->load('Invoice', $tx->invoice_id);
         $client = $this->di['db']->load('Client', $proforma->client_id);

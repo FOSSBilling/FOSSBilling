@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -109,7 +108,25 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->getCell($sql);
     }
 
-    public function setPermissions($member_id, $array)
+    public function getPairs(array $data = [])
+    {
+        $limit = $data['per_page'] ?? 30;
+        
+        $sql = 'SELECT id, name FROM admin WHERE 1';
+        $params = [];
+
+        if (!empty($data['search'])) {
+            $sql .= ' AND (name LIKE :search OR email LIKE :search)';
+            $params['search'] = '%' . $data['search'] . '%';
+        }
+
+        // Limit results for performance
+        $sql .= sprintf(' ORDER BY name ASC LIMIT %u', $limit);
+
+        return $this->di['db']->getAssoc($sql, $params);
+    }
+
+    public function setPermissions($member_id, $array): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
 
@@ -206,7 +223,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientOrderCreate(\Box_Event $event)
+    public static function onAfterClientOrderCreate(\Box_Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -259,7 +276,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientReplyTicket(\Box_Event $event)
+    public static function onAfterClientReplyTicket(\Box_Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -281,7 +298,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientCloseTicket(\Box_Event $event)
+    public static function onAfterClientCloseTicket(\Box_Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -302,7 +319,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterGuestPublicTicketOpen(\Box_Event $event)
+    public static function onAfterGuestPublicTicketOpen(\Box_Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -322,7 +339,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientSignUp(\Box_Event $event)
+    public static function onAfterClientSignUp(\Box_Event $event): bool
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -343,7 +360,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public static function onAfterGuestPublicTicketReply(\Box_Event $event)
+    public static function onAfterGuestPublicTicketReply(\Box_Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -363,7 +380,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterGuestPublicTicketClose(\Box_Event $event)
+    public static function onAfterGuestPublicTicketClose(\Box_Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -396,7 +413,7 @@ class Service implements InjectionAwareInterface
         return $pager->getPaginatedResultSet($query, $params, $per_page);
     }
 
-    public function getSearchQuery($data)
+    public function getSearchQuery($data): array
     {
         $query = 'SELECT * FROM admin';
 
@@ -486,7 +503,7 @@ class Service implements InjectionAwareInterface
         return $data;
     }
 
-    public function update(\Model_Admin $model, $data)
+    public function update(\Model_Admin $model, $data): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffUpdate', 'params' => ['id' => $model->id]]);
 
@@ -511,7 +528,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function delete(\Model_Admin $model)
+    public function delete(\Model_Admin $model): bool
     {
         if ($model->protected) {
             throw new \FOSSBilling\InformationException('This administrator account is protected and cannot be removed');
@@ -535,7 +552,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changePassword(\Model_Admin $model, $password)
+    public function changePassword(\Model_Admin $model, $password): bool
     {
         if ($model->role === 'admin') {
             $this->checkPermissionsAndThrowException('staff', 'reset_admin_password');
@@ -559,7 +576,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function create(array $data)
+    public function create(array $data): int
     {
         // TODO: When it becomes possible to create other super admins, add a check for that here,
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
@@ -635,7 +652,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getAdminGroupSearchQuery($data)
+    public function getAdminGroupSearchQuery($data): array
     {
         $sql = 'SELECT *
                 FROM admin_group
@@ -644,7 +661,7 @@ class Service implements InjectionAwareInterface
         return [$sql, []];
     }
 
-    public function createGroup($name)
+    public function createGroup($name): int
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
 
@@ -674,7 +691,7 @@ class Service implements InjectionAwareInterface
         return $data;
     }
 
-    public function deleteGroup(\Model_AdminGroup $model)
+    public function deleteGroup(\Model_AdminGroup $model): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
 
@@ -698,7 +715,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateGroup(\Model_AdminGroup $model, $data)
+    public function updateGroup(\Model_AdminGroup $model, $data): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
 
@@ -713,7 +730,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getActivityAdminHistorySearchQuery($data)
+    public function getActivityAdminHistorySearchQuery($data): array
     {
         $sql = 'SELECT m.*, a.email, a.name
                 FROM activity_admin_history as m
@@ -762,13 +779,6 @@ class Service implements InjectionAwareInterface
         }
 
         return $result;
-    }
-
-    public function deleteLoginHistory(\Model_ActivityAdminHistory $model)
-    {
-        $this->di['db']->trash($model);
-
-        return true;
     }
 
     public function authorizeAdmin($email, $plainTextPassword)

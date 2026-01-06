@@ -1,14 +1,10 @@
 {
   "name": "admin_default",
   "scripts": {
-    "dev-server": "encore dev-server",
-    "dev": "encore dev",
-    "watch": "encore dev --watch",
-    "build": "encore production --progress"
+    "build": "node ./esbuild.mjs",
+    "dev": "node ./esbuild.mjs --watch"
   },
   "dependencies": {
-    "@babel/plugin-transform-class-properties": "^7.25.7",
-    "@babel/plugin-transform-object-rest-spread": "^7.25.7",
     "@melloware/coloris": "^0.25.0",
     "@tabler/core": "^1.2.0",
     "apexcharts": "^5.0.0",
@@ -22,5 +18,12 @@
     "litepicker": "^2.0.12",
     "select2": "^4.0.13",
     "sortable-tablesort": "^4.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.27.2",
+    "nanospinner": "1.2.2",
+    "postcss": "8.5.6",
+    "sass": "1.97.1",
+    "svg-sprite": "2.0.4"
   }
 }

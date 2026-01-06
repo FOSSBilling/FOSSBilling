@@ -1,4 +1,4 @@
-FROM php:8.4-apache
+FROM php:8.5-apache@sha256:6e5cfaec7df961fe2cca048e9ce3a3c448c1b77b489c51c4e1d98cda943759af
 
 # Install required packages, configure Apache, install PHP extensions, and clean-up.
 RUN apt-get update \
@@ -10,8 +10,6 @@ RUN apt-get update \
   && docker-php-ext-install -j$(nproc) gd \
   && docker-php-ext-configure intl \
   && docker-php-ext-install -j$(nproc) intl \
-  && docker-php-ext-configure opcache \
-  && docker-php-ext-install -j$(nproc) opcache \
   && docker-php-ext-configure pdo_mysql \
   && docker-php-ext-install -j$(nproc) pdo_mysql \
   && apt-get clean \

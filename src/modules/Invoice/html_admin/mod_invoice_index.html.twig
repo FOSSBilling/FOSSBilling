@@ -12,7 +12,6 @@
         <div class="card-body">
             <h5>{{ 'Filter invoices'|trans }}</h5>
             <form method="get">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
                     <div class="col">
@@ -32,8 +31,7 @@
                                 placeholder="{{ 'Start typing the client name or ID'|trans }}"
                                 id="client_id"
                                 name="client_id"
-                                data-resturl="admin/client/get_pairs"
-                                data-csrf="{{ CSRFToken }}">
+                                data-resturl="admin/client/get_pairs">
                         {% if not request.client_id %}
                         {% else %}
                             {% set client = admin.client_get({ 'id': request.client_id }) %}
@@ -52,7 +50,7 @@
                     <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
                     <div class="col">
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" id="radioStatusAll" type="radio" name="status" value="0"{% if not request.status %} checked{% endif %}>
+                            <input class="form-check-input" id="radioStatusAll" type="radio" name="status" value=""{% if not request.status %} checked{% endif %}>
                             <label class="form-check-label" for="radioStatusAll">{{ 'All statuses'|trans }}</label>
                         </div>
                         <div class="form-check form-check-inline">
@@ -107,7 +105,6 @@
                     </div>
                 </div>
 
-                <input type="hidden" name="_url" value="{{ request._url }}">
                 <input type="hidden" name="show_filter" value="1">
                 <div class="d-flex gap-2">
                     <button class="btn btn-primary w-75" type="submit">{{ 'Filter'|trans }}</button>
@@ -258,7 +255,7 @@
                                     </svg>
                                 </a>
                                 <a class="btn btn-icon api-link"
-                                    href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id, 'CSRFToken': CSRFToken }) }}"
+                                    href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}"
                                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                                     data-api-reload="1">
                                     <svg class="icon">
@@ -281,7 +278,7 @@
                         {{ include('partial_pagination.html.twig', { 'list': invoices, 'url': 'invoice' }) }}
                     </div>
                     <div>
-                        <a class="btn btn-secondary" href="{{ '/api/admin/invoice/export_csv'|link({ 'CSRFToken': CSRFToken }) }}" title="{{ 'Export Invoices'|trans }}">
+                        <a class="btn btn-secondary" href="{{ '/api/admin/invoice/export_csv'|link }}" title="{{ 'Export Invoices'|trans }}">
                             <svg class="icon">
                                 <use xlink:href="#download" />
                             </svg>
@@ -294,7 +291,6 @@
             <div class="tab-pane show" id="tab-new" role="tabpanel">
                 <div class="card-body">
                     <form method="post" action="{{ 'api/admin/invoice/prepare'|link }}" class="api-form" data-api-jsonp="onAfterInvoicePrepared">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
                             <div class="col">
@@ -303,8 +299,7 @@
                                             placeholder="{{ 'Start typing the client name or ID'|trans }}"
                                             id="client_id"
                                             name="client_id"
-                                            data-resturl="admin/client/get_pairs"
-                                            data-csrf="{{ CSRFToken }}">
+                                            data-resturl="admin/client/get_pairs">
                                     </select>
                                 {% else %}
                                     {% set client = admin.client_get({ 'id': request.client_id }) %}

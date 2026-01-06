@@ -32,14 +32,7 @@ require_once 'Zend/Reflection/Docblock/Tag.php';
  */
 class TagOptional extends Zend_Reflection_Docblock_Tag
 {
-    /**
-     * @var string
-     */
-    protected $_type;
-
-    /**
-     * @var string
-     */
+    protected string $_type;
     protected $_variableName;
 
     /**

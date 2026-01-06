@@ -14,21 +14,19 @@ We've tried to keep this document as short as possible but there is a lot of inf
 
 [Before you get started](#before-you-get-started)
  * [Code of Conduct](#code-of-conduct)
- * [Which 'branch' should I contribute to?](#which-branch-should-i-contribute-to)
- * [Understanding the structure of FOSSBilling](#)
+ * [Understanding the structure of FOSSBilling](#understanding-the-structure-of-fossbilling)
 
 [How can I contribute?](#how-can-i-contribute)
  * [Reporting bugs](#reporting-bugs)
- * [Suggesting improvements](#suggesting-improvements)
+ * [Suggesting improvements](#suggesting-improvements-or-new-features)
  * [Contributing Code](#contributing-code)
  * [Writing Documentation](#writing-documentation)
  * [Translating FOSSBilling](#translating-fossbilling)
- * [Sponsor the project](#sponsoring-the-project)
+ * [Sponsoring the project](#sponsoring-the-project)
 
-[Style Guides](#styleguides)
+[Style Guides](#style-guides)
 
 [But, I still have a question!](#but-i-still-have-a-question)
-
 
 ## Why should I contribute?
 
@@ -46,7 +44,7 @@ If you need more reasons than that though, then because...
 
 First off, no matter how you plan to take part, please take a couple of minutes to read our code of conduct before contributing anything.
 
-This project and everyone participating in it are governed by the [FOSSBilling Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the moderators on our [Discord](https://fossbilling.org/discord) server.
+This project and everyone participating in it are governed by the [FOSSBilling Code of Conduct](.github/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the moderators on our [Discord](https://fossbilling.org/discord) server.
 
 ### Understanding the structure of FOSSBilling
 
@@ -61,7 +59,6 @@ Think of Service modules as products that you want to sell. These modules have a
 If you need to sell a new type of product you will implement a Service type module.
 
 Other modules extend the whole FOSSBilling API with any functionality needed. Check existing modules to get an idea of what is already shipped with the default structure of FOSSBilling.
-
 
 ## How can I contribute?
 
@@ -167,7 +164,6 @@ If you do not have the time or necessary skills to actively take part in the dev
 
 You can do this using [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or on [Open Collective](https://opencollective.com/FOSSBilling). 
 
-
 ## Style Guides
 
 ### Commit Messages Style Guide
@@ -187,7 +183,13 @@ Please be as clear and descriptive as possible in your commit messages, it makes
     * 🔒 when dealing with security
     * ⬆️ when upgrading dependencies
     * :sparkles: when it is a new feature
-    
+
+### AI and LLM Usage
+
+Usage of AI assistance is generally acceptable, but you are responsible for ensuring the quality of the output meets the project's standards. Currently, AI-generated content is often too verbose and its quality is typically subpar compared to what most human contributors produce.
+
+Do not use an AI or LLM to generate changes, respond to issues, or interact with PRs without holding the output to the same standards as human-written content. All contributions, whether AI-assisted or not, must undergo the same review process and meet the same quality requirements.
+
 ### PHP Style Guide
 
 All PHP must adhere to [PSR-12](https://www.php-fig.org/psr/psr-12/).

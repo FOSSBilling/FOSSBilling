@@ -25,8 +25,6 @@
 {% block content %}
     {% set new_params = admin.extension_config_get({ 'ext': 'mod_system' }) %}
     {% set params = admin.system_get_params %}
-    {% set environment = admin.system_env %}
-    {% set external_ip = admin.system_env({ 'ip': true }) %}
     <div class="card-tabs">
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
@@ -488,6 +486,26 @@ YE=Yemen
 ZM=Zambia
 ZW=Zimbabwe
 {% endset %}
+
+                            <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Default country for new users'|trans }}</label>
+                                <div class="col-md-6">
+                                    <select class="form-select" name="default_country">
+                                        <option value="" {% if new_params.default_country is not defined or new_params.default_country == '' %}selected{% endif %}>
+                                            {{ 'No default country'|trans }}
+                                        </option>
+                                        {% for line in (new_params.countries|default(default_countries))|split('\n') %}
+                                            {% set parts = line|split('=') %}
+                                            {% if parts|length == 2 %}
+                                                <option value="{{ parts[0] }}" {% if new_params.default_country is defined and new_params.default_country == parts[0] %}selected{% endif %}>
+                                                    {{ parts[1] }}
+                                                </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
                             <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'List of countries'|trans }}</label>
                                 <div class="col-md-6">
@@ -584,17 +602,39 @@ ZW=Zimbabwe
                     <div class="card-body">
                         {% set last_change = admin.system_last_error_reporting_change %}
                         {% if admin.system_error_reporting_enabled %}
-                            <div class="alert alert-success" role="alert">
-                                <p>{{ 'Error reporting is enabled.'|trans}}</p>
-                                <p>{{ 'This FOSSBilling instance is automatically sending error reports which allows us to more easily improve the software and keep it stable. Thanks!'|trans }}</p>
-                                <a class="btn btn-danger api-link" href="{{ 'api/admin/system/toggle_error_reporting'|link({ 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Error reporting is now disabled.'|trans }}">{{'Disable error reporting'|trans}}</a>
+                        <div class="alert alert-success d-flex align-items-center justify-content-between" role="alert">
+                            <div class="d-flex align-items-center">
+                                <span class="me-2">
+                                    <svg class="icon">
+                                        <use xlink:href="#check" />
+                                    </svg>
+                                </span>
+                                <div>
+                                    <div class="fw-bold">{{ 'Error reporting is enabled.'|trans }}</div>
+                                    <div class="text-muted small">{{ 'This FOSSBilling instance is automatically sending error reports which helps us improve the software and keep it stable. Thanks!'|trans }}</div>
+                                </div>
                             </div>
+                            <a class="btn btn-danger api-link ms-3" href="{{ 'api/admin/system/toggle_error_reporting'|link }}" data-api-msg="{{ 'Error reporting is now disabled.'|trans }}">
+                                {{ 'Disable error reporting'|trans }}
+                            </a>
+                        </div>
                         {% else %}
-                            <div class="alert alert-danger" role="alert">
-                                <p>{{ 'Error reporting is disabled.'|trans}}</p>
-                                <p>{{ 'Please consider enabling error reporting. Doing so allows us to provide you with better technical support and helps us to proactively improve FOSSBilling.'|trans }}</p>
-                                <a class="btn btn-success api-link" href="{{ 'api/admin/system/toggle_error_reporting'|link({ 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Error reporting is now enabled.'|trans }}">{{'Enable error reporting'|trans}}</a>
+                        <div class="alert alert-warning d-flex align-items-center justify-content-between" role="alert">
+                            <div class="d-flex align-items-center">
+                                <span class="me-2">
+                                    <svg class="icon">
+                                        <use xlink:href="#alert-triangle" />
+                                    </svg>
+                                </span>
+                                <div>
+                                    <div class="fw-bold">{{ 'Error reporting is disabled.'|trans }}</div>
+                                    <div class="text-muted small">{{ 'Please consider enabling error reporting. This allows us to provide better technical support and helps us proactively improve FOSSBilling.'|trans }}</div>
+                                </div>
                             </div>
+                            <a class="btn btn-success api-link ms-3" href="{{ 'api/admin/system/toggle_error_reporting'|link }}" data-api-msg="{{ 'Error reporting is now enabled.'|trans }}">
+                                {{ 'Enable error reporting'|trans }}
+                            </a>
+                        </div>
                         {% endif %}
                         <p>{{ "FOSSBilling optionally includes automated error reporting to help aid the project's development and stability. To find the most up-to-date information about it, you should review the links and information below."|trans }}</p>
                         <ul>
@@ -613,26 +653,17 @@ ZW=Zimbabwe
                         <h3 class="card-title">{{ 'Network interface'|trans }}</h3>
                     </div>
                     <div class="card-body">
-                        <div class="alert {% if external_ip %}alert-success{% else %}alert-danger{% endif %}" role="alert" id="external-ip">
-                            {% if external_ip %}
-                                {{ 'With the current settings, your FOSSBilling instance will have an external IP address of: '|trans }} {{ external_ip }}
-                            {% else %}
-                                {{ 'The currently selected network interface does not appear to be able to reach the internet!'|trans }}
-                            {% endif %}
+                        <div class="alert alert-info" role="alert" id="external-ip">
+                            {{ "Checking external IP..."|trans }}
                         </div>
 
                         <form class="api-form" method="post" action="{{ 'api/admin/system/set_interface_ip'|link }}" data-api-jsonp="onAfterInterfaceSet">
-                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
-                            {% set interface_ips = admin.system_get_interface_ips %}
                             
                             <div class="col-12 col-lg-3">
-                                <label for="interface">{{"Select the default network interface:"|trans }}</label>
-                                <select class="form-select" aria-label="{{ 'Available network interfaces'|trans }}" name="interface" id="interface">
-                                    <option value="0" {% if constant('BIND_TO') == 0 %} selected {%endif%}>{{ 'None (Default PHP Behavior)'|trans }}</option>
-                                    {% for i, interface in interface_ips %}
-                                    <option value="{{ interface }}" {% if constant('BIND_TO') == interface %} selected {% endif %}>{{ interface }}</option>
-                                    {% endfor %}
+                                <label for="interface">{{ 'Select the default network interface:'|trans }}</label>
+                                <select class="form-select" name="interface" id="interface">
+                                    <option value="0">{{ 'None (Default PHP Behavior)'|trans }}</option>
                                 </select>
                             </div>
 
@@ -640,13 +671,11 @@ ZW=Zimbabwe
 
                             <div class="col-12 col-lg-3">
                                 <label for="custom_interface">{{'Enter a custom interface to use:'|trans }}</label>
-                                {% if constant('BIND_TO') not in interface_ips and constant('BIND_TO') != 0%}
-                                    <input class="form-control mt-1" type="text" name="custom_interface" id="custom_interface" value="{{ constant('BIND_TO') }}">
-                                {% else %}
-                                    <input class="form-control mt-1" type="text" name="custom_interface" id="custom_interface">
-                                {% endif %}
+                                <input class="form-control mt-1" type="text" name="custom_interface" id="custom_interface">
                             </div>
-                            <span class="text-muted">{{ "If the dropdown menu doesn't have the appropriate network interface, please enter the IP address or name (e.g., eth0) of the correct one above."|trans }}</span>
+                            <span class="text-muted">
+                                {{ "If the dropdown menu doesn't have the appropriate network interface, please enter the IP address or name (e.g., eth0) of the correct one above."|trans }}
+                            </span>
                             <br>
 
                             <input type="submit" class="btn btn-primary mt-1" value="{{ 'Update'|trans }}">
@@ -660,20 +689,62 @@ ZW=Zimbabwe
 
 {% block js %}
 <script>
-    function onAfterInterfaceSet(result) {
-        API.admin.post('system/env', {
-            ip: true,
-            CSRFToken: "{{ CSRFToken }}"
-        }, function (ip) {
-            FOSSBilling.message(`{{ 'Network interface updated.'|trans }}`);
-            if(ip){
-                document.getElementById('external-ip').innerText = `{{ 'With the current settings, your FOSSBilling instance will have an external IP address of: '|trans }}` + ip;
-                document.getElementById('external-ip').className = 'alert alert-success';
+    const bindTo = "{{ constant('BIND_TO') }}";
+
+    function updateExternalIP() {
+        const el = document.getElementById('external-ip');
+        // Always show a loading state first
+        el.innerText = `{{ "Checking external IP..."|trans }}`;
+        el.className = 'alert alert-info';
+    
+        API.admin.get('system/env', { ip: true }, function (ip) {
+            if (ip) {
+                el.innerText = `{{ 'With the current settings, your FOSSBilling instance will have an external IP address of: '|trans }}` + ip;
+                el.className = 'alert alert-success';
             } else {
-                document.getElementById('external-ip').innerText = `{{ 'The currently selected network interface does not appear to be able to reach the internet!'|trans }}`;
-                document.getElementById('external-ip').className = 'alert alert-danger';
+                el.innerText = `{{ 'The currently selected network interface does not appear to be able to reach the internet!'|trans }}`;
+                el.className = 'alert alert-danger';
             }
         });
+    }
+
+    function loadInterfaceIPs() {
+        const select = document.getElementById('interface');
+        // Show loading state first
+        select.innerHTML = `<option disabled selected>{{ "Loading interfaces..."|trans }}</option>`;
+
+        API.admin.get('system/get_interface_ips', {}, function (interfaces) {
+            select.innerHTML = `<option value="0">{{ 'None (Default PHP Behavior)'|trans }}</option>`;
+
+            interfaces.forEach(interface => {
+                const opt = document.createElement('option');
+                opt.value = interface;
+                opt.textContent = interface;
+                if (interface === bindTo) {
+                    opt.selected = true;
+                }
+                select.appendChild(opt);
+            });
+
+            // Handle custom interface
+            const custom = document.getElementById('custom_interface');
+            if (bindTo !== "0" && !interfaces.includes(bindTo)) {
+                custom.value = bindTo;
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const networkTab = document.querySelector('a[href="#network-interface"]');
+        networkTab.addEventListener("shown.bs.tab", function () {
+            updateExternalIP();
+            loadInterfaceIPs();
+        });
+    });
+
+    function onAfterInterfaceSet(result) {
+        FOSSBilling.message(`{{ 'Network interface updated.'|trans }}`);
+        updateExternalIP();
     }
 </script>
 {% endblock %}

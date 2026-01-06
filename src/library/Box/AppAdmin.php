@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -70,6 +69,7 @@ class Box_AppAdmin extends Box_App
         $twig = $this->di['twig'];
         $twig->setLoader($loader);
         $twig->addGlobal('theme', $theme);
+        $twig->addGlobal('current_theme', $theme['code']);
 
         if (Environment::isDevelopment()) {
             $profile = new Profile();

@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -39,7 +38,7 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
-    public function attachOrderConfig(\Model_Product $product, array &$data)
+    public function attachOrderConfig(\Model_Product $product, array &$data): array
     {
         $config = json_decode($product->config ?? '', true) ?? [];
         $required = [
@@ -52,7 +51,7 @@ class Service implements InjectionAwareInterface
         return array_merge($config, $data);
     }
 
-    public function validateOrderData(array &$data)
+    public function validateOrderData(array &$data): void
     {
         $required = [
             'filename' => 'Filename is missing in product config',
@@ -82,67 +81,55 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
-    public function action_activate(\Model_ClientOrder $order)
+    public function action_activate(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
     /**
      * @todo
-     *
-     * @return bool
      */
-    public function action_renew(\Model_ClientOrder $order)
+    public function action_renew(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
     /**
      * @todo
-     *
-     * @return bool
      */
-    public function action_suspend(\Model_ClientOrder $order)
+    public function action_suspend(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
     /**
      * @todo
-     *
-     * @return bool
      */
-    public function action_unsuspend(\Model_ClientOrder $order)
+    public function action_unsuspend(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
     /**
      * @todo
-     *
-     * @return bool
      */
-    public function action_cancel(\Model_ClientOrder $order)
+    public function action_cancel(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
     /**
      * @todo
-     *
-     * @return bool
      */
-    public function action_uncancel(\Model_ClientOrder $order)
+    public function action_uncancel(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
     /**
      * @todo
-     *
-     * @return void
      */
-    public function action_delete(\Model_ClientOrder $order)
+    public function action_delete(\Model_ClientOrder $order): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
@@ -166,17 +153,23 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function uploadProductFile(\Model_Product $productModel)
+    public function uploadProductFile(\Model_Product $productModel): bool
     {
         $productService = $this->di['mod_service']('product');
         $request = $this->di['request'];
 
         if ($request->files->count() == 0) {
-            throw new \FOSSBilling\Exception('Error uploading file.');
+            throw new \FOSSBilling\Exception('File upload failed: no files in request.');
         }
         $file = $request->files->get('file_data');
         $fileName = $file->getClientOriginalName();
-        $fileNameHash = md5($fileName);
+
+        $errorCode = $file->getError();
+        if ($errorCode !== UPLOAD_ERR_OK) {
+            throw new \FOSSBilling\Exception('File upload failed: ' . $this->_error_message($errorCode));
+        }
+
+        $fileNameHash = md5((string) $fileName);
         $fileSavePath = PATH_UPLOADS;
         $file->move($fileSavePath, $fileNameHash);
 
@@ -184,7 +177,7 @@ class Service implements InjectionAwareInterface
 
         // Remove old file.
         if (isset($config['filename'])) {
-            $oldFilePath = Path::join(PATH_UPLOADS, md5($config['filename']));
+            $oldFilePath = Path::join(PATH_UPLOADS, md5((string) $config['filename']));
             if ($this->filesystem->exists($oldFilePath)) {
                 $this->filesystem->remove($oldFilePath);
             }
@@ -199,7 +192,6 @@ class Service implements InjectionAwareInterface
             foreach ($orders as $order) {
                 $ordermodel = $this->di['db']->getExistingModelById('ClientOrder', $order['id']);
                 $serviceDownloadable = $orderService->getOrderService($ordermodel);
-                $this->updateProductFile($serviceDownloadable, $ordermodel);
 
                 // Update the filename
                 $oldconfig = json_decode($order['config'] ?? '', true);
@@ -209,6 +201,9 @@ class Service implements InjectionAwareInterface
                 $ordermodel->config = json_encode($oldconfig);
                 $ordermodel->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($ordermodel);
+
+                // Pass the filename since the file was already uploaded and moved
+                $this->updateProductFile($serviceDownloadable, $ordermodel, $fileName);
             }
         }
 
@@ -223,22 +218,40 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function updateProductFile(\Model_ServiceDownloadable $serviceDownloadable, \Model_ClientOrder $order)
+    public function updateProductFile(\Model_ServiceDownloadable $serviceDownloadable, \Model_ClientOrder $order, ?string $filename = null): bool
     {
         $request = $this->di['request'];
 
-        if ($request->files->count() == 0) {
-            throw new \FOSSBilling\Exception('Error uploading file.');
+        // If filename is provided, use it directly (file was already uploaded in uploadProductFile)
+        if ($filename !== null) {
+            $fileName = $filename;
+        } elseif ($request->files->count() > 0) {
+            $file = $request->files->get('file_data');
+            $fileName = $file->getClientOriginalName();
+
+            $errorCode = $file->getError();
+            if ($errorCode !== UPLOAD_ERR_OK) {
+                throw new \FOSSBilling\Exception('File upload failed: ' . $this->_error_message($errorCode));
+            }
+
+            $fileNameHash = md5((string) $fileName);
+            $fileSavePath = PATH_UPLOADS;
+            $file->move($fileSavePath, $fileNameHash);
+        } else {
+            $fileName = null;
+            if (isset($order->config)) {
+                $config = json_decode($order->config, true);
+                $fileName = $config['filename'] ?? null;
+            }
+            if (!$fileName && isset($serviceDownloadable->filename)) {
+                $fileName = $serviceDownloadable->filename;
+            }
+            if (!$fileName) {
+                throw new \FOSSBilling\Exception('No filename available for order file update');
+            }
         }
-        $file = $request->files->get('file_data');
-        $fileName = $file->getClientOriginalName();
-        $fileNameHash = md5($fileName);
-        $fileSavePath = PATH_UPLOADS;
-        $file->move($fileSavePath, $fileNameHash);
 
         $serviceDownloadable->filename = $fileName;
         $serviceDownloadable->updated_at = date('Y-m-d H:i:s');
@@ -249,7 +262,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    private function _error_message($error_code)
+    private function _error_message($error_code): string
     {
         return match ($error_code) {
             UPLOAD_ERR_INI_SIZE => 'The uploaded file exceeds the upload_max_filesize directive in php.ini',
@@ -263,7 +276,7 @@ class Service implements InjectionAwareInterface
         };
     }
 
-    public function sendFile(\Model_ServiceDownloadable $serviceDownloadable)
+    public function sendFile(\Model_ServiceDownloadable $serviceDownloadable): bool
     {
         $info = $this->toApiArray($serviceDownloadable);
 
@@ -287,13 +300,8 @@ class Service implements InjectionAwareInterface
                 $fileName
             );
 
-            $response->headers->set('Content-Type', 'application/force-download');
             $response->headers->set('Content-Type', 'application/octet-stream');
-            $response->headers->set('Content-Type', 'application/download');
-            $response->headers->set('Content-Description', 'File Transfer');
             $response->headers->set('Content-Disposition', $disposition);
-            $response->headers->set('Content-Transfer-Encoding', 'binary');
-
             $response->send();
         }
 
@@ -302,13 +310,66 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function saveProductConfig(\Model_Product $productModel, $data)
+    public function saveProductConfig(\Model_Product $productModel, $data): bool
     {
-        $config = [];
+        $config = json_decode($productModel->config ?? '', true) ?: [];
         $config['update_orders'] = isset($data['update_orders']) && (bool) $data['update_orders'];
         $productModel->config = json_encode($config);
         $productModel->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($productModel);
+
+        return true;
+    }
+
+    /**
+     * Sends the file associated with a product for download.
+     *
+     * In a non-testing environment, this method reads the product file from disk,
+     * constructs an HTTP response with appropriate headers, and sends it directly
+     * to the client. In a testing environment ({@see Environment::isTesting()}),
+     * no response is sent, but the method will still perform logging and return
+     * a boolean indicating that the operation completed.
+     *
+     * @param \Model_Product $product The product model whose associated file should be downloaded.
+     *
+     * @return bool True if the download operation completed successfully, regardless of whether
+     *              a response was actually sent (e.g. in a testing environment).
+     *
+     * @throws \FOSSBilling\Exception If no file is associated with the product configuration
+     *                                or if the associated file cannot be found or read. In both
+     *                                cases, the exception is thrown with an HTTP-style error
+     *                                code of 404.
+     */
+    public function sendProductFile(\Model_Product $product)
+    {
+        $config = $product->config;
+        $config = json_decode($config ?? '', true) ?: [];
+
+        if (!isset($config['filename'])) {
+            throw new \FOSSBilling\Exception('No file associated with this product.', null, 404);
+        }
+
+        $fileName = $config['filename'];
+        $filePath = Path::join(PATH_UPLOADS, md5($fileName));
+
+        if (!$this->filesystem->exists($filePath)) {
+            throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
+        }
+
+        if (!Environment::isTesting()) {
+            $response = new Response($this->filesystem->readFile($filePath));
+
+            $disposition = $response->headers->makeDisposition(
+                HeaderUtils::DISPOSITION_ATTACHMENT,
+                $fileName
+            );
+
+            $response->headers->set('Content-Type', 'application/octet-stream');
+            $response->headers->set('Content-Disposition', $disposition);
+            $response->send();
+        }
+
+        $this->di['logger']->info('Downloaded product %s file by admin.', $product->id);
 
         return true;
     }

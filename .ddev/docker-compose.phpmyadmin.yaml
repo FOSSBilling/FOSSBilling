@@ -2,7 +2,7 @@
 services:
   phpmyadmin:
     container_name: ddev-${DDEV_SITENAME}-phpmyadmin
-    image: ${PHPMYADMIN_DOCKER_IMAGE:-phpmyadmin:5}
+    image: ${PHPMYADMIN_DOCKER_IMAGE:-phpmyadmin:5@sha256:5ef9945762c6871de3f318812f9e28b11afa80351e76b1ae246fc3deef5bbddb}
     working_dir: "/root"
     restart: "no"
     labels:

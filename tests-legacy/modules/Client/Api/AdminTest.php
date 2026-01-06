@@ -1,19 +1,24 @@
 <?php
 
-namespace Box\Tests\Mod\Client\Api;
+declare(strict_types=1);
 
-class AdminTest extends \BBTestCase
+namespace Box\Tests\Mod\Client\Api;
+use PHPUnit\Framework\Attributes\DataProvider; 
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class AdminTest extends \BBTestCase
 {
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
         $getDi = $admin_Client->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testgetList(): void
+    public function testGetList(): void
     {
         $simpleResultArr = [
             'list' => [
@@ -21,7 +26,7 @@ class AdminTest extends \BBTestCase
             ],
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['String', []]);
@@ -29,7 +34,7 @@ class AdminTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
             ->onlyMethods(['getPaginatedResultSet'])
             ->getMock();
 
@@ -39,12 +44,12 @@ class AdminTest extends \BBTestCase
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
 
@@ -59,12 +64,11 @@ class AdminTest extends \BBTestCase
 
     public function testGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('getPairs')->willReturn([]);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('getPairs')->willReturn([]);
 
-        $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -74,14 +78,13 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testget(): void
+    public function testGet(): void
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('get')->willReturn($model);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('get')->willReturn($model);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([]);
@@ -93,11 +96,11 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testlogin(): void
+    public function testLogin(): void
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
@@ -107,23 +110,19 @@ class AdminTest extends \BBTestCase
             'name' => 'John Smith',
             'role' => 'client',
         ];
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('toSessionArray')->willReturn($sessionArray);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('toSessionArray')->willReturn($sessionArray);
 
-        $sessionMock = $this->getMockBuilder('\\' . \FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
-        $sessionMock->expects($this->atLeastOnce())->
-        method('set');
+        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
+        $sessionMock->expects($this->atLeastOnce())->method('set');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -138,30 +137,23 @@ class AdminTest extends \BBTestCase
     {
         $data = [
             'email' => 'email@example.com',
-            'first_name' => 'John',
+            'first_name' => 'John', 'password' => 'StrongPass123',
         ];
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('emailAlreadyRegistered')->willReturn(false);
-        $serviceMock->expects($this->atLeastOnce())->
-        method('adminCreateClient')->willReturn(1);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(false);
+        $serviceMock->expects($this->atLeastOnce())->method('adminCreateClient')->willReturn(1);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock = $this->createMock('\\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
-
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['tools'] = $toolsMock;
 
@@ -178,20 +170,16 @@ class AdminTest extends \BBTestCase
     {
         $data = [
             'email' => 'email@example.com',
-            'first_name' => 'John',
+            'first_name' => 'John', 'password' => 'StrongPass123',
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('emailAlreadyRegistered')->willReturn(true);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $di['tools'] = $toolsMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -203,36 +191,32 @@ class AdminTest extends \BBTestCase
         $admin_Client->create($data);
     }
 
-    public function testdelete(): void
+    public function testDelete(): void
     {
         $data = ['id' => 1];
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock = $this->createMock('\\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Client\Service::class)
             ->onlyMethods(['remove'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
-            ->method('remove')
-            ->willReturn(true);
+            ->method('remove');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -242,11 +226,11 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdate(): void
+    public function testUpdate(): void
     {
         $data = [
             'id' => 1,
-            'first_name' => 'John',
+            'first_name' => 'John', 'password' => 'StrongPass123',
             'last_name' => 'Smith',
             'aid' => '0',
             'gender' => 'male',
@@ -265,7 +249,7 @@ class AdminTest extends \BBTestCase
             'city' => 'Chicaco',
             'state' => 'IL',
             'currency' => 'USD',
-            'tax_exempt' => 'n/a',
+            'tax_exempt' => 'N/A',
             'created_at' => '2012-05-10',
             'email' => 'test@example.com',
             'group_id' => 1,
@@ -288,36 +272,27 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')->willReturn(1);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('emailAlreadyRegistered')->willReturn(false);
-        $serviceMock->expects($this->atLeastOnce())->
-        method('canChangeCurrency')->willReturn(true);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(false);
+        $serviceMock->expects($this->atLeastOnce())->method('canChangeCurrency')->willReturn(true);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock = $this->createMock('\\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $di['events_manager'] = $eventMock;
-        $di['validator'] = $validatorMock;
         $di['logger'] = new \Box_Log();
-
         $di['tools'] = $toolsMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -326,11 +301,11 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testupdateEmailALreadyRegistered(): void
+    public function testUpdateEmailALreadyRegistered(): void
     {
         $data = [
             'id' => 1,
-            'first_name' => 'John',
+            'first_name' => 'John', 'password' => 'StrongPass123',
             'last_name' => 'Smith',
             'aid' => '0',
             'gender' => 'male',
@@ -349,7 +324,7 @@ class AdminTest extends \BBTestCase
             'city' => 'Chicaco',
             'state' => 'IL',
             'currency' => 'USD',
-            'tax_exempt' => 'n/a',
+            'tax_exempt' => 'N/A',
             'created_at' => '2012-05-10',
             'email' => 'test@example.com',
             'group_id' => 1,
@@ -372,32 +347,25 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('emailAlreadyRegistered')->willReturn(true);
-        $serviceMock->expects($this->never())->
-        method('canChangeCurrency')->willReturn(true);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(true);
+        $serviceMock->expects($this->never())->method('canChangeCurrency')->willReturn(true);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->never())->
-        method('fire');
+        $eventMock = $this->createMock('\\Box_EventManager');
+        $eventMock->expects($this->never())->method('fire');
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $di['events_manager'] = $eventMock;
-        $di['validator'] = $validatorMock;
         $di['logger'] = new \Box_Log();
+        $di['validator'] = new \FOSSBilling\Validate();
 
-        $toolsMock = $this->getMockBuilder('\\' . \FOSSBilling\Tools::class)->getMock();
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
@@ -414,17 +382,18 @@ class AdminTest extends \BBTestCase
         $data = [];
         $admin_Client = new \Box\Mod\Client\Api\Admin();
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $di['validator'] = new \FOSSBilling\Validate();
         $admin_Client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Id required');
+        $this->expectExceptionMessage('Client ID was not passed');
+        $this->validateRequiredParams($admin_Client, 'update', $data);
         $admin_Client->update($data);
     }
 
-    public function testchangePassword(): void
+    public function testChangePassword(): void
     {
         $data = [
             'id' => 1,
@@ -435,35 +404,32 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store')->willReturn(1);
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock = $this->createMock('\\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $passwordMock = $this->getMockBuilder('\FOSSBilling\PasswordManager')->getMock();
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
             ->method('hashIt')
             ->with($data['password']);
 
-        $profileService = $this->getMockBuilder('\\' . \Box\Mod\Profile\Service::class)->getMock();
+        $profileService = $this->createMock(\Box\Mod\Profile\Service::class);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['password'] = $passwordMock;
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
-        $di['mod_service'] = $di->protect(fn () => $profileService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $profileService);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -472,7 +438,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testchangePasswordPasswordMismatch(): void
+    public function testChangePasswordPasswordMismatch(): void
     {
         $data = [
             'id' => 1,
@@ -481,13 +447,10 @@ class AdminTest extends \BBTestCase
         ];
         $admin_Client = new \Box\Mod\Client\Api\Admin();
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $admin_Client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -495,7 +458,7 @@ class AdminTest extends \BBTestCase
         $admin_Client->change_password($data);
     }
 
-    public function testbalanceGetList(): void
+    public function testBalanceGetList(): void
     {
         $simpleResultArr = [
             'list' => [
@@ -511,12 +474,12 @@ class AdminTest extends \BBTestCase
 
         $data = [];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\ServiceBalance::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Client\ServiceBalance::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['String', []]);
 
-        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
             ->onlyMethods(['getPaginatedResultSet'])
             ->getMock();
 
@@ -527,8 +490,8 @@ class AdminTest extends \BBTestCase
         $model = new \Model_ClientBalance();
         $model->loadBean(new \DummyBean());
 
-        $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $di['pager'] = $pagerMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -538,7 +501,7 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testbalanceDelete(): void
+    public function testBalanceDelete(): void
     {
         $data = [
             'id' => 1,
@@ -547,20 +510,18 @@ class AdminTest extends \BBTestCase
         $model = new \Model_ClientBalance();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -570,7 +531,7 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testbalanceAddFunds(): void
+    public function testBalanceAddFunds(): void
     {
         $data = [
             'id' => 1,
@@ -581,22 +542,19 @@ class AdminTest extends \BBTestCase
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('addFunds');
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('addFunds');
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -606,23 +564,22 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testbatchExpirePasswordReminders(): void
+    public function testBatchExpirePasswordReminders(): void
     {
         $expiredArr = [
             new \Model_ClientPasswordReset(),
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('getExpiredPasswordReminders')->willReturn($expiredArr);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('getExpiredPasswordReminders')->willReturn($expiredArr);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $di['logger'] = new \Box_Log();
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -632,19 +589,19 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testloginHistoryGetList(): void
+    public function testLoginHistoryGetList(): void
     {
         $data = [];
         $pagerResultSet = [
             'list' => [],
         ];
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getHistorySearchQuery')
             ->willReturn(['String', []]);
 
-        $pagerMock = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
+        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
             ->onlyMethods(['getPaginatedResultSet'])
             ->getMock();
 
@@ -652,7 +609,7 @@ class AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn($pagerResultSet);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $pagerMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -663,14 +620,13 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgetStatuses(): void
+    public function testGetStatuses(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('counter')->willReturn([]);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('counter')->willReturn([]);
 
-        $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -679,14 +635,13 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgroupGetPairs(): void
+    public function testGroupGetPairs(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('getGroupPairs')->willReturn([]);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('getGroupPairs')->willReturn([]);
 
-        $di = new \Pimple\Container();
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -695,23 +650,15 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testgroupCreate(): void
+    public function testGroupCreate(): void
     {
         $data['title'] = 'test Group';
 
         $newGroupId = 1;
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())->
-        method('createGroup')
-            ->willReturn($newGroupId);
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->atLeastOnce())->method('createGroup')->willReturn($newGroupId);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-
+        $di = $this->getDi();
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setService($serviceMock);
         $admin_Client->setDi($di);
@@ -721,7 +668,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($newGroupId, $result);
     }
 
-    public function testgroupUpdate(): void
+    public function testGroupUpdate(): void
     {
         $data['id'] = '2';
         $data['title'] = 'test Group updated';
@@ -729,20 +676,18 @@ class AdminTest extends \BBTestCase
         $model = new \Model_ClientGroup();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store')->willReturn(1);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -753,34 +698,32 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgroupDelete(): void
+    public function testGroupDelete(): void
     {
         $data['id'] = '2';
 
         $model = new \Model_ClientGroup();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
         $dbMock->expects($this->once())
             ->method('find')->with('Client', 'client_group_id = :group_id', [':group_id' => $data['id']])
             ->willReturn([]); // Return an empty array to simulate no clients assigned to the group
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Client\Service::class)
             ->onlyMethods(['deleteGroup'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteGroup')
             ->willReturn(true);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -792,26 +735,24 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testgroupGet(): void
+    public function testGroupGet(): void
     {
         $data['id'] = '2';
 
         $model = new \Model_ClientGroup();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')->willReturn([]);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -822,63 +763,18 @@ class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testloginHistoryDelete(): void
-    {
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn(new \Model_ActivityClientHistory());
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
-
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-        $di['db'] = $dbMock;
-        $admin_Client->setDi($di);
-
-        $data = ['id' => 1];
-        $result = $admin_Client->login_history_delete($data);
-        $this->assertTrue($result);
-    }
-
     public function testBatchDelete(): void
     {
-        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Api\Admin::class)->onlyMethods(['delete'])->getMock();
+        $activityMock = $this->getMockBuilder(\Box\Mod\Client\Api\Admin::class)->onlyMethods(['delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('delete')->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
+        $di = $this->getDi();
         $activityMock->setDi($di);
 
         $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);
-        $this->assertTrue($result);
-    }
-
-    public function testBatchDeleteLog(): void
-    {
-        $activityMock = $this->getMockBuilder('\\' . \Box\Mod\Client\Api\Admin::class)->onlyMethods(['login_history_delete'])->getMock();
-        $activityMock->expects($this->atLeastOnce())->method('login_history_delete')->willReturn(true);
-
-        $validatorMock = $this->getMockBuilder('\\' . \FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-
-        $di = new \Pimple\Container();
-        $di['validator'] = $validatorMock;
-        $activityMock->setDi($di);
-
-        $result = $activityMock->batch_delete_log(['ids' => [1, 2, 3]]);
         $this->assertTrue($result);
     }
 }

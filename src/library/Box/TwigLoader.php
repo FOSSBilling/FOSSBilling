@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -15,7 +14,7 @@ use Symfony\Component\Filesystem\Path;
 
 class Box_TwigLoader extends Twig\Loader\FilesystemLoader
 {
-    protected $options = [];
+    protected array $options;
     private readonly Filesystem $filesystem;
 
     /**
@@ -53,7 +52,7 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
             return $this->cache[$name];
         }
 
-        $name_split = explode('_', $name);
+        $name_split = explode('_', (string) $name);
 
         $paths = [];
         $paths[] = Path::join($this->options['theme'], 'html_custom');
@@ -67,7 +66,7 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
                 return $this->cache[$name] = Path::join($path, $name);
             }
 
-            if (str_ends_with($name, 'icon.svg') && $this->filesystem->exists(Path::join(Path::getDirectory($path), 'icon.svg'))) {
+            if (str_ends_with((string) $name, 'icon.svg') && $this->filesystem->exists(Path::join(Path::getDirectory($path), 'icon.svg'))) {
                 return $this->cache[$name] = Path::join(Path::getDirectory($path), 'icon.svg');
             }
         }

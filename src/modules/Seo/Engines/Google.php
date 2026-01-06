@@ -26,7 +26,7 @@ class Google implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function getDetails()
+    public function getDetails(): array
     {
         return [
             'id' => 'google',
@@ -34,7 +34,7 @@ class Google implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function pingSitemap(string $url)
+    public function pingSitemap(string $url): bool
     {
         $link = 'https://www.google.com/ping';
         $httpClient = HttpClient::create(['bindto' => BIND_TO]);
