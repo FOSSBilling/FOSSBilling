@@ -142,13 +142,30 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
           })
           .then((json) => {
-            if (json.result && json.result.content) {
-              if (typeof editors !== 'undefined' && editors) {
-                Object.keys(editors).forEach(function (name) {
-                  editors[name].editor.setData(json.result.content);
-                });
-              }
+            const content = json.result?.content || '';
+            
+            // Try element-based approach first: look for active editor
+            const activeEditorElement = document.activeElement.closest('[data-editor]');
+            if (activeEditorElement?.editor?.setData) {
+              activeEditorElement.editor.setData(content);
+              return;
             }
+            
+            // Fallback to registry approach
+            if (window.FOSSBilling?.editors) {
+              Object.values(window.FOSSBilling.editors).forEach(editor => {
+                if (editor?.setData) {
+                  editor.setData(content);
+                }
+              });
+            }
+            
+            // Last fallback: try to find any editor in the document
+            document.querySelectorAll('[data-editor]').forEach(el => {
+              if (el.editor?.setData) {
+                el.editor.setData(content);
+              }
+            });
           })
           .catch(error => {
             console.error('Canned response fetch error:', error);

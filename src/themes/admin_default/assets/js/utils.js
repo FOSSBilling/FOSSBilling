@@ -177,3 +177,51 @@ export function deepMerge(...objects) {
   
   return result;
 }
+
+/**
+ * Register a CKEditor instance for canned response functionality
+ * @param {HTMLElement} element - The editor container element
+ * @param {Object} editor - The CKEditor instance
+ */
+export function registerEditor(element, editor) {
+  if (!element || !editor) {
+    console.warn('Invalid editor registration:', { element, editor });
+    return;
+  }
+  
+  // Store editor on the element itself
+  element.editor = editor;
+  
+  // Add data attribute to mark as editor
+  element.setAttribute('data-editor', 'true');
+  
+  // Initialize FOSSBilling editors registry if needed
+  window.FOSSBilling = window.FOSSBilling || {};
+  window.FOSSBilling.editors = window.FOSSBilling.editors || {};
+  
+  // Store in registry with element ID as key
+  if (element.id) {
+    window.FOSSBilling.editors[element.id] = editor;
+  }
+  
+  console.debug('Editor registered:', element.id || 'unnamed', editor);
+}
+
+/**
+ * Unregister a CKEditor instance
+ * @param {HTMLElement} element - The editor container element
+ */
+export function unregisterEditor(element) {
+  if (!element) return;
+  
+  // Remove from element
+  delete element.editor;
+  element.removeAttribute('data-editor');
+  
+  // Remove from registry
+  if (element.id && window.FOSSBilling?.editors) {
+    delete window.FOSSBilling.editors[element.id];
+  }
+  
+  console.debug('Editor unregistered:', element.id || 'unnamed');
+}
