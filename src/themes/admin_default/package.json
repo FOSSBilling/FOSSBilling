@@ -15,7 +15,6 @@
     "flag-icons": "^7.2.3",
     "imask": "^7.6.1",
     "litepicker": "^2.0.12",
-    "select2": "^4.0.13",
     "sortable-tablesort": "^4.0.0"
   },
   "devDependencies": {

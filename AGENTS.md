@@ -28,7 +28,7 @@ FOSSBilling is a free and open-source billing and client management solution des
   * [Tom Select](https://tom-select.js.org/): Enhanced select boxes with search and tagging
   * [Autosize](http://www.jacklmoore.com/autosize/): Automatic textarea resizing
   * [Flag Icons](https://flagicons.lipis.dev/): Country flag icon library
-  * jQuery is being slowly phased out. Avoid it and use vanilla JavaScript for new pieces of code.
+  * jQuery has been fully removed from the codebase. Use vanilla JavaScript for all new code.
 * **Build Tools:**
   * [esbuild](https://esbuild.github.io/): Fast JavaScript/CSS bundler and minifier
   * [Sass](https://sass-lang.com/): CSS preprocessing
