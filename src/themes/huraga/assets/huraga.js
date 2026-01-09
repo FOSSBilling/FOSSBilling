@@ -1,8 +1,8 @@
-import * as bootstrap from 'bootstrap';
-import '../../admin_default/assets/js/tomselect';
-import '../../admin_default/assets/js/fossbilling';
+import { Tooltip, Toast } from 'bootstrap';
+import './js/tomselect';
+import './js/utils';
 
-globalThis.bootstrap = bootstrap;
+globalThis.bootstrap = { Tooltip, Toast };
 
 document.addEventListener('DOMContentLoaded', () => {
   /**
