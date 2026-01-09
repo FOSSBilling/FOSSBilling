@@ -26,7 +26,7 @@ async function build() {
     await ensureDir(cssDir);
     await ensureDir(imgDir);
 
-    // Build JavaScript
+    // Build JavaScript with improved optimization
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/huraga.js')],
       bundle: true,
@@ -45,10 +45,14 @@ async function build() {
       },
       minify: isProduction,
       sourcemap: !isProduction,
-      logLevel: 'info'
+      logLevel: 'info',
+      // Add tree-shaking and optimization settings
+      treeShaking: true,
+      legalComments: 'none',
+      drop: isProduction ? ['console', 'debugger'] : []
     });
 
-    // Build theme SCSS
+    // Build theme SCSS with improved optimization
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/scss/huraga.scss')],
       bundle: true,
@@ -63,7 +67,11 @@ async function build() {
       plugins: [sassPlugin(nodeModulesDir, isProduction)],
       minify: isProduction,
       sourcemap: !isProduction,
-      logLevel: 'info'
+      logLevel: 'info',
+      // Add CSS optimization settings
+      define: {
+        'process.env.NODE_ENV': isProduction ? '"production"' : '"development"'
+      }
     });
 
     await postprocessCssFile(join(cssDir, 'huraga.css'), isProduction);
