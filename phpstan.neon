@@ -39,3 +39,8 @@ parameters:
 		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$updated_at\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$created_at\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$id\.$#'
+		- message: '#^Function ctype_alnum invoked with 1 parameter, 0 required\.$#'
+		  identifier: arguments.count
+		  count: 1
+		  path: src/modules/Extension/Service.php
+
