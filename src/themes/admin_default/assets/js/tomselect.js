@@ -128,15 +128,35 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!value) return;
 
       try {
-        const restUrl = new URL(getBaseURL(cannedResponseSelectorEl.dataset.resturl));
-        restUrl.searchParams.append('id', value);
+        // Validate we have the required data attribute
+        const restUrlPath = cannedResponseSelectorEl.dataset.resturl;
+        if (!restUrlPath) {
+          console.error('Canned response selector missing required data-resturl attribute');
+          return;
+        }
+
+        // Build URL safely
+        let finalUrl;
+        try {
+          // Try direct URL construction first
+          finalUrl = new URL(restUrlPath);
+        } catch (e) {
+          // Fallback: treat as relative URL
+          if (!restUrlPath.startsWith('/')) {
+            finalUrl = new URL('/' + restUrlPath, window.location.origin);
+          } else {
+            finalUrl = new URL(restUrlPath, window.location.origin);
+          }
+        }
+
+        finalUrl.searchParams.append('id', value);
 
         const csrfToken = getCSRFToken();
         if (csrfToken) {
-          restUrl.searchParams.append('CSRFToken', csrfToken);
+          finalUrl.searchParams.append('CSRFToken', csrfToken);
         }
 
-        fetch(restUrl)
+        fetch(finalUrl)
           .then((response) => {
             if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
