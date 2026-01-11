@@ -48,7 +48,7 @@
     </script>
 {% endif %}
 
-{% if client %}
+{% if client and profile is not defined %}
     {% set profile = client.profile_get %}
 {% endif %}
 {% set company = guest.system_company %}
@@ -64,7 +64,7 @@
             <div class="container-fluid">
                 {% if logo_url and settings.show_company_logo %}
                     <a class="navbar-brand" href="{{ '/'|link }}">
-                        <img class="d-none d-sm-block" src="{{ logo_url }}" alt="{{ company.name }}" height="45px"
+                        <img class="d-none d-sm-block" src="{{ logo_url }}" alt="{{ company.name }}" style="max-height: 45px; width: auto; display: block;"
                              title="{{ company.name }}">
                         <span class="d-sm-none">{{ company.name }}</span>
                     </a>

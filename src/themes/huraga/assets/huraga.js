@@ -58,4 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
+
+  /**
+   * Lazy load Tom Select only if language selector exists
+   */
+  const languageSelector = document.querySelector('.js-language-selector');
+  if (languageSelector) {
+    import('./js/tomselect.js').then(module => {
+      module.default();
+    });
+  }
 });
