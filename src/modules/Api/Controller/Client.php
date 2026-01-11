@@ -66,7 +66,7 @@ class Client implements InjectionAwareInterface
     {
         $call = $class . '_' . $method;
 
-        $this->tryCall($role, $call, $_GET);
+        $this->tryCall($role, $class, $call, $_GET);
 
         return null;
     }
@@ -83,7 +83,7 @@ class Client implements InjectionAwareInterface
 
         $call = $class . '_' . $method;
 
-        $this->tryCall($role, $call, $p);
+        $this->tryCall($role, $class, $call, $p);
 
         return null;
     }
@@ -91,10 +91,10 @@ class Client implements InjectionAwareInterface
     /**
      * @param string $call
      */
-    private function tryCall($role, $call, $p): void
+    private function tryCall($role, $class, $call, $p): void
     {
         try {
-            $this->_apiCall($role, $call, $p);
+            $this->_apiCall($role, $class, $call, $p);
         } catch (\Exception $exc) {
             // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
             \Sentry\captureException($exc);
@@ -176,7 +176,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function _apiCall($role, $method, $params): null
+    private function _apiCall($role, $class, $method, $params): null
     {
         $this->_loadConfig();
         $this->checkAllowedIps();
@@ -199,6 +199,24 @@ class Client implements InjectionAwareInterface
         $api = $this->di['api']($role);
         unset($params['CSRFToken']);
         $result = $api->$method($params);
+
+        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+        $isLoginMethod = ($method === 'login');
+        $isStaffLogin = ($class === 'staff');
+        $isClientLogin = ($class === 'client');
+
+        if ($isLoginMethod && !$isAjax && ($isStaffLogin || $isClientLogin)) {
+            if ($isStaffLogin) {
+                $redirectUrl = $this->di['url']->adminLink('');
+            } elseif ($isClientLogin) {
+                $redirectUrl = $this->di['url']->link('');
+            } else {
+                $redirectUrl = '/';
+            }
+
+            header('Location: ' . $redirectUrl);
+            exit;
+        }
 
         $this->renderJson($result);
 
