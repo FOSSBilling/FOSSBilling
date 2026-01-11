@@ -213,7 +213,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% set tickets = admin.support_ticket_get_list({ 'per_page': '20', 'client_id': ticket.client.id }) %}
+                    {% set tickets = admin.support_ticket_get_list({ 'per_page': '20', 'client_id': ticket.client.id, 'deep': 0, 'include_first': 0 }) %}
                     {% for ticket in tickets.list %}
                     <tr>
                         <td>{{ ticket.id }}</td>

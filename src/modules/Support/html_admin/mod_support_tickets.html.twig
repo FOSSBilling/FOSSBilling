@@ -212,7 +212,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% set tickets = admin.support_ticket_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                    {% set tickets = admin.support_ticket_get_list({ 'per_page': 30, 'page': request.page, 'deep': 0, 'include_first': 0 }|merge(request)) %}
                     {% for i, ticket in tickets.list %}
                     <tr class="priority_{{ ticket.priority }}">
                         <td>

@@ -87,7 +87,7 @@ class Service implements InjectionAwareInterface
 
         foreach ($results as $row) {
             $ticket = $this->di['db']->getExistingModelById('SupportTicket', $row['id'], 'Ticket not found');
-            $tickets[] = $supportService->toApiArray($ticket, true, $this->di['loggedin_client']);
+            $tickets[] = $supportService->toApiArray($ticket, false, $this->di['loggedin_client'], false);
         }
 
         return $tickets;
