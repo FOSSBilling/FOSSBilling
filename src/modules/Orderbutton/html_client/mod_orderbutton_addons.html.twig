@@ -30,11 +30,11 @@
           {% endif %}
 
           {% if addon.pricing.type is same as('once') %}
-          <span class="badge bg-success">{{ (addon.pricing.once.price + addon.pricing.once.setup) | money_convert }}</span>
+          <span class="badge text-bg-success">{{ (addon.pricing.once.price + addon.pricing.once.setup) | money_convert }}</span>
           {% endif %}
 
           {% if addon.pricing.type is same as('free') %}
-          <span class="badge bg-success">{{ 0 | money_convert }}</span>
+          <span class="badge text-bg-success">{{ 0 | money_convert }}</span>
           {% endif %}
         </label>
 

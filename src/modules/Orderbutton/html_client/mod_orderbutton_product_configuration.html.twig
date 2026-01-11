@@ -44,9 +44,9 @@
                                         {% endfor %}
                                     </select>
                                     {% elseif product.pricing.type == 'free' %}
-                                    <span class="badge bg-success">{{ 0 | money_convert }}</span>
+                                    <span class="badge text-bg-success">{{ 0 | money_convert }}</span>
                                     {% else %}
-                                    <span class="badge bg-success">{{ product.pricing.once.price | money_convert }}</span>
+                                    <span class="badge text-bg-success">{{ product.pricing.once.price | money_convert }}</span>
                                     {% endif %}
                                 </div>
                             </div>

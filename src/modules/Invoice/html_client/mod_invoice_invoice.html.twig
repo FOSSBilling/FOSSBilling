@@ -91,7 +91,7 @@
                                         </dd>
                                         <dt class="col-sm-4 text-muted">{{ 'Status'|trans }}</dt>
                                         <dd class="col-sm-8">
-                                        <span class="badge fs-7 {% if invoice.status == 'paid' %} bg-success{% elseif invoice.status == 'unpaid' %}bg-warning{% endif %}">
+                                        <span class="badge fs-7 {% if invoice.status == 'paid' %} text-bg-success{% elseif invoice.status == 'unpaid' %}text-bg-warning{% endif %}">
                                             {{ mf.status_name(invoice.status) }}
                                         </span>
                                         </dd>

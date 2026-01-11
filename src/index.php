@@ -16,8 +16,11 @@ use DebugBar\DataCollector\TimeDataCollector;
 
 // Setting up the debug bar
 $debugBar = new DebugBar\StandardDebugBar();
-/** @var TimeDataCollector $timeCollector */
 $timeCollector = $debugBar->getCollector('time');
+
+if (!$timeCollector instanceof DebugBar\DataCollector\TimeDataCollector) {
+    throw new \RuntimeException('Time collector not found in debug bar');
+}
 
 // PDO collector
 $pdoCollector = new DebugBar\DataCollector\PDO\PDOCollector();
