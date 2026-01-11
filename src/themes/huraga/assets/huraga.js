@@ -1,5 +1,4 @@
 import { Tooltip, Toast } from 'bootstrap';
-import './js/tomselect';
 import './js/utils';
 
 globalThis.bootstrap = { Tooltip, Toast };
