@@ -1,5 +1,4 @@
 import './js/ui/modals';
-import { coloris, init } from '@melloware/coloris';
 import ClipboardJS from "clipboard";
 import * as tabler from '@tabler/core/js/tabler.js';
 import './js/tomselect'
@@ -7,15 +6,25 @@ import './js/datepicker'
 import ApexCharts from 'apexcharts';
 import './js/ui/theme_settings';
 import './js/fossbilling';
+import './js/utils';
 import 'sortable-tablesort/dist/sortable.min.js';
 
 globalThis.ApexCharts = ApexCharts;
 globalThis.bootstrap = tabler.bootstrap;
 
-init();
-coloris({
-  el: '#coloris-picker',
-  alpha: false
+document.addEventListener('DOMContentLoaded', () => {
+  const colorPickerElement = document.getElementById('coloris-picker');
+  if (colorPickerElement) {
+    import('@melloware/coloris').then(module => {
+      module.init();
+      module.coloris({
+        el: '#coloris-picker',
+        alpha: false
+      });
+    }).catch(error => {
+      console.error('Failed to load coloris:', error);
+    });
+  }
 });
 
 

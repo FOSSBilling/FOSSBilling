@@ -36,7 +36,7 @@
         <div class="card">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration Updated'|trans }}">
+                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({ message: 'Configuration Updated'|trans }) }}>
                         {% set params = admin.extension_config_get({ 'ext': 'mod_support' }) %}
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Auto Responder'|trans }}</h3>
@@ -159,19 +159,14 @@
                                 <td>{{ helpdesk.email }}</td>
                                 <td>{{ helpdesk.close_after }} {{ 'hour(s)'|trans }}</td>
                                 <td>
-                                    <a class="btn btn-icon" href="{{ '/support/helpdesk'|alink }}/{{ helpdesk.id }}"
-                                    data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                                    <a class="btn btn-icon" href="{{ '/support/helpdesk'|alink }}/{{ helpdesk.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                         <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link"
-                                       href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}"
-                                       data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                       data-api-confirm-btn="{{ 'Delete'|trans }}"
-                                       data-api-type="danger"
-                                       data-api-redirect="{{ 'extension/settings/support'|alink }}"
-                                       data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
+                                    <a class="btn btn-icon" href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}"
+                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                        {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/support'|alink }) }}>
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -199,18 +194,18 @@
         let autoRespondToggle = document.querySelector('input[name=autorespond_enable]');
         autoRespondToggle.addEventListener('click', (e) => {
             if (e.target.checked) {
-                $('#autorespond_enable').slideDown();
+                document.getElementById('autorespond_enable').style.display = 'block';
             } else {
-                $('#autorespond_enable').slideUp();
+                document.getElementById('autorespond_enable').style.display = 'none';
             }
         })
 
         let delayToggle = document.querySelector('input[name=delay_enable]');
         delayToggle.addEventListener('click', (e) => {
             if (e.target.checked) {
-                $('#delay_enable').slideDown();
+                document.getElementById('delay_enable').style.display = 'block';
             } else {
-                $('#delay_enable').slideUp();
+                document.getElementById('delay_enable').style.display = 'none';
             }
         })
 

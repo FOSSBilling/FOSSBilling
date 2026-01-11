@@ -28,8 +28,7 @@
         <h3>{{ 'Create new order'|trans }}</h3>
         <p class="text-muted">{{ product.title }} {{ 'for'|trans }} {{ client.first_name }} {{ client.last_name }}</h2>
 
-        <form method="post" action="{{ 'api/admin/order/create'|link }}" class="api-form" data-api-jsonp="onAfterOrderPlaced">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <form method="post" action="{{ 'api/admin/order/create'|link }}" {{ fb_api_form({callback: 'onAfterOrderPlaced'}) }}>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Invoice option'|trans }}</label>
                 <div class="col">
@@ -86,25 +85,35 @@
 </div>
 {% endblock %}
 
-{% block js%}
+{% block js %}
 <script>
     function onAfterOrderPlaced(id) {
-        bb.redirect("{{ 'order/manage/'|alink }}/" + id);
+        window.location = "{{ 'order/manage/'|alink }}/" + id;
     }
 
-    $('#period').on('change', function() {
-        var optionSelected = $("option:selected", this);
-        var periodNotification = $('#period-info');
-        var spanElem = $('<span />').css({'padding-left': '20px', 'line-height': '28px', 'float': 'left'});
+    document.getElementById('period').addEventListener('change', function() {
+        const optionSelected = this.options[this.selectedIndex];
+        const periodNotification = document.getElementById('period-info');
 
-        periodNotification.text('');
+        // Clear previous notifications.
+        periodNotification.textContent = '';
 
-        if (optionSelected.data('price') == 0){
-            spanElem.clone().text("{{ 'Selected price is 0.00'|trans }}").appendTo(periodNotification);
+        // Create helper function to add notification text.
+        const addNotification = (text) => {
+            const spanElem = document.createElement('span');
+            spanElem.style.paddingLeft = '20px';
+            spanElem.style.lineHeight = '28px';
+            spanElem.style.float = 'left';
+            spanElem.textContent = text;
+            periodNotification.appendChild(spanElem);
+        };
+
+        if (optionSelected.dataset.price == 0) {
+            addNotification("{{ 'Selected price is 0.00'|trans }}");
         }
 
-        if (optionSelected.data('status') == 0){
-            spanElem.clone().text("{{ 'Product is disabled in configuration'|trans }}").appendTo(periodNotification);
+        if (optionSelected.dataset.status == 0) {
+            addNotification("{{ 'Product is disabled in configuration'|trans }}");
         }
     });
 </script>

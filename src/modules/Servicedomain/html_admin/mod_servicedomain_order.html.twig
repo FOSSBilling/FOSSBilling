@@ -41,15 +41,19 @@
 </div>
 
 <script>
-$(function() {
-    $('.domain-action-select input').on('click', function() {
-        $('.domain-action').hide();
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.domain-action-select input').forEach(function(radio) {
+            radio.addEventListener('click', function() {
+                document.querySelectorAll('.domain-action').forEach(function(action) {
+                    action.style.display = 'none';
+                });
 
-        if($(this).val() == 'register') {
-            $('.domain-action.domain-register').show();
-        } else {
-            $('.domain-action.domain-transfer').show();
-        }
+                if (this.value === 'register') {
+                    document.querySelector('.domain-action.domain-register').style.display = '';
+                } else {
+                    document.querySelector('.domain-action.domain-transfer').style.display = '';
+                }
+            });
+        });
     });
-});
 </script>

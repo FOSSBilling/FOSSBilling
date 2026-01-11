@@ -85,16 +85,19 @@
     </div>
 </div>
 
-<script type="text/javascript">
+{% block js %}
+<script>
     document.querySelector('#license-reset').addEventListener('click', (event) => {
         event.preventDefault();
 
         if (confirm("{{ 'Are you sure?'|trans }}")) {
-            API.client.post('servicelicense/reset', { order_id: {{ order.id }} }, function(result) {
-                FOSSBilling.message("{{ 'License was reset'|trans }}");
-            });
+            API.client.post('servicelicense/reset', { order_id: {{ order.id }} },
+                (result) => {
+                    FOSSBilling.message("{{ 'License was reset'|trans }}");
+                });
         }
     });
 </script>
+{% endblock %}
 {% endif %}
 

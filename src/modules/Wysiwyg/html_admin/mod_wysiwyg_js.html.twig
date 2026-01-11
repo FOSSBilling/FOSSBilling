@@ -1,27 +1,46 @@
 {{ 'ckeditor.js' | mod_asset_url('wysiwyg') | script_tag }}
 {{ 'ckeditor.css' | mod_asset_url('wysiwyg') | stylesheet_tag }}
 <script type="text/javascript">
-    const editors = [];
-    document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll('.{{ class }}').forEach(function (element) {
-            let required = false;
-            CKEditor.default.create(element)
-                .then(editor => {
-                    if (element.hasAttribute('required')) {
-                        element.removeAttribute('required');
-                        required = true;
-                    }
-                    editors[element.name] = { editor, 'required': required };
-                })
-                .catch(error => { console.error(error) });
-        });
-
-        if (localStorage.getItem('theme') === 'dark') {
-            setTimeout(() => {
-                document.querySelectorAll('.ck-editor__main').forEach(function (element) {
-                    element.style.color="#1d273b";
+    (function() {
+        // Import editor registration utilities from admin_default theme
+        import('/themes/admin_default/assets/js/utils.js').then(({ registerEditor }) => {
+            const initEditors = function() {
+                document.querySelectorAll('.{{ class }}').forEach(function (element) {
+                    CKEditor.default.create(element)
+                        .then(editor => {
+                            // Handle required attribute - CKEditor manages this internally
+                            if (element.hasAttribute('required')) {
+                                element.removeAttribute('required');
+                            }
+                            
+                            // Register editor for canned response functionality
+                            registerEditor(element, editor);
+                        })
+                        .catch(error => { 
+                            console.error('CKEditor initialization error:', error);
+                        });
                 });
-            }, 1000);
-        }
-    });
+
+                // Adjust CKEditor text color for dark theme compatibility
+                if (localStorage.getItem('theme') === 'dark') {
+                    setTimeout(function () {
+                        document.querySelectorAll('.ck-editor__main').forEach(function (element) {
+                            element.style.color = "#1d273b";
+                        });
+                    }, 1000);
+                }
+            };
+            
+            // Check if DOM is already loaded
+            if (document.readyState === 'loading') {
+                // Still loading, wait for DOMContentLoaded
+                document.addEventListener("DOMContentLoaded", initEditors);
+            } else {
+                // DOM already loaded, run immediately
+                initEditors();
+            }
+        }).catch(error => {
+            console.error('Failed to load editor utilities:', error);
+        });
+    })();
 </script>

@@ -212,7 +212,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% set tickets = admin.support_ticket_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                    {% set tickets = admin.support_ticket_get_list({ 'per_page': 30, 'page': request.page, 'deep': 0, 'include_first': 0 }|merge(request)) %}
                     {% for i, ticket in tickets.list %}
                     <tr class="priority_{{ ticket.priority }}">
                         <td>
@@ -262,10 +262,8 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
-                                data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                data-api-redirect="{{ 'support'|alink }}">
+                            <a class="btn btn-icon" href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
+                                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|alink }) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -281,22 +279,21 @@
             </table>
 
             <div class="card-footer d-flex align-items-center justify-content-between">
-                {{ include('partial_batch_delete.html.twig', { 'action': 'admin/support/batch_delete' }) }}
-                {{ include('partial_pagination.html.twig', { 'list': tickets, 'url': 'support' }) }}
+                {% include 'partial_batch_delete.html.twig' with { 'action': 'support/batch_delete' } %}
+                {% include 'partial_pagination.html.twig' with { 'list': tickets, 'url': 'support' } %}
             </div>
         </div>
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
             <div class="card-body">
                 <h5>{{ 'Open Ticket for Existing Client'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" class="api-form" data-api-redirect="{{ 'support'|alink }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" {{ fb_api_form({ redirect: 'support'|alink }) }}>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
                         <div class="col">
                             {% if not request.client_id %}
                                 <select class="form-control autocomplete-selector"
-                                        placeholder="{{ 'Start typing the client name or ID'|trans }}"
+                                        placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                         id="client_id"
                                         name="client_id"
                                         data-resturl="admin/client/get_pairs">
@@ -334,8 +331,7 @@
         <div class="tab-pane fade" id="tab-email" role="tabpanel" aria-labelledby="email-tab">
             <div class="card-body">
                 <h5>{{ 'Open Public Ticket for Non-client'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="api-form" data-api-jsonp="onAfterPublicTicketCreate">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" {{ fb_api_form({ callback: 'onAfterPublicTicketCreate' }) }}>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Receiver Name'|trans }}</label>
                         <div class="col">
@@ -394,7 +390,7 @@
     })
 
     function onAfterPublicTicketCreate(result) {
-        bb.redirect("{{ 'support/public-ticket'|alink }}/" + result);
+        window.location = "{{ 'support/public-ticket'|alink }}/" + result;
     }
 </script>
 {% endblock %}

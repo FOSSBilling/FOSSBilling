@@ -64,8 +64,8 @@
         </div>
         <div class="card-body container">
             {% set params = admin.extension_config_get({ 'ext': 'mod_cron' }) %}
-            <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+            <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
+
                 <input type="hidden" name="ext" value="mod_cron">
                 <div class="row">
                     <div class="col-3">
@@ -83,7 +83,7 @@
             </form>
         </div>
         <div class="card-footer text-center">
-            <a href="{{'api/admin/cron/run'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" target="_blank" data-api-msg="{{ 'Cron executed'|trans }}">
+            <a class="btn btn-primary" href="{{'api/admin/cron/run'|link }}" target="_blank" {{ fb_api_link({message: 'Cron Executed'|trans}) }}>
                 <svg class="icon icon-tabler">
                     <use xlink:href="#play"/>
                 </svg>

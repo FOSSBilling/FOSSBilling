@@ -1,8 +1,7 @@
-import * as bootstrap from 'bootstrap';
-import '../../admin_default/assets/js/tomselect';
-import '../../admin_default/assets/js/fossbilling';
+import { Tooltip, Toast } from 'bootstrap';
+import './js/utils';
 
-globalThis.bootstrap = bootstrap;
+globalThis.bootstrap = { Tooltip, Toast };
 
 document.addEventListener('DOMContentLoaded', () => {
   /**
@@ -25,9 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (message) {
       sessionStorage.setItem(key, message);
       if (typeof reload === 'boolean' && reload) {
-        bb.reload();
+        window.location.reload();
       } else if (typeof reload === 'string') {
-        bb.redirect(reload);
+        window.location.assign(reload);
       }
     }
   }
@@ -58,4 +57,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
+
+  /**
+   * Lazy load Tom Select only if language selector exists
+   */
+  const languageSelector = document.querySelector('.js-language-selector');
+  if (languageSelector) {
+    import('./js/tomselect.js').then(module => {
+      module.default();
+    });
+  }
 });

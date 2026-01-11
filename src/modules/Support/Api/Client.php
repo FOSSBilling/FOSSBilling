@@ -25,6 +25,8 @@ class Client extends \Api_Abstract
      * @optional string status - filter tickets by status
      * @optional string date_from - show tickets created since this day. Can be any string parsable by strtotime()
      * @optional string date_to - show tickets created until this day. Can be any string parsable by strtotime()
+     * @optional bool deep - include full message threads. Default true
+     * @optional bool include_first - include the first message. Defaults to deep
      *
      * @return array
      */
@@ -33,12 +35,15 @@ class Client extends \Api_Abstract
         $identity = $this->getIdentity();
         $data['client_id'] = $identity->id;
 
+        $deep = array_key_exists('deep', $data) ? (bool) $data['deep'] : true;
+        $includeFirst = array_key_exists('include_first', $data) ? (bool) $data['include_first'] : $deep;
+
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, $per_page);
         foreach ($pager['list'] as $key => $ticketArr) {
             $ticket = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($ticket, true, $this->getIdentity());
+            $pager['list'][$key] = $this->getService()->toApiArray($ticket, $deep, $this->getIdentity(), $includeFirst);
         }
 
         return $pager;

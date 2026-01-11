@@ -18,7 +18,6 @@ import { Paragraph } from '@ckeditor/ckeditor5-paragraph/dist/index.js';
 import { PasteFromOffice } from '@ckeditor/ckeditor5-paste-from-office/dist/index.js';
 import { SourceEditing } from '@ckeditor/ckeditor5-source-editing/dist/index.js';
 import { Table, TableToolbar } from '@ckeditor/ckeditor5-table/dist/index.js';
-import { TextTransformation } from '@ckeditor/ckeditor5-typing/dist/index.js';
 
 // Style imports - core styles (required).
 import '@ckeditor/ckeditor5-theme-lark/dist/index.css';
@@ -75,7 +74,6 @@ export default class CKEditor extends ClassicEditor {
     Strikethrough,
     Table,
     TableToolbar,
-    TextTransformation,
     Underline,
   ];
 

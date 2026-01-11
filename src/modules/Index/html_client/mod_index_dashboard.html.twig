@@ -28,16 +28,20 @@
     {% endif %}
 
     {% if client %}
-        {% set tickets = client.support_ticket_get_list({ "status": 'on_hold' }) %}
-        {% if tickets.total > 0 %}
+        {% set dashboard = client.index_get_dashboard %}
+        {% set profile = dashboard.profile %}
+
+        {% if dashboard.tickets.on_hold > 0 %}
             <div class="row">
                 <div class="col-md-12">
-                    {% for i, ticket in tickets.list %}
-                        <div class="alert alert-info d-flex justify-content-between" role="alert">
-                            <span>Ticket <strong>#{{ ticket.id }}</strong> was replied to {{ ticket.updated_at|timeago }} {{ 'ago'|trans }}.</span><a
-                                href="{{ 'support/ticket'|link }}/{{ ticket.id }}"
-                                class="alert-link">{{ 'Reply'|trans }}</a>
-                        </div>
+                    {% for i, ticket in dashboard.recent_tickets %}
+                        {% if ticket.status == 'on_hold' %}
+                            <div class="alert alert-info d-flex justify-content-between" role="alert">
+                                <span>Ticket <strong>#{{ ticket.id }}</strong> was replied to {{ ticket.updated_at|timeago }} {{ 'ago'|trans }}.</span><a
+                                    href="{{ 'support/ticket'|link }}/{{ ticket.id }}"
+                                    class="alert-link">{{ 'Reply'|trans }}</a>
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 </div>
             </div>
@@ -79,11 +83,11 @@
                         <div class="card-body">
                             <div class="row">
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Total'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.invoice_get_list().total }}</dd>
+                                <dd class="col-sm-8">{{ dashboard.invoices.total }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Paid'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.invoice_get_list({ "status": "paid" }).total }}</dd>
+                                <dd class="col-sm-8">{{ dashboard.invoices.paid }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Unpaid'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.invoice_get_list({ "status": "unpaid" }).total }}</dd>
+                                <dd class="col-sm-8">{{ dashboard.invoices.unpaid }}</dd>
                             </div>
                         </div>
                     </div>
@@ -105,11 +109,11 @@
                         <div class="card-body">
                             <div class="row">
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Total'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.order_get_list({ "hide_addons": 1}).total }}</dd>
+                                <dd class="col-sm-8">{{ dashboard.orders.total }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Active'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.order_get_list({ "hide_addons": 1, "status": "active" }).total }}</dd>
+                                <dd class="col-sm-8">{{ dashboard.orders.active }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Expiring'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.order_get_list({ "expiring": 1 }).total }}</dd>
+                                <dd class="col-sm-8">{{ dashboard.orders.expiring }}</dd>
                             </div>
                         </div>
                     </div>
@@ -128,11 +132,11 @@
                         <div class="card-body">
                             <div class="row">
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Total'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.support_ticket_get_list().total }}</dd>
+                                <dd class="col-sm-8">{{ dashboard.tickets.total }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Open'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.support_ticket_get_list({ "status": 'open' }).total }}</dd>
+                                <dd class="col-sm-8">{{ dashboard.tickets.open }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'On Hold'|trans }}</dt>
-                                <dd class="col-sm-8">{{ client.support_ticket_get_list({ "status": 'on_hold' }).total }}</dd>
+                                <dd class="col-sm-8">{{ dashboard.tickets.on_hold }}</dd>
                             </div>
                         </div>
                     </div>
@@ -144,9 +148,9 @@
                             <span class="h6 m-0 pt-1">{{ 'Recent orders'|trans }}</span>
                         </div>
                         <div class="card-body p-1">
-                            {% if client.order_get_list({ "per_page": 5, "page": request.page, "hide_addons": 1 }).list %}
+                            {% if dashboard.recent_orders %}
                                 <div class="list-group list-group-flush">
-                                    {% for i, order in client.order_get_list({ "per_page": 5, "page": request.page, "hide_addons": 1 }).list %}
+                                    {% for i, order in dashboard.recent_orders %}
                                         <a href="{{ 'order/service/manage'|link }}/{{ order.id }}"
                                            class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
                                             <div>
@@ -156,7 +160,7 @@
                                                 <span class="text-secondary small" title="{{ order.updated_at|format_date }}">{{ order.updated_at|timeago }} {{ 'ago'|trans }}</span>
                                             </div>
                                             <div>
-                                                <span class="badge {% if order.status == 'active' %}bg-success{% elseif order.status == 'pending_setup' %}bg-warning{% elseif order.status == 'failed_setup' or order.status == 'suspended' or order.status == 'failed_renew' %}bg-danger{% elseif order.status == 'canceled' %}bg-secondary{% endif %}">{{ mf.status_name(order.status) }}</span>
+                                                <span class="badge {% if order.status == 'active' %}text-bg-success{% elseif order.status == 'pending_setup' %}text-bg-warning{% elseif order.status == 'failed_setup' or order.status == 'suspended' or order.status == 'failed_renew' %}text-bg-danger{% elseif order.status == 'canceled' %}text-bg-secondary{% endif %}">{{ mf.status_name(order.status) }}</span>
                                             </div>
                                         </a>
                                     {% endfor %}
@@ -176,9 +180,9 @@
                             <span class="h6 m-0 pt-1">{{ 'Support tickets'|trans }}</span>
                         </div>
                         <div class="card-body p-1">
-                            {% if client.support_ticket_get_list({ "per_page": 5 }).list %}
+                            {% if dashboard.recent_tickets %}
                                 <div class="list-group list-group-flush">
-                                    {% for i, ticket in client.support_ticket_get_list({ "per_page": 5 }).list %}
+                                    {% for i, ticket in dashboard.recent_tickets %}
                                         <a href="{{ 'support/ticket'|link }}/{{ ticket.id }}"
                                            class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
                                             <div>
@@ -188,7 +192,7 @@
                                                 <span class="text-secondary small" title="{{ ticket.updated_at|format_date }}">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
                                             </div>
                                             <div>
-                                                <span class="badge {% if ticket.status == 'open' %}bg-success{% elseif ticket.status == 'on_hold' %}bg-warning{% elseif ticket.status == 'closed' %}bg-secondary{% endif %}">{{ mf.status_name(ticket.status) }}</span>
+                                                <span class="badge {% if ticket.status == 'open' %}text-bg-success{% elseif ticket.status == 'on_hold' %}text-bg-warning{% elseif ticket.status == 'closed' %}text-bg-secondary{% endif %}">{{ mf.status_name(ticket.status) }}</span>
                                             </div>
                                         </a>
                                     {% endfor %}

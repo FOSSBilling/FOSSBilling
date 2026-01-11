@@ -25,8 +25,7 @@
 {% block content %}
     {% set params = admin.extension_config_get({ 'ext': 'mod_client' }) %}
     <div class="card-tabs">
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({message: 'Configuration updated'|trans}) }}>
             <input type="hidden" name="ext" value="mod_client">
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item" role="presentation">

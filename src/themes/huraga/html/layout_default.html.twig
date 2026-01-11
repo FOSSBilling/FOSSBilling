@@ -2,10 +2,8 @@
 <html lang="en" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
-   <title>{{ settings.meta_title_prefix }} {% block meta_title %}{% endblock %} {{ settings.meta_title_suffix }}</title>
+    <title>{{ settings.meta_title_prefix }} {% block meta_title %}{% endblock %} {{ settings.meta_title_suffix }}</title>
 
-    <meta property="bb:url" content="{{ constant('SYSTEM_URL') }}">
-    <meta property="bb:client_area" content="{{ '/'|link }}">
     <meta name="csrf-token" content="{{ CSRFToken }}">
 
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
@@ -16,7 +14,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     {% block opengraph %}{% endblock %}
-    <link rel='stylesheet' type='text/css' href="{{ 'css/font-awesome.css' | asset_url }}">
     <link rel="stylesheet" href="{{ 'build/css/vendor.css' | asset_url }}">
     <link rel="stylesheet" href="{{ 'build/css/huraga.css' | asset_url }}">
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
@@ -51,7 +48,7 @@
     </script>
 {% endif %}
 
-{% if client %}
+{% if client and profile is not defined %}
     {% set profile = client.profile_get %}
 {% endif %}
 {% set company = guest.system_company %}
@@ -67,7 +64,7 @@
             <div class="container-fluid">
                 {% if logo_url and settings.show_company_logo %}
                     <a class="navbar-brand" href="{{ '/'|link }}">
-                        <img class="d-none d-sm-block" src="{{ logo_url }}" alt="{{ company.name }}" height="45px"
+                        <img class="d-none d-sm-block" src="{{ logo_url }}" alt="{{ company.name }}" style="max-height: 45px; width: auto; display: block;"
                              title="{{ company.name }}">
                         <span class="d-sm-none">{{ company.name }}</span>
                     </a>
@@ -83,8 +80,6 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <div class="navbar-nav me-auto mb-2 mb-lg-0 w-100 d-flex justify-content-end">
-
-
                         {% set languages = guest.extension_languages(true) %}
                         {% if languages|length > 1 %}
                             <li class="nav-item">
@@ -255,9 +250,14 @@
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
     {% if settings.footer_to_top_enabled %}
         <a href="#top" class="position-fixed btn btn-primary bottom-0 end-0 m-3">
-            <span class="awe-arrow-up"></span> {{ 'Top'|trans }}</a>
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrow-up" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="18" y1="11" x2="12" y2="5"></line>
+                <line x1="6" y1="11" x2="12" y2="5"></line>
+            </svg> {{ 'Top'|trans }}</a>
     {% endif %}
-    <div class="wait" style="display:none" onclick="$(this).hide();">
+    <div class="wait" style="display:none" onclick="this.style.display='none'">
         <div class="spinner-border"
              style="width: 4rem; height: 4rem; top: 50%; left: 50%; position: fixed; z-index: 999"></div>
     </div>

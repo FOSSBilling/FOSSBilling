@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use DebugBar\Bridge\NamespacedTwigProfileCollector;
+use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use FOSSBilling\Environment;
 use FOSSBilling\TwigExtensions\DebugBar;
 use Symfony\Component\Filesystem\Path;
