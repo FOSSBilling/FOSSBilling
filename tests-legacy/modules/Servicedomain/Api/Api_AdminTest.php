@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Servicedomain\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -565,7 +565,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn(true);
 
         $di = $this->getDi();
-        $di["validator"] = new \FOSSBilling\Validate();
+        $di['validator'] = new \FOSSBilling\Validate();
         $di['db'] = $dbMock;
 
         $this->adminApi->setDi($di);

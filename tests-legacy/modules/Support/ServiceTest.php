@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Support;
-use PHPUnit\Framework\Attributes\DataProvider; 
-use PHPUnit\Framework\Attributes\Group;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
 
 #[Group('Core')]
@@ -1787,8 +1787,6 @@ final class ServiceTest extends \BBTestCase
 
     public static function publicToApiArrayProvider(): array
     {
-        
-
         return [
             [
                 new \Model_SupportPTicketMessage(),

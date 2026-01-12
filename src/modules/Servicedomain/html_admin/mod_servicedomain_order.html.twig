@@ -17,7 +17,7 @@
     <label class="form-label col-3 col-form-label">{{ 'Register domain'|trans }}:</label>
     <div class="col">
         <div class="input-group mb-3">
-            <input class="form-control w-50" type="text" name="config[register_sld]" value="{{ request.register_sld }}" placeholder="{{ 'Domain name to register'|trans }}">
+            <input class="form-control" type="text" name="config[register_sld]" value="{{ request.register_sld }}" placeholder="{{ 'Domain name to register'|trans }}">
             {{ mf.selectboxtld('config[register_tld]', guest.serviceDomain_tlds({ 'allow_register': 1 })) }}
         </div>
         <div class="input-group mb-3">
@@ -30,7 +30,7 @@
     <label class="form-label col-3 col-form-label">{{ 'Transfer domain'|trans }}:</label>
     <div class="col">
         <div class="input-group mb-3">
-            <input class="form-control w-50" type="text" name="config[transfer_sld]" value="{{ request.transfer_sld }}"  placeholder="{{ 'Domain name to transfer'|trans }}">
+            <input class="form-control" type="text" name="config[transfer_sld]" value="{{ request.transfer_sld }}"  placeholder="{{ 'Domain name to transfer'|trans }}">
             {{ mf.selectboxtld('config[transfer_tld]', guest.serviceDomain_tlds({ "allow_transfer": 1 })) }}
         </div>
         <div class="input-group mb-3">

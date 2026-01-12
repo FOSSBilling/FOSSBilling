@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Support\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -74,7 +74,6 @@ final class Api_ClientTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);
 
-
         $di = $this->getDi();
         $this->clientApi->setDi($di);
 
@@ -114,7 +113,6 @@ final class Api_ClientTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForClient')
             ->willReturn(1);
 
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -149,7 +147,6 @@ final class Api_ClientTest extends \BBTestCase
             ->willReturn(true);
         $serviceMock->expects($this->atLeastOnce())->method('ticketReply')
             ->willReturn(1);
-
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -186,7 +183,6 @@ final class Api_ClientTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('ticketReply')
             ->willReturn(1);
 
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
@@ -222,7 +218,6 @@ final class Api_ClientTest extends \BBTestCase
             ->willReturn(new \Model_SupportTicket());
         $serviceMock->expects($this->atLeastOnce())->method('closeTicket')
             ->willReturn(true);
-
 
         $di = $this->getDi();
         $this->clientApi->setDi($di);

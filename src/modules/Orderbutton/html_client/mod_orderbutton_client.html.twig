@@ -1,7 +1,7 @@
 {% import "macro_functions.html.twig" as mf %}
 
 <div class="accordion-item">
-    <h2 class="accordion-header">
+    <h3 class="accordion-header">
         <button class="accordion-button{% if not request.checkout %} collapsed{% endif %}" type="button"
                 data-bs-toggle="collapse" data-bs-target="#register" aria-controls="register">
             <svg class="svg-icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -10,7 +10,7 @@
             </svg>
             <span>{{ 'Login or Register'|trans }}</span>
         </button>
-    </h2>
+    </h3>
     <div id="register" class="accordion-collapse collapse{% if request.checkout and not client %} show{% endif %}"
          data-bs-parent="#orderManager">
         <div class="accordion-body">

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Extension\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -202,7 +202,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        
+
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
@@ -238,7 +238,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        
+
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 

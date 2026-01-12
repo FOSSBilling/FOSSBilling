@@ -32,7 +32,6 @@ class Service implements InjectionAwareInterface
      * This cache is used to avoid repeated lookups during a single request.
      * It is cleared whenever theme settings are changed by calling clearThemeCache().
      */
-    
     private static ?string $clientThemeCache = null;
 
     public function setDi(\Pimple\Container $di): void

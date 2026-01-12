@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Cart;
-use PHPUnit\Framework\Attributes\DataProvider; 
-use PHPUnit\Framework\Attributes\Group;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
 
 #[Group('Core')]
@@ -75,8 +75,6 @@ final class ServiceTest extends \BBTestCase
 
     public static function getSessionCartDoesNotExistProvider(): array
     {
-        
-
         return [
             [
                 100,
@@ -129,9 +127,9 @@ final class ServiceTest extends \BBTestCase
             ->method('get')
             ->willReturn($sessionGetWillReturn);
 
-$currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
         if ($sessionGetWillReturn === null) {
             $currencyRepositoryMock->expects($this->atLeastOnce())
                 ->method('findDefault')
@@ -862,7 +860,7 @@ $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Reposit
         $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);
@@ -1105,9 +1103,9 @@ $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Reposit
             ->method('toApiArray')
             ->willReturn([]);
 
-$currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
         $currencyRepositoryMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn($currencyModel);

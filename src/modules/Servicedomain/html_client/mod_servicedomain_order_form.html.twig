@@ -20,11 +20,11 @@
                     <div class="col-sm-12">
                         <label class="form-label">{{ 'Register a new domain'|trans }}</label>
                         <div class="d-flex gap-2">
-                            <div class="input-group">
-                                <input class="form-control form-control-sm w-75" type="text" name="register_sld"
+                            <div class="input-group" style="max-width: 500px;">
+                                <input class="form-control form-control-sm" type="text" name="register_sld"
                                     value="{{ request.register_sld }}"
                                     placeholder="{{ 'Enter new domain name to register'|trans }}">
-                                <select class="form-select form-select-sm w-25" name="register_tld">
+                                <select class="form-select form-select-sm" name="register_tld" style="width: 30%; max-width: 120px;">
                                     {% for tld in tlds %}
                                         <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>
                                     {% endfor %}
@@ -70,11 +70,11 @@
                     <div class="col-sm-12">
                         <label class="form-label">{{ 'Transfer a new domain'|trans }}</label>
                         <div class="d-flex gap-2">
-                            <div class="input-group">
-                                <input class="form-control form-control-sm w-75" type="text" name="transfer_sld"
+                            <div class="input-group" style="max-width: 500px;">
+                                <input class="form-control form-control-sm" type="text" name="transfer_sld"
                                        value="{{ request.transfer_sld }}"
                                        placeholder="{{ 'Enter your domain name to transfer'|trans }}">
-                                <select class="form-select form-select-sm w-25" name="transfer_tld">
+                                <select class="form-select form-select-sm" name="transfer_tld" style="width: 30%; max-width: 120px;">
                                     {% for tld in transfer_tlds %}
                                         <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>
                                     {% endfor %}

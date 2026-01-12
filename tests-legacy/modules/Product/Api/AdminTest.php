@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Product\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -81,7 +81,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
@@ -201,7 +201,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -255,7 +255,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -316,7 +316,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -328,7 +328,7 @@ final class AdminTest extends \BBTestCase
     {
         $data = ['id' => 1];
 
-        $apiMock = $this->getMockBuilder(\Box\Mod\Product\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['update'])
             ->getMock();
 
@@ -348,7 +348,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        
+
         $apiMock->setDi($di);
 
         $result = $apiMock->addon_update($data);
@@ -357,7 +357,7 @@ final class AdminTest extends \BBTestCase
 
     public function testAddonDelete(): void
     {
-        $apiMock = $this->getMockBuilder(\Box\Mod\Product\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['delete'])
             ->getMock();
 
@@ -389,7 +389,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        
+
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
@@ -457,7 +457,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        
+
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
@@ -504,7 +504,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        
+
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
@@ -587,7 +587,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        
+
         $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toPromoApiArray')
@@ -619,7 +619,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->promo_update($data);
@@ -644,7 +644,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn(true);
 
         $di = $this->getDi();
-        
+
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);

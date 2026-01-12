@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Formbuilder;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -194,7 +195,7 @@ final class ServiceTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
         $di['validator'] = $validatorMock;
 
         $this->service->setDi($di);
@@ -431,7 +432,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 

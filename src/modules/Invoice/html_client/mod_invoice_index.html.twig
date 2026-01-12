@@ -28,11 +28,11 @@
                             <button class="nav-link active" id="unpaid-tab" data-bs-toggle="tab"
                                     data-bs-target="#nav-unpaid" type="button" role="tab" aria-controls="nav-unpaid"
                                     aria-selected="true">{{ 'Unpaid'|trans }}{% if unpaid_invoices.total %}&nbsp;<span
-                                    class="badge bg-danger">{{ unpaid_invoices.total }}</span>{% endif %}</button>
+                                    class="badge text-bg-danger">{{ unpaid_invoices.total }}</span>{% endif %}</button>
                             <button class="nav-link" id="paid-tab" data-bs-toggle="tab" data-bs-target="#nav-paid"
                                     type="button" role="tab" aria-controls="nav-paid"
-                                    aria-selected="false">{{ 'Paid'|trans }}&nbsp;<span
-                                    class="badge bg-secondary">{{ paid_invoices.total }}</span></button>
+                                    aria-selected="false">{{ 'Paid'|trans }}{% if paid_invoices.total %}&nbsp;<span
+                                    class="badge text-bg-secondary">{{ paid_invoices.total }}</span>{% endif %}</button>
                         </div>
                     </nav>
                     <div class="tab-content" id="nav-tabContent">

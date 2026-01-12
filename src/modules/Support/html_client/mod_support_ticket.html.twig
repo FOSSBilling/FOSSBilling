@@ -47,7 +47,7 @@
                         <tr>
                             <td>{{ 'Status'|trans }}</td>
                             <td>
-                                <div class="badge {% if ticket.status=='open' %}bg-success{% elseif ticket.status == 'on_hold' %}bg-warning{% else %}bg-danger{% endif %}">{{ mf.status_name(ticket.status) }}</div>
+                                <div class="badge {% if ticket.status=='open' %}text-bg-success{% elseif ticket.status == 'on_hold' %}text-bg-warning{% else %}text-bg-danger{% endif %}">{{ mf.status_name(ticket.status) }}</div>
                             </td>
                         </tr>
 
@@ -83,11 +83,11 @@
                                             {{ message.author.name }}
                                         </span>
                                         {% if message.admin_id %}
-                                            <span class="badge bg-primary">
+                                            <span class="badge text-bg-primary">
                                                     {{ 'Operator'|trans }}
                                                 </span>
                                         {% else %}
-                                            <span class="badge bg-secondary">
+                                            <span class="badge text-bg-secondary">
                                                     {{ 'You'|trans }}
                                                 </span>
                                         {% endif %}

@@ -11,7 +11,6 @@
 
 namespace Box\Mod\Email;
 
-use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;

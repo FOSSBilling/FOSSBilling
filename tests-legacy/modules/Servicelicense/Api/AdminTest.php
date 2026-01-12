@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -26,9 +26,9 @@ final class AdminTest extends \BBTestCase
 
     public function testPluginGetPairs(): void
     {
-        $licensePluginArray[]["filename"] = 'plugin1';
-        $licensePluginArray[]["filename"] = 'plugin2';
-        $licensePluginArray[]["filename"] = 'plugin3';
+        $licensePluginArray[]['filename'] = 'plugin1';
+        $licensePluginArray[]['filename'] = 'plugin2';
+        $licensePluginArray[]['filename'] = 'plugin3';
 
         $expected = [
             'plugin1' => 'plugin1',
@@ -54,7 +54,7 @@ final class AdminTest extends \BBTestCase
             'order_id' => 1,
         ];
 
-        $apiMock = $this->getMockBuilder(\Box\Mod\Servicelicense\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -79,7 +79,7 @@ final class AdminTest extends \BBTestCase
             'order_id' => 1,
         ];
 
-        $apiMock = $this->getMockBuilder(\Box\Mod\Servicelicense\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())

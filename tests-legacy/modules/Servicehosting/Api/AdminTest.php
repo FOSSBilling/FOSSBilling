@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -31,7 +31,7 @@ final class AdminTest extends \BBTestCase
         ];
 
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -78,7 +78,7 @@ final class AdminTest extends \BBTestCase
     public function testChangeUsername(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -101,7 +101,7 @@ final class AdminTest extends \BBTestCase
     public function testChangeIp(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -124,7 +124,7 @@ final class AdminTest extends \BBTestCase
     public function testChangeDomain(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -147,7 +147,7 @@ final class AdminTest extends \BBTestCase
     public function testChangePassword(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -170,7 +170,7 @@ final class AdminTest extends \BBTestCase
     public function testSync(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -193,7 +193,7 @@ final class AdminTest extends \BBTestCase
     public function testUpdate(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -310,7 +310,6 @@ final class AdminTest extends \BBTestCase
             ->method('createServer')
             ->willReturn($newServerId);
 
-
         $di = $this->getDi();
         $this->api->setDi($di);
 
@@ -334,7 +333,6 @@ final class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ServiceHostingServer());
-
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -360,7 +358,6 @@ final class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_ServiceHostingServer());
 
-
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->api->setDi($di);
@@ -376,7 +373,6 @@ final class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn(new \Model_ServiceHostingServer());
-
 
         // Mock the 'find' method to return a non-empty array, simulating the server being used by service hostings
         $dbMock->expects($this->atLeastOnce())
@@ -533,7 +529,6 @@ final class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->api->setDi($di);
@@ -561,7 +556,6 @@ final class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
-
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $this->api->setDi($di);
@@ -584,7 +578,6 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('createHp')
             ->willReturn($newHpId);
-
 
         $di = $this->getDi();
         $this->api->setDi($di);
@@ -615,7 +608,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn($model);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn () => $orderServiceMock);

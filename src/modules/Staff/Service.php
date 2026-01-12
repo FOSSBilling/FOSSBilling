@@ -111,7 +111,7 @@ class Service implements InjectionAwareInterface
     public function getPairs(array $data = [])
     {
         $limit = $data['per_page'] ?? 30;
-        
+
         $sql = 'SELECT id, name FROM admin WHERE 1';
         $params = [];
 

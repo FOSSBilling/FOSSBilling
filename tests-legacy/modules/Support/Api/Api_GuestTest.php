@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Support\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -22,7 +22,6 @@ final class Api_GuestTest extends \BBTestCase
             ->onlyMethods(['ticketCreateForGuest'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForGuest')
             ->willReturn(bin2hex(random_bytes(random_int(100, 127))));
-
 
         $di = $this->getDi();
         $this->guestApi->setDi($di);
@@ -47,7 +46,6 @@ final class Api_GuestTest extends \BBTestCase
             ->onlyMethods(['ticketCreateForGuest'])->getMock();
         $serviceMock->expects($this->never())->method('ticketCreateForGuest')
             ->willReturn(sha1(uniqid()));
-
 
         $di = $this->getDi();
         $this->guestApi->setDi($di);
@@ -77,7 +75,6 @@ final class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
             ->willReturn([]);
 
-
         $di = $this->getDi();
         $this->guestApi->setDi($di);
 
@@ -99,7 +96,6 @@ final class Api_GuestTest extends \BBTestCase
             ->willReturn(new \Model_SupportPTicket());
         $serviceMock->expects($this->atLeastOnce())->method('publicCloseTicket')
             ->willReturn(true);
-
 
         $di = $this->getDi();
         $this->guestApi->setDi($di);
@@ -123,7 +119,6 @@ final class Api_GuestTest extends \BBTestCase
             ->willReturn(new \Model_SupportPTicket());
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketReplyForGuest')
             ->willReturn(sha1(uniqid()));
-
 
         $di = $this->getDi();
         $this->guestApi->setDi($di);
@@ -195,7 +190,7 @@ final class Api_GuestTest extends \BBTestCase
             ->willReturn(new \Model_SupportKbArticle());
         $supportService->expects($this->atLeastOnce())
             ->method('kbHitView')
-            ;
+        ;
         $supportService->expects($this->atLeastOnce())
             ->method('kbToApiArray')
             ->willReturn([]);
@@ -225,7 +220,7 @@ final class Api_GuestTest extends \BBTestCase
             ->willReturn(new \Model_SupportKbArticle());
         $supportService->expects($this->atLeastOnce())
             ->method('kbHitView')
-            ;
+        ;
         $supportService->expects($this->atLeastOnce())
             ->method('kbToApiArray')
             ->willReturn([]);
@@ -251,7 +246,7 @@ final class Api_GuestTest extends \BBTestCase
             ->willReturn(new \Model_SupportKbArticle());
         $kbService->expects($this->never())
             ->method('kbHitView')
-            ;
+        ;
         $kbService->expects($this->never())
             ->method('kbToApiArray')
             ->willReturn([]);
@@ -275,7 +270,7 @@ final class Api_GuestTest extends \BBTestCase
             ->willReturn(new \Model_SupportKbArticle());
         $kbService->expects($this->never())
             ->method('kbHitView')
-            ;
+        ;
         $kbService->expects($this->never())
             ->method('kbToApiArray')
             ->willReturn([]);
@@ -306,7 +301,7 @@ final class Api_GuestTest extends \BBTestCase
             ->willReturn(null);
         $kbService->expects($this->never())
             ->method('kbHitView')
-            ;
+        ;
         $kbService->expects($this->never())
             ->method('kbToApiArray')
             ->willReturn([]);

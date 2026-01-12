@@ -460,6 +460,7 @@ class Service
         } catch (\Exception $e) {
             if (!$try_render) {
                 $errorMsg = 'Template rendering failed: ' . $e->getMessage();
+
                 throw new \FOSSBilling\InformationException($errorMsg, null, $e->getCode());
             }
 

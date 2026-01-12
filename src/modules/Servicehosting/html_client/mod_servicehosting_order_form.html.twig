@@ -39,10 +39,10 @@
                     <div class="col-md-9">
                         <div class="d-flex gap-2">
                             <div class="input-group mb-3">
-                                <input class="form-control w-75" type="text" name="domain[register_sld]"
+                            <input class="form-control" type="text" name="domain[register_sld]"
                                        value="{{ request.register_sld }}"
                                        placeholder="{{ 'Your new domain'|trans }}">
-                                <select class="form-select" name="domain[register_tld]">
+                            <select class="form-select" name="domain[register_tld]" style="width: 120px;">
                                     {% for tld in tlds %}
                                         <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>
                                     {% endfor %}

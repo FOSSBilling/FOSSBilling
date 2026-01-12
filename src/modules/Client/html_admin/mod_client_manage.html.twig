@@ -590,7 +590,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% set tickets = admin.support_ticket_get_list({ 'per_page': '20', 'client_id': client.id }) %}
+                        {% set tickets = admin.support_ticket_get_list({ 'per_page': '20', 'client_id': client.id, 'deep': 0, 'include_first': 0 }) %}
                         {% for ticket in tickets.list %}
                         <tr>
                             <td>{{ ticket.id }}</td>
@@ -661,7 +661,7 @@
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
                                 <a class="btn btn-icon"
-                                    {{ fb_api_link({href: 'api/admin/client/balance_delete'|link({id: tx.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}) }}>
+                                    {{ fb_api_link({href: 'api/admin/client/balance_delete'|link({id: tx.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
