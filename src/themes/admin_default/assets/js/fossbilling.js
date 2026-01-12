@@ -82,12 +82,39 @@ globalThis.FOSSBilling = {
 };
 
   //===== Global ajax methods =====//
-  // Setup global AJAX loading indicators
+  // Modern AJAX loading indicators using Fetch API interception
   document.addEventListener("DOMContentLoaded", function() {
     (() => {
-      const originalXHR = window.XMLHttpRequest;
       let activeRequests = 0;
+      const originalFetch = window.fetch;
 
+      // Intercept fetch calls to track loading state
+      window.fetch = async function(...args) {
+        try {
+          // Show loading indicators when first request starts
+          if (activeRequests === 0) {
+            document.querySelectorAll('.loading').forEach(el => {
+              el.style.display = '';
+            });
+          }
+          activeRequests++;
+
+          const response = await originalFetch.apply(this, args);
+
+          return response;
+        } finally {
+          activeRequests--;
+          // Hide loading indicators when last request completes
+          if (activeRequests === 0) {
+            document.querySelectorAll('.loading').forEach(el => {
+              el.style.display = 'none';
+            });
+          }
+        }
+      };
+
+      // Also intercept XMLHttpRequest for legacy compatibility
+      const originalXHR = window.XMLHttpRequest;
       window.XMLHttpRequest = function() {
         const xhr = new originalXHR();
 
@@ -95,13 +122,11 @@ globalThis.FOSSBilling = {
         const originalOpen = xhr.open;
         xhr.open = function() {
           if (activeRequests === 0) {
-            // Show all loading elements when first request starts
             document.querySelectorAll('.loading').forEach(el => {
               el.style.display = '';
             });
           }
           activeRequests++;
-
           return originalOpen.apply(this, arguments);
         };
 
@@ -109,7 +134,6 @@ globalThis.FOSSBilling = {
         xhr.addEventListener('loadend', () => {
           activeRequests--;
           if (activeRequests === 0) {
-            // Hide all loading elements when last request completes
             document.querySelectorAll('.loading').forEach(el => {
               el.style.display = 'none';
             });

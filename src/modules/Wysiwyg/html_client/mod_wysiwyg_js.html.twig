@@ -1,21 +1,21 @@
 {{ 'ckeditor.js' | mod_asset_url('wysiwyg') | script_tag }}
 {{ 'ckeditor.css' | mod_asset_url('wysiwyg') | stylesheet_tag }}
 <script type="text/javascript">
-    const editors = [];
     document.addEventListener("DOMContentLoaded", function () {
+        // Initialize CKEditor on all elements with the specified class
         document.querySelectorAll('.{{ class }}').forEach(function (element) {
-            let required = false;
             CKEditor.default.create(element)
                 .then(editor => {
+                    // Handle required attribute - CKEditor manages this internally
                     if (element.hasAttribute('required')) {
                         element.removeAttribute('required');
-                        required = true;
                     }
-                    editors[element.name] = { editor, 'required': required };
                 })
                 .catch(error => { console.error(error) });
         });
 
+        // Adjust CKEditor text color for dark theme compatibility
+        // The editor needs a slight delay to apply styles after initialization
         {% if 'dark' in settings.theme %}
         setTimeout(() => {
             document.querySelectorAll('.ck-editor__main').forEach(function (element) {
