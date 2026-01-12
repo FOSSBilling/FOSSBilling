@@ -230,10 +230,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * Find ticket for client.
-     *
-     * @param int $id
-     *
-     * @return \Model_SupportTicket
      */
     public function findOneByClient(\Model_Client $c, int $id): \Model_SupportTicket
     {
@@ -398,8 +394,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function countByStatus(string $status): int
     {
-        $query = "SELECT COUNT(id) as counter FROM support_ticket
-                WHERE status = :status GROUP BY status LIMIT 1";
+        $query = 'SELECT COUNT(id) as counter FROM support_ticket
+                WHERE status = :status GROUP BY status LIMIT 1';
 
         return $this->di['db']->getCell($query, [':status' => $status]);
     }
@@ -542,16 +538,25 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(\Model_SupportTicket $model, bool $deep = true, \Model_Admin|\Model_Client|null $identity = null): array
+    public function toApiArray(\Model_SupportTicket $model, bool $deep = true, \Model_Admin|\Model_Client|null $identity = null, bool $includeFirstMessage = true): array
     {
-        $firstSupportTicketMessage = $this->di['db']->findOne('SupportTicketMessage', 'support_ticket_id = :support_ticket_id ORDER by id ASC LIMIT 1', [':support_ticket_id' => $model->id]);
         $supportHelpdesk = $this->di['db']->load('SupportHelpdesk', $model->support_helpdesk_id);
 
         $data = $this->di['db']->toArray($model);
         $data['replies'] = $this->messageGetRepliesCount($model);
-        $data['first'] = $this->messageToApiArray($firstSupportTicketMessage);
         $data['helpdesk'] = $this->helpdeskToApiArray($supportHelpdesk);
         $data['client'] = $this->getClientApiArrayForTicket($model);
+
+        if ($includeFirstMessage) {
+            $firstSupportTicketMessage = $this->di['db']->findOne(
+                'SupportTicketMessage',
+                'support_ticket_id = :support_ticket_id ORDER by id ASC LIMIT 1',
+                [':support_ticket_id' => $model->id]
+            );
+            if ($firstSupportTicketMessage instanceof \Model_SupportTicketMessage) {
+                $data['first'] = $this->messageToApiArray($firstSupportTicketMessage);
+            }
+        }
 
         if ($deep) {
             $messages = $this->messageGetTicketMessages($model);

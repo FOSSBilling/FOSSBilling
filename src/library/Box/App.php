@@ -9,6 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use DebugBar\DataCollector\TimeDataCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
 use FOSSBilling\InjectionAwareInterface;
@@ -114,17 +115,20 @@ class Box_App
 
     public function run(): string
     {
-        $this->debugBar['time']->startMeasure('registerModule', 'Registering module routes');
+        /** @var TimeDataCollector $timeCollector */
+        $timeCollector = $this->debugBar->getCollector('time');
+
+        $timeCollector->startMeasure('registerModule', 'Registering module routes');
         $this->registerModule();
-        $this->debugBar['time']->stopMeasure('registerModule');
+        $timeCollector->stopMeasure('registerModule');
 
-        $this->debugBar['time']->startMeasure('init', 'Initializing the app');
+        $timeCollector->startMeasure('init', 'Initializing the app');
         $this->init();
-        $this->debugBar['time']->stopMeasure('init');
+        $timeCollector->stopMeasure('init');
 
-        $this->debugBar['time']->startMeasure('checkperm', 'Checking access to module');
+        $timeCollector->startMeasure('checkperm', 'Checking access to module');
         $this->checkPermission();
-        $this->debugBar['time']->stopMeasure('checkperm');
+        $timeCollector->stopMeasure('checkperm');
 
         return $this->processRequest();
     }
@@ -166,7 +170,10 @@ class Box_App
 
     protected function executeShared($classname, $methodName, $params): string
     {
-        $this->debugBar['time']->startMeasure('executeShared', 'Reflecting module controller (shared mapping)');
+        /** @var TimeDataCollector $timeCollector */
+        $timeCollector = $this->debugBar->getCollector('time');
+
+        $timeCollector->startMeasure('executeShared', 'Reflecting module controller (shared mapping)');
         $class = new $classname();
         if ($class instanceof InjectionAwareInterface) {
             $class->setDi($this->di);
@@ -182,14 +189,17 @@ class Box_App
                 $args[$param->name] = $param->getDefaultValue();
             }
         }
-        $this->debugBar['time']->stopMeasure('executeShared');
+        $timeCollector->stopMeasure('executeShared');
 
         return $reflection->invokeArgs($class, $args);
     }
 
     protected function execute($methodName, $params, $classname = null): string
     {
-        $this->debugBar['time']->startMeasure('execute', 'Reflecting module controller');
+        /** @var TimeDataCollector $timeCollector */
+        $timeCollector = $this->debugBar->getCollector('time');
+
+        $timeCollector->startMeasure('execute', 'Reflecting module controller');
 
         $reflection = new ReflectionMethod(static::class, $methodName);
         $args = [];
@@ -202,7 +212,7 @@ class Box_App
             }
         }
 
-        $this->debugBar['time']->stopMeasure('execute');
+        $timeCollector->stopMeasure('execute');
 
         return $reflection->invokeArgs($this, $args);
     }
@@ -307,32 +317,35 @@ class Box_App
             }
         }
 
-        $this->debugBar['time']->startMeasure('sharedMapping', 'Checking shared mappings');
+        /** @var TimeDataCollector $timeCollector */
+        $timeCollector = $this->debugBar->getCollector('time');
+
+        $timeCollector->startMeasure('sharedMapping', 'Checking shared mappings');
         $sharedCount = count($this->shared);
         for ($i = 0; $i < $sharedCount; ++$i) {
             $mapping = $this->shared[$i];
             $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url);
             if ($url->match) {
-                $this->debugBar['time']->stopMeasure('sharedMapping');
+                $timeCollector->stopMeasure('sharedMapping');
 
                 return $this->executeShared($mapping[4], $mapping[2], $url->params);
             }
         }
-        $this->debugBar['time']->stopMeasure('sharedMapping');
+        $timeCollector->stopMeasure('sharedMapping');
 
         // this class mappings
-        $this->debugBar['time']->startMeasure('mapping', 'Checking mappings');
+        $timeCollector->startMeasure('mapping', 'Checking mappings');
         $mappingsCount = count($this->mappings);
         for ($i = 0; $i < $mappingsCount; ++$i) {
             $mapping = $this->mappings[$i];
             $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url);
             if ($url->match) {
-                $this->debugBar['time']->stopMeasure('mapping');
+                $timeCollector->stopMeasure('mapping');
 
                 return $this->execute($mapping[2], $url->params);
             }
         }
-        $this->debugBar['time']->stopMeasure('mapping');
+        $timeCollector->stopMeasure('mapping');
 
         $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
