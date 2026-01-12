@@ -379,6 +379,11 @@ const API = {
       .then((response) => {
         clearTimeout(timeoutId);
 
+        if (response.redirected) {
+          window.location.replace(response.url);
+          return;
+        }
+
         if (!response.ok) {
           throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
         }

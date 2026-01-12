@@ -29,7 +29,7 @@ final class RequiredParams
      * @param array<string, string> $params Map of parameter names to error messages
      */
     public function __construct(
-        public readonly array $params
+        public readonly array $params,
     ) {
     }
 }

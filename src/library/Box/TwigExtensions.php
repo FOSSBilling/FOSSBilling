@@ -29,6 +29,45 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $this->di;
     }
 
+    private function getLoadedAssets(): array
+    {
+        if (!$this->di->offsetExists('loaded_assets')) {
+            $this->di['loaded_assets'] = [];
+        }
+
+        return $this->di['loaded_assets'];
+    }
+
+    private function markAssetAsLoaded(string $path): void
+    {
+        $assets = $this->getLoadedAssets();
+        $assets[] = $this->normalizeAssetPath($path);
+        $this->di['loaded_assets'] = $assets;
+    }
+
+    private function isAssetLoaded(string $path): bool
+    {
+        $normalizedPath = $this->normalizeAssetPath($path);
+        $loadedAssets = $this->getLoadedAssets();
+
+        return in_array($normalizedPath, $loadedAssets, true);
+    }
+
+    private function normalizeAssetPath(string $path): string
+    {
+        $path = trim($path);
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            $parsed = parse_url($path);
+
+            return $parsed['path'] ?? $path;
+        }
+
+        $path = ltrim($path, '/\\');
+
+        return $path;
+    }
+
     /**
      * Returns a list of filters to add to the existing list.
      *
@@ -212,11 +251,23 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_script_tag($path): string
     {
+        if ($this->isAssetLoaded($path)) {
+            return '';
+        }
+
+        $this->markAssetAsLoaded($path);
+
         return sprintf('<script src="%s?%s"></script>', $path, FOSSBilling\Version::VERSION);
     }
 
     public function twig_stylesheet_tag($path, $media = 'screen'): string
     {
+        if ($this->isAssetLoaded($path)) {
+            return '';
+        }
+
+        $this->markAssetAsLoaded($path);
+
         return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, FOSSBilling\Version::VERSION, $media);
     }
 
