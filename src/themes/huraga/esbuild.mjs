@@ -99,6 +99,7 @@ async function build() {
         '.ttf': 'file',
         '.eot': 'file'
       },
+      plugins: [sassPlugin(nodeModulesDir, isProduction)],
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'info'

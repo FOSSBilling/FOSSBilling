@@ -1,7 +1,8 @@
-import * as tabler from '@tabler/core/js/tabler.js';
+import { Tooltip } from 'bootstrap/dist/js/bootstrap.esm.js';
+import { Toast } from 'bootstrap/dist/js/bootstrap.esm.js';
 import './js/utils';
 
-globalThis.bootstrap = tabler.bootstrap;
+globalThis.bootstrap = { Tooltip, Toast };
 
 document.addEventListener('DOMContentLoaded', () => {
   /**
