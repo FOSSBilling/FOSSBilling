@@ -1,6 +1,6 @@
 /**
  * Utility functions for FOSSBilling admin theme
- * 
+ *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
@@ -109,7 +109,7 @@ export function throttle(func, limit) {
  */
 export function isElementInViewport(element) {
   if (!element) return false;
-  
+
   const rect = element.getBoundingClientRect();
   return (
     rect.top >= 0 &&
@@ -127,9 +127,9 @@ export function isElementInViewport(element) {
 export function scrollToElement(target, options = {}) {
   const element = typeof target === 'string' ? safeQuerySelector(target) : target;
   if (!element) return;
-  
+
   const { behavior = 'smooth', block = 'start', inline = 'nearest' } = options;
-  
+
   element.scrollIntoView({
     behavior,
     block,
@@ -145,13 +145,13 @@ export function scrollToElement(target, options = {}) {
  */
 export function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  
+
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
@@ -162,7 +162,7 @@ export function formatBytes(bytes, decimals = 2) {
  */
 export function deepMerge(...objects) {
   const result = {};
-  
+
   for (const obj of objects) {
     for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
@@ -174,7 +174,7 @@ export function deepMerge(...objects) {
       }
     }
   }
-  
+
   return result;
 }
 
@@ -188,22 +188,17 @@ export function registerEditor(element, editor) {
     console.warn('Invalid editor registration:', { element, editor });
     return;
   }
-  
-  // Store editor on the element itself
+
   element.editor = editor;
-  
-  // Add data attribute to mark as editor
   element.setAttribute('data-editor', 'true');
-  
-  // Initialize FOSSBilling editors registry if needed
+
   window.FOSSBilling = window.FOSSBilling || {};
   window.FOSSBilling.editors = window.FOSSBilling.editors || {};
-  
-  // Store in registry with element ID as key
+
   if (element.id) {
     window.FOSSBilling.editors[element.id] = editor;
   }
-  
+
   console.debug('Editor registered:', element.id || 'unnamed', editor);
 }
 
@@ -213,15 +208,13 @@ export function registerEditor(element, editor) {
  */
 export function unregisterEditor(element) {
   if (!element) return;
-  
-  // Remove from element
+
   delete element.editor;
   element.removeAttribute('data-editor');
-  
-  // Remove from registry
+
   if (element.id && window.FOSSBilling?.editors) {
     delete window.FOSSBilling.editors[element.id];
   }
-  
+
   console.debug('Editor unregistered:', element.id || 'unnamed');
 }

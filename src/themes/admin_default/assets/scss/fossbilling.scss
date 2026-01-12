@@ -13,14 +13,6 @@ body {
     min-height: calc(100vh - 2px);
 }
 
-.visible {
-    transition: opacity 400ms;
-}
-
-.hidden {
-    opacity: 0;
-}
-
 .ck.ck-content:not(.ck-comment__input *) {
     min-height: 300px;
     overflow-y: auto;

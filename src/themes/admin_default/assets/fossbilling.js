@@ -22,13 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
         alpha: false
       });
     }).catch(error => {
-      console.error('Failed to load coloris:', error);
+      console.error('Failed to load Coloris:', error);
     });
   }
-});
 
-
-document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.js-theme-toggler').forEach(element => {
     element.addEventListener('click', event => {
       event.preventDefault();
@@ -37,10 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-
-  /**
-   * Enable Bootstrap Tooltip
-   */
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl, {
@@ -48,10 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   });
 
-
-  /**
-   * Copy To Clipboard
-   */
   const clipboard = new ClipboardJS('.clipboard-copy');
   clipboard.on('success', function (e) {
     let originalTitle = e.trigger.dataset.bsOriginalTitle;
