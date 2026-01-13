@@ -1380,7 +1380,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct->id = 1;
         $modelProduct->is_addon = 1;
 
-        $currencyModel = $this->getMockBuilder("\\Box\\Mod\\Currency\\Entity\\Currency")->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->getMockBuilder('\\Box\\Mod\\Currency\\Entity\\Currency')->disableOriginalConstructor()->getMock();
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -1435,7 +1435,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct->loadBean(new \DummyBean());
         $modelProduct->id = 1;
 
-        $currencyModel = $this->getMockBuilder("\\Box\\Mod\\Currency\\Entity\\Currency")->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->getMockBuilder('\\Box\\Mod\\Currency\\Entity\\Currency')->disableOriginalConstructor()->getMock();
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -1497,7 +1497,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct->id = 1;
         $modelProduct->type = 'custom';
 
-        $currencyModel = $this->getMockBuilder("\\Box\\Mod\\Currency\\Entity\\Currency")->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->getMockBuilder('\\Box\\Mod\\Currency\\Entity\\Currency')->disableOriginalConstructor()->getMock();
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -1520,7 +1520,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $productServiceMock = $this->getMockBuilder('\Box\Mod\Servicecustom')->getMock();
+        $productServiceMock = $this->getMockBuilder('\Box\Mod\Servicecustom\Service')->getMock();
 
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());

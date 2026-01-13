@@ -2,14 +2,14 @@
 
 class BBTestCase extends PHPUnit\Framework\TestCase
 {
-    protected function getDi(): \Pimple\Container
+    protected function getDi(): Pimple\Container
     {
-        $di = new \Pimple\Container();
-        $di['validator'] = function () use ($di) {
-            return new \FOSSBilling\Validate();
+        $di = new Pimple\Container();
+        $di['validator'] = function () {
+            return new FOSSBilling\Validate();
         };
-        $di['tools'] = function () use ($di) {
-            return new \FOSSBilling\Tools();
+        $di['tools'] = function () {
+            return new FOSSBilling\Tools();
         };
         $di['config'] = [
             'salt' => 'test_salt',
@@ -23,15 +23,15 @@ class BBTestCase extends PHPUnit\Framework\TestCase
      * Helper method to validate required parameters for API methods with RequiredParams attribute.
      * This simulates the validation that happens in Api_Handler when methods are called through it.
      *
-     * @param \Api_Abstract $api The API instance
-     * @param string $methodName The method name to validate
-     * @param array $data The data to validate
+     * @param Api_Abstract $api        The API instance
+     * @param string       $methodName The method name to validate
+     * @param array        $data       The data to validate
      *
-     * @throws \FOSSBilling\InformationException if validation fails
+     * @throws FOSSBilling\InformationException if validation fails
      */
-    protected function validateRequiredParams(\Api_Abstract $api, string $methodName, array $data): void
+    protected function validateRequiredParams(Api_Abstract $api, string $methodName, array $data): void
     {
-        $handler = new \Api_Handler(new \Model_Admin());
+        $handler = new Api_Handler(new Model_Admin());
         $handler->validateRequiredParams($api, $methodName, $data);
     }
 

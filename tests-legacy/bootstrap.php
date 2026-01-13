@@ -31,11 +31,11 @@ require_once 'FakeTemplateWrapper.php';
 require_once 'DummyBean.php';
 $di = include PATH_ROOT . '/di.php';
 $di['translate']();
-$di['validator'] = function () use ($di) {
-    return new \FOSSBilling\Validate();
+$di['validator'] = function () {
+    return new FOSSBilling\Validate();
 };
-$di['tools'] = function () use ($di) {
-    return new \FOSSBilling\Tools();
+$di['tools'] = function () {
+    return new FOSSBilling\Tools();
 };
 
 // Setup the autoloader
