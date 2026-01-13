@@ -359,6 +359,130 @@ class Service implements InjectionAwareInterface
         return $data;
     }
 
+    /**
+     * Get multiple orders in a batch for API response.
+     *
+     * @param array                           $ids      Array of order IDs to fetch
+     * @param \Model_Admin|\Model_Client|null $identity The requesting identity
+     *
+     * @return array Array of order API arrays. Missing IDs are silently skipped.
+     */
+    public function getBatchForApi(array $ids, $identity = null): array
+    {
+        $ids = $this->normalizeIds($ids);
+        if (empty($ids)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $orders = $this->di['db']->getAll("SELECT * FROM client_order WHERE id IN ($placeholders)", $ids);
+        if (empty($orders)) {
+            return [];
+        }
+        $orders = $this->orderRowsByIds($orders, $ids);
+
+        $orderIds = array_column($orders, 'id');
+        $clientIds = $this->normalizeIds(array_column($orders, 'client_id'));
+        $productIds = $this->normalizeIds(array_column($orders, 'product_id'));
+
+        $clients = [];
+        if (!empty($clientIds)) {
+            $placeholders = implode(',', array_fill(0, count($clientIds), '?'));
+            $clientModels = $this->di['db']->find('Client', "id IN ($placeholders)", $clientIds);
+            $clientService = $this->di['mod_service']('client');
+            foreach ($clientModels as $client) {
+                $clients[$client->id] = $clientService->toApiArray($client, false, $identity);
+            }
+        }
+
+        $meta = [];
+        if (!empty($orderIds)) {
+            $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+            $metaRows = $this->di['db']->getAll(
+                "SELECT client_order_id, name, value FROM client_order_meta WHERE client_order_id IN ($placeholders)",
+                $orderIds
+            );
+            foreach ($metaRows as $row) {
+                $meta[$row['client_order_id']][$row['name']] = $row['value'];
+            }
+        }
+
+        $activeTickets = [];
+        if (!empty($orderIds)) {
+            $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+            $rows = $this->di['db']->getAll(
+                "SELECT rel_id, COUNT(id) as counter FROM support_ticket
+                WHERE rel_type = 'order'
+                AND rel_id IN ($placeholders)
+                AND (status = 'open' OR status = 'on_hold')
+                GROUP BY rel_id",
+                $orderIds
+            );
+            foreach ($rows as $row) {
+                $activeTickets[$row['rel_id']] = (int) $row['counter'];
+            }
+        }
+
+        $plugins = [];
+        if ($identity instanceof \Model_Admin && !empty($productIds)) {
+            $placeholders = implode(',', array_fill(0, count($productIds), '?'));
+            $productRows = $this->di['db']->getAll(
+                "SELECT id, plugin FROM product WHERE id IN ($placeholders)",
+                $productIds
+            );
+            foreach ($productRows as $row) {
+                $plugins[$row['id']] = $row['plugin'];
+            }
+        }
+
+        $result = [];
+        foreach ($orders as $order) {
+            $clientId = $order['client_id'];
+            $data = $order;
+            $data['config'] = json_decode($order['config'] ?? '', true) ?? [];
+            $data['total'] = (float) $order['price'] * (int) $order['quantity'];
+            $data['title'] = $order['title'];
+            $data['meta'] = $meta[$order['id']] ?? [];
+            $data['active_tickets'] = $activeTickets[$order['id']] ?? 0;
+            if (!isset($clients[$clientId])) {
+                $this->di['logger']->err('Missing client for order ' . $order['id']);
+                $data['client'] = [];
+            } else {
+                $data['client'] = $clients[$clientId];
+            }
+
+            if ($identity instanceof \Model_Admin) {
+                $data['plugin'] = $plugins[$order['product_id']] ?? null;
+            }
+
+            $result[] = $data;
+        }
+
+        return $result;
+    }
+
+    private function normalizeIds(array $ids): array
+    {
+        return array_values(array_unique(array_map('intval', array_filter($ids, 'is_numeric'))));
+    }
+
+    private function orderRowsByIds(array $rows, array $ids): array
+    {
+        $rowsById = [];
+        foreach ($rows as $row) {
+            $rowsById[(int) $row['id']] = $row;
+        }
+
+        $ordered = [];
+        foreach ($ids as $id) {
+            if (isset($rowsById[$id])) {
+                $ordered[] = $rowsById[$id];
+            }
+        }
+
+        return $ordered;
+    }
+
     public function getSearchQuery($data): array
     {
         $query = 'SELECT co.* from client_order co
