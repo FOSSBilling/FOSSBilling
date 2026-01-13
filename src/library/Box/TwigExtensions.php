@@ -90,6 +90,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function getFunctions()
     {
         return [
+            new TwigFunction('render_widgets', $this->twig_render_widgets(...), ['is_safe' => ['html']]),
             new TwigFunction('svg_sprite', $this->twig_svg_sprite(...), ['needs_environment' => true, 'is_safe' => ['html']]),
         ];
     }
@@ -102,6 +103,18 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function getName(): string
     {
         return 'bb';
+    }
+
+    /**
+     * Part of the Widgets module. Renders the widgets of a specified slot.
+     * 
+     * @param string $slot name of the slot
+     * @param array $context optional slot context, such as order or client details
+     * @return string Slot content
+     */
+    public function twig_render_widgets(string $slot, array $context = []): string
+    {
+        return $this->di['mod_service']('widgets')->renderSlot($slot, $context);
     }
 
     public function twig_ipcountryname_filter($value)
