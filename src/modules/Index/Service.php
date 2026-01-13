@@ -65,8 +65,12 @@ class Service implements InjectionAwareInterface
         ];
 
         foreach ($results as $row) {
-            $counts['total'] += $row['total'];
-            $counts[$row['status']] = $row['total'];
+            $counts['total'] += (int) $row['total'];
+
+            $status = (string) $row['status'];
+            if (array_key_exists($status, $counts) && $status !== 'total') {
+                $counts[$status] = (int) $row['total'];
+            }
         }
 
         return $counts;
@@ -110,8 +114,12 @@ class Service implements InjectionAwareInterface
         ];
 
         foreach ($results as $row) {
-            $counts['total'] += $row['total'];
-            $counts[$row['status']] = $row['total'];
+            $counts['total'] += (int) $row['total'];
+
+            $status = (string) $row['status'];
+            if (in_array($status, ['paid', 'unpaid'], true)) {
+                $counts[$status] = (int) $row['total'];
+            }
         }
 
         return $counts;
@@ -134,8 +142,13 @@ class Service implements InjectionAwareInterface
         ];
 
         foreach ($results as $row) {
-            $counts['total'] += $row['total'];
-            $counts[$row['status']] = $row['total'];
+            // Sum total orders across all statuses
+            $counts['total'] += (int) $row['total'];
+
+            // Only track counts for expected statuses to avoid dynamic keys
+            if ($row['status'] === 'active') {
+                $counts['active'] = (int) $row['total'];
+            }
         }
 
         $systemService = $this->di['mod_service']('system');
@@ -168,7 +181,7 @@ class Service implements InjectionAwareInterface
                  FROM client_order co
                  WHERE co.client_id = :client_id
                  AND co.group_master = 1
-                 ORDER BY co.id DESC
+                 ORDER BY co.updated_at DESC
                  LIMIT 5';
 
         $results = $this->di['db']->getAll($sql, $data);
