@@ -29,9 +29,8 @@
 			<h3 class="card-title">{{ 'Activity settings'|trans }}</h3>
 		</div>
 
-		<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+		<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
 			<div class="card-body">
-				<input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
 				<input type="hidden" name="ext" value="mod_activity">
 				<div class="mb-3">
 					<label class="form-label">{{ 'Activity log retention'|trans }}</label>

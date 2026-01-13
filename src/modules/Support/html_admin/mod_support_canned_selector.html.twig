@@ -2,7 +2,7 @@
     name="canned_response"
     placeholder="Canned Responses"
     class="canned_ticket_response"
-    data-resturl="admin/support/canned_get"
+    data-resturl="/api/admin/support/canned_get"
 >
     {% for ctitle, cat in admin.support_canned_pairs %}
         <optgroup label="{{ ctitle }}">

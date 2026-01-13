@@ -43,24 +43,32 @@
     </fieldset>
 </form>
 
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-<script type="text/javascript">
-$(function() {
-    $('#client-login').on('submit', function(event) {
-        $.post("{{ constant('SYSTEM_URL') }}api/guest/client/login",
-            $(this).serialize(),
-            function(json) {
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('client-login').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+            const formDataEncoded = new URLSearchParams(formData).toString();
+
+            fetch("{{ constant('SYSTEM_URL') }}api/guest/client/login", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formDataEncoded
+            })
+            .then(response => response.json())
+            .then(json => {
                 if(json.error) {
                     alert(json.error.message);
                 } else {
                     parent.window.location = "{{ constant('SYSTEM_URL') }}";
                 }
-            }, 'json')
-        ;
-
-        return false;
+            })
+            .catch(error => console.error('Error:', error));
+        });
     });
-});
 </script>
 </body>
 </html>
