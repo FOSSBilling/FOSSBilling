@@ -281,12 +281,23 @@ class Service implements InjectionAwareInterface
         $result['orders'] = [];
         $orderIds = array_unique(array_filter(array_column($lines, 'order_id')));
 
+        // Ensure order IDs are safe integers before using in SQL
+        $orderIds = array_values(array_filter(array_map('intval', $orderIds), static function ($id) {
+            return $id > 0;
+        }));
+
         if (!empty($orderIds)) {
             // Batch load orders
             $orders = $this->di['db']->find('ClientOrder', 'id IN (' . implode(',', $orderIds) . ')');
 
             // Batch load related products
-            $productIds = array_unique(array_filter(array_map(fn ($o) => $o->product_id, $orders)));
+            $productIds = array_unique(array_filter(array_map(static function ($o) {
+                return isset($o->product_id) ? (int) $o->product_id : 0;
+            }, $orders)));
+            // Ensure product IDs are safe integers before using in SQL
+            $productIds = array_values(array_filter($productIds, static function ($id) {
+                return $id > 0;
+            }));
             $products = !empty($productIds)
             ? $this->di['db']->find('Product', 'id IN (' . implode(',', $productIds) . ')')
             : [];
@@ -319,7 +330,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            $invoice = $service->toApiArray($invoiceModel, ['id' => $params['id']]);
+            $invoice = $service->toApiArray($invoiceModel, true);
             if ($invoice['total'] > 0) {
                 $email = [];
                 $email['to_client'] = $invoiceModel->client_id;
@@ -343,7 +354,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            $invoice = $service->toApiArray($invoiceModel, ['id' => $params['id']]);
+            $invoice = $service->toApiArray($invoiceModel, true);
             $email = [];
             $email['to_client'] = $invoiceModel->client_id;
             $email['code'] = 'mod_invoice_created';
@@ -385,8 +396,8 @@ class Service implements InjectionAwareInterface
         if (isset($remove_after_days) && $remove_after_days) {
             // removing old invoices
             $days = (int) $remove_after_days;
-            $sql = "DELETE FROM invoice WHERE status = 'unpaid' AND DATEDIFF(NOW(), due_at) > $days";
-            $di['db']->exec($sql);
+            $sql = "DELETE FROM invoice WHERE status = 'unpaid' AND DATEDIFF(NOW(), due_at) > :days";
+            $di['db']->exec($sql, [':days' => $days]);
         }
     }
 
