@@ -27,6 +27,17 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    /**
+     * Get dashboard data for a client.
+     *
+     * This method aggregates all data needed for the client dashboard into a single
+     * response. It fetches profile information, ticket statistics, invoice statistics,
+     * order statistics, and recent items.
+     *
+     * @param \Model_Client $client The client model to get dashboard data for
+     *
+     * @return array Dashboard data containing profile, tickets, invoices, orders, recent_orders, and recent_tickets
+     */
     public function getDashboardData(\Model_Client $client): array
     {
         $data['client_id'] = $client->id;
@@ -78,23 +89,21 @@ class Service implements InjectionAwareInterface
 
     private function getRecentTickets(array $data): array
     {
-        $sql = 'SELECT st.*
+        $sql = 'SELECT st.id
                  FROM support_ticket st
                  WHERE st.client_id = :client_id
                  ORDER BY st.updated_at DESC
                  LIMIT 5';
 
-        $results = $this->di['db']->getAll($sql, $data);
+        $ids = $this->di['db']->getCol($sql, $data);
 
-        $supportService = $this->di['mod_service']('support');
-        $tickets = [];
-
-        foreach ($results as $row) {
-            $ticket = $this->di['db']->getExistingModelById('SupportTicket', $row['id'], 'Ticket not found');
-            $tickets[] = $supportService->toApiArray($ticket, false, $this->di['loggedin_client'], false);
+        if (empty($ids)) {
+            return [];
         }
 
-        return $tickets;
+        $supportService = $this->di['mod_service']('support');
+
+        return $supportService->getBatchForApi($ids, false, $this->di['loggedin_client']);
     }
 
     private function getInvoicesData(array $data): array
@@ -177,23 +186,21 @@ class Service implements InjectionAwareInterface
 
     private function getRecentOrders(array $data): array
     {
-        $sql = 'SELECT co.*
+        $sql = 'SELECT co.id
                  FROM client_order co
                  WHERE co.client_id = :client_id
                  AND co.group_master = 1
                  ORDER BY co.updated_at DESC
                  LIMIT 5';
 
-        $results = $this->di['db']->getAll($sql, $data);
+        $ids = $this->di['db']->getCol($sql, $data);
 
-        $orderService = $this->di['mod_service']('order');
-        $orders = [];
-
-        foreach ($results as $row) {
-            $order = $this->di['db']->getExistingModelById('ClientOrder', $row['id'], 'Order not found');
-            $orders[] = $orderService->toApiArray($order, false, $this->di['loggedin_client']);
+        if (empty($ids)) {
+            return [];
         }
 
-        return $orders;
+        $orderService = $this->di['mod_service']('order');
+
+        return $orderService->getBatchForApi($ids, $this->di['loggedin_client']);
     }
 }
