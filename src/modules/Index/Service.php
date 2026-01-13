@@ -95,7 +95,9 @@ class Service implements InjectionAwareInterface
                  ORDER BY st.updated_at DESC
                  LIMIT 5';
 
-        $ids = $this->di['db']->getCol($sql, $data);
+        $rows = $this->di['db']->getAll($sql, $data);
+
+        $ids = array_column($rows, 'id');
 
         if (empty($ids)) {
             return [];
@@ -193,7 +195,9 @@ class Service implements InjectionAwareInterface
                  ORDER BY co.updated_at DESC
                  LIMIT 5';
 
-        $ids = $this->di['db']->getCol($sql, $data);
+        $rows = $this->di['db']->getAll($sql, $data);
+
+        $ids = array_column($rows, 'id');
 
         if (empty($ids)) {
             return [];

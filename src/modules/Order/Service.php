@@ -440,7 +440,7 @@ class Service implements InjectionAwareInterface
             $clientId = $order['client_id'];
             $data = $order;
             $data['config'] = json_decode($order['config'] ?? '', true) ?? [];
-            $data['total'] = (float) $order['price'] * (int) $order['quantity'];
+            $data['total'] = $this->calculateTotal($order['price'], $order['quantity']);
             $data['title'] = $order['title'];
             $data['meta'] = $meta[$order['id']] ?? [];
             $data['active_tickets'] = $activeTickets[$order['id']] ?? 0;
@@ -1457,7 +1457,12 @@ class Service implements InjectionAwareInterface
 
     public function getTotal(\Model_ClientOrder $model)
     {
-        return $model->price * $model->quantity;
+        return $this->calculateTotal($model->price, $model->quantity);
+    }
+
+    private function calculateTotal($price, $quantity): float
+    {
+        return (float) $price * (int) $quantity;
     }
 
     public function setUnpaidInvoice(\Model_ClientOrder $order, \Model_Invoice $proforma): void
