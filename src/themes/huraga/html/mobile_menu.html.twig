@@ -83,7 +83,7 @@
 
 {% if settings.sidebar_balance_enabled and client %}
     <li class="pt-3 ps-3">
-        <h5 class="text-secondary d-block pb-1">{{ 'Account balance'|trans }}</h5>
+        <h5 class="text-secondary d-block pb-1">{{ 'Account Balance'|trans }}</h5>
         <h4><strong>{{ profile.balance | money(profile.currency) }}</strong></h4>
     </li>
 {% endif %}
@@ -113,7 +113,7 @@
                     <li><a class="dropdown-item"
                            href="{{ 'client/profile'|link }}">{{ 'Profile'|trans }}</a></li>
                     <li><a class="dropdown-item"
-                           href="{{ 'client/logout'|link }}">{{ 'Sign out'|trans }}</a></li>
+                           href="{{ 'client/logout'|link }}">{{ 'Sign Out'|trans }}</a></li>
                 </ul>
             </div>
         {% else %}

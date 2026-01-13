@@ -4,8 +4,6 @@
     <meta charset="utf-8">
    <title>{{ settings.meta_title_prefix }} {% block meta_title %}{% endblock %} {{ settings.meta_title_suffix }}</title>
 
-    <meta property="bb:url" content="{{ constant('SYSTEM_URL') }}">
-    <meta property="bb:client_area" content="{{ '/'|link }}">
     <meta name="csrf-token" content="{{ CSRFToken }}">
 
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
@@ -51,7 +49,7 @@
     </script>
 {% endif %}
 
-{% if client %}
+{% if client and profile is not defined %}
     {% set profile = client.profile_get %}
 {% endif %}
 {% set company = guest.system_company %}
@@ -83,8 +81,6 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <div class="navbar-nav me-auto mb-2 mb-lg-0 w-100 d-flex justify-content-end">
-
-
                         {% set languages = guest.extension_languages(true) %}
                         {% if languages|length > 1 %}
                             <li class="nav-item">
@@ -97,19 +93,19 @@
                         {% endif %}
 
                         {% if settings.top_menu_dashboard %}
-                            <li class="nav-item d-none d-md-block">
+                            <li class="nav-item d-md-flex">
                                 <a class="nav-link" href="{{ ''|link }}">{{ 'Dashboard'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_order %}
-                            <li class="nav-item d-none d-md-block">
+                            <li class="nav-item d-md-flex">
                                 <a class="nav-link" href="{{ '/order'|link }}">{{ 'Order'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_profile %}
-                            <li class="nav-item d-none d-md-block">
+                            <li class="nav-item d-md-flex">
                                 {% if not client %}
                                     <a class="nav-link" href="{{ 'login'|link }}">{{ 'Login'|trans }}</a>
                                 {% endif %}
@@ -117,22 +113,18 @@
                         {% endif %}
 
                         {% if settings.top_menu_signout %}
-                            <li class="nav-item d-none d-md-block">
+                            <li class="nav-item d-md-flex">
                                 {% if client %}
-                                    <div class="dropdown">
-                                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <div class="dropdown client-dropdown">
+                                        <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                             <img class="img-fluid rounded-circle" alt="{{ profile.first_name }} {{ profile.last_name }} gravatar" src="{{ profile.email|gravatar(60) }}" height="25px" width="25px">
-                                            {% if profile.company %}
-                                                <span>{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }})</span>
-                                            {% else %}
-                                                <span>{{ profile.first_name }} {{ profile.last_name }}</span>
-                                            {% endif %}
+                                            <span class="ms-1">{% if profile.company %}{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }}){% else %}{{ profile.first_name }} {{ profile.last_name }}{% endif %}</span>
                                         </button>
                                         <ul class="dropdown-menu">
                                             <li><a class="dropdown-item"
                                                    href="{{ 'client/profile'|link }}">{{ 'Profile'|trans }}</a></li>
                                             <li><a class="dropdown-item"
-                                                   href="{{ 'client/logout'|link }}">{{ 'Sign out'|trans }}</a></li>
+                                                   href="{{ 'client/logout'|link }}">{{ 'Sign Out'|trans }}</a></li>
                                         </ul>
                                     </div>
                                 {% else %}
@@ -240,10 +232,10 @@
                             </div>
                             {% if guest.extension_is_on({"mod":'branding'}) %}
                                 <div class="d-flex justify-content-center">
-                                    <span>{{ 'Powered by the'|trans }}&nbsp;</span>
+                                    <span>{{ 'Powered by'|trans }}&nbsp;</span>
                                     <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
                                         href="https://fossbilling.org" title="Billing Software"
-                                       target="_blank">{{ 'FOSSBilling Community'|trans }}</a>
+                                       target="_blank">{{ 'FOSSBilling'|trans }}</a>
                                 </div>
                             {% endif %}
                         </div>
@@ -257,7 +249,7 @@
         <a href="#top" class="position-fixed btn btn-primary bottom-0 end-0 m-3">
             <span class="awe-arrow-up"></span> {{ 'Top'|trans }}</a>
     {% endif %}
-    <div class="wait" style="display:none" onclick="$(this).hide();">
+    <div class="wait" style="display:none" onclick="this.style.display='none'">
         <div class="spinner-border"
              style="width: 4rem; height: 4rem; top: 50%; left: 50%; position: fixed; z-index: 999"></div>
     </div>
