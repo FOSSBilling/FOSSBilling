@@ -36,7 +36,7 @@ final class ServiceTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
@@ -65,7 +65,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(1);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
 
         $di = $this->getDi();
         $di['db'] = $dbMock;

@@ -54,7 +54,7 @@ final class AdminTest extends \BBTestCase
             'order_id' => 1,
         ];
 
-        $apiMock = $this->getMockBuilder(\Box\Mod\Servicelicense\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -79,7 +79,7 @@ final class AdminTest extends \BBTestCase
             'order_id' => 1,
         ];
 
-        $apiMock = $this->getMockBuilder(\Box\Mod\Servicelicense\Api\Admin::class)
+        $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())

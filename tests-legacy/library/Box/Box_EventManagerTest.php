@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 #[Group('Core')]
-final class Box_EventManagerTest extends \BBTestCase
+final class Box_EventManagerTest extends BBTestCase
 {
     #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
     public function testEmptyFire(): void

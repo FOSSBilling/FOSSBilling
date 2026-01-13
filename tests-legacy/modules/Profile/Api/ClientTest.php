@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Profile\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -115,7 +115,7 @@ final class ClientTest extends \BBTestCase
             ->willReturn(true);
 
         $di = $this->getDi();
-        
+
         $this->clientApi->setDi($di);
         $this->clientApi->setService($service);
         $this->clientApi->setIdentity(new \Model_Client());
