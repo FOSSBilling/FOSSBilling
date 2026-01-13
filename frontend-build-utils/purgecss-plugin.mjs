@@ -41,6 +41,24 @@ export async function purgeCssFile(cssFilePath, themePath, enabled = false) {
           /^fade$/, // Fade transition
           /^nav-/, // Navigation classes
           /^data-bs-/, // Bootstrap data attributes
+          /^btn-/, // Button variants
+          /^card-/, // Cards
+          /^badge-/, // Badges
+          /^form-/, // Form controls
+          /^text-/, // Text utilities
+          /^bg-/, // Background utilities
+          /^d-/, // Display utilities
+          /^m-/, // Margin utilities
+          /^p-/, // Padding utilities
+          /^w-/, // Width utilities
+          /^h-/, // Height utilities
+          /^border-/, // Border utilities
+          /^flex-/, // Flex utilities
+          /^justify-/, // Justify utilities
+          /^align-/, // Align utilities
+          /^offcanvas-/, // Offcanvas components
+          /^accordion-/, // Accordion components
+          /^carousel-/, // Carousel components
         ],
         deep: [
           /tom-select/, // Tom Select plugin styles
