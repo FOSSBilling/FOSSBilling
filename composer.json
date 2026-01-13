@@ -56,7 +56,7 @@
         "maxmind-db/reader": "^1.13.1",
         "monolog/monolog": "^3.9",
         "nelexa/zip": "^4.0.2",
-        "php-debugbar/php-debugbar": "^2.2.6",
+        "php-debugbar/php-debugbar": "^3.0.0",
         "phpmyadmin/motranslator": "^6.0.0",
         "pimple/pimple": "^3.6",
         "plesk/api-php-lib": "^2.2.1",
