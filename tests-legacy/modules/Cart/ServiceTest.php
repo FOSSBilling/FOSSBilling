@@ -127,8 +127,8 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($sessionGetWillReturn);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-                    ->disableOriginalConstructor()
-                    ->getMock();
+            ->disableOriginalConstructor()
+            ->getMock();
         if ($sessionGetWillReturn === null) {
             $currencyRepositoryMock->expects($this->atLeastOnce())
                 ->method('findDefault')
@@ -1103,8 +1103,8 @@ final class ServiceTest extends \BBTestCase
             ->willReturn([]);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-                    ->disableOriginalConstructor()
-                    ->getMock();
+            ->disableOriginalConstructor()
+            ->getMock();
         $currencyRepositoryMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn($currencyModel);
