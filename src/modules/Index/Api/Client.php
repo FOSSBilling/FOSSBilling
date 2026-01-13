@@ -13,7 +13,7 @@ namespace Box\Mod\Index\Api;
 
 class Client extends \Api_Abstract
 {
-    public function get_dashboard($data): array
+    public function get_dashboard(): array
     {
         $identity = $this->getIdentity();
 
