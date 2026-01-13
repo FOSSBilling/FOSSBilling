@@ -82,7 +82,7 @@ class Service implements InjectionAwareInterface
 
         if ($approved) {
             $sql .= ' AND p.approved = :approved';
-            $params['approved'] = $approved;
+            $params['approved'] = (int) $approved;
         }
 
         if ($status) {
