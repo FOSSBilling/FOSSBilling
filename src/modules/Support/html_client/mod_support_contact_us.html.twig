@@ -27,8 +27,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/guest/support/ticket_create'|link}} " id="public-ticket-create" class="api-form" data-api-jsonp="onTicketCreate">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                    <form method="post" action="{{ 'api/guest/support/ticket_create'|link}}" id="public-ticket-create" {{ fb_api_form({ callback: 'onTicketCreate' }) }}>
                         <div class="mb-3">
                             <label class="form-label" for="name">{{ 'Name'|trans }}</label>
                             <input class="form-control" type="text" name="name" value="{{ request.name }}" required="required" id="name">
@@ -86,11 +85,12 @@
 
 {% block js %}
     <script>
-        $(function () {
-            $('#anti-spam').remove();
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('anti-spam').remove();
         });
+
         function onTicketCreate(result){
-            bb.redirect("{{ 'support/contact-us/conversation'|link }}" + '/' + result);
+            window.location = "{{ 'support/contact-us/conversation'|link }}" + '/' + result;
         }
     </script>
 {% endblock %}

@@ -35,8 +35,8 @@
         }
 
         {% if not admin %}
-            $(function () {
-                bb.redirect("{{ 'staff/login'|alink }}");
+            document.addEventListener("DOMContentLoaded", function() {
+                window.location = "{{ 'staff/login'|alink }}";
             });
         {% else %}
     </script>
@@ -125,9 +125,10 @@
                            <a class="dropdown-item"
                               href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
                            <div class="dropdown-divider"></div>
-                           <a class="dropdown-item api-link"
-                              href="{{ 'api/admin/profile/logout'|link({ 'CSRFToken': CSRFToken }) }}"
-                              data-api-redirect="{{ 'staff/login'|alink }}">{{ 'Logout'|trans }}</a>
+                           <a class="dropdown-item" href="{{ 'api/admin/profile/logout'|link }}"
+                               {{ fb_api_link({ redirect: 'staff/login'|alink }) }}>
+                              {{ 'Logout'|trans }}
+                            </a>
                         </div>
                      </div>
                   </div>

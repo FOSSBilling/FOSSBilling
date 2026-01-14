@@ -2,22 +2,16 @@
   "name": "admin_default",
   "scripts": {
     "build": "node ./esbuild.mjs",
-    "dev": "node ./esbuild.mjs --watch"
+    "dev": "node ./esbuild.mjs"
   },
   "dependencies": {
     "@melloware/coloris": "^0.25.0",
     "@tabler/core": "^1.2.0",
     "apexcharts": "^5.0.0",
-    "autosize": "^6.0.1",
-    "bootstrap": "^5.3.3",
-    "bootstrap-markdown": "^2.10.0",
     "clipboard": "^2.0.11",
     "flag-icons": "^7.2.3",
-    "imask": "^7.6.1",
-    "jquery": "^3.7.1",
     "litepicker": "^2.0.12",
-    "select2": "^4.0.13",
-    "sortable-tablesort": "^4.0.0"
+    "sortable-tablesort": "^4.1.7"
   },
   "devDependencies": {
     "esbuild": "0.27.2",

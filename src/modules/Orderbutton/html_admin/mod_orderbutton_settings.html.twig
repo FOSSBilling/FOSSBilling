@@ -36,9 +36,7 @@
             </li>
         </ul>
 
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form"
-              data-api-reload="Settings updated">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({reload: true}) }}>
             <input type="hidden" name="ext" value="mod_orderbutton">
             <div class="card">
                 <div class="tab-content">
@@ -216,7 +214,7 @@
                                     <span class="d-block mb-2">{{ 'Add order-button class to your elements which must call popup. For example:'|trans }}</span>
                                     <div class="col">
                                         <div class="input-group input-group-flat">
-                                            <textarea id="html-code" rows="1" class="form-control" onclick="$(this).trigger('select')">&lt;button type=&quot;button&quot;&nbsp;class=&quot;order-button&quot;&gt;Order Now&lt;/button&gt;</textarea>
+                                            <textarea id="html-code" rows="1" class="form-control">&lt;button type=&quot;button&quot;&nbsp;class=&quot;order-button&quot;&gt;Order Now&lt;/button&gt;</textarea>
                                             <span class="input-group-text align-items-start pt-3">
                                                 <span class="input-group-link cursor-pointer clipboard-copy" data-clipboard-target="#html-code"
                                                     data-bs-toggle="tooltip" aria-label="{{ 'Copy'|trans }}" data-bs-original-title="{{ 'Copy'|trans }}">
@@ -231,7 +229,7 @@
                                 <span class="d-block mt-3 mb-2">{{ 'Add data-product attribute to your element to open specific product. For example:'|trans }}</span>
                                 <div class="col">
                                     <div class="input-group input-group-flat">
-                                        <textarea id="html-code2" rows="1" class="form-control" onclick="$(this).trigger('select')">&lt;button type=&quot;button&quot; class=&quot;order-button" data-product="2"&gt;Order Product#2 Now&lt;/button&gt;</textarea>
+                                        <textarea id="html-code2" rows="1" class="form-control">&lt;button type=&quot;button&quot; class=&quot;order-button" data-product="2"&gt;Order Product#2 Now&lt;/button&gt;</textarea>
                                         <span class="input-group-text align-items-start pt-3">
                                             <span class="input-group-link cursor-pointer clipboard-copy" data-clipboard-target="#html-code2"
                                                 data-bs-toggle="tooltip" aria-label="{{ 'Copy'|trans }}" data-bs-original-title="{{ 'Copy'|trans }}">
@@ -252,7 +250,7 @@
                     <label for="domain-checker-form" class="col-12 form-label">{{ 'Copy this code to your website'|trans }}</label>
                     <div class="col">
                         <div class="input-group input-group-flat">
-                            <textarea id="script-code" rows="3" class="form-control" onclick="$(this).trigger('select')"></textarea>
+                            <textarea id="script-code" rows="3" class="form-control"></textarea>
                             <span class="input-group-text align-items-start pt-3">
                                 <span class="input-group-link cursor-pointer clipboard-copy" data-clipboard-target="#script-code"
                                       data-bs-toggle="tooltip" aria-label="{{ 'Copy'|trans }}" data-bs-original-title="{{ 'Copy'|trans }}">
@@ -275,8 +273,8 @@
 {% endblock %}
 
 {% block js %}
-    <script type="text/javascript">
-        $(function () {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
             let changed = false;
             window.onbeforeunload = confirmExit;
 
@@ -287,89 +285,128 @@
             }
 
             const generate_link = function (selector) {
-                selector = (typeof selector === "undefined") ? $('#bind_selector').val() : selector;
+                selector = (typeof selector === "undefined") ? document.getElementById('bind_selector').value : selector;
 
                 const initial_link = "{{ 'orderbutton/js' | link({'options' : 1}) }}";
 
                 const options = {
-                    'width': $('#popup_width').val(),
-                    'theme_color': $('#theme_color').val(),
-                    'background_color': $('#coloris-picker').val(),
-                    'popup_top': $('#popup-top').val(),
-                    'popup_left': $('#popup-left').val(),
-                    'background_opacity': $('#background-opacity').val(),
-                    'background_close': $('#background-close:checked').val(),
-                    'show_custom_form_values': $('#show-custom-form-values:checked').val(),
+                    'width': document.getElementById('popup_width').value,
+                    'theme_color': document.getElementById('theme_color').value,
+                    'background_color': document.getElementById('coloris-picker').value,
+                    'background_opacity': document.getElementById('background_opacity').value,
+                    'background_close': document.getElementById('background-close').checked ? 'on' : undefined,
+                    'show_custom_form_values': document.getElementById('show-custom-form-values')?.checked ? 'on' : undefined,
                     'bind_selector': selector,
-                    'border_radius': $('#border-radius').val(),
-                    'product_id': $('#product_id').val(),
-                    'loader': $('[name=loader]:checked').val()
+                    'border_radius': document.getElementById('border-radius').value,
+                    'product_id': document.getElementById('product_id').value,
+                    'loader': document.querySelector('[name=loader]:checked')?.value
                 };
 
                 let options_url = "";
-                $.each(options, function (k, v) {
+                for (const [k, v] of Object.entries(options)) {
                     if (v !== "" && typeof v !== "undefined") {
                         options_url += "&" + k + "=" + encodeURIComponent(v);
                     }
-                });
+                }
                 return initial_link + options_url;
             };
 
             const show_link = function () {
-                $('#script-code').text('\<script type="text/javascript" src="' + generate_link() + '"\>\<\/script\>')
+                document.getElementById('script-code').textContent = '\<script src="' + generate_link() + '"\>\<\/script\>';
             };
-
             show_link();
 
-            $('#background-close, #show-custom-form-values').on('click', function () {
+            document.getElementById('html-code').addEventListener('click', function() {
+                this.select();
+            });
+
+            document.getElementById('html-code2').addEventListener('click', function() {
+                this.select();
+            });
+
+
+            document.getElementById('script-code').addEventListener('click', function() {
+                this.select();
+            });
+
+            document.getElementById('background-close').addEventListener('click', function() {
                 changed = true;
                 show_link();
             });
 
-            $('input').on('input', function () {
+            document.getElementById('show-custom-form-values')?.addEventListener('click', function() {
                 changed = true;
                 show_link();
             });
 
-            $('select, #background-color, input:radio').on('change', function () {
-                changed = true;
-                show_link();
+            document.querySelectorAll('input').forEach(function(input) {
+                input.addEventListener('input', function() {
+                    changed = true;
+                    show_link();
+                });
             });
 
-            $('#bind_selector').on('input', function () {
-                const selector = $(this).val();
-                if (selector[0] !== "." || selector[0] !== "#") {
-                    $('#button-info').parent().removeClass('alert-info').addClass('alert-danger');
-                    $('#button-code-info').html("<span class=\"d-block mb-2 text-danger\"><b>{{ 'Class name should start with dot (.) or hashtag (#) for ID'|trans }}</b></span>");
+            document.querySelectorAll('select, #background-color, input[type="radio"]').forEach(function(element) {
+                element.addEventListener('change', function() {
+                    changed = true;
+                    show_link();
+                });
+            });
+
+            document.getElementById('bind_selector').addEventListener('input', function() {
+                const selector = this.value;
+                const buttonInfoParent = document.getElementById('button-info').parentNode;
+
+                if (selector[0] !== "." && selector[0] !== "#") {
+                    buttonInfoParent.classList.remove('alert-info');
+                    buttonInfoParent.classList.add('alert-danger');
+                    document.getElementById('button-code-info').innerHTML = "<span class=\"d-block mb-2 text-danger\"><b>{{ 'Class name should start with dot (.) or hashtag (#) for ID'|trans }}</b></span>";
                 }
 
                 if (selector[0] === ".") {
-                    $('#button-info').parent().removeClass('alert-danger').removeClass('alert-info').addClass('alert-info');
-                    $('#button-code-info').html("<span class=\"d-block mb-2\">{{ 'Add " + selector + " class to your elements which must call popup. For example: '|trans }}" + '</span><pre>&lt;button type=&quot;button&quot;' + '<span class="text-orange">' + ' class=&quot;' + selector.substring(1) + '</span>' + '&quot; &gt;Order Now&lt;/button&gt;</pre>');
+                    buttonInfoParent.classList.remove('alert-danger');
+                    buttonInfoParent.classList.add('alert-info');
+                    document.getElementById('button-code-info').innerHTML = "<span class=\"d-block mb-2\">{{ 'Add " + selector + " class to your elements which must call popup. For example: '|trans }}" + '</span><pre>&lt;button type=&quot;button&quot;' + '<span class="text-orange">' + ' class=&quot;' + selector.substring(1) + '</span>' + '&quot; &gt;Order Now&lt;/button&gt;</pre>';
                 }
 
                 if (selector[0] === "#") {
-                    $('#button-info').parent().removeClass('alert-danger').removeClass('alert-info').addClass('alert-info');
-                    $('#button-code-info').html("<span class=\"d-block mb-2\">{{ 'Add " + selector + " ID to your element which must call popup. For example: '|trans }}" + '</span><pre>&lt;button type=&quot;button&quot;' + '<span class="text-orange">' + ' id=&quot;' + selector.substring(1) + '</span>' + '&quot; &gt;Order Now&lt;/button&gt;</pre>');
+                    buttonInfoParent.classList.remove('alert-danger');
+                    buttonInfoParent.classList.add('alert-info');
+                    document.getElementById('button-code-info').innerHTML = "<span class=\"d-block mb-2\">{{ 'Add " + selector + " ID to your element which must call popup. For example: '|trans }}" + '</span><pre>&lt;button type=&quot;button&quot;' + '<span class="text-orange">' + ' id=&quot;' + selector.substring(1) + '</span>' + '&quot; &gt;Order Now&lt;/button&gt;</pre>';
                 }
             });
 
-            $('#load').on('click', function () {
-                const s = $('#bind_selector').val() + new Date().getTime();
-                $('body>button').remove()
-                $.getScript(generate_link(s), function () {
-                    const test_button = $('<button/>').css({"display": "none"}).appendTo('body');
+            document.getElementById('load').addEventListener('click', function() {
+                const s = document.getElementById('bind_selector').value + new Date().getTime();
+
+                // Remove any buttons that are direct children of body
+                document.querySelectorAll('body > button').forEach(button => button.remove());
+
+                // Create and load the script
+                const script = document.createElement('script');
+                script.src = generate_link(s);
+                script.onload = function() {
+                    // Create a test button and add it to the body
+                    const test_button = document.createElement('button');
+                    test_button.style.display = 'none';
+
                     if (s.charAt(0) === '.') {
-                        test_button.attr('class', s.substring(1));
+                        test_button.className = s.substring(1);
                     } else {
-                        test_button.attr('id', s.substring(1));
+                        test_button.id = s.substring(1);
                     }
 
-                });
+                    document.body.appendChild(test_button);
+                };
+                document.head.appendChild(script);
 
-                document.addEventListener('OrderButtonEventsReady', function (e) {
-                    $(s).trigger('click');
-                }, false);
+                // Add event listener for OrderButtonEventsReady
+                document.addEventListener('OrderButtonEventsReady', function() {
+                    const element = document.querySelector(s);
+                    if (element) {
+                        element.click();
+                    }
+                }, { once: true });
             });
         });
     </script>

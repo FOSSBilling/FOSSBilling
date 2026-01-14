@@ -28,8 +28,7 @@
         <h3>{{ 'Orders settings'|trans }}</h3>
 
         {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Settings updated'|trans }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({message: 'Settings Updated'|trans}) }}>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Expiration date'|trans }}</label>
                 <div class="col">

@@ -1,7 +1,7 @@
 <div class="card-body">
     <h5>{{ 'File'|trans }}</h5>
         <div class="row mb-3">
-            <form method="post" action="{{ '/api/admin/servicedownloadable/config_save'|link }}" class="api-form" data-api-msg="Settings updated">
+            <form method="post" action="{{ '/api/admin/servicedownloadable/config_save'|link }}" {{ fb_api_form({ message: 'Settings Updated'|trans}) }}>
             <label class="col-md-3 form-label">
                 {{ 'Keep Orders Updated'|trans }}
             </label>
@@ -20,7 +20,7 @@
         </form>
         </div>
     <div class="row mb-3">
-        <form method="post" action="" class="" enctype="multipart/form-data" target="uploadframe" id="upload-form">
+        <form method="post" action="{{ 'api/admin/servicedownloadable/upload'|link }}" enctype="multipart/form-data" id="upload-form">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             {% if product.config.filename  %}
             <div class="mb-3 row">
@@ -44,30 +44,35 @@
 </div>
 
 <script>
-$(function() {
-    $('body').append('<iframe id="uploadframe" name="uploadframe" style="display:none" />');
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('upload-form');
+    if (!form) {
+        return;
+    }
 
-    $('#upload-form').on('submit', function() {
-        $(this).attr('action', bb.restUrl('admin/servicedownloadable/upload'));
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
 
-        $('#uploadframe').on('load', function() {
-            var responseText = $(this).contents().find('body').text();
-            var data;
-            try {
-                data = $.parseJSON(responseText);
-            } catch (e) {
-                FOSSBilling.message("Server returned non-JSON response", "error");
-                return;
-            }
+        const submitButton = form.querySelector('input[type="submit"], button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
 
-            if (data.error) {
-                bb.error(data.error.message, data.error.code);
-            }
-
-            if (data.result) {
+        const formData = new FormData(form);
+        API.admin.post('servicedownloadable/upload', formData,
+            function () {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
                 FOSSBilling.message("{{ 'File was uploaded'|trans }}");
+            },
+            function (error) {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
+                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
             }
-        });
+        );
     });
 });
 </script>

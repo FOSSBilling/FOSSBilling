@@ -21,7 +21,7 @@ class Model_Client extends RedBeanPHP\SimpleModel
         self::GENDER_MALE,
         self::GENDER_FEMALE,
         self::GENDER_NON_BINARY,
-        self::GENDER_OTHER
+        self::GENDER_OTHER,
     ];
     final public const DOC_PASSPORT = 'passport';
     public const ALLOWED_DOCUMENT_TYPES = [

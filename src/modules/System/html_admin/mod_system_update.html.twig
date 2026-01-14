@@ -23,13 +23,13 @@
                         <span>{{ 'This update is considered to be a major update, you should check the release notes for any breaking changes.'|trans }}</span>
                     </div>
                 {% endif %}
-                
+
                 {% if update_info['update_type'] == 1 %}
                     <div class="alert alert-warning" role="alert">
                         <span>{{ 'This update is considered to be a minor update, there are low chances of incompatibilities.'|trans }}</span>
                     </div>
                 {% endif %}
-                    
+
                 {{ update_info['release_notes']|markdown }}
             {% else %}
                 <h2 class="card-title">{{ 'There is no update available'|trans }}</h2>
@@ -38,12 +38,8 @@
         </div>
         <div class="card-footer">
             {% if admin.system_update_available or update_info['branch'] == 'preview' %}
-                <a href="{{ 'api/admin/system/update_core'|link({ 'CSRFToken': CSRFToken }) }}"
-                    class="btn btn-primary api-link"
-                    data-api-reload="1"
-                    data-api-confirm="Proceed with automatic update?"
-                    data-api-confirm-btn="Update"
-                    data-api-confirm-content="Make sure that you have made database and files backups before proceeding with automatic update. You will automatically be redirected once the update is complete.">
+                <a class="btn btn-primary" href="{{ 'api/admin/system/update_core'|link }}"
+                    {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
                     <svg class="icon">
                         <use xlink:href="#download" />
                     </svg>
@@ -59,15 +55,14 @@
                     {{ 'Update FOSSBilling'|trans }}
                 </a>
             {% endif %}
-            <a href="{{ 'api/admin/system/recheck_update'|link({ 'CSRFToken': CSRFToken }) }}"
-                class="btn btn-primary api-link"
-                data-api-reload="1">
+            <a class="btn btn-primary" href="{{ 'api/admin/system/recheck_update'|link }}" {{ fb_api_link({ reload: true }) }}>
                 <svg class="icon">
                     <use xlink:href="#refresh" />
                 </svg>
                 {{ 'Check for Updates'|trans }}
             </a>
-            <a href="{{ 'api/admin/system/manual_update'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.old.php." data-api-msg="Patches applied and configuration updated.">
+            <a class="btn btn-primary" href="{{ 'api/admin/system/manual_update'|link }}"
+                {{ fb_api_link({ message: 'Patches Applied and Configuration Updated'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
                 <svg class="icon">
                     <use xlink:href="#cog-play" />
                 </svg>
