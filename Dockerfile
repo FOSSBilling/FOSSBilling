@@ -1,4 +1,4 @@
-FROM php:8.5-apache@sha256:96b50b7861cb6d1c10cd9f58c46b2c19606761a1209c20d410a509d4d1c935fd
+FROM php:8.3-apache
 
 # Install required packages, configure Apache, install PHP extensions, and clean-up.
 RUN apt-get update \
@@ -18,7 +18,10 @@ RUN apt-get update \
 # Copy files and set required permissions.
 COPY --chown=www-data:www-data ./src/. /var/www/html
 
-RUN { crontab -l -u www-data 2>/dev/null; echo "*/5 * * * * /usr/local/bin/php /var/www/html/cron.php"; } | crontab -u www-data -
+# Configure cron job for www-data in a dedicated crontab file for clarity.
+RUN echo '*/5 * * * * /usr/local/bin/php /var/www/html/cron.php' > /tmp/www-data.cron \
+  && crontab -u www-data /tmp/www-data.cron \
+  && rm /tmp/www-data.cron
 
 # Start cron and then run Apache in the foreground when the container starts.
-CMD service cron start && apache2-foreground
+CMD cron && apache2-foreground
