@@ -1544,7 +1544,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if ($search) {
-            $sql .= ' AND title LIKE :q OR content LIKE :q';
+            $sql .= ' AND (title LIKE :q OR content LIKE :q)';
             $filter[':q'] = "%$search%";
         }
 
