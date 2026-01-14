@@ -43,7 +43,7 @@ class Service
         $filter = [];
         $sql = 'SELECT * FROM custom_pages WHERE 1';
         if ($search) {
-            $sql .= ' AND title LIKE :q OR content LIKE :q';
+            $sql .= ' AND (title LIKE :q OR content LIKE :q)';
             $filter[':q'] = "%$search%";
         }
         $sql .= ' ORDER BY id DESC';
