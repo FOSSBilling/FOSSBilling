@@ -21,4 +21,4 @@ COPY --chown=www-data:www-data ./src/. /var/www/html
 RUN { crontab -l -u www-data 2>/dev/null; echo "*/5 * * * * /usr/local/bin/php /var/www/html/cron.php"; } | crontab -u www-data -
 
 # Start cron and then run Apache in the foreground when the container starts.
-CMD service cron start && apache2-foreground
+CMD cron && apache2-foreground
