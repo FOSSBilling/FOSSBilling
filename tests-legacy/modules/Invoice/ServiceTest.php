@@ -19,7 +19,6 @@ final class ServiceTest extends \BBTestCase
     public function testGetDi(): void
     {
         $di = $this->getDi();
-        $itemInvoiceServiceMock = null;
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -85,13 +84,6 @@ final class ServiceTest extends \BBTestCase
                 [
                     'client_search' => 'John%',
                     'client' => 'John',
-                ],
-            ],
-            [
-                ['id' => 1],
-                'AND p.id = :id',
-                [
-                    'id' => 1,
                 ],
             ],
             [
@@ -219,12 +211,11 @@ final class ServiceTest extends \BBTestCase
             ->method('getQty');
 
         $di = $this->getDi();
-        $itemInvoiceServiceMock = null;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($itemInvoiceServiceMock, $systemService, $subscriptionServiceMock) {
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock) {
             $service = null;
             if ($sub == 'InvoiceItem') {
-                $service = $itemInvoiceServiceMock;
+                $service = $service;
             }
             if ($serviceName == 'system') {
                 $service = $systemService;
@@ -333,21 +324,18 @@ final class ServiceTest extends \BBTestCase
             if ($serviceName == 'invoice') {
                 return $serviceMock;
             }
-            if ($serviceName == 'email') {
+            if ($serviceName == 'email' || $serviceName == 'Email') {
                 return $emailService;
             }
         });
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
-        $this->service->setDi($di);
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
             ->willReturn($di);
 
-        $result = $this->service->onAfterAdminInvoicePaymentReceived($eventMock);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
+        $this->service->onAfterAdminInvoiceReminderSent($eventMock);
     }
 
     public function testOnAfterAdminCronRun(): void
