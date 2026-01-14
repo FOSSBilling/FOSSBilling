@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="no-js" lang="en" data-bs-theme="{{ settings.theme|default('light') }}">
+<html class="no-js" lang="{{ settings.locale|default('en') }}" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
     <title>{{ settings.meta_title_prefix }} {% block meta_title %}{% endblock %} {{ settings.meta_title_suffix }}</title>
@@ -27,9 +27,7 @@
 </head>
 <body class="{% block body_class %}{% endblock %}">
     {% block body %}{% endblock %}
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
-    </div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3 toast-container-zindex" aria-live="polite" aria-atomic="true"></div>
     {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
 </body>
 </html>
