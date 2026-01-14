@@ -324,7 +324,7 @@ final class ServiceTest extends \BBTestCase
             if ($serviceName == 'invoice') {
                 return $serviceMock;
             }
-            if ($serviceName == 'email') {
+            if ($serviceName == 'email' || $serviceName == 'Email') {
                 return $emailService;
             }
         });
