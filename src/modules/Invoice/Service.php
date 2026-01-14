@@ -321,7 +321,8 @@ class Service implements InjectionAwareInterface
             }
 
             foreach ($orders as $order) {
-                $product = isset($order->product_id) ? ($productsById[(int) $order->product_id] ?? null) : null;
+                $productId = isset($order->product_id) ? (int) $order->product_id : 0;
+                $product = $productsById[$productId] ?? null;
                 $orderData = [
                     'id' => $order->id,
                     'title' => $order->title,
