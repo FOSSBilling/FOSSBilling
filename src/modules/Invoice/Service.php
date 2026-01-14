@@ -127,8 +127,8 @@ class Service implements InjectionAwareInterface
         }
 
         if ($search) {
-            $sql .= ' AND (p.id = :int OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)';
-            $params['int'] = (int) preg_replace('/[^0-9]/', '', (string) $search);
+            $sql .= ' AND (p.id = :search_numeric_id OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)';
+            $params['search_numeric_id'] = (int) preg_replace('/[^0-9]/', '', (string) $search);
             $params['search_like'] = '%' . $search . '%';
             $params['search'] = $search;
         }
@@ -288,7 +288,14 @@ class Service implements InjectionAwareInterface
 
         if (!empty($orderIds)) {
             // Batch load orders
-            $orders = $this->di['db']->find('ClientOrder', 'id IN (' . implode(',', $orderIds) . ')');
+            $orderIdPlaceholders = [];
+            $orderIdParams = [];
+            foreach ($orderIds as $idx => $id) {
+                $placeholder = ':order_id_' . $idx;
+                $orderIdPlaceholders[] = $placeholder;
+                $orderIdParams['order_id_' . $idx] = $id;
+            }
+            $orders = $this->di['db']->find('ClientOrder', 'id IN (' . implode(',', $orderIdPlaceholders) . ')', $orderIdParams);
 
             // Batch load related products
             $productIds = array_unique(array_filter(array_map(static function ($o) {
@@ -298,12 +305,24 @@ class Service implements InjectionAwareInterface
             $productIds = array_values(array_filter($productIds, static function ($id) {
                 return $id > 0;
             }));
-            $products = !empty($productIds)
-            ? $this->di['db']->find('Product', 'id IN (' . implode(',', $productIds) . ')')
-            : [];
+
+            $productsById = [];
+            if (!empty($productIds)) {
+                // Use parameter placeholders instead of directly interpolating IDs into the SQL string
+                $placeholders = implode(',', array_fill(0, count($productIds), '?'));
+                $products = $this->di['db']->find('Product', 'id IN (' . $placeholders . ')', $productIds);
+
+                // Re-index products by their ID for efficient lookup
+                foreach ($products as $product) {
+                    if (isset($product->id)) {
+                        $productsById[(int) $product->id] = $product;
+                    }
+                }
+            }
 
             foreach ($orders as $order) {
-                $product = $products[$order->product_id] ?? null;
+                $productId = isset($order->product_id) ? (int) $order->product_id : 0;
+                $product = $productsById[$productId] ?? null;
                 $orderData = [
                     'id' => $order->id,
                     'title' => $order->title,
@@ -396,8 +415,8 @@ class Service implements InjectionAwareInterface
         if (isset($remove_after_days) && $remove_after_days) {
             // removing old invoices
             $days = (int) $remove_after_days;
-            $sql = "DELETE FROM invoice WHERE status = 'unpaid' AND DATEDIFF(NOW(), due_at) > :days";
-            $di['db']->exec($sql, [':days' => $days]);
+            $sql = "DELETE FROM invoice WHERE status = :status AND DATEDIFF(NOW(), due_at) > :days";
+            $di['db']->exec($sql, [':days' => $days, ':status' => \Model_Invoice::STATUS_UNPAID]);
         }
     }
 
@@ -672,8 +691,8 @@ class Service implements InjectionAwareInterface
             $balanceTransaction->type = 'invoice';
             $balanceTransaction->rel_id = $invoice->id;
 
-            $invoiceIdentifier = $invoice->serie_nr ?: $invoice->id;
-            $balanceTransaction->description = "Payment for invoice #{$invoiceIdentifier} using account credit.";
+            $invoice_identifier = $invoice->serie_nr ?: $invoice->id;
+            $balanceTransaction->description = "Payment for invoice #{$invoice_identifier} using account credit.";
 
             $balanceTransaction->amount = -$required;
             $balanceTransaction->created_at = date('Y-m-d H:i:s');
