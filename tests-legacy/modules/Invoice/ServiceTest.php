@@ -124,11 +124,11 @@ final class ServiceTest extends \BBTestCase
             ],
             [
                 ['search' => 'trend'],
-                'AND (p.id = :int OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)',
+                'AND (p.id = :search_numeric_id OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)',
                 [
                     'search' => 'trend',
                     'search_like' => '%trend%',
-                    'int' => 0,
+                    'search_numeric_id' => 0,
                 ],
             ],
         ];
