@@ -743,7 +743,7 @@ class Service implements InjectionAwareInterface
         $where = [];
         $params = [];
         if ($search) {
-            $where[] = ' a.name LIKE :name OR a.id LIKE :id OR a.email LIKE :email ';
+            $where[] = '(a.name LIKE :name OR a.id LIKE :id OR a.email LIKE :email)';
             $params['name'] = "%$search%";
             $params['id'] = "%$search%";
             $params['email'] = "%$search%";

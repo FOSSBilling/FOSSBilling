@@ -238,7 +238,7 @@ final class ServiceTest extends \BBTestCase
             ],
             [
                 ['search' => '2'],
-                'c.id = :cid or c.aid = :caid',
+                '(c.id = :cid OR c.aid = :caid)',
                 [':cid' => '2', ':caid' => '2'],
             ],
             [
