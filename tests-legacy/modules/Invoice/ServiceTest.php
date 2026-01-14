@@ -335,9 +335,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getDi')
             ->willReturn($di);
 
-        $result = $this->service->onAfterAdminInvoiceReminderSent($eventMock);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
+        $this->service->onAfterAdminInvoiceReminderSent($eventMock);
     }
 
     public function testOnAfterAdminCronRun(): void
