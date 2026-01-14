@@ -79,6 +79,15 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
 
         $skip_validation = isset($data['skip_validation']) && (bool) $data['skip_validation'];
+        if (!empty($data['gateway_id'])) {
+            try {
+                $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
+            } catch (\Exception $e) {
+                $this->di['logger']->warning('IPN with invalid gateway_id rejected: ' . $data['gateway_id']);
+
+                throw new \FOSSBilling\InformationException('Invalid payment gateway');
+            }
+        }
         if (!$skip_validation) {
             if (!isset($data['invoice_id'])) {
                 throw new \FOSSBilling\InformationException('Transaction invoice ID is missing');
