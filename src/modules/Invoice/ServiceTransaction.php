@@ -83,7 +83,9 @@ class ServiceTransaction implements InjectionAwareInterface
             try {
                 $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
             } catch (\Exception $e) {
-                $this->di['logger']->warning('IPN with invalid gateway_id rejected: ' . $data['gateway_id']);
+                if (isset($this->di['logger'])) {
+                    $this->di['logger']->warning('IPN with invalid gateway_id rejected: ' . $data['gateway_id']);
+                }
 
                 throw new \FOSSBilling\InformationException('Invalid payment gateway');
             }
