@@ -418,7 +418,8 @@
         "Spriter",
         "spriter",
         "dataurl",
-        "tomselect"
+        "tomselect",
+        "zindex"
     ],
     "ignorePaths": [
         "tests-legacy/**",
