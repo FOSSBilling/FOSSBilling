@@ -3,14 +3,21 @@ import { fileURLToPath } from 'url';
 import { dirname, resolve, join } from 'path';
 import { writeFile, copyFile } from 'fs/promises';
 import { sassPlugin, postprocessCssFile } from '@fossbilling/frontend-build-utils/plugins';
-import { ensureDir, copyAssets } from '@fossbilling/frontend-build-utils/helpers';
+import { ensureDir, copyAssets, removeDirContents } from '@fossbilling/frontend-build-utils/helpers';
 import { purgeCssFile } from '@fossbilling/frontend-build-utils/purgecss-plugin.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
-const jqueryShim = resolve(rootDir, 'frontend-build-utils/jquery-shim.js');
+
+async function cleanBuild() {
+  try {
+    const buildDir = resolve(__dirname, 'assets/build');
+    await removeDirContents(buildDir);
+  } catch (error) {
+  }
+}
 
 async function build() {
   console.log(`Building huraga theme (${isProduction ? 'production' : 'development'}) with esbuild ...`);
@@ -18,6 +25,8 @@ async function build() {
   const startTime = Date.now();
 
   try {
+    await cleanBuild();
+
     const buildDir = resolve(__dirname, 'assets/build');
     const jsDir = join(buildDir, 'js');
     const cssDir = join(buildDir, 'css');
@@ -27,14 +36,13 @@ async function build() {
     await ensureDir(cssDir);
     await ensureDir(imgDir);
 
-    // Build JavaScript
+    // Build JavaScript with improved optimization
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/huraga.js')],
       bundle: true,
       outfile: join(jsDir, 'huraga.js'),
       platform: 'browser',
       target: 'es2018',
-      inject: [jqueryShim],
       loader: {
         '.svg': 'file',
         '.woff': 'file',
@@ -47,10 +55,14 @@ async function build() {
       },
       minify: isProduction,
       sourcemap: !isProduction,
-      logLevel: 'info'
+      logLevel: 'info',
+      // Add tree-shaking and optimization settings
+      treeShaking: true,
+      legalComments: 'none',
+      drop: isProduction ? ['console', 'debugger'] : []
     });
 
-    // Build theme SCSS
+    // Build theme SCSS with improved optimization
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/scss/huraga.scss')],
       bundle: true,
@@ -65,7 +77,11 @@ async function build() {
       plugins: [sassPlugin(nodeModulesDir, isProduction)],
       minify: isProduction,
       sourcemap: !isProduction,
-      logLevel: 'info'
+      logLevel: 'info',
+      // Add CSS optimization settings
+      define: {
+        'process.env.NODE_ENV': isProduction ? '"production"' : '"development"'
+      }
     });
 
     await postprocessCssFile(join(cssDir, 'huraga.css'), isProduction);
@@ -83,6 +99,7 @@ async function build() {
         '.ttf': 'file',
         '.eot': 'file'
       },
+      plugins: [sassPlugin(nodeModulesDir, isProduction)],
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'info'
@@ -179,7 +196,6 @@ async function watch() {
     outfile: join(jsDir, 'huraga.js'),
     platform: 'browser',
     target: 'es2018',
-    inject: [jqueryShim],
     loader: {
       '.svg': 'file',
       '.woff': 'file',

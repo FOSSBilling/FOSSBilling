@@ -24,7 +24,7 @@
             <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                 <div class="card-body border-bottom py-3">
                     <div class="d-flex">
-                        {{ include('partial_batch_delete.html.twig', { 'action' : 'admin/custompages/batch_delete' }) }}
+                        {% include "partial_batch_delete.html.twig" with {'action' : 'custompages/batch_delete'} %}
                         <div class="ms-auto text-muted">
                             <form method="get">
                                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
@@ -77,14 +77,9 @@
                                             <use xlink:href="#edit"/>
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon bb-rm-tr api-link"
-                                       href="{{ 'api/admin/custompages/delete'|link({ 'id': page.id, 'CSRFToken': CSRFToken }) }}"
-                                       title="{{ 'Delete'|trans }}"
-                                       data-api-confirm="Are you sure?"
-                                       data-api-type="danger"
-                                       data-api-confirm-btn="{{ 'Delete'|trans }}"
-                                       data-api-reload="1"
-                                       data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
+                                    <a class="btn btn-icon" href="{{ 'api/admin/custompages/delete'|link({ 'id': page.id }) }}" title="{{ 'Delete'|trans }}"
+                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                        {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, reload: true}) }}>
                                         <svg class="icon">
                                             <use xlink:href="#delete"/>
                                         </svg>
@@ -106,9 +101,8 @@
             </div>
 
             <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                <form method="post" action="{{ 'api/admin/custompages/create'|link }}" class="api-form save" data-api-redirect="{{ 'custompages'|alink }}">
+                <form method="post" action="{{ 'api/admin/custompages/create'|link }}" {{ fb_api_form({redirect: 'custompages'|alink}) }}>
                     <div class="card-body mt-2">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
                         <div class="mb-3 row">
                             <label class="col-md-3 col-form-label">{{ 'Title'|trans }}</label>
                             <div class="col">
@@ -143,7 +137,5 @@
     </div>
     </div>
 {% endblock %}
-
-{% block js %}{% endblock %}
 
 {% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

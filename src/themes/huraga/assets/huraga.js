@@ -1,8 +1,8 @@
-import * as bootstrap from 'bootstrap';
-import '../../admin_default/assets/js/tomselect';
-import '../../admin_default/assets/js/fossbilling';
+import { Tooltip } from 'bootstrap/dist/js/bootstrap.esm.js';
+import { Toast } from 'bootstrap/dist/js/bootstrap.esm.js';
+import './js/utils';
 
-globalThis.bootstrap = bootstrap;
+globalThis.bootstrap = { Tooltip, Toast };
 
 document.addEventListener('DOMContentLoaded', () => {
   /**
@@ -25,9 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (message) {
       sessionStorage.setItem(key, message);
       if (typeof reload === 'boolean' && reload) {
-        bb.reload();
+        window.location.reload();
       } else if (typeof reload === 'string') {
-        bb.redirect(reload);
+        window.location.assign(reload);
       }
     }
   }
@@ -58,4 +58,32 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
+
+  /**
+   * Lazy load Tom Select only if language selector exists
+   * Includes error handling and ensures CSS is loaded before JS initializes
+   */
+  const languageSelector = document.querySelector('.js-language-selector');
+  if (languageSelector) {
+    // Dynamically import TomSelect module with error handling
+    import('./js/tomselect.js')
+      .then(module => {
+        if (typeof module.default === 'function') {
+          module.default();
+        } else {
+          console.error('TomSelect module does not export a default function');
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load language selector:', err);
+      });
+  }
+
+  // Attach event listeners to all forms and links with data-fb-api attribute.
+  if (document.querySelector("form[data-fb-api]")) {
+    API._apiForm();
+  };
+  if (document.querySelector("a[data-fb-api]")) {
+    API._apiLink();
+  }
 });

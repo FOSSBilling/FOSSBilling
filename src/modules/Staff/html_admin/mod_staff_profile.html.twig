@@ -28,8 +28,8 @@
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-profile" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/profile/update'|link }}" class="api-form" data-api-msg="{{ 'Profile updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/profile/update'|link }}" {{ fb_api_form({message: 'Profile Updated'|trans}) }}>
+
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}</label>
                         <div class="col">
@@ -57,8 +57,7 @@
 
         <div class="tab-pane fade" id="tab-password" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/profile/change_password'|link }}" class="api-form" data-api-msg="{{ 'Password Changed'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/profile/change_password'|link }}" {{ fb_api_form({message: 'Password Changed'|trans}) }}>
                     <div class="mb-3 row">
                         <label for="current_password" class="col-3 col-form-label">{{ 'Current Password'|trans }}</label>
                         <div class="col">
@@ -90,8 +89,7 @@
                 <p class="text-muted">{{ 'External application can control every aspect of FOSSBilling using this API key.'|trans }}</p>
                 <p class="text-muted">{{ 'Warning! Resetting the key will break existing applications using it.'|trans }}</p>
 
-                <form method="post" action="{{ 'api/admin/profile/generate_api_key'|link }}" class="api-form" data-api-jsonp="onAfterKeyUpdate">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/profile/generate_api_key'|link }}" {{ fb_api_form({callback: 'onAfterKeyUpdate'}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'API Key'|trans }}</label>
                         <div class="col">
@@ -99,7 +97,7 @@
                         </div>
                     </div>
 
-                    <input type="submit" value="{{ 'Generate new key'|trans }}" class="btn btn-primary w-100">
+                    <input type="submit" value="{{ 'Generate New Key'|trans }}" class="btn btn-primary w-100">
                 </form>
             </div>
         </div>
@@ -119,10 +117,11 @@
 {% block js %}
 <script>
     function onAfterKeyUpdate(result) {
-        API.admin.post('profile/get', {}, function(result) {
-            $('#apikey').val(result.api_token);
-            FOSSBilling.message("{{ 'New API key generated. Applications using old key are now not working.'|trans }}");
-        })
+        API.admin.post('profile/get', {},
+            (result) => {
+                document.getElementById('apikey').value = result.api_token;
+                FOSSBilling.message("{{ 'New API key generated. Applications using old key are now not working.'|trans }}");
+            });
     }
 </script>
 {% endblock %}
