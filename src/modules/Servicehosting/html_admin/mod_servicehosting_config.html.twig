@@ -1,7 +1,7 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 <div class="card-body">
-    <h5>{{ 'Hosting settings'|trans }}</h5>
+    <h3>{{ 'Hosting settings'|trans }}</h3>
     <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="api-form save" data-api-msg="{{ 'Hosting settings updated'|trans }}">
         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="mb-3 row">
@@ -29,6 +29,56 @@
                 </div>
             </div>
         </div>
+
+        <hr />
+
+        <h3 class="mt-4">{{ 'Domain configuration'|trans }}</h3>
+        <p class="text-muted">{{ 'Select which domain options are available to customers when ordering this product.'|trans }}</p>
+
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Allow domain registration'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioAllowRegisterYes" type="radio" name="config[allow_domain_register]" value="1"{% if product.config.allow_domain_register is not defined or product.config.allow_domain_register %} checked{% endif %}>
+                    <label class="form-check-label" for="radioAllowRegisterYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioAllowRegisterNo" type="radio" name="config[allow_domain_register]" value="0"{% if product.config.allow_domain_register is defined and not product.config.allow_domain_register %} checked{% endif %}>
+                    <label class="form-check-label" for="radioAllowRegisterNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Allow domain transfer'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioAllowTransferYes" type="radio" name="config[allow_domain_transfer]" value="1"{% if product.config.allow_domain_transfer is not defined or product.config.allow_domain_transfer %} checked{% endif %}>
+                    <label class="form-check-label" for="radioAllowTransferYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioAllowTransferNo" type="radio" name="config[allow_domain_transfer]" value="0"{% if product.config.allow_domain_transfer is defined and not product.config.allow_domain_transfer %} checked{% endif %}>
+                    <label class="form-check-label" for="radioAllowTransferNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Allow using own domain'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioAllowOwnYes" type="radio" name="config[allow_domain_own]" value="1"{% if product.config.allow_domain_own is not defined or product.config.allow_domain_own %} checked{% endif %}>
+                    <label class="form-check-label" for="radioAllowOwnYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioAllowOwnNo" type="radio" name="config[allow_domain_own]" value="0"{% if product.config.allow_domain_own is defined and not product.config.allow_domain_own %} checked{% endif %}>
+                    <label class="form-check-label" for="radioAllowOwnNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
+        </div>
+        
+        <hr />
+
+        <h3 class="mt-4">{{ 'Free domain options'|trans }}</h3>
+
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Free domain registration'|trans }}:</label>
             <div class="col">
@@ -42,6 +92,7 @@
                 </div>
             </div>
         </div>
+        
         <div class="mb-3 row free-tlds-row">
             <label class="form-label col-3 col-form-label">{{ 'Select free TLDs'|trans }}</label>
             <div class="col">
@@ -91,7 +142,7 @@
     <hr>
 
     <div class="d-flex align-items-center mb-3">
-        <h5 class="mb-0">{{ 'Hosting plans'|trans }}</h5>
+        <h3 class="mb-0">{{ 'Hosting plans'|trans }}</h3>
         <a href="{{ 'servicehosting#tab-new-server'|alink }}" class="ms-auto btn btn-primary">
             <svg class="icon me-2">
                 <use xlink:href="#plus" />
@@ -130,7 +181,7 @@
     <hr>
 
     <div class="d-flex align-items-center mb-3">
-        <h5 class="mb-0">{{ 'Servers'|trans }}</h5>
+        <h3 class="mb-0">{{ 'Servers'|trans }}</h3>
         <a href="{{ 'servicehosting#tab-new-server'|alink }}" class="ms-auto btn btn-primary">
             <svg class="icon me-2">
                 <use xlink:href="#plus" />
