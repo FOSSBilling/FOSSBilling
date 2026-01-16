@@ -1,0 +1,8 @@
+{
+  "id": "lambda",
+  "type": "mod",
+  "name": "Lambda",
+  "description": "Lambda hooks for order activation",
+  "author": "Doz",
+  "version": "0.0.1"
+}
