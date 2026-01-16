@@ -176,9 +176,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
                 // Now pay the invoice / batch pay if there's no invoice associated with the transaction
-                if ($tx->invoice_id) {
+                // Skip payment for deposit invoices - funds were already added above
+                if ($tx->invoice_id && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
                     $invoiceService->payInvoiceWithCredits($invoice);
-                } else {
+                } elseif (!$tx->invoice_id) {
                     $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
                 }
             }
