@@ -2716,16 +2716,16 @@
         },
         {
             "name": "php-debugbar/php-debugbar",
-            "version": "v3.0.3",
+            "version": "v3.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-debugbar/php-debugbar.git",
-                "reference": "47d1bd578ba88a298e12f4b0ff9268485bf22ec9"
+                "reference": "930838bf3a95b3d76bb0c1a90279ba6d7e003d86"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-debugbar/php-debugbar/zipball/47d1bd578ba88a298e12f4b0ff9268485bf22ec9",
-                "reference": "47d1bd578ba88a298e12f4b0ff9268485bf22ec9",
+                "url": "https://api.github.com/repos/php-debugbar/php-debugbar/zipball/930838bf3a95b3d76bb0c1a90279ba6d7e003d86",
+                "reference": "930838bf3a95b3d76bb0c1a90279ba6d7e003d86",
                 "shasum": ""
             },
             "require": {
@@ -2802,7 +2802,7 @@
             ],
             "support": {
                 "issues": "https://github.com/php-debugbar/php-debugbar/issues",
-                "source": "https://github.com/php-debugbar/php-debugbar/tree/v3.0.3"
+                "source": "https://github.com/php-debugbar/php-debugbar/tree/v3.1.0"
             },
             "funding": [
                 {
@@ -2814,7 +2814,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-01-14T09:46:16+00:00"
+            "time": "2026-01-15T14:17:36+00:00"
         },
         {
             "name": "php-debugbar/twig-bridge",
@@ -8497,16 +8497,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "12.5.4",
+            "version": "12.5.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "4ba0e923f9d3fc655de22f9547c01d15a41fc93a"
+                "reference": "ba2d126905713bcf802c7f1e0d7507092ce9bf9a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/4ba0e923f9d3fc655de22f9547c01d15a41fc93a",
-                "reference": "4ba0e923f9d3fc655de22f9547c01d15a41fc93a",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/ba2d126905713bcf802c7f1e0d7507092ce9bf9a",
+                "reference": "ba2d126905713bcf802c7f1e0d7507092ce9bf9a",
                 "shasum": ""
             },
             "require": {
@@ -8520,7 +8520,7 @@
                 "phar-io/manifest": "^2.0.4",
                 "phar-io/version": "^3.2.1",
                 "php": ">=8.3",
-                "phpunit/php-code-coverage": "^12.5.1",
+                "phpunit/php-code-coverage": "^12.5.2",
                 "phpunit/php-file-iterator": "^6.0.0",
                 "phpunit/php-invoker": "^6.0.0",
                 "phpunit/php-text-template": "^5.0.0",
@@ -8574,7 +8574,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.4"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.5"
             },
             "funding": [
                 {
@@ -8598,7 +8598,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-12-15T06:05:34+00:00"
+            "time": "2026-01-15T12:03:46+00:00"
         },
         {
             "name": "react/cache",
