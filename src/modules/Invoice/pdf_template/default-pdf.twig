@@ -70,6 +70,12 @@
 		</p>
 		</div>
 
+		{% if invoice.text_1 %}
+			<div class='InvoiceText' style='margin: 10px 0; padding: 10px; background-color: #f5f5f5;'>
+				{{ invoice.text_1|markdown }}
+			</div>
+		{% endif %}
+
 		<div class='Breakdown' style='top: {{top}}px'>
 			<table style='width:100%'>
 				<tr>
@@ -111,6 +117,13 @@
 			</table>
 		<span class="muted-text">{{ footer.signature }}</span>
 		</div>
+
+		{% if invoice.text_2 %}
+			<div class='InvoiceText' style='margin: 10px 0; padding: 10px; background-color: #f5f5f5;'>
+				{{ invoice.text_2|markdown }}
+			</div>
+		{% endif %}
+
 		<div class='InvoiceFooter'>
 			{% if footer.display_bank_info == 1 %}
 				<b>{{ 'Payment details'|trans }}:</b><br >
