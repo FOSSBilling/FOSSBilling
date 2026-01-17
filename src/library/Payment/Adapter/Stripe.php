@@ -190,8 +190,15 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $paymentStatus = match ($charge->status) {
             'succeeded' => 'processed',
+            'requires_action' => 'received',
+            'requires_payment_method' => 'received',
+            'requires_confirmation' => 'received',
+            'requires_capture' => 'received',
+            'processing' => 'received',
             'pending' => 'received',
+            'canceled' => 'error',
             'failed' => 'error',
+            default => 'received',
         };
 
         $tx->status = $paymentStatus;
