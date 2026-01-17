@@ -571,6 +571,7 @@ class Service implements InjectionAwareInterface
         $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
         $order->config = json_encode($config);
         $order->invoice_option = $invoiceOption;
+        $order->form_id = $product->form_id;
 
         if ($period) {
             $bp = $this->di['period']($data['period']);

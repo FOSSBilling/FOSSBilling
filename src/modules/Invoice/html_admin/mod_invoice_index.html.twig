@@ -294,7 +294,7 @@
                             <div class="col">
                                 {% if not request.client_id %}
                                     <select class="form-control autocomplete-selector"
-                                            placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
+                                            placeholder="{{ 'Start Typing to select client'|trans }}"
                                             id="client_id"
                                             name="client_id"
                                             data-resturl="admin/client/get_pairs">
@@ -306,6 +306,18 @@
                                 {% endif %}
                             </div>
                         </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label" for="product_id">{{ 'Product'|trans }}</label>
+                            <div class="col">
+                                <select class="form-control autocomplete-selector"
+                                        placeholder="{{ 'Start typing to select product (optional)'|trans }}"
+                                        id="product_id"
+                                        name="product_id"
+                                        data-resturl="admin/product/get_pairs">
+                                </select>
+                                <small class="form-text text-muted">{{ 'Optionally select a product to pre-fill title and price'|trans }}</small>
+                            </div>
+                        </div>
                         <input type="submit" value="{{ 'Prepare'|trans }}" class="btn btn-primary">
                     </form>
                 </div>
@@ -314,10 +326,98 @@
     </div>
 {% endblock %}
 
-{% block js%}
+ {% block js%}
 <script>
     function onAfterInvoicePrepared(id) {
         window.location = "{{ 'invoice/manage/'|alink }}/" + id;
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const productSelect = document.getElementById('product_id');
+        const form = document.querySelector('form[action*="/api/admin/invoice/prepare"]');
+
+        if (productSelect) {
+            productSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (!selectedOption.value) {
+                    return;
+                }
+
+                const productId = selectedOption.value;
+                const productTitle = selectedOption.text;
+
+                // Check if product items container exists
+                let itemsContainer = document.getElementById('selected-product-items');
+                if (!itemsContainer) {
+                    itemsContainer = document.createElement('div');
+                    itemsContainer.id = 'selected-product-items';
+                    itemsContainer.className = 'card-body border-top';
+                    itemsContainer.innerHTML = `
+                        <h6 class="mb-3">{{ 'Selected products to be added as invoice items'|trans }}</h6>
+                        <div id="products-list"></div>
+                    `;
+                    form.querySelector('.card-body').appendChild(itemsContainer);
+                }
+
+                // Add product to the list
+                const productsList = document.getElementById('products-list');
+                const productDiv = document.createElement('div');
+                productDiv.className = 'mb-3 row align-items-center';
+                productDiv.dataset.productId = productId;
+                productDiv.dataset.productTitle = productTitle;
+                productDiv.innerHTML = `
+                    <div class="col">
+                        <input type="text" name="products[${productId}][title]" value="${productTitle}" class="form-control" readonly>
+                    </div>
+                    <div class="col-3">
+                        <input type="number" name="products[${productId}][quantity]" value="1" min="1" class="form-control" placeholder="{{ 'Quantity'|trans }}">
+                    </div>
+                    <div class="col-3">
+                        <input type="number" name="products[${productId}][price]" step="0.01" class="form-control" placeholder="{{ 'Price'|trans }}">
+                    </div>
+                    <div class="col-1">
+                        <button type="button" class="btn btn-icon btn-danger" onclick="this.closest('.row').remove()">
+                            <svg class="icon">
+                                <use xlink:href="#delete" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                productsList.appendChild(productDiv);
+            });
+        }
+
+        // Convert selected products to invoice items format on form submit
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const productItems = document.querySelectorAll('#selected-product-items .row[data-product-id]');
+                const items = [];
+
+                productItems.forEach(itemDiv => {
+                    const productId = itemDiv.dataset.productId;
+                    const titleInput = itemDiv.querySelector(`input[name*="[${productId}][title]"]`);
+                    const quantityInput = itemDiv.querySelector(`input[name*="[${productId}][quantity]"]`);
+                    const priceInput = itemDiv.querySelector(`input[name*="[${productId}][price]"]`);
+
+                    if (titleInput && quantityInput && priceInput && quantityInput.value > 0 && priceInput.value > 0) {
+                        items.push({
+                            'title' => titleInput.value,
+                            'price' => priceInput.value,
+                            'quantity' => parseInt(quantityInput.value),
+                            'taxed' => '0'
+                        });
+                    }
+                });
+
+                if (items.length > 0) {
+                    const itemsInput = document.createElement('input');
+                    itemsInput.type = 'hidden';
+                    itemsInput.name = 'items';
+                    itemsInput.value = JSON.stringify(items);
+                    form.appendChild(itemsInput);
+                }
+            });
+        }
+    });
 </script>
 {% endblock %}
