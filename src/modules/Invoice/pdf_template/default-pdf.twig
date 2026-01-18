@@ -4,6 +4,12 @@
 	{% set top = 275 + (25 * seller_lines) %}
 {% endif %}
 
+{% set max_lines = buyer_lines >= seller_lines ? buyer_lines : seller_lines %}
+{% set text_1_top = 185 + (max_lines * 20) %}
+
+{% set line_items = invoice.lines|length %}
+{% set text_2_top = 420 + (25 * max_lines) + (line_items * 25) + (invoice.tax > 0 ? 25 : 0) + ((invoice.discount|default and invoice.discount > 0) ? 25 : 0) %}
+
 {% set address_lines = [] %}
 	{% for line in [footer.address_1, footer.address_2, footer.address_3] %}
 		{% if line|length > 0 %}
@@ -18,63 +24,52 @@
 		<meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
 		<title>{{ invoice.serie_nr }}</title>
 		<style>
-			{{css}}
+			{{ css }}
 		</style>
 	</head>
 	<body>
 		{% if logo_source is not empty %}
 			<img src='{{ logo_source }}' height='50' class='CompanyLogo'>
 		{% endif %}
-		<hr class='Rounded'>
+		<hr class='TopSectionDivider'>
 		<div class='InvoiceInfo'>
-			<p>{{ 'Invoice number'|trans }}: {{ invoice.serie_nr }}</p>
-			<p>{{ 'Invoice date'|trans }}: {{ invoice.created_at|format_date }}</p>
-			<p>{{ 'Due date'|trans }}: {{ invoice.due_at|format_date }}</p>
-			<p>{{ 'Invoice status'|trans }}: {{ invoice.status|capitalize }}</p>
-			{% if invoice.orders is defined and invoice.orders|length > 0 %}
-				{% for order in invoice.orders %}
-					<p>{{ 'Order ID'|trans }}: #{{ order.id }}</p>
-					{% if order.product_name is defined %}
-						<p>{{ 'Product'|trans }}: {{ order.product_name }}</p>
-					{% endif %}
-					{% if order.expires_at is defined %}
-						<p>{{ 'Renewal Date'|trans }}: {{ order.expires_at|format_date }}</p>
-					{% endif %}
-				{% endfor %}
-			{% endif %}
+			<p>{{ 'Invoice Number'|trans }}: {{ invoice.serie_nr }}</p>
+			<p>{{ 'Invoice Date'|trans }}: {{ invoice.created_at|format_date }}</p>
+			<p>{{ 'Due Date'|trans }}: {{ invoice.due_at|format_date }}</p>
+			<p>{{ 'Invoice Status'|trans }}: {{ invoice.status|capitalize }}</p>
 		</div>
 
 		<h3 class='CompanyInfo'>{{ 'Company'|trans }}</h3>
 		<div class='CompanyInfo'>
-		<p>
-		{% for key, value in seller %}
-		{% if key == 'Name' %}<b>{% endif %}
-		{% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
-		{% if key == 'VAT Number' %} {{ 'VAT Number'|trans }} :{% endif %}
-				{{ value }}<br>
-		{% if key == 'Name' %}</b>{% endif %}
-		{% endfor %}
-		</p>
+            <p>
+                {% for key, value in seller %}
+                    {% if key == 'Name' %}<b>{% endif %}
+                    {% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
+                    {% if key == 'VAT Number' %} {{ 'VAT Number'|trans }} :{% endif %}
+                            {{ value }}<br>
+                    {% if key == 'Name' %}</b>{% endif %}
+                {% endfor %}
+            </p>
 		</div>
 
 		<h3 class='ClientInfo'>{{ 'Client'|trans }}</h3>
 		<div class='ClientInfo'>
-		<p>
-		{% for key, value in buyer %}
-		{% if key == 'Company' %}<b>{% endif %}
-		{% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
-		{% if key == 'VAT Number' %} {{ 'VAT Number'|trans }} :{% endif %}
-				{{ value }}<br>
-		{% if key == 'Company' %}</b>{% endif %}
-		{% endfor %}
-		</p>
+            <p>
+            {% for key, value in buyer %}
+                {% if key == 'Company' %}<b>{% endif %}
+                {% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
+                {% if key == 'VAT Number' %} {{ 'VAT Number'|trans }} :{% endif %}
+                        {{ value }}<br>
+                {% if key == 'Company' %}</b>{% endif %}
+            {% endfor %}
+            </p>
 		</div>
 
-		{% if invoice.text_1 %}
-			<div class='InvoiceText' style='margin: 10px 0; padding: 10px; background-color: #f5f5f5;'>
-				{{ invoice.text_1|markdown }}
-			</div>
-		{% endif %}
+        <div class='InvoiceText' style='top: {{ text_1_top }}px;'>
+            {% if invoice.text_1 %}
+                {{ invoice.text_1|markdown }}
+            {% endif %}
+        </div>
 
 		<div class='Breakdown' style='top: {{top}}px'>
 			<table style='width:100%'>
@@ -115,14 +110,13 @@
 					<th style='text-align: right'>{{ invoice.total|money(currency_code) }}</th>
 				</tr>
 			</table>
-		<span class="muted-text">{{ footer.signature }}</span>
 		</div>
 
-		{% if invoice.text_2 %}
-			<div class='InvoiceText' style='margin: 10px 0; padding: 10px; background-color: #f5f5f5;'>
-				{{ invoice.text_2|markdown }}
-			</div>
-		{% endif %}
+        <div class='InvoiceText' style='top: {{ text_2_top }}px;'>
+            {% if invoice.text_2 %}
+                {{ invoice.text_2|markdown }}
+            {% endif %}
+        </div>
 
 		<div class='InvoiceFooter'>
 			{% if footer.display_bank_info == 1 %}
@@ -137,6 +131,8 @@
 			{% if footer.company_vat %} <b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | {% endif %}
 			{% if footer.company_number %} <b>{{ 'Company Registration #:'|trans }}</b> {{ footer.company_number }} | {% endif %}
 			<b>{{ 'Website'|trans }}: </b>{{ footer.www }}
+            </br>
+            <span class="muted-text">{{ footer.signature }}</span>
 		</div>
 	</body>
 </html>
