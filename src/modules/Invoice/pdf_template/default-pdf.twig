@@ -54,15 +54,15 @@
 
 		<h3 class='ClientInfo'>{{ 'Client'|trans }}</h3>
 		<div class='ClientInfo'>
-            <p>
-            {% for key, value in buyer %}
-                {% if key == 'Company' %}<b>{% endif %}
-                {% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
-                {% if key == 'VAT Number' %} {{ 'VAT Number'|trans }} :{% endif %}
-                        {{ value }}<br>
-                {% if key == 'Company' %}</b>{% endif %}
-            {% endfor %}
-            </p>
+			<p>
+			{% for key, value in buyer %}
+				{% if key == 'Company' %}<b>{% endif %}
+				{% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
+				{% if key == 'VAT Number' %} {{ 'VAT Number'|trans }} :{% endif %}
+						{{ value }}<br>
+				{% if key == 'Company' %}</b>{% endif %}
+			{% endfor %}
+			</p>
 		</div>
 
         <div class='InvoiceText' style='top: {{ text_1_top }}px;'>
