@@ -112,11 +112,11 @@
 			</table>
 		</div>
 
-        <div class='InvoiceText' style='top: {{ text_2_top }}px;'>
-            {% if invoice.text_2 %}
+        {% if invoice.text_2 %}
+            <div class='InvoiceText' style='top: {{ text_2_top }}px;'>
                 {{ invoice.text_2|markdown }}
-            {% endif %}
-        </div>
+            </div>
+        {% endif %}
 
 		<div class='InvoiceFooter'>
 			{% if footer.display_bank_info == 1 %}
