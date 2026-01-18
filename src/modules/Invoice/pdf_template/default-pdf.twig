@@ -4,7 +4,7 @@
 	{% set top = 275 + (25 * seller_lines) %}
 {% endif %}
 
-{% set max_lines = buyer_lines >= seller_lines ? buyer_lines : seller_lines %}
+{% set max_lines = (top - 275) / 25 %}
 {% set text_1_top = 185 + (max_lines * 25) %}
 
 {% set line_items = invoice.lines|length %}
