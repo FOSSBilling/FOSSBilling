@@ -65,11 +65,11 @@
 			</p>
 		</div>
 
-        <div class='InvoiceText' style='top: {{ text_1_top }}px;'>
-            {% if invoice.text_1 %}
-                {{ invoice.text_1|markdown }}
-            {% endif %}
-        </div>
+		<div class='InvoiceText' style='top: {{ text_1_top }}px;'>
+			{% if invoice.text_1 %}
+				{{ invoice.text_1|markdown }}
+			{% endif %}
+		</div>
 
 		<div class='Breakdown' style='top: {{top}}px'>
 			<table style='width:100%'>
