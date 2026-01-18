@@ -85,7 +85,7 @@
 </div>
 {% endblock %}
 
-{% block js %}
+ {% block js %}
 <script>
     function onAfterOrderPlaced(id) {
         window.location = "{{ 'order/manage/'|alink }}/" + id;
@@ -114,6 +114,26 @@
 
         if (optionSelected.dataset.status == 0) {
             addNotification("{{ 'Product is disabled in configuration'|trans }}");
+        }
+    });
+
+    // Parse URL parameters for pre-filling form values
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+
+        // Handle period parameter
+        const periodParam = urlParams.get('period');
+        if (periodParam) {
+            const periodSelect = document.getElementById('period');
+            if (periodSelect) {
+                for (let i = 0; i < periodSelect.options.length; i++) {
+                    if (periodSelect.options[i].value === periodParam) {
+                        periodSelect.selectedIndex = i;
+                        periodSelect.dispatchEvent(new Event('change'));
+                        break;
+                    }
+                }
+            }
         }
     });
 </script>
