@@ -1045,13 +1045,42 @@ class Service implements InjectionAwareInterface
 
     public function prependOrderConfig(\Model_Product $product, array $data): array
     {
+        $c = json_decode($product->config ?? '', true) ?? [];
+
+        if (isset($data['domain']['action'])) {
+            $this->validateDomainAction($data, $c);
+        }
+        
         [$sld, $tld] = $this->_getDomainTuple($data);
         $data['sld'] = $sld;
         $data['tld'] = $tld;
 
-        $c = json_decode($product->config ?? '', true) ?? [];
-
         return array_merge($c, $data);
+    }
+
+    /**
+     * Validates that the requested domain action is allowed for this product.
+     *
+     * @param array $data          The order data containing domain configuration
+     * @param array $productConfig The product configuration
+     *
+     * @throws InformationException if the domain action is not allowed
+     */
+    private function validateDomainAction(array $data, array $productConfig): void
+    {
+        $action = $data['domain']['action'];
+
+        // Settings default to true for backward compatibility
+        $allowRegister = $productConfig['allow_domain_register'] ?? true;
+        $allowTransfer = $productConfig['allow_domain_transfer'] ?? true;
+        $allowOwn = $productConfig['allow_domain_own'] ?? true;
+
+        match ($action) {
+            'register' => $allowRegister || throw new InformationException('Domain registration is not available for this product.'),
+            'transfer' => $allowTransfer || throw new InformationException('Domain transfer is not available for this product.'),
+            'owndomain' => $allowOwn || throw new InformationException('Using your own domain is not allowed for this product.'),
+            default => throw new InformationException('Invalid domain action specified.'),
+        };
     }
 
     public function getDomainProductFromConfig(\Model_Product $product, array &$data): bool|array
