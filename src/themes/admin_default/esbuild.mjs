@@ -1,7 +1,7 @@
 import * as esbuild from 'esbuild';
 import { fileURLToPath } from 'url';
 import { dirname, resolve, join, basename } from 'path';
-import { readFile, readdir, copyFile, writeFile } from 'fs/promises';
+import { readFile, readdir, writeFile } from 'fs/promises';
 import { sassPlugin, postprocessCssFile } from '@fossbilling/frontend-build-utils/plugins';
 import { ensureDir, removeDirContents } from '@fossbilling/frontend-build-utils/helpers';
 import { purgeCssFile } from '@fossbilling/frontend-build-utils/purgecss-plugin.mjs';
