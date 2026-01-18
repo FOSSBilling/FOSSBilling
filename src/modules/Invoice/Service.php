@@ -193,7 +193,7 @@ class Service implements InjectionAwareInterface
         $result['nr'] = $row['nr'];
         $result['client_id'] = $invoice->client_id;
 
-        $nr = (is_numeric($result['nr'])) ? $result['nr'] : $result['id'];
+        $nr = is_numeric($row['nr']) ? intval($row['nr']) : $result['id'];
         $result['serie_nr'] = $result['serie'] . sprintf('%0' . $invoice_number_padding . 's', $nr);
 
         $result['hash'] = $row['hash'];
@@ -1336,7 +1336,6 @@ class Service implements InjectionAwareInterface
         $pdf->setPaper($document_format, 'portrait');
         $options = $pdf->getOptions();
         $options->setChroot($_SERVER['DOCUMENT_ROOT']);
-        $options->setDefaultFont('DejaVu Sans');
 
         $sellerLines = 0;
         $buyerLines = 0;

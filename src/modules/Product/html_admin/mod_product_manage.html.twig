@@ -345,6 +345,26 @@
                 btn.setAttribute('href', "{{ 'extension/settings/formbuilder'|alink }}");
             }
         }
+
+        const urlHash = window.location.hash;
+        if (urlHash && urlHash.startsWith('#tab-')) {
+            const tabId = urlHash.substring(5);
+            const tabEl = document.querySelector(`[data-bs-target="#tab-${tabId}"]`);
+            if (tabEl) {
+                const tab = new bootstrap.Tab(tabEl);
+                tab.show();
+            }
+        }
+
+        document.querySelectorAll('.nav-tabs .nav-link').forEach(tabEl => {
+            tabEl.addEventListener('shown.bs.tab', function(e) {
+                const targetId = e.target.getAttribute('data-bs-target');
+                if (targetId && targetId.startsWith('#tab-')) {
+                    const tabName = targetId.substring(5);
+                    history.replaceState(null, null, '#' + tabName);
+                }
+            });
+        });
     });
 </script>
 {% endblock %}

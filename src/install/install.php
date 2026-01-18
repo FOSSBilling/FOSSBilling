@@ -152,6 +152,11 @@ final class FOSSBilling_Installer
                     // Set if they've opted into error reporting
                     $this->session->set('error_reporting', $_POST['error_reporting']);
 
+                    // Set up default currency before validation to preserve user selection if validation fails
+                    $this->session->set('currency_code', $_POST['currency_code']);
+                    $this->session->set('currency_title', $_POST['currency_title']);
+                    $this->session->set('currency_format', $_POST['currency_format'] ?? '${{price}}');
+
                     // Handle database information
                     $this->session->set('database_hostname', $_POST['database_hostname']);
                     $this->session->set('database_port', $_POST['database_port']);
@@ -172,11 +177,6 @@ final class FOSSBilling_Installer
                     }
 
                     $this->validateAdmin();
-
-                    // Set up default currency
-                    $this->session->set('currency_code', $_POST['currency_code']);
-                    $this->session->set('currency_title', $_POST['currency_title']);
-                    $this->session->set('currency_format', $_POST['currency_format'] ?? '${{price}}');
 
                     // Attempt installation
                     $this->install();

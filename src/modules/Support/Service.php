@@ -230,10 +230,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * Find ticket for client.
-     *
-     * @param int $id
-     *
-     * @return \Model_SupportTicket
      */
     public function findOneByClient(\Model_Client $c, int $id): \Model_SupportTicket
     {
@@ -398,8 +394,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function countByStatus(string $status): int
     {
-        $query = "SELECT COUNT(id) as counter FROM support_ticket
-                WHERE status = :status GROUP BY status LIMIT 1";
+        $query = 'SELECT COUNT(id) as counter FROM support_ticket
+                WHERE status = :status GROUP BY status LIMIT 1';
 
         return $this->di['db']->getCell($query, [':status' => $status]);
     }
@@ -1548,7 +1544,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $filter[':q'] = "%$search%";
         }
 
-        $sql .= ' ORDER BY kb_article_category_id DESC, views DESC';
+        $sql .= ' ORDER BY title ASC';
 
         return $this->di['pager']->getPaginatedResultSet($sql, $filter, $per_page, $page);
     }
