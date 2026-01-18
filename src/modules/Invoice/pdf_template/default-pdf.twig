@@ -41,15 +41,15 @@
 
 		<h3 class='CompanyInfo'>{{ 'Company'|trans }}</h3>
 		<div class='CompanyInfo'>
-            <p>
-                {% for key, value in seller %}
-                    {% if key == 'Name' %}<b>{% endif %}
-                    {% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
-                    {% if key == 'VAT Number' %} {{ 'VAT Number'|trans }} :{% endif %}
-                            {{ value }}<br>
-                    {% if key == 'Name' %}</b>{% endif %}
-                {% endfor %}
-            </p>
+			<p>
+				{% for key, value in seller %}
+					{% if key == 'Name' %}<b>{% endif %}
+					{% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
+					{% if key == 'VAT Number' %} {{ 'VAT Number'|trans }} :{% endif %}
+							{{ value }}<br>
+					{% if key == 'Name' %}</b>{% endif %}
+				{% endfor %}
+			</p>
 		</div>
 
 		<h3 class='ClientInfo'>{{ 'Client'|trans }}</h3>
