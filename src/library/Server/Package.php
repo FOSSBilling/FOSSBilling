@@ -118,7 +118,7 @@ class Server_Package
     }
 
     /**
-     * Set the disk quota of the Server_Package instance MB.
+     * Set the disk quota of the Server_Package instance in MB.
      *
      * @param string|null $quota the quota to be set
      *
