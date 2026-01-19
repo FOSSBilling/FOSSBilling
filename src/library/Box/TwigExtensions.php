@@ -280,7 +280,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
      * 
      * @param string $email The user's email address.
      * @param int $size 
-     * @return string 
+     * @return string The URL for the profile picture
      */
     public function twig_gravatar_filter(string $email, $size = 20): string
     {
@@ -291,7 +291,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         $url = 'https://seccdn.libravatar.org/avatar/';
         $url .= md5(strtolower(trim((string) $email)));
 
-        return $url . "?s=$size";
+        return $url . "?s=$size&d=identicon";
     }
 
     public function twig_autolink_filter($text): ?string
