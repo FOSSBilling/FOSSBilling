@@ -1,7 +1,7 @@
-import { Tooltip, Toast, Modal} from 'bootstrap/dist/js/bootstrap.esm.js';
+import { Tooltip, Toast, Modal } from 'bootstrap/dist/js/bootstrap.esm.js';
 import './js/utils';
 
-globalThis.bootstrap = { Tooltip, Toast, Modal};
+globalThis.bootstrap = { Tooltip, Toast, Modal };
 
 document.addEventListener('DOMContentLoaded', () => {
   /**
