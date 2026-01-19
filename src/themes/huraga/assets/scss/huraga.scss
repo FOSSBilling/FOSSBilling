@@ -342,9 +342,12 @@ body {
 
 // Language selector vertical alignment in navbar
 .nav-item {
+    display: flex;
+    align-items: center;
+
     .form-select.js-language-selector {
-        color: #000000;
-        padding: 0.25rem 2rem 0.25rem 0.75rem;
+        color: var(--bs-body-color);
+        padding: 0.5rem 2rem 0.5rem 0.75rem;
         font-size: 0.875rem;
         line-height: 1.5;
         min-height: auto;
@@ -365,9 +368,19 @@ body {
 
 // Nav-link vertical alignment with language selector
 .navbar-nav {
+    align-items: center;
+    gap: 0.25rem;
+
     .nav-link {
-        padding-top: 0.25rem;
-        padding-bottom: 0.25rem;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    > .btn {
+        margin-top: 0;
+        margin-bottom: 0;
+        display: inline-flex;
+        align-items: center;
     }
 }
 .toast-container-zindex {
