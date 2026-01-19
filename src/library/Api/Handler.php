@@ -105,7 +105,6 @@ final class Api_Handler implements InjectionAwareInterface
             }
         }
 
-        // Validate required parameters using attributes
         $data = is_array($arguments) ? $arguments : [];
 
         $this->validateRequiredParams($api, $method_name, $data);
@@ -116,10 +115,10 @@ final class Api_Handler implements InjectionAwareInterface
     /**
      * Validate required parameters for an API method using attributes.
      *
-     * @param Api_Abstract $api The API instance
-     * @param string $method_name The method name
-     * @param array $data The data array passed to the method
-     * @return void
+     * @param Api_Abstract $api         The API instance
+     * @param string       $method_name The method name
+     * @param array        $data        The data array passed to the method
+     *
      * @throws FOSSBilling\InformationException If required parameters are missing
      */
     public function validateRequiredParams(Api_Abstract $api, string $method_name, array $data): void
@@ -131,7 +130,6 @@ final class Api_Handler implements InjectionAwareInterface
             return;
         }
 
-        // Get RequiredParams attributes
         $attributes = $reflection->getAttributes(FOSSBilling\Validation\Api\RequiredParams::class);
 
         if (empty($attributes)) {
@@ -141,19 +139,15 @@ final class Api_Handler implements InjectionAwareInterface
         foreach ($attributes as $attribute) {
             $instance = $attribute->newInstance();
 
-            // Validate each required parameter
             foreach ($instance->params as $paramName => $errorMessage) {
-                // Check if parameter exists in data array
                 if (!isset($data[$paramName])) {
                     throw new FOSSBilling\InformationException($errorMessage);
                 }
 
-                // Check if the parameter is an empty string
                 if (is_string($data[$paramName]) && strlen(trim($data[$paramName])) === 0) {
                     throw new FOSSBilling\InformationException($errorMessage);
                 }
 
-                // Check if the parameter is empty (but allow numeric 0)
                 if (!is_numeric($data[$paramName]) && empty($data[$paramName])) {
                     throw new FOSSBilling\InformationException($errorMessage);
                 }

@@ -528,7 +528,7 @@
 {% block js %}
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
         <script>
-            $(function() {
+            document.addEventListener('DOMContentLoaded', function() {
                 setPlotDataData('chart-income', {{ admin.stats_get_income({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Income'|trans }}" );
                 setPlotDataData('chart-orders', {{ admin.stats_get_orders({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Orders'|trans }}" );
                 setPlotDataData('chart-invoices', {{ admin.stats_get_invoices({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }},"{{ 'Invoices'|trans }}" );
@@ -589,7 +589,7 @@
                     labels: {
                         show: false,
                     },
-                    colors:  (localStorage.getItem('theme') === 'dark') ? ["#91bbed"] : ["#206bc4"] ,
+                    colors:  (localStorage.getItem('theme') === 'dark') ? ["#91bbed"] : ["#206bc4"],
                     theme : {
                         mode: (localStorage.getItem('theme') === 'dark') ? 'dark' : 'light',
                         monochrome: {

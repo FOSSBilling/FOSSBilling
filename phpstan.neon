@@ -39,4 +39,3 @@ parameters:
 		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$updated_at\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$created_at\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$id\.$#'
-		# PHPStan occasionally gets confused by polyfilled ctype functions

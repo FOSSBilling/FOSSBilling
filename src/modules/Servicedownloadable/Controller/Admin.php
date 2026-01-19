@@ -9,9 +9,9 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Dashboard\Controller;
+namespace Box\Mod\Servicedownloadable\Controller;
 
-class Client implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -25,15 +25,19 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\Box_App &$app)
     {
-        $app->get('/dashboard', 'get_dashboard_index', [], static::class);
+        $app->get('/servicedownloadable/get-file/:id', 'get_download', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_dashboard_index(\Box_App $app): string
+    public function get_download(\Box_App $app, $id)
     {
-        $this->di['is_client_logged'];
+        $this->di['is_admin_logged'];
 
-        return $app->render('mod_dashboard_index');
+        $api = $this->di['api_admin'];
+        $data = [
+            'id' => $id,
+        ];
+        $api->servicedownloadable_send_file($data);
     }
 }

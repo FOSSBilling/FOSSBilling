@@ -15,16 +15,11 @@ use FOSSBilling\Config;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
-use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
-use Lcharette\WebpackEncoreTwig\JsonManifest;
-use Lcharette\WebpackEncoreTwig\TagRenderer;
-use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
 use League\Csv\Writer;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
 use Twig\Extension\StringLoaderExtension;
@@ -298,14 +293,6 @@ $di['twig'] = $di->factory(function () use ($di) {
 
     $box_extensions = new Box_TwigExtensions();
     $box_extensions->setDi($di);
-
-    if ($di['encore_info']['is_encore_theme']) {
-        $entryPoints = new EntrypointLookup($di['encore_info']['entrypoints']);
-        $tagRenderer = new TagRenderer($entryPoints);
-        $encoreExtensions = new EntrypointsTwigExtension($entryPoints, $tagRenderer);
-        $twig->addExtension($encoreExtensions);
-        $twig->addExtension(new VersionedAssetsTwigExtension(new JsonManifest($di['encore_info']['manifest'])));
-    }
 
     // $twig->addExtension(new OptimizerExtension());
     $twig->addExtension(new StringLoaderExtension());
@@ -665,16 +652,6 @@ $di['theme'] = function () use ($di) {
     $service = $di['mod_service']('theme');
 
     return $service->getCurrentClientAreaTheme();
-};
-
-/*
- * Gets the information of Webpack Encore for the current route theme.
- * @return string
- */
-$di['encore_info'] = function () use ($di) {
-    $service = $di['mod_service']('theme');
-
-    return $service->getEncoreInfo();
 };
 
 /*

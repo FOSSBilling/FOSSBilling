@@ -496,14 +496,14 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
 
         // Only mock getExtensionPath to return our temp dir, let other methods work normally
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getExtensionPath'])
             ->setConstructorArgs([$this->filesystemMock])
             ->getMock();
 
         // Create temp directory that actually exists for the first test
         $tmpDir = sys_get_temp_dir() . '/fb_test_ext_' . uniqid();
-        mkdir($tmpDir, 0755, true);
+        mkdir($tmpDir, 0o755, true);
 
         // Configure getExtensionPath to return the temp directory
         $serviceMock->expects($this->atLeastOnce())

@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Currency\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -343,14 +344,14 @@ final class Api_AdminTest extends \BBTestCase
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
-        
+
         // Create mock if needed
         if ($findOneByCodeReturn === 'currency_exists') {
             $findOneByCodeReturn = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
                 ->disableOriginalConstructor()
                 ->getMock();
         }
-        
+
         $repositoryMock->expects($this->$findOneByCodeCalled())
             ->method('findOneByCode')
             ->willReturn($findOneByCodeReturn);
@@ -363,7 +364,6 @@ final class Api_AdminTest extends \BBTestCase
         $service->expects($this->$getAvailableCurrenciesCalled())
             ->method('getAvailableCurrencies')
             ->willReturn($this->availableCurrencies);
-
 
         $di = $this->getDi();
         $adminApi->setService($service);
@@ -399,7 +399,6 @@ final class Api_AdminTest extends \BBTestCase
             ->method('createCurrency')
             ->willReturn($data['code']);
 
-
         $di = $this->getDi();
         $adminApi->setService($service);
         $adminApi->setDi($di);
@@ -427,7 +426,6 @@ final class Api_AdminTest extends \BBTestCase
         $service->expects($this->atLeastOnce())
             ->method('updateCurrency')
             ->willReturn(true);
-
 
         $di = $this->getDi();
         $adminApi->setDi($di);
@@ -476,7 +474,6 @@ final class Api_AdminTest extends \BBTestCase
         $service->expects($this->atLeastOnce())
             ->method('deleteCurrencyByCode')
             ->willReturn(true);
-
 
         $di = $this->getDi();
         $di['validator'] = new \FOSSBilling\Validate();
@@ -554,7 +551,6 @@ final class Api_AdminTest extends \BBTestCase
         $service->expects($this->atLeastOnce())
             ->method('setAsDefault')
             ->willReturn(true);
-
 
         $di = $this->getDi();
         $adminApi->setDi($di);

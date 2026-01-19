@@ -1,12 +1,15 @@
 {
   "name": "huraga",
   "scripts": {
-    "dev-server": "encore dev-server",
-    "dev": "encore dev",
-    "watch": "encore dev --watch",
-    "build": "encore production --progress"
+    "dev": "node ./esbuild.mjs --watch",
+    "build": "node ./esbuild.mjs"
   },
   "dependencies": {
-    "github-markdown-css": "^5.7.0"
+    "github-markdown-css": "^5.7.0",
+    "tom-select": "^2.2.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.27.2",
+    "sass": "1.97.2"
   }
 }

@@ -1198,7 +1198,7 @@ final class AdminTest extends \BBTestCase
 
     public function testBatchDelete(): void
     {
-        $activityMock = $this->getMockBuilder(\Box\Mod\Invoice\Api\Admin::class)->onlyMethods(['delete'])->getMock();
+        $activityMock = $this->getMockBuilder(Admin::class)->onlyMethods(['delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('delete')->willReturn(true);
 
         $di = $this->getDi();
@@ -1210,7 +1210,7 @@ final class AdminTest extends \BBTestCase
 
     public function testBatchDeleteSubscription(): void
     {
-        $activityMock = $this->getMockBuilder(\Box\Mod\Invoice\Api\Admin::class)->onlyMethods(['subscription_delete'])->getMock();
+        $activityMock = $this->getMockBuilder(Admin::class)->onlyMethods(['subscription_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('subscription_delete')->willReturn(true);
 
         $di = $this->getDi();
@@ -1222,7 +1222,7 @@ final class AdminTest extends \BBTestCase
 
     public function testBatchDeleteTransaction(): void
     {
-        $activityMock = $this->getMockBuilder(\Box\Mod\Invoice\Api\Admin::class)->onlyMethods(['transaction_delete'])->getMock();
+        $activityMock = $this->getMockBuilder(Admin::class)->onlyMethods(['transaction_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('transaction_delete')->willReturn(true);
 
         $di = $this->getDi();
@@ -1234,7 +1234,7 @@ final class AdminTest extends \BBTestCase
 
     public function testBatchDeleteTax(): void
     {
-        $activityMock = $this->getMockBuilder(\Box\Mod\Invoice\Api\Admin::class)->onlyMethods(['tax_delete'])->getMock();
+        $activityMock = $this->getMockBuilder(Admin::class)->onlyMethods(['tax_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('tax_delete')->willReturn(true);
 
         $di = $this->getDi();

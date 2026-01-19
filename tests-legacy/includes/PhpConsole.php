@@ -143,6 +143,7 @@ class PhpConsole
             self::flushMessagesBuffer();
         }
     }
+
     protected function convertTraceToArray($traceData, $eventFile = null, $eventLine = null): array
     {
         $trace = [];

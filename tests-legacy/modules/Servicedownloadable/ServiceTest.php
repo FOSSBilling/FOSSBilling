@@ -36,7 +36,7 @@ final class ServiceTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
@@ -65,7 +65,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(1);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -95,5 +95,103 @@ final class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $this->service->action_delete($clientOrderModel);
+    }
+
+    public function testSaveProductConfig(): void
+    {
+        $data = [
+            'update_orders' => true,
+        ];
+
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->config = '{"filename": "test.txt"}';
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($productModel)
+            ->willReturn(1);
+
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+        $result = $this->service->saveProductConfig($productModel, $data);
+
+        $this->assertIsBool($result);
+        $this->assertTrue($result);
+
+        // Verify the config was updated correctly
+        $updatedConfig = json_decode($productModel->config, true);
+        $this->assertIsArray($updatedConfig);
+        $this->assertEquals('test.txt', $updatedConfig['filename']);
+        $this->assertTrue($updatedConfig['update_orders']);
+        $this->assertNotNull($productModel->updated_at);
+    }
+
+    public function testSaveProductConfigWithExistingConfig(): void
+    {
+        $data = [
+            'update_orders' => false,
+        ];
+
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->config = '{"filename": "existing.txt", "update_orders": true}';
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($productModel)
+            ->willReturn(1);
+
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+        $result = $this->service->saveProductConfig($productModel, $data);
+
+        $this->assertIsBool($result);
+        $this->assertTrue($result);
+
+        // Verify the config was updated correctly
+        $updatedConfig = json_decode($productModel->config, true);
+        $this->assertIsArray($updatedConfig);
+        $this->assertEquals('existing.txt', $updatedConfig['filename']);
+        $this->assertFalse($updatedConfig['update_orders']);
+        $this->assertNotNull($productModel->updated_at);
+    }
+
+    public function testSaveProductConfigWithNoExistingConfig(): void
+    {
+        $data = [
+            'update_orders' => true,
+        ];
+
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->config = null;
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($productModel)
+            ->willReturn(1);
+
+        $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+        $result = $this->service->saveProductConfig($productModel, $data);
+
+        $this->assertIsBool($result);
+        $this->assertTrue($result);
+
+        // Verify the config was created correctly
+        $updatedConfig = json_decode($productModel->config, true);
+        $this->assertIsArray($updatedConfig);
+        $this->assertTrue($updatedConfig['update_orders']);
+        $this->assertNotNull($productModel->updated_at);
     }
 }

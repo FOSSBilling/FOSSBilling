@@ -565,7 +565,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn(true);
 
         $di = $this->getDi();
-        $di["validator"] = new \FOSSBilling\Validate();
+        $di['validator'] = new \FOSSBilling\Validate();
         $di['db'] = $dbMock;
 
         $this->adminApi->setDi($di);

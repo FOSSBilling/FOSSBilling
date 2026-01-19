@@ -1,0 +1,12 @@
+{
+  "name": "@fossbilling/frontend-build-utils",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared build utilities for FOSSBilling frontend themes and modules",
+  "exports": {
+    "./plugins": "./plugins.mjs",
+    "./helpers": "./helpers.mjs",
+    "./purgecss-plugin.mjs": "./purgecss-plugin.mjs"
+  }
+}
