@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Client;
 
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -487,9 +488,29 @@ class Service implements InjectionAwareInterface
         $system = $this->di['mod']('system');
         $systemCfg = $system->getConfig();
 
-        $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
+        // Special handling for the phone county codes
+        $phoneCC = $data['phone_cc'] ?? null;
         if (!empty($phoneCC)) {
+            if (!is_numeric($phoneCC) || $phoneCC <= 0 | $phoneCC > 999) {
+                throw new InformationException("The provided phone country code does not appear to be valid.");
+            }
             $client->phone_cc = intval($phoneCC);
+        }
+
+        // Special handling for the phone number itself
+        $phone = $data['phone'] ?? null;
+        if (!empty($phone)) {
+            if (!is_string($phone)) {
+                throw new InformationException("The provided phone number does not appear to be valid.");
+            }
+            $digitsOnly = preg_replace('/\D+/', '', $phone);
+            if (strlen($digitsOnly) < 1 || strlen($digitsOnly) > 12) {
+                throw new InformationException("The provided phone number does not appear to be valid.");
+            }
+            if (str_starts_with($phone, "+")) {
+                throw new InformationException("Please use the separate field for the phone country code.");
+            }
+            $client->phone = $phone;
         }
 
         $client->aid = $data['aid'] ?? null;
@@ -498,7 +519,6 @@ class Service implements InjectionAwareInterface
         $client->status = $data['status'] ?? null;
         $client->gender = $data['gender'] ?? null;
         $client->birthday = $data['birthday'] ?? null;
-        $client->phone = $data['phone'] ?? null;
         $client->company = $data['company'] ?? null;
         $client->company_vat = $data['company_vat'] ?? null;
         $client->company_number = $data['company_number'] ?? null;
