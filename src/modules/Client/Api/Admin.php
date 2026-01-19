@@ -238,7 +238,7 @@ class Admin extends \Api_Abstract
         // Special handling for the phone county codes
         $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
         if (!empty($phoneCC)) {
-            if (!is_numeric($phoneCC) || $phoneCC <= 0 | $phoneCC > 999) {
+            if (!is_numeric($phoneCC) || $phoneCC <= 0 || $phoneCC > 999) {
                 throw new InformationException("The provided phone country code does not appear to be valid.");
             }
             $client->phone_cc = intval($phoneCC);
