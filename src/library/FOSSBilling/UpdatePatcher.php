@@ -98,7 +98,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];
         $depreciatedConfigSubkeys = [
             'security' => 'cookie_lifespan',
-            'db' => 'type'
+            'db' => 'type',
         ];
         $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
         foreach ($depreciatedConfigSubkeys as $key => $subkey) {
@@ -153,10 +153,8 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function executeSql($sql): void
     {
-        $statement = $this->di['pdo']->prepare($sql);
-
         try {
-            $statement->execute();
+            $this->di['dbal']->executeStatement($sql);
         } catch (\Exception $e) {
             // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
             error_log($e->getMessage());
@@ -251,8 +249,8 @@ class UpdatePatcher implements InjectionAwareInterface
                         'param' => ':param',
                         'value' => ':value',
                         'public' => '0',
-                        'category' => NULL,
-                        'hash' => NULL,
+                        'category' => null,
+                        'hash' => null,
                         'created_at' => ':created_at',
                         'updated_at' => ':updated_at',
                     ])
@@ -522,6 +520,7 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             48 => function (): void {
                 $filesystem = new Filesystem();
+                $dbal = $this->di['dbal'];
 
                 $oldUploadsPath = Path::join(PATH_ROOT, 'uploads');
                 $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
@@ -538,7 +537,9 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
                 }
 
-                $products = $this->di['pdo']->query("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'")->fetchAll(\PDO::FETCH_ASSOC);
+                $productsStmt = $dbal->prepare("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'");
+                $productsStmt->execute();
+                $products = $productsStmt->fetchAllAssociative();
 
                 foreach ($products as $product) {
                     $productConfig = json_decode($product['config'], true) ?: [];
@@ -549,9 +550,9 @@ class UpdatePatcher implements InjectionAwareInterface
 
                     $foundFilename = null;
 
-                    $orderStmt = $this->di['pdo']->prepare('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id');
+                    $orderStmt = $dbal->prepare('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id');
                     $orderStmt->execute(['product_id' => $product['id']]);
-                    $orders = $orderStmt->fetchAll(\PDO::FETCH_ASSOC);
+                    $orders = $orderStmt->fetchAllAssociative();
 
                     foreach ($orders as $order) {
                         $orderConfig = json_decode($order['config'] ?? '', true);
@@ -568,9 +569,9 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
 
                     if ($foundFilename === null) {
-                        $serviceStmt = $this->di['pdo']->prepare('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""');
+                        $serviceStmt = $dbal->prepare('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""');
                         $serviceStmt->execute(['product_id' => $product['id']]);
-                        $services = $serviceStmt->fetchAll(\PDO::FETCH_ASSOC);
+                        $services = $serviceStmt->fetchAllAssociative();
 
                         foreach ($services as $service) {
                             $filePath = Path::join(PATH_UPLOADS, md5($service['filename']));
@@ -584,25 +585,25 @@ class UpdatePatcher implements InjectionAwareInterface
 
                     if ($foundFilename !== null) {
                         $productConfig['filename'] = $foundFilename;
-                        $updateProductStmt = $this->di['pdo']->prepare('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id');
+                        $updateProductStmt = $dbal->prepare('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id');
                         $updateProductStmt->execute([
                             'config' => json_encode($productConfig),
                             'updated_at' => date('Y-m-d H:i:s'),
                             'id' => $product['id'],
                         ]);
 
-                        $updateAllServicesStmt = $this->di['pdo']->prepare('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id');
+                        $updateAllServicesStmt = $dbal->prepare('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id');
                         $updateAllServicesStmt->execute(['filename' => $foundFilename, 'product_id' => $product['id']]);
 
-                        $updateOrdersStmt = $this->di['pdo']->prepare('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"');
+                        $updateOrdersStmt = $dbal->prepare('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"');
                         $updateOrdersStmt->execute(['product_id' => $product['id']]);
-                        $ordersToUpdate = $updateOrdersStmt->fetchAll(\PDO::FETCH_ASSOC);
+                        $ordersToUpdate = $updateOrdersStmt->fetchAllAssociative();
 
                         foreach ($ordersToUpdate as $orderToUpdate) {
                             $orderConfig = json_decode($orderToUpdate['config'] ?? '', true);
                             if (is_array($orderConfig) && isset($orderConfig['filename'])) {
                                 $orderConfig['filename'] = $foundFilename;
-                                $saveOrderStmt = $this->di['pdo']->prepare('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id');
+                                $saveOrderStmt = $dbal->prepare('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id');
                                 $saveOrderStmt->execute([
                                     'config' => json_encode($orderConfig),
                                     'updated_at' => date('Y-m-d H:i:s'),
@@ -613,15 +614,15 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
                 }
 
-                $orphanStmt = $this->di['pdo']->query('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""');
-                $orphans = $orphanStmt->fetchAll(\PDO::FETCH_ASSOC);
+                $orphanStmt = $dbal->query('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""');
+                $orphans = $orphanStmt->fetchAllAssociative();
 
                 foreach ($orphans as $orphan) {
                     $orderConfig = json_decode($orphan['order_config'] ?? '', true);
                     if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
                         $filePath = Path::join(PATH_UPLOADS, md5($orderConfig['filename']));
                         if ($filesystem->exists($filePath)) {
-                            $recoverStmt = $this->di['pdo']->prepare('UPDATE service_downloadable SET filename = :filename WHERE id = :id');
+                            $recoverStmt = $dbal->prepare('UPDATE service_downloadable SET filename = :filename WHERE id = :id');
                             $recoverStmt->execute(['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
                         }
                     }
