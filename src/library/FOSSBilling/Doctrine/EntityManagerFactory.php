@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -26,7 +25,6 @@ class EntityManagerFactory
 {
     public static function create(): EntityManager
     {
-        $dbc = Config::getProperty('db');
         $finder = new Finder();
         $finder->directories()->in(PATH_MODS . '/*/Entity')->depth('== 0');
         $moduleEntityPaths = iterator_to_array($finder);
@@ -52,17 +50,7 @@ class EntityManagerFactory
             }
         }
 
-        $connectionParams = [
-            'driver' => 'pdo_mysql',
-            'host' => $dbc['host'],
-            'port' => $dbc['port'],
-            'dbname' => $dbc['name'],
-            'user' => $dbc['user'],
-            'password' => $dbc['password'],
-            'charset' => 'utf8',
-        ];
-
-        $connection = DriverManager::getConnection($connectionParams, $config);
+        $connection = DriverManagerFactory::getConnection();
 
         return new EntityManager($connection, $config);
     }

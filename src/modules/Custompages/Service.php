@@ -57,35 +57,41 @@ class Service
             foreach ($id as $i => $x) {
                 $id[$i] = (int) $x;
             }
-            $this->di['pdo']->query('DELETE from custom_pages WHERE id in (' . join(', ', $id) . ')');
+            $placeholders = implode(', ', array_fill(0, count($id), '?'));
+            $this->di['dbal']->executeStatement("DELETE FROM custom_pages WHERE id IN ($placeholders)", $id);
         } else {
-            $this->di['pdo']->prepare('DELETE from custom_pages WHERE id = ?')->execute([$id]);
+            $this->di['dbal']->executeStatement('DELETE FROM custom_pages WHERE id = ?', [$id]);
         }
     }
 
     public function getPage($id, $type = 'id')
     {
-        $q = $this->di['pdo']->prepare('SELECT * from custom_pages WHERE ' . $type . ' = ?');
-        $q->execute([$id]);
-
-        return $q->fetch();
+        return $this->di['dbal']->executeQuery(
+            "SELECT * FROM custom_pages WHERE $type = ?",
+            [$id]
+        )->fetchAssociative();
     }
 
     public function createPage($title, $description, $keywords, $content)
     {
         $slug = $this->di['tools']->slug($title);
         $i = 0;
-        $ex = $this->di['pdo']->prepare('SELECT id from custom_pages WHERE slug = ?');
-        $ex->execute([$slug]);
-        $ex = $ex->rowCount();
-        while ($ex > 0) {
+        $exists = $this->di['dbal']->executeQuery(
+            'SELECT id FROM custom_pages WHERE slug = ?',
+            [$slug]
+        )->fetchOne();
+        while ($exists) {
             $slug = $this->di['tools']->slug($title) . '-' . ++$i;
-            $ex = $this->di['pdo']->prepare('SELECT id from custom_pages WHERE slug = ?');
-            $ex->execute([$slug]);
-            $ex = $ex->rowCount();
+            $exists = $this->di['dbal']->executeQuery(
+                'SELECT id FROM custom_pages WHERE slug = ?',
+                [$slug]
+            )->fetchOne();
         }
-        $this->di['pdo']->prepare('INSERT into custom_pages (title, description, keywords, content, slug) VALUES (?, ?, ?, ?, ?)')->execute([$title, $description, $keywords, $content, $slug]);
-        $id = $this->di['pdo']->lastInsertId();
+        $this->di['dbal']->executeStatement(
+            'INSERT INTO custom_pages (title, description, keywords, content, slug) VALUES (?, ?, ?, ?, ?)',
+            [$title, $description, $keywords, $content, $slug]
+        );
+        $id = $this->di['dbal']->lastInsertId();
         $this->di['logger']->info('Created new custom page #%s', $id);
 
         return $id;
@@ -94,12 +100,17 @@ class Service
     public function updatePage($id, $title, $description, $keywords, $content, $slug)
     {
         $slug = $this->di['tools']->slug($slug);
-        $ex = $this->di['pdo']->prepare('SELECT id from custom_pages WHERE slug = ? AND id <> ?');
-        $ex->execute([$slug, $id]);
-        if ($ex->rowCount() > 0) {
+        $exists = $this->di['dbal']->executeQuery(
+            'SELECT id FROM custom_pages WHERE slug = ? AND id <> ?',
+            [$slug, $id]
+        )->fetchOne();
+        if ($exists) {
             exit(json_encode(['result' => null, 'error' => ['message' => 'You need to set unique slug.', 'code' => 9999]]));
         }
-        $this->di['pdo']->prepare('UPDATE custom_pages SET title = ?, description = ?, keywords = ?, content = ?, slug = ? WHERE id = ?')->execute([$title, $description, $keywords, $content, $slug, $id]);
+        $this->di['dbal']->executeStatement(
+            'UPDATE custom_pages SET title = ?, description = ?, keywords = ?, content = ?, slug = ? WHERE id = ?',
+            [$title, $description, $keywords, $content, $slug, $id]
+        );
         $this->di['logger']->info('Updated custom page #%s', $id);
 
         return $id;

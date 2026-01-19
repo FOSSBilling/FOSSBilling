@@ -72,6 +72,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['i18n']['timezone'] ??= $currentConfig['timezone'] ?? 'UTC';
         $newConfig['i18n']['date_format'] ??= 'medium';
         $newConfig['i18n']['time_format'] ??= 'short';
+        $newConfig['db']['driver'] ??= $currentConfig['db']['type'] ?? 'pdo_mysql';
         $newConfig['db']['port'] ??= '3306';
         $newConfig['api']['throttle_delay'] ??= 2;
         $newConfig['api']['rate_span_login'] ??= 60;
@@ -97,6 +98,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];
         $depreciatedConfigSubkeys = [
             'security' => 'cookie_lifespan',
+            'db' => 'type',
         ];
         $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
         foreach ($depreciatedConfigSubkeys as $key => $subkey) {
@@ -151,10 +153,8 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function executeSql($sql): void
     {
-        $statement = $this->di['pdo']->prepare($sql);
-
         try {
-            $statement->execute();
+            $this->di['dbal']->executeStatement($sql);
         } catch (\Exception $e) {
             // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
             error_log($e->getMessage());
@@ -170,10 +170,14 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function getPatchLevel(): ?int
     {
-        $sql = 'SELECT value FROM setting WHERE param = :param';
-        $sqlStatement = $this->di['pdo']->prepare($sql);
-        $sqlStatement->execute(['param' => 'last_patch']);
-        $result = $sqlStatement->fetchColumn();
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('value')
+            ->from('setting')
+            ->where('param = :param')
+            ->setParameter('param', 'last_patch')
+            ->executeQuery();
+        $result = $query->fetchOne();
 
         return intval($result) ?: null;
     }
@@ -185,15 +189,34 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function setPatchLevel(int $patchLevel): void
     {
+        $query = $this->di['dbal']->createQueryBuilder();
+
         if (is_null($this->getPatchLevel())) {
-            $sql = 'INSERT INTO setting (param, value, public, updated_at, created_at) VALUES ("last_patch", :value, 1, :u, :c)';
-            $sqlStatement = $this->di['pdo']->prepare($sql);
-            $sqlStatement->execute(['value' => $patchLevel, 'c' => date('Y-m-d H:i:s'), 'u' => date('Y-m-d H:i:s')]);
+            $query
+                ->insert('setting')
+                ->values([
+                    'param' => ':param',
+                    'value' => ':value',
+                    'public' => '1',
+                    'created_at' => ':created_at',
+                    'updated_at' => ':updated_at',
+                ])
+                ->setParameter('param', 'last_patch')
+                ->setParameter('value', $patchLevel)
+                ->setParameter('created_at', date('Y-m-d H:i:s'))
+                ->setParameter('updated_at', date('Y-m-d H:i:s'));
         } else {
-            $sql = 'UPDATE setting SET value = :value, updated_at = :u WHERE param = :param';
-            $sqlStatement = $this->di['pdo']->prepare($sql);
-            $sqlStatement->execute(['param' => 'last_patch', 'value' => $patchLevel, 'u' => date('Y-m-d H:i:s')]);
+            $query
+                ->update('setting')
+                ->set('value', ':value')
+                ->set('updated_at', ':updated_at')
+                ->where('param = :param')
+                ->setParameter('param', 'last_patch')
+                ->setParameter('value', $patchLevel)
+                ->setParameter('updated_at', date('Y-m-d H:i:s'));
         }
+
+        $query->executeStatement();
     }
 
     /**
@@ -208,16 +231,34 @@ class UpdatePatcher implements InjectionAwareInterface
         $patches = [
             25 => function (): void {
                 // Migrate email templates to be compatible with Twig 3.x.
-                $q = "UPDATE email_template SET content = REPLACE(content, '{% filter markdown %}', '{% apply markdown %}')";
-                $this->executeSql($q);
+                $this->di['dbal']->createQueryBuilder()
+                    ->update('email_template')
+                    ->set('content', 'REPLACE(content, \'{% filter markdown %}\', \'{% apply markdown %}\')')
+                    ->executeStatement();
 
-                $q = "UPDATE email_template SET content = REPLACE(content, '{% endfilter %}', '{% endapply %}')";
-                $this->executeSql($q);
+                $this->di['dbal']->createQueryBuilder()
+                    ->update('email_template')
+                    ->set('content', 'REPLACE(content, \'{% endfilter %}\', \'{% endapply %}\')')
+                    ->executeStatement();
             },
             26 => function (): void {
                 // Migration steps from BoxBilling to FOSSBilling - added favicon settings.
-                $q = "INSERT INTO setting (param, value, public, category, hash, created_at, updated_at) VALUES ('company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
-                $this->executeSql($q);
+                $this->di['dbal']->createQueryBuilder()
+                    ->insert('setting')
+                    ->values([
+                        'param' => ':param',
+                        'value' => ':value',
+                        'public' => '0',
+                        'category' => null,
+                        'hash' => null,
+                        'created_at' => ':created_at',
+                        'updated_at' => ':updated_at',
+                    ])
+                    ->setParameter('param', 'company_favicon')
+                    ->setParameter('value', 'themes/huraga/assets/favicon.ico')
+                    ->setParameter('created_at', '2023-01-08 12:00:00')
+                    ->setParameter('updated_at', '2023-01-08 12:00:00')
+                    ->executeStatement();
             },
             27 => function (): void {
                 // Migration steps to create table to allow admin users to do password reset.
@@ -227,17 +268,24 @@ class UpdatePatcher implements InjectionAwareInterface
             28 => function (): void {
                 // Patch to remove .html from email templates action code.
                 // @see https://github.com/FOSSBilling/FOSSBilling/issues/863
-                $q = "UPDATE email_template SET action_code = REPLACE(action_code, '.html', '')";
-                $this->executeSql($q);
+                $this->di['dbal']->createQueryBuilder()
+                    ->update('email_template')
+                    ->set('action_code', 'REPLACE(action_code, \'.html\', \'\')')
+                    ->executeStatement();
             },
             29 => function (): void {
                 // Patch to update email templates to use format_date/format_datetime filters
                 // instead of removed bb_date/bb_datetime filters.
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/948
-                $q = "UPDATE email_template SET content = REPLACE(content, 'bb_date', 'format_date')";
-                $this->executeSql($q);
-                $q = "UPDATE email_template SET content = REPLACE(content, 'bb_datetime', 'format_datetime')";
-                $this->executeSql($q);
+                $this->di['dbal']->createQueryBuilder()
+                    ->update('email_template')
+                    ->set('content', 'REPLACE(content, \'bb_date\', \'format_date\')')
+                    ->executeStatement();
+
+                $this->di['dbal']->createQueryBuilder()
+                    ->update('email_template')
+                    ->set('content', 'REPLACE(content, \'bb_datetime\', \'format_datetime\')')
+                    ->executeStatement();
             },
             30 => function (): void {
                 // Patch to remove the old guzzlehttp package, as we no longer
@@ -381,9 +429,15 @@ class UpdatePatcher implements InjectionAwareInterface
                 // This patch will migrate previous currency exchange rate data provider settings to the new ones
                 // @see https://github.com/FOSSBilling/FOSSBilling/pull/2189
                 $ext_service = $this->di['mod_service']('extension');
-                $pairs = $this->di['db']->getAssoc('SELECT `param`, `value` FROM setting');
-                $config = $ext_service->getConfig('mod_currency');
 
+                $query = $this->di['dbal']->createQueryBuilder()
+                    ->select('param', 'value')
+                    ->from('setting')
+                    ->executeQuery();
+
+                $pairs = $query->fetchAllAssociative();
+
+                $config = $ext_service->getConfig('mod_currency');
                 $config['ext'] = 'mod_currency'; // This should automatically be set, but some appear to be having cache issues that causes it to not be
 
                 // Migrate the old currency exchange rate sync settings
@@ -466,6 +520,7 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             48 => function (): void {
                 $filesystem = new Filesystem();
+                $dbal = $this->di['dbal'];
 
                 $oldUploadsPath = Path::join(PATH_ROOT, 'uploads');
                 $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
@@ -482,7 +537,9 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
                 }
 
-                $products = $this->di['pdo']->query("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'")->fetchAll(\PDO::FETCH_ASSOC);
+                $productsStmt = $dbal->prepare("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'");
+                $productsStmt->execute();
+                $products = $productsStmt->fetchAllAssociative();
 
                 foreach ($products as $product) {
                     $productConfig = json_decode($product['config'], true) ?: [];
@@ -493,9 +550,9 @@ class UpdatePatcher implements InjectionAwareInterface
 
                     $foundFilename = null;
 
-                    $orderStmt = $this->di['pdo']->prepare('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id');
+                    $orderStmt = $dbal->prepare('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id');
                     $orderStmt->execute(['product_id' => $product['id']]);
-                    $orders = $orderStmt->fetchAll(\PDO::FETCH_ASSOC);
+                    $orders = $orderStmt->fetchAllAssociative();
 
                     foreach ($orders as $order) {
                         $orderConfig = json_decode($order['config'] ?? '', true);
@@ -512,9 +569,9 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
 
                     if ($foundFilename === null) {
-                        $serviceStmt = $this->di['pdo']->prepare('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""');
+                        $serviceStmt = $dbal->prepare('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""');
                         $serviceStmt->execute(['product_id' => $product['id']]);
-                        $services = $serviceStmt->fetchAll(\PDO::FETCH_ASSOC);
+                        $services = $serviceStmt->fetchAllAssociative();
 
                         foreach ($services as $service) {
                             $filePath = Path::join(PATH_UPLOADS, md5($service['filename']));
@@ -528,25 +585,25 @@ class UpdatePatcher implements InjectionAwareInterface
 
                     if ($foundFilename !== null) {
                         $productConfig['filename'] = $foundFilename;
-                        $updateProductStmt = $this->di['pdo']->prepare('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id');
+                        $updateProductStmt = $dbal->prepare('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id');
                         $updateProductStmt->execute([
                             'config' => json_encode($productConfig),
                             'updated_at' => date('Y-m-d H:i:s'),
                             'id' => $product['id'],
                         ]);
 
-                        $updateAllServicesStmt = $this->di['pdo']->prepare('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id');
+                        $updateAllServicesStmt = $dbal->prepare('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id');
                         $updateAllServicesStmt->execute(['filename' => $foundFilename, 'product_id' => $product['id']]);
 
-                        $updateOrdersStmt = $this->di['pdo']->prepare('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"');
+                        $updateOrdersStmt = $dbal->prepare('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"');
                         $updateOrdersStmt->execute(['product_id' => $product['id']]);
-                        $ordersToUpdate = $updateOrdersStmt->fetchAll(\PDO::FETCH_ASSOC);
+                        $ordersToUpdate = $updateOrdersStmt->fetchAllAssociative();
 
                         foreach ($ordersToUpdate as $orderToUpdate) {
                             $orderConfig = json_decode($orderToUpdate['config'] ?? '', true);
                             if (is_array($orderConfig) && isset($orderConfig['filename'])) {
                                 $orderConfig['filename'] = $foundFilename;
-                                $saveOrderStmt = $this->di['pdo']->prepare('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id');
+                                $saveOrderStmt = $dbal->prepare('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id');
                                 $saveOrderStmt->execute([
                                     'config' => json_encode($orderConfig),
                                     'updated_at' => date('Y-m-d H:i:s'),
@@ -557,15 +614,15 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
                 }
 
-                $orphanStmt = $this->di['pdo']->query('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""');
-                $orphans = $orphanStmt->fetchAll(\PDO::FETCH_ASSOC);
+                $orphanStmt = $dbal->query('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""');
+                $orphans = $orphanStmt->fetchAllAssociative();
 
                 foreach ($orphans as $orphan) {
                     $orderConfig = json_decode($orphan['order_config'] ?? '', true);
                     if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
                         $filePath = Path::join(PATH_UPLOADS, md5($orderConfig['filename']));
                         if ($filesystem->exists($filePath)) {
-                            $recoverStmt = $this->di['pdo']->prepare('UPDATE service_downloadable SET filename = :filename WHERE id = :id');
+                            $recoverStmt = $dbal->prepare('UPDATE service_downloadable SET filename = :filename WHERE id = :id');
                             $recoverStmt->execute(['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
                         }
                     }
