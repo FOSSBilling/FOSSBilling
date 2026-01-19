@@ -275,16 +275,23 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, FOSSBilling\Version::VERSION, $media);
     }
 
-    public function twig_gravatar_filter($email, $size = 20): string
+    /**
+     * @TODO: Legacy. Gravatar is down. This instead points to libravatar, but ultimately we want to allow profile picture uploads and remove this entirely.
+     * 
+     * @param string $email The user's email address.
+     * @param int $size 
+     * @return string 
+     */
+    public function twig_gravatar_filter(string $email, $size = 20): string
     {
         if (empty($email)) {
             return '';
         }
 
-        $url = 'https://www.gravatar.com/avatar/';
+        $url = 'https://seccdn.libravatar.org/avatar/';
         $url .= md5(strtolower(trim((string) $email)));
 
-        return $url . "?s=$size&d=mp&r=g";
+        return $url . "?s=$size";
     }
 
     public function twig_autolink_filter($text): ?string
