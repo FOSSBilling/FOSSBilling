@@ -255,7 +255,7 @@ class Service implements InjectionAwareInterface
         $mods = [];
         $handle = opendir(PATH_MODS);
         while ($name = readdir($handle)) {
-            if ($name && ctype_alnum($name)) {
+            if ($name && preg_match('/^[a-zA-Z0-9]+$/', $name)) {
                 $m = $name;
                 $mod = $this->di['mod']($m);
                 if ($mod->isCore()) {
