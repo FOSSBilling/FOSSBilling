@@ -112,7 +112,7 @@ async function build() {
       bundle: true,
       outfile: resolve(__dirname, 'assets/build/css/fossbilling.css'),
       plugins: [sassPlugin(nodeModulesDir, isProduction)],
-      loader: loader: sharedLoaders,
+      loader: sharedLoaders,
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'info'
@@ -125,7 +125,7 @@ async function build() {
       entryPoints: [resolve(__dirname, 'assets/css/vendor.css')],
       bundle: true,
       outfile: resolve(__dirname, 'assets/build/css/vendor.css'),
-      loader: loader: sharedLoaders,
+      loader: sharedLoaders,
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'info'
@@ -139,7 +139,7 @@ async function build() {
       outfile: resolve(__dirname, 'assets/build/js/fossbilling.js'),
       platform: 'browser',
       target: 'es2018',
-      loader: loader: sharedLoaders,
+      loader: sharedLoaders,
       define: {
         'process.env.NODE_ENV': isProduction ? '"production"' : '"development"'
       },
