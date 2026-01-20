@@ -80,6 +80,8 @@ async function cleanBuild() {
     const buildDir = resolve(__dirname, 'assets/build');
     await removeDirContents(buildDir);
   } catch (error) {
+    // Cleanup failures are non-fatal, but we log them for debugging purposes.
+    console.error('Failed to clean build directory:', error);
   }
 }
 
