@@ -11,6 +11,14 @@ const isProduction = process.env.NODE_ENV === 'production';
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
 
+const sharedLoaders = {
+  '.svg': 'dataurl',
+  '.woff': 'file',
+  '.woff2': 'file',
+  '.ttf': 'file',
+  '.eot': 'file'
+};
+
 async function generateManifest() {
   const manifest = {};
 
@@ -52,7 +60,7 @@ async function generateSvgSprite() {
   });
 
   const files = await readdir(iconsDir);
-  const svgFiles = files.filter(f => f.endsWith('.svg'));
+  const svgFiles = files.filter(file => file.endsWith('.svg'));
 
   if (svgFiles.length === 0) {
     console.error('No SVG files found in assets/icons');
@@ -80,6 +88,8 @@ async function cleanBuild() {
     const buildDir = resolve(__dirname, 'assets/build');
     await removeDirContents(buildDir);
   } catch (error) {
+    // Cleanup failures are non-fatal, but we log them for debugging purposes.
+    console.error('Failed to clean build directory:', error);
   }
 }
 
@@ -102,13 +112,7 @@ async function build() {
       bundle: true,
       outfile: resolve(__dirname, 'assets/build/css/fossbilling.css'),
       plugins: [sassPlugin(nodeModulesDir, isProduction)],
-      loader: {
-        '.svg': 'dataurl',
-        '.woff': 'file',
-        '.woff2': 'file',
-        '.ttf': 'file',
-        '.eot': 'file'
-      },
+      loader: sharedLoaders,
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'info'
@@ -121,13 +125,7 @@ async function build() {
       entryPoints: [resolve(__dirname, 'assets/css/vendor.css')],
       bundle: true,
       outfile: resolve(__dirname, 'assets/build/css/vendor.css'),
-      loader: {
-        '.svg': 'dataurl',
-        '.woff': 'file',
-        '.woff2': 'file',
-        '.ttf': 'file',
-        '.eot': 'file'
-      },
+      loader: sharedLoaders,
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'info'
@@ -141,13 +139,7 @@ async function build() {
       outfile: resolve(__dirname, 'assets/build/js/fossbilling.js'),
       platform: 'browser',
       target: 'es2018',
-      loader: {
-        '.svg': 'dataurl',
-        '.woff': 'file',
-        '.woff2': 'file',
-        '.ttf': 'file',
-        '.eot': 'file'
-      },
+      loader: sharedLoaders,
       define: {
         'process.env.NODE_ENV': isProduction ? '"production"' : '"development"'
       },
