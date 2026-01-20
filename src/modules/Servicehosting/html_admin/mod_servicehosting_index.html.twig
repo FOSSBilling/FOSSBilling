@@ -2,24 +2,24 @@
 
 {% extends 'layout_default.html.twig' %}
 
-{% block meta_title %}{{ 'Hosting plans and servers'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Hosting Plans and Servers'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
 {% block content %}
     <ul class="nav nav-tabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="#tab-servers" data-bs-toggle="tab">{{ 'Hosting servers'|trans }}</a>
+            <a class="nav-link active" href="#tab-servers" data-bs-toggle="tab">{{ 'Hosting Servers'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-plans" data-bs-toggle="tab">{{ 'Hosting plans'|trans }}</a>
+            <a class="nav-link" href="#tab-plans" data-bs-toggle="tab">{{ 'Hosting Plans'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new-server" data-bs-toggle="tab">
                 <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
-                {{ 'New server'|trans }}
+                {{ 'New Server'|trans }}
             </a>
         </li>
         <li class="nav-item" role="presentation">
@@ -27,7 +27,7 @@
                 <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
-                {{ 'New plan'|trans }}
+                {{ 'New Plan'|trans }}
             </a>
         </li>
     </ul>
@@ -36,7 +36,7 @@
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-servers" role="tabpanel">
             <div class="card-header">
-                <h3 class="card-title">{{ 'Hosting servers'|trans }}</h3>
+                <h3 class="card-title">{{ 'Hosting Servers'|trans }}</h3>
             </div>
             <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
@@ -257,7 +257,7 @@
 
         <div class="tab-pane fade" id="tab-new-plan" role="tabpanel">
             <div class="card-header">
-                <h3 class="card-title">{{ 'Add new hosting plan'|trans }}</h3>
+                <h3 class="card-title">{{ 'Add New Hosting Plan'|trans }}</h3>
             </div>
             <div class="card-body">
                 <p class="text-body-secondary">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters in next step. In this step provide basic hosting plan information.'|trans }}</p>
@@ -267,7 +267,7 @@
                         <input class="form-control" id="new-plan-name" type="text" name="name" value="" required placeholder="{{ 'Unique name to identify this hosting plan'|trans }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" for="new-plan-quota">{{ 'Disk quota'|trans }}:</label>
+                        <label class="form-label" for="new-plan-quota">{{ 'Disk Quota'|trans }}:</label>
                         <div class="input-group">
                             <input class="form-control" type="text" name="quota" value="1024" aria-describedby="new-plan-quota">
                             <span class="input-group-text" id="new-plan-quota">MB</span>

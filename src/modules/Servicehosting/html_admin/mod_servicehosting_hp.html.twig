@@ -14,7 +14,7 @@
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'servicehosting'|alink }}">{{ 'Hosting plans and servers'|trans }}</a>
+            <a href="{{ 'servicehosting'|alink }}">{{ 'Hosting Plans and Servers'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ hp.name }}</li>
     </ol>
@@ -23,7 +23,7 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h3>{{ 'Manage hosting plan'|trans }}</h3>
+        <h3>{{ 'Manage Hosting Plan'|trans }}</h3>
     </div>
     <div class="card-body">
         <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" {{ fb_api_form({message: 'Hosting Plan Updated'|trans}) }}>
@@ -32,7 +32,7 @@
                 <input class="form-control" id="plan-name" type="text" name="name" value="{{ hp.name }}" required placeholder="{{ 'Unique name to identify this hosting plan'|trans }}">
             </div>
             <div class="mb-3">
-                <label class="form-label" for="plan-disk">{{ 'Disk quota'|trans }}:</label>
+                <label class="form-label" for="plan-disk">{{ 'Disk Quota'|trans }}:</label>
                 <div class="input-group">
                     <input class="form-control" id="plan-disk" type="text" name="quota" value="{{ hp.quota }}" aria-describedby="quota">
                     <span class="input-group-text" id="quota">MB</span>
@@ -46,31 +46,31 @@
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label" for="plan-addon">{{ 'Maximum addon domains'|trans }}:</label>
+                <label class="form-label" for="plan-addon">{{ 'Maximum Addon Domains'|trans }}:</label>
                 <input class="form-control" id="plan-addon" type="number" name="max_addon" value="{{ hp.max_addon }}">
             </div>
             <div class="mb-3">
-                <label class="form-label" for="plan-ftp">{{ 'Maximum FTP accounts'|trans }}:</label>
+                <label class="form-label" for="plan-ftp">{{ 'Maximum FTP Accounts'|trans }}:</label>
                 <input class="form-control" id="plan-ftp" type="number" name="max_ftp" value="{{ hp.max_ftp }}">
             </div>
             <div class="mb-3">
-                <label class="form-label" for="plan-sql">{{ 'Maximum databases'|trans }}:</label>
+                <label class="form-label" for="plan-sql">{{ 'Maximum Databases'|trans }}:</label>
                 <input class="form-control" id="plan-sql" type="number" name="max_sql" value="{{ hp.max_sql }}">
             </div>
             <div class="mb-3">
-                <label class="form-label" for="plan-email">{{ 'Maximum email accounts'|trans }}:</label>
+                <label class="form-label" for="plan-email">{{ 'Maximum Email Accounts'|trans }}:</label>
                 <input class="form-control" id="plan-email" type="number" name="max_pop" value="{{ hp.max_pop }}">
             </div>
             <div class="mb-3">
-                <label class="form-label" for="plan-subdomains">{{ 'Maximum subdomains'|trans }}:</label>
+                <label class="form-label" for="plan-subdomains">{{ 'Maximum Subdomains'|trans }}:</label>
                 <input class="form-control" id="plan-subdomains" type="number" name="max_sub" value="{{ hp.max_sub }}">
             </div>
             <div class="mb-3">
-                <label class="form-label" for="plan-parked">{{ 'Maximum parked domains'|trans }}:</label>
+                <label class="form-label" for="plan-parked">{{ 'Maximum Parked Domains'|trans }}:</label>
                 <input class="form-control" id="plan-parked" type="number" name="max_park" value="{{ hp.max_park }}">
             </div>
             {% if hp.config|length > 0 %}
-                <h3>{{ 'Server manager specific parameters'|trans }}</h3>
+                <h3>{{ 'Server Manager Specific Parameters'|trans }}</h3>
                 {% for name, value in hp.config %}
                 <div class="mb-3">
                     <label class="form-label" for="plan-special-{{ name }}">{{ name }}:</label>
@@ -84,7 +84,7 @@
         </form>
         <hr>
 
-        <h3>{{ 'Hosting plan additional parameters'|trans }}</h3>
+        <h3>{{ 'Hosting Plan Additional Parameters'|trans }}</h3>
         <p class="text-muted">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters. List of parameters server managers requires you can find on extensions page.'|trans }}</p>
 
         <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" {{ fb_api_form({reload: true}) }}>
