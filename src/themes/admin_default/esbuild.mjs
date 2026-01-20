@@ -11,6 +11,14 @@ const isProduction = process.env.NODE_ENV === 'production';
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
 
+const sharedLoaders = {
+  '.svg': 'dataurl',
+  '.woff': 'file',
+  '.woff2': 'file',
+  '.ttf': 'file',
+  '.eot': 'file'
+};
+
 async function generateManifest() {
   const manifest = {};
 
@@ -104,13 +112,7 @@ async function build() {
       bundle: true,
       outfile: resolve(__dirname, 'assets/build/css/fossbilling.css'),
       plugins: [sassPlugin(nodeModulesDir, isProduction)],
-      loader: {
-        '.svg': 'dataurl',
-        '.woff': 'file',
-        '.woff2': 'file',
-        '.ttf': 'file',
-        '.eot': 'file'
-      },
+      loader: loader: sharedLoaders,
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'info'
@@ -123,13 +125,7 @@ async function build() {
       entryPoints: [resolve(__dirname, 'assets/css/vendor.css')],
       bundle: true,
       outfile: resolve(__dirname, 'assets/build/css/vendor.css'),
-      loader: {
-        '.svg': 'dataurl',
-        '.woff': 'file',
-        '.woff2': 'file',
-        '.ttf': 'file',
-        '.eot': 'file'
-      },
+      loader: loader: sharedLoaders,
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'info'
@@ -143,13 +139,7 @@ async function build() {
       outfile: resolve(__dirname, 'assets/build/js/fossbilling.js'),
       platform: 'browser',
       target: 'es2018',
-      loader: {
-        '.svg': 'dataurl',
-        '.woff': 'file',
-        '.woff2': 'file',
-        '.ttf': 'file',
-        '.eot': 'file'
-      },
+      loader: loader: sharedLoaders,
       define: {
         'process.env.NODE_ENV': isProduction ? '"production"' : '"development"'
       },
