@@ -52,7 +52,7 @@ async function generateSvgSprite() {
   });
 
   const files = await readdir(iconsDir);
-  const svgFiles = files.filter(f => f.endsWith('.svg'));
+  const svgFiles = files.filter(file => file.endsWith('.svg'));
 
   if (svgFiles.length === 0) {
     console.error('No SVG files found in assets/icons');
