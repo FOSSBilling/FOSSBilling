@@ -1577,13 +1577,6 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetPermissionsPermAreEmpty(): void
     {
-        $statementWithFetchOne = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['fetchOne'])
-            ->getMock();
-        $statementWithFetchOne->expects($this->any())
-            ->method('fetchOne')
-            ->willReturn('{}');
-
         $service = new Service();
 
         $dbalMock = $this->getMockBuilder(\stdClass::class)->addMethods(['createQueryBuilder'])->getMock();
