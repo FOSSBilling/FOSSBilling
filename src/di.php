@@ -140,7 +140,7 @@ $di['db'] = function () use ($di) {
  * @return Connection The Doctrine DBAL connection instance.
  */
 $di['dbal'] = function ($driverOptions): Connection {
-    return DriverManagerFactory::getConnection();
+    return DriverManagerFactory::getConnection($driverOptions);
 };
 
 /*
