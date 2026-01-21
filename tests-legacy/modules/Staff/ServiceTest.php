@@ -1632,12 +1632,6 @@ final class ServiceTest extends \BBTestCase
     public function testGetPermissions(): void
     {
         $queryResult = '{"id" : "1"}';
-        $statementWithFetchOne = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['fetchOne'])
-            ->getMock();
-        $statementWithFetchOne->expects($this->any())
-            ->method('fetchOne')
-            ->willReturn($queryResult);
         $service = new Service();
 
         $dbalMock = $this->getMockBuilder(\stdClass::class)->addMethods(['createQueryBuilder'])->getMock();
