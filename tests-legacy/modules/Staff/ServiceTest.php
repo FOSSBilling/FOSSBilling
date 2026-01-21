@@ -1548,23 +1548,20 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
 
-        $dbalMock = $this->getMockBuilder(\stdClass::class)->addMethods(['createQueryBuilder'])->getMock();
-        $queryBuilderMock = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['update', 'set', 'where', 'setParameter', 'executeStatement'])
-            ->getMock();
-        $queryBuilderMock->expects($this->atLeastOnce())
-            ->method('update')->willReturnSelf();
-        $queryBuilderMock->expects($this->atLeastOnce())
-            ->method('set')->willReturnSelf();
-        $queryBuilderMock->expects($this->atLeastOnce())
-            ->method('where')->willReturnSelf();
-        $queryBuilderMock->expects($this->atLeastOnce())
-            ->method('setParameter')->willReturnSelf();
-        $queryBuilderMock->expects($this->atLeastOnce())
-            ->method('executeStatement')->willReturn(1);
-        $dbalMock->expects($this->atLeastOnce())
-            ->method('createQueryBuilder')
-            ->willReturn($queryBuilderMock);
+        $queryBuilderMock = new class {
+            public function update($table) { return $this; }
+            public function set($field, $value) { return $this; }
+            public function where($cond) { return $this; }
+            public function setParameter($key, $val) { return $this; }
+            public function executeStatement() { return 1; }
+        };
+
+        $dbalMock = new class($queryBuilderMock) {
+            public function __construct(private $qb) {}
+            public function createQueryBuilder() {
+                return $this->qb;
+            }
+        };
 
         $di = new \Pimple\Container();
         $di['dbal'] = $dbalMock;
@@ -1577,47 +1574,33 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetPermissionsPermAreEmpty(): void
     {
-        $statementWithFetchOne = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['fetchOne'])
-            ->getMock();
-        $statementWithFetchOne->expects($this->any())
-            ->method('fetchOne')
-            ->willReturn('{}');
+        $statementWithFetchOne = new class {
+            public function fetchOne() {
+                return '{}';
+            }
+        };
 
         $service = new Service();
 
-        $dbalMock = $this->getMockBuilder(\stdClass::class)->addMethods(['createQueryBuilder'])->getMock();
-        $statementWithFetchOne = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['fetchOne'])
-            ->getMock();
-        $statementWithFetchOne->expects($this->any())
-            ->method('fetchOne')
-            ->willReturn('{}');
+        $queryBuilderMock = new class($statementWithFetchOne) {
+            public function __construct(private $stmt) {}
+            public function update($table) { return $this; }
+            public function set($field, $value) { return $this; }
+            public function where($cond) { return $this; }
+            public function setParameter($key, $val) { return $this; }
+            public function executeStatement() { return 1; }
+            public function select($field) { return $this; }
+            public function from($table) { return $this; }
+            public function executeQuery() { return $this->stmt; }
+            public function fetchOne() { return '{}'; }
+        };
 
-        $queryBuilderMock = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['update', 'set', 'where', 'setParameter', 'executeStatement', 'select', 'from', 'executeQuery', 'fetchOne'])
-            ->getMock();
-        $queryBuilderMock->expects($this->any())
-            ->method('executeQuery')->willReturn($statementWithFetchOne);
-        $queryBuilderMock->expects($this->any())
-            ->method('fetchOne')->willReturn('{}');
-        $queryBuilderMock->expects($this->any())
-            ->method('from')->willReturnSelf();
-        $queryBuilderMock->expects($this->any())
-            ->method('select')->willReturnSelf();
-        $queryBuilderMock->expects($this->any())
-            ->method('update')->willReturnSelf();
-        $queryBuilderMock->expects($this->any())
-            ->method('set')->willReturnSelf();
-        $queryBuilderMock->expects($this->any())
-            ->method('where')->willReturnSelf();
-        $queryBuilderMock->expects($this->any())
-            ->method('setParameter')->willReturnSelf();
-        $queryBuilderMock->expects($this->any())
-            ->method('executeStatement')->willReturn(1);
-        $dbalMock->expects($this->any())
-            ->method('createQueryBuilder')
-            ->willReturn($queryBuilderMock);
+        $dbalMock = new class($queryBuilderMock) {
+            public function __construct(private $qb) {}
+            public function createQueryBuilder() {
+                return $this->qb;
+            }
+        };
 
         $di = new \Pimple\Container();
         $di['dbal'] = $dbalMock;
@@ -1632,49 +1615,38 @@ final class ServiceTest extends \BBTestCase
     public function testGetPermissions(): void
     {
         $queryResult = '{"id" : "1"}';
-        $statementWithFetchOne = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['fetchOne'])
-            ->getMock();
-        $statementWithFetchOne->expects($this->any())
-            ->method('fetchOne')
-            ->willReturn($queryResult);
+
+        $statementWithFetchOne = new class($queryResult) {
+            public function __construct(private $result) {}
+            public function fetchOne() {
+                return $this->result;
+            }
+        };
+
         $service = new Service();
 
-        $dbalMock = $this->getMockBuilder(\stdClass::class)->addMethods(['createQueryBuilder'])->getMock();
-        $statementWithFetchOne = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['fetchOne'])
-            ->getMock();
-        $statementWithFetchOne->expects($this->any())
-            ->method('fetchOne')
-            ->willReturn($queryResult);
+        $queryBuilderMock = new class($statementWithFetchOne) {
+            public function __construct(private $stmt) {}
+            public function update($table) { return $this; }
+            public function set($field, $value) { return $this; }
+            public function where($cond) { return $this; }
+            public function setParameter($key, $val) { return $this; }
+            public function executeStatement() { return 1; }
+            public function select($field) { return $this; }
+            public function from($table) { return $this; }
+            public function executeQuery() { return $this->stmt; }
+            public function fetchOne() { return $this->stmt->fetchOne(); }
+        };
 
-        $queryBuilderMock = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['update', 'set', 'where', 'setParameter', 'executeStatement', 'select', 'from', 'executeQuery', 'fetchOne'])
-            ->getMock();
-        $queryBuilderMock->expects($this->any())
-            ->method('executeQuery')->willReturn($statementWithFetchOne);
-        $queryBuilderMock->expects($this->any())
-            ->method('fetchOne')->willReturn($queryResult);
-        $queryBuilderMock->expects($this->any())
-            ->method('from')->willReturnSelf();
-        $queryBuilderMock->expects($this->any())
-            ->method('select')->willReturnSelf();
-        $queryBuilderMock->expects($this->any())
-            ->method('update')->willReturnSelf();
-        $queryBuilderMock->expects($this->any())
-            ->method('set')->willReturnSelf();
-        $queryBuilderMock->expects($this->any())
-            ->method('where')->willReturnSelf();
-        $queryBuilderMock->expects($this->any())
-            ->method('setParameter')->willReturnSelf();
-        $queryBuilderMock->expects($this->any())
-            ->method('executeStatement')->willReturn(1);
-        $dbalMock->expects($this->any())
-            ->method('createQueryBuilder')
-            ->willReturn($queryBuilderMock);
+        $dbalMock = new class($queryBuilderMock) {
+            public function __construct(private $qb) {}
+            public function createQueryBuilder() {
+                return $this->qb;
+            }
+        };
 
-    $di = new \Pimple\Container();
-    $di['dbal'] = $dbalMock;
+        $di = new \Pimple\Container();
+        $di['dbal'] = $dbalMock;
         $service->setDi($di);
 
         $member_id = 1;

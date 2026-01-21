@@ -435,7 +435,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     ->from('setting')
                     ->executeQuery();
 
-                $pairs = $query->fetchAllAssociative();
+                $pairs = $query->fetchAllKeyValue();
 
                 $config = $ext_service->getConfig('mod_currency');
                 $config['ext'] = 'mod_currency'; // This should automatically be set, but some appear to be having cache issues that causes it to not be

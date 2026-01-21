@@ -235,18 +235,19 @@ final class ServiceTest extends \BBTestCase
             ->method('hasPermission')
             ->willReturn(true);
 
-        $dbalMock = $this->getMockBuilder('stdClass')->addMethods(['createQueryBuilder'])->getMock();
-        $dbalMock->expects($this->any())
-            ->method('createQueryBuilder')
-            ->willReturn(new class {
-                public function select($field) { return $this; }
-                public function from($table) { return $this; }
-                public function where($cond) { return $this; }
-                public function andWhere($cond) { return $this; }
-                public function setParameter($key, $val) { return $this; }
-                public function executeQuery() { return $this; }
-                public function fetchFirstColumn() { return []; }
-            });
+        $dbalMock = new class {
+            public function createQueryBuilder() {
+                return new class {
+                    public function select($field) { return $this; }
+                    public function from($table) { return $this; }
+                    public function where($cond) { return $this; }
+                    public function andWhere($cond) { return $this; }
+                    public function setParameter($key, $val) { return $this; }
+                    public function executeQuery() { return $this; }
+                    public function fetchFirstColumn() { return []; }
+                };
+            }
+        };
 
         $link = 'extension';
 
@@ -564,18 +565,19 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetInstalledMods(): void
     {
-        $dbalMock = $this->getMockBuilder('stdClass')->addMethods(['createQueryBuilder'])->getMock();
-        $dbalMock->expects($this->any())
-            ->method('createQueryBuilder')
-            ->willReturn(new class {
-                public function select($field) { return $this; }
-                public function from($table) { return $this; }
-                public function where($cond) { return $this; }
-                public function andWhere($cond) { return $this; }
-                public function setParameter($key, $val) { return $this; }
-                public function executeQuery() { return $this; }
-                public function fetchFirstColumn() { return []; }
-            });
+        $dbalMock = new class {
+            public function createQueryBuilder() {
+                return new class {
+                    public function select($field) { return $this; }
+                    public function from($table) { return $this; }
+                    public function where($cond) { return $this; }
+                    public function andWhere($cond) { return $this; }
+                    public function setParameter($key, $val) { return $this; }
+                    public function executeQuery() { return $this; }
+                    public function fetchFirstColumn() { return []; }
+                };
+            }
+        };
 
         $di = new \Pimple\Container();
         $di['dbal'] = $dbalMock;

@@ -1859,19 +1859,55 @@ final class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $queryBuilderMock = $this->getMockBuilder('stdClass')->addMethods(['delete', 'where', 'setParameter', 'executeStatement'])->getMock();
-        $queryBuilderMock->expects($this->once())->method('delete')->with('client_order')->willReturnSelf();
-        $queryBuilderMock->expects($this->once())->method('where')->with('client_id = :id')->willReturnSelf();
-        $queryBuilderMock->expects($this->once())->method('setParameter')->with('id', $clientModel->id)->willReturnSelf();
-        $queryBuilderMock->expects($this->once())->method('executeStatement')->willReturn(1);
+        $queryBuilderMock = new class {
+            private bool $deleteCalled = false;
+            private bool $whereCalled = false;
+            private bool $setParamCalled = false;
+            private mixed $deleteTable = null;
+            private mixed $whereCond = null;
+            private mixed $paramId = null;
 
-        $dbalMock = $this->getMockBuilder('stdClass')->addMethods(['createQueryBuilder'])->getMock();
-        $dbalMock->expects($this->once())->method('createQueryBuilder')->willReturn($queryBuilderMock);
+            public function delete($table) {
+                $this->deleteCalled = true;
+                $this->deleteTable = $table;
+                return $this;
+            }
+            public function where($cond) {
+                $this->whereCalled = true;
+                $this->whereCond = $cond;
+                return $this;
+            }
+            public function setParameter($key, $val) {
+                $this->setParamCalled = true;
+                $this->paramId = $val;
+                return $this;
+            }
+            public function executeStatement() {
+                return 1;
+            }
+            public function getDeleteTable() { return $this->deleteTable; }
+            public function getWhereCond() { return $this->whereCond; }
+            public function getParamId() { return $this->paramId; }
+            public function wasDeleteCalled() { return $this->deleteCalled; }
+            public function wasWhereCalled() { return $this->whereCalled; }
+            public function wasSetParamCalled() { return $this->setParamCalled; }
+        };
+
+        $dbalMock = new class($queryBuilderMock) {
+            public function __construct(private $qb) {}
+            public function createQueryBuilder() {
+                return $this->qb;
+            }
+        };
 
         $di = new \Pimple\Container();
         $di['dbal'] = $dbalMock;
         $this->service->setDi($di);
         $this->service->rmByClient($clientModel);
+
+        $this->assertSame('client_order', $queryBuilderMock->getDeleteTable());
+        $this->assertSame('client_id = :id', $queryBuilderMock->getWhereCond());
+        $this->assertSame($clientModel->id, $queryBuilderMock->getParamId());
     }
 
     public function testUpdatePeriod(): void
