@@ -1673,8 +1673,8 @@ final class ServiceTest extends \BBTestCase
             ->method('createQueryBuilder')
             ->willReturn($queryBuilderMock);
 
-    $di = new \Pimple\Container();
-    $di['dbal'] = $dbalMock;
+        $di = new \Pimple\Container();
+        $di['dbal'] = $dbalMock;
         $service->setDi($di);
 
         $member_id = 1;
