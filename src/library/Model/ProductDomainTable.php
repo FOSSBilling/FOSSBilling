@@ -182,7 +182,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         $pricing = [];
 
         $query = $this->di['dbal']->createQueryBuilder();
-        $query
+        $result = $query
             ->select('t.*', 'r.name')
             ->from('tld', 't')
             ->leftJoin('t', 'tld_registrar', 'r', 'r.id = t.tld_registrar_id')
@@ -190,7 +190,7 @@ class Model_ProductDomainTable extends Model_ProductTable
             ->orderBy('t.id', 'ASC')
             ->executeQuery();
 
-        $results = $query->fetchAllAssociative();
+        $results = $result->fetchAllAssociative();
         foreach ($results as $tld) {
             $pricing[$tld['tld']] = [
                 'tld' => $tld['tld'],
