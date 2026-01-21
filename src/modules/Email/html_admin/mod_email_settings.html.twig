@@ -406,36 +406,34 @@
             event.preventDefault();
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const mailerInputs = document.querySelectorAll('#mailer input');
+        const mailerInputs = document.querySelectorAll('#mailer input');
 
-            mailerInputs.forEach(input => {
-                input.addEventListener('click', function() {
-                    const smtpFieldset = document.querySelector('fieldset.smtp');
-                    const sendgridFieldset = document.querySelector('fieldset.sendgrid');
-                    const customFieldset = document.querySelector('fieldset.custom');
+        mailerInputs.forEach(input => {
+            input.addEventListener('click', function() {
+                const smtpFieldset = document.querySelector('fieldset.smtp');
+                const sendgridFieldset = document.querySelector('fieldset.sendgrid');
+                const customFieldset = document.querySelector('fieldset.custom');
 
-                    // Handle SMTP fieldset.
-                    if (this.value === 'smtp') {
-                        smtpFieldset.style.display = 'block';
-                    } else {
-                        smtpFieldset.style.display = 'none';
-                    }
+                // Handle SMTP fieldset.
+                if (this.value === 'smtp') {
+                    smtpFieldset.style.display = 'block';
+                } else {
+                    smtpFieldset.style.display = 'none';
+                }
 
-                    // Handle SendGrid fieldset.
-                    if (this.value === 'sendgrid') {
-                        sendgridFieldset.style.display = 'block';
-                    } else {
-                        sendgridFieldset.style.display = 'none';
-                    }
+                // Handle SendGrid fieldset.
+                if (this.value === 'sendgrid') {
+                    sendgridFieldset.style.display = 'block';
+                } else {
+                    sendgridFieldset.style.display = 'none';
+                }
 
-                    // Handle Custom fieldset.
-                    if (this.value === 'custom') {
-                        customFieldset.style.display = 'block';
-                    } else {
-                        customFieldset.style.display = 'none';
-                    }
-                });
+                // Handle Custom fieldset.
+                if (this.value === 'custom') {
+                    customFieldset.style.display = 'block';
+                } else {
+                    customFieldset.style.display = 'none';
+                }
             });
         });
     });
