@@ -151,9 +151,8 @@ class Service implements InjectionAwareInterface
             ->select('permissions')
             ->from('admin')
             ->where('id = :id')
-            ->setParameter('id', $member_id)
-            ->executeQuery();
-        $result = $query->fetchOne() ?? '';
+            ->setParameter('id', $member_id);
+        $result = $query->executeQuery()->fetchOne() ?? '';
 
         $permissions = json_decode($result, true);
         if (!$permissions) {
