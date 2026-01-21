@@ -716,9 +716,9 @@ class Service implements InjectionAwareInterface
             ->where('type = :type')
             ->andWhere('status = :status')
             ->setParameter('type', 'mod')
-            ->setParameter('status', 'installed')
-            ->executeQuery();
-        $extensions = $query->executeQuery()->fetchAllKeyValue();
+            ->setParameter('status', 'installed');
+        $result = $query->executeQuery();
+        $extensions = $result->fetchAllKeyValue();
 
         if (!$extensions) {
             $list = [];
