@@ -151,6 +151,8 @@ class Service implements InjectionAwareInterface
 
     public function getProductSummary($data)
     {
+        $dbal = $this->di['dbal'];
+
         $query = "SELECT p.id, p.title, COUNT(o.id) as orders
                 FROM `client_order` o
                 RIGHT JOIN `product` p ON(p.id = o.product_id)
@@ -159,7 +161,9 @@ class Service implements InjectionAwareInterface
                 ORDER BY orders DESC
                 ";
 
-        return $this->di['db']->getAll($query);
+        $result = $dbal->executeQuery($query);
+
+        return $result->fetchAllAssociative();
     }
 
     public function getProductSales($data)

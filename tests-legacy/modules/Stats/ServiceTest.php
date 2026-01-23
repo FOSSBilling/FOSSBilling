@@ -44,13 +44,18 @@ final class ServiceTest extends \BBTestCase
     {
         $data = [];
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAll')
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->atLeastOnce())
+            ->method('fetchAllAssociative')
             ->willReturn([]);
 
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->atLeastOnce())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
+
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
 
         $this->service->setDi($di);
         $result = $this->service->getProductSummary($data);
