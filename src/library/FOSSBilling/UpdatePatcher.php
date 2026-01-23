@@ -537,9 +537,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
                 }
 
-                $productsStmt = $dbal->prepare("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'");
-                $productsStmt->execute();
-                $products = $productsStmt->fetchAllAssociative();
+                $products = $dbal->executeQuery("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'")->fetchAllAssociative();
 
                 foreach ($products as $product) {
                     $productConfig = json_decode($product['config'], true) ?: [];
@@ -550,9 +548,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
                     $foundFilename = null;
 
-                    $orderStmt = $dbal->prepare('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id');
-                    $orderStmt->execute(['product_id' => $product['id']]);
-                    $orders = $orderStmt->fetchAllAssociative();
+                    $orders = $dbal->executeQuery('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id', ['product_id' => $product['id']])->fetchAllAssociative();
 
                     foreach ($orders as $order) {
                         $orderConfig = json_decode($order['config'] ?? '', true);
@@ -569,9 +565,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
 
                     if ($foundFilename === null) {
-                        $serviceStmt = $dbal->prepare('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""');
-                        $serviceStmt->execute(['product_id' => $product['id']]);
-                        $services = $serviceStmt->fetchAllAssociative();
+                        $services = $dbal->executeQuery('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""', ['product_id' => $product['id']])->fetchAllAssociative();
 
                         foreach ($services as $service) {
                             $filePath = Path::join(PATH_UPLOADS, md5($service['filename']));
@@ -585,26 +579,21 @@ class UpdatePatcher implements InjectionAwareInterface
 
                     if ($foundFilename !== null) {
                         $productConfig['filename'] = $foundFilename;
-                        $updateProductStmt = $dbal->prepare('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id');
-                        $updateProductStmt->execute([
+                        $dbal->executeStatement('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id', [
                             'config' => json_encode($productConfig),
                             'updated_at' => date('Y-m-d H:i:s'),
                             'id' => $product['id'],
                         ]);
 
-                        $updateAllServicesStmt = $dbal->prepare('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id');
-                        $updateAllServicesStmt->execute(['filename' => $foundFilename, 'product_id' => $product['id']]);
+                        $dbal->executeStatement('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id', ['filename' => $foundFilename, 'product_id' => $product['id']]);
 
-                        $updateOrdersStmt = $dbal->prepare('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"');
-                        $updateOrdersStmt->execute(['product_id' => $product['id']]);
-                        $ordersToUpdate = $updateOrdersStmt->fetchAllAssociative();
+                        $ordersToUpdate = $dbal->executeQuery('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"', ['product_id' => $product['id']])->fetchAllAssociative();
 
                         foreach ($ordersToUpdate as $orderToUpdate) {
                             $orderConfig = json_decode($orderToUpdate['config'] ?? '', true);
                             if (is_array($orderConfig) && isset($orderConfig['filename'])) {
                                 $orderConfig['filename'] = $foundFilename;
-                                $saveOrderStmt = $dbal->prepare('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id');
-                                $saveOrderStmt->execute([
+                                $dbal->executeStatement('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id', [
                                     'config' => json_encode($orderConfig),
                                     'updated_at' => date('Y-m-d H:i:s'),
                                     'id' => $orderToUpdate['id'],
@@ -614,16 +603,14 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
                 }
 
-                $orphanStmt = $dbal->query('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""');
-                $orphans = $orphanStmt->fetchAllAssociative();
+                $orphans = $dbal->executeQuery('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""')->fetchAllAssociative();
 
                 foreach ($orphans as $orphan) {
                     $orderConfig = json_decode($orphan['order_config'] ?? '', true);
                     if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
                         $filePath = Path::join(PATH_UPLOADS, md5($orderConfig['filename']));
                         if ($filesystem->exists($filePath)) {
-                            $recoverStmt = $dbal->prepare('UPDATE service_downloadable SET filename = :filename WHERE id = :id');
-                            $recoverStmt->execute(['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
+                            $dbal->executeStatement('UPDATE service_downloadable SET filename = :filename WHERE id = :id', ['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
                         }
                     }
                 }
