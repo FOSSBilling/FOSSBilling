@@ -84,7 +84,7 @@ $di['pdo'] = function () {
     ];
 
     $connection = DriverManagerFactory::getConnection($driverOptions);
-    /** @var \PDO $pdo */
+    /** @var PDO $pdo */
     $pdo = $connection->getNativeConnection();
 
     if (isset($debugConfig['debug']) && $debugConfig['debug']) {
@@ -92,10 +92,7 @@ $di['pdo'] = function () {
     }
 
     if ($dbConfig['driver'] === 'pdo_mysql') {
-        $pdo->exec('SET NAMES "utf8"');
-        $pdo->exec('SET CHARACTER SET utf8');
-        $pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
-        $pdo->exec('SET character_set_results = utf8');
+        // Set server default charset for newly created tables. Connection charset is handled by DBAL via DSN.
         $pdo->exec('SET character_set_server = utf8');
         $pdo->exec('SET SESSION interactive_timeout = 28800');
         $pdo->exec('SET SESSION wait_timeout = 28800');
