@@ -187,10 +187,10 @@ class Model_ProductDomainTable extends Model_ProductTable
             ->from('tld', 't')
             ->leftJoin('t', 'tld_registrar', 'r', 'r.id = t.tld_registrar_id')
             ->where('t.active = 1')
-            ->orderBy('t.id', 'ASC')
-            ->executeQuery();
+            ->orderBy('t.id', 'ASC');
 
-        $results = $query->fetchAllAssociative();
+        $result = $query->executeQuery();
+        $results = $result->fetchAllAssociative();
         foreach ($results as $tld) {
             $pricing[$tld['tld']] = [
                 'tld' => $tld['tld'],

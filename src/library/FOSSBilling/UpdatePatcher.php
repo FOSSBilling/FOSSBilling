@@ -176,11 +176,12 @@ class UpdatePatcher implements InjectionAwareInterface
             ->select('value')
             ->from('setting')
             ->where('param = :param')
-            ->setParameter('param', 'last_patch')
-            ->executeQuery();
-        $result = $query->fetchOne();
+            ->setParameter('param', 'last_patch');
 
-        return intval($result) ?: null;
+        $result = $query->executeQuery();
+        $value = $result->fetchOne();
+
+        return intval($value) ?: null;
     }
 
     /**

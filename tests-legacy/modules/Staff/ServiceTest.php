@@ -1592,7 +1592,6 @@ final class ServiceTest extends \BBTestCase
             public function select($field) { return $this; }
             public function from($table) { return $this; }
             public function executeQuery() { return $this->stmt; }
-            public function fetchOne() { return '{}'; }
         };
 
         $dbalMock = new class($queryBuilderMock) {
@@ -1635,7 +1634,6 @@ final class ServiceTest extends \BBTestCase
             public function select($field) { return $this; }
             public function from($table) { return $this; }
             public function executeQuery() { return $this->stmt; }
-            public function fetchOne() { return $this->stmt->fetchOne(); }
         };
 
         $dbalMock = new class($queryBuilderMock) {
