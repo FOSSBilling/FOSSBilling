@@ -251,13 +251,15 @@ class UpdatePatcher implements InjectionAwareInterface
                         'param' => ':param',
                         'value' => ':value',
                         'public' => '0',
-                        'category' => null,
-                        'hash' => null,
+                        'category' => ':category',
+                        'hash' => ':hash',
                         'created_at' => ':created_at',
                         'updated_at' => ':updated_at',
                     ])
                     ->setParameter('param', 'company_favicon')
                     ->setParameter('value', 'themes/huraga/assets/favicon.ico')
+                    ->setParameter('category', null)
+                    ->setParameter('hash', null)
                     ->setParameter('created_at', '2023-01-08 12:00:00')
                     ->setParameter('updated_at', '2023-01-08 12:00:00')
                     ->executeStatement();
