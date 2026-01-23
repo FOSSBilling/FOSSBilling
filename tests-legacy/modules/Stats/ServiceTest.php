@@ -298,7 +298,7 @@ final class ServiceTest extends \BBTestCase
             'date_from' => 'yesterday',
             'date_to' => 'now',
         ];
-        $result = $this->service->getTableStats('TableName', $data);
+        $result = $this->service->getTableStats('client', $data);
         $this->assertIsArray($result);
     }
 }

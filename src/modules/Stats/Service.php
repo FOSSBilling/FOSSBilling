@@ -321,6 +321,10 @@ class Service implements InjectionAwareInterface
 
     public function getTableStats($table, $data = [])
     {
+        $allowedTables = ['client_order', 'client', 'invoice', 'support_ticket'];
+        if (!in_array($table, $allowedTables, true)) {
+            throw new \FOSSBilling\Exception('Invalid table name: :table', [':table' => $table]);
+        }
         $time_from = strtotime('-1 month');
         $time_to = strtotime('+1 day');
 

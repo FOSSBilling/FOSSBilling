@@ -66,6 +66,11 @@ class Service
 
     public function getPage($id, $type = 'id')
     {
+        $allowedColumns = ['id', 'slug'];
+        if (!in_array($type, $allowedColumns, true)) {
+            throw new \FOSSBilling\Exception('Invalid column type: :type', [':type' => $type]);
+        }
+
         return $this->di['dbal']->executeQuery(
             "SELECT * FROM custom_pages WHERE $type = ?",
             [$id]

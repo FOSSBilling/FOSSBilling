@@ -23,16 +23,27 @@ class DriverManagerFactory
      *
      * @var string[]
      */
-    const SUPPORTED_DRIVERS = [
+    public const SUPPORTED_DRIVERS = [
         'pdo_mysql',
+    ];
+
+    /**
+     * List of supported charset values for database connections.
+     *
+     * @var string[]
+     */
+    public const SUPPORTED_CHARSETS = [
+        'utf8',
+        'utf8mb4',
+        'latin1',
     ];
 
     /**
      * Creates and returns a Doctrine DBAL Connection instance.
      *
-     * @param array $driverOptions Optional driver-specific options.
-     * @return Connection
-     * @throws Exception If required database configuration keys are missing or the driver is unsupported.
+     * @param array $driverOptions optional driver-specific options
+     *
+     * @throws Exception if required database configuration keys are missing or the driver is unsupported
      */
     public static function getConnection(array $driverOptions = []): Connection
     {
@@ -49,15 +60,20 @@ class DriverManagerFactory
             throw new Exception('Unsupported database driver :driver. Supported drivers are: :supported.', [':driver' => $dbConfig['driver'], ':supported' => implode(', ', self::SUPPORTED_DRIVERS)]);
         }
 
+        $charset = $dbConfig['charset'] ?? 'utf8';
+        if (!in_array($charset, self::SUPPORTED_CHARSETS, true)) {
+            $charset = 'utf8';
+        }
+
         $connectionParams = [
-            'driver'   => $dbConfig['driver'],
-            'host'     => $dbConfig['host'],
-            'port'     => $dbConfig['port'],
-            'dbname'   => $dbConfig['name'],
-            'user'     => $dbConfig['user'],
+            'driver' => $dbConfig['driver'],
+            'host' => $dbConfig['host'],
+            'port' => $dbConfig['port'],
+            'dbname' => $dbConfig['name'],
+            'user' => $dbConfig['user'],
             'password' => $dbConfig['password'],
             'driverOptions' => $driverOptions,
-            'charset'  => $dbConfig['charset'] ?? 'utf8',
+            'charset' => $charset,
         ];
 
         return DriverManager::getConnection($connectionParams);
