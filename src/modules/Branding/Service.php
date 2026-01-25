@@ -32,6 +32,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
+    public function getWidgets(): array
+    {
+        return [
+            [
+                'slot' => 'client.theme.footer.end',
+                'template' => 'mod_branding_footer',
+            ],
+        ];
+    }
+
     public function uninstall(): bool
     {
         return true;

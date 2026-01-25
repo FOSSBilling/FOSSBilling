@@ -1,0 +1,156 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Widgets'|trans }}{% endblock %}
+
+{% set active_menu = 'extensions' %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'extension'|alink }}">{{ 'Extensions'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Widgets'|trans }}</li>
+    </ol>
+{% endblock %}
+
+{% set slots = admin.widgets_list() %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Widget Registry'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Modules can register widgets to dynamically display content in theme slots'|trans }}</p>
+            </div>
+            <div class="card-actions">
+                <a href="{{ 'api/admin/widgets/rebuild'|link }}" class="btn btn-primary"
+                   {{ fb_api_link({ reload: true, message: 'Widget cache rebuilt successfully'|trans}) }}>
+                    <svg class="icon">
+                        <use xlink:href="#refresh" />
+                    </svg>
+                    {{ 'Rebuild Cache'|trans }}
+                </a>
+            </div>
+        </div>
+
+        {% if slots is empty %}
+            <div class="card-body">
+                <div class="empty">
+                    <div class="empty-icon">
+                        <svg class="icon icon-lg">
+                            <use xlink:href="#info" />
+                        </svg>
+                    </div>
+                    <p class="empty-title">{{ 'No widgets registered'|trans }}</p>
+                    <p class="empty-subtitle text-secondary">
+                        {{ 'Widgets will appear here when modules that provide them are activated.'|trans }}<br>
+                        {{ 'Modules register widgets by implementing a <code>getWidgets()</code> method in their Service class.'|trans|raw }}
+                    </p>
+                    <div class="empty-action">
+                        <a href="{{ 'extension'|alink }}" class="btn btn-primary">
+                            <svg class="icon">
+                                <use xlink:href="#iPlugin" />
+                            </svg>
+                            {{ 'Manage Extensions'|trans }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="card-body border-bottom py-3">
+                <div class="d-flex">
+                    <div class="text-secondary">
+                        {{ 'Showing'|trans }}
+                        <span class="text-body fw-semibold">{{ slots|length }}</span>
+                        {{ slots|length == 1 ? 'slot'|trans : 'slots'|trans }}
+                        {{ 'with'|trans }}
+                        <span class="text-body fw-semibold">{% set total_widgets = 0 %}{% for slot in slots %}{% set total_widgets = total_widgets + slot.count %}{% endfor %}{{ total_widgets }}</span>
+                        {{ total_widgets == 1 ? 'widget'|trans : 'widgets'|trans }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>{{ 'Slot'|trans }}</th>
+                            <th>{{ 'Widgets'|trans }}</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for slot in slots %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="avatar avatar-sm bg-primary-lt text-secondary me-2">
+                                            <svg class="icon">
+                                                <use xlink:href="#cog" />
+                                            </svg>
+                                        </span>
+                                        <div>
+                                            <code class="text-reset">{{ slot.slot }}</code>
+                                            <div class="text-secondary small">
+                                                {% set slot_parts = slot.slot|split('.') %}
+                                                {% if slot_parts[0] == 'admin' %}
+                                                    <span class="badge bg-blue-lt">{{ 'Admin'|trans }}</span>
+                                                {% elseif slot_parts[0] == 'client' %}
+                                                    <span class="badge bg-green-lt">{{ 'Client'|trans }}</span>
+                                                {% endif %}
+                                                {% if slot_parts[1] == 'theme' %}
+                                                    {{ 'Theme layout slot'|trans }}
+                                                {% else %}
+                                                    {{ 'Module slot'|trans }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column gap-1">
+                                        {% for widget in slot.widgets %}
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-secondary text-white" data-bs-toggle="tooltip" data-bs-title="{{ 'Priority'|trans }}">{{ widget.priority }}</span>
+                                                <span class="fw-medium">{{ widget.module|capitalize }}</span>
+                                                <span class="text-secondary">&rarr;</span>
+                                                <code class="text-secondary small">widgets/{{ widget.template }}.html.twig</code>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-blue-lt">{{ slot.count }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card-footer">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <svg class="icon">
+                            <use xlink:href="#info" />
+                        </svg>
+                    </div>
+                    <div class="col">
+                        <div class="text-secondary">
+                            {{ 'Widgets are registered automatically when modules are activated. Lower priority numbers are rendered first.'|trans }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

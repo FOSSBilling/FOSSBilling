@@ -133,7 +133,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function getFunctions()
     {
         return [
-            new TwigFunction('render_widgets', $this->twig_render_widgets(...), ['is_safe' => ['html']]),
+            new TwigFunction('render_widgets', $this->twig_render_widgets(...), ['needs_environment' => true, 'is_safe' => ['html']]),
             new TwigFunction('svg_sprite', $this->twig_svg_sprite(...), ['needs_environment' => true, 'is_safe' => ['html']]),
 
             // FOSSBilling API functions
@@ -155,14 +155,53 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     /**
      * Part of the Widgets module. Renders the widgets of a specified slot.
-     * 
-     * @param string $slot name of the slot
-     * @param array $context optional slot context, such as order or client details
-     * @return string Slot content
+     *
+     * @param \Twig\Environment $env     the Twig environment (injected automatically)
+     * @param string            $slot    name of the slot
+     * @param array             $context optional slot context, such as order or client details
+     *
+     * @return string slot content
      */
-    public function twig_render_widgets(string $slot, array $context = []): string
+    public function twig_render_widgets(\Twig\Environment $env, string $slot, array $context = []): string
     {
-        return $this->di['mod_service']('widgets')->renderSlot($slot, $context);
+        $widgets = $this->di['mod_service']('Widgets')->getSlotWidgets($slot);
+
+        if (empty($widgets)) {
+            return '';
+        }
+
+        $output = '';
+
+        foreach ($widgets as $widget) {
+            try {
+                $templateName = 'widgets/' . $widget['template'] . '.html.twig';
+                $output .= $env->render($templateName, $context);
+            } catch (\Throwable $e) {
+                // Render error widget on failure
+                try {
+                    $output .= $env->render('widgets/mod_widgets_error.html.twig', array_merge($context, [
+                        'widget' => [
+                            'slot' => $slot,
+                            'mod_name' => $widget['module'],
+                            'template' => $widget['template'],
+                        ],
+                        'error' => \FOSSBilling\Environment::isDevelopment() ? $e->getMessage() : null,
+                    ]));
+                } catch (\Throwable) {
+                    // If even the error template fails, output a minimal HTML comment in dev mode
+                    if (\FOSSBilling\Environment::isDevelopment()) {
+                        $output .= sprintf(
+                            '<!-- Widget error: %s (module: %s, template: %s) -->',
+                            htmlspecialchars($e->getMessage()),
+                            htmlspecialchars($widget['module']),
+                            htmlspecialchars($widget['template'])
+                        );
+                    }
+                }
+            }
+        }
+
+        return $output;
     }
 
     public function twig_ipcountryname_filter($value)

@@ -1,7 +1,7 @@
 <?php
+
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -13,24 +13,25 @@ namespace Box\Mod\Widgets\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Get a paginated list of widgets.
+     * Get all registered widgets grouped by slots.
      *
-     * @return array
+     * @return array list of slots with their widgets
      */
-    public function get_list($data)
+    public function list(): array
     {
-        $service = $this->getService();
-        [$sql, $params] = $service->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-
-        return $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        return $this->getService()->getWidgetList();
     }
 
-    public function batch_connect($data)
+    /**
+     * Force rebuild of the widget registry cache.
+     * Useful for debugging or after manual changes.
+     */
+    public function rebuild(): bool
     {
-        $mod = $data['mod'] ?? null;
         $service = $this->getService();
+        $service->invalidateCache();
+        $service->getRegistry(); // Trigger rebuild
 
-        return $service->batchConnect($mod);
+        return true;
     }
 }

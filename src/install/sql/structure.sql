@@ -1427,27 +1427,6 @@ CREATE TABLE `transaction` (
   KEY `invoice_id_idx` (`invoice_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `widgets`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `widgets` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `mod_name` varchar(64) NOT NULL,
-  `slot` varchar(64) NOT NULL,
-  `template` varchar(64) NOT NULL,
-  `priority` int(11) DEFAULT 10,
-  `enabled` tinyint(1) NOT NULL DEFAULT 1,
-  `options` JSON DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `mod_slot_template_unique` (`mod_name`, `slot`, `template`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
