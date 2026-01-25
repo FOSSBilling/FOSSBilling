@@ -452,7 +452,9 @@ const API = {
           errorHandler(errorObj);
         } else {
           console.warn('No error handler was specified for API error.');
-          throw error;
+          const normalizedError = new Error(errorObj.message);
+          normalizedError.code = errorObj.code;
+          throw normalizedError;
         }
       });
   },
