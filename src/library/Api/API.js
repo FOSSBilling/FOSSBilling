@@ -452,9 +452,8 @@ const API = {
           errorHandler(errorObj);
         } else {
           console.warn('No error handler was specified for API error.');
+          throw error;
         }
-
-        throw error;
       });
   },
 
@@ -574,25 +573,20 @@ const API = {
             return;
           }
 
-          try {
-            API.makeRequest(
-              formMethod,
-              Tools.getBaseURL(action),
-              data,
-              (result) => {
-                toggleButtons(false);
-                API._afterComplete(formElement, result);
-                return result;
-              },
-              (error) => {
-                toggleButtons(false);
-                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
-              }
-            );
-          } catch (error) {
-            toggleButtons(false);
-            FOSSBilling.message(error.message || 'An error occurred', 'error');
-          }
+          API.makeRequest(
+            formMethod,
+            Tools.getBaseURL(action),
+            data,
+            (result) => {
+              toggleButtons(false);
+              API._afterComplete(formElement, result);
+              return result;
+            },
+            (error) => {
+              toggleButtons(false);
+              FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+            }
+          );
         });
       });
     }
