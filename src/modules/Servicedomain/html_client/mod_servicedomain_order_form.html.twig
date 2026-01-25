@@ -158,11 +158,6 @@
             return `${total.toFixed(2)} ${code}`;
         };
 
-        const showApiError = (error) => {
-            const message = error && error.message ? `${error.message} (${error.code})` : 'Unknown error occurred';
-            FOSSBilling.message(message, 'error');
-        };
-
         const transferCheck = document.getElementById('transfer-check');
         if (transferCheck) {
             transferCheck.addEventListener('click', function (event) {
@@ -186,7 +181,6 @@
                         const transferOrderButton = document.querySelector('#transfer .order-button');
                         if (transferOrderButton) transferOrderButton.style.display = '';
                     },
-                    showApiError
                 );
 
                 return false;
@@ -213,7 +207,6 @@
                         const registerOrderButton = document.querySelector('#register .order-button');
                         if (registerOrderButton) registerOrderButton.style.display = '';
                     },
-                    showApiError
                 );
 
                 return false;
@@ -256,7 +249,6 @@
                     configNext.style.display = '';
                     configNext.disabled = false;
                 },
-                showApiError
             );
         }
 
@@ -271,7 +263,6 @@
                     configNext.style.display = '';
                     configNext.disabled = false;
                 },
-                showApiError
             );
         }
     });
