@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
    * Global error handler for unhandled Promise rejections
    */
   window.addEventListener('unhandledrejection', function(event) {
-    event.preventDefault();
     const error = event.reason;
     let message = 'An unexpected error occurred';
     if (error && typeof error === 'object') {
@@ -29,7 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
       displayMessage = error.message;
     }
     FOSSBilling.message(displayMessage, 'error');
-    return true; // Prevent default browser error handling
   };
 
   /**

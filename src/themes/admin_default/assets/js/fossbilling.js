@@ -85,7 +85,6 @@ globalThis.FOSSBilling = {
   document.addEventListener('DOMContentLoaded', function() {
     // Global error handler for unhandled Promise rejections
     window.addEventListener('unhandledrejection', function(event) {
-      event.preventDefault();
       const error = event.reason;
       let message = 'An unexpected error occurred';
       if (error && typeof error === 'object') {
@@ -103,7 +102,6 @@ globalThis.FOSSBilling = {
         displayMessage = error.message;
       }
       FOSSBilling.message(displayMessage, 'error');
-      return true; // Prevent default browser error handling
     };
 
     // Attach event listeners to all forms and links with data-fb-api attribute.
