@@ -96,13 +96,13 @@ globalThis.FOSSBilling = {
     });
 
     // Global error handler for synchronous errors
-    window.onerror = function(message, source, lineno, colno, error) {
-      let displayMessage = message;
-      if (error && error.message) {
-        displayMessage = error.message;
+    window.addEventListener('error', function(event) {
+      let displayMessage = event && event.message ? event.message : 'An unexpected error occurred';
+      if (event && event.error && event.error.message) {
+        displayMessage = event.error.message;
       }
       FOSSBilling.message(displayMessage, 'error');
-    };
+    });
 
     // Attach event listeners to all forms and links with data-fb-api attribute.
     if (document.querySelector("form[data-fb-api]")) {
