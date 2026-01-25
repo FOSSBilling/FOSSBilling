@@ -178,26 +178,14 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
                 $output .= $env->render($templateName, $context);
             } catch (\Throwable $e) {
                 // Render error widget on failure
-                try {
-                    $output .= $env->render('widgets/mod_widgets_error.html.twig', array_merge($context, [
-                        'widget' => [
-                            'slot' => $slot,
-                            'mod_name' => $widget['module'],
-                            'template' => $widget['template'],
-                        ],
-                        'error' => \FOSSBilling\Environment::isDevelopment() ? $e->getMessage() : null,
-                    ]));
-                } catch (\Throwable) {
-                    // If even the error template fails, output a minimal HTML comment in dev mode
-                    if (\FOSSBilling\Environment::isDevelopment()) {
-                        $output .= sprintf(
-                            '<!-- Widget error: %s (module: %s, template: %s) -->',
-                            htmlspecialchars($e->getMessage()),
-                            htmlspecialchars($widget['module']),
-                            htmlspecialchars($widget['template'])
-                        );
-                    }
-                }
+                $output .= $env->render('widgets/mod_widgets_error.html.twig', array_merge($context, [
+                    'widget' => [
+                        'slot' => $slot,
+                        'mod_name' => $widget['module'],
+                        'template' => $widget['template'],
+                    ],
+                    'error' => \FOSSBilling\Environment::isDevelopment() ? $e->getMessage() : null,
+                ]));
             }
         }
 
