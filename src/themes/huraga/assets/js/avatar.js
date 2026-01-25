@@ -1,6 +1,8 @@
 import { createAvatar } from '@dicebear/core';
 import * as identicon from '@dicebear/identicon';
 
+const avatarCache = new Map();
+
 function hashEmail(email) {
   if (!email || typeof email !== 'string') {
     return null;
@@ -17,8 +19,12 @@ function hashEmail(email) {
 }
 
 export function generateAvatar(email, size = 40) {
-  const seed = hashEmail(email);
+  const cacheKey = `${email}:${size}`;
+  if (avatarCache.has(cacheKey)) {
+    return avatarCache.get(cacheKey);
+  }
 
+  const seed = hashEmail(email);
   if (!seed) {
     return null;
   }
@@ -29,7 +35,9 @@ export function generateAvatar(email, size = 40) {
     backgroundColor: ['transparent']
   });
 
-  return avatar.toString();
+  const result = avatar.toString();
+  avatarCache.set(cacheKey, result);
+  return result;
 }
 
 export function initAvatars() {
@@ -41,9 +49,7 @@ export function initAvatars() {
       const svg = generateAvatar(email, size);
 
       if (svg) {
-        const encodedSvg = encodeURIComponent(svg)
-          .replace(/'/g, '%27')
-          .replace(/"/g, '%22');
+        const encodedSvg = encodeURIComponent(svg);
 
         container.style.backgroundImage = `url("data:image/svg+xml,${encodedSvg}")`;
       }
