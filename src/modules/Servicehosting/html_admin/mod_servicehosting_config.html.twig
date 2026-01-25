@@ -2,7 +2,7 @@
 
 <div class="card-body">
     <h3>{{ 'Hosting settings'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/product/update_config'|link }}" {{ fb_api_form({message: 'Hosting Settings Updated'|trans}) }}>
+    <form method="post" action="{{ 'api/admin/product/update_config'|link }}" {{ fb_api_form({message: 'Hosting Settings Updated'|trans}) }} id="hosting-settings-form">
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Server'|trans }}:</label>
             <div class="col">
@@ -72,6 +72,13 @@
                     <label class="form-check-label" for="radioAllowOwnNo">{{ 'No'|trans }}</label>
                 </div>
             </div>
+        </div>
+
+        <div class="alert alert-danger d-none" id="domain-options-warning">
+            <svg class="icon me-2">
+                <use xlink:href="#alert-triangle" />
+            </svg>
+            {{ 'At least one domain option must be enabled. Customers will not be able to order this product if all domain options are disabled.'|trans }}
         </div>
         
         <hr />
@@ -262,4 +269,40 @@
         freeTldsRow.style.display = 'none';
         freePerdsRow.style.display = 'none';
     }
+
+    // Domain options validation - at least one must be enabled
+    const domainOptionsWarning = document.getElementById('domain-options-warning');
+    const hostingSettingsForm = document.getElementById('hosting-settings-form');
+    const domainOptionRadios = document.querySelectorAll(
+        'input[name="config[allow_domain_register]"], ' +
+        'input[name="config[allow_domain_transfer]"], ' +
+        'input[name="config[allow_domain_own]"]'
+    );
+
+    function checkDomainOptions() {
+        const registerEnabled = document.querySelector('input[name="config[allow_domain_register]"][value="1"]').checked;
+        const transferEnabled = document.querySelector('input[name="config[allow_domain_transfer]"][value="1"]').checked;
+        const ownEnabled = document.querySelector('input[name="config[allow_domain_own]"][value="1"]').checked;
+
+        const allDisabled = !registerEnabled && !transferEnabled && !ownEnabled;
+        domainOptionsWarning.classList.toggle('d-none', !allDisabled);
+
+        return !allDisabled;
+    }
+
+    domainOptionRadios.forEach(radio => {
+        radio.addEventListener('change', checkDomainOptions);
+    });
+
+    hostingSettingsForm.addEventListener('submit', function(e) {
+        if (!checkDomainOptions()) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            domainOptionsWarning.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+        }
+    });
+
+    // Initial check on page load
+    checkDomainOptions();
 </script>
