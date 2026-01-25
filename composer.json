@@ -91,8 +91,7 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.92.3",
-        "pestphp/pest": "^3.8",
-        "pestphp/pest-plugin-faker": "^3.0",
+        "pestphp/pest": "^4.0",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan": "^2.1.33",
         "phpstan/phpstan-deprecation-rules": "^2.0.3",
