@@ -70,6 +70,10 @@ body {
     padding: 0.5rem 1rem;
 }
 
+.ts-dropdown-content {
+    background-color: var(--tblr-bg-forms);
+}
+
 .ts-dropdown.locale-selector-dropdown .dropdown-item:hover,
 .ts-dropdown.locale-selector-dropdown .dropdown-item.active,
 .ts-dropdown.locale-selector-dropdown .dropdown-item.selected {

@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.assign(reload);
       }
     }
-  }
+  };
   flashMessage({});
 
   /**

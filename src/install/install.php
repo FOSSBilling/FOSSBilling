@@ -451,7 +451,7 @@ final class FOSSBilling_Installer
         $data['url'] = str_replace(['https://', 'http://'], '', SYSTEM_URL);
         $data['path_data'] = Path::join(PATH_ROOT, 'data');
         $data['db'] = [
-            'type' => 'mysql',
+            'driver' => 'pdo_mysql',
             'host' => $this->session->get('database_hostname'),
             'port' => $this->session->get('database_port'),
             'name' => $this->session->get('database_name'),
