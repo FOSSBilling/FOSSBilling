@@ -52,6 +52,9 @@ export function initAvatars() {
         const encodedSvg = encodeURIComponent(svg);
 
         container.style.backgroundImage = `url("data:image/svg+xml,${encodedSvg}")`;
+        container.style.backgroundSize = '100% 100%';
+        container.style.backgroundPosition = 'center';
+        container.style.backgroundRepeat = 'no-repeat';
       }
     }
   });
