@@ -236,6 +236,9 @@
                         renewPrice = regPrice;
                     }
 
+                    const yearLabel = "{{ ' Year @ '|trans }}";
+                    const yearsLabel = "{{ ' Years @ '|trans }}";
+
                     for (let i = 1; i <= 5; i++) {
                         const totalPrice = (i === 1) ? regPrice : regPrice + (i - 1) * renewPrice;
                         const priceFormatted = formatCurrency(
@@ -246,7 +249,7 @@
                         );
 
                         yearsSelect.append(
-                            new Option(i + "{{ ' Year/s @ '|trans }}" + priceFormatted, i)
+                            new Option(i + (i === 1 ? yearLabel : yearsLabel) + priceFormatted, i)
                         );
                     }
 
