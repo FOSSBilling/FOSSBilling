@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Theme\Model;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]

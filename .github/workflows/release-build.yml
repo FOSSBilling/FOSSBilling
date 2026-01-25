@@ -24,14 +24,14 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@684dd307834c3066b5b95d3b971e1877d205c0de
+        uses: FOSSBilling/.workflows/.github/actions/php-build@11c3d3bb2ce6915aa0fc8af3165402a65400b084
         with:
           cache-deps: 'false'
           composer-args: '--prefer-dist --no-dev --optimize-autoloader'
-          php-version: 8.2
+          php-version: 8.3
 
       - name: 'Install Node.js and Enable Caching'
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
@@ -41,7 +41,7 @@ jobs:
         run: npm install
 
       - name: 'Build Frontend Assets'
-        run: npm run build
+        run: NODE_ENV=production npm run build
 
       - name: 'Download Latest Translations'
         run: |

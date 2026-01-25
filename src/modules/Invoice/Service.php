@@ -82,7 +82,7 @@ class Service implements InjectionAwareInterface
 
         if ($approved) {
             $sql .= ' AND p.approved = :approved';
-            $params['approved'] = $approved;
+            $params['approved'] = (int) $approved;
         }
 
         if ($status) {
@@ -127,8 +127,8 @@ class Service implements InjectionAwareInterface
         }
 
         if ($search) {
-            $sql .= ' AND (p.id = :int OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)';
-            $params['int'] = (int) preg_replace('/[^0-9]/', '', (string) $search);
+            $sql .= ' AND (p.id = :search_numeric_id OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)';
+            $params['search_numeric_id'] = (int) preg_replace('/[^0-9]/', '', (string) $search);
             $params['search_like'] = '%' . $search . '%';
             $params['search'] = $search;
         }
@@ -193,7 +193,7 @@ class Service implements InjectionAwareInterface
         $result['nr'] = $row['nr'];
         $result['client_id'] = $invoice->client_id;
 
-        $nr = (is_numeric($result['nr'])) ? $result['nr'] : $result['id'];
+        $nr = is_numeric($row['nr']) ? intval($row['nr']) : $result['id'];
         $result['serie_nr'] = $result['serie'] . sprintf('%0' . $invoice_number_padding . 's', $nr);
 
         $result['hash'] = $row['hash'];
@@ -281,18 +281,48 @@ class Service implements InjectionAwareInterface
         $result['orders'] = [];
         $orderIds = array_unique(array_filter(array_column($lines, 'order_id')));
 
+        // Ensure order IDs are safe integers before using in SQL
+        $orderIds = array_values(array_filter(array_map('intval', $orderIds), static function ($id) {
+            return $id > 0;
+        }));
+
         if (!empty($orderIds)) {
             // Batch load orders
-            $orders = $this->di['db']->find('ClientOrder', 'id IN (' . implode(',', $orderIds) . ')');
+            $orderIdPlaceholders = [];
+            $orderIdParams = [];
+            foreach ($orderIds as $idx => $id) {
+                $placeholder = ':order_id_' . $idx;
+                $orderIdPlaceholders[] = $placeholder;
+                $orderIdParams['order_id_' . $idx] = $id;
+            }
+            $orders = $this->di['db']->find('ClientOrder', 'id IN (' . implode(',', $orderIdPlaceholders) . ')', $orderIdParams);
 
             // Batch load related products
-            $productIds = array_unique(array_filter(array_map(fn ($o) => $o->product_id, $orders)));
-            $products = !empty($productIds)
-            ? $this->di['db']->find('Product', 'id IN (' . implode(',', $productIds) . ')')
-            : [];
+            $productIds = array_unique(array_filter(array_map(static function ($o) {
+                return isset($o->product_id) ? (int) $o->product_id : 0;
+            }, $orders)));
+            // Ensure product IDs are safe integers before using in SQL
+            $productIds = array_values(array_filter($productIds, static function ($id) {
+                return $id > 0;
+            }));
+
+            $productsById = [];
+            if (!empty($productIds)) {
+                // Use parameter placeholders instead of directly interpolating IDs into the SQL string
+                $placeholders = implode(',', array_fill(0, count($productIds), '?'));
+                $products = $this->di['db']->find('Product', 'id IN (' . $placeholders . ')', $productIds);
+
+                // Re-index products by their ID for efficient lookup
+                foreach ($products as $product) {
+                    if (isset($product->id)) {
+                        $productsById[(int) $product->id] = $product;
+                    }
+                }
+            }
 
             foreach ($orders as $order) {
-                $product = $products[$order->product_id] ?? null;
+                $productId = isset($order->product_id) ? (int) $order->product_id : 0;
+                $product = $productsById[$productId] ?? null;
                 $orderData = [
                     'id' => $order->id,
                     'title' => $order->title,
@@ -319,7 +349,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            $invoice = $service->toApiArray($invoiceModel, ['id' => $params['id']]);
+            $invoice = $service->toApiArray($invoiceModel, true);
             if ($invoice['total'] > 0) {
                 $email = [];
                 $email['to_client'] = $invoiceModel->client_id;
@@ -343,7 +373,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            $invoice = $service->toApiArray($invoiceModel, ['id' => $params['id']]);
+            $invoice = $service->toApiArray($invoiceModel, true);
             $email = [];
             $email['to_client'] = $invoiceModel->client_id;
             $email['code'] = 'mod_invoice_created';
@@ -385,8 +415,8 @@ class Service implements InjectionAwareInterface
         if (isset($remove_after_days) && $remove_after_days) {
             // removing old invoices
             $days = (int) $remove_after_days;
-            $sql = "DELETE FROM invoice WHERE status = 'unpaid' AND DATEDIFF(NOW(), due_at) > $days";
-            $di['db']->exec($sql);
+            $sql = "DELETE FROM invoice WHERE status = :status AND DATEDIFF(NOW(), due_at) > :days";
+            $di['db']->exec($sql, [':days' => $days, ':status' => \Model_Invoice::STATUS_UNPAID]);
         }
     }
 
@@ -661,8 +691,8 @@ class Service implements InjectionAwareInterface
             $balanceTransaction->type = 'invoice';
             $balanceTransaction->rel_id = $invoice->id;
 
-            $invoiceIdentifier = $invoice->serie_nr ?: $invoice->id;
-            $balanceTransaction->description = "Payment for invoice #{$invoiceIdentifier} using account credit.";
+            $invoice_identifier = $invoice->serie_nr ?: $invoice->id;
+            $balanceTransaction->description = "Payment for invoice #{$invoice_identifier} using account credit.";
 
             $balanceTransaction->amount = -$required;
             $balanceTransaction->created_at = date('Y-m-d H:i:s');
@@ -1306,7 +1336,6 @@ class Service implements InjectionAwareInterface
         $pdf->setPaper($document_format, 'portrait');
         $options = $pdf->getOptions();
         $options->setChroot($_SERVER['DOCUMENT_ROOT']);
-        $options->setDefaultFont('DejaVu Sans');
 
         $sellerLines = 0;
         $buyerLines = 0;

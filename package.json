@@ -19,33 +19,29 @@
     "url": "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "dependencies": {
+    "@tabler/core": "^1.2.0",
     "autosize": "^6.0.1",
     "bootstrap": "^5.3.3",
     "flag-icons": "^7.2.3",
     "tom-select": "^2.3.1"
   },
   "devDependencies": {
-    "@symfony/webpack-encore": "5.3.1",
+    "@fullhuman/postcss-purgecss": "7.0.2",
     "autoprefixer": "10.4.23",
-    "core-js": "3.47.0",
     "postcss": "8.5.6",
-    "postcss-loader": "8.2.0",
-    "sass": "1.97.1",
-    "sass-embedded": "1.97.1",
-    "sass-loader": "16.0.6",
-    "svg-sprite-loader": "6.0.11",
-    "svgo-loader": "4.0.0",
-    "webpack": "5.104.1",
-    "webpack-cli": "6.0.1"
+    "purgecss": "7.0.2",
+    "sass": "1.97.3",
+    "sass-embedded": "1.97.3"
   },
   "workspaces": [
+    "frontend-build-utils",
     "src/themes/huraga",
     "src/themes/admin_default",
     "src/modules/Wysiwyg"
   ],
   "config": {
     "platform": {
-      "php": "8.2"
+      "php": "8.3"
     }
   },
   "engines": {

@@ -194,6 +194,10 @@ Do not use an AI or LLM to generate changes, respond to issues, or interact with
 
 All PHP must adhere to [PSR-12](https://www.php-fig.org/psr/psr-12/).
 
+### JavaScript Style Guide
+
+JavaScript must use modern vanilla JavaScript (ES6+). jQuery has been fully removed from the codebase.
+
 ### Documentation Style Guide
 
 We don't have a formal documentation style guide yet, but we will be developing one soon. In the meantime please take a look at the existing documentation and follow the tone and writing style so that everything stays coherent. 

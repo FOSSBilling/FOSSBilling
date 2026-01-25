@@ -14,7 +14,7 @@
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'servicehosting'|alink }}">{{ 'Hosting plans and servers'|trans }}</a>
+            <a href="{{ 'servicehosting'|alink }}">{{ 'Hosting Plans and Servers'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ hp.name }}</li>
     </ol>
@@ -22,72 +22,59 @@
 
 {% block content %}
 <div class="card">
+    <div class="card-header">
+        <h3>{{ 'Manage Hosting Plan'|trans }}</h3>
+    </div>
     <div class="card-body">
-        <h5>{{ 'Manage hosting plan'|trans }}</h5>
-        <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" class="api-form" data-api-msg="{{ 'Hosting plan updated'|trans }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="name" value="{{ hp.name }}" required placeholder="{{ 'Unique name to identify this hosting plan'|trans }}">
+        <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" {{ fb_api_form({message: 'Hosting Plan Updated'|trans}) }}>
+            <div class="mb-3">
+                <label class="form-label" for="plan-name">{{ 'Name'|trans }}:</label>
+                <input class="form-control" id="plan-name" type="text" name="name" value="{{ hp.name }}" required placeholder="{{ 'Unique name to identify this hosting plan'|trans }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-disk">{{ 'Disk Quota'|trans }}:</label>
+                <div class="input-group">
+                    <input class="form-control" id="plan-disk" type="text" name="quota" value="{{ hp.quota }}" aria-describedby="quota">
+                    <span class="input-group-text" id="quota">MB</span>
                 </div>
             </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Disk quota'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="quota" value="{{ hp.quota }}">
+            <div class="mb-3">
+                <label class="form-label" for="plan-bandwidth">{{ 'Bandwidth'|trans }}:</label>
+                <div class="input-group">
+                    <input class="form-control" id="plan-bandwidth" type="text" name="bandwidth" value="{{ hp.bandwidth }}" aria-describedby="bandwidth">
+                    <span class="input-group-text" id="bandwidth">MB</span>
                 </div>
             </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Bandwidth'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="bandwidth" value="{{ hp.bandwidth }}">
-                </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-addon">{{ 'Maximum Addon Domains'|trans }}:</label>
+                <input class="form-control" id="plan-addon" type="number" name="max_addon" value="{{ hp.max_addon }}">
             </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Max Addon domains'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="max_addon" value="{{ hp.max_addon }}">
-                </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-ftp">{{ 'Maximum FTP Accounts'|trans }}:</label>
+                <input class="form-control" id="plan-ftp" type="number" name="max_ftp" value="{{ hp.max_ftp }}">
             </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Max FTP accounts'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="max_ftp" value="{{ hp.max_ftp }}">
-                </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-sql">{{ 'Maximum Databases'|trans }}:</label>
+                <input class="form-control" id="plan-sql" type="number" name="max_sql" value="{{ hp.max_sql }}">
             </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Max SQL Databases'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="max_sql" value="{{ hp.max_sql }}">
-                </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-email">{{ 'Maximum Email Accounts'|trans }}:</label>
+                <input class="form-control" id="plan-email" type="number" name="max_pop" value="{{ hp.max_pop }}">
             </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Max Email Accounts'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="max_pop" value="{{ hp.max_pop }}">
-                </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-subdomains">{{ 'Maximum Subdomains'|trans }}:</label>
+                <input class="form-control" id="plan-subdomains" type="number" name="max_sub" value="{{ hp.max_sub }}">
             </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Max Subdomains'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="max_sub" value="{{ hp.max_sub }}">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Max Parked Domains'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="max_park" value="{{ hp.max_park }}">
-                </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-parked">{{ 'Maximum Parked Domains'|trans }}:</label>
+                <input class="form-control" id="plan-parked" type="number" name="max_park" value="{{ hp.max_park }}">
             </div>
             {% if hp.config|length > 0 %}
-                <h3>{{ 'Server manager specific parameters'|trans }}</h3>
+                <h3>{{ 'Server Manager Specific Parameters'|trans }}</h3>
                 {% for name, value in hp.config %}
-                <div class="mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ name }}:</label>
-                    <div class="col">
-                        <textarea class="form-control" name="config[{{ name }}]" rows="1">{{ value }}</textarea>
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label" for="plan-special-{{ name }}">{{ name }}:</label>
+                    <textarea class="form-control" id="plan-special-{{ name }}" name="config[{{ name }}]" rows="1">{{ value }}</textarea>
                 </div>
                 {% endfor %}
             {% endif %}
@@ -97,11 +84,10 @@
         </form>
         <hr>
 
-        <h3>{{ 'Hosting plan additional parameters'|trans }}</h3>
+        <h3>{{ 'Hosting Plan Additional Parameters'|trans }}</h3>
         <p class="text-muted">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters. List of parameters server managers requires you can find on extensions page.'|trans }}</p>
 
-        <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" class="api-form" data-api-reload="1">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" {{ fb_api_form({reload: true}) }}>
             <div class="mb-3 row g-2">
                 <div class="col">
                     <label class="form-label">{{ 'Parameter name'|trans }}:</label>

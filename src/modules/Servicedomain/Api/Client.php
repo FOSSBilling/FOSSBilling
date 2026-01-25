@@ -46,8 +46,6 @@ class Client extends \Api_Abstract
     {
         $s = $this->_getService($data);
 
-        $this->getService()->updateContacts($s, $data);
-
         return $this->getService()->updateContacts($s, $data);
     }
 

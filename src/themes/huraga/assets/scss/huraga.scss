@@ -1,14 +1,22 @@
-$primary: #005fc5;
-$warning: #f59e0b;
-$danger: #dc2626;
-$body-bg: #f5f5f5;
+@use "flags";
 
-$accordion-button-active-bg: rgba($primary, .05);
-$accordion-button-focus-border-color: rgba($primary, .08);
+:root {
+    --tblr-primary: #005fc5;
+    --tblr-primary-rgb: 0, 95, 197;
+    --tblr-warning: #f59e0b;
+    --tblr-danger: #dc2626;
+    --tblr-body-bg: #f5f5f5;
+    --tblr-body-bg-rgb: 245, 245, 245;
+    --tblr-muted: #656d77;
+    --tblr-muted-rgb: 101, 109, 119;
+    --tblr-border-color: #e3e5e8;
+    --tblr-dark: #132238;
+    --tblr-font-size-base: 0.875rem;
+}
 
-@import "~bootstrap/scss/bootstrap";
-@import "~tom-select/dist/css/tom-select.bootstrap5.css";
-@import "flags";
+html {
+    font-size: var(--tblr-font-size-base, 0.875rem);
+}
 
 html,
 body {
@@ -17,7 +25,9 @@ body {
 }
 
 body {
-    font-family: Verdana, sans-serif;
+    font-family: var(--tblr-body-font-family, system-ui, -apple-system, sans-serif);
+    font-size: 1rem;
+    line-height: 1.42857143;
 }
 
 .fs-7 {
@@ -36,7 +46,7 @@ body {
     }
 
     >a {
-        color: $secondary;
+        color: var(--tblr-muted);
     }
 }
 
@@ -49,8 +59,8 @@ body {
         >thead {
             >tr {
                 >th {
-                    font-size: $font-size-sm * .875;
-                    color: $secondary;
+                    font-size: 0.765625rem;
+                    color: var(--tblr-muted);
                     font-weight: 600;
                     text-transform: uppercase;
                 }
@@ -75,8 +85,8 @@ body {
 
 // Remove order management accordion icons
 #orderManager {
-    --#{$prefix}accordion-btn-icon: none;
-    --#{$prefix}accordion-btn-active-icon: none;
+    --tblr-accordion-btn-icon: none;
+    --tblr-accordion-btn-active-icon: none;
 }
 
 // TomSelect dropdown
@@ -108,12 +118,12 @@ body {
         font-size: 14px;
 
         .active {
-            background-color: rgba($secondary, .06);
+            background-color: rgba(var(--tblr-muted-rgb), 0.06);
             color: inherit;
         }
 
         .selected {
-            background-color: rgba($secondary, .1);
+            background-color: rgba(var(--tblr-muted-rgb), 0.1);
         }
     }
 }
@@ -125,10 +135,10 @@ body {
 }
 
 .invoice-gateway {
-    border: 1px $border-color solid;
+    border: 1px solid var(--tblr-border-color);
 
     &:hover {
-        border: 1px $primary solid;
+        border: 1px solid var(--tblr-primary);
     }
 }
 
@@ -137,15 +147,240 @@ body {
 
     .list-group-item {
         border: 0;
-        border-bottom: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--tblr-border-color);
         border-left: 2px solid transparent;
 
         &.active {
-            border-left: 2px solid var(--bs-primary-border-subtle);
-            background: rgba($primary, .1);
-            color: $dark;
+            border-left: 2px solid var(--tblr-primary);
+            background: rgba(var(--tblr-primary-rgb), 0.1);
+            color: var(--tblr-dark);
         }
     }
+}
+
+// Badge text contrast fix - ensure white text on colored badges
+.badge[class*="bg-"],
+.badge[class*="text-bg-"] {
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+// Hide empty badges to prevent grey circle from showing
+.badge:empty {
+    display: none;
+}
+
+.card-header {
+    padding: 0.75rem 1.25rem;
+    background-color: var(--tblr-bg-surface-tertiary, #e9ecef);
+}
+
+// Navbar and logo styling
+.navbar {
+    background-color: var(--tblr-body-bg, #f9fafb);
+    box-shadow: none;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 45px;
+}
+
+.navbar-brand img {
+    display: block;
+    height: 45px;
+    width: auto;
+}
+
+// Language selector flag icon styling
+.locale-selector-dropdown {
+    background-color: var(--tblr-bg-surface);
+    border: 1px solid var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    box-shadow: var(--tblr-box-shadow);
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+
+        .fi {
+            display: inline-block;
+            width: 1.25em;
+            height: 1em;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+    }
+}
+
+// Ensure flag icons render correctly in all contexts
+.fi {
+    border-radius: 4px;
+    display: inline-block;
+    vertical-align: middle;
+    position: relative;
+    width: 1.25em;
+    height: 1em;
+
+    &::before {
+        content: '';
+        display: block;
+        width: inherit;
+        height: inherit;
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+}
+
+// Flag icon size variants
+.fi-fw {
+    width: 1.28571429em;
+}
+
+.fi-size-sm {
+    font-size: 0.875rem;
+}
+
+.fi-size-lg {
+    font-size: 1.25rem;
+}
+
+// TODO: Add custom color themes to Huraga. Tabler provides built-in dark mode support - see https://tabler.io/docs/colors
+
+// Breadcrumb margin
+.breadcrumb {
+    margin-bottom: 1.25rem;
+}
+
+// Nav-link color - black for better visibility and contrast
+.nav-link {
+    color: #000000 !important;
+}
+
+.nav-link:hover {
+    color: var(--tblr-primary, #066fd1) !important;
+}
+
+// Client profile dropdown - inline with nav items, transparent background
+.client-dropdown {
+    .nav-link.dropdown-toggle {
+        color: var(--tblr-body-color, #1f2937);
+        background-color: transparent;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.5rem 0.75rem;
+
+        &:hover {
+            color: var(--tblr-primary, #066fd1);
+        }
+
+        &::after {
+            margin-left: 0.25rem;
+        }
+    }
+
+    .dropdown-menu {
+        background-color: var(--tblr-bg-surface);
+        border: 1px solid var(--tblr-border-color);
+        box-shadow: var(--tblr-box-shadow, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+    }
+}
+
+// Sidebar balance and note styling
+.sidebar-balance-title {
+    color: var(--tblr-muted, #656d77);
+    font-size: var(--tblr-font-size-base, 0.875rem);
+    font-weight: 500;
+}
+
+.sidebar-note-content {
+    font-size: var(--tblr-font-size-base, 0.875rem);
+}
+
+// Alert styling - more prominent backgrounds
+.alert-danger {
+    --tblr-alert-bg: rgba(var(--tblr-danger-rgb), 0.15);
+    --tblr-alert-border-color: rgba(var(--tblr-danger-rgb), 0.3);
+    --tblr-alert-color: var(--tblr-danger);
+}
+
+.alert-warning {
+    --tblr-alert-bg: rgba(var(--tblr-warning-rgb), 0.15);
+    --tblr-alert-border-color: rgba(var(--tblr-warning-rgb), 0.3);
+    --tblr-alert-color: var(--tblr-warning);
+}
+
+.alert-info {
+    --tblr-alert-bg: rgba(var(--tblr-primary-rgb), 0.1);
+    --tblr-alert-border-color: rgba(var(--tblr-primary-rgb), 0.2);
+    --tblr-alert-color: var(--tblr-primary);
+}
+
+// Order page text sizing
+.mod_orderbutton {
+    .accordion-body {
+        span:not(.badge) {
+            font-size: var(--tblr-font-size-base, 0.875rem);
+        }
+    }
+}
+
+// Dashboard and client area styling
+.dashboard,
+.mod_client {
+    // Card header h6 styling - larger and more prominent
+    .card-header {
+        h6 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--tblr-body-color, #1f2937);
+        }
+    }
+}
+
+// Language selector vertical alignment in navbar
+.nav-item {
+    .form-select.js-language-selector {
+        color: #000000;
+        padding: 0.25rem 2rem 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        min-height: auto;
+        height: auto;
+        background-position: right 0.5rem center;
+    }
+}
+
+// Alert vertical centering and layout
+.alert {
+    align-items: center;
+    flex-direction: column !important;
+}
+
+.alert p {
+    margin-bottom: 0;
+}
+
+// Nav-link vertical alignment with language selector
+.navbar-nav {
+    .nav-link {
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+}
+.toast-container-zindex {
+    z-index: 1070;
 }
 
 // TODO: Add custom color themes to Huraga. Bootstrap has a great example here: https://getbootstrap.com/docs/5.3/customize/color-modes/#custom-color-modes

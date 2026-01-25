@@ -11,8 +11,7 @@
         <div class="card-body">
             <h3>{{ 'Update tax rule'|trans }}</h3>
 
-            <form method="post" action="{{ 'api/admin/invoice/tax_update'|link }}" data-api-redirect="{{ 'invoice/tax'|alink }}" class="api-form">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+            <form method="post" action="{{ 'api/admin/invoice/tax_update'|link }}" {{ fb_api_form({redirect: 'invoice/tax'|alink}) }}>
                 <div class="mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Tax title'|trans }}:</label>
                     <div class="col">

@@ -126,9 +126,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         throw new Payment_Exception('Cannot process duplicate IPN');
                     }
                     $api_admin->client_balance_add_funds($bd);
-                    if ($tx['invoice_id']) {
+                    // Skip payment for deposit invoices - funds were already added above
+                    $invoiceService = $this->di['mod_service']('Invoice');
+                    $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
+                    if ($tx['invoice_id'] && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
                         $api_admin->invoice_pay_with_credits(['id' => $tx['invoice_id']]);
-                    } else {
+                    } elseif (!$tx['invoice_id']) {
                         $api_admin->invoice_batch_pay_with_credits(['client_id' => $client_id]);
                     }
                 }
@@ -268,7 +271,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
         if (isset($this->config['auto_redirect']) && $this->config['auto_redirect']) {
             $form .= sprintf('<h2>%s</h2>', __trans('Redirecting to PayPal.com'));
-            $form .= "<script type='text/javascript'>$(document).ready(function(){    document.getElementById('payment_button').style.display = 'none';    document.forms['payment_form'].submit();});</script>";
+            $form .= "<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('payment_button').style.display = 'none';
+    document.forms['payment_form'].submit();
+});
+</script>";
         }
 
         return $form;

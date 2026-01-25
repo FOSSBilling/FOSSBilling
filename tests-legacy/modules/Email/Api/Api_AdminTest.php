@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Email\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -522,7 +522,7 @@ final class Api_AdminTest extends \BBTestCase
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['batchSend'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('batchSend')
-            ;
+        ;
 
         $isExtensionActiveReturn = false;
         $extension = $this->createMock(\Box\Mod\Extension\Service::class);

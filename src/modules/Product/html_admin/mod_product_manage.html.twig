@@ -48,9 +48,8 @@
                 <h1>{{ product.title|title }} {{ 'General Settings'|trans }}</h1>
             </div>
             <div class="card-body">
-                <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}" name="form">
+                <form method="post" action="admin/product/update" name="form" {{ fb_api_form({message: 'Product Configuration Updated'|trans}) }}>
                     <h2>{{'General Settings'|trans }}</h1>
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
                         <div class="col">
@@ -219,8 +218,7 @@
         </div>
 
         <div class="tab-pane fade" id="tab-addons" role="tabpanel" aria-labelledby="addons-tab">
-            <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+            <form method="post" action="admin/product/update" {{ fb_api_form({message: 'Product Configuration Updated'|trans}) }}>
                 <div class="card-body">
                     <h5>{{ 'Choose which addons you would like to offer with'|trans }} {{ product.title }}</h5>
                 </div><input type="hidden" name="addons[]" value="">
@@ -267,8 +265,7 @@
         <div class="tab-pane fade" id="tab-upgrades" role="tabpanel">
             <div class="card-body">
                 <h5>{{ 'Choose which products can client upgrade to'|trans }}</h5>
-                <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+            <form method="post" action="admin/product/update" {{ fb_api_form({message: 'Product Configuration Updated'|trans}) }}>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Product Upgrades'|trans }}</label>
                         <div class="col">
@@ -334,20 +331,39 @@
 
 {% block js %}
 <script>
-    $(function() {
-        $("[name='form_id']").on('change',function() {
-            var form_id = $(this).val();
-            var btn = $("#formbuilder_btn");
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.querySelector("[name='form_id']")) {
+            const formId = document.querySelector("[name='form_id']").value;
+            const btn = document.getElementById("formbuilder_btn");
 
-            if (form_id != "") {
-                btn.html("{{ 'Edit form'|trans }}");
-                var href = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + form_id;
-                btn.attr('href', href);
+            if (formId !== "") {
+                btn.innerHTML = "{{ 'Edit Form'|trans }}";
+                const href = "{{ 'extension/settings/formbuilder'|alink }}" + (formId ? "?id=" + formId : "");
+                btn.setAttribute('href', href);
+            } else {
+                btn.innerHTML = "{{ 'Add New Form'|trans }}";
+                btn.setAttribute('href', "{{ 'extension/settings/formbuilder'|alink }}");
             }
-            else {
-                btn.html("{{ 'Add new form'|trans }}");
-                btn.attr("href", "{{ 'extension/settings/formbuilder'|alink }}");
+        }
+
+        const urlHash = window.location.hash;
+        if (urlHash && urlHash.startsWith('#tab-')) {
+            const tabId = urlHash.substring(5);
+            const tabEl = document.querySelector(`[data-bs-target="#tab-${tabId}"]`);
+            if (tabEl) {
+                const tab = new bootstrap.Tab(tabEl);
+                tab.show();
             }
+        }
+
+        document.querySelectorAll('.nav-tabs .nav-link').forEach(tabEl => {
+            tabEl.addEventListener('shown.bs.tab', function(e) {
+                const targetId = e.target.getAttribute('data-bs-target');
+                if (targetId && targetId.startsWith('#tab-')) {
+                    const tabName = targetId.substring(5);
+                    history.replaceState(null, null, '#' + tabName);
+                }
+            });
         });
     });
 </script>

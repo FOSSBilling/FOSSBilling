@@ -22,6 +22,15 @@ $invoiceID = $_POST['invoice_id'] ?? $_GET['invoice_id'] ?? $_POST['bb_invoice_i
 
 $gatewayID = $_POST['gateway_id'] ?? $_GET['gateway_id'] ?? $_POST['bb_gateway_id'] ?? $_GET['bb_gateway_id'] ?? null;
 
+if ($gatewayID !== null) {
+    $gatewayID = filter_var($gatewayID, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    if ($gatewayID === false) {
+        http_response_code(400);
+        echo json_encode(['error' => ['message' => 'Invalid gateway ID']]);
+        exit;
+    }
+}
+
 $_GET['bb_invoice_id'] = $invoiceID;
 $_GET['bb_gateway_id'] = $gatewayID;
 

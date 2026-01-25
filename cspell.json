@@ -56,7 +56,6 @@
         "endfor",
         "currentpage",
         "numpages",
-        "jquery",
         "jgrowl",
         "endmacro",
         "tlds",
@@ -414,7 +413,13 @@
         "hcaptcha",
         "hCaptcha",
         "LEMP",
-        "Servicemembership"
+        "Servicemembership",
+        "Spriter",
+        "spriter",
+        "dataurl",
+        "tomselect",
+        "zindex",
+        "CHARSETS"
     ],
     "ignorePaths": [
         "tests-legacy/**",

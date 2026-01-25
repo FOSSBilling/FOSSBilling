@@ -307,7 +307,7 @@ final class ServiceTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
         $di['validator'] = $validatorMock;
         $service->setDi($di);
 
@@ -360,7 +360,7 @@ final class ServiceTest extends \BBTestCase
         };
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
         $di['validator'] = $validatorMock;
 
         $cryptMock = $this->getMockBuilder('\Box_Crypt')
@@ -503,7 +503,7 @@ final class ServiceTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
         $di['validator'] = $validatorMock;
 
         $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();

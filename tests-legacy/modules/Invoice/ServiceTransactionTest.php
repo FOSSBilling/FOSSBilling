@@ -103,7 +103,6 @@ final class ServiceTransactionTest extends \BBTestCase
 
         $data = [
             'skip_validation' => false,
-            'gateway_id' => 1,
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);

@@ -62,7 +62,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTicketGet(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -89,7 +88,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTicketUpdate(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -116,7 +114,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTicketMessageUpdate(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -144,7 +141,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTicketDelete(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -171,7 +167,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTicketReply(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -200,7 +195,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTicketClose(): void
     {
-
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
 
@@ -231,7 +225,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTicketCloseAlreadyClosed(): void
     {
-
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
         $ticket->status = \Model_SupportTicket::CLOSED;
@@ -244,7 +237,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['closeTicket'])->getMock();
         $serviceMock->expects($this->never())->method('closeTicket')
-            ;
+        ;
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -262,7 +255,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTicketCreate(): void
     {
-
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
@@ -339,7 +331,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('getExpired')
             ->willReturn([['id' => 1], ['id' => 2]]);
         $serviceMock->expects($this->atLeastOnce())->method('autoClose')
-            ;
+        ;
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -383,7 +375,7 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('publicGetExpired')
             ->willReturn([$ticket, $ticket]);
         $serviceMock->expects($this->atLeastOnce())->method('publicAutoClose')
-            ;
+        ;
 
         $this->adminApi->setService($serviceMock);
         $di = $this->getDi();
@@ -484,7 +476,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testPublicTicketCreate(): void
     {
-
         $randID = 1;
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicTicketCreate'])->getMock();
@@ -512,7 +503,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testPublicTicketGet(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -540,7 +530,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testPublicTicketDelete(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -567,7 +556,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testPublicTicketClose(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -595,7 +583,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testPublicTicketUpdate(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -623,7 +610,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testPublicTicketReply(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -740,7 +726,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testHelpdeskGet(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -768,7 +753,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testHelpdeskUpdate(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -796,7 +780,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testHelpdeskCreate(): void
     {
-
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['helpdeskCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('helpdeskCreate')
@@ -818,7 +801,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testHelpdeskDelete(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -906,7 +888,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCannedGet(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -934,7 +915,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCannedDelete(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -962,7 +942,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCannedCreate(): void
     {
-
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCreate')
@@ -986,7 +965,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCannedUpdate(): void
     {
-
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedUpdate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedUpdate')
@@ -1035,7 +1013,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCannedCategoryGet(): void
     {
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -1063,7 +1040,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCannedCategoryUpdate(): void
     {
-
         $supportCategory = new \Model_SupportPrCategory();
         $supportCategory->loadBean(new \DummyBean());
 
@@ -1096,7 +1072,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCannedCategoryDelete(): void
     {
-
         $supportCategory = new \Model_SupportPrCategory();
         $supportCategory->loadBean(new \DummyBean());
 
@@ -1127,7 +1102,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCannedCategoryCreate(): void
     {
-
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['cannedCategoryCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('cannedCategoryCreate')
@@ -1148,7 +1122,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCannedNoteCreate(): void
     {
-
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['noteCreate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('noteCreate')
@@ -1177,7 +1150,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCannedNoteDelete(): void
     {
-
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['noteRm'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('noteRm')
@@ -1205,7 +1177,6 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTaskComplete(): void
     {
-
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['ticketTaskComplete'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketTaskComplete')
@@ -1235,7 +1206,6 @@ final class Api_AdminTest extends \BBTestCase
         $activityMock = $this->getMockBuilder(\Box\Mod\Support\Api\Admin::class)->onlyMethods(['ticket_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('ticket_delete')->willReturn(true);
 
-
         $di = $this->getDi();
         $activityMock->setDi($di);
 
@@ -1247,7 +1217,6 @@ final class Api_AdminTest extends \BBTestCase
     {
         $activityMock = $this->getMockBuilder(\Box\Mod\Support\Api\Admin::class)->onlyMethods(['public_ticket_delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('public_ticket_delete')->willReturn(true);
-
 
         $di = $this->getDi();
         $activityMock->setDi($di);
@@ -1305,7 +1274,7 @@ final class Api_AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['loggedin_admin'] = $admin;
         $di['db'] = $db;
-        
+
         $adminApi->setDi($di);
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbToApiArray'])->getMock();
@@ -1333,7 +1302,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $db;
-        
+
         $adminApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
         $adminApi->kb_article_get($data);
@@ -1357,7 +1326,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('kbCreateArticle')
             ->willReturn($id);
         $adminApi->setService($kbService);
-        
+
         $adminApi->setDi($di);
 
         $result = $adminApi->kb_article_create($data);
@@ -1414,7 +1383,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbRm'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbRm')
-            ;
+        ;
         $adminApi->setService($kbService);
 
         $result = $adminApi->kb_article_delete($data);
@@ -1438,7 +1407,7 @@ final class Api_AdminTest extends \BBTestCase
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbRm'])->getMock();
         $kbService->expects($this->never())
             ->method('kbRm')
-            ;
+        ;
         $adminApi->setService($kbService);
 
         $this->expectException(\FOSSBilling\Exception::class);

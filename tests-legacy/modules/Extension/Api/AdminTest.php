@@ -202,7 +202,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        
+
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
@@ -238,7 +238,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        
+
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 

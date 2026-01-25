@@ -434,29 +434,6 @@ class Service implements InjectionAwareInterface
         return $this->getCurrentClientAreaTheme()->getName();
     }
 
-    public function getEncoreInfo(): array
-    {
-        $encoreInfo = [];
-        $entrypoint = 'entrypoints';
-        $manifest = 'manifest';
-        $encoreInfo['is_encore_theme'] = true;
-
-        if (!$this->filesystem->exists($this->getEncoreJsonPath($entrypoint)) && !$this->filesystem->exists($this->getEncoreJsonPath($manifest))) {
-            $encoreInfo['is_encore_theme'] = false;
-        }
-
-        $encoreInfo[$entrypoint] = $this->getEncoreJsonPath($entrypoint);
-        $encoreInfo[$manifest] = $this->getEncoreJsonPath($manifest);
-
-        if ($this->useAdminDefaultEncore()) {
-            $encoreInfo['is_encore_theme'] = true;
-            $encoreInfo[$entrypoint] = Path::join($this->getThemesPath(), 'admin_default', 'build', "{$entrypoint}.json");
-            $encoreInfo[$manifest] = Path::join($this->getThemesPath(), 'admin_default', 'build', "{$manifest}.json");
-        }
-
-        return $encoreInfo;
-    }
-
     public function getDefaultMarkdownAttributes(): array
     {
         if (defined('ADMIN_AREA') && ADMIN_AREA == true) {
@@ -477,17 +454,5 @@ class Service implements InjectionAwareInterface
         } else {
             return [];
         }
-    }
-
-    protected function getEncoreJsonPath($filename): string
-    {
-        return Path::join($this->getThemesPath(), $this->getCurrentRouteTheme(), 'build', "{$filename}.json");
-    }
-
-    protected function useAdminDefaultEncore()
-    {
-        $config = $this->getThemeConfig();
-
-        return $config['use_admin_default_encore'] ?? false;
     }
 }

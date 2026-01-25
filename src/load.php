@@ -217,7 +217,7 @@ function preInit(): void
     define('PATH_THEMES', Path::join(PATH_ROOT, 'themes'));
     define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
     define('PATH_LANGS', Path::join(PATH_ROOT, 'locale'));
-    define('PATH_UPLOADS', Path::join(PATH_ROOT, 'uploads'));
+    define('PATH_UPLOADS', Path::join(PATH_ROOT, 'data', 'uploads'));
     define('PATH_CONFIG', Path::join(PATH_ROOT, 'config.php'));
 
     // Load required FOSSBilling libraries.

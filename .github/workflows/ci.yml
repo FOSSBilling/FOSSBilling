@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 'Perform Spellcheck'
-        uses: streetsidesoftware/cspell-action@e5a858a18b7e0b56e0342b1dcad796308b7341a2 # v8
+        uses: streetsidesoftware/cspell-action@24fa8d3096a314ce263f39578744e9d9f8d80acf # v8
         with:
           incremental_files_only: true
 
@@ -29,12 +29,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: [8.2, 8.3, 8.4]
+        php: [8.3, 8.4]
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@684dd307834c3066b5b95d3b971e1877d205c0de
+        uses: FOSSBilling/.workflows/.github/actions/php-build@11c3d3bb2ce6915aa0fc8af3165402a65400b084
         with:
           php-version: ${{ matrix.php }}
 
@@ -45,7 +45,7 @@ jobs:
           echo APP_ENV=test >> $GITHUB_ENV
         
       - name: 'PHP Tests (PHPStan and PHPUnit)'
-        uses: FOSSBilling/.workflows/.github/actions/php-test@684dd307834c3066b5b95d3b971e1877d205c0de
+        uses: FOSSBilling/.workflows/.github/actions/php-test@11c3d3bb2ce6915aa0fc8af3165402a65400b084
         with:
           php-version: ${{ matrix.php }}
           phpstan-enable: 'true'
@@ -121,7 +121,7 @@ jobs:
       actions: write
     needs: [ preview-build ]
     if: ${{ github.ref == 'refs/heads/main' }}
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@684dd307834c3066b5b95d3b971e1877d205c0de
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@11c3d3bb2ce6915aa0fc8af3165402a65400b084
     secrets:
       dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}

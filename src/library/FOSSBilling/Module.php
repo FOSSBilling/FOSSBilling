@@ -70,7 +70,6 @@ class Module implements InjectionAwareInterface
             throw new Exception('Invalid manifest file for the :mod module. Please check file syntax and permissions.', [':mod' => $this->module]);
         }
 
-        // Default manifest fields if some fields are missing
         $info = [
             'id' => $this->module,
             'type' => 'mod',

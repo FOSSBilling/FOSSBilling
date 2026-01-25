@@ -5,7 +5,7 @@
 {% block meta_title %}{{ ticket.subject }}{% endblock %}
 
 {% block head %}
-    {{ encore_entry_link_tags('markdown') }}
+    <link rel="stylesheet" href="{{ '/themes/huraga/build/css/markdown.css' | asset_url }}">
     {{ mf.wysiwyg('.editor-textarea') }}
 {% endblock %}
 
@@ -47,7 +47,7 @@
                         <tr>
                             <td>{{ 'Status'|trans }}</td>
                             <td>
-                                <div class="badge {% if ticket.status=='open' %}bg-success{% elseif ticket.status == 'on_hold' %}bg-warning{% else %}bg-danger{% endif %}">{{ mf.status_name(ticket.status) }}</div>
+                                <div class="badge {% if ticket.status=='open' %}text-bg-success{% elseif ticket.status == 'on_hold' %}text-bg-warning{% else %}text-bg-danger{% endif %}">{{ mf.status_name(ticket.status) }}</div>
                             </td>
                         </tr>
 
@@ -83,11 +83,11 @@
                                             {{ message.author.name }}
                                         </span>
                                         {% if message.admin_id %}
-                                            <span class="badge bg-primary">
+                                            <span class="badge text-bg-primary">
                                                     {{ 'Operator'|trans }}
                                                 </span>
                                         {% else %}
-                                            <span class="badge bg-secondary">
+                                            <span class="badge text-bg-secondary">
                                                     {{ 'You'|trans }}
                                                 </span>
                                         {% endif %}
@@ -160,10 +160,9 @@
             const replyToMessageBtn = document.querySelectorAll('.btn-quote-reply');
             const ticketReplyTextArea = document.getElementById('ticket-reply-text');
 
-            ticketReplyForm.addEventListener('submit', (e) => {
+            ticketReplyForm?.addEventListener('submit', (e) => {
                 e.preventDefault();
-                API.client.post('support/ticket_reply',
-                    new FormData(ticketReplyForm).serializeObject(),
+                API.client.post('support/ticket_reply', Tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
                     () => {
                         flashMessage({
                             message: 'Posted reply',
@@ -177,8 +176,7 @@
             closeTicketBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 toggleLoader();
-                API.client.post('support/ticket_close',
-                    new FormData(ticketReplyForm).serializeObject(),
+                API.client.post('support/ticket_close', Tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
                     () => {
                         flashMessage({
                             message: 'Closed ticket #{{ ticket.id }}',

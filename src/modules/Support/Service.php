@@ -230,10 +230,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * Find ticket for client.
-     *
-     * @param int $id
-     *
-     * @return \Model_SupportTicket
      */
     public function findOneByClient(\Model_Client $c, int $id): \Model_SupportTicket
     {
@@ -398,8 +394,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function countByStatus(string $status): int
     {
-        $query = "SELECT COUNT(id) as counter FROM support_ticket
-                WHERE status = :status GROUP BY status LIMIT 1";
+        $query = 'SELECT COUNT(id) as counter FROM support_ticket
+                WHERE status = :status GROUP BY status LIMIT 1';
 
         return $this->di['db']->getCell($query, [':status' => $status]);
     }
@@ -1069,7 +1065,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $bindings[':p_ticket_id'] = $search;
             } else {
                 $search = '%' . $search . '%';
-                $where[] = 'sptm.content LIKE :p_message_content OR spt.subject LIKE :p_ticket_subject';
+                $where[] = '(sptm.content LIKE :p_message_content OR spt.subject LIKE :p_ticket_subject)';
                 $bindings[':p_message_content'] = $search;
                 $bindings[':p_ticket_subject'] = $search;
             }
@@ -1352,7 +1348,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($search) {
             $search = '%' . $search . '%';
-            $where[] = 'title LIKE :title OR content LIKE :content';
+            $where[] = '(title LIKE :title OR content LIKE :content)';
             $bindings[':title'] = $search;
             $bindings[':content'] = $search;
         }
@@ -1544,11 +1540,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if ($search) {
-            $sql .= ' AND title LIKE :q OR content LIKE :q';
+            $sql .= ' AND (title LIKE :q OR content LIKE :q)';
             $filter[':q'] = "%$search%";
         }
 
-        $sql .= ' ORDER BY kb_article_category_id DESC, views DESC';
+        $sql .= ' ORDER BY title ASC';
 
         return $this->di['pager']->getPaginatedResultSet($sql, $filter, $per_page, $page);
     }
