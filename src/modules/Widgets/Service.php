@@ -11,6 +11,7 @@
 namespace Box\Mod\Widgets;
 
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\WidgetProviderInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
@@ -150,20 +151,11 @@ class Service implements InjectionAwareInterface
      *
      * @param object $service the service class instance
      *
-     * @return bool true if the service has a valid getWidgets() method
+     * @return bool true if the service implements WidgetProviderInterface
      */
     private function serviceProvidesWidgets(object $service): bool
     {
-        $reflector = new \ReflectionClass($service);
-
-        if ($reflector->hasMethod('getWidgets')) {
-            $method = $reflector->getMethod('getWidgets');
-
-            // Method must be public and require no arguments
-            return $method->isPublic() && $method->getNumberOfRequiredParameters() === 0;
-        }
-
-        return false;
+        return $service instanceof WidgetProviderInterface;
     }
 
     /**

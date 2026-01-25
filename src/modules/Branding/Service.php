@@ -11,7 +11,10 @@
 
 namespace Box\Mod\Branding;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+use \FOSSBilling\InjectionAwareInterface;
+use \FOSSBilling\Interfaces\WidgetProviderInterface;
+
+class Service implements InjectionAwareInterface, WidgetProviderInterface
 {
     protected ?\Pimple\Container $di = null;
 
