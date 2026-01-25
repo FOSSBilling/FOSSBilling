@@ -72,7 +72,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['i18n']['timezone'] ??= $currentConfig['timezone'] ?? 'UTC';
         $newConfig['i18n']['date_format'] ??= 'medium';
         $newConfig['i18n']['time_format'] ??= 'short';
-        $newConfig['db']['driver'] ??= $currentConfig['db']['type'] ?? 'pdo_mysql';
+        $newConfig['db']['driver'] ??= 'pdo_mysql';
         $newConfig['db']['port'] ??= '3306';
         $newConfig['api']['throttle_delay'] ??= 2;
         $newConfig['api']['rate_span_login'] ??= 60;
