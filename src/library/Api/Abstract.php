@@ -72,7 +72,7 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @return Model_Admin
+     * @return Model_Admin|Model_Client|Model_Guest
      */
     public function getIdentity()
     {

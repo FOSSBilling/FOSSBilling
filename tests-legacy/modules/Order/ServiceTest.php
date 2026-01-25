@@ -1380,7 +1380,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct->id = 1;
         $modelProduct->is_addon = 1;
 
-        $currencyModel = $this->getMockBuilder("\\Box\\Mod\\Currency\\Entity\\Currency")->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->getMockBuilder('\\Box\\Mod\\Currency\\Entity\\Currency')->disableOriginalConstructor()->getMock();
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -1435,7 +1435,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct->loadBean(new \DummyBean());
         $modelProduct->id = 1;
 
-        $currencyModel = $this->getMockBuilder("\\Box\\Mod\\Currency\\Entity\\Currency")->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->getMockBuilder('\\Box\\Mod\\Currency\\Entity\\Currency')->disableOriginalConstructor()->getMock();
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -1497,7 +1497,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct->id = 1;
         $modelProduct->type = 'custom';
 
-        $currencyModel = $this->getMockBuilder("\\Box\\Mod\\Currency\\Entity\\Currency")->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->getMockBuilder('\\Box\\Mod\\Currency\\Entity\\Currency')->disableOriginalConstructor()->getMock();
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -1520,7 +1520,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $productServiceMock = $this->getMockBuilder('\Box\Mod\Servicecustom')->getMock();
+        $productServiceMock = $this->getMockBuilder('\Box\Mod\Servicecustom\Service')->getMock();
 
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1859,19 +1859,55 @@ final class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $pdoStatment = $this->createMock(PdoStatmentsMock::class);
-        $pdoStatment->expects($this->atLeastOnce())
-            ->method('execute');
+        $queryBuilderMock = new class {
+            private bool $deleteCalled = false;
+            private bool $whereCalled = false;
+            private bool $setParamCalled = false;
+            private mixed $deleteTable = null;
+            private mixed $whereCond = null;
+            private mixed $paramId = null;
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatment);
+            public function delete($table) {
+                $this->deleteCalled = true;
+                $this->deleteTable = $table;
+                return $this;
+            }
+            public function where($cond) {
+                $this->whereCalled = true;
+                $this->whereCond = $cond;
+                return $this;
+            }
+            public function setParameter($key, $val) {
+                $this->setParamCalled = true;
+                $this->paramId = $val;
+                return $this;
+            }
+            public function executeStatement() {
+                return 1;
+            }
+            public function getDeleteTable() { return $this->deleteTable; }
+            public function getWhereCond() { return $this->whereCond; }
+            public function getParamId() { return $this->paramId; }
+            public function wasDeleteCalled() { return $this->deleteCalled; }
+            public function wasWhereCalled() { return $this->whereCalled; }
+            public function wasSetParamCalled() { return $this->setParamCalled; }
+        };
 
-        $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $dbalMock = new class($queryBuilderMock) {
+            public function __construct(private $qb) {}
+            public function createQueryBuilder() {
+                return $this->qb;
+            }
+        };
+
+        $di = new \Pimple\Container();
+        $di['dbal'] = $dbalMock;
         $this->service->setDi($di);
         $this->service->rmByClient($clientModel);
+
+        $this->assertSame('client_order', $queryBuilderMock->getDeleteTable());
+        $this->assertSame('client_id = :id', $queryBuilderMock->getWhereCond());
+        $this->assertSame($clientModel->id, $queryBuilderMock->getParamId());
     }
 
     public function testUpdatePeriod(): void

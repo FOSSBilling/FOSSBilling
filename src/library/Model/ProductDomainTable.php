@@ -181,17 +181,17 @@ class Model_ProductDomainTable extends Model_ProductTable
     {
         $pricing = [];
 
-        $sql = '
-            SELECT t.*, r.name
-            FROM tld t
-            LEFT JOIN tld_registrar r ON (r.id = t.tld_registrar_id)
-            WHERE t.active = 1
-            ORDER BY t.id ASC
-        ';
-        $stmt = $this->di['pdo']->prepare($sql);
-        $stmt->execute();
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('t.*', 'r.name')
+            ->from('tld', 't')
+            ->leftJoin('t', 'tld_registrar', 'r', 'r.id = t.tld_registrar_id')
+            ->where('t.active = 1')
+            ->orderBy('t.id', 'ASC');
 
-        foreach ($stmt->fetchAll() as $tld) {
+        $result = $query->executeQuery();
+        $results = $result->fetchAllAssociative();
+        foreach ($results as $tld) {
             $pricing[$tld['tld']] = [
                 'tld' => $tld['tld'],
                 'price_registration' => $tld['price_registration'],

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Box\Mod\System;
 use PHPUnit\Framework\Attributes\DataProvider; 
 use PHPUnit\Framework\Attributes\Group;
-
 use Twig\Environment;
 
 #[Group('Core')]
@@ -192,11 +191,6 @@ final class ServiceTest extends \BBTestCase
             '_client_id' => 1,
         ];
 
-        $this
-            ->getMockBuilder('Drupal\Core\Template\TwigEnvironment')
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $twigMock = $this->getMockBuilder(Environment::class)->disableOriginalConstructor()->getMock();
         $twigMock->expects($this->atLeastOnce())
             ->method('addGlobal');
@@ -257,7 +251,7 @@ final class ServiceTest extends \BBTestCase
         // Create cache directory with .gitkeep if it doesn't exist
         $cacheDir = PATH_CACHE;
         if (!is_dir($cacheDir)) {
-            mkdir($cacheDir, 0755, true);
+            mkdir($cacheDir, 0o755, true);
         }
         $gitkeepFile = $cacheDir . '/.gitkeep';
         $gitkeepExists = file_exists($gitkeepFile);

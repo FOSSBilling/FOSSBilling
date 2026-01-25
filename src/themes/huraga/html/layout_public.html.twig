@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<html class="no-js" lang="en" data-bs-theme="{{ settings.theme|default('light') }}">
+<html class="no-js" lang="{{ settings.locale|default('en') }}" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
     <title>{{ settings.meta_title_prefix }} {% block meta_title %}{% endblock %} {{ settings.meta_title_suffix }}</title>
 
-    <meta property="bb:url" content="{{ constant('SYSTEM_URL') }}">
-    <meta property="bb:client_area" content="{{ '/'|link }}">
     <meta name="csrf-token" content="{{ CSRFToken }}">
 
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
@@ -17,7 +15,6 @@
 
     {% block opengraph %}{% endblock %}
 
-    <link rel='stylesheet' type='text/css' href="{{ 'css/font-awesome.css' | asset_url }}">
     <link rel="stylesheet" href="{{ 'build/css/vendor.css' | asset_url }}">
     <link rel="stylesheet" href="{{ 'build/css/huraga.css' | asset_url }}">
 
@@ -30,9 +27,7 @@
 </head>
 <body class="{% block body_class %}{% endblock %}">
     {% block body %}{% endblock %}
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
-    </div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3 toast-container-zindex" aria-live="polite" aria-atomic="true"></div>
     {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
 </body>
 </html>

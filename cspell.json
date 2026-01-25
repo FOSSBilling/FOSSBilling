@@ -56,7 +56,6 @@
         "endfor",
         "currentpage",
         "numpages",
-        "jquery",
         "jgrowl",
         "endmacro",
         "tlds",
@@ -418,7 +417,9 @@
         "Spriter",
         "spriter",
         "dataurl",
-        "tomselect"
+        "tomselect",
+        "zindex",
+        "CHARSETS"
     ],
     "ignorePaths": [
         "tests-legacy/**",

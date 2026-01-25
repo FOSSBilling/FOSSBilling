@@ -1,8 +1,8 @@
-FROM php:8.5-apache@sha256:6e5cfaec7df961fe2cca048e9ce3a3c448c1b77b489c51c4e1d98cda943759af
+FROM php:8.5-apache@sha256:33ee34a05c6a4a2b6cddc798e439f34c7784e7c44c0d8da0e92317e908e93bc7
 
 # Install required packages, configure Apache, install PHP extensions, and clean-up.
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends wget unzip zlib1g-dev libpng-dev libicu-dev libbz2-dev cron \
+  && apt-get install -y --no-install-recommends zlib1g-dev libpng-dev libicu-dev libbz2-dev cron \
   && a2enmod rewrite \
   && docker-php-ext-configure bz2 \
   && docker-php-ext-install -j$(nproc) bz2 \
@@ -13,9 +13,15 @@ RUN apt-get update \
   && docker-php-ext-configure pdo_mysql \
   && docker-php-ext-install -j$(nproc) pdo_mysql \
   && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # Copy files and set required permissions.
 COPY --chown=www-data:www-data ./src/. /var/www/html
 
-RUN { crontab -l -u www-data 2>/dev/null; echo "*/5 * * * * /usr/local/bin/php /var/www/html/cron.php"; } | crontab -u www-data -
+# Configure cron job for www-data in a dedicated crontab file for clarity.
+RUN echo '*/5 * * * * /usr/local/bin/php /var/www/html/cron.php' > /tmp/www-data.cron \
+  && crontab -u www-data /tmp/www-data.cron \
+  && rm /tmp/www-data.cron
+
+# Start cron and then run Apache in the foreground when the container starts.
+CMD cron && apache2-foreground

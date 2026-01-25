@@ -115,10 +115,10 @@ final class Api_Handler implements InjectionAwareInterface
     /**
      * Validate required parameters for an API method using attributes.
      *
-     * @param Api_Abstract $api The API instance
-     * @param string $method_name The method name
-     * @param array $data The data array passed to the method
-     * @return void
+     * @param Api_Abstract $api         The API instance
+     * @param string       $method_name The method name
+     * @param array        $data        The data array passed to the method
+     *
      * @throws FOSSBilling\InformationException If required parameters are missing
      */
     public function validateRequiredParams(Api_Abstract $api, string $method_name, array $data): void

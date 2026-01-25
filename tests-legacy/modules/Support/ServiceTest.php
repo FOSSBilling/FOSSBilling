@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Box\Tests\Mod\Support;
 use PHPUnit\Framework\Attributes\DataProvider; 
 use PHPUnit\Framework\Attributes\Group;
-
 use Symfony\Component\HttpFoundation\Request;
 
 #[Group('Core')]
@@ -1438,7 +1437,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
-        $di['request'] = $this->getMockBuilder('\FOSSBilling\Request')->getMock();
+        $di['request'] = $this->getMockBuilder('\Symfony\Component\HttpFoundation\Request')->getMock();
         $di['events_manager'] = $eventMock;
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $supportModMock);
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffServiceMock);
@@ -1787,8 +1786,6 @@ final class ServiceTest extends \BBTestCase
 
     public static function publicToApiArrayProvider(): array
     {
-        
-
         return [
             [
                 new \Model_SupportPTicketMessage(),

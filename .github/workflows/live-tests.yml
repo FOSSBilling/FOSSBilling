@@ -38,21 +38,21 @@ jobs:
 
       - name: Cache Built Admin Theme
         id: cache-admin_default
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
         with:
           path: ./src/themes/admin_default/build
           key: admin_default-${{ hashFiles('./package-lock.json', './src/themes/admin_default/assets/fossbilling.js', './src/themes/admin_default/assets/scss/*.scss', './src/themes/admin_default/assets/js/*.js', './src/themes/admin_default/assets/js/ui/*.js') }}
 
       - name: Cache Built Huraga Theme
         id: cache-huraga
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
         with:
           path: ./src/themes/huraga/build
           key: huraga-${{ hashFiles('./package-lock.json', './src/themes/huraga/assets/huraga.js', './src/themes/huraga/assets/scss/*.scss') }}
 
       - name: 'Install Node.js and Enable Caching'
         if: steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'

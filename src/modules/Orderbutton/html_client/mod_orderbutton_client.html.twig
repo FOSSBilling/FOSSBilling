@@ -1,7 +1,7 @@
 {% import "macro_functions.html.twig" as mf %}
 
 <div class="accordion-item">
-    <h2 class="accordion-header">
+    <h3 class="accordion-header">
         <button class="accordion-button{% if not request.checkout %} collapsed{% endif %}" type="button"
                 data-bs-toggle="collapse" data-bs-target="#register" aria-controls="register">
             <svg class="svg-icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -10,16 +10,14 @@
             </svg>
             <span>{{ 'Login or Register'|trans }}</span>
         </button>
-    </h2>
+    </h3>
     <div id="register" class="accordion-collapse collapse{% if request.checkout and not client %} show{% endif %}"
          data-bs-parent="#orderManager">
         <div class="accordion-body">
             <div role="tablist">
                 <div class="tab-content" id="nav-tabContent">
-                    <div class="tab-pane show active" id="sign-in" role="tabpanel" aria-labelledby="in-tab"
-                         tabindex="0">
-                        <form method="post" class="api-form" action="{{ 'api/guest/client/login'|link }}" data-api-jsonp="onLogin">
-                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                    <div class="tab-pane show active" id="sign-in" role="tabpanel" aria-labelledby="in-tab" tabindex="0">
+                        <form method="post" action="{{ 'api/guest/client/login'|link }}" {{ fb_api_form({callback: 'onLogin'}) }}>
                             <div class="row">
                                 <div class="form-floating col-md-7 mb-3">
                                     <input class="form-control form-control-sm" type="email" name="email" id="email"
@@ -49,8 +47,7 @@
                         </form>
                     </div>
                     <div class="tab-pane" id="sign-up" role="tabpanel" aria-labelledby="up-tab" tabindex="0">
-                        <form class="api-form" action="{{ 'api/guest/client/create'|link }}" method="post" data-api-jsonp="onAccountCreate">
-                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                        <form method="post" action="{{ 'api/guest/client/create'|link }}" {{ fb_api_form({callback: 'onAccountCreate'}) }}>
                             {% set r = guest.client_required %}
                             <div class="row">
                                 <div class="form-floating col-md-7 mb-3">
