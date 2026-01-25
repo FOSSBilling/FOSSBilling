@@ -2716,16 +2716,16 @@
         },
         {
             "name": "php-debugbar/php-debugbar",
-            "version": "v3.1.6",
+            "version": "v3.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-debugbar/php-debugbar.git",
-                "reference": "6a93ae1bce00f9fecbf56b1721d7df3c5ea9f300"
+                "reference": "d8c8886867eb265469cd4c569a9e0ca5cbf2faf2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-debugbar/php-debugbar/zipball/6a93ae1bce00f9fecbf56b1721d7df3c5ea9f300",
-                "reference": "6a93ae1bce00f9fecbf56b1721d7df3c5ea9f300",
+                "url": "https://api.github.com/repos/php-debugbar/php-debugbar/zipball/d8c8886867eb265469cd4c569a9e0ca5cbf2faf2",
+                "reference": "d8c8886867eb265469cd4c569a9e0ca5cbf2faf2",
                 "shasum": ""
             },
             "require": {
@@ -2802,7 +2802,7 @@
             ],
             "support": {
                 "issues": "https://github.com/php-debugbar/php-debugbar/issues",
-                "source": "https://github.com/php-debugbar/php-debugbar/tree/v3.1.6"
+                "source": "https://github.com/php-debugbar/php-debugbar/tree/v3.2.0"
             },
             "funding": [
                 {
@@ -2814,7 +2814,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-01-20T18:37:38+00:00"
+            "time": "2026-01-24T19:24:36+00:00"
         },
         {
             "name": "php-debugbar/twig-bridge",
@@ -7215,16 +7215,16 @@
         },
         {
             "name": "twig/intl-extra",
-            "version": "v3.22.1",
+            "version": "v3.23.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twigphp/intl-extra.git",
-                "reference": "93ac31e53cdd3f2e541f42690cd0c54ca8138ab1"
+                "reference": "32f15a38d45a8d0ec11bc8a3d97d3ac2a261499f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/intl-extra/zipball/93ac31e53cdd3f2e541f42690cd0c54ca8138ab1",
-                "reference": "93ac31e53cdd3f2e541f42690cd0c54ca8138ab1",
+                "url": "https://api.github.com/repos/twigphp/intl-extra/zipball/32f15a38d45a8d0ec11bc8a3d97d3ac2a261499f",
+                "reference": "32f15a38d45a8d0ec11bc8a3d97d3ac2a261499f",
                 "shasum": ""
             },
             "require": {
@@ -7263,7 +7263,7 @@
                 "twig"
             ],
             "support": {
-                "source": "https://github.com/twigphp/intl-extra/tree/v3.22.1"
+                "source": "https://github.com/twigphp/intl-extra/tree/v3.23.0"
             },
             "funding": [
                 {
@@ -7275,20 +7275,20 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-11-02T11:00:49+00:00"
+            "time": "2026-01-17T13:57:47+00:00"
         },
         {
             "name": "twig/twig",
-            "version": "v3.22.2",
+            "version": "v3.23.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twigphp/Twig.git",
-                "reference": "946ddeafa3c9f4ce279d1f34051af041db0e16f2"
+                "reference": "a64dc5d2cc7d6cafb9347f6cd802d0d06d0351c9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/Twig/zipball/946ddeafa3c9f4ce279d1f34051af041db0e16f2",
-                "reference": "946ddeafa3c9f4ce279d1f34051af041db0e16f2",
+                "url": "https://api.github.com/repos/twigphp/Twig/zipball/a64dc5d2cc7d6cafb9347f6cd802d0d06d0351c9",
+                "reference": "a64dc5d2cc7d6cafb9347f6cd802d0d06d0351c9",
                 "shasum": ""
             },
             "require": {
@@ -7342,7 +7342,7 @@
             ],
             "support": {
                 "issues": "https://github.com/twigphp/Twig/issues",
-                "source": "https://github.com/twigphp/Twig/tree/v3.22.2"
+                "source": "https://github.com/twigphp/Twig/tree/v3.23.0"
             },
             "funding": [
                 {
@@ -7354,7 +7354,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-12-14T11:28:47+00:00"
+            "time": "2026-01-23T21:00:41+00:00"
         }
     ],
     "packages-dev": [
@@ -8063,11 +8063,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.1.36",
+            "version": "2.1.37",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/2132e5e2361d11d40af4c17faa16f043269a4cf3",
-                "reference": "2132e5e2361d11d40af4c17faa16f043269a4cf3",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/28cd424c5ea984128c95cfa7ea658808e8954e49",
+                "reference": "28cd424c5ea984128c95cfa7ea658808e8954e49",
                 "shasum": ""
             },
             "require": {
@@ -8112,7 +8112,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-01-21T13:58:26+00:00"
+            "time": "2026-01-24T08:21:55+00:00"
         },
         {
             "name": "phpstan/phpstan-deprecation-rules",
