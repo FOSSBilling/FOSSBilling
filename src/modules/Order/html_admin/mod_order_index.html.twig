@@ -199,7 +199,7 @@
                                 <td><a href="{{ '/order/manage'|alink }}/{{ order.id }}">#{{ order.id }}</a></td>
                                 <td>
                                     <a href="{{ 'client/manage'|alink }}/{{ order.client_id }}">
-                                        <span class="avatar avatar-xs" style="background-image: url({{ order.client.email|gravatar }}&size=24)"></span>
+                                        <span class="db-avatar avatar avatar-xs" data-email="{{ order.client.email }}" data-size="24"></span>
                                     </a>
                                 </td>
                                 <td>

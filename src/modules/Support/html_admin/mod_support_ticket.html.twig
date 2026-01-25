@@ -265,7 +265,7 @@
     {% for i, message in ticket.messages %}
     <div class="card mb-3 col-md-10 {% if ticket.first.author.email != message.author.email %}offset-md-2{% endif %} {{ loop.last ? 'last' : '' }}" id="{{ message.id == request_message ? 'direct-msg' : '' }}">
         <div class="card-header" style="cursor: pointer;">
-            <span class="avatar avatar-xs me-2" style="background-image: url({{ message.author.email|gravatar }}&size=24)"></span>
+            <span class="db-avatar avatar avatar-xs me-2" data-email="{{ message.author.email }}" data-size="24"></span>
             {{ message.author.name }}
             <a class="ms-2" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}/message/{{ message.id }}">
                 <svg class="icon">
