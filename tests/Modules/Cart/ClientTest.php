@@ -2,80 +2,34 @@
 
 declare(strict_types=1);
 
-namespace CartTests;
+use function Pest\Faker\fake;
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+it('persists cart items when guest logs in', function () {
+    // Create a test product
+    $productId = createTestProduct('Cart Test Product');
 
-final class ClientTest extends TestCase
-{
-    public function testDoesCartTransferOnLogin(): void
-    {
-        // First we need a dummy product
-        $result = Request::makeRequest('admin/product/prepare', [
-            'title' => 'Dummy Product',
-            'type' => 'custom',
-            'product_category_id' => 1,
-        ]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsNumeric($result->getResult());
-        $productID = intval($result->getResult());
+    // Add product to guest cart
+    expect(api('guest/cart/add_item', ['id' => $productId]))
+        ->toBeSuccessfulResponse();
 
-        // Now configure it
-        $result = Request::makeRequest('admin/product/update', [
-            'id' => $productID,
-            'status' => 'enabled',
-            'pricing' => [
-                'type' => 'free',
-            ],
-        ]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
+    // Save cart state
+    $guestCart = api('guest/cart/get')->getResult();
+    expect($guestCart)->toBeArray();
 
-        // Next add that product to the cart
-        $result = Request::makeRequest('guest/cart/add_item', [
-            'id' => $productID,
-        ]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
+    // Create and login as new client
+    $email = fake()->email();
+    $password = 'A1a' . fake()->password(8);
 
-        // Get the cart as-is
-        $result = Request::makeRequest('guest/cart/get');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-        $startingCart = $result->getResult();
+    $clientId = createTestClient($email,$password);
 
-        // Generate a new test user
-        $password = 'A1a' . bin2hex(random_bytes(6));
-        $result = Request::makeRequest('guest/client/create', [
-            'email' => 'client@example.com',
-            'first_name' => 'Test',
-            'password' => $password,
-            'password_confirm' => $password,
-        ]);
+    expect(api('guest/client/login', ['email' => $email, 'password' => $password]))
+        ->toBeSuccessfulResponse();
 
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsNumeric($result->getResult());
+    // Verify cart was transferred
+    $clientCart = api('guest/cart/get')->getResult();
+    expect($clientCart)->toBe($guestCart);
 
-        $id = intval($result->getResult());
-
-        // Login as that user
-        $result = Request::makeRequest('guest/client/login', [
-            'email' => 'client@example.com',
-            'password' => $password,
-        ]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-
-        // Get the cart again and verify it matches the original one
-        $result = Request::makeRequest('guest/cart/get');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-        $this->assertEquals($startingCart, $result->getResult());
-
-        // Finally perform some cleanup
-        $result = Request::makeRequest('admin/client/delete', ['id' => $id]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
-        Request::resetCookies();
-    }
-}
+    // Cleanup
+    deleteTestClient($clientId);
+    resetCookies();
+});

@@ -2,49 +2,40 @@
 
 declare(strict_types=1);
 
-namespace ExtensionTests;
+describe('Theme Information', function () {
+    it('returns theme metadata', function () {
+        $theme = api('guest/extension/theme')->getResult();
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+        expect($theme)
+            ->toBeArray()
+            ->toHaveKeys(['name', 'version', 'author'])
+            ->and($theme['author'])->toBe('FOSSBilling');
+    });
+});
 
-final class GuestTest extends TestCase
-{
-    public function testTheme(): void
-    {
-        $result = Request::makeRequest('guest/extension/theme');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
+describe('Extension Settings', function () {
+    it('returns settings for a valid extension', function () {
+        expect(api('guest/extension/settings', ['ext' => 'index']))
+            ->toHaveResult()
+            ->toBeArray();
+    });
 
-        $this->assertArrayHasKey('name', $result->getResult());
-        $this->assertArrayHasKey('version', $result->getResult());
-        $this->assertEquals('FOSSBilling', $result->getResult()['author']);
-    }
+    it('rejects request without an extension parameter', function () {
+        expect(api('guest/extension/settings', ['ext']))
+            ->toHaveErrorMessage('Parameter ext is missing');
+    });
+});
 
-    public function testSettings(): void
-    {
-        $result = Request::makeRequest('guest/extension/settings', ['ext' => 'index']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
+describe('Extension Status', function () {
+    it('detects active core extensions', function () {
+        expect(api('guest/extension/is_on', ['mod' => 'index']))
+            ->toHaveResult()
+            ->toBeTrue();
+    });
 
-    public function testSettingsMissingExt(): void
-    {
-        $result = Request::makeRequest('guest/extension/settings', ['ext']);
-        $this->assertFalse($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertEquals('Parameter ext is missing', $result->getErrorMessage());
-    }
-
-    public function testExtensionIsActive(): void
-    {
-        $result = Request::makeRequest('guest/extension/is_on', ['mod' => 'index']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
-    }
-
-    public function testExtensionIsNotActive(): void
-    {
-        $result = Request::makeRequest('guest/extension/is_on', ['mod' => 'serviceapikey']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertFalse($result->getResult());
-    }
-}
+    it('detects inactive extensions', function () {
+        expect(api('guest/extension/is_on', ['mod' => 'serviceapikey']))
+            ->toHaveResult()
+            ->toBeFalse();
+    });
+});

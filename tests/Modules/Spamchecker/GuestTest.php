@@ -2,68 +2,55 @@
 
 declare(strict_types=1);
 
-namespace SpamcheckerTests;
+describe('Spam Protection', function () {
+    it('blocks disposable email addresses when enabled', function () {
+        // Enable spamchecker and disposable email checking
+        api('admin/extension/activate', ['type' => 'mod', 'id' => 'spamchecker']);
+        api('admin/extension/config_save', ['ext' => 'mod_spamchecker', 'check_temp_emails' => true]);
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
-
-final class GuestTest extends TestCase
-{
-    public function testDisposableEmailCheck(): void
-    {
-        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'spamchecker']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-
-        $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_spamchecker', 'check_temp_emails' => true]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-
-        // Generate a new test user with by using a throwaway email address, which should fail
+        // Attempt to create account with disposable email (should fail)
         $password = 'A1a' . bin2hex(random_bytes(6));
-        $result = Request::makeRequest('guest/client/create', [
+        $response = api('guest/client/create', [
             'email' => 'email@yopmail.net',
             'first_name' => 'Test',
             'password' => $password,
             'password_confirm' => $password,
         ]);
 
-        $this->assertFalse($result->wasSuccessful(), 'The client account was created when it should not have been');
-        $this->assertEquals('Disposable email addresses are not allowed', $result->getErrorMessage());
+        expect($response)
+            ->toBeFailedResponse()
+            ->and($response->getErrorMessage())
+            ->toBe('Disposable email addresses are not allowed');
 
-        // If the account was created, perform cleanup
-        if ($result->wasSuccessful()) {
-            $id = intval($result->getResult());
-            Request::makeRequest('admin/client/delete', ['id' => $id]);
+        // Cleanup if somehow it succeeded
+        if ($response->wasSuccessful()) {
+            api('admin/client/delete', ['id' => intval($response->getResult())]);
         }
-    }
+    });
 
-    public function testStopForumSpam(): void
-    {
-        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'spamchecker']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-
-        $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_spamchecker', 'sfs' => true]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+    it('blocks known spam users via StopForumSpam', function () {
+        // Enable spamchecker and StopForumSpam checking
+        api('admin/extension/activate', ['type' => 'mod', 'id' => 'spamchecker']);
+        api('admin/extension/config_save', ['ext' => 'mod_spamchecker', 'sfs' => true]);
 
         /**
-         * This one should create without any errors as long as the email address doesn't get listed as spam.
+         * This should create without errors as long as the email isn't listed as spam.
          *
          * @see http://api.stopforumspam.org/api?email=email@example.com
          */
         $password = 'A1a' . bin2hex(random_bytes(6));
-        $result = Request::makeRequest('guest/client/create', [
+        $clientId = api('guest/client/create', [
             'email' => 'email@example.com',
             'first_name' => 'Test',
             'password' => $password,
             'password_confirm' => $password,
-        ]);
+        ])->getResult();
 
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsNumeric($result->getResult());
+        expect($clientId)->toBeNumeric();
 
-        $id = intval($result->getResult());
-
-        $result = Request::makeRequest('admin/client/delete', ['id' => $id]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
-    }
-}
+        // Cleanup
+        expect(api('admin/client/delete', ['id' => intval($clientId)]))
+            ->toHaveResult()
+            ->toBeTrue();
+    });
+});

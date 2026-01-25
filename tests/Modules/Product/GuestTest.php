@@ -2,31 +2,21 @@
 
 declare(strict_types=1);
 
-namespace ProductTests;
+describe('Product Catalog', function () {
+    it('returns the product list', function () {
+        expect(api('guest/product/get_list'))
+            ->toHaveResult()
+            ->toBeArray();
+    });
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+    it('returns product pairs for dropdowns', function () {
+        expect(api('guest/product/get_pairs'))
+            ->toHaveResult()
+            ->toBeArray();
+    });
 
-final class GuestTest extends TestCase
-{
-    public function testGetList(): void
-    {
-        $result = Request::makeRequest('guest/product/get_list');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
-
-    public function testGetPairs(): void
-    {
-        $result = Request::makeRequest('guest/product/get_pairs');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
-
-    public function testGetMissingRequiredParams(): void
-    {
-        $result = Request::makeRequest('guest/product/get');
-        $this->assertFalse($result->wasSuccessful(), 'The request succeeded when it should not have');
-        $this->assertEquals('Product ID or slug is missing', $result->getErrorMessage());
-    }
-}
+    it('requires a product ID or slug to fetch details', function () {
+        expect(api('guest/product/get'))
+            ->toHaveErrorMessage('Product ID or slug is missing');
+    });
+});
