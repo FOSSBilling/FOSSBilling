@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const autocompleteTemplate = (item, escape) => {
     return `<div class="py-2 d-flex align-items-center text-body">
                 <span>${escape(item.label)}</span>
-                <small class="text-body-seconday ms-1 lh-1">#${escape(item.value)}</small>
+                <small class="text-body-secondary ms-1 lh-1">#${escape(item.value)}</small>
              </div>`;
   }
 
