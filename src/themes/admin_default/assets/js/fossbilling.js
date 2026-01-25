@@ -82,68 +82,7 @@ globalThis.FOSSBilling = {
 };
 
   //===== Global ajax methods =====//
-  // Modern AJAX loading indicators using Fetch API interception
   document.addEventListener("DOMContentLoaded", function() {
-    (() => {
-      let activeRequests = 0;
-      const originalFetch = window.fetch;
-
-      // Intercept fetch calls to track loading state
-      window.fetch = async function(...args) {
-        try {
-          // Show loading indicators when first request starts
-          if (activeRequests === 0) {
-            document.querySelectorAll('.loading').forEach(el => {
-              el.style.display = '';
-            });
-          }
-          activeRequests++;
-
-          const response = await originalFetch.apply(this, args);
-
-          return response;
-        } finally {
-          activeRequests--;
-          // Hide loading indicators when last request completes
-          if (activeRequests === 0) {
-            document.querySelectorAll('.loading').forEach(el => {
-              el.style.display = 'none';
-            });
-          }
-        }
-      };
-
-      // Also intercept XMLHttpRequest for legacy compatibility
-      const originalXHR = window.XMLHttpRequest;
-      window.XMLHttpRequest = function() {
-        const xhr = new originalXHR();
-
-        // Track when request starts
-        const originalOpen = xhr.open;
-        xhr.open = function() {
-          if (activeRequests === 0) {
-            document.querySelectorAll('.loading').forEach(el => {
-              el.style.display = '';
-            });
-          }
-          activeRequests++;
-          return originalOpen.apply(this, arguments);
-        };
-
-        // Track when request ends
-        xhr.addEventListener('loadend', () => {
-          activeRequests--;
-          if (activeRequests === 0) {
-            document.querySelectorAll('.loading').forEach(el => {
-              el.style.display = 'none';
-            });
-          }
-        });
-
-        return xhr;
-      };
-    })();
-
     // Attach event listeners to all forms and links with data-fb-api attribute.
     if (document.querySelector("form[data-fb-api]")) {
       API._apiForm();
