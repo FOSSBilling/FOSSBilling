@@ -613,7 +613,8 @@ const API = {
           try {
             apiData = Tools.parseDataAttr(linkElement.dataset.fbApi || '{}');
           } catch (error) {
-            FOSSBilling.message(error.message || 'Invalid API configuration', 'error');
+            console.error('Failed to parse data-fb-api attribute:', error);
+            FOSSBilling.message('Invalid API configuration', 'error');
             return;
           }
 
