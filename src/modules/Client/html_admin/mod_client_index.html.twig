@@ -223,7 +223,7 @@
                                 <td>
                                     <div class="d-flex py-1 align-items-center">
                                         <a href="{{ 'client/manage'|alink }}/{{ client.id }}">
-                                            <span class="avatar me-2" style="background-image: url({{ client.email|gravatar }}&size=40)"></span>
+                                            <span class="db-avatar avatar me-2" data-email="{{ client.email }}" data-size="40"></span>
                                         </a>
                                         <div class="flex-fill">
                                             <div class="font-weight-medium">

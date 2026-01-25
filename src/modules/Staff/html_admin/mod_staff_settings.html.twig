@@ -75,8 +75,7 @@
                                     <td>{{ loop.index }}</td>
                                     <td>
                                         <a href="{{ 'staff/manage'|alink }}/{{ member.id }}">
-                                        <span class="avatar avatar-xs me-2"
-                                              style="background-image: url({{ member.email|gravatar }}&size=25)"></span>
+                                        <span class="db-avatar avatar avatar-xs me-2" data-email="{{ member.email }}" data-size="25"></span>
                                         </a>
                                         <a href="{{ '/staff/manage'|alink }}/{{ member.id }}">{{ member.name }}</a>
                                     </td>

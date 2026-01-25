@@ -1,10 +1,13 @@
 import { Tooltip } from 'bootstrap/dist/js/bootstrap.esm.js';
 import { Toast } from 'bootstrap/dist/js/bootstrap.esm.js';
 import './js/utils';
+import { initAvatars } from './js/avatar.js';
 
 globalThis.bootstrap = { Tooltip, Toast };
 
 document.addEventListener('DOMContentLoaded', () => {
+  initAvatars();
+
   /**
    * Enable Bootstrap Tooltip
    */

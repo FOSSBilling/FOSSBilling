@@ -1,4 +1,5 @@
 import './js/ui/modals';
+import { initAvatars } from './js/avatar.js';
 import { coloris, init } from '@melloware/coloris';
 import ClipboardJS from "clipboard";
 import * as tabler from '@tabler/core/js/tabler.js';
@@ -20,6 +21,8 @@ coloris({
 
 
 document.addEventListener('DOMContentLoaded', () => {
+  initAvatars();
+
   document.querySelectorAll('.js-theme-toggler').forEach(element => {
     element.addEventListener('click', event => {
       event.preventDefault();

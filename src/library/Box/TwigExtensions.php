@@ -86,8 +86,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             'link' => new TwigFilter('link', $this->twig_bb_client_link_filter(...), ['is_safe' => ['html']]),
             'autolink' => new TwigFilter('autolink', $this->twig_autolink_filter(...)),
 
-            'gravatar' => new TwigFilter('gravatar', $this->twig_gravatar_filter(...)),
-
             'markdown' => new TwigFilter('markdown', $this->twig_markdown_filter(...), ['needs_environment' => true, 'is_safe' => ['html']]),
 
             'truncate' => new TwigFilter('truncate', $this->twig_truncate_filter(...), ['needs_environment' => true]),
@@ -273,18 +271,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         $this->markAssetAsLoaded($path);
 
         return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, FOSSBilling\Version::VERSION, $media);
-    }
-
-    public function twig_gravatar_filter($email, $size = 20): string
-    {
-        if (empty($email)) {
-            return '';
-        }
-
-        $url = 'https://www.gravatar.com/avatar/';
-        $url .= md5(strtolower(trim((string) $email)));
-
-        return $url . "?s=$size&d=mp&r=g";
     }
 
     public function twig_autolink_filter($text): ?string

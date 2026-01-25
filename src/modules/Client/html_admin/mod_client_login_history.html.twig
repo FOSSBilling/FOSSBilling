@@ -32,7 +32,7 @@
             <td>{{ event.id }}</td>
             <td>
                 <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
-                    <span class="avatar avatar-xs d-none d-md-inline-block" style="background-image: url({{ event.client.email|gravatar }}&size=24)"></span>
+                    <span class="db-avatar avatar avatar-xs d-none d-md-inline-block" data-email="{{ event.client.email }}" data-size="24"></span>
                 </a>
             </td>
             <td>
