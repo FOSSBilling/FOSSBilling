@@ -574,20 +574,25 @@ const API = {
             return;
           }
 
-          API.makeRequest(
-            formMethod,
-            Tools.getBaseURL(action),
-            data,
-            (result) => {
-              toggleButtons(false);
-              API._afterComplete(formElement, result);
-              return result;
-            },
-            (error) => {
-              toggleButtons(false);
-              FOSSBilling.message(`${error.message} (${error.code})`, 'error');
-            }
-          );
+          try {
+            API.makeRequest(
+              formMethod,
+              Tools.getBaseURL(action),
+              data,
+              (result) => {
+                toggleButtons(false);
+                API._afterComplete(formElement, result);
+                return result;
+              },
+              (error) => {
+                toggleButtons(false);
+                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+              }
+            );
+          } catch (error) {
+            toggleButtons(false);
+            FOSSBilling.message(error.message || 'An error occurred', 'error');
+          }
         });
       });
     }
@@ -608,7 +613,7 @@ const API = {
           try {
             apiData = Tools.parseDataAttr(linkElement.dataset.fbApi || '{}');
           } catch (error) {
-            console.warn('Invalid JSON in data-fb-api attribute:', error);
+            FOSSBilling.message(error.message || 'Invalid API configuration', 'error');
             return;
           }
 

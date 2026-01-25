@@ -6,6 +6,33 @@ globalThis.bootstrap = { Tooltip, Toast };
 
 document.addEventListener('DOMContentLoaded', () => {
   /**
+   * Global error handler for unhandled Promise rejections
+   */
+  window.addEventListener('unhandledrejection', function(event) {
+    event.preventDefault();
+    const error = event.reason;
+    let message = 'An unexpected error occurred';
+    if (error && typeof error === 'object') {
+      message = error.message || error.code || message;
+    } else if (typeof error === 'string') {
+      message = error;
+    }
+    FOSSBilling.message(message, 'error');
+  });
+
+  /**
+   * Global error handler for synchronous errors
+   */
+  window.onerror = function(message, source, lineno, colno, error) {
+    let displayMessage = message;
+    if (error && error.message) {
+      displayMessage = error.message;
+    }
+    FOSSBilling.message(displayMessage, 'error');
+    return true; // Prevent default browser error handling
+  };
+
+  /**
    * Enable Bootstrap Tooltip
    */
   const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
