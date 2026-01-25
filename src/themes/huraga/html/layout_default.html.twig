@@ -167,7 +167,9 @@
                                 {% endblock %}
                             {% endif %}
 
+                            {{ render_widgets('client.theme.content.before') }}
                             {% block content %}{% endblock %}
+                            {{ render_widgets('client.theme.content.after') }}
 
                             {{ include('partial_message.html.twig') }}
 
@@ -180,6 +182,7 @@
                 {% if settings.footer_enabled %}
                     <footer id="footer" class="small text-muted mt-2 mb-3">
                         <div class="d-flex flex-column">
+                            {{ render_widgets('client.theme.footer.start') }}
                             <div class="d-flex justify-content-center">
                                 <span>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature | default(company.signature) }}
                                     {% if company.bank_info_pagebottom == 1 %}

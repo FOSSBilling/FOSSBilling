@@ -146,7 +146,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Check if a service class can provide widgets.
+     * Check if a service class provides widgets.
      *
      * @param object $service the service class instance
      *
