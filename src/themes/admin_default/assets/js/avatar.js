@@ -60,4 +60,4 @@ export function initAvatars() {
   });
 }
 
-export default { generateAvatar, initAvatars };
+export default { generateAvatar };
