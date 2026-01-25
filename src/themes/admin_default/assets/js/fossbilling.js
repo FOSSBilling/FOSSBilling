@@ -82,7 +82,6 @@ globalThis.FOSSBilling = {
 };
 
   //===== Global ajax methods =====//
-  // Modern AJAX loading indicators using Fetch API interception
   document.addEventListener("DOMContentLoaded", function() {
     // Attach event listeners to all forms and links with data-fb-api attribute.
     if (document.querySelector("form[data-fb-api]")) {
