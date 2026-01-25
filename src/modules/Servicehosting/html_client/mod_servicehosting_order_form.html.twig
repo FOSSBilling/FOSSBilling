@@ -33,21 +33,21 @@
 <h4 class="mt-4 mb-1"><strong>Domain configuration</strong></h4>
 
 <div class="d-flex mb-3">
-    <nav class="nav nav-pills flex-column border-end me-3 gap-2">
+    <nav class="nav nav-pills flex-column border-end me-3 gap-2" role="tablist">
         {% if can_register %}
             <a class="nav-link me-3 py-1 px-2 fs-7{% if default_action == 'register' %} active{% endif %}" href="#"
                id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane"
-               role="tab" aria-controls="register-tab-pane" data-action="register">{{ 'Register'|trans }}</a>
+               role="tab" aria-controls="register-tab-pane" aria-selected="{{ default_action == 'register' ? 'true' : 'false' }}" data-action="register">{{ 'Register'|trans }}</a>
         {% endif %}
         {% if can_transfer %}
             <a class="nav-link me-3 py-1 px-2 fs-7{% if default_action == 'transfer' %} active{% endif %}" href="#"
                id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-tab-pane"
-               role="tab" aria-controls="transfer-tab-pane" data-action="transfer">{{ 'Transfer'|trans }}</a>
+               role="tab" aria-controls="transfer-tab-pane" aria-selected="{{ default_action == 'transfer' ? 'true' : 'false' }}" data-action="transfer">{{ 'Transfer'|trans }}</a>
         {% endif %}
         {% if can_own %}
             <a class="nav-link me-3 py-1 px-2 fs-7{% if default_action == 'owndomain' %} active{% endif %}" href="#"
                id="owndomain-tab" data-bs-toggle="tab" data-bs-target="#owndomain-tab-pane"
-               role="tab" aria-controls="owndomain-tab-pane" data-action="owndomain">{{ 'Own domain'|trans }}</a>
+               role="tab" aria-controls="owndomain-tab-pane" aria-selected="{{ default_action == 'owndomain' ? 'true' : 'false' }}" data-action="owndomain">{{ 'Own domain'|trans }}</a>
         {% endif %}
     </nav>
 
@@ -153,14 +153,19 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Update domain action when switching tabs
-        document.querySelectorAll('.nav-pills .nav-link[data-action]').forEach(tab => {
+        // Update domain action and aria-selected when switching tabs
+        const allTabs = document.querySelectorAll('.nav-pills .nav-link[data-action]');
+        allTabs.forEach(tab => {
             tab.addEventListener('click', function() {
                 const action = this.getAttribute('data-action');
                 const actionInput = document.getElementById('domain-action');
                 if (actionInput) {
                     actionInput.value = action;
                 }
+
+                // Update aria-selected for all tabs
+                allTabs.forEach(t => t.setAttribute('aria-selected', 'false'));
+                this.setAttribute('aria-selected', 'true');
             });
         });
 
