@@ -5,8 +5,8 @@
     "dev": "node ./esbuild.mjs"
   },
   "dependencies": {
-    "@dicebear/core": "^9.3.1",
-    "@dicebear/identicon": "^9.3.1",
+    "@dicebear/core": "^9.0.0",
+    "@dicebear/identicon": "^9.0.0",
     "@melloware/coloris": "^0.25.0",
     "@tabler/core": "^1.2.0",
     "apexcharts": "^5.0.0",
