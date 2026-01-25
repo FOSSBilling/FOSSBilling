@@ -166,8 +166,8 @@
         const transferCheck = document.getElementById('transfer-check');
         if (transferCheck) {
             transferCheck.addEventListener('click', function (event) {
-                const sld = document.querySelector('input[name="transfer_sld"]').value;
-                const tld = document.querySelector('select[name="transfer_tld"]').value;
+                const sld = document.querySelector('input[name="transfer_sld"]').value.toLowerCase();
+                const tld = document.querySelector('select[name="transfer_tld"]').value.toLowerCase();
                 document.getElementById('domain-action').value = 'transfer';
                 const domain = sld + tld;
 
@@ -197,7 +197,7 @@
         if (domainCheck) {
             domainCheck.addEventListener('click', function (event) {
                 const sld = document.querySelector('input[name="register_sld"]').value.toLowerCase();
-                const tld = document.querySelector('select[name="register_tld"]').value;
+                const tld = document.querySelector('select[name="register_tld"]').value.toLowerCase();
                 const domain = sld + tld;
                 document.getElementById('domain-action').value = 'register';
                 API.guest.post(
