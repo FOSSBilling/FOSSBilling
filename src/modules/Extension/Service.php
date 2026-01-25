@@ -550,16 +550,17 @@ class Service implements InjectionAwareInterface
 
     public function getInstalledMods()
     {
-        $query = "SELECT name
-                FROM extension
-                WHERE type = 'mod'
-                AND status = 'installed'
-               ";
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($query);
-        $stmt->execute();
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('name')
+            ->from('extension')
+            ->where('type = :type')
+            ->andWhere('status = :status')
+            ->setParameter('type', 'mod')
+            ->setParameter('status', 'installed');
+        $result = $query->executeQuery()->fetchFirstColumn();
 
-        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+        return $result;
     }
 
     private function installModule(\Model_Extension $ext): bool
@@ -708,14 +709,16 @@ class Service implements InjectionAwareInterface
      */
     public function getCoreAndActiveModules(): array
     {
-        $query = "SELECT name, name
-                FROM extension
-                WHERE `type` = 'mod'
-                AND status = 'installed'
-               ";
-        $stmt = $this->di['pdo']->prepare($query);
-        $stmt->execute();
-        $extensions = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('name', 'name')
+            ->from('extension')
+            ->where('type = :type')
+            ->andWhere('status = :status')
+            ->setParameter('type', 'mod')
+            ->setParameter('status', 'installed');
+        $result = $query->executeQuery();
+        $extensions = $result->fetchAllKeyValue();
 
         if (!$extensions) {
             $list = [];

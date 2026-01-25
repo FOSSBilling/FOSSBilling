@@ -1542,24 +1542,29 @@ final class ServiceTest extends \BBTestCase
 
     public function testSetPermissions(): void
     {
-        $pdoStatementMock = $this->getMockBuilder(PdoStatementMock::class)
-            ->getMock();
-        $pdoStatementMock->expects($this->atLeastOnce())
-            ->method('execute');
-
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatementMock);
-
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
 
-        $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $queryBuilderMock = new class {
+            public function update($table) { return $this; }
+            public function set($field, $value) { return $this; }
+            public function where($cond) { return $this; }
+            public function setParameter($key, $val) { return $this; }
+            public function executeStatement() { return 1; }
+        };
+
+        $dbalMock = new class($queryBuilderMock) {
+            public function __construct(private $qb) {}
+            public function createQueryBuilder() {
+                return $this->qb;
+            }
+        };
+
+        $di = new \Pimple\Container();
+        $di['dbal'] = $dbalMock;
         $serviceMock->setDi($di);
 
         $member_id = 1;
@@ -1569,23 +1574,35 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetPermissionsPermAreEmpty(): void
     {
-        $pdoStatementMock = $this->getMockBuilder(PdoStatementMock::class)
-            ->getMock();
-        $pdoStatementMock->expects($this->atLeastOnce())
-            ->method('execute');
-        $pdoStatementMock->expects($this->atLeastOnce())
-            ->method('fetchColumn')
-            ->willReturn('{}');
-
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatementMock);
+        $statementWithFetchOne = new class {
+            public function fetchOne() {
+                return '{}';
+            }
+        };
 
         $service = new Service();
 
-        $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $queryBuilderMock = new class($statementWithFetchOne) {
+            public function __construct(private $stmt) {}
+            public function update($table) { return $this; }
+            public function set($field, $value) { return $this; }
+            public function where($cond) { return $this; }
+            public function setParameter($key, $val) { return $this; }
+            public function executeStatement() { return 1; }
+            public function select($field) { return $this; }
+            public function from($table) { return $this; }
+            public function executeQuery() { return $this->stmt; }
+        };
+
+        $dbalMock = new class($queryBuilderMock) {
+            public function __construct(private $qb) {}
+            public function createQueryBuilder() {
+                return $this->qb;
+            }
+        };
+
+        $di = new \Pimple\Container();
+        $di['dbal'] = $dbalMock;
         $service->setDi($di);
 
         $member_id = 1;
@@ -1596,24 +1613,38 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetPermissions(): void
     {
-        $pdoStatementMock = $this->getMockBuilder(PdoStatementMock::class)
-            ->getMock();
-        $pdoStatementMock->expects($this->atLeastOnce())
-            ->method('execute');
         $queryResult = '{"id" : "1"}';
-        $pdoStatementMock->expects($this->atLeastOnce())
-            ->method('fetchColumn')
-            ->willReturn($queryResult);
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatementMock);
+        $statementWithFetchOne = new class($queryResult) {
+            public function __construct(private $result) {}
+            public function fetchOne() {
+                return $this->result;
+            }
+        };
 
         $service = new Service();
 
-        $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $queryBuilderMock = new class($statementWithFetchOne) {
+            public function __construct(private $stmt) {}
+            public function update($table) { return $this; }
+            public function set($field, $value) { return $this; }
+            public function where($cond) { return $this; }
+            public function setParameter($key, $val) { return $this; }
+            public function executeStatement() { return 1; }
+            public function select($field) { return $this; }
+            public function from($table) { return $this; }
+            public function executeQuery() { return $this->stmt; }
+        };
+
+        $dbalMock = new class($queryBuilderMock) {
+            public function __construct(private $qb) {}
+            public function createQueryBuilder() {
+                return $this->qb;
+            }
+        };
+
+        $di = new \Pimple\Container();
+        $di['dbal'] = $dbalMock;
         $service->setDi($di);
 
         $member_id = 1;

@@ -235,17 +235,19 @@ final class ServiceTest extends \BBTestCase
             ->method('hasPermission')
             ->willReturn(true);
 
-        $pdoStatment = $this->createMock(PdoStatmentsMock::class);
-        $pdoStatment->expects($this->atLeastOnce())
-            ->method('execute');
-        $pdoStatment->expects($this->atLeastOnce())
-            ->method('fetchAll')
-            ->willReturn([]);
-
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatment);
+        $dbalMock = new class {
+            public function createQueryBuilder() {
+                return new class {
+                    public function select($field) { return $this; }
+                    public function from($table) { return $this; }
+                    public function where($cond) { return $this; }
+                    public function andWhere($cond) { return $this; }
+                    public function setParameter($key, $val) { return $this; }
+                    public function executeQuery() { return $this; }
+                    public function fetchFirstColumn() { return []; }
+                };
+            }
+        };
 
         $link = 'extension';
 
@@ -253,13 +255,11 @@ final class ServiceTest extends \BBTestCase
         $urlMock->expects($this->atLeastOnce())
             ->method('adminLink')
             ->willReturn('http://fossbilling.org/index.php?_url=/' . $link);
-        $di['url'] = $urlMock;
 
         $di = $this->getDi();
         $di['mod'] = $di->protect(function ($name) use ($di) {
             $mod = new \FOSSBilling\Module($name);
             $mod->setDi($di);
-
             return $mod;
         });
         $di['tools'] = new \FOSSBilling\Tools();
@@ -270,12 +270,11 @@ final class ServiceTest extends \BBTestCase
                 return $extensionServiceMock;
             }
         });
-        $di['pdo'] = $pdoMock;
         $di['url'] = $urlMock;
+        $di['dbal'] = $dbalMock;
 
         $this->service->setDi($di);
         $result = $this->service->getAdminNavigation(new \Model_Admin());
-
         $this->assertIsArray($result);
     }
 
@@ -566,20 +565,22 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetInstalledMods(): void
     {
-        $pdoStatment = $this->createMock(PdoStatmentsMock::class);
-        $pdoStatment->expects($this->atLeastOnce())
-            ->method('execute');
-        $pdoStatment->expects($this->atLeastOnce())
-            ->method('fetchAll')
-            ->willReturn([]);
+        $dbalMock = new class {
+            public function createQueryBuilder() {
+                return new class {
+                    public function select($field) { return $this; }
+                    public function from($table) { return $this; }
+                    public function where($cond) { return $this; }
+                    public function andWhere($cond) { return $this; }
+                    public function setParameter($key, $val) { return $this; }
+                    public function executeQuery() { return $this; }
+                    public function fetchFirstColumn() { return []; }
+                };
+            }
+        };
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatment);
-
-        $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $di = new \Pimple\Container();
+        $di['dbal'] = $dbalMock;
 
         $this->service->setDi($di);
         $result = $this->service->getInstalledMods();

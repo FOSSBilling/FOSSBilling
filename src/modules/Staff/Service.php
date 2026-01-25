@@ -131,24 +131,30 @@ class Service implements InjectionAwareInterface
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
 
         $array = array_filter($array);
-        $sql = 'UPDATE admin SET permissions = :p WHERE id = :id';
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindValue('p', json_encode($array));
-        $stmt->bindValue('id', $member_id);
-        $stmt->execute();
+
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->update('admin')
+            ->set('permissions', ':p')
+            ->where('id = :id')
+            ->setParameter('p', json_encode($array))
+            ->setParameter('id', $member_id)
+            ->executeStatement();
 
         return true;
     }
 
     public function getPermissions($member_id)
     {
-        $sql = 'SELECT permissions FROM admin WHERE id = :id';
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute(['id' => $member_id]);
-        $json = $stmt->fetchColumn() ?? '';
-        $permissions = json_decode($json, true);
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('permissions')
+            ->from('admin')
+            ->where('id = :id')
+            ->setParameter('id', $member_id);
+        $result = $query->executeQuery()->fetchOne() ?? '';
+
+        $permissions = json_decode($result, true);
         if (!$permissions) {
             return [];
         }
