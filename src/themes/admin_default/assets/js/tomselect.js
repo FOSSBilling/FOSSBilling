@@ -47,9 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
    * Autocomplete selector
    */
   const autocompleteTemplate = (item, escape) => {
-    return `<div class="py-2 d-flex align-items-center">
+    return `<div class="py-2 d-flex align-items-center text-body">
                 <span>${escape(item.label)}</span>
-                <small class="text-muted ms-1 lh-1">#${escape(item.value)}</small>
+                <small class="text-body-seconday ms-1 lh-1">#${escape(item.value)}</small>
              </div>`;
   }
 
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         searchField: ["label", "value"],
         load: (query, callback) => {
           try {
-            const restUrl = new URL(autocompleteSelectorEl.dataset.resturl);
+            const restUrl = new URL(Tools.getBaseURL(autocompleteSelectorEl.dataset.resturl));
             restUrl.searchParams.append("search", query);
 
             // Add CSRF token if available
