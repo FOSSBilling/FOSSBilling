@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         searchField: ["label", "value"],
         load: (query, callback) => {
           try {
-            const restUrl = new URL(autocompleteSelectorEl.dataset.resturl);
+            const restUrl = new URL(Tools.getBaseURL(autocompleteSelectorEl.dataset.resturl));
             restUrl.searchParams.append("search", query);
 
             // Add CSRF token if available
