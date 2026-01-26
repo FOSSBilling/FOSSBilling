@@ -34,7 +34,7 @@ class Service implements InjectionAwareInterface
         $db = $this->di['db'];
         $result = $db->getRow('SELECT id, client_id FROM extension_meta WHERE extension = "mod_client" AND meta_key = "confirm_email" AND meta_value = :hash', [':hash' => $hash]);
         if (!$result) {
-            throw new \FOSSBilling\InformationException('Invalid email confirmation link');
+            throw new InformationException('Invalid email confirmation link');
         }
         $db->exec('UPDATE client SET email_approved = 1 WHERE id = :id', ['id' => $result['client_id']]);
         $db->exec('DELETE FROM extension_meta WHERE id = :id', ['id' => $result['id']]);
@@ -182,7 +182,7 @@ class Service implements InjectionAwareInterface
     {
         $limit = $data['per_page'] ?? 30;
         if (!is_numeric($limit) || $limit < 1) {
-            throw new \FOSSBilling\InformationException('Invalid per page number');
+            throw new InformationException('Invalid per page number');
         }
 
         [$sql, $params] = $this->getSearchQuery($data, "SELECT c.id, IF(c.company <> '', CONCAT_WS(' ', c.first_name, c.last_name, ' (', c.company, ')'), CONCAT_WS(' ', c.first_name, c.last_name)) as client");
@@ -224,12 +224,12 @@ class Service implements InjectionAwareInterface
 
         $invoice = $this->di['db']->findOne('Invoice', 'client_id = :client_id', [':client_id' => $model->id]);
         if ($invoice instanceof \Model_Invoice) {
-            throw new \FOSSBilling\InformationException('Currency cannot be changed. Client already has invoices issued.');
+            throw new InformationException('Currency cannot be changed. Client already has invoices issued.');
         }
 
         $order = $this->di['db']->findOne('ClientOrder', 'client_id = :client_id', [':client_id' => $model->id]);
         if ($order instanceof \Model_ClientOrder) {
-            throw new \FOSSBilling\InformationException('Currency cannot be changed. Client already has orders.');
+            throw new InformationException('Currency cannot be changed. Client already has orders.');
         }
 
         return true;
@@ -238,15 +238,15 @@ class Service implements InjectionAwareInterface
     public function addFunds(\Model_Client $client, $amount, $description, array $data = []): bool
     {
         if (!$client->currency) {
-            throw new \FOSSBilling\InformationException('You must define the client\'s currency before adding funds.');
+            throw new InformationException('You must define the client\'s currency before adding funds.');
         }
 
         if (!is_numeric($amount)) {
-            throw new \FOSSBilling\InformationException('Funds amount is invalid');
+            throw new InformationException('Funds amount is invalid');
         }
 
         if (empty($description)) {
-            throw new \FOSSBilling\InformationException('Funds description is invalid');
+            throw new InformationException('Funds description is invalid');
         }
 
         $credit = $this->di['db']->dispense('ClientBalance');
@@ -409,7 +409,7 @@ class Service implements InjectionAwareInterface
     public function get($data)
     {
         if (!isset($data['id']) && !isset($data['email'])) {
-            throw new \FOSSBilling\InformationException('Client ID or email is required');
+            throw new InformationException('Client ID or email is required');
         }
 
         $db = $this->di['db'];
@@ -638,7 +638,7 @@ class Service implements InjectionAwareInterface
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
-            throw new \FOSSBilling\InformationException('Email address cannot be changed');
+            throw new InformationException('Email address cannot be changed');
         }
 
         return true;
@@ -652,7 +652,7 @@ class Service implements InjectionAwareInterface
             if (!isset($checkArr[$field]) || empty($checkArr[$field])) {
                 $name = ucwords(str_replace('_', ' ', $field));
 
-                throw new \FOSSBilling\InformationException('Field :field cannot be empty', [':field' => $name]);
+                throw new InformationException('Field :field cannot be empty', [':field' => $name]);
             }
         }
     }
@@ -668,7 +668,7 @@ class Service implements InjectionAwareInterface
                 if (!isset($checkArr[$cFieldName]) || empty($checkArr[$cFieldName])) {
                     $name = isset($cField['title']) && !empty($cField['title']) ? $cField['title'] : ucwords(str_replace('_', ' ', $cFieldName));
 
-                    throw new \FOSSBilling\InformationException('Field :field cannot be empty', [':field' => $name]);
+                    throw new InformationException('Field :field cannot be empty', [':field' => $name]);
                 }
             }
         }
@@ -696,7 +696,7 @@ class Service implements InjectionAwareInterface
      *
      * @return bool|int
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws InformationException
      */
     public function password_reset_valid($data)
     {
@@ -708,7 +708,7 @@ class Service implements InjectionAwareInterface
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
         if (!$reset instanceof \Model_ClientPasswordReset) {
-            throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+            throw new InformationException('The link has expired or you have already reset your password.');
         }
 
         $c = $this->di['db']->findOne('Client', 'id = ?', [$reset->client_id]);

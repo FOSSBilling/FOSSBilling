@@ -142,7 +142,7 @@ class Admin extends \Api_Abstract
 
         $service = $this->getService();
         if ($service->emailAlreadyRegistered($data['email'])) {
-            throw new \FOSSBilling\InformationException('This email address is already registered.');
+            throw new InformationException('This email address is already registered.');
         }
 
         $validator->isPasswordStrong($data['password']);
@@ -222,7 +222,7 @@ class Admin extends \Api_Abstract
             $email = $data['email'];
             $email = $this->di['tools']->validateAndSanitizeEmail($email);
             if ($service->emailAlreadyRegistered($email, $client)) {
-                throw new \FOSSBilling\InformationException('This email address is already registered.');
+                throw new InformationException('This email address is already registered.');
             }
         }
 
@@ -305,7 +305,7 @@ class Admin extends \Api_Abstract
     public function change_password($data): bool
     {
         if ($data['password'] != $data['password_confirm']) {
-            throw new \FOSSBilling\InformationException('Passwords do not match');
+            throw new InformationException('Passwords do not match');
         }
 
         $this->di['validator']->isPasswordStrong($data['password']);
@@ -500,7 +500,7 @@ class Admin extends \Api_Abstract
         $clients = $this->di['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
 
         if ((is_countable($clients) ? count($clients) : 0) > 0) {
-            throw new \FOSSBilling\InformationException('Group has clients assigned. Please reassign them first.');
+            throw new InformationException('Group has clients assigned. Please reassign them first.');
         }
 
         return $this->getService()->deleteGroup($model);

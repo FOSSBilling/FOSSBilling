@@ -19,7 +19,7 @@ final class GuestTest extends TestCase
             'password' => $password,
             'password_confirm' => $password,
             'phone_cc' => 1,
-            'phone' => "(216) 245-2368"
+            'phone' => '(216) 245-2368',
         ]);
 
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
@@ -71,7 +71,7 @@ final class GuestTest extends TestCase
             'first_name' => 'Test',
             'password' => $password,
             'password_confirm' => $password,
-            'phone' => "123456789101123",
+            'phone' => '123456789101123',
         ]);
 
         $this->assertFalse($result->wasSuccessful(), $result->generatePHPUnitMessage());
