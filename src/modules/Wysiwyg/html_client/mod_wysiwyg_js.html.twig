@@ -8,8 +8,20 @@
                 .then(editor => {
                     // Handle required attribute - CKEditor manages this internally
                     if (element.hasAttribute('required')) {
+                        element.dataset.editorRequired = 'true';
                         element.removeAttribute('required');
                     }
+
+                    const syncEditorData = function () {
+                        if ('value' in element) {
+                            element.value = editor.getData();
+                        } else {
+                            element.textContent = editor.getData();
+                        }
+                    };
+
+                    syncEditorData();
+                    editor.model.document.on('change:data', syncEditorData);
                 })
                 .catch(error => { console.error(error) });
         });
