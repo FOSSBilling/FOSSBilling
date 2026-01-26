@@ -282,7 +282,7 @@ class Service implements InjectionAwareInterface
         $orderIds = array_unique(array_filter(array_column($lines, 'order_id')));
 
         // Ensure order IDs are safe integers before using in SQL
-        $orderIds = array_values(array_filter(array_map(intval(...), $orderIds), static fn ($id) => $id > 0));
+        $orderIds = array_values(array_filter(array_map(intval(...), $orderIds), static fn ($id): bool => $id > 0));
 
         if (!empty($orderIds)) {
             // Batch load orders
@@ -296,9 +296,9 @@ class Service implements InjectionAwareInterface
             $orders = $this->di['db']->find('ClientOrder', 'id IN (' . implode(',', $orderIdPlaceholders) . ')', $orderIdParams);
 
             // Batch load related products
-            $productIds = array_unique(array_filter(array_map(static fn ($o) => isset($o->product_id) ? (int) $o->product_id : 0, $orders)));
+            $productIds = array_unique(array_filter(array_map(static fn ($o): int => isset($o->product_id) ? (int) $o->product_id : 0, $orders)));
             // Ensure product IDs are safe integers before using in SQL
-            $productIds = array_values(array_filter($productIds, static fn ($id) => $id > 0));
+            $productIds = array_values(array_filter($productIds, static fn ($id): bool => $id > 0));
 
             $productsById = [];
             if (!empty($productIds)) {

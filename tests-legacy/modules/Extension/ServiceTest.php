@@ -25,7 +25,7 @@ class PdoStatmentsMock extends \PDOStatement
 final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
-    protected \PHPUnit\Framework\MockObject\MockObject $filesystemMock;
+    protected object $filesystemMock;
 
     public function setUp(): void
     {

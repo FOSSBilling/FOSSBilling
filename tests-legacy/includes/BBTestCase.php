@@ -5,8 +5,8 @@ class BBTestCase extends PHPUnit\Framework\TestCase
     protected function getDi(): Pimple\Container
     {
         $di = new Pimple\Container();
-        $di['validator'] = (fn () => new FOSSBilling\Validate());
-        $di['tools'] = (fn () => new FOSSBilling\Tools());
+        $di['validator'] = (fn (): FOSSBilling\Validate => new FOSSBilling\Validate());
+        $di['tools'] = (fn (): FOSSBilling\Tools => new FOSSBilling\Tools());
         $di['config'] = [
             'salt' => 'test_salt',
             'url' => 'http://localhost/',

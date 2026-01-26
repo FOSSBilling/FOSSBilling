@@ -6,6 +6,7 @@ use Rector\Config\RectorConfig;
 use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 use Rector\Doctrine\Set\DoctrineSetList;
 use Rector\PHPUnit\Set\PHPUnitSetList;
+use Rector\TypeDeclaration\Rector\Class_\TypedPropertyFromCreateMockAssignRector;
 
 return RectorConfig::configure()
     ->withPaths([
@@ -16,6 +17,9 @@ return RectorConfig::configure()
     ->withSkip([
         __DIR__ . '/src/vendor',
         __DIR__ . '/src/data/cache',
+        TypedPropertyFromCreateMockAssignRector::class => [
+            __DIR__ . "/tests-legacy/modules/Extension/ServiceTest.php"
+        ],
     ])
     ->withAttributesSets()
     ->withPhpSets()
