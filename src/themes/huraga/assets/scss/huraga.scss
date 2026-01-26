@@ -1,9 +1,5 @@
 @use "flags";
 
-:root {
-    --tblr-body-font-family: system-ui, -apple-system, sans-serif;
-}
-
 html {
     font-size: 1rem;
 }
@@ -308,7 +304,7 @@ body {
 .alert-warning {
     --bs-alert-bg: rgba(var(--bs-warning-rgb), 0.15);
     --bs-alert-border-color: rgba(var(--bs-warning-rgb), 0.3);
-    --bs-alert-color: #997404;
+    --bs-alert-color: var(--bs-warning);
 }
 
 .alert-info {
