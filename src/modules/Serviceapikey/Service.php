@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Serviceapikey;
 
 use FOSSBilling\InjectionAwareInterface;
-use \FOSSBilling\Interfaces\ServiceModuleInterface;
+use FOSSBilling\Interfaces\ServiceModuleInterface;
 
 class Service implements InjectionAwareInterface, ServiceModuleInterface
 {

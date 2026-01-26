@@ -810,7 +810,7 @@ class Service implements InjectionAwareInterface
 
             return $repo->$m($order);
         }
-        
+
         $this->di['logger']->debug("Service {$order->service_type} does not support action {$action}.");
 
         return null;
