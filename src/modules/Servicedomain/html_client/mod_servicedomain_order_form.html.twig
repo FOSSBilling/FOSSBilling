@@ -158,16 +158,11 @@
             return `${total.toFixed(2)} ${code}`;
         };
 
-        const showApiError = (error) => {
-            const message = error && error.message ? `${error.message} (${error.code})` : 'Unknown error occurred';
-            FOSSBilling.message(message, 'error');
-        };
-
         const transferCheck = document.getElementById('transfer-check');
         if (transferCheck) {
             transferCheck.addEventListener('click', function (event) {
-                const sld = document.querySelector('input[name="transfer_sld"]').value;
-                const tld = document.querySelector('select[name="transfer_tld"]').value;
+                const sld = document.querySelector('input[name="transfer_sld"]').value.toLowerCase();
+                const tld = document.querySelector('select[name="transfer_tld"]').value.toLowerCase();
                 document.getElementById('domain-action').value = 'transfer';
                 const domain = sld + tld;
 
@@ -186,7 +181,6 @@
                         const transferOrderButton = document.querySelector('#transfer .order-button');
                         if (transferOrderButton) transferOrderButton.style.display = '';
                     },
-                    showApiError
                 );
 
                 return false;
@@ -197,7 +191,7 @@
         if (domainCheck) {
             domainCheck.addEventListener('click', function (event) {
                 const sld = document.querySelector('input[name="register_sld"]').value.toLowerCase();
-                const tld = document.querySelector('select[name="register_tld"]').value;
+                const tld = document.querySelector('select[name="register_tld"]').value.toLowerCase();
                 const domain = sld + tld;
                 document.getElementById('domain-action').value = 'register';
                 API.guest.post(
@@ -213,7 +207,6 @@
                         const registerOrderButton = document.querySelector('#register .order-button');
                         if (registerOrderButton) registerOrderButton.style.display = '';
                     },
-                    showApiError
                 );
 
                 return false;
@@ -236,6 +229,9 @@
                         renewPrice = regPrice;
                     }
 
+                    const yearLabel = "{{ ' Year @ '|trans }}";
+                    const yearsLabel = "{{ ' Years @ '|trans }}";
+
                     for (let i = 1; i <= 5; i++) {
                         const totalPrice = (i === 1) ? regPrice : regPrice + (i - 1) * renewPrice;
                         const priceFormatted = formatCurrency(
@@ -246,14 +242,13 @@
                         );
 
                         yearsSelect.append(
-                            new Option(i + "{{ ' Year/s @ '|trans }}" + priceFormatted, i)
+                            new Option(i + (i === 1 ? yearLabel : yearsLabel) + priceFormatted, i)
                         );
                     }
 
                     configNext.style.display = '';
                     configNext.disabled = false;
                 },
-                showApiError
             );
         }
 
@@ -268,7 +263,6 @@
                     configNext.style.display = '';
                     configNext.disabled = false;
                 },
-                showApiError
             );
         }
     });
