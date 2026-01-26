@@ -48,6 +48,16 @@ class Service implements InjectionAwareInterface
     {
     }
 
+    public static function registerListeners($di): void
+    {
+        static $listenersRegistered = false;
+        if (!$listenersRegistered) {
+            $hookService = $di['mod_service']('hook');
+            $hookService->batchConnect(['mod' => 'antispam']);
+            $listenersRegistered = true;
+        }
+    }
+
     public static function onBeforeClientOpenTicket(\Box_Event $event)
     {
         self::performChecks($event);
@@ -81,6 +91,7 @@ class Service implements InjectionAwareInterface
     private static function performChecks(\Box_Event $event)
     {
         $di = $event->getDi();
+        self::registerListeners($di);
         $antispamService = $di['mod_service']('antispam');
         $antispamService->isBlockedIp($event);
         $antispamService->isSpam($event);
