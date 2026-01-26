@@ -745,9 +745,9 @@ class Service implements InjectionAwareInterface
 
             if ($p) {
                 return min($p);
-            } else {
-                return null;
             }
+
+            return null;
         }
 
         return null;

@@ -57,19 +57,18 @@ final class Version
             // We are still in pre-release status, so handle the version increments differently
             if ($new[1] !== $current[1]) {
                 return self::MAJOR;
-            } else {
-                return self::MINOR;
             }
-        } else {
-            // We aren't in pre-production anymore, so treat it using normal semver practices
-            if ($new[0] !== $current[0]) {
-                return self::MAJOR;
-            } elseif ($new[1] !== $current[1]) {
-                return self::MINOR;
-            } else {
-                return self::PATCH;
-            }
+
+            return self::MINOR;
         }
+        // We aren't in pre-production anymore, so treat it using normal semver practices
+        if ($new[0] !== $current[0]) {
+            return self::MAJOR;
+        } elseif ($new[1] !== $current[1]) {
+            return self::MINOR;
+        }
+
+        return self::PATCH;
     }
 
     public static function isPreviewVersion(string $version = Version::VERSION): bool

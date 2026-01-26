@@ -115,7 +115,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams([
         'id' => 'ID was not passed',
         'password' => 'Password required',
-        'password_confirm' => 'Password confirmation required'
+        'password_confirm' => 'Password confirmation required',
     ])]
     public function change_password($data)
     {

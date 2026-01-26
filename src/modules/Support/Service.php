@@ -577,11 +577,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $clientService = $this->di['mod_service']('client');
 
             return $clientService->toApiArray($client);
-        } else {
-            $this->di['logger']->err('Missing client for ticket ' . $ticket->id);
-
-            return [];
         }
+        $this->di['logger']->err('Missing client for ticket ' . $ticket->id);
+
+        return [];
     }
 
     public function noteGetAuthorDetails(\Model_SupportTicketNote $model): array

@@ -70,13 +70,12 @@ final class Api_Handler implements InjectionAwareInterface
             if (!$staff_service->hasPermission($this->identity, $mod)) {
                 if ($this->_acl_exception) {
                     throw new FOSSBilling\Exception('You do not have access to the :mod module', [':mod' => $mod], 725);
-                } else {
-                    if (DEBUG) {
-                        error_log('You do not have access to ' . $mod . ' module');
-                    }
-
-                    return null;
                 }
+                if (DEBUG) {
+                    error_log('You do not have access to ' . $mod . ' module');
+                }
+
+                return null;
             }
         }
 

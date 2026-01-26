@@ -44,17 +44,17 @@ class DebugBar extends AbstractExtension
     {
         if (Environment::isDevelopment()) {
             return $this->debugbarRenderer->renderHead();
-        } else {
-            return '';
         }
+
+        return '';
     }
 
     public function render(): string
     {
         if (Environment::isDevelopment()) {
             return $this->debugbarRenderer->render();
-        } else {
-            return '';
         }
+
+        return '';
     }
 }

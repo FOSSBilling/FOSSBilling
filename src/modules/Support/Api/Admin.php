@@ -25,8 +25,6 @@ class Admin extends \Api_Abstract
      * @optional string status - filter tickets by status
      * @optional string date_from - show tickets created since this day. Can be any string parsable by strtotime()
      * @optional string date_to - show tickets created until this day. Can be any string parsable by strtotime()
-     *
-     * @return array
      */
     public function ticket_get_list(array $data): array
     {
@@ -43,8 +41,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Return ticket full details.
-     *
-     * @return array
      */
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_get(array $data): array
@@ -61,8 +57,6 @@ class Admin extends \Api_Abstract
      * @optional string $status - ticket status
      * @optional string $subject - ticket subject
      * @optional string $priority - ticket priority
-     *
-     * @return bool
      */
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_update(array $data): bool
@@ -79,8 +73,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update ticket message.
-     *
-     * @return bool
      */
     #[RequiredParams(['id' => 'Ticket message ID is missing', 'content' => 'Ticket message content is missing'])]
     public function ticket_message_update(array $data): bool
@@ -92,8 +84,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete ticket.
-     *
-     * @return bool
      */
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_delete(array $data): bool
@@ -121,8 +111,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Close ticket.
-     *
-     * @return bool
      */
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_close(array $data): bool
@@ -210,8 +198,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get paginated list of inquiries.
-     *
-     * @return array
      */
     public function public_ticket_get_list(array $data): array
     {
@@ -247,8 +233,6 @@ class Admin extends \Api_Abstract
     /**
      * Get inquiry details.
      *
-     * @return array
-     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
@@ -262,8 +246,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete inquiry.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
@@ -276,8 +258,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Set id status to closed.
-     *
-     * @return bool
      *
      * @throws \FOSSBilling\Exception
      */
@@ -295,8 +275,6 @@ class Admin extends \Api_Abstract
      * @optional string $subject - subject
      * @optional string $status - status
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
@@ -309,8 +287,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Post new reply to inquiry.
-     *
-     * @return int
      *
      * @throws \FOSSBilling\Exception
      */
@@ -336,8 +312,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get helpdesk list.
-     *
-     * @return array
      */
     public function helpdesk_get_list(array $data): array
     {
@@ -349,8 +323,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get pairs of helpdesks.
-     *
-     * @return array
      */
     public function helpdesk_get_pairs(array $data): array
     {
@@ -359,8 +331,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get helpdesk details.
-     *
-     * @return array
      *
      * @throws \FOSSBilling\Exception
      */
@@ -380,8 +350,6 @@ class Admin extends \Api_Abstract
      * @optional string $can_reopen - flag to enable/disable ability to reopen closed tickets
      * @optional int $close_after - time to wait for reply before auto closing ticket
      * @optional string $signature - helpdesk signature
-     *
-     * @return bool
      *
      * @throws \FOSSBilling\Exception
      */
@@ -414,8 +382,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete helpdesk.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
@@ -428,8 +394,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get list of canned responses.
-     *
-     * @return array
      */
     public function canned_get_list(array $data): array
     {
@@ -462,8 +426,6 @@ class Admin extends \Api_Abstract
     /**
      * Get canned response details.
      *
-     * @return array
-     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
@@ -476,8 +438,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete canned response.
-     *
-     * @return bool
      *
      * @throws \FOSSBilling\Exception
      */
@@ -493,8 +453,6 @@ class Admin extends \Api_Abstract
      * Create new canned response.
      *
      * @optional string $content - canned response content
-     *
-     * @return int
      *
      * @throws \FOSSBilling\Exception
      */
@@ -513,8 +471,6 @@ class Admin extends \Api_Abstract
      * @optional int $category_id - canned response category id
      * @optional string $content - canned response content
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
@@ -527,8 +483,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get canned response pairs.
-     *
-     * @return array
      */
     public function canned_category_pairs(array $data): array
     {
@@ -537,8 +491,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get canned response category.
-     *
-     * @return array
      *
      * @throws \FOSSBilling\Exception
      */
@@ -555,8 +507,6 @@ class Admin extends \Api_Abstract
      *
      * @optional string $title - new category title
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
@@ -571,8 +521,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete canned response category.
-     *
-     * @return bool
      *
      * @throws \FOSSBilling\Exception
      */
@@ -615,8 +563,6 @@ class Admin extends \Api_Abstract
     /**
      * Delete note from support ticket.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Note ID is missing'])]
@@ -629,8 +575,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Set support ticket related task to completed.
-     *
-     * @return bool
      *
      * @throws \FOSSBilling\Exception
      */
@@ -674,8 +618,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get paginated list of knowledge base articles.
-     *
-     * @return array
      */
     public function kb_article_get_list(array $data): array
     {
@@ -695,8 +637,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get knowledge base article.
-     *
-     * @return array
      */
     #[RequiredParams(['id' => 'Article ID was not passed'])]
     public function kb_article_get(array $data): array
@@ -715,8 +655,6 @@ class Admin extends \Api_Abstract
      *
      * @optional string $status - knowledge base article status
      * @optional string $content - knowledge base article content
-     *
-     * @return int
      */
     #[RequiredParams(['kb_article_category_id' => 'Article category ID was not passed', 'title' => 'Article title not passed'])]
     public function kb_article_create(array $data): int
@@ -739,8 +677,6 @@ class Admin extends \Api_Abstract
      * @optional string $status - knowledge base article status
      * @optional string $content - knowledge base article content
      * @optional int $views - knowledge base article views counter
-     *
-     * @return bool
      */
     #[RequiredParams(['id' => 'Article ID was not passed'])]
     public function kb_article_update(array $data): bool
@@ -775,8 +711,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get paginated list of knowledge base categories.
-     *
-     * @return array
      */
     public function kb_category_get_list(array $data): array
     {
@@ -794,8 +728,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get knowledge base category.
-     *
-     * @return array
      */
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_get(array $data): array
@@ -813,8 +745,6 @@ class Admin extends \Api_Abstract
      * Create new knowledge base category.
      *
      * @optional string $description - knowledge base category description
-     *
-     * @return int
      */
     #[RequiredParams(['title' => 'Category title not passed'])]
     public function kb_category_create(array $data): int
@@ -831,8 +761,6 @@ class Admin extends \Api_Abstract
      * @optional string $title - knowledge base category title
      * @optional string $slug  - knowledge base category slug
      * @optional string $description - knowledge base category description
-     *
-     * @return bool
      */
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_update(array $data): bool
@@ -852,8 +780,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete knowledge base category.
-     *
-     * @return bool
      */
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_delete(array $data): bool
@@ -869,8 +795,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get knowledge base categories id, title pairs.
-     *
-     * @return array
      */
     public function kb_category_get_pairs(array $data): array
     {

@@ -131,41 +131,40 @@ class Update implements InjectionAwareInterface
                 'branch' => 'preview',
                 'minimum_php_version' => 'unknown',
             ];
-        } else {
-            $key = "Update.latest_{$branch}_version_info";
+        }
+        $key = "Update.latest_{$branch}_version_info";
 
-            // Delete the cached result to force a refetch
-            if ($refetch) {
-                $this->di['cache']->delete($key);
+        // Delete the cached result to force a refetch
+        if ($refetch) {
+            $this->di['cache']->delete($key);
+        }
+
+        return $this->di['cache']->get($key, function (ItemInterface $item) use ($branch) {
+            $item->expiresAfter(3600);
+
+            try {
+                $releaseInfoUrl = 'https://api.fossbilling.net/versions/v1/latest';
+                $httpClient = HttpClient::create(['bindto' => BIND_TO]);
+                $response = $httpClient->request('GET', $releaseInfoUrl);
+                $releaseInfo = $response->toArray()['result'];
+            } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
+                error_log($e->getMessage());
+
+                throw new Exception('Failed to download the latest version information. Further details are available in the error log.');
             }
 
-            return $this->di['cache']->get($key, function (ItemInterface $item) use ($branch) {
-                $item->expiresAfter(3600);
-
-                try {
-                    $releaseInfoUrl = 'https://api.fossbilling.net/versions/v1/latest';
-                    $httpClient = HttpClient::create(['bindto' => BIND_TO]);
-                    $response = $httpClient->request('GET', $releaseInfoUrl);
-                    $releaseInfo = $response->toArray()['result'];
-                } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
-                    error_log($e->getMessage());
-
-                    throw new Exception('Failed to download the latest version information. Further details are available in the error log.');
-                }
-
-                return [
-                    'version' => $releaseInfo['version'] ?: Version::VERSION,
-                    'download_url' => $releaseInfo['download_url'],
-                    'release_date' => $releaseInfo['released_on'],
-                    'release_notes' => $this->buildCompleteChangelog() ?: '**Error: Release notes unavailable.**',
-                    'update_type' => Version::getUpdateType($releaseInfo['version'] ?: Version::VERSION),
-                    'last_check' => date('Y-m-d H:i:s'),
-                    'next_check' => date('Y-m-d H:i:s', time() + 3600),
-                    'branch' => $branch,
-                    'minimum_php_version' => $releaseInfo['minimum_php_version'],
-                ];
-            });
-        }
+            return [
+                'version' => $releaseInfo['version'] ?: Version::VERSION,
+                'download_url' => $releaseInfo['download_url'],
+                'release_date' => $releaseInfo['released_on'],
+                'release_notes' => $this->buildCompleteChangelog() ?: '**Error: Release notes unavailable.**',
+                'update_type' => Version::getUpdateType($releaseInfo['version'] ?: Version::VERSION),
+                'last_check' => date('Y-m-d H:i:s'),
+                'next_check' => date('Y-m-d H:i:s', time() + 3600),
+                'branch' => $branch,
+                'minimum_php_version' => $releaseInfo['minimum_php_version'],
+            ];
+        });
     }
 
     /**

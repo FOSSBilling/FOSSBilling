@@ -105,9 +105,9 @@ class Box_Database implements InjectionAwareInterface
     {
         if (is_null($sql)) {
             return $this->orm->findAll($table);
-        } else {
-            return $this->orm->findAll($table, $sql, $bindings);
         }
+
+        return $this->orm->findAll($table, $sql, $bindings);
     }
 
     /**

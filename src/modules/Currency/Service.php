@@ -60,9 +60,11 @@ class Service implements InjectionAwareInterface
     /**
      * Convert foreign price back to default currency.
      *
-     * @param string $foreign_code The foreign currency code
-     * @param float|int $amount The amount in foreign currency
+     * @param string    $foreign_code The foreign currency code
+     * @param float|int $amount       The amount in foreign currency
+     *
      * @return float The amount in default currency
+     *
      * @throws \FOSSBilling\Exception If default currency cannot be found
      */
     public function toBaseCurrency(string $foreign_code, float|int $amount): float
@@ -87,7 +89,9 @@ class Service implements InjectionAwareInterface
      * This is the inverse of the conversion rate (1 / rate).
      *
      * @param string $foreign_code Currency code to get the rate for
+     *
      * @return float The base currency rate
+     *
      * @throws \FOSSBilling\Exception If currency not found or rate is zero
      */
     public function getBaseCurrencyRate(string $foreign_code): float
@@ -111,7 +115,9 @@ class Service implements InjectionAwareInterface
      * Falls back to default currency if client has no currency set.
      *
      * @param int $client_id The client ID
+     *
      * @return Currency The currency entity
+     *
      * @throws \FOSSBilling\Exception If default currency cannot be found
      */
     public function getCurrencyByClientId(int $client_id): Currency
@@ -127,6 +133,7 @@ class Service implements InjectionAwareInterface
             if ($default === null) {
                 throw new \FOSSBilling\Exception('Default currency not found');
             }
+
             return $default;
         }
 
@@ -139,6 +146,7 @@ class Service implements InjectionAwareInterface
         if ($default === null) {
             throw new \FOSSBilling\Exception('Default currency not found');
         }
+
         return $default;
     }
 
@@ -146,7 +154,7 @@ class Service implements InjectionAwareInterface
      * Set a currency as the default currency for the system.
      *
      * @param Currency $currency The currency to set as default
-     * @return bool
+     *
      * @throws \FOSSBilling\Exception If currency code is not provided
      */
     public function setAsDefault(Currency $currency): bool
@@ -228,8 +236,8 @@ class Service implements InjectionAwareInterface
      * Remove a currency from the system.
      *
      * @param Currency $model The currency to remove
-     * @return void
-     * @throws InformationException If trying to remove the default currency
+     *
+     * @throws InformationException   If trying to remove the default currency
      * @throws \FOSSBilling\Exception If currency code is invalid
      */
     public function rm(Currency $model): void
@@ -302,7 +310,7 @@ class Service implements InjectionAwareInterface
      * Validate that a currency format string contains the required {{price}} placeholder.
      *
      * @param string $format The format string to validate
-     * @return void
+     *
      * @throws \FOSSBilling\Exception If format is invalid
      */
     public function validateCurrencyFormat(string $format): void
@@ -315,14 +323,14 @@ class Service implements InjectionAwareInterface
     /**
      * Update an existing currency with new values.
      *
-     * @param string $code The currency code to update
-     * @param string|null $format The display format (optional)
-     * @param string|null $title The currency title (optional)
-     * @param string|null $priceFormat The price format (optional)
+     * @param string            $code           The currency code to update
+     * @param string|null       $format         The display format (optional)
+     * @param string|null       $title          The currency title (optional)
+     * @param string|null       $priceFormat    The price format (optional)
      * @param string|float|null $conversionRate The conversion rate (optional)
-     * @return bool
+     *
      * @throws \FOSSBilling\Exception If currency not found
-     * @throws InformationException If conversion rate is invalid
+     * @throws InformationException   If conversion rate is invalid
      */
     public function updateCurrency(string $code, ?string $format = null, ?string $title = null, ?string $priceFormat = null, string|float|null $conversionRate = null): bool
     {
@@ -364,7 +372,6 @@ class Service implements InjectionAwareInterface
      * Update all currency conversion rates from the configured exchange rate provider.
      * Uses batch processing for optimal performance.
      *
-     * @return bool
      * @throws \FOSSBilling\Exception If default currency cannot be found
      */
     public function updateCurrencyRates(): bool
@@ -391,7 +398,7 @@ class Service implements InjectionAwareInterface
             }
 
             $currency->setConversionRate($rate);
-            $updatedCount++;
+            ++$updatedCount;
         }
 
         $em->flush();
@@ -406,10 +413,12 @@ class Service implements InjectionAwareInterface
      * Handles selecting the right function to query the data sources & passing the correct parameters.
      *
      * @param string|null $from The source currency code (null for default)
-     * @param string $to The target currency code
+     * @param string      $to   The target currency code
+     *
      * @return float The conversion rate
+     *
      * @throws \FOSSBilling\Exception If default currency cannot be found
-     * @throws InformationException If API configuration is invalid, or unable to fetch conversion rate.
+     * @throws InformationException   if API configuration is invalid, or unable to fetch conversion rate
      */
     protected function _getRate(?string $from, string $to): float
     {
@@ -506,9 +515,9 @@ class Service implements InjectionAwareInterface
         // Different array key between the open and authenticated endpoint, but otherwise it's the same structure.
         if (!empty($key)) {
             return $result['conversion_rates'] ?? [];
-        } else {
-            return $result['rates'] ?? [];
         }
+
+        return $result['rates'] ?? [];
     }
 
     /**
@@ -604,9 +613,9 @@ class Service implements InjectionAwareInterface
      * Fires events before and after deletion.
      *
      * @param string $code The currency code to delete
-     * @return bool
+     *
      * @throws \FOSSBilling\Exception If currency not found
-     * @throws InformationException If trying to delete default currency
+     * @throws InformationException   If trying to delete default currency
      */
     public function deleteCurrencyByCode(string $code): bool
     {

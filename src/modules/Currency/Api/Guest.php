@@ -18,8 +18,6 @@ class Guest extends \Api_Abstract
 {
     /**
      * Get a list of available currencies.
-     *
-     * @return array
      */
     public function get_pairs(array $data): array
     {
@@ -31,8 +29,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Get a currency by code.
-     *
-     * @return array
      */
     public function get(array $data): array
     {

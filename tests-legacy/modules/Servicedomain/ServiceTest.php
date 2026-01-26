@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Servicedomain;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -321,9 +322,9 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(function ($name) use ($orderServiceMock, $systemServiceMock) {
             if ($name == 'order') {
                 return $orderServiceMock;
-            } else {
-                return $systemServiceMock;
             }
+
+            return $systemServiceMock;
         });
         $di['db'] = $dbMock;
 
@@ -369,9 +370,9 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(function ($name) use ($orderServiceMock, $systemServiceMock) {
             if ($name == 'order') {
                 return $orderServiceMock;
-            } else {
-                return $systemServiceMock;
             }
+
+            return $systemServiceMock;
         });
         $serviceMock->setDi($di);
 

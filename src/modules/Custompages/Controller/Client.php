@@ -49,8 +49,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $page = $service->getPage($slug, 'slug');
         if (isset($page['id'])) {
             return $app->render('mod_custompages_content', ['page' => $page]);
-        } else {
-            exit(header('Location: ' . $this->di['url']->get('')));
         }
+        exit(header('Location: ' . $this->di['url']->get('')));
     }
 }

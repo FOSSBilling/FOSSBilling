@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Box\Mod\Spamchecker\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+namespace Box\Mod\Antispam\Api;
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]

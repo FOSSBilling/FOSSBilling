@@ -223,7 +223,6 @@ class Admin extends \Api_Abstract
      * @return bool
      *
      * @throws \FOSSBilling\Exception
-     *
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_update($data)

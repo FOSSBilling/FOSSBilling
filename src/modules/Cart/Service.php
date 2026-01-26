@@ -782,9 +782,9 @@ class Service implements InjectionAwareInterface
         $service = $product->getService();
         if (method_exists($service, 'getCartProductTitle')) {
             return $service->getCartProductTitle($product, $config);
-        } else {
-            return $product->title;
         }
+
+        return $product->title;
     }
 
     protected function getItemPromoDiscount(\Model_CartProduct $model, \Model_Promo $promo)

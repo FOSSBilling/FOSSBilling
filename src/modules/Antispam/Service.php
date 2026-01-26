@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Spamchecker;
+namespace Box\Mod\Antispam;
 
 use EmailChecker\Adapter;
 use EmailChecker\Utilities;
@@ -29,9 +29,18 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
+    private function registerEventListeners(): void
+    {
+        if ($this->di !== null && isset($this->di['mod_service'])) {
+            $hookService = $this->di['mod_service']('hook');
+            $hookService->batchConnect('antispam');
+        }
+    }
+
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->registerEventListeners();
     }
 
     public function getDi(): ?\Pimple\Container
@@ -39,22 +48,52 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public static function onBeforeClientSignUp(\Box_Event $event): void
+    public function install(): void
     {
-        $di = $event->getDi();
-        $spamCheckerService = $di['mod_service']('Spamchecker');
-        $spamCheckerService->isBlockedIp($event);
-        $spamCheckerService->isSpam($event);
-        $spamCheckerService->isTemp($event);
+        $this->di['mod_service']('hook')->batchConnect('antispam');
     }
 
-    public static function onBeforeGuestPublicTicketOpen(\Box_Event $event): void
+    public function uninstall(): void
+    {
+    }
+
+    public static function onBeforeClientOpenTicket(\Box_Event $event)
+    {
+        self::performChecks($event);
+    }
+
+    public static function onBeforeClientCheckout(\Box_Event $event)
+    {
+        self::performChecks($event);
+    }
+
+    public static function onBeforeProductAddedToCart(\Box_Event $event)
+    {
+        self::performChecks($event);
+    }
+
+    public static function onBeforeClientSignUp(\Box_Event $event)
+    {
+        self::performChecks($event);
+    }
+
+    public static function onBeforeClientLogin(\Box_Event $event)
+    {
+        self::performChecks($event);
+    }
+
+    public static function onBeforeGuestPublicTicketOpen(\Box_Event $event)
+    {
+        self::performChecks($event);
+    }
+
+    private static function performChecks(\Box_Event $event)
     {
         $di = $event->getDi();
-        $spamCheckerService = $di['mod_service']('Spamchecker');
-        $spamCheckerService->isBlockedIp($event);
-        $spamCheckerService->isSpam($event);
-        $spamCheckerService->isTemp($event);
+        $antispamService = $di['mod_service']('antispam');
+        $antispamService->isBlockedIp($event);
+        $antispamService->isSpam($event);
+        $antispamService->isTemp($event);
     }
 
     /**
@@ -62,20 +101,19 @@ class Service implements InjectionAwareInterface
      */
     public function isBlockedIp($event): void
     {
-        $di = $event->getDi();
-        $config = $di['mod_config']('Spamchecker');
-        if (isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
+        $config = $this->di['mod_config']('antispam');
+        $block = boolval($config['block_ips'] ?? true);
+        if ($block && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
             $blocked_ips = array_map(trim(...), $blocked_ips);
-            if (in_array($di['request']->getClientIp(), $blocked_ips)) {
-                throw new \FOSSBilling\InformationException('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientIp()], 403);
+            if (in_array($this->di['request']->getClientIp(), $blocked_ips)) {
+                throw new \FOSSBilling\InformationException('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $this->di['request']->getClientIp()], 403);
             }
         }
     }
 
     public function isSpam(\Box_Event $event): void
     {
-        $di = $event->getDi();
         $params = $event->getParameters();
         $data = [
             'ip' => $params['ip'] ?? null,
@@ -84,7 +122,7 @@ class Service implements InjectionAwareInterface
             'recaptcha_response_field' => $params['recaptcha_response_field'] ?? null,
         ];
 
-        $config = $di['mod_config']('Spamchecker');
+        $config = $this->di['mod_config']('antispam');
 
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
             $provider = $config['captcha_provider'] ?? 'recaptcha_v2';
@@ -103,7 +141,7 @@ class Service implements InjectionAwareInterface
                     'body' => [
                         'secret' => $config['captcha_recaptcha_privatekey'],
                         'response' => $params['g-recaptcha-response'],
-                        'remoteip' => $di['request']->getClientIp(),
+                        'remoteip' => $this->di['request']->getClientIp(),
                     ],
                 ]);
                 $content = $response->toArray();
@@ -111,7 +149,6 @@ class Service implements InjectionAwareInterface
                 if (!isset($content['success']) || $content['success'] !== true) {
                     throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
                 }
-            
             } elseif ($provider === 'turnstile') {
                 if (empty($config['turnstile_secret_key'])) {
                     throw new \FOSSBilling\InformationException('Cloudflare Turnstile secret key is not configured.');
@@ -125,9 +162,9 @@ class Service implements InjectionAwareInterface
                 $client = HttpClient::create(['bindto' => BIND_TO]);
                 $response = $client->request('POST', 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
                     'body' => [
-                        'secret'   => $config['turnstile_secret_key'],
+                        'secret' => $config['turnstile_secret_key'],
                         'response' => $turnstile_response,
-                        'remoteip' => $di['request']->getClientIp(),
+                        'remoteip' => $this->di['request']->getClientIp(),
                     ],
                 ]);
                 $content = $response->toArray();
@@ -148,9 +185,9 @@ class Service implements InjectionAwareInterface
                 $client = HttpClient::create(['bindto' => BIND_TO]);
                 $response = $client->request('POST', 'https://hcaptcha.com/siteverify', [
                     'body' => [
-                        'secret'   => $config['hcaptcha_secret_key'],
+                        'secret' => $config['hcaptcha_secret_key'],
                         'response' => $hcaptcha_response,
-                        'remoteip' => $di['request']->getClientIp(),
+                        'remoteip' => $this->di['request']->getClientIp(),
                     ],
                 ]);
                 $content = $response->toArray();
@@ -161,23 +198,18 @@ class Service implements InjectionAwareInterface
             }
         }
         if (isset($config['sfs']) && $config['sfs']) {
-            $spamCheckerService = $di['mod_service']('Spamchecker');
-            $spamCheckerService->isInStopForumSpamDatabase($data);
+            $this->isInStopForumSpamDatabase($data);
         }
     }
 
     public function isTemp(\Box_Event $event): void
     {
-        $di = $event->getDi();
-        $config = $di['mod_config']('Spamchecker');
-
-        $check = $config['check_temp_emails'] ?? false;
+        $config = $this->di['mod_config']('antispam');
+        $check = $config['check_temp_emails'] ?? true;
         if ($check) {
-            $spamCheckerService = $di['mod_service']('Spamchecker');
             $params = $event->getParameters();
             $email = $params['email'] ?? '';
-
-            $spamCheckerService->isATempEmail($email, true);
+            $this->isATempEmail($email, true);
         }
     }
 

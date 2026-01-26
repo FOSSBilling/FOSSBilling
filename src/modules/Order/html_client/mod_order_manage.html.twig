@@ -174,7 +174,6 @@
                         </div>
                         <form action="" method="post" id="cancel-request-form" class="request-cancellation">
                             <div class="modal-body">
-                                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                                 <input type="hidden" name="rel_type" value="order">
                                 <input type="hidden" name="rel_id" value="{{ order.id }}">
                                 <input type="hidden" name="rel_task" value="cancel">
@@ -208,7 +207,6 @@
                         </div>
                         <form action="" method="post" id="open-ticket-form" class="open-ticket">
                             <div class="modal-body">
-                                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                                 <input type="hidden" name="rel_type" value="order">
                                 <input type="hidden" name="rel_id" value="{{ order.id }}">
                                 <div class="mb-3">
@@ -241,7 +239,6 @@
                         </div>
                         <form action="" method="post" id="upgrade-request-form" class="request-upgrade">
                             <div class="modal-body">
-                                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                                 <input type="hidden" name="rel_type" value="order">
                                 <input type="hidden" name="rel_id" value="{{ order.id }}">
                                 <input type="hidden" name="rel_task" value="upgrade">

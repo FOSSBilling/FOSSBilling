@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Order;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 class PdoMock extends \PDO
@@ -1867,35 +1868,73 @@ final class ServiceTest extends \BBTestCase
             private mixed $whereCond = null;
             private mixed $paramId = null;
 
-            public function delete($table) {
+            public function delete($table)
+            {
                 $this->deleteCalled = true;
                 $this->deleteTable = $table;
+
                 return $this;
             }
-            public function where($cond) {
+
+            public function where($cond)
+            {
                 $this->whereCalled = true;
                 $this->whereCond = $cond;
+
                 return $this;
             }
-            public function setParameter($key, $val) {
+
+            public function setParameter($key, $val)
+            {
                 $this->setParamCalled = true;
                 $this->paramId = $val;
+
                 return $this;
             }
-            public function executeStatement() {
+
+            public function executeStatement()
+            {
                 return 1;
             }
-            public function getDeleteTable() { return $this->deleteTable; }
-            public function getWhereCond() { return $this->whereCond; }
-            public function getParamId() { return $this->paramId; }
-            public function wasDeleteCalled() { return $this->deleteCalled; }
-            public function wasWhereCalled() { return $this->whereCalled; }
-            public function wasSetParamCalled() { return $this->setParamCalled; }
+
+            public function getDeleteTable()
+            {
+                return $this->deleteTable;
+            }
+
+            public function getWhereCond()
+            {
+                return $this->whereCond;
+            }
+
+            public function getParamId()
+            {
+                return $this->paramId;
+            }
+
+            public function wasDeleteCalled()
+            {
+                return $this->deleteCalled;
+            }
+
+            public function wasWhereCalled()
+            {
+                return $this->whereCalled;
+            }
+
+            public function wasSetParamCalled()
+            {
+                return $this->setParamCalled;
+            }
         };
 
         $dbalMock = new class($queryBuilderMock) {
-            public function __construct(private $qb) {}
-            public function createQueryBuilder() {
+            public function __construct(private $qb)
+            {
+            }
+
+            public function createQueryBuilder()
+            {
                 return $this->qb;
             }
         };

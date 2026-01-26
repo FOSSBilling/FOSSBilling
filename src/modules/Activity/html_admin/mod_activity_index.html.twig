@@ -265,6 +265,24 @@
                         </svg>
                     </a>
                 {% endif %}
+                {% if event.client or not event.staff %}
+                <a class="btn btn-icon api-link"
+                    href="{{ 'api/admin/antispam/block_ip'|link({ 'ip': event.ip }) }}"
+                    data-api-confirm="{{ 'Are you sure?'|trans }}"
+                    data-api-redirect="{{ 'activity'|alink }}">
+                    <svg class="icon">
+                        <use xlink:href="#forbid" />
+                    </svg>
+                </a>
+                {% endif %}
+                <a class="btn btn-icon api-link"
+                    href="{{ 'api/admin/activity/log_delete'|link({ 'id': event.id }) }}"
+                    data-api-confirm="{{ 'Are you sure?'|trans }}"
+                    data-api-redirect="{{ 'activity'|alink }}">
+                    <svg class="icon">
+                        <use xlink:href="#delete" />
+                    </svg>
+                </a>
             </td>
             <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
             <td title="{{ event.created_at|timeago }} ago">{{ event.created_at|format_datetime }}</td>

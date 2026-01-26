@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Box\Mod\Spamchecker;
-use PHPUnit\Framework\Attributes\DataProvider; 
+namespace Box\Mod\Antispam;
+
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -27,15 +27,22 @@ final class ServiceTest extends \BBTestCase
 
     public function testOnBeforeClientSignUp(): void
     {
-        $spamCheckerService = $this->createMock(Service::class);
-        $spamCheckerService->expects($this->atLeastOnce())
+        $antispamService = $this->createMock(Service::class);
+        $antispamService->expects($this->atLeastOnce())
             ->method('isBlockedIp');
-        $spamCheckerService->expects($this->atLeastOnce())
+        $antispamService->expects($this->atLeastOnce())
             ->method('isSpam');
 
+        $hookService = $this->createMock(\Box\Mod\Hook\Service::class);
+        $hookService->expects($this->any())
+            ->method('batchConnect')
+            ->willReturn(true);
+
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $spamCheckerService);
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
+        $di['mod_service'] = $di->protect(function ($name) use ($antispamService, $hookService) {
+            return $name === 'hook' ? $hookService : $antispamService;
+        });
+        $boxEventMock = $this->getMockBuilder(\Box_Event::class)->disableOriginalConstructor()
             ->getMock();
         $boxEventMock->expects($this->atLeastOnce())
             ->method('getDi')
@@ -46,15 +53,22 @@ final class ServiceTest extends \BBTestCase
 
     public function testOnBeforeGuestPublicTicketOpen(): void
     {
-        $spamCheckerService = $this->createMock(Service::class);
-        $spamCheckerService->expects($this->atLeastOnce())
+        $antispamService = $this->createMock(Service::class);
+        $antispamService->expects($this->atLeastOnce())
             ->method('isBlockedIp');
-        $spamCheckerService->expects($this->atLeastOnce())
+        $antispamService->expects($this->atLeastOnce())
             ->method('isSpam');
 
+        $hookService = $this->createMock(\Box\Mod\Hook\Service::class);
+        $hookService->expects($this->any())
+            ->method('batchConnect')
+            ->willReturn(true);
+
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $spamCheckerService);
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
+        $di['mod_service'] = $di->protect(function ($name) use ($antispamService, $hookService) {
+            return $name === 'hook' ? $hookService : $antispamService;
+        });
+        $boxEventMock = $this->getMockBuilder(\Box_Event::class)->disableOriginalConstructor()
             ->getMock();
         $boxEventMock->expects($this->atLeastOnce())
             ->method('getDi')
@@ -74,17 +88,17 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['request'] = Request::createFromGlobals();
         $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
-            if ($modName == 'Spamchecker') {
+            if ($modName == 'antispam') {
                 return $modConfig;
             }
+
+            return [];
         });
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
 
+        $this->service->setDi($di);
         $this->service->isBlockedIp($boxEventMock);
     }
 
@@ -96,17 +110,17 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
-            if ($modName == 'Spamchecker') {
+            if ($modName == 'antispam') {
                 return $modConfig;
             }
+
+            return [];
         });
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
 
+        $this->service->setDi($di);
         $this->service->isBlockedIp($boxEventMock);
     }
 

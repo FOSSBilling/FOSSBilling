@@ -198,9 +198,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
     {
         if ($this->config['test_mode']) {
             return 'https://www.sandbox.paypal.com/cgi-bin/webscr';
-        } else {
-            return 'https://www.paypal.com/cgi-bin/webscr';
         }
+
+        return 'https://www.paypal.com/cgi-bin/webscr';
     }
 
     private function _isIpnValid($data): bool

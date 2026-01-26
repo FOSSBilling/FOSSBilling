@@ -115,9 +115,9 @@ class Tools
 
         if ($valid) {
             return $password;
-        } else {
-            throw new InformationException('We were unable to generate a password with the required parameters');
         }
+
+        throw new InformationException('We were unable to generate a password with the required parameters');
     }
 
     public function slug($str): string
@@ -229,9 +229,9 @@ class Tools
                 $friendlyName = ucfirst(__trans('Email address'));
 
                 throw new InformationException(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
-            } else {
-                return false;
             }
+
+            return false;
         }
 
         return $email;

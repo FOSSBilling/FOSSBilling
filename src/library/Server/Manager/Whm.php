@@ -96,11 +96,10 @@ class Server_Manager_Whm extends Server_Manager
                 $response = $this->request($action, $params);
                 if (isset($response->data->url)) {
                     return $response->data->url;
-                } else {
-                    $this->getLog()->err('Unexpected API response: ' . print_r($response, true));
-
-                    return 'https://' . $this->_config['host'] . '/cpanel';
                 }
+                $this->getLog()->err('Unexpected API response: ' . print_r($response, true));
+
+                return 'https://' . $this->_config['host'] . '/cpanel';
             } catch (Server_Exception $e) {
                 $this->getLog()->err("Failed to get login URL: {$e->getMessage()}.");
 
@@ -135,11 +134,10 @@ class Server_Manager_Whm extends Server_Manager
                 // Check if the response is an object and access it accordingly
                 if (isset($response->data->url)) {
                     return $response->data->url;
-                } else {
-                    $this->getLog()->err('Unexpected API response: ' . print_r($response, true));
-
-                    return 'https://' . $this->_config['host'] . '/whm';
                 }
+                $this->getLog()->err('Unexpected API response: ' . print_r($response, true));
+
+                return 'https://' . $this->_config['host'] . '/whm';
             } catch (Server_Exception $e) {
                 $this->getLog()->err("Failed to get login URL: {$e->getMessage()}.");
 

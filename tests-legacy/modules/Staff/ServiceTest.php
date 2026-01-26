@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Staff;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 class PdoMock extends \PDO
@@ -1542,23 +1543,46 @@ final class ServiceTest extends \BBTestCase
 
     public function testSetPermissions(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('hasPermission')->willReturn(true);
 
         $queryBuilderMock = new class {
-            public function update($table) { return $this; }
-            public function set($field, $value) { return $this; }
-            public function where($cond) { return $this; }
-            public function setParameter($key, $val) { return $this; }
-            public function executeStatement() { return 1; }
+            public function update($table)
+            {
+                return $this;
+            }
+
+            public function set($field, $value)
+            {
+                return $this;
+            }
+
+            public function where($cond)
+            {
+                return $this;
+            }
+
+            public function setParameter($key, $val)
+            {
+                return $this;
+            }
+
+            public function executeStatement()
+            {
+                return 1;
+            }
         };
 
         $dbalMock = new class($queryBuilderMock) {
-            public function __construct(private $qb) {}
-            public function createQueryBuilder() {
+            public function __construct(private $qb)
+            {
+            }
+
+            public function createQueryBuilder()
+            {
                 return $this->qb;
             }
         };
@@ -1575,7 +1599,8 @@ final class ServiceTest extends \BBTestCase
     public function testGetPermissionsPermAreEmpty(): void
     {
         $statementWithFetchOne = new class {
-            public function fetchOne() {
+            public function fetchOne()
+            {
                 return '{}';
             }
         };
@@ -1583,20 +1608,58 @@ final class ServiceTest extends \BBTestCase
         $service = new Service();
 
         $queryBuilderMock = new class($statementWithFetchOne) {
-            public function __construct(private $stmt) {}
-            public function update($table) { return $this; }
-            public function set($field, $value) { return $this; }
-            public function where($cond) { return $this; }
-            public function setParameter($key, $val) { return $this; }
-            public function executeStatement() { return 1; }
-            public function select($field) { return $this; }
-            public function from($table) { return $this; }
-            public function executeQuery() { return $this->stmt; }
+            public function __construct(private $stmt)
+            {
+            }
+
+            public function update($table)
+            {
+                return $this;
+            }
+
+            public function set($field, $value)
+            {
+                return $this;
+            }
+
+            public function where($cond)
+            {
+                return $this;
+            }
+
+            public function setParameter($key, $val)
+            {
+                return $this;
+            }
+
+            public function executeStatement()
+            {
+                return 1;
+            }
+
+            public function select($field)
+            {
+                return $this;
+            }
+
+            public function from($table)
+            {
+                return $this;
+            }
+
+            public function executeQuery()
+            {
+                return $this->stmt;
+            }
         };
 
         $dbalMock = new class($queryBuilderMock) {
-            public function __construct(private $qb) {}
-            public function createQueryBuilder() {
+            public function __construct(private $qb)
+            {
+            }
+
+            public function createQueryBuilder()
+            {
                 return $this->qb;
             }
         };
@@ -1616,8 +1679,12 @@ final class ServiceTest extends \BBTestCase
         $queryResult = '{"id" : "1"}';
 
         $statementWithFetchOne = new class($queryResult) {
-            public function __construct(private $result) {}
-            public function fetchOne() {
+            public function __construct(private $result)
+            {
+            }
+
+            public function fetchOne()
+            {
                 return $this->result;
             }
         };
@@ -1625,20 +1692,58 @@ final class ServiceTest extends \BBTestCase
         $service = new Service();
 
         $queryBuilderMock = new class($statementWithFetchOne) {
-            public function __construct(private $stmt) {}
-            public function update($table) { return $this; }
-            public function set($field, $value) { return $this; }
-            public function where($cond) { return $this; }
-            public function setParameter($key, $val) { return $this; }
-            public function executeStatement() { return 1; }
-            public function select($field) { return $this; }
-            public function from($table) { return $this; }
-            public function executeQuery() { return $this->stmt; }
+            public function __construct(private $stmt)
+            {
+            }
+
+            public function update($table)
+            {
+                return $this;
+            }
+
+            public function set($field, $value)
+            {
+                return $this;
+            }
+
+            public function where($cond)
+            {
+                return $this;
+            }
+
+            public function setParameter($key, $val)
+            {
+                return $this;
+            }
+
+            public function executeStatement()
+            {
+                return 1;
+            }
+
+            public function select($field)
+            {
+                return $this;
+            }
+
+            public function from($table)
+            {
+                return $this;
+            }
+
+            public function executeQuery()
+            {
+                return $this->stmt;
+            }
         };
 
         $dbalMock = new class($queryBuilderMock) {
-            public function __construct(private $qb) {}
-            public function createQueryBuilder() {
+            public function __construct(private $qb)
+            {
+            }
+
+            public function createQueryBuilder()
+            {
                 return $this->qb;
             }
         };

@@ -27,7 +27,7 @@
                         {% include "partial_batch_delete.html.twig" with {'action' : 'custompages/batch_delete'} %}
                         <div class="ms-auto text-muted">
                             <form method="get">
-                                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+
                                 <input type="hidden" name="_url" value="{{request._url}}">
                                 <div class="input-group">
                                     <input type="text" class="form-control" placeholder="Search…" name="search">

@@ -32,7 +32,6 @@ class Service implements InjectionAwareInterface
      * This cache is used to avoid repeated lookups during a single request.
      * It is cleared whenever theme settings are changed by calling clearThemeCache().
      */
-    
     private static ?string $clientThemeCache = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -187,9 +186,9 @@ class Service implements InjectionAwareInterface
         );
         if ($meta) {
             return json_decode($meta->meta_value ?? '', true);
-        } else {
-            return $theme->getPresetFromSettingsDataFile($preset);
         }
+
+        return $theme->getPresetFromSettingsDataFile($preset);
     }
 
     public function updateSettings(Model\Theme $theme, $preset, array $params): bool
@@ -451,8 +450,8 @@ class Service implements InjectionAwareInterface
             }
 
             return $attributes;
-        } else {
-            return [];
         }
+
+        return [];
     }
 }

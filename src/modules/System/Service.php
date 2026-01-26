@@ -364,9 +364,9 @@ class Service
                         'text' => __trans("Error reporting in FOSSBilling has changed since you last reviewed it. You may want to consider reviewing the changes to see what's been changed. (This message will remain for 24 hours)"),
                         'url' => $url,
                     ];
-                } else {
-                    return [];
                 }
+
+                return [];
             });
 
             if ($result) {
@@ -475,6 +475,7 @@ class Service
         } catch (\Exception $e) {
             if (!$try_render) {
                 $errorMsg = 'Template rendering failed: ' . $e->getMessage();
+
                 throw new \FOSSBilling\InformationException($errorMsg, null, $e->getCode());
             }
 
