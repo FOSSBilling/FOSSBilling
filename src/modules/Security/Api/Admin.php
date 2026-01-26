@@ -28,16 +28,15 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * 
-     * @return array<string|int, string> 
+     * @return array<string|int, string>
      */
     private function getIpList()
     {
-        $config = $this->di['mod_config']('security');
+        $config = $this->di['mod_config']('antispam');
         $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
         $blocked_ips = array_map(trim(...), $blocked_ips);
 
-        return array_map(trim(...), $blocked_ips);
+        return array_filter($blocked_ips);
     }
 
     /**
@@ -60,7 +59,7 @@ class Admin extends \Api_Abstract
 
             $config['blocked_ips'] = implode(PHP_EOL, $blocked_ips);
             $config['block_ips'] = true;
-            $config['ext'] = 'mod_security';
+            $config['ext'] = 'mod_antispam';
 
             $this->di['mod_service']('extension')->setConfig($config);
         } else {
@@ -71,7 +70,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Lists the available security checks that can be run
+     * Lists the available security checks that can be run.
      */
     public function list_checks(array $data): array
     {
@@ -89,7 +88,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Run the specified check
+     * Run the specified check.
      */
     public function run_check(array $data): array
     {
@@ -101,7 +100,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Runs all available checks
+     * Runs all available checks.
      */
     public function run_checks(array $data): array
     {

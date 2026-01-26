@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]

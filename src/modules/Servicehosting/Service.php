@@ -1038,9 +1038,9 @@ class Service implements InjectionAwareInterface
         [$adapter, $account] = $this->_getAM($model);
         if ($model->reseller) {
             return $adapter->getResellerLoginUrl($account);
-        } else {
-            return $adapter->getLoginUrl($account);
         }
+
+        return $adapter->getLoginUrl($account);
     }
 
     public function prependOrderConfig(\Model_Product $product, array $data): array
@@ -1050,7 +1050,7 @@ class Service implements InjectionAwareInterface
         if (isset($data['domain']['action'])) {
             $this->validateDomainAction($data, $c);
         }
-        
+
         [$sld, $tld] = $this->_getDomainTuple($data);
         $data['sld'] = $sld;
         $data['tld'] = $tld;

@@ -344,12 +344,11 @@ $di['is_client_logged'] = function () use ($di) {
         if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Client is not logged in');
-        } else {
-            // Redirect to login page if browser request
-            $di['set_return_uri'];
-            $login_url = $di['url']->link('login');
-            header("Location: $login_url");
         }
+        // Redirect to login page if browser request
+        $di['set_return_uri'];
+        $login_url = $di['url']->link('login');
+        header("Location: $login_url");
     }
 
     return true;
@@ -418,12 +417,11 @@ $di['loggedin_client'] = function () use ($di) {
         if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Client is not logged in');
-        } else {
-            // Redirect to login page if browser request
-            $login_url = $di['url']->link('login');
-            header("Location: $login_url");
-            exit;
         }
+        // Redirect to login page if browser request
+        $login_url = $di['url']->link('login');
+        header("Location: $login_url");
+        exit;
     }
 };
 
@@ -456,12 +454,11 @@ $di['loggedin_admin'] = function () use ($di) {
         if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Admin is not logged in');
-        } else {
-            // Redirect to login page if browser request
-            $login_url = $di['url']->adminLink('staff/login');
-            header("Location: $login_url");
-            exit;
         }
+        // Redirect to login page if browser request
+        $login_url = $di['url']->adminLink('staff/login');
+        header("Location: $login_url");
+        exit;
     }
 };
 

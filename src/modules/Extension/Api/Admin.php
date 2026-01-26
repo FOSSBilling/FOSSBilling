@@ -175,8 +175,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Completely remove extension from FOSSBilling.
-     *
-     * @return bool
      */
     public function uninstall($data): bool
     {

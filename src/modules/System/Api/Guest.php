@@ -32,10 +32,10 @@ class Guest extends \Api_Abstract
         // Only provide the FOSSBilling version if configured to do so or if the request is being made by an administrator.
         if ($this->di['auth']->isAdminLoggedIn() || !$hideVersionGuest) {
             return $this->getService()->getVersion();
-        } else {
-            // return an empty string
-            return '';
         }
+
+        // return an empty string
+        return '';
     }
 
     /**

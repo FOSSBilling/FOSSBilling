@@ -157,11 +157,10 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
         if ($result['status'] == 'SUCCESS') {
             return $this->_createDomainObj($result, $domain);
-        } else {
-            $placeholders = [':action:' => __trans('get domain details'), ':type:' => 'Internetbs'];
-
-            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
+        $placeholders = [':action:' => __trans('get domain details'), ':type:' => 'Internetbs'];
+
+        throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
     }
 
     public function deleteDomain(Registrar_Domain $domain): never

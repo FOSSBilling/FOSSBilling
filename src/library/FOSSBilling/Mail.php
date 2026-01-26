@@ -191,8 +191,8 @@ class Mail
             $authString = !empty($pass) ? $username . ':' . $pass : $username;
 
             return "smtp://$authString@" . $host . ':' . $options['smtp_port'];
-        } else {
-            return 'smtp://' . $host . ':' . $options['smtp_port'];
         }
+
+        return 'smtp://' . $host . ':' . $options['smtp_port'];
     }
 }

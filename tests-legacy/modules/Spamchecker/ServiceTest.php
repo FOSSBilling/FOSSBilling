@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Antispam;
-use PHPUnit\Framework\Attributes\DataProvider;
+
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -77,6 +77,7 @@ final class ServiceTest extends \BBTestCase
             if ($modName == 'security') {
                 return $modConfig;
             }
+
             return [];
         });
 
@@ -98,6 +99,7 @@ final class ServiceTest extends \BBTestCase
             if ($modName == 'security') {
                 return $modConfig;
             }
+
             return [];
         });
 

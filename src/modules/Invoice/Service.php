@@ -415,7 +415,7 @@ class Service implements InjectionAwareInterface
         if (isset($remove_after_days) && $remove_after_days) {
             // removing old invoices
             $days = (int) $remove_after_days;
-            $sql = "DELETE FROM invoice WHERE status = :status AND DATEDIFF(NOW(), due_at) > :days";
+            $sql = 'DELETE FROM invoice WHERE status = :status AND DATEDIFF(NOW(), due_at) > :days';
             $di['db']->exec($sql, [':days' => $days, ':status' => \Model_Invoice::STATUS_UNPAID]);
         }
     }
@@ -1586,13 +1586,12 @@ class Service implements InjectionAwareInterface
                 if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
                     // Throw Exception if api request
                     throw new InformationException('You do not have permission to perform this action', [], 403);
-                } else {
-                    // Redirect to login page if browser request
-                    $invoiceLink = $this->di['url']->link('invoice');
-                    header("Location: $invoiceLink");
-                    echo __trans('You do not have permission to perform this action');
-                    exit;
                 }
+                // Redirect to login page if browser request
+                $invoiceLink = $this->di['url']->link('invoice');
+                header("Location: $invoiceLink");
+                echo __trans('You do not have permission to perform this action');
+                exit;
             }
         }
     }

@@ -311,9 +311,9 @@ class Box_App
                     $apiController->renderJson(null, $exc);
 
                     return '';
-                } else {
-                    return $this->render('mod_system_maintenance');
                 }
+
+                return $this->render('mod_system_maintenance');
             }
         }
 

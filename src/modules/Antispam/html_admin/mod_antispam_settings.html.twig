@@ -51,24 +51,6 @@
             </div>
 
             <div class="card-body">
-                <input type="hidden" name="ext" value="mod_antispam">
-                <div class="row">
-                    <label class="col-md-3 col-form-label" for="block_ips_check">{{ 'Enable IP blocking'|trans }}</label>
-                    <div class="row col-md-6 pt-2 ps-0">
-                        <label class="form-check form-check-single form-switch ps-0 mb-2">
-                            <input id="block_ips_check" class="form-check-input" name="block_ips" type="checkbox"
-                                   {% if params.block_ips %}checked="checked"{% endif %}">
-                        </label>
-                        <div class="col ps-0">
-                            <small class="form-hint">{{ 'Blocked IPs are not allowed to login, register or open public ticket. (One IP per line)'|trans }}</small>
-                            <textarea id="block_ips" class="form-control" name="blocked_ips" rows="5" placeholder="127.0.0.1">{{ params.blocked_ips }}</textarea>
-                            <label class="hidden" for="block_ips">Blocked IP list</label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-body">
                 <h3 class="card-title">{{ 'CAPTCHA settings'|trans }}</h3>
                 <p class="card-subtitle">
                     {{ 'Enable captcha for client registration and contact forms'|trans }}<br>

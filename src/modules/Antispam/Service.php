@@ -83,7 +83,7 @@ class Service implements InjectionAwareInterface
      */
     public function isBlockedIp($event): void
     {
-        $config = $this->di['mod_config']('security');
+        $config = $this->di['mod_config']('antispam');
         $block = boolval($config['block_ips'] ?? true);
         if ($block && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
@@ -131,7 +131,6 @@ class Service implements InjectionAwareInterface
                 if (!isset($content['success']) || $content['success'] !== true) {
                     throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
                 }
-            
             } elseif ($provider === 'turnstile') {
                 if (empty($config['turnstile_secret_key'])) {
                     throw new \FOSSBilling\InformationException('Cloudflare Turnstile secret key is not configured.');
@@ -145,7 +144,7 @@ class Service implements InjectionAwareInterface
                 $client = HttpClient::create(['bindto' => BIND_TO]);
                 $response = $client->request('POST', 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
                     'body' => [
-                        'secret'   => $config['turnstile_secret_key'],
+                        'secret' => $config['turnstile_secret_key'],
                         'response' => $turnstile_response,
                         'remoteip' => $this->di['request']->getClientIp(),
                     ],
@@ -168,7 +167,7 @@ class Service implements InjectionAwareInterface
                 $client = HttpClient::create(['bindto' => BIND_TO]);
                 $response = $client->request('POST', 'https://hcaptcha.com/siteverify', [
                     'body' => [
-                        'secret'   => $config['hcaptcha_secret_key'],
+                        'secret' => $config['hcaptcha_secret_key'],
                         'response' => $hcaptcha_response,
                         'remoteip' => $this->di['request']->getClientIp(),
                     ],

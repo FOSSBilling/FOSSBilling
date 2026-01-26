@@ -158,11 +158,10 @@ class i18n
             $filesystem->remove($disablePath);
 
             return true;
-        } else {
-            $filesystem->dumpFile($disablePath, '');
-
-            return $filesystem->exists($disablePath);
         }
+        $filesystem->dumpFile($disablePath, '');
+
+        return $filesystem->exists($disablePath);
     }
 
     /**

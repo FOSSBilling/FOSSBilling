@@ -235,9 +235,9 @@ class SentryHelper
             return 'NGINX';
         } elseif (PHP_SAPI === 'cli-server') {
             return 'PHP Development Server';
-        } else {
-            return 'Unknown';
         }
+
+        return 'Unknown';
     }
 
     public static function skipReporting(?string $module = null, ?string $theme = null): bool
