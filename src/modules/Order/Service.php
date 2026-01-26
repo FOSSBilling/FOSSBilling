@@ -14,6 +14,7 @@ namespace Box\Mod\Order;
 use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\ServiceModuleInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -773,8 +774,17 @@ class Service implements InjectionAwareInterface
     protected function _callOnService(\Model_ClientOrder $order, $action)
     {
         $repo = $this->di['mod_service']('service' . $order->service_type);
-        // @deprecated
-        // @todo remove this when doctrine is removed
+
+        // Check if the service implements ServiceModuleInterface
+        if ($repo instanceof ServiceModuleInterface) {
+            $m = 'action_' . $action;
+
+            return $repo->$m($order);
+        }
+
+        // @deprecated Fallback for services not implementing ServiceModuleInterface.
+        // Third-party service modules should implement ServiceModuleInterface.
+        // This fallback will be removed in a future version.
         $core_services = [
             \Model_ProductTable::CUSTOM,
             \Model_ProductTable::LICENSE,
