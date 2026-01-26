@@ -31,12 +31,8 @@ require_once 'FakeTemplateWrapper.php';
 require_once 'DummyBean.php';
 $di = include PATH_ROOT . '/di.php';
 $di['translate']();
-$di['validator'] = function () {
-    return new FOSSBilling\Validate();
-};
-$di['tools'] = function () {
-    return new FOSSBilling\Tools();
-};
+$di['validator'] = (fn () => new FOSSBilling\Validate());
+$di['tools'] = (fn () => new FOSSBilling\Tools());
 
 // Setup the autoloader
 $testsLoader = new AntCMS\AntLoader([

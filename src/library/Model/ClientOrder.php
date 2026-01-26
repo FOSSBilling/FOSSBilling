@@ -10,19 +10,19 @@
  */
 class Model_ClientOrder extends RedBeanPHP\SimpleModel
 {
-    final public const STATUS_PENDING_SETUP = 'pending_setup';
-    final public const STATUS_FAILED_SETUP = 'failed_setup';
-    final public const STATUS_FAILED_RENEW = 'failed_renew';
-    final public const STATUS_ACTIVE = 'active';
-    final public const STATUS_CANCELED = 'canceled';
-    final public const STATUS_SUSPENDED = 'suspended';
+    final public const string STATUS_PENDING_SETUP = 'pending_setup';
+    final public const string STATUS_FAILED_SETUP = 'failed_setup';
+    final public const string STATUS_FAILED_RENEW = 'failed_renew';
+    final public const string STATUS_ACTIVE = 'active';
+    final public const string STATUS_CANCELED = 'canceled';
+    final public const string STATUS_SUSPENDED = 'suspended';
 
-    final public const ACTION_CREATE = 'create';
-    final public const ACTION_ACTIVATE = 'activate';
-    final public const ACTION_RENEW = 'renew';
-    final public const ACTION_SUSPEND = 'suspend';
-    final public const ACTION_UNSUSPEND = 'unsuspend';
-    final public const ACTION_CANCEL = 'cancel';
-    final public const ACTION_UNCANCEL = 'uncancel';
-    final public const ACTION_DELETE = 'delete';
+    final public const string ACTION_CREATE = 'create';
+    final public const string ACTION_ACTIVATE = 'activate';
+    final public const string ACTION_RENEW = 'renew';
+    final public const string ACTION_SUSPEND = 'suspend';
+    final public const string ACTION_UNSUSPEND = 'unsuspend';
+    final public const string ACTION_CANCEL = 'cancel';
+    final public const string ACTION_UNCANCEL = 'uncancel';
+    final public const string ACTION_DELETE = 'delete';
 }

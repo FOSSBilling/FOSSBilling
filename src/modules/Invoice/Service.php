@@ -282,9 +282,7 @@ class Service implements InjectionAwareInterface
         $orderIds = array_unique(array_filter(array_column($lines, 'order_id')));
 
         // Ensure order IDs are safe integers before using in SQL
-        $orderIds = array_values(array_filter(array_map('intval', $orderIds), static function ($id) {
-            return $id > 0;
-        }));
+        $orderIds = array_values(array_filter(array_map(intval(...), $orderIds), static fn ($id) => $id > 0));
 
         if (!empty($orderIds)) {
             // Batch load orders
@@ -298,13 +296,9 @@ class Service implements InjectionAwareInterface
             $orders = $this->di['db']->find('ClientOrder', 'id IN (' . implode(',', $orderIdPlaceholders) . ')', $orderIdParams);
 
             // Batch load related products
-            $productIds = array_unique(array_filter(array_map(static function ($o) {
-                return isset($o->product_id) ? (int) $o->product_id : 0;
-            }, $orders)));
+            $productIds = array_unique(array_filter(array_map(static fn ($o) => isset($o->product_id) ? (int) $o->product_id : 0, $orders)));
             // Ensure product IDs are safe integers before using in SQL
-            $productIds = array_values(array_filter($productIds, static function ($id) {
-                return $id > 0;
-            }));
+            $productIds = array_values(array_filter($productIds, static fn ($id) => $id > 0));
 
             $productsById = [];
             if (!empty($productIds)) {
@@ -415,7 +409,7 @@ class Service implements InjectionAwareInterface
         if (isset($remove_after_days) && $remove_after_days) {
             // removing old invoices
             $days = (int) $remove_after_days;
-            $sql = "DELETE FROM invoice WHERE status = :status AND DATEDIFF(NOW(), due_at) > :days";
+            $sql = 'DELETE FROM invoice WHERE status = :status AND DATEDIFF(NOW(), due_at) > :days';
             $di['db']->exec($sql, [':days' => $days, ':status' => \Model_Invoice::STATUS_UNPAID]);
         }
     }
@@ -1586,13 +1580,12 @@ class Service implements InjectionAwareInterface
                 if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
                     // Throw Exception if api request
                     throw new InformationException('You do not have permission to perform this action', [], 403);
-                } else {
-                    // Redirect to login page if browser request
-                    $invoiceLink = $this->di['url']->link('invoice');
-                    header("Location: $invoiceLink");
-                    echo __trans('You do not have permission to perform this action');
-                    exit;
                 }
+                // Redirect to login page if browser request
+                $invoiceLink = $this->di['url']->link('invoice');
+                header("Location: $invoiceLink");
+                echo __trans('You do not have permission to perform this action');
+                exit;
             }
         }
     }

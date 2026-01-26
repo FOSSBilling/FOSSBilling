@@ -10,7 +10,7 @@
  */
 class Model_ProductPayment extends RedBeanPHP\SimpleModel
 {
-    final public const FREE = 'free';
-    final public const ONCE = 'once';
-    final public const RECURRENT = 'recurrent';
+    final public const string FREE = 'free';
+    final public const string ONCE = 'once';
+    final public const string RECURRENT = 'recurrent';
 }

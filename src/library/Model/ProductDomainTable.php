@@ -10,6 +10,7 @@
  */
 class Model_ProductDomainTable extends Model_ProductTable
 {
+    #[Override]
     public function getUnit(Model_Product $model): string
     {
         return 'year';
@@ -56,9 +57,9 @@ class Model_ProductDomainTable extends Model_ProductTable
                     $factor = $this->discountFactor($addon, $config['period']);
 
                     return $factor * $this->getProductPrice($product, $config);
-                } else {
-                    return 0;
                 }
+
+                return 0;
             }
 
             if (
@@ -79,9 +80,9 @@ class Model_ProductDomainTable extends Model_ProductTable
         $addon_period = $addon['config']['period'];
         if (in_array($addon_period, $free_domain_periods) || sizeof($free_domain_periods) > 0) {
             return true;
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     /**
@@ -121,9 +122,9 @@ class Model_ProductDomainTable extends Model_ProductTable
 
                 if (count($free_domain_qtys) > 1) {
                     return min($ref_item_qty, min($free_domain_qtys));
-                } else {
-                    return min($ref_item_qty, $free_domain_qtys[0]);
                 }
+
+                return min($ref_item_qty, $free_domain_qtys[0]);
             }
         } else {
             return 0;
@@ -146,9 +147,9 @@ class Model_ProductDomainTable extends Model_ProductTable
 
         if ($tld != null && !$free_domain && is_array($free_tlds) && in_array($tld, $free_tlds)) {
             return true;
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     private function registerDomainMatch($item, $config)
@@ -177,6 +178,7 @@ class Model_ProductDomainTable extends Model_ProductTable
     /**
      * @return array<mixed, array<'active'|'allow_register'|'allow_transfer'|'min_years'|'price_registration'|'price_renew'|'price_transfer'|'registrar'|'tld', mixed>>
      */
+    #[Override]
     public function getPricingArray(Model_Product $product): array
     {
         $pricing = [];
@@ -211,6 +213,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return $pricing;
     }
 
+    #[Override]
     public function getProductPrice(Model_Product $product, ?array $config = null)
     {
         $rtable = $this->di['mod_service']('servicedomain', 'Tld');
@@ -248,6 +251,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return 0;
     }
 
+    #[Override]
     public function getProductSetupPrice(Model_Product $product, ?array $config = null): float
     {
         return (float) 0;

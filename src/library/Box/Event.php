@@ -162,6 +162,5 @@ class Box_Event implements ArrayAccess, FOSSBilling\InjectionAwareInterface
      */
     public function offsetUnset(mixed $name): void
     {
-        return;
     }
 }

@@ -1038,9 +1038,9 @@ class Service implements InjectionAwareInterface
         [$adapter, $account] = $this->_getAM($model);
         if ($model->reseller) {
             return $adapter->getResellerLoginUrl($account);
-        } else {
-            return $adapter->getLoginUrl($account);
         }
+
+        return $adapter->getLoginUrl($account);
     }
 
     public function prependOrderConfig(\Model_Product $product, array $data): array
@@ -1050,7 +1050,7 @@ class Service implements InjectionAwareInterface
         if (isset($data['domain']['action'])) {
             $this->validateDomainAction($data, $c);
         }
-        
+
         [$sld, $tld] = $this->_getDomainTuple($data);
         $data['sld'] = $sld;
         $data['tld'] = $tld;
@@ -1156,7 +1156,7 @@ class Service implements InjectionAwareInterface
         $array = preg_split('/\r\n|\r|\n/', $assigned_ips);
 
         // Trim each entry and remove any empty strings
-        $array = array_map('trim', $array);
+        $array = array_map(trim(...), $array);
         $array = array_filter($array, fn ($ip): bool => $ip !== '');
 
         // Validate that each entry is a valid IP address (works both with IPv4 and IPv6)

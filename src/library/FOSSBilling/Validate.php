@@ -56,9 +56,9 @@ class Validate
 
         if (preg_match('/^[a-z0-9]+[a-z0-9\-]*[a-z0-9]+$/i', $sld) && strlen($sld) < 64 && substr($sld, 2, 2) != '--') {
             return true;
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     /**
@@ -97,7 +97,7 @@ class Validate
                 return [];
             }
 
-            $validTlds = array_filter($database, fn ($tld): bool => !str_starts_with($tld, '/'));
+            $validTlds = array_filter($database, fn ($tld): bool => !str_starts_with((string) $tld, '/'));
 
             $result = [];
             foreach ($validTlds as $tld) {
@@ -124,12 +124,12 @@ class Validate
             // Fallback behavior if we fail to get a valid list
             if (str_starts_with($tld, 'xn--') || preg_match('/^[a-z]+$/', $tld)) {
                 return true;
-            } else {
-                return false;
             }
-        } else {
-            return $validTlds[$tld] ?? false;
+
+            return false;
         }
+
+        return $validTlds[$tld] ?? false;
     }
 
     public function isPasswordStrong($pwd): bool

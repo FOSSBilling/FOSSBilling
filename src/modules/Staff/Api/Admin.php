@@ -115,7 +115,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams([
         'id' => 'ID was not passed',
         'password' => 'Password required',
-        'password_confirm' => 'Password confirmation required'
+        'password_confirm' => 'Password confirmation required',
     ])]
     public function change_password($data)
     {
@@ -171,7 +171,7 @@ class Admin extends \Api_Abstract
      * Update staff member permissions.
      */
     #[RequiredParams(['id' => 'ID was not passed', 'permissions' => 'Missing "permissions" parameter'])]
-    public function permissions_update($data)
+    public function permissions_update($data): bool
     {
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 

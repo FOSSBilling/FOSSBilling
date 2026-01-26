@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Extension;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\Filesystem\Filesystem;
@@ -24,7 +25,7 @@ class PdoStatmentsMock extends \PDOStatement
 final class ServiceTest extends \BBTestCase
 {
     protected ?Service $service;
-    protected $filesystemMock;
+    protected \PHPUnit\Framework\MockObject\MockObject $filesystemMock;
 
     public function setUp(): void
     {
@@ -236,15 +237,43 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $dbalMock = new class {
-            public function createQueryBuilder() {
+            public function createQueryBuilder(): object
+            {
                 return new class {
-                    public function select($field) { return $this; }
-                    public function from($table) { return $this; }
-                    public function where($cond) { return $this; }
-                    public function andWhere($cond) { return $this; }
-                    public function setParameter($key, $val) { return $this; }
-                    public function executeQuery() { return $this; }
-                    public function fetchFirstColumn() { return []; }
+                    public function select($field)
+                    {
+                        return $this;
+                    }
+
+                    public function from($table)
+                    {
+                        return $this;
+                    }
+
+                    public function where($cond)
+                    {
+                        return $this;
+                    }
+
+                    public function andWhere($cond)
+                    {
+                        return $this;
+                    }
+
+                    public function setParameter($key, $val)
+                    {
+                        return $this;
+                    }
+
+                    public function executeQuery()
+                    {
+                        return $this;
+                    }
+
+                    public function fetchFirstColumn(): array
+                    {
+                        return [];
+                    }
                 };
             }
         };
@@ -260,15 +289,16 @@ final class ServiceTest extends \BBTestCase
         $di['mod'] = $di->protect(function ($name) use ($di) {
             $mod = new \FOSSBilling\Module($name);
             $mod->setDi($di);
+
             return $mod;
         });
         $di['tools'] = new \FOSSBilling\Tools();
         $di['mod_service'] = $di->protect(function ($mod) use ($extensionServiceMock, $staffServiceMock) {
             if ($mod == 'staff') {
                 return $staffServiceMock;
-            } else {
-                return $extensionServiceMock;
             }
+
+            return $extensionServiceMock;
         });
         $di['url'] = $urlMock;
         $di['dbal'] = $dbalMock;
@@ -566,15 +596,43 @@ final class ServiceTest extends \BBTestCase
     public function testGetInstalledMods(): void
     {
         $dbalMock = new class {
-            public function createQueryBuilder() {
+            public function createQueryBuilder(): object
+            {
                 return new class {
-                    public function select($field) { return $this; }
-                    public function from($table) { return $this; }
-                    public function where($cond) { return $this; }
-                    public function andWhere($cond) { return $this; }
-                    public function setParameter($key, $val) { return $this; }
-                    public function executeQuery() { return $this; }
-                    public function fetchFirstColumn() { return []; }
+                    public function select($field)
+                    {
+                        return $this;
+                    }
+
+                    public function from($table)
+                    {
+                        return $this;
+                    }
+
+                    public function where($cond)
+                    {
+                        return $this;
+                    }
+
+                    public function andWhere($cond)
+                    {
+                        return $this;
+                    }
+
+                    public function setParameter($key, $val)
+                    {
+                        return $this;
+                    }
+
+                    public function executeQuery()
+                    {
+                        return $this;
+                    }
+
+                    public function fetchFirstColumn(): array
+                    {
+                        return [];
+                    }
                 };
             }
         };

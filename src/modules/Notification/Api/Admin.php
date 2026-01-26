@@ -77,7 +77,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Notification ID was not passed'])]
-    public function delete($data)
+    public function delete($data): bool
     {
         $meta = $this->di['db']->load('extension_meta', $data['id']);
         if ($meta->extension != 'mod_notification' || $meta->meta_key != 'message') {
