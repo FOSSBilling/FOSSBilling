@@ -267,7 +267,7 @@
                 {% endif %}
                 {% if event.client or not event.staff %}
                 <a class="btn btn-icon api-link"
-                    href="{{ 'api/admin/antispam/block_ip'|link({ 'ip': event.ip, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'api/admin/antispam/block_ip'|link({ 'ip': event.ip }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'activity'|alink }}">
                     <svg class="icon">
@@ -276,7 +276,7 @@
                 </a>
                 {% endif %}
                 <a class="btn btn-icon api-link"
-                    href="{{ 'api/admin/activity/log_delete'|link({ 'id': event.id, 'CSRFToken': CSRFToken }) }}"
+                    href="{{ 'api/admin/activity/log_delete'|link({ 'id': event.id }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'activity'|alink }}">
                     <svg class="icon">
