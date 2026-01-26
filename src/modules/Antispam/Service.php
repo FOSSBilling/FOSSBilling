@@ -147,7 +147,7 @@ class Service implements InjectionAwareInterface
                     'body' => [
                         'secret'   => $config['turnstile_secret_key'],
                         'response' => $turnstile_response,
-                        'remoteip' => $di['request']->getClientIp(),
+                        'remoteip' => $this->di['request']->getClientIp(),
                     ],
                 ]);
                 $content = $response->toArray();
@@ -170,7 +170,7 @@ class Service implements InjectionAwareInterface
                     'body' => [
                         'secret'   => $config['hcaptcha_secret_key'],
                         'response' => $hcaptcha_response,
-                        'remoteip' => $di['request']->getClientIp(),
+                        'remoteip' => $this->di['request']->getClientIp(),
                     ],
                 ]);
                 $content = $response->toArray();
