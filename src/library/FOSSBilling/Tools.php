@@ -134,7 +134,7 @@ class Tools
         if ($capitalize_first_char) {
             $str[0] = strtoupper((string) $str[0]);
         }
-        $func = fn ($c): string => strtoupper((string) $c[1]);
+        $func = fn($c): string => strtoupper((string) $c[1]);
 
         return preg_replace_callback('/-([a-z])/', $func, (string) $str);
     }
@@ -142,7 +142,7 @@ class Tools
     public function from_camel_case($str): ?string
     {
         $str[0] = strtolower((string) $str[0]);
-        $func = fn ($c): string => '-' . strtolower((string) $c[1]);
+        $func = fn($c): string => '-' . strtolower((string) $c[1]);
 
         return preg_replace_callback('/([A-Z])/', $func, (string) $str);
     }
@@ -395,5 +395,28 @@ class Tools
         $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer($config);
 
         return trim($sanitizer->sanitize($content));
+    }
+
+    public static function validatePhoneCC(string|int $countryCode)
+    {
+        if (!is_numeric($countryCode) || $countryCode <= 0 || $countryCode > 999) {
+            throw new InformationException("The provided phone country code does not appear to be valid.");
+        }
+
+        return intval($countryCode);
+    }
+
+    public static function validatePhoneNumber(string $number)
+    {
+        $digitsOnly = preg_replace('/\D+/', '', $number);
+        if (strlen($digitsOnly) < 1 || strlen($digitsOnly) > 12) {
+            throw new InformationException("The provided phone number does not appear to be valid.");
+        }
+
+        if (str_starts_with($number, "+")) {
+            throw new InformationException("Please use the separate field for the phone country code.");
+        }
+
+        return $number;
     }
 }

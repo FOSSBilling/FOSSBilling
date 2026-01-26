@@ -16,6 +16,7 @@
 namespace Box\Mod\Client\Api;
 
 use FOSSBilling\InformationException;
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -238,26 +239,13 @@ class Admin extends \Api_Abstract
         // Special handling for the phone county codes
         $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
         if (!empty($phoneCC)) {
-            if (!is_numeric($phoneCC) || $phoneCC <= 0 || $phoneCC > 999) {
-                throw new InformationException("The provided phone country code does not appear to be valid.");
-            }
-            $client->phone_cc = intval($phoneCC);
+            $client->phone_cc = Tools::validatePhoneCC($phoneCC);
         }
 
         // Special handling for the phone number itself
         $phone = (!empty($data['phone']) ? $data['phone'] : $client->phone);
-        if (!empty($phone)) {
-            if (!is_string($phone)) {
-                throw new InformationException("The provided phone number does not appear to be valid.");
-            }
-            $digitsOnly = preg_replace('/\D+/', '', $phone);
-            if (strlen($digitsOnly) < 1 || strlen($digitsOnly) > 12) {
-                throw new InformationException("The provided phone number does not appear to be valid.");
-            }
-            if (str_starts_with($phone, "+")) {
-                throw new InformationException("Please use the separate field for the phone country code.");
-            }
-            $client->phone = $phone;
+        if (!empty($phone) && is_string($phone)) {
+            $client->phone = Tools::validatePhoneNumber($phone);
         }
 
         $client->email = (!empty($data['email']) ? $data['email'] : $client->email);

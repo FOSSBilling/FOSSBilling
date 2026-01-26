@@ -13,6 +13,7 @@ namespace Box\Mod\Client;
 
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Tools;
 
 class Service implements InjectionAwareInterface
 {
@@ -491,26 +492,13 @@ class Service implements InjectionAwareInterface
         // Special handling for the phone county codes
         $phoneCC = $data['phone_cc'] ?? null;
         if (!empty($phoneCC)) {
-            if (!is_numeric($phoneCC) || $phoneCC <= 0 | $phoneCC > 999) {
-                throw new InformationException("The provided phone country code does not appear to be valid.");
-            }
-            $client->phone_cc = intval($phoneCC);
+            $client->phone_cc = Tools::validatePhoneCC($phoneCC);
         }
 
         // Special handling for the phone number itself
         $phone = $data['phone'] ?? null;
-        if (!empty($phone)) {
-            if (!is_string($phone)) {
-                throw new InformationException("The provided phone number does not appear to be valid.");
-            }
-            $digitsOnly = preg_replace('/\D+/', '', $phone);
-            if (strlen($digitsOnly) < 1 || strlen($digitsOnly) > 12) {
-                throw new InformationException("The provided phone number does not appear to be valid.");
-            }
-            if (str_starts_with($phone, "+")) {
-                throw new InformationException("Please use the separate field for the phone country code.");
-            }
-            $client->phone = $phone;
+        if (!empty($phone) && is_string($phone)) {
+            $client->phone = Tools::validatePhoneNumber($phone);
         }
 
         $client->aid = $data['aid'] ?? null;
