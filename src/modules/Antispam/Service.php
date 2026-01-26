@@ -39,6 +39,15 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function install(): void
+    {
+        $this->di['mod_service']('hook')->batchConnect(['mod' => 'antispam']);
+    }
+
+    public function uninstall(): void
+    {
+    }
+
     public static function onBeforeClientOpenTicket(\Box_Event $event)
     {
         self::performChecks($event);
