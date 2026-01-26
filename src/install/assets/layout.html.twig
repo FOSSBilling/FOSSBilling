@@ -41,7 +41,19 @@
         <main class="container">
             <nav style='padding-bottom: 1em;'>
                 <ul>
-                    <li><a href="{{ constant('URL_INSTALL') }}" title="FOSSBilling"><img src="../themes/huraga/assets/img/logo_white.svg" alt="FOSSBilling Logo" height="50px" width="238"/></a></li>
+                    <li>
+                    <a href="{{ constant('URL_INSTALL') }}" title="FOSSBilling">
+                        <picture>
+                            <!-- User prefers light mode: -->
+                            <source srcset="../themes/huraga/assets/img/logo.svg" media="(prefers-color-scheme: light)" alt="FOSSBilling logo" height="50px" width="238"/>
+
+                            <!-- User prefers dark mode: -->
+                            <source srcset="../themes/huraga/assets/img/logo_white.svg"  media="(prefers-color-scheme: dark)" alt="FOSSBilling logo" height="50px" width="238"/>
+
+                            <!-- Fallback / no preference -->
+                            <img src="../themes/huraga/assets/img/logo.svg" alt="FOSSBilling logo" height="50px" width="238"/>
+                        </picture>
+                    </a></li>
                 </ul>
                 <ul>
                     <li><a href="https://fossbilling.org/docs" target="_blank" data-tooltip="Opens in a new window.">Documentation</a></li>

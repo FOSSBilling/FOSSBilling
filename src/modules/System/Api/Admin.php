@@ -16,6 +16,7 @@
 namespace Box\Mod\System\Api;
 
 use FOSSBilling\Config;
+use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
 {
@@ -122,13 +123,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['mod' => '"mod" key is missing'])]
     public function is_allowed($data)
     {
-        $required = [
-            'mod' => 'mod key is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
         $f = $data['f'] ?? null;
         $service = $this->di['mod_service']('Staff');
 
@@ -180,7 +177,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Update FOSSBilling core.
-     *
      *
      * @throws \FOSSBilling\Exception
      */

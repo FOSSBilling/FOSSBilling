@@ -105,6 +105,53 @@ final class Api_Handler implements InjectionAwareInterface
             }
         }
 
+        $data = is_array($arguments) ? $arguments : [];
+
+        $this->validateRequiredParams($api, $method_name, $data);
+
         return $api->{$method_name}($arguments);
+    }
+
+    /**
+     * Validate required parameters for an API method using attributes.
+     *
+     * @param Api_Abstract $api         The API instance
+     * @param string       $method_name The method name
+     * @param array        $data        The data array passed to the method
+     *
+     * @throws FOSSBilling\InformationException If required parameters are missing
+     */
+    public function validateRequiredParams(Api_Abstract $api, string $method_name, array $data): void
+    {
+        try {
+            $reflection = new ReflectionMethod($api, $method_name);
+        } catch (ReflectionException) {
+            // Method doesn't exist, skip validation
+            return;
+        }
+
+        $attributes = $reflection->getAttributes(FOSSBilling\Validation\Api\RequiredParams::class);
+
+        if (empty($attributes)) {
+            return; // No validation attributes found
+        }
+
+        foreach ($attributes as $attribute) {
+            $instance = $attribute->newInstance();
+
+            foreach ($instance->params as $paramName => $errorMessage) {
+                if (!isset($data[$paramName])) {
+                    throw new FOSSBilling\InformationException($errorMessage);
+                }
+
+                if (is_string($data[$paramName]) && strlen(trim($data[$paramName])) === 0) {
+                    throw new FOSSBilling\InformationException($errorMessage);
+                }
+
+                if (!is_numeric($data[$paramName]) && empty($data[$paramName])) {
+                    throw new FOSSBilling\InformationException($errorMessage);
+                }
+            }
+        }
     }
 }

@@ -280,7 +280,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     /**
      * relying on domain->getEpp() to return user's input for Epp code.
      *
-     *
      * @throws Registrar_Exception
      */
     public function transferDomain(Registrar_Domain $domain): bool
@@ -304,10 +303,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
      * Should return details of registered domain
      * If domain is not registered should throw Registrar_Exception.
      *
-     *
      * @throws Registrar_Exception
      */
-    public function getDomainDetails(Registrar_Domain $domain): \Registrar_Domain
+    public function getDomainDetails(Registrar_Domain $domain): Registrar_Domain
     {
         $params = [
             'DomainName' => $domain->getName(),
@@ -707,7 +705,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     /**
      * Checks if tld is compatible with namecheaps transfer api and
      * if the domain is not available for registration (meaning hopefully the client owns it).
-     *
      *
      * @throws Registrar_Exception
      */

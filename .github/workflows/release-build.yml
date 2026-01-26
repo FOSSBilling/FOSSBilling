@@ -21,27 +21,27 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@5effb8054706bc16b98d16bafb5ba540d6d1bc95
+        uses: FOSSBilling/.workflows/.github/actions/php-build@11c3d3bb2ce6915aa0fc8af3165402a65400b084
         with:
           cache-deps: 'false'
           composer-args: '--prefer-dist --no-dev --optimize-autoloader'
-          php-version: 8.2
+          php-version: 8.3
 
       - name: 'Install Node.js and Enable Caching'
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
-          node-version: 22
+          node-version: 24
 
       - name: 'Install Node.js Dependencies'
-        run: npm ci
+        run: npm install
 
       - name: 'Build Frontend Assets'
-        run: npm run build
+        run: NODE_ENV=production npm run build
 
       - name: 'Download Latest Translations'
         run: |
@@ -85,7 +85,7 @@ jobs:
         run: tar -cvf /tmp/build.tar -C ./src/ ./
 
       - name: 'Upload Release Build Archive'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           if-no-files-found: 'error'
           name: ${{ inputs.artifact-name }}

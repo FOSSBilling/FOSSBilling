@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use DebugBar\Bridge\NamespacedTwigProfileCollector;
+use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use FOSSBilling\Environment;
 use FOSSBilling\TwigExtensions\DebugBar;
 use Symfony\Component\Filesystem\Path;
@@ -69,6 +69,7 @@ class Box_AppAdmin extends Box_App
         $twig = $this->di['twig'];
         $twig->setLoader($loader);
         $twig->addGlobal('theme', $theme);
+        $twig->addGlobal('current_theme', $theme['code']);
 
         if (Environment::isDevelopment()) {
             $profile = new Profile();

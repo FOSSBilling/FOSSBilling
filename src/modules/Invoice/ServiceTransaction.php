@@ -79,6 +79,17 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
 
         $skip_validation = isset($data['skip_validation']) && (bool) $data['skip_validation'];
+        if (!empty($data['gateway_id'])) {
+            try {
+                $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
+            } catch (\Exception $e) {
+                if (isset($this->di['logger'])) {
+                    $this->di['logger']->warning('IPN with invalid gateway_id rejected: ' . $data['gateway_id']);
+                }
+
+                throw new \FOSSBilling\InformationException('Invalid payment gateway');
+            }
+        }
         if (!$skip_validation) {
             if (!isset($data['invoice_id'])) {
                 throw new \FOSSBilling\InformationException('Transaction invoice ID is missing');
@@ -98,6 +109,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $existing = $this->di['db']->findOne('Transaction', 'txn_id = ? AND gateway_id = ?', [$txnIdCandidate, $data['gateway_id']]);
             if ($existing instanceof \Model_Transaction && $existing->status == \Model_Transaction::STATUS_PROCESSED) {
                 $this->di['logger']->info('Duplicate transaction ignored, returning existing processed transaction #%s', $existing->id);
+
                 return $existing->id;
             }
         }

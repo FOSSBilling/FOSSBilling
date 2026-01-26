@@ -3,11 +3,12 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
+
 namespace FOSSBilling;
 
 use Pimple\Container;
@@ -20,7 +21,7 @@ class CentralAlerts implements InjectionAwareInterface
 {
     protected ?Container $di = null;
 
-    private string $_url = 'https://fossbilling.org/api/central-alerts/';
+    private string $_url = 'https://api.fossbilling.net/central-alerts/v1/';
 
     public function setDi(Container $di): void
     {

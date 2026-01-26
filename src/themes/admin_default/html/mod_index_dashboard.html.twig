@@ -468,7 +468,7 @@
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                     <table class="table table-vcenter card-table table-striped">
                         <tbody>
-                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'only_clients': 1 }) %}
+                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_clients' }) %}
                             {% for i, event in events.list %}
                             <tr>
                                 <td class="w-1">
@@ -495,7 +495,7 @@
                 <div class="tab-pane fade" id="tab-staff" role="tabpanel">
                     <table class="table table-vcenter card-table table-striped">
                         <tbody>
-                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'only_staff': 1 }) %}
+                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_staff' }) %}
                             {% for i, event in events.list %}
                             <tr>
                                 <td class="w-1">
@@ -528,7 +528,7 @@
 {% block js %}
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
         <script>
-            $(function() {
+            document.addEventListener('DOMContentLoaded', function() {
                 setPlotDataData('chart-income', {{ admin.stats_get_income({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Income'|trans }}" );
                 setPlotDataData('chart-orders', {{ admin.stats_get_orders({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Orders'|trans }}" );
                 setPlotDataData('chart-invoices', {{ admin.stats_get_invoices({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }},"{{ 'Invoices'|trans }}" );
@@ -589,7 +589,7 @@
                     labels: {
                         show: false,
                     },
-                    colors:  (localStorage.getItem('theme') === 'dark') ? ["#91bbed"] : ["#206bc4"] ,
+                    colors:  (localStorage.getItem('theme') === 'dark') ? ["#91bbed"] : ["#206bc4"],
                     theme : {
                         mode: (localStorage.getItem('theme') === 'dark') ? 'dark' : 'light',
                         monochrome: {

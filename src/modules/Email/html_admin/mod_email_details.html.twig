@@ -46,18 +46,23 @@
     </table>
 
     <div class="card-footer text-center">
-        <a class="btn btn-primary api-link"
-            href="{{'api/admin/email/email_resend'|link({ 'id': email.id }) }}"
-            data-api-msg="{{ 'Email resent'|trans }}">
+        <button class="btn btn-primary email-preview-btn"
+            data-email-subject="{{ email.subject }}"
+            data-email-content="{{ email.content_html|e('html_attr') }}">
+            <svg class="icon icon-tabler" width="24" height="24">
+                <use xlink:href="#eye" />
+            </svg>
+            <span class="d-block text-secondary">{{ 'Preview'|trans }}</span>
+        </button>
+        <a class="btn btn-primary"
+            {{ fb_api_link({href: 'api/admin/email/email_resend'|link({id: email.id}), message: 'Email resent'|trans}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
                 <use xlink:href="#refresh" />
             </svg>
             <span class="d-block text-secondary">{{ 'Resend'|trans }}</span>
         </a>
-        <a class="btn btn btn-primary api-link"
-            href="{{'api/admin/email/email_delete'|link({ 'id': email.id }) }}"
-            data-api-confirm="{{ 'Are you sure?'|trans }}"
-            data-api-redirect="{{ 'email/history'|alink }}">
+        <a class="btn btn btn-primary"
+            {{ fb_api_link({href: 'api/admin/email/email_delete'|link({id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|alink}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
                 <use xlink:href="#delete" />
             </svg>
@@ -69,4 +74,8 @@
         {{ email.content_html|raw }}
     </div>
 </div>
+{% endblock %}
+
+{% block js %}
+{{ include('partial_email_preview.html.twig') }}
 {% endblock %}

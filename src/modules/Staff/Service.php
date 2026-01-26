@@ -108,29 +108,53 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->getCell($sql);
     }
 
+    public function getPairs(array $data = [])
+    {
+        $limit = $data['per_page'] ?? 30;
+        
+        $sql = 'SELECT id, name FROM admin WHERE 1';
+        $params = [];
+
+        if (!empty($data['search'])) {
+            $sql .= ' AND (name LIKE :search OR email LIKE :search)';
+            $params['search'] = '%' . $data['search'] . '%';
+        }
+
+        // Limit results for performance
+        $sql .= sprintf(' ORDER BY name ASC LIMIT %u', $limit);
+
+        return $this->di['db']->getAssoc($sql, $params);
+    }
+
     public function setPermissions($member_id, $array): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
 
         $array = array_filter($array);
-        $sql = 'UPDATE admin SET permissions = :p WHERE id = :id';
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindValue('p', json_encode($array));
-        $stmt->bindValue('id', $member_id);
-        $stmt->execute();
+
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->update('admin')
+            ->set('permissions', ':p')
+            ->where('id = :id')
+            ->setParameter('p', json_encode($array))
+            ->setParameter('id', $member_id)
+            ->executeStatement();
 
         return true;
     }
 
     public function getPermissions($member_id)
     {
-        $sql = 'SELECT permissions FROM admin WHERE id = :id';
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute(['id' => $member_id]);
-        $json = $stmt->fetchColumn() ?? '';
-        $permissions = json_decode($json, true);
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('permissions')
+            ->from('admin')
+            ->where('id = :id')
+            ->setParameter('id', $member_id);
+        $result = $query->executeQuery()->fetchOne() ?? '';
+
+        $permissions = json_decode($result, true);
         if (!$permissions) {
             return [];
         }
@@ -725,7 +749,7 @@ class Service implements InjectionAwareInterface
         $where = [];
         $params = [];
         if ($search) {
-            $where[] = ' a.name LIKE :name OR a.id LIKE :id OR a.email LIKE :email ';
+            $where[] = '(a.name LIKE :name OR a.id LIKE :id OR a.email LIKE :email)';
             $params['name'] = "%$search%";
             $params['id'] = "%$search%";
             $params['email'] = "%$search%";
@@ -761,13 +785,6 @@ class Service implements InjectionAwareInterface
         }
 
         return $result;
-    }
-
-    public function deleteLoginHistory(\Model_ActivityAdminHistory $model): bool
-    {
-        $this->di['db']->trash($model);
-
-        return true;
     }
 
     public function authorizeAdmin($email, $plainTextPassword)

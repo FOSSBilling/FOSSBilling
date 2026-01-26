@@ -42,12 +42,11 @@
                 </div>
             </div>
             <div class="table-responsive">
-                <form method="post" action="{{ 'api/admin/product/update_priority'|link }}" class="api-form" data-api-reload="1">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/product/update_priority'|link }}" {{ fb_api_form({reload: true}) }}>
                     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                         <thead>
                             <tr>
-                                <th>{{ '#'|trans }}</th>
+                                <th>{{  '#'|trans }}</th>
                                 <th>{{ 'Type'|trans }}</th>
                                 <th>{{ 'Category'|trans }}</th>
                                 <th>{{ 'Title'|trans }}</th>
@@ -83,7 +82,8 @@
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/delete'|link({'id' : product.id, 'CSRFToken': CSRFToken}) }}" data-api-redirect="{{ 'product'|alink }}">
+                                    <a class="btn btn-icon" href="{{ 'api/admin/product/delete'|link({'id' : product.id }) }}"
+                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|alink}) }}>
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -105,7 +105,7 @@
                             <svg class="icon">
                                 <use xlink:href="#refresh" />
                             </svg>
-                            {{ 'Update priority'|trans }}
+                            {{ 'Update Priority'|trans }}
                         </button>
                     </div>
                 </form>
@@ -114,8 +114,7 @@
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/prepare'|link }}" class="api-form" data-api-reload="1">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/product/prepare'|link }}" {{ fb_api_form({reload: true}) }}>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
                         <div class="col">
@@ -162,7 +161,8 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/category_delete'|link({ 'id': cat_id, 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'product'|alink }}">
+                            <a class="btn btn-icon" href="{{ 'api/admin/product/category_delete'|link({ 'id': cat_id }) }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|alink}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -180,8 +180,7 @@
 
         <div class="tab-pane fade" id="tab-new-category" role="tabpanel" aria-labelledby="new-category-tab">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/category_create'|link }}" class="save api-form" data-api-redirect="{{ 'product'|alink }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/product/category_create'|link }}" {{ fb_api_form({redirect: 'product'|alink}) }}>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                         <div class="col">

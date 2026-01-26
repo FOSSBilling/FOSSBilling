@@ -9,19 +9,17 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use FOSSBilling\Config;
-use FOSSBilling\Environment;
+use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
-use Lcharette\WebpackEncoreTwig\EntrypointsTwigExtension;
-use Lcharette\WebpackEncoreTwig\JsonManifest;
-use Lcharette\WebpackEncoreTwig\TagRenderer;
-use Lcharette\WebpackEncoreTwig\VersionedAssetsTwigExtension;
+use FOSSBilling\Environment;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
+use League\Csv\Writer;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
 use Twig\Extension\StringLoaderExtension;
@@ -79,28 +77,22 @@ $di['crypt'] = function () use ($di) {
  * @return PDO The PDO object used for database connections
  */
 $di['pdo'] = function () {
-    $config = Config::getProperty('db');
+    $debugConfig = Config::getProperty('debug_and_monitoring', []);
+    $dbConfig = Config::getProperty('db');
+    $driverOptions = [
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ];
 
-    $pdo = new PDO(
-        $config['type'] . ':host=' . $config['host'] . ';port=' . $config['port'] . ';dbname=' . $config['name'],
-        $config['user'],
-        $config['password'],
-        [
-            PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]
-    );
+    $connection = DriverManagerFactory::getConnection($driverOptions);
+    /** @var PDO $pdo */
+    $pdo = $connection->getNativeConnection();
 
-    if (isset($config['debug']) && $config['debug']) {
+    if (isset($debugConfig['debug']) && $debugConfig['debug']) {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
     }
 
-    if ($config['type'] === 'mysql') {
-        $pdo->exec('SET NAMES "utf8"');
-        $pdo->exec('SET CHARACTER SET utf8');
-        $pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
-        $pdo->exec('SET character_set_results = utf8');
+    if ($dbConfig['driver'] === 'pdo_mysql') {
+        // Set server default charset for newly created tables. Connection charset is handled by DBAL via DSN.
         $pdo->exec('SET character_set_server = utf8');
         $pdo->exec('SET SESSION interactive_timeout = 28800');
         $pdo->exec('SET SESSION wait_timeout = 28800');
@@ -111,7 +103,7 @@ $di['pdo'] = function () {
         $pdo->exec("SET time_zone = '{$offset}'");
     }
 
-    return $pdo;
+    return new DebugBar\DataCollector\PDO\TraceablePDO($pdo);
 };
 
 /*
@@ -139,9 +131,23 @@ $di['db'] = function () use ($di) {
     return $db;
 };
 
-$di['em'] = function (): EntityManager {
-    return EntityManagerFactory::create();
+/*
+ * Creates and returns a Doctrine DBAL connection instance.
+ *
+ * @return Connection The Doctrine DBAL connection instance.
+ */
+$di['dbal'] = function (): Connection {
+    return DriverManagerFactory::getConnection();
 };
+
+/*
+ * Creates and returns a Doctrine ORM EntityManager instance.
+ *
+ * @param void
+ *
+ * @return EntityManager The Doctrine ORM EntityManager instance.
+ */
+$di['em'] = (fn (): EntityManager => EntityManagerFactory::create());
 
 /*
  *
@@ -171,14 +177,14 @@ $di['url'] = function () use ($di) {
 };
 
 /*
- * Returns a new Box_Mod object, created with the provided module name.
+ * Returns a new Module object, created with the provided module name.
  *
  * @param string $name The name of the module to create the object with.
  *
- * @return \Box_Mod The new Box_Mod object that was just created.
+ * @return \Module The new Module object that was just created.
  */
 $di['mod'] = $di->protect(function ($name) use ($di) {
-    $mod = new Box_Mod($name);
+    $mod = new FOSSBilling\Module($name);
     $mod->setDi($di);
 
     return $mod;
@@ -284,14 +290,6 @@ $di['twig'] = $di->factory(function () use ($di) {
 
     $box_extensions = new Box_TwigExtensions();
     $box_extensions->setDi($di);
-
-    if ($di['encore_info']['is_encore_theme']) {
-        $entryPoints = new EntrypointLookup($di['encore_info']['entrypoints']);
-        $tagRenderer = new TagRenderer($entryPoints);
-        $encoreExtensions = new EntrypointsTwigExtension($entryPoints, $tagRenderer);
-        $twig->addExtension($encoreExtensions);
-        $twig->addExtension(new VersionedAssetsTwigExtension(new JsonManifest($di['encore_info']['manifest'])));
-    }
 
     // $twig->addExtension(new OptimizerExtension());
     $twig->addExtension(new StringLoaderExtension());
@@ -654,16 +652,6 @@ $di['theme'] = function () use ($di) {
 };
 
 /*
- * Gets the information of Webpack Encore for the current route theme.
- * @return string
- */
-$di['encore_info'] = function () use ($di) {
-    $service = $di['mod_service']('theme');
-
-    return $service->getEncoreInfo();
-};
-
-/*
  * Loads an existing cart session or creates a new one if there is no session.
  *
  * @param void
@@ -765,7 +753,7 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
         $headers = array_keys(reset($rows));
     }
 
-    $csv = League\Csv\Writer::createFromFileObject(new SplTempFileObject());
+    $csv = Writer::from(new SplTempFileObject());
     $csv->addFormatter(new League\Csv\EscapeFormula());
     $csv->insertOne($headers);
     $csv->insertAll($rows);

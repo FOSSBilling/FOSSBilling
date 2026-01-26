@@ -5,6 +5,7 @@ parameters:
 			identifier: method.notFound
 			count: 1
 			path: src/library/FOSSBilling/Monolog.php
+
 		-
 			message: '#^Method Registrar_Adapter_Namecheap\:\:getPrivacyInfo\(\) should return array\<string\> but returns array\<string, bool\|string\>\.$#'
 			identifier: return.type
@@ -118,3 +119,4 @@ parameters:
 			identifier: method.notFound
 			count: 2
 			path: src/library/Server/Manager/Plesk.php
+

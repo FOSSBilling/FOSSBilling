@@ -3,7 +3,7 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -293,7 +293,7 @@ class ErrorPage
 
                     <div class="footer" style="clear:both">
                         <hr>
-                        <p>Powered By FOSSBilling</p>
+                        <p>Powered by FOSSBilling</p>
                         <p>
                             <a href="https://github.com/fossbilling/fossbilling">Source code</a> |
                             <a href="https://fossbilling.org/discord">Discord</a> |

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -94,7 +94,7 @@ class Update implements InjectionAwareInterface
             $item->expiresAfter(3600);
 
             $httpClient = HttpClient::create(['bindto' => BIND_TO]);
-            $response = $httpClient->request('GET', "https://api.fossbilling.org/versions/build_changelog/{$end}");
+            $response = $httpClient->request('GET', "https://api.fossbilling.net/versions/v1/build_changelog/{$end}");
             $result = $response->toArray();
 
             return $result['result'];
@@ -143,7 +143,7 @@ class Update implements InjectionAwareInterface
                 $item->expiresAfter(3600);
 
                 try {
-                    $releaseInfoUrl = 'https://api.fossbilling.org/versions/latest';
+                    $releaseInfoUrl = 'https://api.fossbilling.net/versions/v1/latest';
                     $httpClient = HttpClient::create(['bindto' => BIND_TO]);
                     $response = $httpClient->request('GET', $releaseInfoUrl);
                     $releaseInfo = $response->toArray()['result'];

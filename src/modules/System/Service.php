@@ -82,19 +82,19 @@ class Service
             throw new \FOSSBilling\Exception('Parameter key is missing');
         }
 
-        $query = 'SELECT value
-                FROM setting
-                WHERE param = :param
-                ';
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($query);
-        $stmt->execute(['param' => $param]);
-        $results = $stmt->fetchColumn();
-        if ($results === false) {
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('value')
+            ->from('setting')
+            ->where('param = :param')
+            ->setParameter('param', $param);
+
+        $result = $query->executeQuery()->fetchOne();
+        if ($result === false) {
             return $default;
         }
 
-        return $results;
+        return $result;
     }
 
     public function setParamValue($param, $value, $createIfNotExists = true): bool
@@ -104,18 +104,32 @@ class Service
             return true;
         }
 
-        $pdo = $this->di['pdo'];
         if ($this->paramExists($param)) {
-            $query = 'UPDATE setting SET value = :value WHERE param = :param';
-            $stmt = $pdo->prepare($query);
-            $stmt->execute(['param' => $param, 'value' => $value]);
+            $query = $this->di['dbal']->createQueryBuilder();
+            $query
+                ->update('setting')
+                ->set('value', ':value')
+                ->where('param = :param')
+                ->setParameter('param', $param)
+                ->setParameter('value', $value)
+                ->executeStatement();
         } elseif ($createIfNotExists) {
             try {
-                $query = 'INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, :created_at, :updated_at)';
-                $stmt = $pdo->prepare($query);
-                $stmt->execute(['param' => $param, 'value' => $value, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
+                $query = $this->di['dbal']->createQueryBuilder();
+                $query
+                    ->insert('setting')
+                    ->values([
+                        'param' => ':param',
+                        'value' => ':value',
+                        'created_at' => ':created_at',
+                        'updated_at' => ':updated_at',
+                    ])
+                    ->setParameter('param', $param)
+                    ->setParameter('value', $value)
+                    ->setParameter('created_at', date('Y-m-d H:i:s'))
+                    ->setParameter('updated_at', date('Y-m-d H:i:s'))
+                    ->executeStatement();
             } catch (\Exception $e) {
-                // ignore duplicate key error
                 if ($e->getCode() != 23000) {
                     throw $e;
                 }
@@ -127,15 +141,16 @@ class Service
 
     public function paramExists($param): bool
     {
-        $pdo = $this->di['pdo'];
-        $q = 'SELECT id
-              FROM setting
-              WHERE param = :param';
-        $stmt = $pdo->prepare($q);
-        $stmt->execute(['param' => $param]);
-        $results = $stmt->fetchColumn();
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('id')
+            ->from('setting')
+            ->where('param = :param')
+            ->setParameter('param', $param);
 
-        return (bool) $results;
+        $result = $query->executeQuery()->fetchOne();
+
+        return (bool) $result;
     }
 
     /**
@@ -455,15 +470,17 @@ class Service
         try {
             $twig = $this->di['twig'];
             $template = $twig->createTemplate($tpl);
-            $parsed = $template->render($vars);
-        } catch (\Exception $e) {
-            $parsed = $tpl;
-            if (!$try_render) {
-                throw $e;
-            }
-        }
 
-        return $parsed;
+            return $template->render($vars);
+        } catch (\Exception $e) {
+            if (!$try_render) {
+                $errorMsg = 'Template rendering failed: ' . $e->getMessage();
+                throw new \FOSSBilling\InformationException($errorMsg, null, $e->getCode());
+            }
+
+            // Return the original template string instead
+            return $tpl;
+        }
     }
 
     public function clearCache(): bool
@@ -526,21 +543,20 @@ class Service
 
     public function getPublicParamValue($param)
     {
-        $query = 'SELECT value
-                FROM setting
-                WHERE param = :param
-                AND public = 1
-               ';
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('value')
+            ->from('setting')
+            ->where('param = :param')
+            ->andWhere('public = 1')
+            ->setParameter('param', $param);
 
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($query);
-        $stmt->execute(['param' => $param]);
-        $results = $stmt->fetchColumn();
-        if ($results === false) {
+        $result = $query->executeQuery()->fetchOne();
+        if ($result === false) {
             throw new \FOSSBilling\Exception('Parameter :param does not exist', [':param' => $param]);
         }
 
-        return $results;
+        return $result;
     }
 
     public function getLocales(): array

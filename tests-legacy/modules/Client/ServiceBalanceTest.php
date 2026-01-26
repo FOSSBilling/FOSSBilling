@@ -1,26 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Tests\Mod\Client;
 
-class ServiceBalanceTest extends \BBTestCase
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class ServiceBalanceTest extends \BBTestCase
 {
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $service = new \Box\Mod\Client\ServiceBalance();
         $service->setDi($di);
         $getDi = $service->getDi();
         $this->assertEquals($di, $getDi);
     }
 
-    public function testdeductFunds(): void
+    public function testDeductFunds(): void
     {
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
 
         $clientBalance = new \Model_ClientBalance();
         $clientBalance->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->with('ClientBalance')
@@ -52,7 +57,7 @@ class ServiceBalanceTest extends \BBTestCase
         $this->assertEquals('default', $result->type);
     }
 
-    public function testdeductFundsInvalidDescription(): void
+    public function testDeductFundsInvalidDescription(): void
     {
         $service = new \Box\Mod\Client\ServiceBalance();
 
@@ -71,7 +76,7 @@ class ServiceBalanceTest extends \BBTestCase
         $service->deductFunds($clientModel, $amount, $description, $extra);
     }
 
-    public function testdeductFundsInvalidAmount(): void
+    public function testDeductFundsInvalidAmount(): void
     {
         $service = new \Box\Mod\Client\ServiceBalance();
 

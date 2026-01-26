@@ -6,21 +6,24 @@
  * Date: 8/5/14
  * Time: 4:52 PM.
  */
-class Api_ClientTest extends PHPUnit\Framework\TestCase
-{
-    /**
-     * @var Box\Mod\Order\Api\Client
-     */
-    protected $api;
 
-    public function setup(): void
+namespace Box\Tests\Mod\Order\Api;
+
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class Api_ClientTest extends \BBTestCase
+{
+    protected ?\Box\Mod\Order\Api\Client $api;
+
+    public function setUp(): void
     {
-        $this->api = new Box\Mod\Order\Api\Client();
+        $this->api = new \Box\Mod\Order\Api\Client();
     }
 
-    public function testgetDi(): void
+    public function testGetDi(): void
     {
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $this->api->setDi($di);
         $getDi = $this->api->getDi();
         $this->assertEquals($di, $getDi);
@@ -28,7 +31,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testGetList(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['getSearchQuery', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
             ->willReturn(['query', []]);
@@ -40,7 +43,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
                 0 => ['id' => 1],
             ],
         ];
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -48,24 +51,24 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->method('getPaginatedResultSet')
             ->willReturn($resultSet);
 
-        $clientOrderMock = new Model_ClientOrder();
-        $clientOrderMock->loadBean(new DummyBean());
+        $clientOrderMock = new \Model_ClientOrder();
+        $clientOrderMock->loadBean(new \DummyBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->with('ClientOrder')
             ->willReturn($clientOrderMock);
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
 
-        $client = new Model_Client();
-        $client->loadBean(new DummyBean());
-        $client->id = random_int(1, 100);
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
+        $client->id = 1;
 
         $this->api->setIdentity($client);
         $this->api->setService($serviceMock);
@@ -77,12 +80,12 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testGetListExpiring(): void
     {
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['getSoonExpiringActiveOrdersQuery'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSoonExpiringActiveOrdersQuery')
             ->willReturn(['query', []]);
 
-        $paginatorMock = $this->getMockBuilder('\\' . FOSSBilling\Pagination::class)
+        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
         ->onlyMethods(['getPaginatedResultSet'])
         ->disableOriginalConstructor()
         ->getMock();
@@ -90,14 +93,14 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $di['pager'] = $paginatorMock;
 
         $this->api->setDi($di);
 
-        $client = new Model_Client();
-        $client->loadBean(new DummyBean());
-        $client->id = random_int(1, 100);
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
+        $client->id = 1;
 
         $this->api->setIdentity($client);
         $this->api->setService($serviceMock);
@@ -112,15 +115,15 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testGet(): void
     {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);
@@ -128,7 +131,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->get($data);
 
@@ -137,17 +140,17 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testAddons(): void
     {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['getOrderAddonsList', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getOrderAddonsList')
-            ->willReturn([$order]);
+            ->willReturn([new \Model_ClientOrder()]);
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -155,7 +158,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'status' => Model_ClientOrder::STATUS_ACTIVE,
+            'status' => \Model_ClientOrder::STATUS_ACTIVE,
         ];
         $result = $apiMock->addons($data);
 
@@ -165,27 +168,27 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testService(): void
     {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['getOrderServiceData'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getOrderServiceData')
             ->willReturn([]);
 
-        $client = new Model_Client();
-        $client->loadBean(new DummyBean());
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
 
         $apiMock->setService($serviceMock);
         $apiMock->setIdentity($client);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->service($data);
 
@@ -194,30 +197,30 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testUpgradables(): void
     {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $productServiceMock = $this->getMockBuilder('\\' . Box\Mod\Product\Service::class)->onlyMethods(['getUpgradablePairs'])->getMock();
+        $productServiceMock = $this->getMockBuilder(\Box\Mod\Product\Service::class)->onlyMethods(['getUpgradablePairs'])->getMock();
         $productServiceMock->expects($this->atLeastOnce())
             ->method('getUpgradablePairs')
             ->willReturn([]);
 
-        $product = new Model_Product();
-        $product->loadBean(new RedBeanPHP\OODBBean());
+        $product = new \Model_Product();
+        $product->loadBean(new \RedBeanPHP\OODBBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock = $this->getMockBuilder('\\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($product);
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productServiceMock);
+        $di['mod_service'] = $di->protect(fn () => $productServiceMock);
         $apiMock->setDi($di);
         $data = [];
 
@@ -227,16 +230,16 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testDelete(): void
     {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-        $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['deleteFromOrder'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('deleteFromOrder')
             ->willReturn(true);
@@ -244,7 +247,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $result = $apiMock->delete($data);
 
@@ -253,15 +256,15 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testDeleteNotPendingException(): void
     {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
 
-        $apiMock = $this->getMockBuilder('\\' . Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['deleteFromOrder'])->getMock();
         $serviceMock->expects($this->never())->method('deleteFromOrder')
             ->willReturn(true);
@@ -269,10 +272,10 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $apiMock->setService($serviceMock);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $result = $apiMock->delete($data);
 
         $this->assertTrue($result);
@@ -280,27 +283,27 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
 
     public function testGetOrder(): void
     {
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
+        ;
 
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['findForClientById', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findForClientById')
             ->willReturn($order);
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->willReturn([]);
 
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
 
-        $client = new Model_Client();
-        $client->loadBean(new DummyBean());
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
@@ -308,31 +311,31 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->api->setIdentity($client);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
         $this->api->get($data);
     }
 
     public function testGetOrderNotFoundException(): void
     {
-        $validatorMock = $this->getMockBuilder('\\' . FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
+        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
+        ;
 
-        $serviceMock = $this->getMockBuilder('\\' . Box\Mod\Order\Service::class)
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['findForClientById', 'toApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('findForClientById')
             ->willReturn(null);
         $serviceMock->expects($this->never())->method('toApiArray')
             ->willReturn([]);
 
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
 
-        $client = new Model_Client();
-        $client->loadBean(new DummyBean());
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
 
-        $di = new Pimple\Container();
+        $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
@@ -340,10 +343,10 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->api->setIdentity($client);
 
         $data = [
-            'id' => random_int(1, 100),
+            'id' => 1,
         ];
 
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\Exception::class);
         $this->api->get($data);
     }
 }

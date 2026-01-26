@@ -360,4 +360,40 @@ class Tools
 
         return round($bytes / 1099511627776, 2) . ' TB';
     }
+
+    /**
+     * Sanitize user content to prevent XSS attacks.
+     * Uses Symfony's HTML Sanitizer component for robust protection.
+     *
+     * @param string $content   The content to sanitize. If empty, returns an empty string.
+     * @param bool   $allowHtml Whether to allow safe HTML tags (default: true for rich content)
+     *
+     * @return string Sanitized content safe for output
+     */
+    public static function sanitizeContent(string $content = '', bool $allowHtml = true): string
+    {
+        if (empty($content)) {
+            return '';
+        }
+
+        // Remove null bytes
+        $content = str_replace("\0", '', $content);
+
+        if (!$allowHtml) {
+            // Strip all HTML tags for plain text
+            return trim(htmlspecialchars(strip_tags($content), ENT_QUOTES | ENT_HTML5, 'UTF-8', false));
+        }
+
+        // Use Symfony's HTML Sanitizer
+        $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer(
+            (new \Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig())
+                ->allowSafeElements()
+                ->allowElement('a', ['href', 'title'])
+                ->allowElement('code')
+                ->allowElement('pre')
+                ->allowLinkSchemes(['http', 'https', 'mailto', 'tel'])
+        );
+
+        return trim($sanitizer->sanitize($content));
+    }
 }

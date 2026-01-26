@@ -24,8 +24,8 @@
                 <div class="card-body">
                     <h5 class="mb-1">{{ 'Payment methods'|trans }}</h5>
                     <p class="small text-muted">{{ 'Please choose a payment type and pay for your chosen products.'|trans }}</p>
-                    <form method="post" action="{{ 'api/guest/invoice/payment'|link }}" class="api-form" data-api-redirect="{{ ('invoice/'~invoice.hash)|link({ 'auto_redirect': 1 }) }}">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                    <form method="post" action="{{ 'api/guest/invoice/payment'|link }}"
+                        {{ fb_api_form({redirect: ('invoice/'~invoice.hash)|link({ 'auto_redirect': 1 })}) }}>
                         <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
                         <div class="d-flex gap-3">
                             {% for gtw in guest.invoice_gateways %}
@@ -91,7 +91,7 @@
                                         </dd>
                                         <dt class="col-sm-4 text-muted">{{ 'Status'|trans }}</dt>
                                         <dd class="col-sm-8">
-                                        <span class="badge fs-7 {% if invoice.status == 'paid' %} bg-success{% elseif invoice.status == 'unpaid' %}bg-warning{% endif %}">
+                                        <span class="badge fs-7 {% if invoice.status == 'paid' %} text-bg-success{% elseif invoice.status == 'unpaid' %}text-bg-warning{% endif %}">
                                             {{ mf.status_name(invoice.status) }}
                                         </span>
                                         </dd>
@@ -193,7 +193,7 @@
                         <table class="table table-hover mt-3 mb-0">
                             <thead>
                             <tr>
-                                <th>{{ '#'|trans }}</th>
+                                <th>{{  '#'|trans }}</th>
                                 <th>{{ 'Title'|trans }}</th>
                                 <th>{{ 'Price'|trans }}</th>
                                 <th class="text-end">{{ 'Total'|trans }}</th>
@@ -275,9 +275,11 @@
 {% endblock %}
 {% block js %}
 <script>
-    $(function() {
-        $(".hover-popover").tooltip({
-            placement: 'top'
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.hover-popover').forEach(element => {
+            const tooltip = new bootstrap.Tooltip(element, {
+                placement: 'top'
+            });
         });
     });
 
@@ -321,7 +323,7 @@
         document.getElementById('paymentPromptLabel').textContent = `{{ 'Pay with'|trans }}`.concat(` `, title);
         document.getElementById('subscription').href = paymentLink;
         document.getElementById('pay-nondescript').href = paymentLink;
-        paymentLink.searchParams.append('allow_subscription', 0); 
+        paymentLink.searchParams.append('allow_subscription', 0);
         document.getElementById('single').href = paymentLink;
 
         modal = new bootstrap.Modal('#paymentPrompt');

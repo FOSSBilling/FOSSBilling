@@ -1,15 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Box\Mod\Email\Controller;
 
-class AdminTest extends \BBTestCase
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class AdminTest extends \BBTestCase
 {
     public function testDi(): void
     {
         $controller = new Admin();
 
-        $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
+        $di = $this->getDi();
+        $db = $this->createMock('Box_Database');
 
         $di['db'] = $db;
         $controller->setDi($di);
@@ -17,7 +22,7 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public function testregister(): void
+    public function testRegister(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->exactly(5))
@@ -27,7 +32,7 @@ class AdminTest extends \BBTestCase
         $controllerAdmin->register($boxAppMock);
     }
 
-    public function testgetIndex(): void
+    public function testGetIndex(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
@@ -35,7 +40,7 @@ class AdminTest extends \BBTestCase
             ->with('mod_email_history');
 
         $controllerAdmin = new Admin();
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['is_admin_logged'] = true;
 
         $controllerAdmin->setDi($di);

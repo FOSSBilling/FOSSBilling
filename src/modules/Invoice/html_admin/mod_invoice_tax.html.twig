@@ -72,10 +72,8 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/invoice/tax_delete'|link({ 'id': tax.id, 'CSRFToken': CSRFToken }) }}"
-                                data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                data-api-reload="1">
+                            <a class="btn btn-icon" href="{{ 'api/admin/invoice/tax_delete'|link({ 'id': tax.id }) }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -93,14 +91,13 @@
             </table>
 
             <div class="card-footer d-flex align-items-center">
-                {{ include('partial_batch_delete.html.twig', { 'action': 'admin/invoice/batch_delete_tax' }) }}
+                {% include "partial_batch_delete.html.twig" with { 'action': 'invoice/batch_delete_tax' } %}
             </div>
         </div>
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/invoice/tax_create'|link }}" class="api-form" data-api-reload="1">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/invoice/tax_create'|link }}" {{ fb_api_form({reload: true}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Tax title'|trans }}:</label>
                         <div class="col">
@@ -111,7 +108,7 @@
                         <label class="form-label col-3 col-form-label">{{ 'Tax rate'|trans }}:</label>
                         <div class="col">
                             <div class="input-group">
-                                <input class="form-control" type="text" name="taxrate" value="{{ request.taxrate }}" required placeholder="{{ '18'|trans }}">
+                                <input class="form-control" type="text" name="taxrate" value="{{ request.taxrate }}" required placeholder="18">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -137,8 +134,7 @@
 
         <div class="tab-pane fade" id="tab-settings" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Tax settings updated'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/system/update_params'|link }}" {{ fb_api_form({message: 'Tax Settings Updated'|trans}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Enable tax support'|trans }}:</label>
                         <div class="col">

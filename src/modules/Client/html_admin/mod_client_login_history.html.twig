@@ -16,15 +16,12 @@
     <table class="table card-table table-vcenter table-striped text-nowrap">
         <thead>
             <tr>
-                <th class="w-1">
-                    <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
-                </th>
-                <th class="w-1"></th>
+                <th>{{ '#'|trans }}</th>
+                <th class="w-1 no-sort"></th>
                 <th>{{ 'User'|trans }}</th>
                 <th>{{ 'IP'|trans }}</th>
                 <th>{{ 'Country'|trans }}</th>
                 <th>{{ 'Date'|trans }}</th>
-                <th class="w-1"></th>
             </tr>
         </thead>
 
@@ -32,9 +29,7 @@
         {% set history = admin.client_login_history_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
         {% for i, event in history.list %}
         <tr>
-            <td>
-                <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ event.id }}">
-            </td>
+            <td>{{ event.id }}</td>
             <td>
                 <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
                     <span class="avatar avatar-xs d-none d-md-inline-block" style="background-image: url({{ event.client.email|gravatar }}&size=24)"></span>
@@ -46,24 +41,6 @@
             <td>{{ event.ip|iplookup }}</td>
             <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
             <td>{{ event.created_at|format_datetime }}</td>
-            <td>
-                <a class="btn btn-icon api-link"
-                    href="{{ 'api/admin/client/login_history_delete'|link({ 'id': event.id, 'CSRFToken': CSRFToken }) }}"
-                    data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{ 'client/logins'|alink }}">
-                    <svg class="icon">
-                        <use xlink:href="#delete" />
-                    </svg>
-                </a>
-                <a class="btn btn-icon api-link"
-                    href="{{ 'api/admin/antispam/block_ip'|link({ 'ip': event.ip, 'CSRFToken': CSRFToken }) }}"
-                    data-api-confirm="{{ 'Are you sure?'|trans }}"
-                    data-api-redirect="{{ 'activity'|alink }}">
-                    <svg class="icon">
-                        <use xlink:href="#forbid" />
-                    </svg>
-                </a>
-            </td>
         </tr>
         {% else %}
         <tr>
@@ -74,7 +51,6 @@
     </table>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
-        {{ include('partial_batch_delete.html.twig', { 'action': 'admin/client/batch_delete_log' }) }}
         {{ include('partial_pagination.html.twig', { 'list': history, 'url': 'client/logins' }) }}
     </div>
 </div>

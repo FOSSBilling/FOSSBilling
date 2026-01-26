@@ -12,7 +12,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\News\Api;
 
-use \Box\Mod\News\Entity\Post;
+use Box\Mod\News\Entity\Post;
+use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
 {
@@ -20,6 +21,7 @@ class Admin extends \Api_Abstract
      * Get paginated list of news items (any status).
      *
      * @param array $data Filtering and pagination parameters
+     *
      * @return array Paginated list of news items
      */
     public function get_list(array $data): array
@@ -37,7 +39,7 @@ class Admin extends \Api_Abstract
      * Get a single news item by ID or slug.
      *
      * @param array $data ['id' => int|null, 'slug' => string|null]
-     * @return array
+     *
      * @throws \FOSSBilling\Exception if ID/slug is missing or news item not found
      */
     public function get(array $data): array
@@ -73,14 +75,10 @@ class Admin extends \Api_Abstract
 
     /**
      * Update news item.
-     *
-     * @param array $data
-     * @return bool
      */
+    #[RequiredParams(['id' => 'Post ID was not passed'])]
     public function update(array $data): bool
     {
-        $this->di['validator']->checkRequiredParamsForArray(['id' => 'Post ID not passed'], $data);
-
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
 
@@ -121,13 +119,11 @@ class Admin extends \Api_Abstract
     /**
      * Create new news item.
      *
-     * @param array $data
      * @return int New post ID
      */
+    #[RequiredParams(['title' => 'Post title was not passed'])]
     public function create(array $data): int
     {
-        $this->di['validator']->checkRequiredParamsForArray(['title' => 'Post title not passed'], $data);
-
         $post = new Post($data['title'], $this->di['tools']->slug($data['title']));
 
         $post->setAdminId($this->getIdentity()->id)
@@ -145,14 +141,10 @@ class Admin extends \Api_Abstract
 
     /**
      * Delete news item by ID.
-     *
-     * @param array $data
-     * @return bool
      */
+    #[RequiredParams(['id' => 'Post ID was not passed'])]
     public function delete(array $data): bool
     {
-        $this->di['validator']->checkRequiredParamsForArray(['id' => 'Post ID not passed'], $data);
-
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
 
@@ -172,14 +164,10 @@ class Admin extends \Api_Abstract
 
     /**
      * Batch delete news items by IDs.
-     *
-     * @param array $data
-     * @return bool
      */
+    #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete(array $data): bool
     {
-        $this->di['validator']->checkRequiredParamsForArray(['ids' => 'IDs not passed'], $data);
-
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
 

@@ -8,7 +8,7 @@
 {% endmacro %}
 
 {% macro selectboxtld(name, options, selected, required) %}
-    <select name="{{ name }}" class="form-control{% if required %} is-required{% endif %}" style="width: 80px;">
+    <select name="{{ name }}" class="form-control{% if required %} is-required{% endif %}" style="width: 120px;">
         {% for data in options %}
         <option value="{{ data.tld }}" {% if selected == data.tld %}selected{% endif %}>{{ data.tld }}</option>
         {% endfor %}
@@ -66,16 +66,35 @@
 
 
 {% macro recaptcha() %}
+    {% if guest.extension_is_on({"mod":"antispam"}) %}
+        {% set config = guest.antispam_recaptcha %}
+        {% if config.enabled %}
+            {% set provider = config.captcha_provider|default('recaptcha_v2') %}
+            {% if provider == 'turnstile' %}
+                {% if config.turnstile_site_key %}
+                    <div class="mb-3">
+                        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer loading="lazy"></script>
+                        <div class="cf-turnstile" data-sitekey="{{ config.turnstile_site_key }}"></div>
+                    </div>
+                {% endif %}
 
-{% if guest.extension_is_on({"mod":"antispam"}) %}
-{% set rc = guest.antispam_recaptcha %}
-    {% if rc.enabled %}
-        {% if rc.version == 2 %}
-            <script src='https://www.google.com/recaptcha/api.js' async defer></script>
-            <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
+            {% elseif provider == 'recaptcha_v2' %}
+                {% if config.publickey %}
+                    <div class="mb-3">
+                        <script src='https://www.google.com/recaptcha/api.js' async defer loading="lazy"></script>
+                        <div class="g-recaptcha" data-sitekey="{{ config.publickey }}"></div>
+                    </div>
+                {% endif %}
+            {% elseif provider == 'hcaptcha' %}
+                {% if config.hcaptcha_site_key %}
+                    <div class="mb-3">
+                        <script src='https://js.hcaptcha.com/1/api.js' async defer loading="lazy"></script>
+                        <div class="h-captcha" data-sitekey="{{ config.hcaptcha_site_key }}"></div>
+                    </div>
+                {% endif %}
+            {% endif %}
         {% endif %}
     {% endif %}
-{% endif %}
 {% endmacro %}
 
 {% macro wysiwyg(selector) %}

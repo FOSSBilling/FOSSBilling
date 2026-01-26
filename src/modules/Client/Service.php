@@ -154,11 +154,11 @@ class Service implements InjectionAwareInterface
         // smartSearch
         if ($search) {
             if (is_numeric($search)) {
-                $where[] = 'c.id = :cid or c.aid = :caid';
+                $where[] = '(c.id = :cid OR c.aid = :caid)';
                 $params[':cid'] = $search;
                 $params[':caid'] = $search;
             } else {
-                $where[] = "c.company LIKE :s_company OR c.first_name LIKE :s_first_time OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name";
+                $where[] = "(c.company LIKE :s_company OR c.first_name LIKE :s_first_time OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name)";
                 $search = '%' . $search . '%';
                 $params[':s_company'] = $search;
                 $params[':s_first_time'] = $search;
@@ -281,7 +281,7 @@ class Service implements InjectionAwareInterface
         $where = [];
         $params = [];
         if ($search) {
-            $where[] = 'c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.id LIKE :id';
+            $where[] = '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.id LIKE :id)';
             $params[':first_name'] = '%' . $search . '%';
             $params[':last_name'] = '%' . $search . '%';
             $params[':id'] = $search;
@@ -556,7 +556,9 @@ class Service implements InjectionAwareInterface
         $data['status'] = \Model_Client::ACTIVE;
         $client = $this->createClient($data);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterClientSignUp', 'params' => ['id' => $client->id, 'password' => $data['password']]]);
+        $event_params['id'] = $client->id;
+
+        $this->di['events_manager']->fire(['event' => 'onAfterClientSignUp', 'params' => $event_params]);
         $this->di['logger']->info('Client #%s signed up', $client->id);
 
         return $client;
@@ -585,9 +587,12 @@ class Service implements InjectionAwareInterface
         $table = $this->di['table']('ClientPasswordReset');
         $table->rmByClient($model);
 
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare('DELETE FROM extension_meta WHERE client_id = :id');
-        $stmt->execute(['id' => $model->id]);
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->delete('extension_meta')
+            ->where('client_id = :id')
+            ->setParameter('id', $model->id);
+        $query->executeStatement();
 
         $this->di['db']->trash($model);
     }

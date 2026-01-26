@@ -34,7 +34,7 @@ class Payment_Adapter_Dummy
         return [];
     }
 
-    public function ipn($data, Payment_Invoice $invoice): \Payment_Transaction
+    public function ipn($data, Payment_Invoice $invoice): Payment_Transaction
     {
         $tx = new Payment_Transaction();
         $tx->setAmount($invoice->getTotal());

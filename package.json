@@ -9,8 +9,7 @@
     "build-modules": "npm run build-wysiwyg",
     "build-huraga": "npm run build -w huraga",
     "build-admin_default": "npm run build -w admin_default",
-    "build-wysiwyg": "npm run build -w wysiwyg",
-    "cypress:open": "cypress open"
+    "build-wysiwyg": "npm run build -w wysiwyg"
   },
   "repository": {
     "type": "git",
@@ -20,34 +19,29 @@
     "url": "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "dependencies": {
+    "@tabler/core": "^1.2.0",
     "autosize": "^6.0.1",
     "bootstrap": "^5.3.3",
     "flag-icons": "^7.2.3",
     "tom-select": "^2.3.1"
   },
   "devDependencies": {
-    "@symfony/webpack-encore": "5.2.0",
-    "autoprefixer": "10.4.21",
-    "core-js": "3.46.0",
-    "cypress": "15.4.0",
+    "@fullhuman/postcss-purgecss": "7.0.2",
+    "autoprefixer": "10.4.23",
     "postcss": "8.5.6",
-    "postcss-loader": "8.2.0",
-    "sass": "1.93.2",
-    "sass-embedded": "1.93.2",
-    "sass-loader": "16.0.5",
-    "svg-sprite-loader": "6.0.11",
-    "svgo-loader": "4.0.0",
-    "webpack": "5.102.1",
-    "webpack-cli": "6.0.1"
+    "purgecss": "7.0.2",
+    "sass": "1.97.3",
+    "sass-embedded": "1.97.3"
   },
   "workspaces": [
+    "frontend-build-utils",
     "src/themes/huraga",
     "src/themes/admin_default",
     "src/modules/Wysiwyg"
   ],
   "config": {
     "platform": {
-      "php": "8.2"
+      "php": "8.3"
     }
   },
   "engines": {

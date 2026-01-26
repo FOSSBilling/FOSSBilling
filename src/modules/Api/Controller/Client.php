@@ -53,23 +53,25 @@ class Client implements InjectionAwareInterface
         $app->post('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
     }
 
-    public function show_error(\Box_App $app, $page)
+    public function show_error(\Box_App $app, $page): null
     {
         $exc = new \FOSSBilling\Exception('Unknown API call :call', [':call' => $page], 879);
 
         $this->renderJson(null, $exc);
+
         return null;
     }
 
-    public function get_method(\Box_App $app, $role, $class, $method)
+    public function get_method(\Box_App $app, $role, $class, $method): null
     {
         $call = $class . '_' . $method;
 
-        $this->tryCall($role, $call, $_GET);
+        $this->tryCall($role, $class, $call, $_GET);
+
         return null;
     }
 
-    public function post_method(\Box_App $app, $role, $class, $method)
+    public function post_method(\Box_App $app, $role, $class, $method): null
     {
         $p = $_POST;
 
@@ -81,17 +83,18 @@ class Client implements InjectionAwareInterface
 
         $call = $class . '_' . $method;
 
-        $this->tryCall($role, $call, $p);
+        $this->tryCall($role, $class, $call, $p);
+
         return null;
     }
 
     /**
      * @param string $call
      */
-    private function tryCall($role, $call, $p): void
+    private function tryCall($role, $class, $call, $p): void
     {
         try {
-            $this->_apiCall($role, $call, $p);
+            $this->_apiCall($role, $class, $call, $p);
         } catch (\Exception $exc) {
             // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
             \Sentry\captureException($exc);
@@ -173,7 +176,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function _apiCall($role, $method, $params)
+    private function _apiCall($role, $class, $method, $params): null
     {
         $this->_loadConfig();
         $this->checkAllowedIps();
@@ -197,7 +200,26 @@ class Client implements InjectionAwareInterface
         unset($params['CSRFToken']);
         $result = $api->$method($params);
 
+        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+        $isLoginMethod = ($method === 'login');
+        $isStaffLogin = ($class === 'staff');
+        $isClientLogin = ($class === 'client');
+
+        if ($isLoginMethod && !$isAjax && ($isStaffLogin || $isClientLogin)) {
+            if ($isStaffLogin) {
+                $redirectUrl = $this->di['url']->adminLink('');
+            } elseif ($isClientLogin) {
+                $redirectUrl = $this->di['url']->link('');
+            } else {
+                $redirectUrl = '/';
+            }
+
+            header('Location: ' . $redirectUrl);
+            exit;
+        }
+
         $this->renderJson($result);
+
         return null;
     }
 
