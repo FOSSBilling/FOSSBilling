@@ -876,7 +876,7 @@ class Admin extends \Api_Abstract
      * Deletes invoices with given IDs.
      */
     #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id]);
@@ -889,7 +889,7 @@ class Admin extends \Api_Abstract
      * Deletes subscriptions with given IDs.
      */
     #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete_subscription($data)
+    public function batch_delete_subscription($data): bool
     {
         foreach ($data['ids'] as $id) {
             $this->subscription_delete(['id' => $id]);
@@ -902,7 +902,7 @@ class Admin extends \Api_Abstract
      * Deletes transactions with given IDs.
      */
     #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete_transaction($data)
+    public function batch_delete_transaction($data): bool
     {
         foreach ($data['ids'] as $id) {
             $this->transaction_delete(['id' => $id]);
@@ -915,7 +915,7 @@ class Admin extends \Api_Abstract
      * Deletes taxes with given IDs.
      */
     #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete_tax($data)
+    public function batch_delete_tax($data): bool
     {
         foreach ($data['ids'] as $id) {
             $this->tax_delete(['id' => $id]);

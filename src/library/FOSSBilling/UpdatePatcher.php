@@ -544,7 +544,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $products = $dbal->executeQuery("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'")->fetchAllAssociative();
 
                 foreach ($products as $product) {
-                    $productConfig = json_decode($product['config'], true) ?: [];
+                    $productConfig = json_decode((string) $product['config'], true) ?: [];
 
                     if (isset($productConfig['filename']) && !empty($productConfig['filename'])) {
                         continue;
@@ -560,7 +560,7 @@ class UpdatePatcher implements InjectionAwareInterface
                             continue;
                         }
 
-                        $filePath = Path::join(PATH_UPLOADS, md5($orderConfig['filename']));
+                        $filePath = Path::join(PATH_UPLOADS, md5((string) $orderConfig['filename']));
                         if ($filesystem->exists($filePath)) {
                             $foundFilename = $orderConfig['filename'];
 
@@ -572,7 +572,7 @@ class UpdatePatcher implements InjectionAwareInterface
                         $services = $dbal->executeQuery('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""', ['product_id' => $product['id']])->fetchAllAssociative();
 
                         foreach ($services as $service) {
-                            $filePath = Path::join(PATH_UPLOADS, md5($service['filename']));
+                            $filePath = Path::join(PATH_UPLOADS, md5((string) $service['filename']));
                             if ($filesystem->exists($filePath)) {
                                 $foundFilename = $service['filename'];
 
@@ -612,7 +612,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 foreach ($orphans as $orphan) {
                     $orderConfig = json_decode($orphan['order_config'] ?? '', true);
                     if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
-                        $filePath = Path::join(PATH_UPLOADS, md5($orderConfig['filename']));
+                        $filePath = Path::join(PATH_UPLOADS, md5((string) $orderConfig['filename']));
                         if ($filesystem->exists($filePath)) {
                             $dbal->executeStatement('UPDATE service_downloadable SET filename = :filename WHERE id = :id', ['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
                         }

@@ -220,13 +220,13 @@ class Service implements InjectionAwareInterface
                 $repo_class = $this->_getServiceClassName($order);
 
                 return $this->di['db']->load($repo_class, $order->service_id);
-            } else {
-                return $this->di['db']->findOne(
-                    'service_' . $order->service_type,
-                    'id = :id',
-                    [':id' => $order->service_id]
-                );
             }
+
+            return $this->di['db']->findOne(
+                'service_' . $order->service_type,
+                'id = :id',
+                [':id' => $order->service_id]
+            );
         }
 
         return null;
@@ -790,22 +790,22 @@ class Service implements InjectionAwareInterface
             }
 
             return $repo->$m($order);
-        } else {
-            // @new logic for services
-            $o = $this->di['db']->findOne(
-                'client_order',
-                'id = :id',
-                [':id' => $order->id]
-            );
-            $service = null;
-            $sdbname = 'service_' . $order->service_type;
-            if ($order->service_id) {
-                $service = $this->di['db']->load($sdbname, $order->service_id);
-            }
-            if (method_exists($repo, $action) && is_callable([$repo, $action])) {
-                return $repo->$action($o, $service);
-            }
         }
+        // @new logic for services
+        $o = $this->di['db']->findOne(
+            'client_order',
+            'id = :id',
+            [':id' => $order->id]
+        );
+        $service = null;
+        $sdbname = 'service_' . $order->service_type;
+        if ($order->service_id) {
+            $service = $this->di['db']->load($sdbname, $order->service_id);
+        }
+        if (method_exists($repo, $action) && is_callable([$repo, $action])) {
+            return $repo->$action($o, $service);
+        }
+
         error_log("Service {$order->service_type} does not support action {$action}.");
 
         return null;
@@ -1147,9 +1147,8 @@ class Service implements InjectionAwareInterface
         } catch (\Exception $e) {
             if (!$forceDelete) {
                 throw $e;
-            } else {
-                error_log("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
             }
+            error_log("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
         }
 
         $id = $order->id;

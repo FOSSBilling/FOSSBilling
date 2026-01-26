@@ -156,7 +156,7 @@ class Admin extends \Api_Abstract
      * Deletes client from system.
      */
     #[RequiredParams(['id' => 'Client ID is missing'])]
-    public function delete($data)
+    public function delete($data): bool
     {
         $model = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
@@ -210,7 +210,7 @@ class Admin extends \Api_Abstract
      * @optional string $custom_10 - Custom field 10
      */
     #[RequiredParams(['id' => 'Client ID was not passed'])]
-    public function update($data = [])
+    public function update($data = []): bool
     {
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
@@ -293,7 +293,7 @@ class Admin extends \Api_Abstract
      * Change client password.
      */
     #[RequiredParams(['id' => 'ID required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
-    public function change_password($data)
+    public function change_password($data): bool
     {
         if ($data['password'] != $data['password_confirm']) {
             throw new \FOSSBilling\InformationException('Passwords do not match');
@@ -348,7 +348,7 @@ class Admin extends \Api_Abstract
      * Remove row from clients balance.
      */
     #[RequiredParams(['id' => 'Client ID was not passed'])]
-    public function balance_delete($data)
+    public function balance_delete($data): bool
     {
         $model = $this->di['db']->getExistingModelById('ClientBalance', $data['id'], 'Balance line not found');
 
@@ -370,7 +370,7 @@ class Admin extends \Api_Abstract
      * @optional string $rel_id - Related item id
      */
     #[RequiredParams(['id' => 'Client ID required', 'amount' => 'Amount is required', 'description' => 'Description is required'])]
-    public function balance_add_funds($data)
+    public function balance_add_funds($data): bool
     {
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
@@ -467,7 +467,7 @@ class Admin extends \Api_Abstract
      * @optional string $title - new group title
      */
     #[RequiredParams(['id' => 'Group ID is missing'])]
-    public function group_update($data)
+    public function group_update($data): bool
     {
         $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
@@ -514,7 +514,7 @@ class Admin extends \Api_Abstract
      * Deletes clients with given IDs.
      */
     #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id]);

@@ -39,8 +39,8 @@ class Admin implements InjectionAwareInterface
     {
         if ($this->di['auth']->isAdminLoggedIn()) {
             return $app->render('mod_index_dashboard');
-        } else {
-            return $app->redirect('/staff/login');
         }
+
+        return $app->redirect('/staff/login');
     }
 }

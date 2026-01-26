@@ -62,9 +62,8 @@ class PhpConsole
             $eventHash = md5($event->message . $event->file . $event->line);
             if (in_array($eventHash, $this->handledMessagesHashes)) {
                 return;
-            } else {
-                $this->handledMessagesHashes[] = $eventHash;
             }
+            $this->handledMessagesHashes[] = $eventHash;
         }
         $this->sendEventToClient($event);
     }
@@ -78,13 +77,13 @@ class PhpConsole
     CLIENT
      **************************************************************/
 
-    final public const clientProtocolCookie = 'phpcslc';
-    final public const serverProtocolCookie = 'phpcsls';
-    final public const serverProtocol = 4;
-    final public const messagesCookiePrefix = 'phpcsl_';
-    final public const cookiesLimit = 50;
-    final public const cookieSizeLimit = 4000;
-    final public const messageLengthLimit = 2500;
+    final public const string clientProtocolCookie = 'phpcslc';
+    final public const string serverProtocolCookie = 'phpcsls';
+    final public const int serverProtocol = 4;
+    final public const string messagesCookiePrefix = 'phpcsl_';
+    final public const int cookiesLimit = 50;
+    final public const int cookieSizeLimit = 4000;
+    final public const int messageLengthLimit = 2500;
 
     protected static $isEnabledOnClient;
     protected static $isDisabled;

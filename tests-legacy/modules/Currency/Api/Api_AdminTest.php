@@ -174,7 +174,7 @@ final class Api_AdminTest extends \BBTestCase
             'list' => ['id' => 1],
         ];
 
-        $qbMock = $this->getMockBuilder('\Doctrine\ORM\QueryBuilder')
+        $qbMock = $this->getMockBuilder(\Doctrine\ORM\QueryBuilder::class)
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -337,7 +337,7 @@ final class Api_AdminTest extends \BBTestCase
     }
 
     #[DataProvider('CreateExceptionProvider')]
-    public function testCreateException(array $data, $findOneByCodeCalled, $findOneByCodeReturn, $getAvailableCurrenciesCalled): void
+    public function testCreateException(array $data, string $findOneByCodeCalled, ?string $findOneByCodeReturn, string $getAvailableCurrenciesCalled): void
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
@@ -500,7 +500,7 @@ final class Api_AdminTest extends \BBTestCase
     }
 
     #[DataProvider('SetDefaultExceptionProvider')]
-    public function testSetDefaultException(array $data, $getByCodeCalled, $getByCodeReturn): void
+    public function testSetDefaultException(array $data, string $getByCodeCalled, $getByCodeReturn): void
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 

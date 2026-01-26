@@ -39,6 +39,7 @@ class Box_AppAdmin extends Box_App
         }
     }
 
+    #[Override]
     public function render($fileName, $variableArray = []): string
     {
         $template = $this->getTwig()->load(Path::changeExtension($fileName, '.html.twig'));
@@ -46,6 +47,7 @@ class Box_AppAdmin extends Box_App
         return $template->render($variableArray);
     }
 
+    #[Override]
     public function redirect($path): never
     {
         $location = $this->di['url']->adminLink($path);

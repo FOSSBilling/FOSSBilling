@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Product\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -564,7 +564,7 @@ final class AdminTest extends \BBTestCase
         $this->assertEquals($newPromoId, $result);
     }
 
-    public function promo_getMissingId()
+    public function promo_getMissingId(): void
     {
         $data = [];
 

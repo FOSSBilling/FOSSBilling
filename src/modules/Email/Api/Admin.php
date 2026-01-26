@@ -116,7 +116,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
-    public function email_delete($data)
+    public function email_delete($data): bool
     {
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
@@ -178,7 +178,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
-    public function template_delete($data)
+    public function template_delete($data): bool
     {
         $model = $this->di['db']->findOne('EmailTemplate', 'id = ?', [$data['id']]);
 
@@ -223,7 +223,6 @@ class Admin extends \Api_Abstract
      * @return bool
      *
      * @throws \FOSSBilling\Exception
-     *
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_update($data)
@@ -356,7 +355,7 @@ class Admin extends \Api_Abstract
      * Deletes email logs with given IDs.
      */
     #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         foreach ($data['ids'] as $id) {
             $this->email_delete(['id' => $id]);

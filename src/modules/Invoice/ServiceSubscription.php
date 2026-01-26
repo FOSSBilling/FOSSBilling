@@ -209,9 +209,9 @@ class ServiceSubscription implements InjectionAwareInterface
             && !empty($list[0]['period'])
         ) {
             return true;
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     public function getSubscriptionPeriod(\Model_Invoice $invoice)

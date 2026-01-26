@@ -17,45 +17,41 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Currency\Repository\CurrencyRepository::class)]
-#[ORM\Table(name: "currency")]
+#[ORM\Table(name: 'currency')]
 #[ORM\HasLifecycleCallbacks]
 class Currency implements ApiArrayInterface, TimestampInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: "integer")]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
     private int $id;
 
-    #[ORM\Column(type: "string", length: 50, nullable: true)]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 50, nullable: true)]
     private ?string $title = null;
 
-    #[ORM\Column(type: "string", length: 3, unique: true)]
-    private string $code;
-
-    #[ORM\Column(type: "boolean", options: ["default" => false])]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BOOLEAN, options: ['default' => false])]
     private bool $isDefault = false;
 
-    #[ORM\Column(type: "decimal", precision: 13, scale: 6, options: ["default" => "1.000000"])]
-    private string $conversionRate = "1.000000";
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DECIMAL, precision: 13, scale: 6, options: ['default' => '1.000000'])]
+    private string $conversionRate = '1.000000';
 
     private ?float $conversionRateFloat = null;
 
-    #[ORM\Column(type: "string", length: 30, nullable: true)]
-    private ?string $format = null;
-
-    #[ORM\Column(type: "string", length: 50, nullable: true, options: ["default" => '${{price}}'])]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 50, nullable: true, options: ['default' => '${{price}}'])]
     private ?string $priceFormat = '${{price}}';
 
-    #[ORM\Column(type: "datetime", nullable: true)]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $createdAt = null;
 
-    #[ORM\Column(type: "datetime", nullable: true)]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $updatedAt = null;
 
-    public function __construct(string $code, string $format)
-    {
-        $this->code = $code;
-        $this->format = $format;
+    public function __construct(
+        #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 3, unique: true)]
+        private string $code,
+        #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30, nullable: true)]
+        private ?string $format,
+    ) {
     }
 
     public function toApiArray(): array
@@ -110,6 +106,7 @@ class Currency implements ApiArrayInterface, TimestampInterface
         if ($this->conversionRateFloat === null) {
             $this->conversionRateFloat = (float) $this->conversionRate;
         }
+
         return $this->conversionRateFloat;
     }
 
@@ -142,18 +139,21 @@ class Currency implements ApiArrayInterface, TimestampInterface
     public function setTitle(?string $title): self
     {
         $this->title = $title;
+
         return $this;
     }
 
     public function setCode(string $code): self
     {
         $this->code = $code;
+
         return $this;
     }
 
     public function setIsDefault(bool $isDefault): self
     {
         $this->isDefault = $isDefault;
+
         return $this;
     }
 
@@ -163,7 +163,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
      * to preserve decimal precision in the database.
      *
      * @param string|float $conversionRate The new conversion rate
-     * @return self
      */
     public function setConversionRate(string|float $conversionRate): self
     {
@@ -176,18 +175,21 @@ class Currency implements ApiArrayInterface, TimestampInterface
         }
         // Invalidate cached float value so it will be recalculated on next access
         $this->conversionRateFloat = null;
+
         return $this;
     }
 
     public function setFormat(?string $format): self
     {
         $this->format = $format;
+
         return $this;
     }
 
     public function setPriceFormat(?string $priceFormat): self
     {
         $this->priceFormat = $priceFormat;
+
         return $this;
     }
 

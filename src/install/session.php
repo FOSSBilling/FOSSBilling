@@ -37,8 +37,8 @@ class Session
 
 class Box_SessionFile
 {
-    final public const SESSION_STARTED = true;
-    final public const SESSION_NOT_STARTED = false;
+    final public const bool SESSION_STARTED = true;
+    final public const bool SESSION_NOT_STARTED = false;
 
     protected $sessionState = self::SESSION_NOT_STARTED;
 
