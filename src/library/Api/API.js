@@ -452,9 +452,10 @@ const API = {
           errorHandler(errorObj);
         } else {
           console.warn('No error handler was specified for API error.');
+          const normalizedError = new Error(errorObj.message);
+          normalizedError.code = errorObj.code;
+          throw normalizedError;
         }
-
-        throw error;
       });
   },
 
@@ -608,7 +609,8 @@ const API = {
           try {
             apiData = Tools.parseDataAttr(linkElement.dataset.fbApi || '{}');
           } catch (error) {
-            console.warn('Invalid JSON in data-fb-api attribute:', error);
+            console.error('Failed to parse data-fb-api attribute:', error);
+            FOSSBilling.message('Invalid API configuration', 'error');
             return;
           }
 
