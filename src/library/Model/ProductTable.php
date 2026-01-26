@@ -10,6 +10,7 @@
  */
 class Model_ProductTable implements FOSSBilling\InjectionAwareInterface
 {
+    final public const APIKEY = 'apikey';
     final public const CUSTOM = 'custom';
     final public const LICENSE = 'license';
     final public const ADDON = 'addon';

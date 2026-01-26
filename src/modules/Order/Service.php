@@ -18,6 +18,19 @@ use FOSSBilling\Interfaces\ServiceModuleInterface;
 
 class Service implements InjectionAwareInterface
 {
+    /**
+     * Core service types that have dedicated Model classes.
+     * These services use `load()` to return properly typed models.
+     */
+    public const CORE_SERVICES = [
+        \Model_ProductTable::APIKEY,
+        \Model_ProductTable::CUSTOM,
+        \Model_ProductTable::LICENSE,
+        \Model_ProductTable::DOWNLOADABLE,
+        \Model_ProductTable::HOSTING,
+        \Model_ProductTable::DOMAIN,
+    ];
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -208,20 +221,13 @@ class Service implements InjectionAwareInterface
     public function getOrderService(\Model_ClientOrder $order)
     {
         if ($order->service_id !== null) {
-            // @deprecated
-            // @todo remove this when doctrine is removed
-            $core_services = [
-                \Model_ProductTable::CUSTOM,
-                \Model_ProductTable::LICENSE,
-                \Model_ProductTable::DOWNLOADABLE,
-                \Model_ProductTable::HOSTING,
-                \Model_ProductTable::DOMAIN,
-            ];
-            if (in_array($order->service_type, $core_services)) {
+            // Return a Model_Service* class for core services
+            if (in_array($order->service_type, self::CORE_SERVICES)) {
                 $repo_class = $this->_getServiceClassName($order);
 
                 return $this->di['db']->load($repo_class, $order->service_id);
             } else {
+                // Return raw OODBBean as a fallback for non-core services
                 return $this->di['db']->findOne(
                     'service_' . $order->service_type,
                     'id = :id',
@@ -782,18 +788,12 @@ class Service implements InjectionAwareInterface
             return $repo->$m($order);
         }
 
-        // @deprecated Fallback for services not implementing ServiceModuleInterface.
-        // Third-party service modules should implement ServiceModuleInterface.
-        // This fallback will be removed in a future version.
-        $core_services = [
-            \Model_ProductTable::CUSTOM,
-            \Model_ProductTable::LICENSE,
-            \Model_ProductTable::DOWNLOADABLE,
-            \Model_ProductTable::HOSTING,
-            \Model_ProductTable::DOMAIN,
-        ];
-
-        if (in_array($order->service_type, $core_services)) {
+        /** @deprecated since v0.8.
+         * Fallback for services not implementing ServiceModuleInterface.
+         * Third-party service modules should now implement ServiceModuleInterface.
+         * This fallback will be removed in a future version.
+         */
+        if (in_array($order->service_type, self::CORE_SERVICES)) {
             $m = 'action_' . $action;
             if (!method_exists($repo, $m) || !is_callable([$repo, $m])) {
                 throw new \FOSSBilling\Exception('Service ' . $order->service_type . ' do not support ' . $m);
