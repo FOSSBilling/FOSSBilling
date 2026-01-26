@@ -51,7 +51,7 @@
             </div>
 
             <div class="card-body">
-                <input type="hidden" name="ext" value="mod_spamchecker">
+                <input type="hidden" name="ext" value="mod_antispam">
                 <div class="row">
                     <label class="col-md-3 col-form-label" for="block_ips_check">{{ 'Enable IP blocking'|trans }}</label>
                     <div class="row col-md-6 pt-2 ps-0">
@@ -67,7 +67,6 @@
                     </div>
                 </div>
             </div>
->>>>>>> origin/main:src/modules/Spamchecker/html_admin/mod_spamchecker_settings.html.twig
 
             <div class="card-body">
                 <h3 class="card-title">{{ 'CAPTCHA settings'|trans }}</h3>
@@ -95,7 +94,7 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div id="recaptcha_v2_settings">
                     <div class="mb-3 row">
                         <label class="col-md-3 col-form-label" for="captcha_recaptcha_publickey">{{ 'reCAPTCHA Public key'|trans }}</label>
@@ -197,7 +196,7 @@
     document.addEventListener("DOMContentLoaded", function() {
         function toggleProviderSettings() {
             var selectedProvider = document.getElementById("provider-select").value;
-            
+
             if (selectedProvider === 'recaptcha_v2') {
                 document.getElementById("recaptcha_v2_settings").style.display = "block";
                 document.getElementById("turnstile_settings").style.display = "none";
