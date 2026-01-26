@@ -18,14 +18,14 @@
         <li class="breadcrumb-item">
             <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ 'Antispam settings'|trans }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Anti-spam Settings'|trans }}</li>
     </ul>
 {% endblock %}
 
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">{{ 'Antispam settings'|trans }}</h3>
+            <h3 class="card-title">{{ 'Anti-spam Settings'|trans }}</h3>
         </div>
 
         {% set params = admin.extension_config_get({ "ext": "mod_antispam" }) %}
