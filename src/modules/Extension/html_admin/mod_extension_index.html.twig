@@ -88,8 +88,17 @@
                                             {% endif %}
                                         {% endif %}
                                     </td>
-                                    {% if ext.type == 'mod' and ext.status != 'installed' %}
                                     <td>
+                                        {% if ext.type == 'mod' and ext.status != 'installed' %}
+                                            <a class="btn btn-icon"
+                                                href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id }) }}"
+                                                {{ fb_api_link({modal: { type: 'confirm', title: 'Are you sure?'|trans, button: 'Activate'|trans}, callback: 'onAfterModuleActivated'}) }}
+                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Activate'|trans }}">
+                                                <svg class="icon">
+                                                    <use xlink:href="#play" />
+                                                </svg>
+                                            </a>
+                                        {% endif %}
                                         {% if ext.has_settings %}
                                             <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">
                                                 <svg class="icon">
@@ -98,7 +107,6 @@
                                             </a>
                                         {% endif %}
                                     </td>
-                                    {% endif %}
                                 </tr>
                             {% else %}
                                 <tr>
