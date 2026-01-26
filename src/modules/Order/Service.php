@@ -809,6 +809,21 @@ class Service implements InjectionAwareInterface
             }
 
             return $repo->$m($order);
+        } else {
+            // @new logic for services
+            $o = $this->di['db']->findOne(
+                'client_order',
+                'id = :id',
+                [':id' => $order->id]
+            );
+            $service = null;
+            $sdbname = 'service_' . $order->service_type;
+            if ($order->service_id) {
+                $service = $this->di['db']->load($sdbname, $order->service_id);
+            }
+            if (method_exists($repo, $action) && is_callable([$repo, $action])) {
+                return $repo->$action($o, $service);
+            }
         }
 
         $this->di['logger']->debug("Service {$order->service_type} does not support action {$action}.");
