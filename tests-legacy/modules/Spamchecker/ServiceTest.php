@@ -74,17 +74,16 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['request'] = Request::createFromGlobals();
         $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
-            if ($modName == 'antispam') {
+            if ($modName == 'security') {
                 return $modConfig;
             }
+            return [];
         });
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
 
+        $this->service->setDi($di);
         $this->service->isBlockedIp($boxEventMock);
     }
 
@@ -96,17 +95,16 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
-            if ($modName == 'antispam') {
+            if ($modName == 'security') {
                 return $modConfig;
             }
+            return [];
         });
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
 
+        $this->service->setDi($di);
         $this->service->isBlockedIp($boxEventMock);
     }
 
