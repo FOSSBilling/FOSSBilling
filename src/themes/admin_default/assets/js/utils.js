@@ -192,11 +192,31 @@ export function registerEditor(element, editor) {
   element.editor = editor;
   element.setAttribute('data-editor', 'true');
 
+  const syncEditorData = () => {
+    if ('value' in element) {
+      element.value = editor.getData();
+    } else {
+      element.textContent = editor.getData();
+    }
+  };
+
+  syncEditorData();
+  editor.model.document.on('change:data', syncEditorData);
+
   window.FOSSBilling = window.FOSSBilling || {};
   window.FOSSBilling.editors = window.FOSSBilling.editors || {};
 
   if (element.id) {
     window.FOSSBilling.editors[element.id] = editor;
+  }
+
+  const editorName = element.getAttribute('name') || element.id;
+  if (editorName) {
+    window.editors = window.editors || {};
+    window.editors[editorName] = {
+      editor,
+      required: element.dataset.editorRequired === 'true',
+    };
   }
 
   console.debug('Editor registered:', element.id || 'unnamed', editor);
@@ -214,6 +234,11 @@ export function unregisterEditor(element) {
 
   if (element.id && window.FOSSBilling?.editors) {
     delete window.FOSSBilling.editors[element.id];
+  }
+
+  const editorName = element.getAttribute('name') || element.id;
+  if (editorName && window.editors) {
+    delete window.editors[editorName];
   }
 
   console.debug('Editor unregistered:', element.id || 'unnamed');
