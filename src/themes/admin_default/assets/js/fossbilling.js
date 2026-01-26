@@ -82,7 +82,28 @@ globalThis.FOSSBilling = {
 };
 
   //===== Global ajax methods =====//
-  document.addEventListener("DOMContentLoaded", function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    // Global error handler for unhandled Promise rejections
+    window.addEventListener('unhandledrejection', function(event) {
+      const error = event.reason;
+      let message = 'An unexpected error occurred';
+      if (error && typeof error === 'object') {
+        message = error.message || error.code || message;
+      } else if (typeof error === 'string') {
+        message = error;
+      }
+      FOSSBilling.message(message, 'error');
+    });
+
+    // Global error handler for synchronous errors
+    window.addEventListener('error', function(event) {
+      let displayMessage = event && event.message ? event.message : 'An unexpected error occurred';
+      if (event && event.error && event.error.message) {
+        displayMessage = event.error.message;
+      }
+      FOSSBilling.message(displayMessage, 'error');
+    });
+
     // Attach event listeners to all forms and links with data-fb-api attribute.
     if (document.querySelector("form[data-fb-api]")) {
       API._apiForm();
