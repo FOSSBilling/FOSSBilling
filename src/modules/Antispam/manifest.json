@@ -1,7 +1,7 @@
 {
   "id": "antispam",
   "type": "mod",
-  "name": "Ant-Spam",
+  "name": "Anti-Spam",
   "description": "FOSSBilling's built-in protections against spam.",
   "icon_url": "icon.svg",
   "project_url": "https://fossbilling.org/",
