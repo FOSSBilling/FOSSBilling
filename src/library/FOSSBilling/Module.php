@@ -26,7 +26,7 @@ class Module implements InjectionAwareInterface
     public const CONTROLLER_CLIENT_SUFFIX = '\\Controller\\Client';
     public const CONTROLLER_ADMIN_SUFFIX = '\\Controller\\Admin';
 
-    public const CORE_MODULES = ['api', 'activity', 'cart', 'client',
+    public const CORE_MODULES = ['api', 'activity', 'antispam', 'cart', 'client',
         'cron', 'currency', 'email', 'extension',
         'hook', 'index', 'invoice', 'order',
         'page', 'product', 'profile', 'security',

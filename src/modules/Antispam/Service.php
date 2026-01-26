@@ -33,7 +33,7 @@ class Service implements InjectionAwareInterface
     {
         if ($this->di !== null && isset($this->di['mod_service'])) {
             $hookService = $this->di['mod_service']('hook');
-            $hookService->batchConnect(['mod' => 'antispam']);
+            $hookService->batchConnect('antispam');
         }
     }
 
@@ -50,7 +50,7 @@ class Service implements InjectionAwareInterface
 
     public function install(): void
     {
-        $this->di['mod_service']('hook')->batchConnect(['mod' => 'antispam']);
+        $this->di['mod_service']('hook')->batchConnect('antispam');
     }
 
     public function uninstall(): void

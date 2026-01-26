@@ -144,20 +144,20 @@ jobs:
       - name: Install FOSSBilling
         run: |
           curl -H "Content-type: multipart/form-data" \
-          -F error_reporting=0 \
-          -F database_hostname="${{ env.DB_HOST }}" \
-          -F database_port="${{ env.DB_PORT }}" \
-          -F database_name="${{ env.DB_NAME }}" \
-          -F database_username="${{ env.DB_USER }}" \
-          -F database_password="${{ env.DB_PASS }}" \
-          -F admin_name="test" \
-          -F admin_email="${{ env.TEST_EMAIL }}" \
-          -F admin_password="${{ env.TEST_PASS }}" \
-          -F currency_code="USD" \
-          -F currency_title="US Dollar" \
-          -F admin_api_token="${{ env.TEST_API_KEY }}" \
-          -X POST \
-          http://localhost/install/install.php?a=install
+            -F error_reporting=0 \
+            -F database_hostname="${{ env.DB_HOST }}" \
+            -F database_port="${{ env.DB_PORT }}" \
+            -F database_name="${{ env.DB_NAME }}" \
+            -F database_username="${{ env.DB_USER }}" \
+            -F database_password="${{ env.DB_PASS }}" \
+            -F admin_name="test" \
+            -F admin_email="${{ env.TEST_EMAIL }}" \
+            -F admin_password="${{ env.TEST_PASS }}" \
+            -F currency_code="USD" \
+            -F currency_title="US Dollar" \
+            -F admin_api_token="${{ env.TEST_API_KEY }}" \
+            -X POST \
+            http://localhost/install/install.php?a=install
 
       - name: Display the installer error log if it exists
         run: |
