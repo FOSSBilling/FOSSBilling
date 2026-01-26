@@ -33,8 +33,15 @@ final class ServiceTest extends \BBTestCase
         $antispamService->expects($this->atLeastOnce())
             ->method('isSpam');
 
+        $hookService = $this->createMock(\Box\Mod\Hook\Service::class);
+        $hookService->expects($this->any())
+            ->method('batchConnect')
+            ->willReturn(true);
+
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): Service => $antispamService);
+        $di['mod_service'] = $di->protect(function ($name) use ($antispamService, $hookService) {
+            return $name === 'hook' ? $hookService : $antispamService;
+        });
         $boxEventMock = $this->getMockBuilder(\Box_Event::class)->disableOriginalConstructor()
             ->getMock();
         $boxEventMock->expects($this->atLeastOnce())
@@ -52,8 +59,15 @@ final class ServiceTest extends \BBTestCase
         $antispamService->expects($this->atLeastOnce())
             ->method('isSpam');
 
+        $hookService = $this->createMock(\Box\Mod\Hook\Service::class);
+        $hookService->expects($this->any())
+            ->method('batchConnect')
+            ->willReturn(true);
+
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): Service => $antispamService);
+        $di['mod_service'] = $di->protect(function ($name) use ($antispamService, $hookService) {
+            return $name === 'hook' ? $hookService : $antispamService;
+        });
         $boxEventMock = $this->getMockBuilder(\Box_Event::class)->disableOriginalConstructor()
             ->getMock();
         $boxEventMock->expects($this->atLeastOnce())
@@ -74,7 +88,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['request'] = Request::createFromGlobals();
         $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
-            if ($modName == 'security') {
+            if ($modName == 'antispam') {
                 return $modConfig;
             }
 
@@ -96,7 +110,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
-            if ($modName == 'security') {
+            if ($modName == 'antispam') {
                 return $modConfig;
             }
 

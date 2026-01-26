@@ -29,9 +29,18 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
+    private function registerEventListeners(): void
+    {
+        if ($this->di !== null && isset($this->di['mod_service'])) {
+            $hookService = $this->di['mod_service']('hook');
+            $hookService->batchConnect(['mod' => 'antispam']);
+        }
+    }
+
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->registerEventListeners();
     }
 
     public function getDi(): ?\Pimple\Container
@@ -46,16 +55,6 @@ class Service implements InjectionAwareInterface
 
     public function uninstall(): void
     {
-    }
-
-    public static function registerListeners($di): void
-    {
-        static $listenersRegistered = false;
-        if (!$listenersRegistered) {
-            $hookService = $di['mod_service']('hook');
-            $hookService->batchConnect(['mod' => 'antispam']);
-            $listenersRegistered = true;
-        }
     }
 
     public static function onBeforeClientOpenTicket(\Box_Event $event)
@@ -91,7 +90,6 @@ class Service implements InjectionAwareInterface
     private static function performChecks(\Box_Event $event)
     {
         $di = $event->getDi();
-        self::registerListeners($di);
         $antispamService = $di['mod_service']('antispam');
         $antispamService->isBlockedIp($event);
         $antispamService->isSpam($event);
