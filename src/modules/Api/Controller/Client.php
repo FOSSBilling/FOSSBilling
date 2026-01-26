@@ -200,7 +200,7 @@ class Client implements InjectionAwareInterface
         unset($params['CSRFToken']);
         $result = $api->$method($params);
 
-        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower((string) $_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
         $isLoginMethod = ($method === 'login');
         $isStaffLogin = ($class === 'staff');
         $isClientLogin = ($class === 'client');

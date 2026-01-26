@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Servicedomain;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -24,7 +25,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public static function getCartProductTitleProvider()
+    public static function getCartProductTitleProvider(): array
     {
         return [
             [
@@ -51,7 +52,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('getCartProductTitleProvider')]
-    public function testGetCartProductTitle($data, $expected): void
+    public function testGetCartProductTitle(array $data, string $expected): void
     {
         $product = new \Model_CartProduct();
         $product->loadBean(new \DummyBean());
@@ -62,7 +63,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $expected);
     }
 
-    public static function validateOrderDataExceptionsProvider()
+    public static function validateOrderDataExceptionsProvider(): array
     {
         return [
             [
@@ -74,7 +75,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('validateOrderDataExceptionsProvider')]
-    public function testValidateOrderDataExceptions($data): void
+    public function testValidateOrderDataExceptions(array $data): void
     {
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
 
@@ -87,7 +88,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public static function validateOrderDateTransferExceptionsProvider()
+    public static function validateOrderDateTransferExceptionsProvider(): array
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
@@ -136,7 +137,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('validateOrderDateTransferExceptionsProvider')]
-    public function testValidateOrderDateTransferExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBeTransferred): void
+    public function testValidateOrderDateTransferExceptions(array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $canBeTransferred): void
     {
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->{$isSldValidArr['called']}())->method('isSldValid')
@@ -160,7 +161,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public static function validateOrderDateRegisterExceptionsProvider()
+    public static function validateOrderDateRegisterExceptionsProvider(): array
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
@@ -232,7 +233,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('validateOrderDateRegisterExceptionsProvider')]
-    public function testValidateOrderDateRegisterExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $isDomainAvailable): void
+    public function testValidateOrderDateRegisterExceptions(array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $isDomainAvailable): void
     {
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->{$isSldValidArr['called']}())->method('isSldValid')
@@ -321,9 +322,9 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(function ($name) use ($orderServiceMock, $systemServiceMock) {
             if ($name == 'order') {
                 return $orderServiceMock;
-            } else {
-                return $systemServiceMock;
             }
+
+            return $systemServiceMock;
         });
         $di['db'] = $dbMock;
 
@@ -369,9 +370,9 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(function ($name) use ($orderServiceMock, $systemServiceMock) {
             if ($name == 'order') {
                 return $orderServiceMock;
-            } else {
-                return $systemServiceMock;
             }
+
+            return $systemServiceMock;
         });
         $serviceMock->setDi($di);
 
@@ -382,7 +383,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->action_create($order);
     }
 
-    public static function actionActivateProvider()
+    public static function actionActivateProvider(): array
     {
         return [
             [
@@ -399,7 +400,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('actionActivateProvider')]
-    public function testActionActivate($action, $registerDomainCalled, $transferDomainCalled): void
+    public function testActionActivate(string $action, string $registerDomainCalled, string $transferDomainCalled): void
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
@@ -711,7 +712,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function updateNameserversExceptionProvider()
+    public static function updateNameserversExceptionProvider(): array
     {
         return [
             [
@@ -724,7 +725,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('updateNameserversExceptionProvider')]
-    public function testUpdateNameserversException($data): void
+    public function testUpdateNameserversException(array $data): void
     {
         $serviceDomainModel = new \Model_ServiceDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
@@ -1063,7 +1064,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public static function toApiArrayProvider()
+    public static function toApiArrayProvider(): array
     {
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -1081,7 +1082,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('toApiArrayProvider')]
-    public function testToApiArray($identity, $dbLoadCalled): void
+    public function testToApiArray(?\Model_Admin $identity, string $dbLoadCalled): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -1201,7 +1202,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('batchSyncExpirationDates')
             ->willReturn(true);
-        $di['mod_service'] = $di->protect(fn ($serviceName) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($serviceName): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
         $boxEventMock->expects($this->atLeastOnce())
@@ -1273,7 +1274,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public static function tldGetSearchQueryProvider()
+    public static function tldGetSearchQueryProvider(): array
     {
         return [
             [
@@ -1315,7 +1316,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('tldGetSearchQueryProvider')]
-    public function testTldGetSearchQuery($data, $expectedQuery, $expectedBindings): void
+    public function testTldGetSearchQuery(array $data, string $expectedQuery, array $expectedBindings): void
     {
         $di = $this->getDi();
 

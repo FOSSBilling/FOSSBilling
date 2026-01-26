@@ -226,14 +226,14 @@ class Service implements InjectionAwareInterface
                 $repo_class = $this->_getServiceClassName($order);
 
                 return $this->di['db']->load($repo_class, $order->service_id);
-            } else {
-                // Return raw OODBBean as a fallback for non-core services
-                return $this->di['db']->findOne(
-                    'service_' . $order->service_type,
-                    'id = :id',
-                    [':id' => $order->service_id]
-                );
             }
+
+            // Return raw OODBBean as a fallback for non-core services
+            return $this->di['db']->findOne(
+                'service_' . $order->service_type,
+                'id = :id',
+                [':id' => $order->service_id]
+            );
         }
 
         return null;
@@ -1167,9 +1167,8 @@ class Service implements InjectionAwareInterface
         } catch (\Exception $e) {
             if (!$forceDelete) {
                 throw $e;
-            } else {
-                error_log("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
             }
+            error_log("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
         }
 
         $id = $order->id;

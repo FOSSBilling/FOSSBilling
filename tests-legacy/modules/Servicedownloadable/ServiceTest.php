@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -91,7 +91,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
         $this->service->action_delete($clientOrderModel);
@@ -189,7 +189,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
 
         // Verify the config was created correctly
-        $updatedConfig = json_decode($productModel->config, true);
+        $updatedConfig = json_decode((string) $productModel->config, true);
         $this->assertIsArray($updatedConfig);
         $this->assertTrue($updatedConfig['update_orders']);
         $this->assertNotNull($productModel->updated_at);

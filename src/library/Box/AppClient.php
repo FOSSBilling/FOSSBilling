@@ -79,6 +79,7 @@ class Box_AppClient extends Box_App
     /**
      * @param string $fileName
      */
+    #[Override]
     public function render($fileName, $variableArray = [], $ext = 'html.twig'): string
     {
         try {

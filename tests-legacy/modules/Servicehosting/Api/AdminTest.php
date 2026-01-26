@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -611,7 +611,7 @@ final class AdminTest extends \BBTestCase
         ;
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
 
@@ -644,7 +644,7 @@ final class AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);

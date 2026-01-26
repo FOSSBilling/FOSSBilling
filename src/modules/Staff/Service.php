@@ -111,7 +111,7 @@ class Service implements InjectionAwareInterface
     public function getPairs(array $data = [])
     {
         $limit = $data['per_page'] ?? 30;
-        
+
         $sql = 'SELECT id, name FROM admin WHERE 1';
         $params = [];
 
@@ -207,9 +207,9 @@ class Service implements InjectionAwareInterface
 
             if (!is_null($constraint)) {
                 return $permissions[$module][$key] === $constraint;
-            } else {
-                return (bool) $permissions[$module][$key];
             }
+
+            return (bool) $permissions[$module][$key];
         }
 
         return true;

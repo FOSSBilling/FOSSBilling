@@ -707,9 +707,9 @@ class Service implements InjectionAwareInterface
         // Return the client ID if the reset request is valid (from within the last 15 minutes), otherwise return false
         if (strtotime($reset->created_at) - time() + 900 < 0) {
             return false;
-        } else {
-            return $c->id;
         }
+
+        return $c->id;
     }
 
     /*

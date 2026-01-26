@@ -328,7 +328,7 @@ class Service implements InjectionAwareInterface, ServiceModuleInterface
      * no response is sent, but the method will still perform logging and return
      * a boolean indicating that the operation completed.
      *
-     * @param \Model_Product $product The product model whose associated file should be downloaded.
+     * @param \Model_Product $product the product model whose associated file should be downloaded
      *
      * @return bool True if the download operation completed successfully, regardless of whether
      *              a response was actually sent (e.g. in a testing environment).
@@ -338,7 +338,7 @@ class Service implements InjectionAwareInterface, ServiceModuleInterface
      *                                cases, the exception is thrown with an HTTP-style error
      *                                code of 404.
      */
-    public function sendProductFile(\Model_Product $product)
+    public function sendProductFile(\Model_Product $product): bool
     {
         $config = $product->config;
         $config = json_decode($config ?? '', true) ?: [];
@@ -348,7 +348,7 @@ class Service implements InjectionAwareInterface, ServiceModuleInterface
         }
 
         $fileName = $config['filename'];
-        $filePath = Path::join(PATH_UPLOADS, md5($fileName));
+        $filePath = Path::join(PATH_UPLOADS, md5((string) $fileName));
 
         if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);

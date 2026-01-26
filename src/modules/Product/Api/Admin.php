@@ -84,7 +84,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['title' => 'You must specify a title', 'type' => 'Type was not passed'])]
-    public function prepare($data)
+    public function prepare($data): int
     {
         $service = $this->getService();
         // allow having only one domain product
@@ -339,7 +339,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['title' => 'Category title is required'])]
-    public function category_create($data)
+    public function category_create($data): int
     {
         $service = $this->getService();
 
@@ -407,7 +407,7 @@ class Admin extends \Api_Abstract
         'type' => 'Promo type is missing',
         'value' => 'Promo value is missing',
     ])]
-    public function promo_create($data)
+    public function promo_create($data): int
     {
         $products = [];
         if (isset($data['products']) && is_array($data['products'])) {

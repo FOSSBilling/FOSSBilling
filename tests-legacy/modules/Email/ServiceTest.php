@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Email;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 class ServiceEmailTestDouble extends \Box\Mod\Email\Service
@@ -31,7 +32,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public static function getSearchQueryProvider()
+    public static function getSearchQueryProvider(): array
     {
         return [
             [
@@ -80,7 +81,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('getSearchQueryProvider')]
-    public function testGetSearchQuery($data, $query, $bindings): void
+    public function testGetSearchQuery(array $data, string $query, array $bindings): void
     {
         $service = new \Box\Mod\Email\Service();
         $di = $this->getDi();
@@ -381,7 +382,7 @@ final class ServiceTest extends \BBTestCase
         $di['crypt'] = $cryptMock;
         $di['twig'] = $twig;
         $di['mod'] = $di->protect(fn () => $modMock);
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $di['tools'] = new \FOSSBilling\Tools();
 
         $serviceMock->setDi($di);
@@ -391,7 +392,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function sendTemplateExistsStaffProvider()
+    public static function sendTemplateExistsStaffProvider(): array
     {
         return [
             [
@@ -422,7 +423,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('sendTemplateExistsStaffProvider')]
-    public function testSendTemplateExistsStaff($data, $clientGetExpects, $staffgetListExpects): void
+    public function testSendTemplateExistsStaff(array $data, string $clientGetExpects, string $staffgetListExpects): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Email\Service::class)
             ->onlyMethods(['sendMail'])
@@ -581,7 +582,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function templateGetSearchQueryProvider()
+    public static function templateGetSearchQueryProvider(): array
     {
         return [
             [
@@ -626,7 +627,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('templateGetSearchQueryProvider')]
-    public function testTemplateGetSearchQuery($data, $query, $bindings): void
+    public function testTemplateGetSearchQuery(array $data, string $query, array $bindings): void
     {
         $service = new \Box\Mod\Email\Service();
         $di = $this->getDi();
@@ -724,7 +725,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $expected);
     }
 
-    public static function template_updateProvider()
+    public static function template_updateProvider(): array
     {
         return [
             [
@@ -751,7 +752,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('template_updateProvider')]
-    public function testTemplateUpdate($data, $templateRenderExpects): void
+    public function testTemplateUpdate(array $data, string $templateRenderExpects): void
     {
         $id = 1;
         $model = new \Model_EmailTemplate();
@@ -784,7 +785,7 @@ final class ServiceTest extends \BBTestCase
         $systemServiceMock->expects($this->$templateRenderExpects())
             ->method('renderString');
 
-        $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $emailService->setDi($di);
 
@@ -881,7 +882,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('batchTemplateGenerateProvider')]
-    public function testBatchTemplateGenerate($findOneReturn, $isExtensionActiveReturn, $findOneExpects, $dispenseExpects): void
+    public function testBatchTemplateGenerate(bool $findOneReturn, bool $isExtensionActiveReturn, string $findOneExpects, string $dispenseExpects): void
     {
         $service = new \Box\Mod\Email\Service();
 
@@ -1034,7 +1035,7 @@ final class ServiceTest extends \BBTestCase
 
         $systemService = $this->createMock(\Box\Mod\System\Service::class);
 
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
 
         $service->setDi($di);
 

@@ -54,7 +54,7 @@ class Guest extends \Api_Abstract
      * @optional string $custom_10 - Custom field 10
      */
     #[RequiredParams(['email' => 'Email required', 'first_name' => 'First name required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
-    public function create($data = [])
+    public function create($data = []): int
     {
         $config = $this->di['mod_config']('client');
 
@@ -142,7 +142,7 @@ class Guest extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['email' => 'Email required'])]
-    public function reset_password($data)
+    public function reset_password($data): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
 
@@ -199,7 +199,7 @@ class Guest extends \Api_Abstract
     }
 
     #[RequiredParams(['hash' => 'No Hash provided', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
-    public function update_password($data)
+    public function update_password($data): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
 
@@ -242,7 +242,7 @@ class Guest extends \Api_Abstract
      * @return bool true if VAT is valid, false if not
      */
     #[RequiredParams(['country' => 'Country code', 'vat' => 'Country VAT is required'])]
-    public function is_vat($data)
+    public function is_vat($data): bool
     {
         $cc = $data['country'];
         $vatnum = $data['vat'];

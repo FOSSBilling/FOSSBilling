@@ -43,6 +43,7 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
         $this->setPaths($paths_arr);
     }
 
+    #[Override]
     protected function findTemplate($name, $throw = true)
     {
         // normalize name
