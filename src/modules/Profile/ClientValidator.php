@@ -39,7 +39,7 @@ class ClientValidator
 
         $birthdayDate = new \DateTime($birthday);
         $today = new \DateTime('today');
-        $minDate = (new \DateTime('today'))->modify('-120 years');
+        $minDate = new \DateTime('today')->modify('-120 years');
 
         if ($birthdayDate < $minDate) {
             throw new InformationException('Birthdate cannot be more than 120 years ago.');
