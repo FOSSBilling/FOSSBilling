@@ -52,7 +52,7 @@
         "league/commonmark": "^2.8",
         "league/csv": "^9.28",
         "liborm85/composer-vendor-cleaner": "^1.7.1",
-        "mattketmo/email-checker": "^2.5",
+        "mattketmo/email-checker": "^3.0",
         "maxmind-db/reader": "^1.13.1",
         "monolog/monolog": "^3.9",
         "nelexa/zip": "^4.0.2",
