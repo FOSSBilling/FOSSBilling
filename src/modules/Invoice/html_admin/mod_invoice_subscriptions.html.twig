@@ -49,7 +49,7 @@
                         </td>
                         <td>
                             <a href="{{ 'client/manage'|alink }}/{{ subscription.client.id }}">
-                                <span class="db-avatar avatar avatar-xs" data-email="{{ subscription.client.email }}" data-size="24"></span>
+                                <span class="db-avatar avatar avatar-xs" data-avatar-seed="{{ subscription.client.email|hash('xxh128') }}" data-avatar-size="24"></span>
                             </a>
                         </td>
                         <td>

@@ -64,7 +64,7 @@
                             {{ message.author.name }}
                         </span>
                         <br/>
-                        <div class="db-avatar img-thumbnail d-none d-md-block" data-email="{{ message.author.email }}" data-size="60" style="width: 60px; height: 60px;"></div>
+                        <div class="db-avatar img-thumbnail d-none d-md-block" data-avatar-seed="{{ message.author.email|hash('xxh128') }}" data-avatar-size="60" style="width: 60px; height: 60px;"></div>
                     </div>
                     <div class="col-10">
                         <header>#{{ i+1 }} | {{ message.created_at|format_date }}

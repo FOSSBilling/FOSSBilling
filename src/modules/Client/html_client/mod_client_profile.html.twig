@@ -40,7 +40,7 @@
                         <form method="post" action="client/profile/update" id="profile-update" {{ fb_api_form({message: 'Profile Updated'|trans}) }}>
                             <div class="row mb-4 d-flex justify-content-center">
                                 <div class="col-md-2">
-                                    <div class="db-avatar img-thumbnail" data-email="{{ profile.email }}" data-size="100" style="width: 100px; height: 100px;"></div>
+                                    <div class="db-avatar img-thumbnail" data-avatar-seed="{{ profile.email|hash('xxh128') }}" data-avatar-size="100" style="width: 100px; height: 100px;"></div>
                                 </div>
                                 <div class="col-md-10 d-flex align-items-center">
                                     {{ 'Avatar is generated locally based on your email address.'|trans }}

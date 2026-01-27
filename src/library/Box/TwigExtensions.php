@@ -114,6 +114,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
             'iplookup' => new TwigFilter('iplookup', $this->ipLookupLink(...), ['is_safe' => ['html']]),
 
+            'hash' => new TwigFilter('hash', $this->twig_hash(...), ['is_safe' => ['html']]),
+
             // We override these default twig filters so we can explicitly disable it from calling certain functions that may leak data or allow commands to be executed on the system.
             'filter' => new TwigFilter('filter', $this->filteredFilter(...)),
             'map' => new TwigFilter('map', $this->filteredMap(...)),
@@ -361,6 +363,11 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         return $value;
+    }
+
+    public function twig_hash($value, $algo = 'xxh128'): string
+    {
+        return hash($algo, (string) $value);
     }
 
     public function filteredFilter($array, $arrow)

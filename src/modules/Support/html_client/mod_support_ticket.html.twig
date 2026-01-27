@@ -5,7 +5,7 @@
 {% block meta_title %}{{ ticket.subject }}{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ '/themes/huraga/build/css/markdown.css' | asset_url }}">
+    <link rel="stylesheet" href="{{ 'build/css/markdown.css' | asset_url }}">
     {{ mf.wysiwyg('.editor-textarea') }}
 {% endblock %}
 
@@ -76,7 +76,7 @@
                         <div class="card {% if message.admin_id %}border-primary{% endif %}">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="db-avatar img-thumbnail d-none d-md-block" data-email="{{ message.author.email }}" data-size="40" style="width: 40px; height: 40px;"></div>
+                                    <div class="db-avatar img-thumbnail d-none d-md-block" data-avatar-seed="{{ message.author.email|hash('xxh128') }}" data-avatar-size="40" style="width: 40px; height: 40px;"></div>
                                     <div class="d-flex flex-column">
                                         <span class="text-muted">
                                             {{ message.author.name }}

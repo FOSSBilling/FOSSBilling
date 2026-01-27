@@ -3,30 +3,10 @@ import * as identicon from '@dicebear/identicon';
 
 const avatarCache = new Map();
 
-function hashEmail(email) {
-  if (!email || typeof email !== 'string') {
-    return null;
-  }
-
-  let hash = 5381;
-  const normalizedEmail = email.toLowerCase().trim();
-
-  for (let i = 0; i < normalizedEmail.length; i++) {
-    hash = ((hash << 5) + hash) + normalizedEmail.charCodeAt(i);
-  }
-
-  return (hash >>> 0).toString(16);
-}
-
-export function generateAvatar(email, size = 40) {
-  const cacheKey = `${email}:${size}`;
+export function generateAvatar(seed, size = 40) {
+  const cacheKey = `${seed}:${size}`;
   if (avatarCache.has(cacheKey)) {
     return avatarCache.get(cacheKey);
-  }
-
-  const seed = hashEmail(email);
-  if (!seed) {
-    return null;
   }
 
   const avatar = createAvatar(identicon, {
@@ -35,23 +15,21 @@ export function generateAvatar(email, size = 40) {
     backgroundColor: ['transparent']
   });
 
-  const result = avatar.toString();
+  const result = avatar.toDataUri();
   avatarCache.set(cacheKey, result);
   return result;
 }
 
 export function initAvatars() {
   document.querySelectorAll('.db-avatar').forEach(container => {
-    const email = container.dataset.email;
-    const size = parseInt(container.dataset.size, 10) || 40;
+    const seed = container.dataset.avatarSeed;
+    const size = parseInt(container.dataset.avatarSize, 10) || 40;
 
-    if (email) {
-      const svg = generateAvatar(email, size);
+    if (seed) {
+      const svg = generateAvatar(seed, size);
 
       if (svg) {
-        const encodedSvg = encodeURIComponent(svg);
-
-        container.style.backgroundImage = `url("data:image/svg+xml,${encodedSvg}")`;
+        container.style.backgroundImage = `url("${svg}")`;
         container.style.backgroundSize = '100% 100%';
         container.style.backgroundPosition = 'center';
         container.style.backgroundRepeat = 'no-repeat';

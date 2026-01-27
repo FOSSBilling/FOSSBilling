@@ -113,7 +113,7 @@
                            data-bs-toggle="dropdown"
                            aria-label="{{ 'Open user menu'|trans }}"
                            aria-expanded="false">
-                           <span class="db-avatar avatar avatar-sm" data-email="{{ profile.email }}" data-size="32"></span>
+                           <span class="db-avatar avatar avatar-sm" data-avatar-seed="{{ profile.email|hash('xxh128') }}" data-avatar-size="32"></span>
                            <div class="d-none d-xl-block ps-2">
                               <div>{{ profile.name }}</div>
                               <div class="mt-1 small text-muted">{{ profile.role }}</div>

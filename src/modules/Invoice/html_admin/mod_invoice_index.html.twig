@@ -224,7 +224,7 @@
                             </td>
                             <td>
                                 <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">
-                                    <span class="db-avatar avatar avatar-xs" data-email="{{ invoice.buyer.email }}" data-size="24"></span>
+                                    <span class="db-avatar avatar avatar-xs" data-avatar-seed="{{ invoice.buyer.email|hash('xxh128') }}" data-avatar-size="24"></span>
                                 </a>
                             </td>
                             <td>

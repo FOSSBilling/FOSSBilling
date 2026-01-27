@@ -205,14 +205,14 @@
             <td>
                 {% if event.client %}
                 <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
-                    <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-email="{{ event.client.email }}" data-size="20"></span>
+                    <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-avatar-seed="{{ event.client.email|hash('xxh128') }}" data-avatar-size="20"></span>
                 </a>
                 {% elseif event.staff %}
                 <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
-                    <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-email="{{ event.staff.email }}" data-size="24"></span>
+                    <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-avatar-seed="{{ event.staff.email|hash('xxh128') }}" data-avatar-size="24"></span>
                 </a>
                 {% else %}
-                <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-email="{{ 'guest@fossbilling.org' }}" data-size="24"></span>
+                <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-avatar-seed="{{ 'guest@fossbilling.org'|hash('xxh128') }}" data-avatar-size="24"></span>
                 {% endif %}
             </td>
             <td>

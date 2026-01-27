@@ -41,7 +41,7 @@
                 <tr>
                     <td>
                         <a href="{{ 'staff/manage'|alink }}/{{ member.id }}">
-                            <div class="db-avatar" data-email="{{ member.email }}" data-size="25"></div>
+                            <div class="db-avatar" data-avatar-seed="{{ member.email|hash('xxh128') }}" data-avatar-size="25"></div>
                         </a>
                     </td>
                     <td>{{ member.name }}</td>
