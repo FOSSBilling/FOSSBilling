@@ -24,3 +24,4 @@ node_modules
 .php-cs-fixer.cache
 src/install/php_error.log
 src/themes/huraga/config/settings_data.json
+output.log
