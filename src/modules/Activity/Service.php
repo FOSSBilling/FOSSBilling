@@ -165,12 +165,12 @@ class Service implements InjectionAwareInterface
 
         if ($date_from) {
             $where[] = 'm.created_at >= :date_from';
-            $params[':date_from'] = date('Y-m-d 00:00:00', strtotime($date_from));
+            $params[':date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
         }
 
         if ($date_to) {
             $where[] = 'm.created_at <= :date_to';
-            $params[':date_to'] = date('Y-m-d 23:59:59', strtotime($date_to));
+            $params[':date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
         }
 
         if ($ip) {

@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Support;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -1437,7 +1438,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
-        $di['request'] = $this->getMockBuilder('\Symfony\Component\HttpFoundation\Request')->getMock();
+        $di['request'] = $this->getMockBuilder(Request::class)->getMock();
         $di['events_manager'] = $eventMock;
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $supportModMock);
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffServiceMock);
@@ -1799,7 +1800,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('publicToApiArrayProvider')]
-    public function testPublicToApiArray(?\Model_SupportPTicketMessage $findOne, $publicMessageGetAuthorDetailsCalled): void
+    public function testPublicToApiArray(?\Model_SupportPTicketMessage $findOne, string $publicMessageGetAuthorDetailsCalled): void
     {
         $ticketMessages = [new \Model_SupportPTicketMessage(), new \Model_SupportPTicketMessage()];
 

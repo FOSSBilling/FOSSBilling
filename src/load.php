@@ -159,9 +159,8 @@ function exceptionHandler(Exception|Error $e)
         echo $e->getMessage() . PHP_EOL;
 
         return;
-    } else {
-        error_log("{$e->getMessage()} at {$e->getFile()} : {$e->getLine()}");
     }
+    error_log("{$e->getMessage()} at {$e->getFile()} : {$e->getLine()}");
 
     $message = htmlspecialchars($e->getMessage());
 

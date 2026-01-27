@@ -67,9 +67,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             $path = substr($path, 0, $qPos);
         }
 
-        $path = ltrim($path, '/\\');
-
-        return $path;
+        return ltrim($path, '/\\');
     }
 
     /**
@@ -77,6 +75,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
      *
      * @return array An array of filters
      */
+    #[Override]
     public function getFilters()
     {
         return [
@@ -128,6 +127,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
      *
      * @return array An array of functions
      */
+    #[Override]
     public function getFunctions()
     {
         return [

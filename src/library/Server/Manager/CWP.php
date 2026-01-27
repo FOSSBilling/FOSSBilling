@@ -59,9 +59,8 @@ class Server_Manager_CWP extends Server_Manager
 
         if (empty($this->_config['accesshash'])) {
             throw new Server_Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'CWP', ':missing' => 'API Key / Access Hash'], 2001);
-        } else {
-            $this->_config['accesshash'] = trim((string) $this->_config['accesshash']);
         }
+        $this->_config['accesshash'] = trim((string) $this->_config['accesshash']);
 
         if (empty($this->_config['port'])) {
             $this->_config['port'] = '2304';
@@ -112,9 +111,9 @@ class Server_Manager_CWP extends Server_Manager
 
         if ($this->request('account', $data)) {
             return true;
-        } else {
-            throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'CWP']);
         }
+
+        throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'CWP']);
     }
 
     /**

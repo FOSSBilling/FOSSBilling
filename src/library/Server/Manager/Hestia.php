@@ -70,11 +70,12 @@ class Server_Manager_Hestia extends Server_Manager
 
         if (filter_var($port, FILTER_VALIDATE_INT) !== false && $port >= 0 && $port <= 65535) {
             return $this->_config['port'];
-        } else {
-            return 8083;
         }
+
+        return 8083;
     }
 
+    #[Override]
     public function generateUsername(string $domain): string
     {
         $processedDomain = strtolower((string) preg_replace('/[^A-Za-z0-9]/', '', $domain));

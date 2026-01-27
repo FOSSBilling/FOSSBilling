@@ -24,7 +24,7 @@ final class ClientTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $clientService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $clientService);
         $this->clientApi->setDi($di);
         $this->clientApi->setIdentity(new \Model_Client());
 

@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Formbuilder;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -38,7 +39,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public static function typeValidationData()
+    public static function typeValidationData(): array
     {
         return [
             ['select', true],
@@ -53,7 +54,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public static function isArrayUniqueData()
+    public static function isArrayUniqueData(): array
     {
         return [
             [['sameValue', 'sameValue'], false],
@@ -138,7 +139,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($newFieldId, $result);
     }
 
-    public static function updateFieldTypeData()
+    public static function updateFieldTypeData(): array
     {
         return [
             ['select'],

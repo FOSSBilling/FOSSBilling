@@ -69,7 +69,7 @@ final class Api_GuestTest extends \BBTestCase
     }
 
     #[DataProvider('getProvider')]
-    public function testGet(array $data, $modelFlag, $expectsGetByCode, $expectsGetDefault): void
+    public function testGet(array $data, string $modelFlag, string $expectsGetByCode, string $expectsGetDefault): void
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
 

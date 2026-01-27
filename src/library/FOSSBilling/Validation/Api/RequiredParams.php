@@ -23,13 +23,13 @@ namespace FOSSBilling\Validation\Api;
  * @Target({"METHOD"})
  */
 #[\Attribute(\Attribute::TARGET_METHOD)]
-final class RequiredParams
+final readonly class RequiredParams
 {
     /**
      * @param array<string, string> $params Map of parameter names to error messages
      */
     public function __construct(
-        public readonly array $params,
+        public array $params,
     ) {
     }
 }

@@ -18,7 +18,7 @@ use Symfony\Component\Filesystem\Path;
 
 class Config
 {
-    final public const MAX_RECURSION_LEVEL = 25;
+    final public const int MAX_RECURSION_LEVEL = 25;
 
     public static function getConfig(): array
     {

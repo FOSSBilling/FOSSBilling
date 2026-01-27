@@ -17,13 +17,13 @@ class ExtensionManager implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    final public const TYPE_MOD = 'mod';
-    final public const TYPE_THEME = 'theme';
-    final public const TYPE_PG = 'payment-gateway';
-    final public const TYPE_SM = 'server-manager';
-    final public const TYPE_DR = 'domain-registrar';
-    final public const TYPE_HOOK = 'hook';
-    final public const TYPE_TRANSLATION = 'translation';
+    final public const string TYPE_MOD = 'mod';
+    final public const string TYPE_THEME = 'theme';
+    final public const string TYPE_PG = 'payment-gateway';
+    final public const string TYPE_SM = 'server-manager';
+    final public const string TYPE_DR = 'domain-registrar';
+    final public const string TYPE_HOOK = 'hook';
+    final public const string TYPE_TRANSLATION = 'translation';
 
     private string $_url = 'https://extensions.fossbilling.org/api/';
 

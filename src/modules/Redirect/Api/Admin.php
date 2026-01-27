@@ -32,7 +32,7 @@ class Admin extends \Api_Abstract
      * Get redirect by id.
      */
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
-    public function get($data)
+    public function get($data): array
     {
         $bean = $this->_getRedirect($data['id']);
 
@@ -49,7 +49,7 @@ class Admin extends \Api_Abstract
      * @return int redirect id
      */
     #[RequiredParams(['path' => 'Redirect path was not passed', 'target' => 'Redirect target was not passed'])]
-    public function create($data)
+    public function create($data): int
     {
         $bean = $this->di['db']->dispense('extension_meta');
         $bean->extension = 'mod_redirect';
@@ -75,7 +75,7 @@ class Admin extends \Api_Abstract
      * @return true
      */
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
-    public function update($data)
+    public function update($data): bool
     {
         $bean = $this->_getRedirect($data['id']);
 
@@ -95,7 +95,7 @@ class Admin extends \Api_Abstract
      * @return true
      */
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
-    public function delete($data)
+    public function delete($data): bool
     {
         $bean = $this->_getRedirect($data['id']);
         $this->di['db']->trash($bean);

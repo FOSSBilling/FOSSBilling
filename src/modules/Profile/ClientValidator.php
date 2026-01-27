@@ -3,7 +3,6 @@
 namespace Box\Mod\Profile;
 
 use FOSSBilling\InformationException;
-use Model_Client;
 
 class ClientValidator
 {
@@ -17,10 +16,8 @@ class ClientValidator
         }
         $gender = strtolower(trim($gender));
 
-        if (!in_array($gender, Model_Client::ALLOWED_GENDERS, true)) {
-            throw new InformationException(
-                'Invalid gender value. Allowed: male, female, nonbinary, other'
-            );
+        if (!in_array($gender, \Model_Client::ALLOWED_GENDERS, true)) {
+            throw new InformationException('Invalid gender value. Allowed: male, female, nonbinary, other');
         }
 
         return $gender;
@@ -61,14 +58,10 @@ class ClientValidator
      */
     public static function validateDocument(string $documentType): string
     {
-        if (!in_array($documentType, Model_Client::ALLOWED_DOCUMENT_TYPES, true)) {
-            throw new InformationException(
-                'Invalid document type. Allowed: :list',
-                [':list' => implode(', ', Model_Client::ALLOWED_DOCUMENT_TYPES)]
-            );
+        if (!in_array($documentType, \Model_Client::ALLOWED_DOCUMENT_TYPES, true)) {
+            throw new InformationException('Invalid document type. Allowed: :list', [':list' => implode(', ', \Model_Client::ALLOWED_DOCUMENT_TYPES)]);
         }
 
         return $documentType;
     }
-
 }

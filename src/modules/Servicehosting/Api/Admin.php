@@ -208,7 +208,7 @@ class Admin extends \Api_Abstract
         'ip' => 'Server IP was not passed',
         'manager' => 'Server manager was not specified',
     ])]
-    public function server_create($data)
+    public function server_create($data): int
     {
         $service = $this->getService();
 
@@ -237,7 +237,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Server ID was not passed'])]
-    public function server_delete($data)
+    public function server_delete($data): bool
     {
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
@@ -272,7 +272,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Server ID was not passed'])]
-    public function server_update($data)
+    public function server_update($data): bool
     {
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
@@ -290,7 +290,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Server ID was not passed'])]
-    public function server_test_connection($data)
+    public function server_test_connection($data): bool
     {
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
@@ -331,7 +331,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\InformationException
      */
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
-    public function hp_delete($data)
+    public function hp_delete($data): bool
     {
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
@@ -370,7 +370,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
-    public function hp_update($data)
+    public function hp_update($data): bool
     {
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
@@ -387,7 +387,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['name' => 'Hosting plan name was not passed'])]
-    public function hp_create($data)
+    public function hp_create($data): int
     {
         $service = $this->getService();
 

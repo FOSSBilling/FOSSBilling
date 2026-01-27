@@ -945,9 +945,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         // override some parameters
         if (in_array($tld, ['.uk', '.co.uk', '.org.uk', '.nz', '.ru', '.com.ru', '.org.ru', '.net.ru', '.eu'])) {
             $admin_contact_id = -1;
-        }
-
-        if (in_array($tld, ['.uk', '.co.uk', '.org.uk', '.nz', '.ru', '.com.ru', '.org.ru', '.net.ru', '.eu'])) {
             $tech_contact_id = -1;
         }
 

@@ -9,6 +9,9 @@
 /src/vendor/*
 build
 
+# Needed for some workflows
+DOCKER_ENV
+docker_tag
 
 ### phpunit/phpunit ###
 .phpunit.result.cache
