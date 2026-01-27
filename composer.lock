@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "39419cb8cb92322add0356df9ff9cf9d",
+    "content-hash": "95b8a44692a566d53a3553b09934d80a",
     "packages": [
         {
             "name": "antcms/antloader",
@@ -2252,16 +2252,16 @@
         },
         {
             "name": "mattketmo/email-checker",
-            "version": "v2.5.0",
+            "version": "v3.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/MattKetmo/EmailChecker.git",
-                "reference": "d21efd330e9ca78936c526959d5c34b5d8a8c06a"
+                "reference": "6a3f31f59ff1b549349d620a38b986cddd3e96ec"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/MattKetmo/EmailChecker/zipball/d21efd330e9ca78936c526959d5c34b5d8a8c06a",
-                "reference": "d21efd330e9ca78936c526959d5c34b5d8a8c06a",
+                "url": "https://api.github.com/repos/MattKetmo/EmailChecker/zipball/6a3f31f59ff1b549349d620a38b986cddd3e96ec",
+                "reference": "6a3f31f59ff1b549349d620a38b986cddd3e96ec",
                 "shasum": ""
             },
             "require": {
@@ -2275,7 +2275,7 @@
                 "phpstan/phpstan-phpunit": "^2.0",
                 "phpstan/phpstan-strict-rules": "^2.0",
                 "phpunit/phpunit": "^9.5",
-                "symfony/validator": "^5.4 || ^6.4 || ^7.3"
+                "symfony/validator": "^5.4 || ^6.4 || ^7.3 || ^8.0"
             },
             "suggest": {
                 "knplabs/gaufrette": "Use filesystem abstraction layer to read data",
@@ -2316,9 +2316,9 @@
             ],
             "support": {
                 "issues": "https://github.com/MattKetmo/EmailChecker/issues",
-                "source": "https://github.com/MattKetmo/EmailChecker/tree/v2.5.0"
+                "source": "https://github.com/MattKetmo/EmailChecker/tree/v3.0.0"
             },
-            "time": "2025-12-10T16:45:09+00:00"
+            "time": "2026-01-26T13:00:11+00:00"
         },
         {
             "name": "maxmind-db/reader",
