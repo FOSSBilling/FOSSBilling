@@ -236,7 +236,7 @@ class Admin extends \Api_Abstract
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
 
-        // Special handling for the phone county codes
+        // Special handling for the phone country codes
         $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
         if (!empty($phoneCC)) {
             $client->phone_cc = Tools::validatePhoneCC($phoneCC);
@@ -258,7 +258,6 @@ class Admin extends \Api_Abstract
         $client->company_vat = (!empty($data['company_vat']) ? $data['company_vat'] : $client->company_vat);
         $client->address_1 = (!empty($data['address_1']) ? $data['address_1'] : $client->address_1);
         $client->address_2 = (!empty($data['address_2']) ? $data['address_2'] : $client->address_2);
-        $client->phone = (!empty($data['phone']) ? $data['phone'] : $client->phone);
         $client->document_type = (!empty($data['document_type']) ? $data['document_type'] : $client->document_type);
         $client->document_nr = (!empty($data['document_nr']) ? $data['document_nr'] : $client->document_nr);
         $client->notes = (!empty($data['notes']) ? $data['notes'] : $client->notes);

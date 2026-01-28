@@ -489,7 +489,7 @@ class Service implements InjectionAwareInterface
         $system = $this->di['mod']('system');
         $systemCfg = $system->getConfig();
 
-        // Special handling for the phone county codes
+        // Special handling for the phone country codes
         $phoneCC = $data['phone_cc'] ?? null;
         if (!empty($phoneCC)) {
             $client->phone_cc = Tools::validatePhoneCC($phoneCC);
