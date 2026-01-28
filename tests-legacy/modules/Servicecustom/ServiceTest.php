@@ -402,8 +402,9 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
-        $result = $this->service->action_delete($order);
-        $this->assertTrue($result);
+        // action_delete returns void, so we just verify it doesn't throw
+        $this->service->action_delete($order);
+        $this->assertTrue(true); // Assertion to confirm execution completed
     }
 
     public function testGetConfig(): void

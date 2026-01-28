@@ -11,11 +11,13 @@
 
 namespace Box\Mod\Servicedomain;
 
+use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\ServiceModuleInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+class Service implements InjectionAwareInterface, ServiceModuleInterface
 {
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
@@ -160,10 +162,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * Creates domain service object from order.
-     *
-     * @return \Model_ServiceDomain
      */
-    public function action_create(\Model_ClientOrder $order)
+    public function action_create(\Model_ClientOrder $order): \Model_ServiceDomain
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
@@ -221,10 +221,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * Register or transfer domain on activation.
-     *
-     * @return \Model_ServiceDomain
      */
-    public function action_activate(\Model_ClientOrder $order)
+    public function action_activate(\Model_ClientOrder $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -252,7 +250,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             error_log($e->getMessage());
         }
 
-        return $model;
+        return true;
     }
 
     public function action_renew(\Model_ClientOrder $order): bool

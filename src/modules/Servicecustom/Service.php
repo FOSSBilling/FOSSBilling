@@ -12,10 +12,12 @@
 namespace Box\Mod\Servicecustom;
 
 use FOSSBilling\Environment;
+use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\ServiceModuleInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+class Service implements InjectionAwareInterface, ServiceModuleInterface
 {
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
@@ -58,10 +60,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    /**
-     * @return \Model_ServiceCustom
-     */
-    public function action_create(\Model_ClientOrder $order)
+    public function action_create(\Model_ClientOrder $order): \Model_ServiceCustom
     {
         $product = $this->di['db']->getExistingModelById('Product', $order->product_id, 'Product not found');
 
@@ -159,20 +158,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_delete(\Model_ClientOrder $order): bool
+    public function action_delete(\Model_ClientOrder $order): void
     {
         try {
             $model = $this->_getOrderService($order);
         } catch (\Exception $e) {
             error_log($e->getMessage());
 
-            return true;
+            return;
         }
 
         $this->callOnAdapter($model, 'delete');
         $this->di['db']->trash($model);
-
-        return true;
     }
 
     public function getConfig(\Model_ServiceCustom $model): array
