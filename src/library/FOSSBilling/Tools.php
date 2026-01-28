@@ -385,14 +385,14 @@ class Tools
         }
 
         // Use Symfony's HTML Sanitizer
-        $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer(
-            (new \Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig())
-                ->allowSafeElements()
-                ->allowElement('a', ['href', 'title'])
-                ->allowElement('code')
-                ->allowElement('pre')
-                ->allowLinkSchemes(['http', 'https', 'mailto', 'tel'])
-        );
+        $config = (new \Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig())
+            ->allowSafeElements()
+            ->allowElement('a', ['href', 'title'])
+            ->allowElement('code')
+            ->allowElement('pre')
+            ->allowLinkSchemes(['http', 'https', 'mailto', 'tel']);
+
+        $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer($config);
 
         return trim($sanitizer->sanitize($content));
     }
