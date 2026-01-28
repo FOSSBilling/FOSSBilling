@@ -51,7 +51,7 @@ class Mail
             $toAddress = $to;
         }
 
-        $this->email = new Email()
+        $this->email = (new Email())
             ->from($fromAddress)
             ->to($toAddress)
             ->subject($subject)

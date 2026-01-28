@@ -391,7 +391,7 @@ class Tools
             ->allowElement('code')
             ->allowElement('pre')
             ->allowLinkSchemes(['http', 'https', 'mailto', 'tel']);
-        
+
         $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer($config);
 
         return trim($sanitizer->sanitize($content));
