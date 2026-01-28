@@ -2716,16 +2716,16 @@
         },
         {
             "name": "php-debugbar/php-debugbar",
-            "version": "v3.2.2",
+            "version": "v3.2.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-debugbar/php-debugbar.git",
-                "reference": "a1f4e156811f000efb6e118178832581fab94f11"
+                "reference": "0c61c6023742c76bc3678100ed6bc52dc4c8d434"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-debugbar/php-debugbar/zipball/a1f4e156811f000efb6e118178832581fab94f11",
-                "reference": "a1f4e156811f000efb6e118178832581fab94f11",
+                "url": "https://api.github.com/repos/php-debugbar/php-debugbar/zipball/0c61c6023742c76bc3678100ed6bc52dc4c8d434",
+                "reference": "0c61c6023742c76bc3678100ed6bc52dc4c8d434",
                 "shasum": ""
             },
             "require": {
@@ -2802,7 +2802,7 @@
             ],
             "support": {
                 "issues": "https://github.com/php-debugbar/php-debugbar/issues",
-                "source": "https://github.com/php-debugbar/php-debugbar/tree/v3.2.2"
+                "source": "https://github.com/php-debugbar/php-debugbar/tree/v3.2.3"
             },
             "funding": [
                 {
@@ -2814,7 +2814,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-01-25T20:59:56+00:00"
+            "time": "2026-01-27T10:26:33+00:00"
         },
         {
             "name": "php-debugbar/twig-bridge",
