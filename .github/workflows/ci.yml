@@ -52,7 +52,7 @@ jobs:
           phpstan-php-version: 8.4
           phpstan-version: 'latest'
           phpunit-enable: 'true'
-          phpunit-version: 10
+          phpunit-version: 12
 
   preview-build:
     name: 'Create Preview Release'
