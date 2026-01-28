@@ -15,6 +15,8 @@
 
 namespace Box\Mod\Client\Api;
 
+use FOSSBilling\InformationException;
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -140,7 +142,7 @@ class Admin extends \Api_Abstract
 
         $service = $this->getService();
         if ($service->emailAlreadyRegistered($data['email'])) {
-            throw new \FOSSBilling\InformationException('This email address is already registered.');
+            throw new InformationException('This email address is already registered.');
         }
 
         $validator->isPasswordStrong($data['password']);
@@ -220,7 +222,7 @@ class Admin extends \Api_Abstract
             $email = $data['email'];
             $email = $this->di['tools']->validateAndSanitizeEmail($email);
             if ($service->emailAlreadyRegistered($email, $client)) {
-                throw new \FOSSBilling\InformationException('This email address is already registered.');
+                throw new InformationException('This email address is already registered.');
             }
         }
 
@@ -234,9 +236,16 @@ class Admin extends \Api_Abstract
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
 
+        // Special handling for the phone country codes
         $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
         if (!empty($phoneCC)) {
-            $client->phone_cc = intval($phoneCC);
+            $client->phone_cc = Tools::validatePhoneCC($phoneCC);
+        }
+
+        // Special handling for the phone number itself
+        $phone = (!empty($data['phone']) ? $data['phone'] : $client->phone);
+        if (!empty($phone) && is_string($phone)) {
+            $client->phone = Tools::validatePhoneNumber($phone);
         }
 
         $client->email = (!empty($data['email']) ? $data['email'] : $client->email);
@@ -249,7 +258,6 @@ class Admin extends \Api_Abstract
         $client->company_vat = (!empty($data['company_vat']) ? $data['company_vat'] : $client->company_vat);
         $client->address_1 = (!empty($data['address_1']) ? $data['address_1'] : $client->address_1);
         $client->address_2 = (!empty($data['address_2']) ? $data['address_2'] : $client->address_2);
-        $client->phone = (!empty($data['phone']) ? $data['phone'] : $client->phone);
         $client->document_type = (!empty($data['document_type']) ? $data['document_type'] : $client->document_type);
         $client->document_nr = (!empty($data['document_nr']) ? $data['document_nr'] : $client->document_nr);
         $client->notes = (!empty($data['notes']) ? $data['notes'] : $client->notes);
@@ -296,7 +304,7 @@ class Admin extends \Api_Abstract
     public function change_password($data): bool
     {
         if ($data['password'] != $data['password_confirm']) {
-            throw new \FOSSBilling\InformationException('Passwords do not match');
+            throw new InformationException('Passwords do not match');
         }
 
         $this->di['validator']->isPasswordStrong($data['password']);
@@ -491,7 +499,7 @@ class Admin extends \Api_Abstract
         $clients = $this->di['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
 
         if ((is_countable($clients) ? count($clients) : 0) > 0) {
-            throw new \FOSSBilling\InformationException('Group has clients assigned. Please reassign them first.');
+            throw new InformationException('Group has clients assigned. Please reassign them first.');
         }
 
         return $this->getService()->deleteGroup($model);
