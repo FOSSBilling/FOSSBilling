@@ -1,9 +1,12 @@
 import { Tooltip, Toast, Modal } from 'bootstrap/dist/js/bootstrap.esm.js';
 import './js/utils';
+import { initAvatars } from './js/avatar.js';
 
 globalThis.bootstrap = { Tooltip, Toast, Modal };
 
 document.addEventListener('DOMContentLoaded', () => {
+  initAvatars();
+
   /**
    * Global error handler for unhandled Promise rejections
    */

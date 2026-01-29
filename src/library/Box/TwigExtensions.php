@@ -85,8 +85,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             'link' => new TwigFilter('link', $this->twig_bb_client_link_filter(...), ['is_safe' => ['html']]),
             'autolink' => new TwigFilter('autolink', $this->twig_autolink_filter(...)),
 
-            'gravatar' => new TwigFilter('gravatar', $this->twig_gravatar_filter(...)),
-
             'markdown' => new TwigFilter('markdown', $this->twig_markdown_filter(...), ['needs_environment' => true, 'is_safe' => ['html']]),
 
             'truncate' => new TwigFilter('truncate', $this->twig_truncate_filter(...), ['needs_environment' => true]),
@@ -115,6 +113,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             'money_convert_without_currency' => new TwigFilter('money_convert_without_currency', $this->money_convert_without_currency(...), ['needs_environment' => true, 'is_safe' => ['html']]),
 
             'iplookup' => new TwigFilter('iplookup', $this->ipLookupLink(...), ['is_safe' => ['html']]),
+
+            'hash' => new TwigFilter('hash', $this->twig_hash(...)),
 
             // We override these default twig filters so we can explicitly disable it from calling certain functions that may leak data or allow commands to be executed on the system.
             'filter' => new TwigFilter('filter', $this->filteredFilter(...)),
@@ -275,18 +275,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, FOSSBilling\Version::VERSION, $media);
     }
 
-    public function twig_gravatar_filter($email, $size = 20): string
-    {
-        if (empty($email)) {
-            return '';
-        }
-
-        $url = 'https://www.gravatar.com/avatar/';
-        $url .= md5(strtolower(trim((string) $email)));
-
-        return $url . "?s=$size&d=mp&r=g";
-    }
-
     public function twig_autolink_filter($text): ?string
     {
         $pattern = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
@@ -375,6 +363,14 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         return $value;
+    }
+
+    public function twig_hash($value, $algo = 'xxh128'): string
+    {
+        if (!in_array($algo, hash_algos(), true)) {
+            throw new \InvalidArgumentException(sprintf('Hash algorithm "%s" is not supported.', $algo));
+        }
+        return hash($algo, (string) $value);
     }
 
     public function filteredFilter($array, $arrow)
