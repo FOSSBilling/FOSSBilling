@@ -683,6 +683,14 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = "DELETE FROM extension_meta WHERE extension = 'servicecustom';";
                 $this->executeSql($q);
             },
+            54 => function (): void {
+                // Remove Servicelicense module registration now handled by product types.
+                $q = "DELETE FROM extension WHERE type = 'mod' AND name = 'servicelicense';";
+                $this->executeSql($q);
+
+                $q = "DELETE FROM extension_meta WHERE extension = 'servicelicense';";
+                $this->executeSql($q);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

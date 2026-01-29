@@ -714,10 +714,10 @@ $di['table'] = $di->protect(function ($name) use ($di) {
 /*
  * @param void
  *
- * @return \Box\Mod\Servicelicense\Server
+ * @return \FOSSBilling\ProductType\License\Server
  */
 $di['license_server'] = function () use ($di) {
-    $server = new Box\Mod\Servicelicense\Server($di['logger']);
+    $server = new FOSSBilling\ProductType\License\Server($di['logger']);
     $server->setDi($di);
 
     return $server;

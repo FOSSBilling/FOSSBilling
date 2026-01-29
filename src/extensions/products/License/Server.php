@@ -2,15 +2,11 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
- *
- * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Servicelicense;
+namespace FOSSBilling\ProductType\License;
 
 class Server implements \FOSSBilling\InjectionAwareInterface
 {
@@ -37,9 +33,6 @@ class Server implements \FOSSBilling\InjectionAwareInterface
     {
     }
 
-    /**
-     * @param string $key
-     */
     private function getServer($key = null, $default = null)
     {
         if ($key === null) {
@@ -61,7 +54,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
             throw new \LogicException('License key is not present in call', 1001);
         }
 
-        $service = $this->di['mod_service']('servicelicense');
+        $service = $this->getLicenseService();
         $model = $this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', [':license_key' => $data['license']]);
 
         if (!$model instanceof \Model_ServiceLicense) {
@@ -121,5 +114,20 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         }
 
         return $this->_result;
+    }
+
+    private function getLicenseService(): LicenseHandler
+    {
+        if (!$this->di || !isset($this->di['product_type_registry'])) {
+            throw new \LogicException('License service is not available', 1005);
+        }
+
+        $registry = $this->di['product_type_registry'];
+        $handler = $registry->getHandler('license');
+        if (!$handler instanceof LicenseHandler) {
+            throw new \LogicException('License service is not available', 1005);
+        }
+
+        return $handler;
     }
 }
