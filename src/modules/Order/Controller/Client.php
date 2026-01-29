@@ -43,8 +43,8 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     {
         $api = $this->di['api_guest'];
         $product = $api->product_get(['slug' => $slug]);
-        $tpl = 'mod_service' . $product['type'] . '_order';
-        if ($api->system_template_exists(['file' => $tpl . '.html.twig'])) {
+        [$tpl, $tplFile] = $this->resolveTemplateName($product['type'], 'order');
+        if ($api->system_template_exists(['file' => $tplFile])) {
             return $app->render($tpl, ['product' => $product]);
         }
 
@@ -55,8 +55,8 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     {
         $api = $this->di['api_guest'];
         $product = $api->product_get(['id' => $id]);
-        $tpl = 'mod_service' . $product['type'] . '_order';
-        if ($api->system_template_exists(['file' => $tpl . '.html.twig'])) {
+        [$tpl, $tplFile] = $this->resolveTemplateName($product['type'], 'order');
+        if ($api->system_template_exists(['file' => $tplFile])) {
             return $app->render($tpl, ['product' => $product]);
         }
 
@@ -78,6 +78,43 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         ];
         $order = $api->order_get($data);
 
-        return $app->render('mod_order_manage', ['order' => $order]);
+        $servicePartial = $this->resolveTemplate(
+            $order['service_type'],
+            'manage',
+            sprintf('mod_service%s_manage.html.twig', $order['service_type'])
+        );
+
+        return $app->render('mod_order_manage', [
+            'order' => $order,
+            'service_partial' => $servicePartial,
+        ]);
+    }
+
+    private function resolveTemplate(string $type, string $kind, string $fallback): string
+    {
+        if (!$this->di || !isset($this->di['product_type_registry'])) {
+            return $fallback;
+        }
+
+        try {
+            return $this->di['product_type_registry']->getTemplate($type, $kind, $fallback);
+        } catch (\Throwable) {
+            return $fallback;
+        }
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function resolveTemplateName(string $type, string $kind): array
+    {
+        $default = sprintf('mod_service%s_%s.html.twig', $type, $kind);
+        $template = $this->resolveTemplate($type, $kind, $default);
+
+        if (str_ends_with($template, '.html.twig')) {
+            return [substr($template, 0, -10), $template];
+        }
+
+        return [$template, $template . '.html.twig'];
     }
 }

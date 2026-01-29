@@ -65,7 +65,7 @@
                         </div>
                     {% endset %}
 
-                    {% set tpl = "mod_service"~product.type~"_order_form.html.twig" %}
+                    {% set tpl = product.templates.order_form ?? ("mod_service"~product.type~"_order_form.html.twig") %}
                     {% if guest.system_template_exists({"file":tpl}) %}
                         {{ include(tpl, product) }}
                     {% elseif product.form_id and guest.extension_is_on({"mod":"formbuilder"}) %}

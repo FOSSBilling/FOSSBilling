@@ -12,7 +12,7 @@
 <li class="breadcrumb-item active" aria-current="page">{{ order.title }}</li>
 {% endblock %}
 
-{% set service_partial = "mod_service" ~ order.service_type ~ "_manage.html.twig" %}
+{% set service_partial = service_partial ?? ("mod_service" ~ order.service_type ~ "_manage.html.twig") %}
 {% set upgradables = client.order_upgradables({ 'id': order.id }) %}
 
 {% block head %}

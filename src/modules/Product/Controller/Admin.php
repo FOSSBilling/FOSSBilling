@@ -112,7 +112,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $addons[] = $addon['id'];
         }
 
-        return $app->render('mod_product_manage', ['product' => $product, 'assigned_addons' => $addons]);
+        $templates = $product['templates'] ?? [];
+
+        return $app->render('mod_product_manage', [
+            'product' => $product,
+            'assigned_addons' => $addons,
+            'product_order_form_template' => $templates['order_form'] ?? null,
+            'product_config_template' => $templates['config'] ?? null,
+        ]);
     }
 
     public function get_promo(\Box_App $app, $id): string

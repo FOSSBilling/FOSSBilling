@@ -144,6 +144,34 @@ final class ProductTypeRegistry implements InjectionAwareInterface
         return $pairs;
     }
 
+    public function getTemplate(string $code, string $key, ?string $fallback = null): string
+    {
+        $code = strtolower($code);
+        $key = strtolower($key);
+
+        try {
+            $definition = $this->getDefinition($code);
+        } catch (Exception) {
+            if ($fallback !== null) {
+                return $fallback;
+            }
+
+            return sprintf('mod_service%s_%s.html.twig', $code, $key);
+        }
+
+        $templates = $definition['templates'] ?? [];
+        $template = is_array($templates) ? ($templates[$key] ?? null) : null;
+        if (!is_string($template) || $template === '') {
+            if ($fallback !== null) {
+                return $fallback;
+            }
+
+            return sprintf('mod_service%s_%s.html.twig', $code, $key);
+        }
+
+        return $template;
+    }
+
     public function getHandler(string $code): object
     {
         $code = strtolower($code);

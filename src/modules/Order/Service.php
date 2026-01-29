@@ -534,14 +534,13 @@ class Service implements InjectionAwareInterface
         if ($period) {
             $config['period'] = $period;
         }
-        $se = $this->di['mod_service']('service' . $product->type);
+        $se = $this->di['product_type_registry']->getHandler($product->type);
         // @deprecated logic
         if (method_exists($se, 'prependOrderConfig')) {
             $config = $se->prependOrderConfig($product, $config);
         }
 
         // @migration script
-        $se = $this->di['mod_service']('service' . $product->type);
         if (method_exists($se, 'attachOrderConfig')) {
             $config = $se->attachOrderConfig($product, $config);
         }
@@ -713,9 +712,8 @@ class Service implements InjectionAwareInterface
     {
         $service = $this->getOrderService($order);
         if (!is_object($service)) {
-            $mod = $this->di['mod']('service' . $order->service_type);
-            $s = $mod->getService();
-            if (method_exists($s, 'create') || method_exists($s, 'action_create')) {
+            $handler = $this->di['product_type_registry']->getHandler($order->service_type);
+            if (method_exists($handler, 'create') || method_exists($handler, 'action_create')) {
                 $service = $this->_callOnService($order, \Model_ClientOrder::ACTION_CREATE);
                 if (!is_object($service)) {
                     throw new \FOSSBilling\Exception('Error creating ' . $order->service_type . ' service for order ' . $order->id);

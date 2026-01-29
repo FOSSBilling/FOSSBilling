@@ -77,7 +77,17 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $product = $api->product_get(['id' => $_POST['product_id'] ?? null]);
         $client = $api->client_get(['id' => $_POST['client_id'] ?? null]);
 
-        return $app->render('mod_order_new', ['product' => $product, 'client' => $client]);
+        $productOrderTemplate = $this->resolveTemplate(
+            $product['type'],
+            'order',
+            sprintf('mod_service%s_order.html.twig', $product['type'])
+        );
+
+        return $app->render('mod_order_new', [
+            'product' => $product,
+            'client' => $client,
+            'product_order_template' => $productOrderTemplate,
+        ]);
     }
 
     public function get_order(\Box_App $app, $id): string
@@ -88,11 +98,29 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
         $order = $api->order_get($data);
         $set = ['order' => $order];
+        $set['service_partial'] = $this->resolveTemplate(
+            $order['service_type'],
+            'manage',
+            sprintf('mod_service%s_manage.html.twig', $order['service_type'])
+        );
 
         if (isset($order['plugin']) && !empty($order['plugin'])) {
             $set['plugin'] = 'plugin_' . $order['plugin'] . '_manage.html.twig';
         }
 
         return $app->render('mod_order_manage', $set);
+    }
+
+    private function resolveTemplate(string $type, string $kind, string $fallback): string
+    {
+        if (!$this->di || !isset($this->di['product_type_registry'])) {
+            return $fallback;
+        }
+
+        try {
+            return $this->di['product_type_registry']->getTemplate($type, $kind, $fallback);
+        } catch (\Throwable) {
+            return $fallback;
+        }
     }
 }

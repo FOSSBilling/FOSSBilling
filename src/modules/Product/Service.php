@@ -108,6 +108,20 @@ class Service implements InjectionAwareInterface
             'stock_control' => $model->stock_control,
         ];
 
+        if ($this->di && isset($this->di['product_type_registry'])) {
+            try {
+                $registry = $this->di['product_type_registry'];
+                $result['templates'] = [
+                    'order' => $registry->getTemplate($model->type, 'order'),
+                    'manage' => $registry->getTemplate($model->type, 'manage'),
+                    'order_form' => $registry->getTemplate($model->type, 'order_form'),
+                    'config' => $registry->getTemplate($model->type, 'config'),
+                ];
+            } catch (\Throwable) {
+                // Keep API output stable if registry fails.
+            }
+        }
+
         if ($identity instanceof \Model_Admin) {
             $result['upgrades'] = $this->getUpgradablePairs($model);
             $result['status'] = $model->status;
