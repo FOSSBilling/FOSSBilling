@@ -1,0 +1,8 @@
+{
+  "id": "widgets",
+  "type": "mod",
+  "name": "Widgets",
+  "description": "Widget system for FOSSBilling. Allows modules to register widgets that can be rendered in designated slots.",
+  "icon_url": "icon.svg",
+  "version": "1.0.0"
+}

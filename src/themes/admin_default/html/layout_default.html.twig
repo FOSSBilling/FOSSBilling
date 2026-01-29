@@ -209,16 +209,20 @@
                         </ol>
                         {% endblock %}
                     </nav>
+                    {{ render_widgets('admin.theme.content.before') }}
                     {% block top_content %}{% endblock %}
                     {% block content %}{% endblock %}
+                    {{ render_widgets('admin.theme.content.after') }}
                 </div>
             </main>
 
             <footer class="footer footer-transparent d-print-none">
                 <div class="container-xl">
+                    {{ render_widgets('admin.theme.footer.start') }}
                     <p>&copy; {{ now|format_date(pattern='yyyy') }} <a href="https://github.com/FOSSBilling">FOSSBilling contributors</a>.
                     Licensed under <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2.0</a>.
                     Running version <code>{{ FOSSBillingVersion }}</code>.</p>
+                    {{ render_widgets('admin.theme.footer.end') }}
                 </div>
             </footer>
         </div>

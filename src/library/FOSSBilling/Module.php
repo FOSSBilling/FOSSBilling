@@ -32,7 +32,8 @@ class Module implements InjectionAwareInterface
         'page', 'product', 'profile', 'security',
         'servicecustom', 'servicedomain', 'servicedownloadable',
         'servicehosting', 'servicelicense', 'staff', 'stats',
-        'support', 'system', 'theme', 'orderbutton', 'formbuilder'];
+        'support', 'system', 'theme', 'orderbutton', 'formbuilder',
+        'widgets'];
 
     public function setDi(?\Pimple\Container $di): void
     {
