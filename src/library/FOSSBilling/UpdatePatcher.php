@@ -633,7 +633,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->executeSql($q);
             },
             50 => function (): void {
-                // Introduce product_type fields for the Product Type registry migration.
+                // Product type registry migration.
                 $q = 'ALTER TABLE `product` ADD COLUMN `product_type` varchar(255) DEFAULT NULL AFTER `type`;';
                 $this->executeSql($q);
 
@@ -651,9 +651,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
                 $q = 'UPDATE `client_order` SET `product_type` = `service_type` WHERE `product_type` IS NULL;';
                 $this->executeSql($q);
-            },
-            51 => function (): void {
-                // Ensure service_apikey table exists for product type extensions.
+
                 $q = '
                 CREATE TABLE IF NOT EXISTS `service_apikey` (
                     `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -666,49 +664,16 @@ class UpdatePatcher implements InjectionAwareInterface
                     KEY `client_id_idx` (`client_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
                 $this->executeSql($q);
-            },
-            52 => function (): void {
-                // Remove Serviceapikey module registration now handled by product types.
-                $q = "DELETE FROM extension WHERE type = 'mod' AND name = 'serviceapikey';";
+
+                $q = "DELETE FROM extension WHERE type = 'mod' AND name IN ('serviceapikey', 'servicecustom', 'servicelicense', 'servicehosting');";
                 $this->executeSql($q);
 
-                $q = "DELETE FROM extension_meta WHERE extension = 'serviceapikey';";
-                $this->executeSql($q);
-            },
-            53 => function (): void {
-                // Remove Servicecustom module registration now handled by product types.
-                $q = "DELETE FROM extension WHERE type = 'mod' AND name = 'servicecustom';";
+                $q = "DELETE FROM extension_meta WHERE extension IN ('serviceapikey', 'servicecustom', 'servicelicense', 'servicehosting');";
                 $this->executeSql($q);
 
-                $q = "DELETE FROM extension_meta WHERE extension = 'servicecustom';";
-                $this->executeSql($q);
-            },
-            54 => function (): void {
-                // Remove Servicelicense module registration now handled by product types.
-                $q = "DELETE FROM extension WHERE type = 'mod' AND name = 'servicelicense';";
-                $this->executeSql($q);
-
-                $q = "DELETE FROM extension_meta WHERE extension = 'servicelicense';";
-                $this->executeSql($q);
-            },
-            55 => function (): void {
-                // Rename downloadable product type to download
                 $this->executeSql("UPDATE product SET type = 'download' WHERE type = 'downloadable'");
-            },
-            56 => function (): void {
-                // Rename service_downloadable table to service_download
                 $this->executeSql("RENAME TABLE service_downloadable TO service_download");
-            },
-            57 => function (): void {
-                // Remove Servicehosting module registration now handled by product types.
-                $q = "DELETE FROM extension WHERE type = 'mod' AND name = 'servicehosting';";
-                $this->executeSql($q);
 
-                $q = "DELETE FROM extension_meta WHERE extension = 'servicehosting';";
-                $this->executeSql($q);
-            },
-            58 => function (): void {
-                // Migrate staff permissions from legacy service modules to product type permissions.
                 $root = Path::join(PATH_ROOT, 'extensions', 'products');
                 if (!is_dir($root)) {
                     return;
