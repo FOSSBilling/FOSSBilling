@@ -44,6 +44,8 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
 
         $this->_connectDatabaseHooks($disp, $e->getName());
         $this->_connectDatabaseHooks($disp, self::GLOBAL_LISTENER_NAME); // Also connect the global listeners (onEveryEvent)
+        $this->_connectProductTypeHooks($disp, $e->getName());
+        $this->_connectProductTypeHooks($disp, self::GLOBAL_LISTENER_NAME);
 
         $disp->notify($e);
 
@@ -84,5 +86,63 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
                 error_log($e->getMessage());
             }
         }
+    }
+
+    private function _connectProductTypeHooks(Box_EventDispatcher $disp, string $event): void
+    {
+        $registry = $this->di['product_type_registry'] ?? null;
+        if (!$registry instanceof FOSSBilling\ProductTypeRegistry) {
+            return;
+        }
+
+        foreach ($registry->getDefinitions() as $code => $definition) {
+            if (!empty($definition['legacy'])) {
+                continue;
+            }
+
+            try {
+                $handler = $registry->getHandler((string) $code);
+            } catch (Throwable $e) {
+                error_log($e->getMessage());
+                continue;
+            }
+
+            $this->connectProductTypeHook($disp, $handler, $event);
+        }
+    }
+
+    private function connectProductTypeHook(Box_EventDispatcher $disp, object $handler, string $event): void
+    {
+        if (!method_exists($handler, $event)) {
+            return;
+        }
+
+        try {
+            $method = new ReflectionMethod($handler, $event);
+        } catch (ReflectionException) {
+            return;
+        }
+
+        if (!$this->canBeConnected($method)) {
+            return;
+        }
+
+        $disp->connect($event, [$handler, $event]);
+    }
+
+    private function canBeConnected(ReflectionMethod $method): bool
+    {
+        if (!$method->isPublic()) {
+            return false;
+        }
+
+        $parameters = $method->getParameters();
+        if (!isset($parameters[0])) {
+            return false;
+        }
+
+        $type = $parameters[0]->getType() instanceof ReflectionNamedType ? $parameters[0]->getType()->getName() : null;
+
+        return $type === Box_Event::class || $type === '\Box_Event' || $type === 'Box_Event';
     }
 }

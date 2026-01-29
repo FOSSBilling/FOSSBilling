@@ -47,6 +47,8 @@ class Client implements InjectionAwareInterface
     {
         $app->post('/api/:role/:class/:method', 'post_method', ['role', 'class', 'method'], static::class);
         $app->get('/api/:role/:class/:method', 'get_method', ['role', 'class', 'method'], static::class);
+        $app->post('/api/:role/product_type/:code/:method', 'post_product_type_method', ['role', 'code', 'method'], static::class);
+        $app->get('/api/:role/product_type/:code/:method', 'get_product_type_method', ['role', 'code', 'method'], static::class);
 
         // all other requests are error requests
         $app->get('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
@@ -71,6 +73,16 @@ class Client implements InjectionAwareInterface
         return null;
     }
 
+    public function get_product_type_method(\Box_App $app, $role, $code, $method): null
+    {
+        $class = 'service' . $code;
+        $call = $class . '_' . $method;
+
+        $this->tryCall($role, $class, $call, $_GET);
+
+        return null;
+    }
+
     public function post_method(\Box_App $app, $role, $class, $method): null
     {
         $p = $_POST;
@@ -81,6 +93,24 @@ class Client implements InjectionAwareInterface
             $p = @json_decode($input, true);
         }
 
+        $call = $class . '_' . $method;
+
+        $this->tryCall($role, $class, $call, $p);
+
+        return null;
+    }
+
+    public function post_product_type_method(\Box_App $app, $role, $code, $method): null
+    {
+        $p = $_POST;
+
+        // adding support for raw post input with json string
+        $input = $this->filesystem->readFile('php://input');
+        if (empty($p) && !empty($input)) {
+            $p = @json_decode($input, true);
+        }
+
+        $class = 'service' . $code;
         $call = $class . '_' . $method;
 
         $this->tryCall($role, $class, $call, $p);

@@ -718,8 +718,16 @@ final class DomainHandler implements ProductTypeHandlerInterface, InjectionAware
     {
         try {
             $di = $event->getDi();
-            $domainService = $di['mod_service']('servicedomain');
-            $domainService->batchSyncExpirationDates();
+            $registry = $di['product_type_registry'] ?? null;
+            if ($registry instanceof \FOSSBilling\ProductTypeRegistry && $registry->has('domain')) {
+                $handler = $registry->getHandler('domain');
+                if (method_exists($handler, 'batchSyncExpirationDates')) {
+                    $handler->batchSyncExpirationDates();
+                }
+            } else {
+                $domainService = $di['mod_service']('servicedomain');
+                $domainService->batchSyncExpirationDates();
+            }
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }

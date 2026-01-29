@@ -567,6 +567,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 if (!$this->isProductTypeRegistered($typeCode)) {
                     continue;
                 }
+                $code = $this->normalizeProductTypeEmailCode($typeCode, $code);
             } else {
                 // Skip if module is not active.
                 if (!$extensionService->isExtensionActive('mod', $module)) {
@@ -595,12 +596,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function getProductTypeEmailTemplatePath(string $module, string $code): ?string
     {
-        if (!str_starts_with($module, 'service')) {
-            return null;
-        }
-
-        $typeCode = substr($module, strlen('service'));
-        if ($typeCode === '' || !$this->isProductTypeRegistered($typeCode)) {
+        $typeCode = $this->resolveProductTypeCodeFromModule($module);
+        if ($typeCode === null) {
             return null;
         }
 
@@ -611,18 +608,58 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return null;
         }
 
-        $candidates = [
-            Path::join($basePath, 'templates', 'email', "{$code}.html.twig"),
-            Path::join($basePath, 'html_email', "{$code}.html.twig"),
-        ];
+        $codeCandidates = $this->getProductTypeEmailCandidates($typeCode, $code);
+        foreach ($codeCandidates as $candidateCode) {
+            $candidates = [
+                Path::join($basePath, 'templates', 'email', "{$candidateCode}.html.twig"),
+                Path::join($basePath, 'html_email', "{$candidateCode}.html.twig"),
+            ];
 
-        foreach ($candidates as $candidate) {
-            if ($this->filesystem->exists($candidate)) {
-                return $candidate;
+            foreach ($candidates as $candidate) {
+                if ($this->filesystem->exists($candidate)) {
+                    return $candidate;
+                }
             }
         }
 
         return null;
+    }
+
+    private function resolveProductTypeCodeFromModule(string $module): ?string
+    {
+        $module = strtolower($module);
+        $typeCode = str_starts_with($module, 'service')
+            ? substr($module, strlen('service'))
+            : $module;
+
+        if ($typeCode === '' || !$this->isProductTypeRegistered($typeCode)) {
+            return null;
+        }
+
+        return $typeCode;
+    }
+
+    private function getProductTypeEmailCandidates(string $typeCode, string $code): array
+    {
+        $typeCode = strtolower($typeCode);
+        $codeCandidates = [$code];
+
+        $servicePrefix = 'mod_service' . $typeCode . '_';
+        $directPrefix = 'mod_' . $typeCode . '_';
+
+        if (str_starts_with($code, $servicePrefix)) {
+            $suffix = substr($code, strlen($servicePrefix));
+            if ($suffix !== '') {
+                $codeCandidates[] = 'mod_' . $typeCode . '_' . $suffix;
+            }
+        } elseif (str_starts_with($code, $directPrefix)) {
+            $suffix = substr($code, strlen($directPrefix));
+            if ($suffix !== '') {
+                $codeCandidates[] = 'mod_service' . $typeCode . '_' . $suffix;
+            }
+        }
+
+        return array_values(array_unique($codeCandidates));
     }
 
     private function isProductTypeRegistered(string $code): bool
@@ -634,6 +671,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $registry = $this->di['product_type_registry'];
 
         return $registry->has($code);
+    }
+
+    private function normalizeProductTypeEmailCode(string $typeCode, string $code): string
+    {
+        $typeCode = strtolower($typeCode);
+        $directPrefix = 'mod_' . $typeCode . '_';
+        if (str_starts_with($code, $directPrefix)) {
+            $suffix = substr($code, strlen($directPrefix));
+            if ($suffix !== '') {
+                return 'mod_service' . $typeCode . '_' . $suffix;
+            }
+        }
+
+        return $code;
     }
 
     private function getProductTypeCodeFromPath(string $extensionsRoot, string $path): ?string

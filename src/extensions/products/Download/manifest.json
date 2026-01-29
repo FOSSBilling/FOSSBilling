@@ -14,5 +14,9 @@
       "file": "Api/Client.php"
     }
   },
+  "templates": {
+    "manage": "mod_download_manage.html.twig",
+    "config": "mod_download_config.html.twig"
+  },
   "source": "core"
 }

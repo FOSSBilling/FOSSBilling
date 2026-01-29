@@ -1093,8 +1093,18 @@ class Service implements InjectionAwareInterface
         $dc = $data['domain'];
         $action = $dc['action'];
 
-        $drepo = $this->di['mod_service']('servicedomain');
-        $drepo->validateOrderData($dc);
+        $domainHandler = null;
+        if (isset($this->di['product_type_registry'])) {
+            $registry = $this->di['product_type_registry'];
+            if ($registry instanceof \FOSSBilling\ProductTypeRegistry && $registry->has('domain')) {
+                $domainHandler = $registry->getHandler('domain');
+            }
+        }
+        $domainHandler ??= $this->di['mod_service']('servicedomain');
+
+        if (method_exists($domainHandler, 'validateOrderData')) {
+            $domainHandler->validateOrderData($dc);
+        }
         if ($action == 'owndomain') {
             return false;
         }

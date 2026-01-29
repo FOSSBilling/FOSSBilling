@@ -49,10 +49,22 @@ final class Api_Handler implements InjectionAwareInterface
             $arguments = $arguments[0];
         }
 
-        $e = explode('_', (string) $method);
-        $mod = strtolower($e[0]);
-        unset($e[0]);
-        $method_name = implode('_', $e);
+        $method = (string) $method;
+        if (str_starts_with($method, 'product_type_')) {
+            $rest = substr($method, strlen('product_type_'));
+            if ($rest === '' || !str_contains($rest, '_')) {
+                throw new FOSSBilling\Exception('Product type method :method must contain underscore', [':method' => $method], 710);
+            }
+            $segments = explode('_', $rest);
+            $code = strtolower((string) array_shift($segments));
+            $mod = 'service' . $code;
+            $method_name = implode('_', $segments);
+        } else {
+            $e = explode('_', $method);
+            $mod = strtolower($e[0]);
+            unset($e[0]);
+            $method_name = implode('_', $e);
+        }
 
         if (empty($mod)) {
             throw new FOSSBilling\Exception('Invalid module name', null, 714);

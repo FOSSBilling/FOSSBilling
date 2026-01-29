@@ -216,7 +216,15 @@ class Model_ProductDomainTable extends Model_ProductTable
     #[Override]
     public function getProductPrice(Model_Product $product, ?array $config = null)
     {
-        $rtable = $this->di['mod_service']('servicedomain', 'Tld');
+        $domainHandler = null;
+        if (isset($this->di['product_type_registry'])) {
+            $registry = $this->di['product_type_registry'];
+            if ($registry instanceof \FOSSBilling\ProductTypeRegistry && $registry->has('domain')) {
+                $domainHandler = $registry->getHandler('domain');
+            }
+        }
+
+        $rtable = $domainHandler ?? $this->di['mod_service']('servicedomain', 'Tld');
         $tld = '';
 
         if (!isset($config['action'])) {
@@ -235,7 +243,11 @@ class Model_ProductDomainTable extends Model_ProductTable
             $tld = $config['transfer_tld'];
         }
 
-        $tld = $rtable->findOneByTld($tld);
+        if (method_exists($rtable, 'tldFindOneByTld')) {
+            $tld = $rtable->tldFindOneByTld($tld);
+        } else {
+            $tld = $rtable->findOneByTld($tld);
+        }
         if (!$tld instanceof Model_Tld) {
             throw new FOSSBilling\Exception('Unknown TLD. Could not determine registration price');
         }

@@ -92,16 +92,26 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
 
     private function resolveProductTypeCode(string $moduleName): ?string
     {
-        if (!str_starts_with($moduleName, 'service')) {
-            return null;
+        $moduleName = strtolower($moduleName);
+
+        if (str_starts_with($moduleName, 'service')) {
+            $code = substr($moduleName, strlen('service'));
+            if ($code !== '') {
+                return $code;
+            }
         }
 
-        $code = substr($moduleName, strlen('service'));
-        if ($code === '') {
-            return null;
+        if ($this->productTypeRegistry && $this->productTypeRegistry->has($moduleName)) {
+            return $moduleName;
         }
 
-        return $code;
+        if ($this->extensionsRoot && is_dir($this->extensionsRoot)) {
+            if ($this->resolveExtensionsProductPath($moduleName) !== null) {
+                return $moduleName;
+            }
+        }
+
+        return null;
     }
 
     private function getProductTypeTemplatePaths(string $code): array

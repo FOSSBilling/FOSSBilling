@@ -144,6 +144,14 @@ final class ProductTypeRegistry implements InjectionAwareInterface
         return $pairs;
     }
 
+    /**
+     * @return array<string, array>
+     */
+    public function getDefinitions(): array
+    {
+        return $this->definitions;
+    }
+
     public function getTemplate(string $code, string $key, ?string $fallback = null): string
     {
         $code = strtolower($code);
