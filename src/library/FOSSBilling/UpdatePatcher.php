@@ -672,6 +672,9 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->executeSql($q);
 
                 $this->executeSql("UPDATE product SET type = 'download' WHERE type = 'downloadable'");
+                $this->executeSql("UPDATE product SET product_type = 'download' WHERE product_type = 'downloadable'");
+                $this->executeSql("UPDATE client_order SET service_type = 'download' WHERE service_type = 'downloadable'");
+                $this->executeSql("UPDATE client_order SET product_type = 'download' WHERE product_type = 'downloadable'");
                 $this->executeSql("RENAME TABLE service_downloadable TO service_download");
 
                 $root = Path::join(PATH_ROOT, 'extensions', 'products');

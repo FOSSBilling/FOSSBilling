@@ -277,7 +277,7 @@ UNLOCK TABLES;
 
 
 
-# Dump of table service_downloadable
+# Dump of table service_download
 # ------------------------------------------------------------
 
 
@@ -310,7 +310,7 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','49',0,NULL,NULL,'2024-12-30 12:00:00','2024-12-30 12:00:00'),
+	(1,'last_patch','50',0,NULL,NULL,'2024-12-30 12:00:00','2024-12-30 12:00:00'),
 	(2,'company_name','Company Name',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(3,'company_email','support@yourcompany.com',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),

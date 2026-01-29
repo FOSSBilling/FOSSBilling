@@ -1006,12 +1006,12 @@ CREATE TABLE `service_domain` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `service_downloadable`
+-- Table structure for table `service_download`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `service_downloadable` (
+CREATE TABLE `service_download` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
   `filename` varchar(100) DEFAULT NULL,
