@@ -59,7 +59,6 @@ class SentryHelper
         'security',
         'seo',
         'serviceapikey',
-        'servicecustom',
         'servicedomain',
         'servicedownloadable',
         'servicehosting',

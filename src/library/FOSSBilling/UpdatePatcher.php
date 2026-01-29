@@ -669,10 +669,18 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             52 => function (): void {
                 // Remove Serviceapikey module registration now handled by product types.
-                $q = "DELETE FROM extension WHERE type = 'mod' AND id = 'serviceapikey';";
+                $q = "DELETE FROM extension WHERE type = 'mod' AND name = 'serviceapikey';";
                 $this->executeSql($q);
 
-                $q = "DELETE FROM extension_meta WHERE extension = 'serviceapikey' AND type = 'mod';";
+                $q = "DELETE FROM extension_meta WHERE extension = 'serviceapikey';";
+                $this->executeSql($q);
+            },
+            53 => function (): void {
+                // Remove Servicecustom module registration now handled by product types.
+                $q = "DELETE FROM extension WHERE type = 'mod' AND name = 'servicecustom';";
+                $this->executeSql($q);
+
+                $q = "DELETE FROM extension_meta WHERE extension = 'servicecustom';";
                 $this->executeSql($q);
             },
         ];

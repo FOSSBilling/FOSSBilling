@@ -1,0 +1,18 @@
+{
+  "code": "custom",
+  "label": "Custom",
+  "description": "Custom services with plugin adapters",
+  "handler_class": "FOSSBilling\\ProductType\\Custom\\CustomHandler",
+  "handler_file": "CustomHandler.php",
+  "api": {
+    "admin": {
+      "class": "FOSSBilling\\ProductType\\Custom\\Api\\Admin",
+      "file": "Api/Admin.php"
+    },
+    "client": {
+      "class": "FOSSBilling\\ProductType\\Custom\\Api\\Client",
+      "file": "Api/Client.php"
+    }
+  },
+  "source": "core"
+}

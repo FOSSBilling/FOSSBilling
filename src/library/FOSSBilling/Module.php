@@ -30,7 +30,7 @@ class Module implements InjectionAwareInterface
         'cron', 'currency', 'email', 'extension',
         'hook', 'index', 'invoice', 'order',
         'page', 'product', 'profile', 'security',
-        'servicecustom', 'servicedomain', 'servicedownloadable',
+        'servicedomain', 'servicedownloadable',
         'servicehosting', 'servicelicense', 'staff', 'stats',
         'support', 'system', 'theme', 'orderbutton', 'formbuilder',
         'widgets'];

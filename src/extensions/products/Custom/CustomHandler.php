@@ -1,23 +1,23 @@
 <?php
 
+declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
- *
- * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Servicecustom;
+namespace FOSSBilling\ProductType\Custom;
 
 use FOSSBilling\Environment;
+use FOSSBilling\Exception;
+use FOSSBilling\Interfaces\ProductTypeHandlerInterface;
+use Pimple\Container;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+final class CustomHandler implements ProductTypeHandlerInterface
 {
-    protected ?\Pimple\Container $di = null;
+    private ?Container $di = null;
     private readonly Filesystem $filesystem;
 
     public function __construct()
@@ -25,12 +25,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
-    public function setDi(\Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?\Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
@@ -58,10 +58,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    /**
-     * @return \Model_ServiceCustom
-     */
-    public function action_create(\Model_ClientOrder $order)
+    public function create(\Model_ClientOrder $order)
     {
         $product = $this->di['db']->getExistingModelById('Product', $order->product_id, 'Product not found');
 
@@ -77,92 +74,63 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model;
     }
 
-    public function action_activate(\Model_ClientOrder $order): bool
+    public function activate(\Model_ClientOrder $order): bool
     {
-        $orderService = $this->di['mod_service']('order');
-        $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new \FOSSBilling\Exception('Could not activate order. Service was not created', null, 7456);
-        }
-
+        $model = $this->getOrderService($order);
         $this->callOnAdapter($model, 'activate');
 
         return true;
     }
 
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function renew(\Model_ClientOrder $order): bool
     {
-        // move expiration period to future
-        $model = $this->_getOrderService($order);
+        $model = $this->getOrderService($order);
         $this->callOnAdapter($model, 'renew');
-
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
+        $this->touch($model);
 
         return true;
     }
 
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function suspend(\Model_ClientOrder $order): bool
     {
-        // move expiration period to future
-        $model = $this->_getOrderService($order);
-
+        $model = $this->getOrderService($order);
         $this->callOnAdapter($model, 'suspend');
-
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
+        $this->touch($model);
 
         return true;
     }
 
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function unsuspend(\Model_ClientOrder $order): bool
     {
-        // move expiration period to future
-        $model = $this->_getOrderService($order);
-
+        $model = $this->getOrderService($order);
         $this->callOnAdapter($model, 'unsuspend');
-
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
+        $this->touch($model);
 
         return true;
     }
 
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function cancel(\Model_ClientOrder $order): bool
     {
-        // move expiration period to future
-        $model = $this->_getOrderService($order);
-
+        $model = $this->getOrderService($order);
         $this->callOnAdapter($model, 'cancel');
-
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
+        $this->touch($model);
 
         return true;
     }
 
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function uncancel(\Model_ClientOrder $order): bool
     {
-        // move expiration period to future
-        $model = $this->_getOrderService($order);
-
+        $model = $this->getOrderService($order);
         $this->callOnAdapter($model, 'uncancel');
-
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
+        $this->touch($model);
 
         return true;
     }
 
-    public function action_delete(\Model_ClientOrder $order): bool
+    public function delete(\Model_ClientOrder $order): bool
     {
         try {
-            $model = $this->_getOrderService($order);
+            $model = $this->getOrderService($order);
         } catch (\Exception $e) {
             error_log($e->getMessage());
 
@@ -203,8 +171,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'renew',
             'activate',
         ];
-        if (in_array($method, $forbidden_methods)) {
-            throw new \FOSSBilling\Exception('Custom plugin method :method is forbidden', [':method' => $method], 403);
+        if (in_array($method, $forbidden_methods, true)) {
+            throw new Exception('Custom plugin method :method is forbidden', [':method' => $method], 403);
         }
 
         return $this->callOnAdapter($model, $method, $params);
@@ -213,14 +181,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function updateConfig($orderId, $config): void
     {
         if (!is_array($config)) {
-            throw new \FOSSBilling\Exception('Config must be an array');
+            throw new Exception('Config must be an array');
         }
 
         $model = $this->getServiceCustomByOrderId($orderId);
         $model->config = json_encode($config);
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
+        $this->touch($model);
 
         $this->di['logger']->info('Custom service updated #%s', $model->id);
     }
@@ -233,7 +199,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $s = $orderService->getOrderService($order);
 
         if (!$s instanceof \Model_ServiceCustom) {
-            throw new \FOSSBilling\Exception('Order is not activated');
+            throw new Exception('Order is not activated');
         }
 
         return $s;
@@ -243,14 +209,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $plugin = $model->plugin;
         if (empty($plugin)) {
-            // error_log('Plugin is not used for this custom service');
             return null;
         }
 
-        // check if plugin exists. If plugin does not exist, do not throw error. Simply add to log
         $file = Path::join('Plugin', $plugin, "{$plugin}.php");
         if (!Environment::isTesting() && !$this->filesystem->exists(Path::join(PATH_LIBRARY, $file))) {
-            $e = new \FOSSBilling\Exception('Plugin class file :file was not found', [':file' => $file], 3124);
+            $e = new Exception('Plugin class file :file was not found', [':file' => $file], 3124);
             if (DEBUG) {
                 error_log($e->getMessage());
             }
@@ -265,7 +229,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $adapter = new $plugin($config);
 
         if (!method_exists($adapter, $method)) {
-            throw new \FOSSBilling\Exception('Plugin :plugin does not support action :action', [':plugin' => $plugin, ':action' => $method], 3125);
+            throw new Exception('Plugin :plugin does not support action :action', [':plugin' => $plugin, ':action' => $method], 3125);
         }
 
         $orderService = $this->di['mod_service']('order');
@@ -276,14 +240,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $adapter->$method($data, $order_data, $params);
     }
 
-    private function _getOrderService(\Model_ClientOrder $order)
+    private function getOrderService(\Model_ClientOrder $order): \Model_ServiceCustom
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
+            throw new Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
         return $model;
+    }
+
+    private function touch(\Model_ServiceCustom $model): void
+    {
+        $model->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($model);
     }
 }
