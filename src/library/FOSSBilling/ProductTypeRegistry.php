@@ -192,6 +192,15 @@ final class ProductTypeRegistry implements InjectionAwareInterface
             } else {
                 $handlerClass = $definition['handler_class'];
                 if (!class_exists($handlerClass)) {
+                    $handlerFile = $this->resolveHandlerFile($definition);
+                    if ($handlerFile !== null) {
+                        if (!is_file($handlerFile)) {
+                            throw new Exception('Product type handler file "%s" was not found.', [$handlerFile]);
+                        }
+                        require_once $handlerFile;
+                    }
+                }
+                if (!class_exists($handlerClass)) {
                     throw new Exception('Product type handler class "%s" was not found.', [$handlerClass]);
                 }
                 $handler = new $handlerClass();
@@ -313,6 +322,22 @@ final class ProductTypeRegistry implements InjectionAwareInterface
         $definition['capabilities'] = array_values(array_unique(array_map('strtolower', $capabilities)));
 
         return $definition;
+    }
+
+    private function resolveHandlerFile(array $definition): ?string
+    {
+        $handlerFile = $definition['handler_file'] ?? null;
+        if (!is_string($handlerFile) || trim($handlerFile) === '') {
+            return null;
+        }
+
+        $handlerFile = trim($handlerFile);
+        $basePath = $definition['base_path'] ?? null;
+        if (!is_string($basePath) || trim($basePath) === '') {
+            return $handlerFile;
+        }
+
+        return Path::join($basePath, $handlerFile);
     }
 
     private function getLegacyBeans(string $code, \Model_ClientOrder $order, \ReflectionMethod $method): array
