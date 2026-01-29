@@ -127,25 +127,17 @@ class Service implements InjectionAwareInterface
 
     public function getTypes(): array
     {
-        $data = [
+        if (isset($this->di['product_type_registry'])) {
+            return $this->di['product_type_registry']->getPairs();
+        }
+
+        return [
             self::CUSTOM => 'Custom',
             self::LICENSE => 'License',
             self::DOWNLOADABLE => 'Downloadable',
             self::HOSTING => 'Hosting',
             self::DOMAIN => 'Domain',
         ];
-
-        // attach service modules
-        $extensionService = $this->di['mod_service']('extension');
-        $list = $extensionService->getInstalledMods();
-        foreach ($list as $mod) {
-            if (str_starts_with((string) $mod, 'service')) {
-                $n = substr((string) $mod, strlen('service'));
-                $data[$n] = ucfirst($n);
-            }
-        }
-
-        return $data;
     }
 
     public function getMainDomainProduct()

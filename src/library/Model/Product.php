@@ -51,6 +51,14 @@ class Model_Product extends RedBeanPHP\SimpleModel implements FOSSBilling\Inject
 
     public function getService()
     {
+        if ($this->di && isset($this->di['product_type_registry'])) {
+            try {
+                return $this->di['product_type_registry']->getHandler($this->type);
+            } catch (\Throwable) {
+                // Fallback to legacy resolution to avoid hard failures.
+            }
+        }
+
         return $this->di['mod_service']('service' . $this->type);
     }
 }

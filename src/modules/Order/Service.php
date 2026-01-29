@@ -772,43 +772,7 @@ class Service implements InjectionAwareInterface
 
     protected function _callOnService(\Model_ClientOrder $order, $action)
     {
-        $repo = $this->di['mod_service']('service' . $order->service_type);
-        // @deprecated
-        // @todo remove this when doctrine is removed
-        $core_services = [
-            \Model_ProductTable::CUSTOM,
-            \Model_ProductTable::LICENSE,
-            \Model_ProductTable::DOWNLOADABLE,
-            \Model_ProductTable::HOSTING,
-            \Model_ProductTable::DOMAIN,
-        ];
-
-        if (in_array($order->service_type, $core_services)) {
-            $m = 'action_' . $action;
-            if (!method_exists($repo, $m) || !is_callable([$repo, $m])) {
-                throw new \FOSSBilling\Exception('Service ' . $order->service_type . ' do not support ' . $m);
-            }
-
-            return $repo->$m($order);
-        }
-        // @new logic for services
-        $o = $this->di['db']->findOne(
-            'client_order',
-            'id = :id',
-            [':id' => $order->id]
-        );
-        $service = null;
-        $sdbname = 'service_' . $order->service_type;
-        if ($order->service_id) {
-            $service = $this->di['db']->load($sdbname, $order->service_id);
-        }
-        if (method_exists($repo, $action) && is_callable([$repo, $action])) {
-            return $repo->$action($o, $service);
-        }
-
-        error_log("Service {$order->service_type} does not support action {$action}.");
-
-        return null;
+        return $this->di['product_type_registry']->dispatchLifecycle($order->service_type, $action, $order);
     }
 
     public function stockSale(\Model_Product $product, $qty): bool
@@ -1321,14 +1285,14 @@ class Service implements InjectionAwareInterface
 
             return null;
         }
-        $srepo = $this->di['mod_service']('service' . $order->service_type);
-        if (!method_exists($srepo, 'toApiArray')) {
+        $handler = $this->di['product_type_registry']->getHandler($order->service_type);
+        if (!method_exists($handler, 'toApiArray')) {
             error_log("Service #{$order->service_type} method toApiArray is missing.");
 
             return null;
         }
 
-        return $srepo->toApiArray($service, true, $identity);
+        return $handler->toApiArray($service, true, $identity);
     }
 
     public function getTotal(\Model_ClientOrder $model)
