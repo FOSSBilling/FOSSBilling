@@ -182,7 +182,6 @@ final class ApiKeyHandler implements ProductTypeHandlerInterface
         }
 
         try {
-            $this->di['is_client_logged'];
             $client = $this->di['loggedin_client'];
         } catch (\Exception) {
             $client = null;

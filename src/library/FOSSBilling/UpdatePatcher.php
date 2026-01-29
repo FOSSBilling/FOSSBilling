@@ -359,7 +359,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = 'RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;';
                 $this->executeSql($q);
 
-                // An error here can pretty safely be ignore.
+                // An error here can pretty safely be ignored.
                 try {
                     // If the Kb extension is currently active, set enabled in Support settings.
                     $ext_service = $this->di['mod_service']('extension');
@@ -665,10 +665,10 @@ class UpdatePatcher implements InjectionAwareInterface
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
                 $this->executeSql($q);
 
-                $q = "DELETE FROM extension WHERE type = 'mod' AND name IN ('serviceapikey', 'servicecustom', 'servicelicense', 'servicehosting');";
+                $q = "DELETE FROM extension WHERE type = 'mod' AND name IN ('mod_serviceapikey', 'mod_servicecustom', 'mod_servicelicense', 'mod_servicehosting');";
                 $this->executeSql($q);
 
-                $q = "DELETE FROM extension_meta WHERE extension IN ('serviceapikey', 'servicecustom', 'servicelicense', 'servicehosting');";
+                $q = "DELETE FROM extension_meta WHERE extension IN ('mod_serviceapikey', 'mod_servicecustom', 'mod_servicelicense', 'mod_servicehosting');";
                 $this->executeSql($q);
 
                 $this->executeSql("UPDATE product SET type = 'download' WHERE type = 'downloadable'");

@@ -194,9 +194,9 @@ final class DomainHandler implements ProductTypeHandlerInterface, InjectionAware
         $model->privacy = false;
         $model->action = $c['action'];
         $model->ns1 = (isset($c['ns1']) && !empty($c['ns1'])) ? $c['ns1'] : $ns['nameserver_1'];
-        $model->ns2 = (isset($c['ns2']) && !empty($c['ns1'])) ? $c['ns2'] : $ns['nameserver_2'];
-        $model->ns3 = (isset($c['ns3']) && !empty($c['ns1'])) ? $c['ns3'] : $ns['nameserver_3'];
-        $model->ns4 = (isset($c['ns4']) && !empty($c['ns1'])) ? $c['ns4'] : $ns['nameserver_4'];
+        $model->ns2 = (isset($c['ns2']) && !empty($c['ns2'])) ? $c['ns2'] : $ns['nameserver_2'];
+        $model->ns3 = (isset($c['ns3']) && !empty($c['ns3'])) ? $c['ns3'] : $ns['nameserver_3'];
+        $model->ns4 = (isset($c['ns4']) && !empty($c['ns4'])) ? $c['ns4'] : $ns['nameserver_4'];
 
         $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
 

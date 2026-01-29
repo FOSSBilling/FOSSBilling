@@ -785,7 +785,11 @@ class Service implements InjectionAwareInterface
 
     protected function _callOnService(\Model_ClientOrder $order, $action)
     {
-        return $this->di['product_type_registry']->dispatchLifecycle($this->getOrderTypeCode($order), $action, $order);
+        $typeCode = $this->getOrderTypeCode($order);
+        if (empty($typeCode)) {
+            throw new Exception('Order has no product type configured');
+        }
+        return $this->di['product_type_registry']->dispatchLifecycle($typeCode, $action, $order);
     }
 
     public function stockSale(\Model_Product $product, $qty): bool
@@ -1311,7 +1315,7 @@ class Service implements InjectionAwareInterface
 
     private function getOrderTypeCode(\Model_ClientOrder $order): string
     {
-        return $order->product_type ?? $order->service_type;
+        return $order->product_type ?? $order->service_type ?? '';
     }
 
     public function getTotal(\Model_ClientOrder $model)
