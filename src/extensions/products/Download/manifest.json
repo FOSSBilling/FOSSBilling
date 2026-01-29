@@ -1,0 +1,18 @@
+{
+  "code": "download",
+  "label": "Download",
+  "description": "Download file products",
+  "handler_class": "FOSSBilling\\ProductType\\Download\\DownloadHandler",
+  "handler_file": "DownloadHandler.php",
+  "api": {
+    "admin": {
+      "class": "FOSSBilling\\ProductType\\Download\\Api\\Admin",
+      "file": "Api/Admin.php"
+    },
+    "client": {
+      "class": "FOSSBilling\\ProductType\\Download\\Api\\Client",
+      "file": "Api/Client.php"
+    }
+  },
+  "source": "core"
+}

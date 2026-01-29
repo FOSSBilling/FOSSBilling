@@ -55,7 +55,7 @@ There are 2 types of modules:
 * Service modules
 * All other modules
 
-Think of Service modules as products that you want to sell. These modules have actions related to product configuration. Let's say the `Servicedownloadable` module allows you to sell downloadable products such as e-books, images, photos, and documents. The module keeps track of the number of downloads, and how many downloads were made.
+Think of Service modules as products that you want to sell. These modules have actions related to product configuration. Let's say the Download product type allows you to sell download products such as e-books, images, photos, and documents. The module keeps track of the number of downloads, and how many downloads were made.
 If you need to sell a new type of product you will implement a Service type module.
 
 Other modules extend the whole FOSSBilling API with any functionality needed. Check existing modules to get an idea of what is already shipped with the default structure of FOSSBilling.

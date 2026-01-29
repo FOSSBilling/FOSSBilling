@@ -19,7 +19,7 @@ class Service implements InjectionAwareInterface
     final public const string LICENSE = 'license';
     final public const string ADDON = 'addon';
     final public const string DOMAIN = 'domain';
-    final public const string DOWNLOADABLE = 'downloadable';
+    final public const string DOWNLOADABLE = 'download';
     final public const string HOSTING = 'hosting';
     final public const string VPS = 'vps';
 
@@ -151,7 +151,7 @@ class Service implements InjectionAwareInterface
         return [
             self::CUSTOM => 'Custom',
             self::LICENSE => 'License',
-            self::DOWNLOADABLE => 'Downloadable',
+            self::DOWNLOADABLE => 'Download',
             self::HOSTING => 'Hosting',
             self::DOMAIN => 'Domain',
         ];

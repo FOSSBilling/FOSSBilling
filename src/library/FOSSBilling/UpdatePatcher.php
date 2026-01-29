@@ -541,7 +541,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
                 }
 
-                $products = $dbal->executeQuery("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'")->fetchAllAssociative();
+                $products = $dbal->executeQuery("SELECT p.id, p.config FROM product p WHERE p.type = 'download'")->fetchAllAssociative();
 
                 foreach ($products as $product) {
                     $productConfig = json_decode((string) $product['config'], true) ?: [];
@@ -569,7 +569,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
 
                     if ($foundFilename === null) {
-                        $services = $dbal->executeQuery('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""', ['product_id' => $product['id']])->fetchAllAssociative();
+                        $services = $dbal->executeQuery('SELECT sd.id, sd.filename FROM service_download sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""', ['product_id' => $product['id']])->fetchAllAssociative();
 
                         foreach ($services as $service) {
                             $filePath = Path::join(PATH_UPLOADS, md5((string) $service['filename']));
@@ -589,7 +589,7 @@ class UpdatePatcher implements InjectionAwareInterface
                             'id' => $product['id'],
                         ]);
 
-                        $dbal->executeStatement('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id', ['filename' => $foundFilename, 'product_id' => $product['id']]);
+                        $dbal->executeStatement('UPDATE service_download sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id', ['filename' => $foundFilename, 'product_id' => $product['id']]);
 
                         $ordersToUpdate = $dbal->executeQuery('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"', ['product_id' => $product['id']])->fetchAllAssociative();
 
@@ -607,14 +607,14 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
                 }
 
-                $orphans = $dbal->executeQuery('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""')->fetchAllAssociative();
+                $orphans = $dbal->executeQuery('SELECT sd.id, co.config as order_config FROM service_download sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""')->fetchAllAssociative();
 
                 foreach ($orphans as $orphan) {
                     $orderConfig = json_decode($orphan['order_config'] ?? '', true);
                     if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
                         $filePath = Path::join(PATH_UPLOADS, md5((string) $orderConfig['filename']));
                         if ($filesystem->exists($filePath)) {
-                            $dbal->executeStatement('UPDATE service_downloadable SET filename = :filename WHERE id = :id', ['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
+                            $dbal->executeStatement('UPDATE service_download SET filename = :filename WHERE id = :id', ['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
                         }
                     }
                 }
@@ -690,6 +690,14 @@ class UpdatePatcher implements InjectionAwareInterface
 
                 $q = "DELETE FROM extension_meta WHERE extension = 'servicelicense';";
                 $this->executeSql($q);
+            },
+            55 => function (): void {
+                // Rename downloadable product type to download
+                $this->executeSql("UPDATE product SET type = 'download' WHERE type = 'downloadable'");
+            },
+            56 => function (): void {
+                // Rename service_downloadable table to service_download
+                $this->executeSql("RENAME TABLE service_downloadable TO service_download");
             },
         ];
         ksort($patches, SORT_NATURAL);

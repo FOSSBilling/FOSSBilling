@@ -1,29 +1,17 @@
 <?php
 
+declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
- *
- * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Servicedownloadable\Api;
+namespace FOSSBilling\ProductType\Download\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
 
-/**
- * Downloadable service management.
- */
-class Admin extends \Api_Abstract
+final class Admin extends \Api_Abstract
 {
-    /**
-     * Upload file to product. Uses $_FILES array so make sure your form is
-     * enctype="multipart/form-data".
-     *
-     * @return bool
-     */
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function upload($data)
     {
@@ -39,35 +27,22 @@ class Admin extends \Api_Abstract
         return $service->uploadProductFile($model);
     }
 
-    /**
-     * Update downloadable product order with new file.
-     * This will change only this order file.
-     *
-     * Uses $_FILES array so make sure your form is
-     * enctype="multipart/form-data"
-     *
-     * @return bool
-     */
     #[RequiredParams(['order_id' => 'Order ID (order_id) was not passed'])]
     public function update($data)
     {
         $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
 
         $orderService = $this->di['mod_service']('order');
-        $serviceDownloadable = $orderService->getOrderService($order);
-        if (!$serviceDownloadable instanceof \Model_ServiceDownloadable) {
+        $serviceDownload = $orderService->getOrderService($order);
+        if (!$serviceDownload instanceof \Model_ServiceDownload) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 
         $service = $this->getService();
 
-        return $service->updateProductFile($serviceDownloadable, $order);
+        return $service->updateProductFile($serviceDownload, $order);
     }
 
-    /**
-     * Save configuration for product.
-     *
-     **/
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function config_save($data)
     {
@@ -78,15 +53,6 @@ class Admin extends \Api_Abstract
         return $service->saveProductConfig($model, $data);
     }
 
-    /**
-     * Send file for download for a specific product.
-     *
-     * @param array{id:int|string} $data data required to send the product file, must contain the product ID as `id`
-     *
-     * @return bool true if the product file was successfully sent
-     *
-     * @throws \FOSSBilling\Exception if the product cannot be found or the file cannot be sent
-     */
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function send_file($data): bool
     {

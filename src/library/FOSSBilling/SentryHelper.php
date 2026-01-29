@@ -60,7 +60,6 @@ class SentryHelper
         'seo',
         'serviceapikey',
         'servicedomain',
-        'servicedownloadable',
         'servicehosting',
         'spamchecker',
         'staff',

@@ -1,0 +1,23 @@
+{% if order.status == 'active' %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2>{{ 'Download'|trans }} {{ service.filename }}</h2>
+    </div>
+    <div class="card-body">
+        <button class="btn btn-primary btn-large" onclick="downloadOrderFile({{ order.id }})">{{ 'Download'|trans }}</button>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function downloadOrderFile(orderId) {
+    API.client.post('product_type/download/send_file', {order_id: orderId},
+        function(data) {
+            window.location.reload();
+        },
+        function(error) {
+            FOSSBilling.message(error.message, 'error');
+        }
+    );
+}
+</script>

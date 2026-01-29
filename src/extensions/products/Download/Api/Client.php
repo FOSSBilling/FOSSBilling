@@ -1,25 +1,15 @@
 <?php
 
+declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
- *
- * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Servicedownloadable\Api;
+namespace FOSSBilling\ProductType\Download\Api;
 
-/**
- * Downloadable service management.
- */
-class Client extends \Api_Abstract
+final class Client extends \Api_Abstract
 {
-    /**
-     * Use GET to call this method. Sends file attached to order.
-     * Sends file as attachment.
-     */
     public function send_file($data): bool
     {
         if (!isset($data['order_id'])) {
@@ -33,7 +23,7 @@ class Client extends \Api_Abstract
 
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceDownloadable || $order->status !== 'active') {
+        if (!$s instanceof \Model_ServiceDownload || $order->status !== 'active') {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

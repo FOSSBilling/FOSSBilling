@@ -118,7 +118,7 @@ final class ServiceTest extends \BBTestCase
         $expectedArray = [
             'custom' => 'Custom',
             'license' => 'License',
-            'downloadable' => 'Downloadable',
+            'download' => 'Download',
             'hosting' => 'Hosting',
             'domain' => 'Domain',
         ];

@@ -14,7 +14,7 @@ class Model_ProductTable implements FOSSBilling\InjectionAwareInterface
     final public const string LICENSE = 'license';
     final public const string ADDON = 'addon';
     final public const string DOMAIN = 'domain';
-    final public const string DOWNLOADABLE = 'downloadable';
+    final public const string DOWNLOADABLE = 'download';
     final public const string HOSTING = 'hosting';
     final public const string VPS = 'vps';
 

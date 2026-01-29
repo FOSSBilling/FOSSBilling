@@ -47,7 +47,7 @@ FOSSBilling follows a modular architecture with clear separation of concerns:
 
 * **Core Application:** Located in `src/` directory containing the main application logic
 * **Modules:** Located in `src/modules/` - Two types of modules exist:
-  * **Service Modules:** Represent products that can be sold (e.g., hosting packages, downloadable products). These modules' names must start with "Service", such as "Servicehosting".
+  * **Service Modules:** Represent products that can be sold (e.g., hosting packages, download products). These modules' names must start with "Service", such as "Servicehosting".
   * **Extension Modules:** Extend FOSSBilling with additional functionality
 * **Themes:** Located in `src/themes/` for customizing the user interface
 * **Libraries:** Core libraries and third-party integrations in `src/library/`

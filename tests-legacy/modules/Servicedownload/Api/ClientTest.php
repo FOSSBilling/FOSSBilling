@@ -96,7 +96,7 @@ final class ClientTest extends \BBTestCase
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
+        $serviceMock = $this->createMock(\Box\Mod\Servicedownload\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendFile')
             ->willReturn(true);
