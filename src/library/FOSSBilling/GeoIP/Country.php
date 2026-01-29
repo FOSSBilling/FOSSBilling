@@ -31,14 +31,14 @@ class Country implements \JsonSerializable
      */
     public readonly array $currencies;
 
-    public function __construct(array $countyRecord, LanguageAlpha2 $language)
+    public function __construct(array $countryRecord, LanguageAlpha2 $language)
     {
-        if (!array_key_exists('iso_code', $countyRecord)) {
+        if (!array_key_exists('iso_code', $countryRecord)) {
             throw new IncompleteRecord('The is no country information for the provided IP address');
         }
 
         // Instance the language
-        $country = CountryAlpha2::from($countyRecord['iso_code']);
+        $country = CountryAlpha2::from($countryRecord['iso_code']);
         $this->name = $country->getNameInLanguage($language) ?? 'Unknown';
         $this->flag = $country->getFlagEmoji() ?? '';
 

@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: 'Perform Spellcheck'
-        uses: streetsidesoftware/cspell-action@24fa8d3096a314ce263f39578744e9d9f8d80acf # v8
+        uses: streetsidesoftware/cspell-action@d5d910b521ad408f1e7383c24609079f5a88bdca # v8
         with:
           incremental_files_only: true
 
@@ -52,7 +52,7 @@ jobs:
           phpstan-php-version: 8.4
           phpstan-version: 'latest'
           phpunit-enable: 'true'
-          phpunit-version: 10
+          phpunit-version: 12
 
   preview-build:
     name: 'Create Preview Release'
