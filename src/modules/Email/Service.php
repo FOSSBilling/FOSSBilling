@@ -270,6 +270,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $mod = $matches[1];
 
         $path = Path::join(PATH_MODS, ucfirst($mod), 'html_email', "{$code}.html.twig");
+        if (!$this->filesystem->exists($path)) {
+            $productPath = $this->getProductTypeEmailTemplatePath($mod, $code);
+            if ($productPath !== null) {
+                $path = $productPath;
+            }
+        }
 
         if ($this->filesystem->exists($path)) {
             $tpl = $this->filesystem->readFile($path);
@@ -537,15 +543,35 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
 
         $finder = new Finder();
-        $finder = $finder->files()->in(PATH_MODS . '/*/html_email/')->name('*.html.twig');
+        $paths = [PATH_MODS . '/*/html_email/'];
+        $extensionsRoot = Path::join(PATH_ROOT, 'extensions', 'products');
+        if (is_dir($extensionsRoot)) {
+            $paths[] = Path::join($extensionsRoot, '*', 'templates', 'email');
+            $paths[] = Path::join($extensionsRoot, '*', 'html_email');
+        }
+
+        $finder = $finder->files()->in($paths)->name('*.html.twig');
 
         foreach ($finder as $file) {
             $code = $file->getBasename('.html.twig');
-            $module = strtolower(Path::getFilenameWithoutExtension(Path::getDirectory($file->getPath())));
+            $path = $file->getPath();
+            $isProductExtension = str_starts_with($path, $extensionsRoot . DIRECTORY_SEPARATOR);
+            $module = strtolower(Path::getFilenameWithoutExtension(Path::getDirectory($path)));
 
-            // Skip if module is not active.
-            if (!$extensionService->isExtensionActive('mod', $module)) {
-                continue;
+            if ($isProductExtension) {
+                $typeCode = $this->getProductTypeCodeFromPath($extensionsRoot, $path);
+                if ($typeCode === null) {
+                    continue;
+                }
+                $module = 'service' . $typeCode;
+                if (!$this->isProductTypeRegistered($typeCode)) {
+                    continue;
+                }
+            } else {
+                // Skip if module is not active.
+                if (!$extensionService->isExtensionActive('mod', $module)) {
+                    continue;
+                }
             }
 
             // Skip if template already exists.
@@ -562,9 +588,68 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
         }
 
-        $this->di['logger']->info('Generated email templates for installed modules.');
+        $this->di['logger']->info('Generated email templates for installed modules and product types.');
 
         return true;
+    }
+
+    private function getProductTypeEmailTemplatePath(string $module, string $code): ?string
+    {
+        if (!str_starts_with($module, 'service')) {
+            return null;
+        }
+
+        $typeCode = substr($module, strlen('service'));
+        if ($typeCode === '' || !$this->isProductTypeRegistered($typeCode)) {
+            return null;
+        }
+
+        $registry = $this->di['product_type_registry'];
+        $definition = $registry->getDefinition($typeCode);
+        $basePath = $definition['base_path'] ?? null;
+        if (!is_string($basePath) || $basePath === '') {
+            return null;
+        }
+
+        $candidates = [
+            Path::join($basePath, 'templates', 'email', "{$code}.html.twig"),
+            Path::join($basePath, 'html_email', "{$code}.html.twig"),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if ($this->filesystem->exists($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private function isProductTypeRegistered(string $code): bool
+    {
+        if (!isset($this->di['product_type_registry'])) {
+            return false;
+        }
+
+        $registry = $this->di['product_type_registry'];
+
+        return $registry->has($code);
+    }
+
+    private function getProductTypeCodeFromPath(string $extensionsRoot, string $path): ?string
+    {
+        if (!str_starts_with($path, $extensionsRoot . DIRECTORY_SEPARATOR)) {
+            return null;
+        }
+
+        $relative = Path::makeRelative($path, $extensionsRoot);
+        $segments = array_values(array_filter(explode(DIRECTORY_SEPARATOR, $relative)));
+        $dirName = $segments[0] ?? null;
+        if (!$dirName) {
+            return null;
+        }
+
+        return strtolower($dirName);
     }
 
     public function templateBatchDisable(): bool

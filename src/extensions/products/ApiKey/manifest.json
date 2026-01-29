@@ -1,0 +1,22 @@
+{
+  "code": "apikey",
+  "label": "API Key",
+  "description": "API key access tokens",
+  "handler_class": "FOSSBilling\\ProductType\\ApiKey\\ApiKeyHandler",
+  "handler_file": "ApiKeyHandler.php",
+  "api": {
+    "admin": {
+      "class": "FOSSBilling\\ProductType\\ApiKey\\Api\\Admin",
+      "file": "Api/Admin.php"
+    },
+    "client": {
+      "class": "FOSSBilling\\ProductType\\ApiKey\\Api\\Client",
+      "file": "Api/Client.php"
+    },
+    "guest": {
+      "class": "FOSSBilling\\ProductType\\ApiKey\\Api\\Guest",
+      "file": "Api/Guest.php"
+    }
+  },
+  "source": "core"
+}

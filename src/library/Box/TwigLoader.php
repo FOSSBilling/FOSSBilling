@@ -16,6 +16,8 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
 {
     protected array $options;
     private readonly Filesystem $filesystem;
+    private ?FOSSBilling\ProductTypeRegistry $productTypeRegistry = null;
+    private ?string $extensionsRoot = null;
 
     /**
      * Constructor.
@@ -39,6 +41,12 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
 
         $this->options = $options;
         $this->filesystem = new Filesystem();
+        if (isset($options['product_type_registry']) && $options['product_type_registry'] instanceof FOSSBilling\ProductTypeRegistry) {
+            $this->productTypeRegistry = $options['product_type_registry'];
+        }
+        if (isset($options['extensions_products']) && is_string($options['extensions_products'])) {
+            $this->extensionsRoot = $options['extensions_products'];
+        }
         $paths_arr = [$options['mods'], $options['theme']];
         $this->setPaths($paths_arr);
     }
@@ -59,6 +67,13 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
         $paths[] = Path::join($this->options['theme'], 'html_custom');
         $paths[] = Path::join($this->options['theme'], 'html');
         if (isset($name_split[1])) {
+            $moduleName = strtolower((string) $name_split[1]);
+            $code = $this->resolveProductTypeCode($moduleName);
+            if ($code !== null) {
+                foreach ($this->getProductTypeTemplatePaths($code) as $templatePath) {
+                    $paths[] = $templatePath;
+                }
+            }
             $paths[] = Path::join($this->options['mods'], ucfirst($name_split[1]), "html_{$this->options['type']}");
         }
 
@@ -73,5 +88,69 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
         }
 
         throw new Twig\Error\LoaderError(sprintf('Unable to find template "%s" (looked into: %s).', $name, implode(', ', $paths)));
+    }
+
+    private function resolveProductTypeCode(string $moduleName): ?string
+    {
+        if (!str_starts_with($moduleName, 'service')) {
+            return null;
+        }
+
+        $code = substr($moduleName, strlen('service'));
+        if ($code === '') {
+            return null;
+        }
+
+        return $code;
+    }
+
+    private function getProductTypeTemplatePaths(string $code): array
+    {
+        $paths = [];
+
+        if ($this->productTypeRegistry && $this->productTypeRegistry->has($code)) {
+            $definition = $this->productTypeRegistry->getDefinition($code);
+            $basePath = $definition['base_path'] ?? null;
+            if (is_string($basePath) && $basePath !== '') {
+                $paths[] = Path::join($basePath, 'templates', $this->options['type']);
+                $paths[] = Path::join($basePath, "html_{$this->options['type']}");
+            }
+
+            return $paths;
+        }
+
+        if ($this->extensionsRoot && is_dir($this->extensionsRoot)) {
+            $resolved = $this->resolveExtensionsProductPath($code);
+            if ($resolved !== null) {
+                $paths[] = Path::join($resolved, 'templates', $this->options['type']);
+                $paths[] = Path::join($resolved, "html_{$this->options['type']}");
+            }
+        }
+
+        return $paths;
+    }
+
+    private function resolveExtensionsProductPath(string $code): ?string
+    {
+        if (!$this->extensionsRoot) {
+            return null;
+        }
+
+        $directPath = Path::join($this->extensionsRoot, $code);
+        if ($this->filesystem->exists($directPath)) {
+            return $directPath;
+        }
+
+        $iterator = new DirectoryIterator($this->extensionsRoot);
+        foreach ($iterator as $entry) {
+            if (!$entry->isDir() || $entry->isDot()) {
+                continue;
+            }
+            if (strtolower($entry->getFilename()) === $code) {
+                return $entry->getPathname();
+            }
+        }
+
+        return null;
     }
 }

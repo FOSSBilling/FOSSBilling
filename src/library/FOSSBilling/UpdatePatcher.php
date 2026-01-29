@@ -652,6 +652,29 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = 'UPDATE `client_order` SET `product_type` = `service_type` WHERE `product_type` IS NULL;';
                 $this->executeSql($q);
             },
+            51 => function (): void {
+                // Ensure service_apikey table exists for product type extensions.
+                $q = '
+                CREATE TABLE IF NOT EXISTS `service_apikey` (
+                    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                    `client_id` bigint(20) NOT NULL,
+                    `api_key` varchar(255) DEFAULT NULL,
+                    `config` text NOT NULL,
+                    `created_at` datetime DEFAULT NULL,
+                    `updated_at` datetime DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `client_id_idx` (`client_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
+                $this->executeSql($q);
+            },
+            52 => function (): void {
+                // Remove Serviceapikey module registration now handled by product types.
+                $q = "DELETE FROM extension WHERE type = 'mod' AND id = 'serviceapikey';";
+                $this->executeSql($q);
+
+                $q = "DELETE FROM extension_meta WHERE extension = 'serviceapikey' AND type = 'mod';";
+                $this->executeSql($q);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

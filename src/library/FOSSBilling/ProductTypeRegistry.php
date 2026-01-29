@@ -172,6 +172,36 @@ final class ProductTypeRegistry implements InjectionAwareInterface
         return $template;
     }
 
+    public function getApiDefinition(string $code, string $role): ?array
+    {
+        $code = strtolower($code);
+        $role = strtolower($role);
+
+        $definition = $this->getDefinition($code);
+        $api = $definition['api'] ?? null;
+        if (!is_array($api)) {
+            return null;
+        }
+
+        $entry = $api[$role] ?? null;
+        if ($entry === null) {
+            return null;
+        }
+
+        if (is_string($entry)) {
+            $entry = ['class' => $entry];
+        }
+
+        if (!is_array($entry) || empty($entry['class'])) {
+            throw new Exception('Product type "%s" API definition for "%s" must define "class".', [$code, $role]);
+        }
+
+        return [
+            'class' => $entry['class'],
+            'file' => $this->resolveApiFile($definition, $entry),
+        ];
+    }
+
     public function getHandler(string $code): object
     {
         $code = strtolower($code);
@@ -338,6 +368,22 @@ final class ProductTypeRegistry implements InjectionAwareInterface
         }
 
         return Path::join($basePath, $handlerFile);
+    }
+
+    private function resolveApiFile(array $definition, array $apiDefinition): ?string
+    {
+        $apiFile = $apiDefinition['file'] ?? null;
+        if (!is_string($apiFile) || trim($apiFile) === '') {
+            return null;
+        }
+
+        $apiFile = trim($apiFile);
+        $basePath = $definition['base_path'] ?? null;
+        if (!is_string($basePath) || trim($basePath) === '') {
+            return $apiFile;
+        }
+
+        return Path::join($basePath, $apiFile);
     }
 
     private function getLegacyBeans(string $code, \Model_ClientOrder $order, \ReflectionMethod $method): array

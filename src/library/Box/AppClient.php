@@ -108,6 +108,8 @@ class Box_AppClient extends Box_App
         $loader = new Box_TwigLoader(
             [
                 'mods' => PATH_MODS,
+                'extensions_products' => Path::join(PATH_ROOT, 'extensions', 'products'),
+                'product_type_registry' => $this->di['product_type_registry'],
                 'theme' => Path::join(PATH_THEMES, $code),
                 'type' => 'client',
             ]

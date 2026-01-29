@@ -58,9 +58,22 @@ final class Api_Handler implements InjectionAwareInterface
             throw new FOSSBilling\Exception('Invalid module name', null, 714);
         }
 
-        $service = $this->di['mod']('extension')->getService();
+        $extensionService = $this->di['mod']('extension')->getService();
+        $isModuleActive = $extensionService->isExtensionActive('mod', $mod);
+        $productTypeCode = null;
 
-        if (!$service->isExtensionActive('mod', $mod)) {
+        if (isset($this->di['product_type_registry'])) {
+            $productTypeCode = $this->resolveProductTypeCode($mod);
+        }
+
+        if ($isModuleActive) {
+            $apiClass = '\Box\Mod\\' . ucfirst($mod) . '\\Api\\' . ucfirst((string) $this->type);
+            if (!class_exists($apiClass) && $productTypeCode !== null) {
+                $isModuleActive = false;
+            }
+        }
+
+        if (!$isModuleActive && $productTypeCode === null) {
             throw new FOSSBilling\Exception('FOSSBilling module :mod is not installed/activated', [':mod' => $mod], 715);
         }
 
@@ -77,6 +90,10 @@ final class Api_Handler implements InjectionAwareInterface
 
                 return null;
             }
+        }
+
+        if ($productTypeCode !== null) {
+            return $this->callProductTypeApi($productTypeCode, $method_name, $arguments, $mod);
         }
 
         $api_class = '\Box\Mod\\' . ucfirst($mod) . '\\Api\\' . ucfirst((string) $this->type);
@@ -106,6 +123,69 @@ final class Api_Handler implements InjectionAwareInterface
 
         $data = is_array($arguments) ? $arguments : [];
 
+        $this->validateRequiredParams($api, $method_name, $data);
+
+        return $api->{$method_name}($arguments);
+    }
+
+    private function resolveProductTypeCode(string $module): ?string
+    {
+        $module = strtolower($module);
+        if (!str_starts_with($module, 'service')) {
+            return null;
+        }
+
+        $code = substr($module, strlen('service'));
+        if ($code === '') {
+            return null;
+        }
+
+        $registry = $this->di['product_type_registry'] ?? null;
+        if (!$registry instanceof FOSSBilling\ProductTypeRegistry) {
+            return null;
+        }
+
+        return $registry->has($code) ? $code : null;
+    }
+
+    private function callProductTypeApi(string $code, string $method_name, $arguments, string $module)
+    {
+        $registry = $this->di['product_type_registry'];
+        $definition = $registry->getApiDefinition($code, $this->type);
+        if ($definition === null) {
+            throw new FOSSBilling\Exception('Product type :mod does not expose :type API', [':mod' => $module, ':type' => $this->type], 715);
+        }
+
+        $api_class = $definition['class'];
+        $api_file = $definition['file'] ?? null;
+
+        if (!class_exists($api_class) && $api_file) {
+            require_once $api_file;
+        }
+
+        if (!class_exists($api_class)) {
+            throw new FOSSBilling\Exception('API class :class not found for product type :mod', [':class' => $api_class, ':mod' => $module], 730);
+        }
+
+        $api = new $api_class();
+
+        if (!$api instanceof Api_Abstract) {
+            throw new FOSSBilling\Exception('Api class must be an instance of Api_Abstract', null, 730);
+        }
+
+        $api->setDi($this->di);
+        $api->setIdentity($this->identity);
+        $api->setIp($this->di['request']->getClientIp());
+        $api->setService($registry->getHandler($code));
+
+        if (!method_exists($api, $method_name) || !is_callable([$api, $method_name])) {
+            $reflector = new ReflectionClass($api);
+            if (!$reflector->hasMethod('__call')) {
+                throw new FOSSBilling\Exception(':type API call :method does not exist for product type :module', [':type' => ucfirst((string) $this->type), ':method' => $method_name, ':module' => $module], 740);
+            }
+        }
+
+        $data = is_array($arguments) ? $arguments : [];
         $this->validateRequiredParams($api, $method_name, $data);
 
         return $api->{$method_name}($arguments);
