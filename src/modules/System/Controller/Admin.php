@@ -44,6 +44,13 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 ],
                 [
                     'location' => 'system',
+                    'label' => __trans('Hosting plans and servers'),
+                    'index' => 140,
+                    'uri' => $this->di['url']->adminLink('servicehosting'),
+                    'class' => '',
+                ],
+                [
+                    'location' => 'system',
                     'label' => __trans('Update FOSSBilling'),
                     'index' => 100,
                     'uri' => $this->di['url']->adminLink('system/update'),
@@ -60,6 +67,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/system/index', 'get_index', [], static::class);
         $app->get('/system/activity', 'get_activity', [], static::class);
         $app->get('/system/update', 'get_update', [], static::class);
+        $app->get('/servicehosting', 'get_servicehosting_index', null, static::class);
+        $app->get('/servicehosting/plan/:id', 'get_servicehosting_plan', ['id' => '[0-9]+'], static::class);
+        $app->get('/servicehosting/server/:id', 'get_servicehosting_server', ['id' => '[0-9]+'], static::class);
     }
 
     public function get_index(\Box_App $app): string
@@ -81,5 +91,28 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $this->di['is_admin_logged'];
 
         return $app->render('mod_system_update');
+    }
+
+    public function get_servicehosting_index(\Box_App $app): string
+    {
+        $this->di['is_admin_logged'];
+
+        return $app->render('mod_servicehosting_index');
+    }
+
+    public function get_servicehosting_plan(\Box_App $app, $id): string
+    {
+        $api = $this->di['api_admin'];
+        $hp = $api->servicehosting_hp_get(['id' => $id]);
+
+        return $app->render('mod_servicehosting_hp', ['hp' => $hp]);
+    }
+
+    public function get_servicehosting_server(\Box_App $app, $id): string
+    {
+        $api = $this->di['api_admin'];
+        $server = $api->servicehosting_server_get(['id' => $id]);
+
+        return $app->render('mod_servicehosting_server', ['server' => $server]);
     }
 }

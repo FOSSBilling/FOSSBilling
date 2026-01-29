@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Servicehosting\Api;
+namespace FOSSBilling\ProductType\Hosting\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
 

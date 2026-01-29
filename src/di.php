@@ -215,26 +215,6 @@ $di['product_type_registry'] = function () use ($di) {
     $registry = new FOSSBilling\ProductTypeRegistry();
     $registry->setDi($di);
 
-    $legacyModules = FOSSBilling\Module::CORE_MODULES;
-    try {
-        $installed = $di['mod_service']('extension')->getInstalledMods();
-    } catch (\Throwable) {
-        $installed = [];
-    }
-
-    $legacyModules = array_unique(array_merge($legacyModules, $installed));
-    foreach ($legacyModules as $moduleName) {
-        if (!is_string($moduleName)) {
-            continue;
-        }
-        $normalized = strtolower($moduleName);
-        if (!str_starts_with($normalized, 'service')) {
-            continue;
-        }
-        $source = in_array($normalized, FOSSBilling\Module::CORE_MODULES, true) ? 'core' : 'extension';
-        $registry->registerLegacyModule($moduleName, ['source' => $source]);
-    }
-
     $registry->loadFromFilesystem(Path::join(PATH_ROOT, 'extensions', 'products'));
 
     return $registry;

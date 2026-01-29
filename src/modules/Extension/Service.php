@@ -751,7 +751,37 @@ class Service implements InjectionAwareInterface
             $modules[$module]['permissions'] = $permissions;
         }
 
+        foreach ($this->getProductTypePermissionEntries() as $key => $entry) {
+            $modules[$key] = $entry;
+        }
+
         return $modules;
+    }
+
+    private function getProductTypePermissionEntries(): array
+    {
+        if (!isset($this->di['product_type_registry'])) {
+            return [];
+        }
+
+        $registry = $this->di['product_type_registry'];
+        $entries = [];
+
+        foreach ($registry->getDefinitions() as $code => $definition) {
+            if (!empty($definition['legacy'])) {
+                continue;
+            }
+
+            $label = $definition['label'] ?? ucfirst((string) $code);
+            $entries[$registry->getPermissionKey((string) $code)] = [
+                'permissions' => [],
+                'label' => __trans('Product type: :label', [':label' => $label]),
+            ];
+        }
+
+        uasort($entries, static fn (array $a, array $b): int => strcasecmp((string) ($a['label'] ?? ''), (string) ($b['label'] ?? '')));
+
+        return $entries;
     }
 
     public function getSpecificModulePermissions(string $module): array|false

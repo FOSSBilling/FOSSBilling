@@ -1,0 +1,27 @@
+{
+  "code": "hosting",
+  "label": "Hosting",
+  "description": "Hosting account provisioning and management",
+  "handler_class": "FOSSBilling\\ProductType\\Hosting\\HostingHandler",
+  "handler_file": "HostingHandler.php",
+  "api": {
+    "admin": {
+      "class": "FOSSBilling\\ProductType\\Hosting\\Api\\Admin",
+      "file": "Api/Admin.php"
+    },
+    "client": {
+      "class": "FOSSBilling\\ProductType\\Hosting\\Api\\Client",
+      "file": "Api/Client.php"
+    },
+    "guest": {
+      "class": "FOSSBilling\\ProductType\\Hosting\\Api\\Guest",
+      "file": "Api/Guest.php"
+    }
+  },
+  "templates": {
+    "manage": "mod_servicehosting_manage.html.twig",
+    "config": "mod_servicehosting_config.html.twig",
+    "order_form": "mod_servicehosting_order_form.html.twig"
+  },
+  "source": "core"
+}

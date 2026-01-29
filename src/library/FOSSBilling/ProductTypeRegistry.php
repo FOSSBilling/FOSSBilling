@@ -144,6 +144,13 @@ final class ProductTypeRegistry implements InjectionAwareInterface
         return $pairs;
     }
 
+    public function getPermissionKey(string $code): string
+    {
+        $code = strtolower($code);
+
+        return 'product_type_' . $code;
+    }
+
     /**
      * @return array<string, array>
      */

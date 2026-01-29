@@ -150,7 +150,7 @@
 									<div class="row">
 										<div class="col-1"></div>
 										<div class="col-2">
-											<h3 class="float-right text-capitalize mt-1">{{ modName }}</h3>
+											<h3 class="float-right text-capitalize mt-1">{{ mod.label ?? modName }}</h3>
 										</div>
 										<div class="col-4">
 											{% if not mod.permissions.can_always_access %}

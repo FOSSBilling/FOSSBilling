@@ -9,16 +9,17 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Servicehosting;
+namespace FOSSBilling\ProductType\Hosting;
 
 use FOSSBilling\Exception;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\ProductTypeHandlerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
-class Service implements InjectionAwareInterface
+class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
@@ -66,6 +67,46 @@ class Service implements InjectionAwareInterface
         if (!isset($data['tld']) || empty($data['tld'])) {
             throw new InformationException('Domain extension is invalid.', null, 704);
         }
+    }
+
+    public function create(\Model_ClientOrder $order)
+    {
+        return $this->action_create($order);
+    }
+
+    public function activate(\Model_ClientOrder $order)
+    {
+        return $this->action_activate($order);
+    }
+
+    public function renew(\Model_ClientOrder $order)
+    {
+        return $this->action_renew($order);
+    }
+
+    public function suspend(\Model_ClientOrder $order)
+    {
+        return $this->action_suspend($order);
+    }
+
+    public function unsuspend(\Model_ClientOrder $order)
+    {
+        return $this->action_unsuspend($order);
+    }
+
+    public function cancel(\Model_ClientOrder $order)
+    {
+        return $this->action_cancel($order);
+    }
+
+    public function uncancel(\Model_ClientOrder $order)
+    {
+        return $this->action_uncancel($order);
+    }
+
+    public function delete(\Model_ClientOrder $order)
+    {
+        return $this->action_delete($order);
     }
 
     /**

@@ -30,7 +30,7 @@ class Module implements InjectionAwareInterface
         'cron', 'currency', 'email', 'extension',
         'hook', 'index', 'invoice', 'order',
         'page', 'product', 'profile', 'security',
-        'servicehosting', 'staff', 'stats',
+        'staff', 'stats',
         'support', 'system', 'theme', 'orderbutton', 'formbuilder'];
 
     public function setDi(?\Pimple\Container $di): void

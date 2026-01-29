@@ -699,6 +699,113 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Rename service_downloadable table to service_download
                 $this->executeSql("RENAME TABLE service_downloadable TO service_download");
             },
+            57 => function (): void {
+                // Remove Servicehosting module registration now handled by product types.
+                $q = "DELETE FROM extension WHERE type = 'mod' AND name = 'servicehosting';";
+                $this->executeSql($q);
+
+                $q = "DELETE FROM extension_meta WHERE extension = 'servicehosting';";
+                $this->executeSql($q);
+            },
+            58 => function (): void {
+                // Migrate staff permissions from legacy service modules to product type permissions.
+                $root = Path::join(PATH_ROOT, 'extensions', 'products');
+                if (!is_dir($root)) {
+                    return;
+                }
+
+                $codes = [];
+                $iterator = new \DirectoryIterator($root);
+                foreach ($iterator as $entry) {
+                    if (!$entry->isDir() || $entry->isDot()) {
+                        continue;
+                    }
+
+                    $manifestPath = Path::join($entry->getPathname(), 'manifest.json');
+                    if (!is_file($manifestPath)) {
+                        continue;
+                    }
+
+                    $contents = file_get_contents($manifestPath);
+                    if ($contents === false) {
+                        continue;
+                    }
+
+                    try {
+                        $data = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+                    } catch (\JsonException) {
+                        continue;
+                    }
+
+                    $code = $data['code'] ?? $entry->getFilename();
+                    if (!is_string($code) || trim($code) === '') {
+                        continue;
+                    }
+
+                    $codes[] = strtolower(trim($code));
+                }
+
+                $codes = array_values(array_unique($codes));
+                if (empty($codes)) {
+                    return;
+                }
+
+                $dbal = $this->di['dbal'];
+                $rows = $dbal->createQueryBuilder()
+                    ->select('id', 'permissions')
+                    ->from('admin')
+                    ->executeQuery()
+                    ->fetchAllAssociative();
+
+                foreach ($rows as $row) {
+                    $permissions = json_decode($row['permissions'] ?? '', true);
+                    if (!is_array($permissions)) {
+                        $permissions = [];
+                    }
+
+                    $changed = false;
+
+                    foreach ($codes as $code) {
+                        $legacyKey = 'service' . $code;
+                        if (!array_key_exists($legacyKey, $permissions)) {
+                            continue;
+                        }
+
+                        $legacyPerms = $permissions[$legacyKey];
+                        $newKey = 'product_type_' . $code;
+                        $newPerms = $permissions[$newKey] ?? [];
+                        if (!is_array($newPerms)) {
+                            $newPerms = [];
+                        }
+
+                        if (is_array($legacyPerms)) {
+                            foreach ($legacyPerms as $permKey => $value) {
+                                if ($permKey === 'access') {
+                                    $newPerms[$permKey] = (bool) ($newPerms[$permKey] ?? false) || (bool) $value;
+                                } elseif (!array_key_exists($permKey, $newPerms)) {
+                                    $newPerms[$permKey] = $value;
+                                }
+                            }
+                        } else {
+                            $newPerms['access'] = (bool) ($newPerms['access'] ?? false) || (bool) $legacyPerms;
+                        }
+
+                        $permissions[$newKey] = $newPerms;
+                        unset($permissions[$legacyKey]);
+                        $changed = true;
+                    }
+
+                    if ($changed) {
+                        $dbal->executeStatement(
+                            'UPDATE admin SET permissions = :permissions WHERE id = :id',
+                            [
+                                'permissions' => json_encode($permissions),
+                                'id' => $row['id'],
+                            ]
+                        );
+                    }
+                }
+            },
         ];
         ksort($patches, SORT_NATURAL);
 
