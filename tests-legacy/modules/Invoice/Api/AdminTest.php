@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -98,7 +98,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -248,7 +248,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $invoiceItemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $invoiceItemService);
 
         $this->api->setDi($di);
 
@@ -495,7 +495,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn(true);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
         $result = $this->api->transaction_process_all([]);
@@ -530,7 +530,7 @@ final class AdminTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventsMock;
         $di['logger'] = new \Box_Log();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -560,7 +560,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -578,7 +578,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn($newTransactionId);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
         $this->api->setDi($di);
 
         $result = $this->api->transaction_create([]);
@@ -607,7 +607,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -637,7 +637,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -662,7 +662,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
         $result = $this->api->transaction_get_list([]);
@@ -677,7 +677,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -693,7 +693,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -709,7 +709,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -725,7 +725,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -741,7 +741,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $transactionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 
         $this->api->setDi($di);
 
@@ -766,7 +766,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
 
         $this->api->setDi($di);
         $result = $this->api->gateway_get_list([]);
@@ -781,7 +781,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
         $this->api->setDi($di);
 
         $result = $this->api->gateway_get_pairs([]);
@@ -796,7 +796,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
         $this->api->setDi($di);
 
         $result = $this->api->gateway_get_available([]);
@@ -815,7 +815,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn(true);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
         $this->api->setDi($di);
 
         $result = $this->api->gateway_install($data);
@@ -844,7 +844,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
 
         $this->api->setDi($di);
 
@@ -873,7 +873,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
 
         $this->api->setDi($di);
 
@@ -903,7 +903,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
 
         $this->api->setDi($di);
 
@@ -933,7 +933,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $gatewayService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayService);
 
         $this->api->setDi($di);
 
@@ -942,7 +942,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function subscription_get_list()
+    public function subscription_get_list(): void
     {
         $subscriptionService = $this->createMock(\Box\Mod\Invoice\ServiceSubscription::class);
         $subscriptionService->expects($this->atLeastOnce())
@@ -959,7 +959,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $subscriptionService);
 
         $this->api->setDi($di);
         $result = $this->api->subscription_get_list([]);
@@ -993,7 +993,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $subscriptionService);
 
         $this->api->setDi($di);
 
@@ -1052,7 +1052,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $subscriptionService);
 
         $this->api->setDi($di);
 
@@ -1082,7 +1082,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $subscriptionService);
 
         $this->api->setDi($di);
 
@@ -1111,7 +1111,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $subscriptionService);
 
         $this->api->setDi($di);
 
@@ -1141,7 +1141,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $taxService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $taxService);
 
         $this->api->setDi($di);
 
@@ -1162,7 +1162,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn($newTaxId);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $taxService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $taxService);
 
         $this->api->setDi($di);
 
@@ -1171,7 +1171,7 @@ final class AdminTest extends \BBTestCase
         $this->assertEquals($newTaxId, $result);
     }
 
-    public function tax_get_list()
+    public function tax_get_list(): void
     {
         $taxService = $this->createMock(\Box\Mod\Invoice\ServiceTax::class);
         $taxService->expects($this->atLeastOnce())
@@ -1188,7 +1188,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn () => $taxService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $taxService);
 
         $this->api->setDi($di);
 
@@ -1260,7 +1260,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $taxService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $taxService);
 
         $this->api->setDi($di);
         $this->api->setService($taxService);
@@ -1287,7 +1287,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $taxService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $taxService);
 
         $this->api->setDi($di);
         $this->api->setService($taxService);

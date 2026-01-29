@@ -25,8 +25,6 @@ class Client extends \Api_Abstract
      * @optional string status - filter tickets by status
      * @optional string date_from - show tickets created since this day. Can be any string parsable by strtotime()
      * @optional string date_to - show tickets created until this day. Can be any string parsable by strtotime()
-     *
-     * @return array
      */
     public function ticket_get_list(array $data): array
     {
@@ -46,8 +44,6 @@ class Client extends \Api_Abstract
 
     /**
      * Return ticket full details.
-     *
-     * @return array
      */
     #[RequiredParams(['id' => 'Ticket ID was not passed'])]
     public function ticket_get(array $data): array
@@ -59,8 +55,6 @@ class Client extends \Api_Abstract
 
     /**
      * Return pairs for support helpdesk. Can be used to populate select box.
-     *
-     * @return array
      */
     public function helpdesk_get_pairs(): array
     {
@@ -127,8 +121,6 @@ class Client extends \Api_Abstract
 
     /**
      * Close ticket.
-     *
-     * @return bool
      */
     #[RequiredParams(['id' => 'Ticket ID was not passed'])]
     public function ticket_close(array $data): bool

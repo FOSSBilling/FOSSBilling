@@ -55,7 +55,7 @@ final class GuestTest extends \BBTestCase
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = $this->getDi();
-        $di['mod_config'] = $di->protect(fn ($name) => $configArr);
+        $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
         $di['validator'] = $validatorMock;
         $di['tools'] = $toolsMock;
 
@@ -97,7 +97,7 @@ final class GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
 
         $di = $this->getDi();
-        $di['mod_config'] = $di->protect(fn ($name) => $configArr);
+        $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
@@ -127,7 +127,7 @@ final class GuestTest extends \BBTestCase
 
         $client = new Guest();
         $di = $this->getDi();
-        $di['mod_config'] = $di->protect(fn ($name) => $configArr);
+        $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
         $client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -149,7 +149,7 @@ final class GuestTest extends \BBTestCase
 
         $client = new Guest();
         $di = $this->getDi();
-        $di['mod_config'] = $di->protect(fn ($name) => $configArr);
+        $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
         $client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -199,7 +199,7 @@ final class GuestTest extends \BBTestCase
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
-        $di['mod_service'] = $di->protect(fn () => $cartServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $cartServiceMock);
 
         $client = new Guest();
         $client->setDi($di);
@@ -245,7 +245,7 @@ final class GuestTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $emailServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
 
@@ -330,7 +330,7 @@ final class GuestTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['password'] = $passwordMock;
         $di['logger'] = new \Box_Log();
-        $di['mod_service'] = $di->protect(fn ($name) => $emailServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
 
         $client = new Guest();
         $client->setDi($di);
@@ -376,7 +376,7 @@ final class GuestTest extends \BBTestCase
         $configArr = [];
 
         $di = $this->getDi();
-        $di['mod_config'] = $di->protect(fn ($name) => $configArr);
+        $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
 
         $client = new Guest();
         $client->setDi($di);

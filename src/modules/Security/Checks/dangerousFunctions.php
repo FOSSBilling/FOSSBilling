@@ -80,8 +80,8 @@ class dangerousFunctions implements \FOSSBilling\Interfaces\SecurityCheckInterfa
 
         if ($state === SecurityCheckResultEnum::PASS) {
             return new SecurityCheckResult(SecurityCheckResultEnum::PASS, __trans('No potentially dangerous PHP functions were detected as enabled'));
-        } else {
-            return new SecurityCheckResult(SecurityCheckResultEnum::WARN, $result);
         }
+
+        return new SecurityCheckResult(SecurityCheckResultEnum::WARN, $result);
     }
 }

@@ -10,6 +10,7 @@
                         .then(editor => {
                             // Handle required attribute - CKEditor manages this internally
                             if (element.hasAttribute('required')) {
+                                element.dataset.editorRequired = 'true';
                                 element.removeAttribute('required');
                             }
                             

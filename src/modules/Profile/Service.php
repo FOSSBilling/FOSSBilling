@@ -12,6 +12,7 @@
 namespace Box\Mod\Profile;
 
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Tools;
 
 class Service implements InjectionAwareInterface
 {
@@ -137,6 +138,14 @@ class Service implements InjectionAwareInterface
             $client->email = $email;
         }
 
+        if (isset($data['phone_cc'])) {
+            $client->phone_cc = Tools::validatePhoneCC($data['phone_cc']);
+        }
+
+        if (isset($data['phone']) && is_string($data['phone'])) {
+            $client->phone = Tools::validatePhoneNumber($data['phone']);
+        }
+
         $client->first_name = $data['first_name'] ?? $client->first_name;
         $client->last_name = $data['last_name'] ?? $client->last_name;
         $client->gender = ClientValidator::validateGender($data['gender'] ?? $client->gender);
@@ -147,8 +156,6 @@ class Service implements InjectionAwareInterface
         $client->type = $data['type'] ?? $client->type;
         $client->address_1 = $data['address_1'] ?? $client->address_1;
         $client->address_2 = $data['address_2'] ?? $client->address_2;
-        $client->phone_cc = $data['phone_cc'] ?? $client->phone_cc;
-        $client->phone = $data['phone'] ?? $client->phone;
         $client->country = $data['country'] ?? $client->country;
         $client->postcode = $data['postcode'] ?? $client->postcode;
         $client->city = $data['city'] ?? $client->city;

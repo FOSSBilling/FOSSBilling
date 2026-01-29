@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\System;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 use Twig\Environment;
 
@@ -262,9 +262,7 @@ final class ServiceTest extends \BBTestCase
         $result = $this->service->clearCache();
 
         // Restore .gitkeep file if it was present before test
-        if ($gitkeepExists || !$gitkeepExists) {
-            file_put_contents($gitkeepFile, '');
-        }
+        file_put_contents($gitkeepFile, '');
 
         $this->assertIsBool($result);
         $this->assertTrue($result);

@@ -115,9 +115,9 @@ class Tools
 
         if ($valid) {
             return $password;
-        } else {
-            throw new InformationException('We were unable to generate a password with the required parameters');
         }
+
+        throw new InformationException('We were unable to generate a password with the required parameters');
     }
 
     public function slug($str): string
@@ -229,9 +229,9 @@ class Tools
                 $friendlyName = ucfirst(__trans('Email address'));
 
                 throw new InformationException(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
-            } else {
-                return false;
             }
+
+            return false;
         }
 
         return $email;
@@ -385,15 +385,38 @@ class Tools
         }
 
         // Use Symfony's HTML Sanitizer
-        $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer(
-            (new \Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig())
-                ->allowSafeElements()
-                ->allowElement('a', ['href', 'title'])
-                ->allowElement('code')
-                ->allowElement('pre')
-                ->allowLinkSchemes(['http', 'https', 'mailto', 'tel'])
-        );
+        $config = (new \Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig())
+            ->allowSafeElements()
+            ->allowElement('a', ['href', 'title'])
+            ->allowElement('code')
+            ->allowElement('pre')
+            ->allowLinkSchemes(['http', 'https', 'mailto', 'tel']);
+
+        $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer($config);
 
         return trim($sanitizer->sanitize($content));
+    }
+
+    public static function validatePhoneCC(string|int $countryCode): int
+    {
+        if (!is_numeric($countryCode) || $countryCode <= 0 || $countryCode > 999) {
+            throw new InformationException('The provided phone country code does not appear to be valid.');
+        }
+
+        return intval($countryCode);
+    }
+
+    public static function validatePhoneNumber(string $number): string
+    {
+        $digitsOnly = preg_replace('/\D+/', '', $number);
+        if (strlen((string) $digitsOnly) < 1 || strlen((string) $digitsOnly) > 12) {
+            throw new InformationException('The provided phone number does not appear to be valid.');
+        }
+
+        if (str_starts_with($number, '+')) {
+            throw new InformationException('Please use the separate field for the phone country code.');
+        }
+
+        return $number;
     }
 }

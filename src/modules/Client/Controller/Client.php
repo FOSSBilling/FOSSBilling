@@ -78,8 +78,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $result = $service->password_reset_valid($data);
         if ($result !== false) {
             return $app->render($template);
-        } else {
-            $app->redirect('/');
         }
+        $app->redirect('/');
     }
 }

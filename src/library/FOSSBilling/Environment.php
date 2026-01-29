@@ -13,13 +13,13 @@ namespace FOSSBilling;
 
 class Environment
 {
-    final public const ENV_KEY = 'APP_ENV';
-    final public const PRODUCTION = 'prod';
-    final public const DEVELOPMENT = 'dev';
-    final public const TESTING = 'test';
+    final public const string ENV_KEY = 'APP_ENV';
+    final public const string PRODUCTION = 'prod';
+    final public const string DEVELOPMENT = 'dev';
+    final public const string TESTING = 'test';
 
-    final public const POSSIBLE = [self::PRODUCTION, self::DEVELOPMENT, self::TESTING];
-    final public const DEFAULT = self::PRODUCTION;
+    final public const array POSSIBLE = [self::PRODUCTION, self::DEVELOPMENT, self::TESTING];
+    final public const string DEFAULT = self::PRODUCTION;
 
     /**
      * Get the current environment of the application.

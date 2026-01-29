@@ -26,14 +26,14 @@ class Module implements InjectionAwareInterface
     public const CONTROLLER_CLIENT_SUFFIX = '\\Controller\\Client';
     public const CONTROLLER_ADMIN_SUFFIX = '\\Controller\\Admin';
 
-    public const CORE_MODULES = [ 'api', 'activity', 'cart', 'client',
-                                  'cron', 'currency', 'email', 'extension',
-                                  'hook', 'index', 'invoice', 'order',
-                                  'page', 'product', 'profile', 'security',
-                                  'servicecustom', 'servicedomain', 'servicedownloadable',
-                                  'servicehosting', 'servicelicense', 'staff', 'stats',
-                                  'support', 'system', 'theme', 'orderbutton', 'formbuilder',
-                                  'widgets' ];
+    public const CORE_MODULES = ['api', 'activity', 'cart', 'client',
+        'cron', 'currency', 'email', 'extension',
+        'hook', 'index', 'invoice', 'order',
+        'page', 'product', 'profile', 'security',
+        'servicecustom', 'servicedomain', 'servicedownloadable',
+        'servicehosting', 'servicelicense', 'staff', 'stats',
+        'support', 'system', 'theme', 'orderbutton', 'formbuilder',
+        'widgets'];
 
     public function setDi(?\Pimple\Container $di): void
     {
@@ -47,7 +47,9 @@ class Module implements InjectionAwareInterface
 
     public function __construct(string $mod)
     {
-        if (!preg_match('#[a-zA-Z]#', $mod)) throw new Exception('Invalid module name (:mod).', ['mod' => $mod]);
+        if (!preg_match('#[a-zA-Z]#', $mod)) {
+            throw new Exception('Invalid module name (:mod).', ['mod' => $mod]);
+        }
 
         $this->module = strtolower($mod);
         $this->filesystem = new Filesystem();
@@ -56,18 +58,21 @@ class Module implements InjectionAwareInterface
     public function hasManifest(): bool
     {
         $path = Path::join($this->getModulePath(), self::MANIFEST_FILENAME);
+
         return $this->filesystem->exists($path);
     }
 
     public function getManifest(): array
     {
-        if (!$this->hasManifest()) throw new Exception('Missing manifest file for the :mod module.', [':mod' => $this->module], 5897);
+        if (!$this->hasManifest()) {
+            throw new Exception('Missing manifest file for the :mod module.', [':mod' => $this->module], 5897);
+        }
 
         $contents = file_get_contents(Path::join($this->getModulePath(), self::MANIFEST_FILENAME));
 
         try {
             $json = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
+        } catch (\JsonException) {
             throw new Exception('Invalid manifest file for the :mod module. Please check file syntax and permissions.', [':mod' => $this->module]);
         }
 
@@ -108,12 +113,16 @@ class Module implements InjectionAwareInterface
 
     public function getService(string $sub = ''): object
     {
-        if (!$this->hasService($sub)) throw new Exception('Module :mod does not have a service class. Make sure Service.php exists and is valid.', [':mod' => $this->module], 5898);
+        if (!$this->hasService($sub)) {
+            throw new Exception('Module :mod does not have a service class. Make sure Service.php exists and is valid.', [':mod' => $this->module], 5898);
+        }
 
         $class = self::SERVICE_CLASS_PREFIX . ucfirst($this->module) . '\\Service' . ucfirst($sub);
         $service = new $class();
 
-        if (method_exists($service, 'setDi')) $service->setDi($this->di);
+        if (method_exists($service, 'setDi')) {
+            $service->setDi($this->di);
+        }
 
         return $service;
     }
@@ -121,6 +130,7 @@ class Module implements InjectionAwareInterface
     public function hasClientController(): bool
     {
         $path = Path::join($this->getModulePath(), 'Controller/Client.php');
+
         return $this->filesystem->exists($path);
     }
 
@@ -142,7 +152,9 @@ class Module implements InjectionAwareInterface
 
     public function getAdminController(): ?object
     {
-        if (!$this->hasAdminController()) return null;
+        if (!$this->hasAdminController()) {
+            return null;
+        }
 
         return $this->createControllerInstance(self::CONTROLLER_ADMIN_SUFFIX);
     }
@@ -156,13 +168,16 @@ class Module implements InjectionAwareInterface
 
     public function install(): bool
     {
-        if ($this->isCore()) return true;
+        if ($this->isCore()) {
+            return true;
+        }
 
         if ($this->hasService()) {
             $s = $this->getService();
 
             if (method_exists($s, 'install')) {
                 $s->install();
+
                 return true;
             }
         }
@@ -172,13 +187,16 @@ class Module implements InjectionAwareInterface
 
     public function uninstall(): bool
     {
-        if ($this->isCore()) return true;
+        if ($this->isCore()) {
+            return true;
+        }
 
         if ($this->hasService()) {
             $s = $this->getService();
 
             if (method_exists($s, 'uninstall')) {
                 $s->uninstall();
+
                 return true;
             }
         }
@@ -188,7 +206,9 @@ class Module implements InjectionAwareInterface
 
     public function update(): bool
     {
-        if ($this->isCore()) throw new InformationException('Core modules cannot be updated separately. Please update to the latest FOSSBilling version to have the module updated.');
+        if ($this->isCore()) {
+            throw new InformationException('Core modules cannot be updated separately. Please update to the latest FOSSBilling version to have the module updated.');
+        }
 
         if ($this->hasService()) {
             $s = $this->getService();
@@ -219,10 +239,14 @@ class Module implements InjectionAwareInterface
         $modName = "mod_{$this->module}";
 
         $bean = $this->di['db']->findOne('extension_meta', 'extension = :ext AND meta_key = :key', [':ext' => $modName, ':key' => 'config']);
-        if (!$bean || empty($bean->meta_value)) return [];
+        if (!$bean || empty($bean->meta_value)) {
+            return [];
+        }
 
         $decrypted = $this->di['crypt']->decrypt($bean->meta_value, Config::getProperty('info.salt'));
-        if (!is_string($decrypted) || !json_validate($decrypted)) return [];
+        if (!is_string($decrypted) || !json_validate($decrypted)) {
+            return [];
+        }
 
         return json_decode($decrypted, true);
     }
@@ -239,6 +263,7 @@ class Module implements InjectionAwareInterface
 
             if (method_exists($cc, 'register')) {
                 $cc->register($app);
+
                 return true;
             }
         }
@@ -256,7 +281,9 @@ class Module implements InjectionAwareInterface
         $class = self::SERVICE_CLASS_PREFIX . ucfirst($this->module) . $suffix;
         $instance = new $class();
 
-        if (method_exists($instance, 'setDi')) $instance->setDi($this->di);
+        if (method_exists($instance, 'setDi')) {
+            $instance->setDi($this->di);
+        }
 
         return $instance;
     }

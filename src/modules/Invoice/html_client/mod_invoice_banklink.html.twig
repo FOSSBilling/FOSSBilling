@@ -24,7 +24,6 @@
                     <h2>{{ 'Redirecting to payment gateway...'|trans }}</h2>
                     <form method="post" action="{{ payment.service_url }}" name="payment_form">
                         <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-                        {% if payment.result.redirect_url is defined %}
                             {% for key, value in payment.result %}
                                 <input type="hidden" name="{{ key }}" value="{{ value }}" />
                             {% endfor %}

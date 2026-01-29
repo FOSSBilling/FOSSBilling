@@ -21,6 +21,7 @@ class Admin extends \Api_Abstract
      * Get a list of available currencies on the system.
      *
      * @param array $data Filtering and pagination parameters
+     *
      * @return array Paginated list of currencies
      */
     public function get_list(array $data): array
@@ -48,8 +49,6 @@ class Admin extends \Api_Abstract
     /**
      * Return currency details by cde.
      *
-     * @return array
-     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['code' => 'Currency code is missing'])]
@@ -69,8 +68,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Return default system currency.
-     *
-     * @return array
      */
     public function get_default(array $data): array
     {
@@ -82,6 +79,7 @@ class Admin extends \Api_Abstract
         if (!$default instanceof Currency) {
             throw new \FOSSBilling\Exception('Default currency not found');
         }
+
         return $default->toApiArray();
     }
 
@@ -123,8 +121,6 @@ class Admin extends \Api_Abstract
      * @optional string $format - new currency format
      * @optional float $conversion_rate - new currency conversion rate
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['code' => 'Currency code is missing'])]
@@ -148,8 +144,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Automatically update all currency rates.
-     *
-     * @return bool
      */
     public function update_rates(array $data): bool
     {
@@ -158,8 +152,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Remove a currency. Default currency cannot be removed.
-     *
-     * @return bool
      *
      * @throws \FOSSBilling\Exception
      */
@@ -172,8 +164,6 @@ class Admin extends \Api_Abstract
     /**
      * Set default currency. If you have active orders or invoices
      * not recalculation on profits and refunds are made.
-     *
-     * @return bool
      *
      * @throws \FOSSBilling\Exception
      */

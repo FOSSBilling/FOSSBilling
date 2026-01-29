@@ -15,17 +15,17 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    final public const CUSTOM = 'custom';
-    final public const LICENSE = 'license';
-    final public const ADDON = 'addon';
-    final public const DOMAIN = 'domain';
-    final public const DOWNLOADABLE = 'downloadable';
-    final public const HOSTING = 'hosting';
-    final public const VPS = 'vps';
+    final public const string CUSTOM = 'custom';
+    final public const string LICENSE = 'license';
+    final public const string ADDON = 'addon';
+    final public const string DOMAIN = 'domain';
+    final public const string DOWNLOADABLE = 'downloadable';
+    final public const string HOSTING = 'hosting';
+    final public const string VPS = 'vps';
 
-    final public const SETUP_AFTER_ORDER = 'after_order';
-    final public const SETUP_AFTER_PAYMENT = 'after_payment';
-    final public const SETUP_MANUAL = 'manual';
+    final public const string SETUP_AFTER_ORDER = 'after_order';
+    final public const string SETUP_AFTER_PAYMENT = 'after_payment';
+    final public const string SETUP_MANUAL = 'manual';
 
     protected ?\Pimple\Container $di = null;
 
@@ -745,9 +745,9 @@ class Service implements InjectionAwareInterface
 
             if ($p) {
                 return min($p);
-            } else {
-                return null;
             }
+
+            return null;
         }
 
         return null;

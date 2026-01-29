@@ -531,7 +531,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn($isExtensionActiveReturn);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $extension);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extension);
 
         $adminApi->setService($emailService);
         $adminApi->setDi($di);
@@ -573,7 +573,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn(['vars' => [], 'content' => 'content']);
 
         $loader = new \Twig\Loader\ArrayLoader();
-        $twig = $this->getMockBuilder("Twig\Environment")->setConstructorArgs([$loader, ['debug' => false]])->getMock();
+        $twig = $this->getMockBuilder(\Twig\Environment::class)->setConstructorArgs([$loader, ['debug' => false]])->getMock();
 
         $di = $this->getDi();
         $di['twig'] = $twig;

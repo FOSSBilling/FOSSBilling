@@ -1,117 +1,259 @@
 {% set periods = guest.system_periods %}
 {% set pricing = product.pricing %}
 {% set tlds = guest.serviceDomain_tlds({"allow_register":1}) %}
+{% set transfer_tlds = guest.serviceDomain_tlds({"allow_transfer":1}) %}
 
-<div class="row">
-    <div class="col-md-12">
-        <h5 class="mb-1">{{ product_details }}</h5>
-        <span class="text-muted">{{ 'Domain configuration'|trans }}</span>
-        <div class="mb-2">
-            <div class="form-check">
-                <input class="form-check-input" type="radio" name="domain[action]" value="owndomain"id="own-domain-check" onclick="selectDomainAction(this);" {% if tlds is empty %} checked {% endif %}>
-                <label class="form-check-label" for="own-domain-check">{{ 'I will use my existing domain and update nameservers'|trans }}</label>
-            </div>
-            {% if tlds is not empty %}
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="domain[action]" value="register" id="domain-register-check" onclick="selectDomainAction(this);">
-                    <label class="form-check-label" for="domain-register-check">{{ 'I want to register a new domain'|trans }}</label>
-                </div>
-            {% endif %}
+{# Domain configuration settings - default to true for backward compatibility #}
+{% set allow_register = product.config.allow_domain_register ?? true %}
+{% set allow_transfer = product.config.allow_domain_transfer ?? true %}
+{% set allow_own = product.config.allow_domain_own ?? true %}
 
-            <div id="owndomain" class="mt-2 domain_action" {% if tlds is not empty %} style="display: none;" {% endif %}>
+{# Determine which options are actually available #}
+{% set can_register = allow_register and tlds is not empty %}
+{% set can_transfer = allow_transfer and transfer_tlds is not empty %}
+{% set can_own = allow_own %}
+
+{# Only show domain configuration section if at least one option is available #}
+{% set show_domain_config = can_register or can_transfer or can_own %}
+
+{# Determine which option should be active by default #}
+{% set default_action = null %}
+{% if can_register %}
+    {% set default_action = 'register' %}
+{% elseif can_transfer %}
+    {% set default_action = 'transfer' %}
+{% elseif can_own %}
+    {% set default_action = 'owndomain' %}
+{% endif %}
+
+<h5 class="mb-1">{{ product_details }}</h5>
+
+{% if show_domain_config %}
+<hr />
+<h4 class="mt-4 mb-1"><strong>Domain configuration</strong></h4>
+
+<div class="d-flex mb-3">
+    <nav class="nav nav-pills flex-column border-end me-3 gap-2">
+        {% if can_register %}
+            <a class="nav-link me-3 py-1 px-2 fs-7{% if default_action == 'register' %} active{% endif %}" href="#"
+               id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane"
+               role="tab" aria-controls="register-tab-pane" data-action="register">{{ 'Register'|trans }}</a>
+        {% endif %}
+        {% if can_transfer %}
+            <a class="nav-link me-3 py-1 px-2 fs-7{% if default_action == 'transfer' %} active{% endif %}" href="#"
+               id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-tab-pane"
+               role="tab" aria-controls="transfer-tab-pane" data-action="transfer">{{ 'Transfer'|trans }}</a>
+        {% endif %}
+        {% if can_own %}
+            <a class="nav-link me-3 py-1 px-2 fs-7{% if default_action == 'owndomain' %} active{% endif %}" href="#"
+               id="owndomain-tab" data-bs-toggle="tab" data-bs-target="#owndomain-tab-pane"
+               role="tab" aria-controls="owndomain-tab-pane" data-action="owndomain">{{ 'Own domain'|trans }}</a>
+        {% endif %}
+    </nav>
+
+    <div class="tab-content flex-grow-1">
+        {% if can_register %}
+            <div class="tab-pane{% if default_action == 'register' %} show active{% endif %}" id="register-tab-pane"
+                 role="tabpanel" aria-labelledby="register-tab" tabindex="0">
                 <div class="row">
-                    <div class="col-md-8">
+                    <div class="col-sm-12">
+                        <label class="form-label">{{ 'Register a new domain'|trans }}</label>
                         <div class="d-flex gap-2">
-                            <div class="input-group mb-3">
-                                <input class="form-control w-75" type="text" name="domain[owndomain_sld]"
-                                       value="{{ request.owndomain_sld }}"
-                                       placeholder="{{ 'Your existing domain'|trans }}">
-                                <input class="form-control" type="text" name="domain[owndomain_tld]"
-                                       value="{{ request.owndomain_tld|default('.com') }}">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="register" class="mt-2 domain_action" style="display: none;">
-                <div class="row">
-                    <div class="col-md-9">
-                        <div class="d-flex gap-2">
-                            <div class="input-group mb-3">
-                            <input class="form-control" type="text" name="domain[register_sld]"
+                            <div class="input-group" style="max-width: 320px;">
+                                <input class="form-control form-control-sm" type="text" name="domain[register_sld]"
                                        value="{{ request.register_sld }}"
-                                       placeholder="{{ 'Your new domain'|trans }}">
-                            <select class="form-select" name="domain[register_tld]" style="width: 120px;">
+                                       placeholder="{{ 'Enter new domain name to register'|trans }}">
+                                <select class="form-select form-select-sm" name="domain[register_tld]" style="width: 30%; max-width: 90px;">
                                     {% for tld in tlds %}
                                         <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
-                            <div>
-                                <button class="btn btn-dark" type="button" id="domain-check">{{ 'Check'|trans }}</button>
-                            </div>
+                            <button class="btn btn-sm btn-dark" type="button" id="domain-check">{{ 'Check'|trans }}</button>
                         </div>
                     </div>
-                    <div class="col-md-4" id="domain-config" style="display:none;">
-                        <div class="mb-3">
-                            <label>
-                                <select class="form-select" name="domain[register_years]"></select>
+                    <div class="col-sm-12">
+                        <div id="register-config" style="display:none;">
+                            <label class="mt-2">
+                                <select class="form-select form-select-sm" name="domain[register_years]" id="registration-years"></select>
                             </label>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
+
+        {% if can_transfer %}
+            <div class="tab-pane{% if default_action == 'transfer' %} show active{% endif %}" id="transfer-tab-pane"
+                 role="tabpanel" aria-labelledby="transfer-tab" tabindex="0">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <label class="form-label">{{ 'Transfer your existing domain'|trans }}</label>
+                        <div class="d-flex gap-2">
+                            <div class="input-group" style="max-width: 320px;">
+                                <input class="form-control form-control-sm" type="text" name="domain[transfer_sld]"
+                                       value="{{ request.transfer_sld }}"
+                                       placeholder="{{ 'Enter your domain name to transfer'|trans }}">
+                                <select class="form-select form-select-sm" name="domain[transfer_tld]" style="width: 30%; max-width: 90px;">
+                                    {% for tld in transfer_tlds %}
+                                        <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button class="btn btn-sm btn-dark" type="button" id="transfer-check">{{ 'Check'|trans }}</button>
+                        </div>
+                    </div>
+                    <div class="col-sm-12">
+                        <div id="transfer-config" style="display:none;">
+                            <p class="fs-7 mt-2">{{ 'Transfer price is'|trans }}&nbsp;<span class="fw-bold" id="transfer-price"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if can_own %}
+            <div class="tab-pane{% if default_action == 'owndomain' %} show active{% endif %}" id="owndomain-tab-pane"
+                 role="tabpanel" aria-labelledby="owndomain-tab" tabindex="0">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <label class="form-label">{{ 'Use your existing domain'|trans }}</label>
+                        <div class="input-group" style="max-width: 320px;">
+                            <input class="form-control form-control-sm" type="text" name="domain[owndomain_sld]"
+                                   value="{{ request.owndomain_sld }}"
+                                   placeholder="{{ 'Your existing domain'|trans }}">
+                            <input class="form-control form-control-sm" type="text" name="domain[owndomain_tld]"
+                                   style="width: 30%; max-width: 90px;"
+                                   value="{{ request.owndomain_tld|default('.com') }}"
+                                   placeholder=".com">
+                        </div>
+                        <p class="fs-7 text-muted mt-2">{{ 'You will need to update your nameservers to point to our servers.'|trans }}</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </div>
 
+<input type="hidden" name="domain[action]" value="{{ default_action }}" id="domain-action">
+{% endif %}
+
 {% set currency = guest.cart_get_currency %}
 <script>
-    function selectDomainAction(el) {
-        document.querySelectorAll('.domain_action').forEach(function(element) {
-            element.style.display = 'none';
-        });
-        document.getElementById(el.value).style.display = 'block';
+    function fadeIn(el) {
+        el.style.removeProperty('display');
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.15s ease-in';
+        requestAnimationFrame(() => el.style.opacity = '1');
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById('domain-check').addEventListener('click', function(event) {
-            event.preventDefault();
-            var sld = document.querySelector('input[name="domain[register_sld]"]').value;
-            var tld = document.querySelector('select[name="domain[register_tld]"]').value;
-
-            API.guest.post('servicedomain/check', { sld: sld, tld: tld },
-                (result) => {
-                    setRegistrationPricing(tld);
-                    document.getElementById('domain-config').style.display = 'block';
-                });
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update domain action when switching tabs
+        document.querySelectorAll('.nav-pills .nav-link[data-action]').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const action = this.getAttribute('data-action');
+                const actionInput = document.getElementById('domain-action');
+                if (actionInput) {
+                    actionInput.value = action;
+                }
+            });
         });
+
+        const formatCurrency = (price, rate, code, multiply) => {
+            let total = parseFloat(price) * parseFloat(rate);
+            if (typeof multiply !== 'undefined') {
+                total *= multiply;
+            }
+            return `${total.toFixed(2)} ${code}`;
+        };
+
+        // Domain registration check
+        const domainCheck = document.getElementById('domain-check');
+        if (domainCheck) {
+            domainCheck.addEventListener('click', function(event) {
+                event.preventDefault();
+                const sld = document.querySelector('input[name="domain[register_sld]"]').value.toLowerCase();
+                const tld = document.querySelector('select[name="domain[register_tld]"]').value.toLowerCase();
+
+                API.guest.post('servicedomain/check', { sld: sld, tld: tld },
+                    function(result) {
+                        setRegistrationPricing(tld);
+                        const registerConfig = document.getElementById('register-config');
+                        if (registerConfig) fadeIn(registerConfig);
+                        domainCheck.style.display = 'none';
+                    },
+                );
+            });
+        }
+
+        // Domain transfer check
+        const transferCheck = document.getElementById('transfer-check');
+        if (transferCheck) {
+            transferCheck.addEventListener('click', function(event) {
+                event.preventDefault();
+                const sld = document.querySelector('input[name="domain[transfer_sld]"]').value.toLowerCase();
+                const tld = document.querySelector('select[name="domain[transfer_tld]"]').value.toLowerCase();
+
+                API.guest.post('servicedomain/can_be_transferred', { sld: sld, tld: tld },
+                    function(result) {
+                        setTransferPricing(tld);
+                        const transferConfig = document.getElementById('transfer-config');
+                        if (transferConfig) fadeIn(transferConfig);
+                        transferCheck.style.display = 'none';
+                    },
+                );
+            });
+        }
 
         function setRegistrationPricing(tld) {
             API.guest.post('servicedomain/pricing', { tld: tld },
-                (result) => {
-                    const s = document.querySelector("select[name='domain[register_years]']");
-                    s.find('option').remove();
+                function(result) {
+                    const yearsSelect = document.getElementById('registration-years');
+                    if (!yearsSelect) return;
+                    yearsSelect.innerHTML = '';
 
-                    for (i = 1; i < 6; i++) {
-                        let price = parseFloat(result.price_registration) * parseFloat( {{ currency.conversion_rate }});
-                        price = price * i;
-                        price = price.toFixed(2) + ' ' + "{{ currency.code }}";
+                    const regPrice = Number(result.price_registration);
+                    let renewPrice = Number(result.price_renew);
 
-                        if (i === 1) {
-                            s.append(new Option(i + "{{ ' year @ '|trans }}" + price, i));
-                        } else {
-                            s.append(new Option(i + "{{ ' years @ '|trans }}" + price, i));
-                        }
+                    if (result.price_renew === null || typeof result.price_renew === 'undefined' || isNaN(renewPrice)) {
+                        renewPrice = regPrice;
                     }
-                });
+
+                    const yearLabel = "{{ ' Year @ '|trans }}";
+                    const yearsLabel = "{{ ' Years @ '|trans }}";
+
+                    for (let i = 1; i <= 5; i++) {
+                        const totalPrice = (i === 1) ? regPrice : regPrice + (i - 1) * renewPrice;
+                        const priceFormatted = formatCurrency(
+                            totalPrice,
+                            {{ currency.conversion_rate }},
+                            "{{ currency.code }}",
+                            1
+                        );
+
+                        yearsSelect.append(
+                            new Option(i + (i === 1 ? yearLabel : yearsLabel) + priceFormatted, i)
+                        );
+                    }
+                },
+            );
         }
 
+        function setTransferPricing(tld) {
+            API.guest.post('servicedomain/pricing', { tld: tld },
+                function(result) {
+                    const price = formatCurrency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
+                    const transferPriceEl = document.getElementById('transfer-price');
+                    if (transferPriceEl) transferPriceEl.textContent = price;
+                },
+            );
+        }
+
+        // Handle addons visibility
         const addons = document.querySelector('.addons');
         const orderButton = document.getElementById('order-button');
 
-        if (addons && getComputedStyle(addons).display === 'none') {
+        if (addons && orderButton && getComputedStyle(addons).display === 'none') {
             orderButton.addEventListener('click', function handler(event) {
                 event.preventDefault();
                 orderButton.style.display = 'none';
