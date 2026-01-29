@@ -60,7 +60,7 @@
                             {% for product in products.list %}
                             <tr>
                                 <td>{{ product.id }}</td>
-                                <td>{{ mf.status_name(product.type) }}</td>
+                                <td>{{ product.type_label ?? mf.status_name(product.type) }}</td>
                                 <td>
                                     <a href="{{ '/product/category'|alink }}/{{ product.category.id }}">{{ product.category.title }}</a>
                                 </td>

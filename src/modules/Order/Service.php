@@ -65,7 +65,8 @@ class Service implements InjectionAwareInterface
 
             $email = $params;
             $email['to_client'] = $order->client_id;
-            $email['code'] = sprintf('mod_service%s_activated', $orderArr['service_type']);
+            $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
+            $email['code'] = sprintf('mod_service%s_activated', $typeCode);
             $email['service'] = $s;
             $email['order'] = $orderArr;
 
@@ -91,7 +92,8 @@ class Service implements InjectionAwareInterface
 
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_renewed', $orderArr['service_type']);
+            $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
+            $email['code'] = sprintf('mod_service%s_renewed', $typeCode);
             $email['service'] = $service;
             $email['order'] = $orderArr;
 
@@ -117,7 +119,8 @@ class Service implements InjectionAwareInterface
 
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_suspended', $orderArr['service_type']);
+            $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
+            $email['code'] = sprintf('mod_service%s_suspended', $typeCode);
             $email['service'] = $s;
             $email['order'] = $orderArr;
 
@@ -143,7 +146,8 @@ class Service implements InjectionAwareInterface
 
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_unsuspended', $orderArr['service_type']);
+            $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
+            $email['code'] = sprintf('mod_service%s_unsuspended', $typeCode);
             $email['service'] = $s;
             $email['order'] = $orderArr;
 
@@ -168,7 +172,8 @@ class Service implements InjectionAwareInterface
 
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_canceled', $orderArr['service_type']);
+            $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
+            $email['code'] = sprintf('mod_service%s_canceled', $typeCode);
             $email['order'] = $orderArr;
 
             $emailService = $di['mod_service']('email');
@@ -193,7 +198,8 @@ class Service implements InjectionAwareInterface
 
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_renewed', $orderArr['service_type']);
+            $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
+            $email['code'] = sprintf('mod_service%s_renewed', $typeCode);
             $email['order'] = $orderArr;
             $email['service'] = $s;
 
@@ -207,6 +213,7 @@ class Service implements InjectionAwareInterface
     public function getOrderService(\Model_ClientOrder $order)
     {
         if ($order->service_id !== null) {
+            $typeCode = $this->getOrderTypeCode($order);
             // @deprecated
             // @todo remove this when doctrine is removed
             $core_services = [
@@ -216,14 +223,14 @@ class Service implements InjectionAwareInterface
                 \Model_ProductTable::HOSTING,
                 \Model_ProductTable::DOMAIN,
             ];
-            if (in_array($order->service_type, $core_services)) {
-                $repo_class = $this->_getServiceClassName($order);
+            if (in_array($typeCode, $core_services)) {
+                $repo_class = $this->_getServiceClassName($typeCode);
 
                 return $this->di['db']->load($repo_class, $order->service_id);
             }
 
             return $this->di['db']->findOne(
-                'service_' . $order->service_type,
+                'service_' . $typeCode,
                 'id = :id',
                 [':id' => $order->service_id]
             );
@@ -232,9 +239,9 @@ class Service implements InjectionAwareInterface
         return null;
     }
 
-    protected function _getServiceClassName(\Model_ClientOrder $order): string
+    protected function _getServiceClassName(string $typeCode): string
     {
-        $s = $this->di['tools']->to_camel_case($order->service_type, true);
+        $s = $this->di['tools']->to_camel_case($typeCode, true);
 
         return 'Service' . ucfirst((string) $s);
     }
@@ -248,7 +255,11 @@ class Service implements InjectionAwareInterface
             ':service_id' => $service->id,
         ];
 
-        return $this->di['db']->findOne('ClientOrder', 'service_type  = :service_type AND service_id = :service_id', $bindings);
+        return $this->di['db']->findOne(
+            'ClientOrder',
+            '(product_type = :service_type OR (product_type IS NULL AND service_type = :service_type)) AND service_id = :service_id',
+            $bindings
+        );
     }
 
     public function getConfig(\Model_ClientOrder $model)
@@ -335,6 +346,7 @@ class Service implements InjectionAwareInterface
         $supportService = $this->di['mod_service']('support');
 
         $data = $this->di['db']->toArray($model);
+        $data['product_type'] = $model->product_type ?? $model->service_type;
         $data['config'] = json_decode($model->config ?? '', true) ?? [];
         $data['total'] = $this->getTotal($model);
         $data['title'] = $model->title;
@@ -373,7 +385,7 @@ class Service implements InjectionAwareInterface
         $status = $data['status'] ?? null;
         $title = $data['title'] ?? null;
         $period = $data['period'] ?? null;
-        $type = $data['type'] ?? null;
+        $type = $data['product_type'] ?? $data['service_type'] ?? $data['type'] ?? null;
         $created_at = $data['created_at'] ?? null;
         $date_from = $data['date_from'] ?? null;
         $date_to = $data['date_to'] ?? null;
@@ -416,7 +428,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($type) {
-            $where[] = 'co.service_type = :service_type';
+            $where[] = '(co.product_type = :service_type OR (co.product_type IS NULL AND co.service_type = :service_type))';
             $bindings[':service_type'] = $type;
         }
 
@@ -501,7 +513,8 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Currency could not be determined for order');
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCreate', 'params' => $data, 'subject' => $product->type]);
+        $typeCode = $product->product_type ?? $product->type;
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCreate', 'params' => $data, 'subject' => $typeCode]);
 
         $period = (isset($data['period']) && !empty($data['period'])) ? $data['period'] : null;
         $qty = $data['quantity'] ?? 1;
@@ -534,7 +547,7 @@ class Service implements InjectionAwareInterface
         if ($period) {
             $config['period'] = $period;
         }
-        $se = $this->di['product_type_registry']->getHandler($product->type);
+        $se = $this->di['product_type_registry']->getHandler($typeCode);
         // @deprecated logic
         if (method_exists($se, 'prependOrderConfig')) {
             $config = $se->prependOrderConfig($product, $config);
@@ -565,7 +578,8 @@ class Service implements InjectionAwareInterface
         $order->title = $generatedOrderTitle ?? $data['title'] ?? $product->title;
         $order->currency = $currency->getCode();
         $order->quantity = $qty;
-        $order->service_type = $product->type;
+        $order->service_type = $typeCode;
+        $order->product_type = $typeCode;
         $order->unit = $product->unit;
         $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
         $order->config = json_encode($config);
@@ -712,11 +726,12 @@ class Service implements InjectionAwareInterface
     {
         $service = $this->getOrderService($order);
         if (!is_object($service)) {
-            $handler = $this->di['product_type_registry']->getHandler($order->service_type);
+            $typeCode = $this->getOrderTypeCode($order);
+            $handler = $this->di['product_type_registry']->getHandler($typeCode);
             if (method_exists($handler, 'create') || method_exists($handler, 'action_create')) {
                 $service = $this->_callOnService($order, \Model_ClientOrder::ACTION_CREATE);
                 if (!is_object($service)) {
-                    throw new \FOSSBilling\Exception('Error creating ' . $order->service_type . ' service for order ' . $order->id);
+                    throw new \FOSSBilling\Exception('Error creating ' . $typeCode . ' service for order ' . $order->id);
                 }
 
                 $order->service_id = $service->id;
@@ -770,7 +785,7 @@ class Service implements InjectionAwareInterface
 
     protected function _callOnService(\Model_ClientOrder $order, $action)
     {
-        return $this->di['product_type_registry']->dispatchLifecycle($order->service_type, $action, $order);
+        return $this->di['product_type_registry']->dispatchLifecycle($this->getOrderTypeCode($order), $action, $order);
     }
 
     public function stockSale(\Model_Product $product, $qty): bool
@@ -1283,14 +1298,20 @@ class Service implements InjectionAwareInterface
 
             return null;
         }
-        $handler = $this->di['product_type_registry']->getHandler($order->service_type);
+        $typeCode = $this->getOrderTypeCode($order);
+        $handler = $this->di['product_type_registry']->getHandler($typeCode);
         if (!method_exists($handler, 'toApiArray')) {
-            error_log("Service #{$order->service_type} method toApiArray is missing.");
+            error_log("Service #{$typeCode} method toApiArray is missing.");
 
             return null;
         }
 
         return $handler->toApiArray($service, true, $identity);
+    }
+
+    private function getOrderTypeCode(\Model_ClientOrder $order): string
+    {
+        return $order->product_type ?? $order->service_type;
     }
 
     public function getTotal(\Model_ClientOrder $model)
@@ -1319,7 +1340,11 @@ class Service implements InjectionAwareInterface
             ':service_type' => $type,
         ];
 
-        $o = $this->di['db']->findOne('ClientOrder', 'group_id = :group_id AND service_type = :service_type', $bindings);
+        $o = $this->di['db']->findOne(
+            'ClientOrder',
+            'group_id = :group_id AND (product_type = :service_type OR (product_type IS NULL AND service_type = :service_type))',
+            $bindings
+        );
 
         if ($o instanceof \Model_ClientOrder) {
             return $o->id;
@@ -1341,7 +1366,7 @@ class Service implements InjectionAwareInterface
     public function exportCSV(array $headers)
     {
         if (!$headers) {
-            $headers = ['id', 'client_id', 'product_id', 'title', 'currency', 'service_type', 'period', 'quantity', 'price', 'discount', 'status', 'reason', 'notes'];
+            $headers = ['id', 'client_id', 'product_id', 'title', 'currency', 'service_type', 'product_type', 'period', 'quantity', 'price', 'discount', 'status', 'reason', 'notes'];
         }
 
         return $this->di['table_export_csv']('client_order', 'orders.csv', $headers);

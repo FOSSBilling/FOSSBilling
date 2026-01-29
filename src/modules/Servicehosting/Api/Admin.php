@@ -166,7 +166,11 @@ class Admin extends \Api_Abstract
             $bean->import($account);
             $model = $bean->box();
 
-            $order = $this->di['db']->findOne('ClientOrder', 'service_type = "hosting" AND service_id = :service_id', [':service_id' => $model->id]);
+            $order = $this->di['db']->findOne(
+                'ClientOrder',
+                '(product_type = "hosting" OR (product_type IS NULL AND service_type = "hosting")) AND service_id = :service_id',
+                [':service_id' => $model->id]
+            );
 
             $result['list'][$key] = $this->getService()->toHostingAccountApiArray($model, true, $this->getIdentity());
 

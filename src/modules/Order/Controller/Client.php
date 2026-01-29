@@ -78,10 +78,11 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         ];
         $order = $api->order_get($data);
 
+        $typeCode = $order['product_type'] ?? $order['service_type'];
         $servicePartial = $this->resolveTemplate(
-            $order['service_type'],
+            $typeCode,
             'manage',
-            sprintf('mod_service%s_manage.html.twig', $order['service_type'])
+            sprintf('mod_service%s_manage.html.twig', $typeCode)
         );
 
         return $app->render('mod_order_manage', [

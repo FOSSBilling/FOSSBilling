@@ -98,10 +98,11 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
         $order = $api->order_get($data);
         $set = ['order' => $order];
+        $typeCode = $order['product_type'] ?? $order['service_type'];
         $set['service_partial'] = $this->resolveTemplate(
-            $order['service_type'],
+            $typeCode,
             'manage',
-            sprintf('mod_service%s_manage.html.twig', $order['service_type'])
+            sprintf('mod_service%s_manage.html.twig', $typeCode)
         );
 
         if (isset($order['plugin']) && !empty($order['plugin'])) {

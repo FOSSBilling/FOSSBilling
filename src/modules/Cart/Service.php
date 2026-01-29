@@ -595,6 +595,7 @@ class Service implements InjectionAwareInterface
             $order->title = $item['title'];
             $order->currency = $currencyCode;
             $order->service_type = $item['type'];
+            $order->product_type = $item['type'];
             $order->unit = $item['unit'] ?? null;
             $order->period = $item['period'] ?? null;
             $order->quantity = $item['quantity'] ?? null;

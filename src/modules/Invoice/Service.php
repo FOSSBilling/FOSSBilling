@@ -325,7 +325,7 @@ class Service implements InjectionAwareInterface
 
                 if ($product) {
                     $orderData['product_name'] = $product->title;
-                    $orderData['product_type'] = $product->type;
+                    $orderData['product_type'] = $product->product_type ?? $product->type;
                 }
 
                 $result['orders'][] = $orderData;

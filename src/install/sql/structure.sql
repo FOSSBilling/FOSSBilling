@@ -318,6 +318,7 @@ CREATE TABLE `client_order` (
   `unpaid_invoice_id` bigint(20) DEFAULT NULL,
   `service_id` bigint(20) DEFAULT NULL,
   `service_type` varchar(100) DEFAULT NULL,
+  `product_type` varchar(100) DEFAULT NULL,
   `period` varchar(20) DEFAULT NULL,
   `quantity` bigint(20) DEFAULT '1',
   `unit` varchar(100) DEFAULT NULL,
@@ -338,6 +339,7 @@ CREATE TABLE `client_order` (
   PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`),
   KEY `product_id_idx` (`product_id`),
+  KEY `client_order_product_type_idx` (`product_type`),
   KEY `form_id_idx` (`form_id`),
   KEY `promo_id_idx` (`promo_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -773,9 +775,11 @@ CREATE TABLE `product` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   `type` varchar(255) DEFAULT NULL,
+  `product_type` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `slug` (`slug`),
   KEY `product_type_idx` (`type`),
+  KEY `product_product_type_idx` (`product_type`),
   KEY `product_category_id_idx` (`product_category_id`),
   KEY `product_payment_id_idx` (`product_payment_id`),
   KEY `form_id_idx` (`form_id`)
@@ -1438,4 +1442,3 @@ CREATE TABLE `transaction` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2014-09-19 15:00:47
-

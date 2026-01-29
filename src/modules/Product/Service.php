@@ -82,11 +82,13 @@ class Service implements InjectionAwareInterface
         $config = json_decode($model->config ?? '', true) ?? [];
         $pricing = $repo->getPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
+        $typeCode = $model->product_type ?? $model->type;
 
         $result = [
             'id' => $model->id,
             'product_category_id' => $model->product_category_id,
-            'type' => $model->type,
+            'type' => $typeCode,
+            'product_type' => $typeCode,
             'title' => $model->title,
             'form_id' => $model->form_id,
             'slug' => $model->slug,
@@ -111,11 +113,12 @@ class Service implements InjectionAwareInterface
         if ($this->di && isset($this->di['product_type_registry'])) {
             try {
                 $registry = $this->di['product_type_registry'];
+                $result['type_label'] = $registry->getDefinition($typeCode)['label'] ?? null;
                 $result['templates'] = [
-                    'order' => $registry->getTemplate($model->type, 'order'),
-                    'manage' => $registry->getTemplate($model->type, 'manage'),
-                    'order_form' => $registry->getTemplate($model->type, 'order_form'),
-                    'config' => $registry->getTemplate($model->type, 'config'),
+                    'order' => $registry->getTemplate($typeCode, 'order'),
+                    'manage' => $registry->getTemplate($typeCode, 'manage'),
+                    'order_form' => $registry->getTemplate($typeCode, 'order_form'),
+                    'config' => $registry->getTemplate($typeCode, 'config'),
                 ];
             } catch (\Throwable) {
                 // Keep API output stable if registry fails.
@@ -186,6 +189,7 @@ class Service implements InjectionAwareInterface
         $model->title = $title;
         $model->slug = $this->di['tools']->slug($title);
         $model->type = $type;
+        $model->product_type = $type;
         $model->setup = self::SETUP_AFTER_PAYMENT;
         $model->priority = $priority + 10;
 
@@ -400,6 +404,7 @@ class Service implements InjectionAwareInterface
         $model->title = $title;
         $model->slug = $this->di['tools']->slug($title);
         $model->type = self::CUSTOM;
+        $model->product_type = self::CUSTOM;
         $model->setup = $setup ?? self::SETUP_AFTER_PAYMENT;
         $model->is_addon = 1;
 

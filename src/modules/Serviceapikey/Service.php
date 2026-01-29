@@ -339,7 +339,11 @@ class Service implements InjectionAwareInterface
 
     private function isActive(OODBBean $model): bool
     {
-        $order = $this->di['db']->findOne('ClientOrder', 'service_id = :id AND service_type = "apikey"', [':id' => $model->id]);
+        $order = $this->di['db']->findOne(
+            'ClientOrder',
+            'service_id = :id AND (product_type = "apikey" OR (product_type IS NULL AND service_type = "apikey"))',
+            [':id' => $model->id]
+        );
         if (is_null($order)) {
             throw new \FOSSBilling\Exception('API key does not exist');
         }

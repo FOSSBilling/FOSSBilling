@@ -22,7 +22,7 @@
 
 {% set active_menu = 'order' %}
 
-{% set service_partial = service_partial ?? ('mod_service' ~ order.service_type ~ '_manage.html.twig') %}
+{% set service_partial = service_partial ?? ('mod_service' ~ (order.product_type ?? order.service_type) ~ '_manage.html.twig') %}
 {% if order.group_master == 1 %}
     {% set addons = admin.order_addons({ 'id': order.id }) %}
 {% endif %}
@@ -73,7 +73,7 @@
                     <tbody>
                         <tr>
                             <td class="w-50 text-end">{{ 'Order'|trans }}</td>
-                            <td>#{{ order.id }} ({{ order.service_type }})</td>
+                            <td>#{{ order.id }} ({{ order.product_type ?? order.service_type }})</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Client'|trans }}</td>

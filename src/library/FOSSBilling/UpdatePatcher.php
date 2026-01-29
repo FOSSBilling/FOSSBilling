@@ -632,6 +632,26 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = "UPDATE setting SET value = 'themes/huraga/assets/build/favicon.ico' WHERE param = 'company_favicon' AND value = 'themes/huraga/assets/favicon.ico';";
                 $this->executeSql($q);
             },
+            50 => function (): void {
+                // Introduce product_type fields for the Product Type registry migration.
+                $q = 'ALTER TABLE `product` ADD COLUMN `product_type` varchar(255) DEFAULT NULL AFTER `type`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `product` ADD INDEX `product_product_type_idx` (`product_type`);';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `client_order` ADD COLUMN `product_type` varchar(100) DEFAULT NULL AFTER `service_type`;';
+                $this->executeSql($q);
+
+                $q = 'ALTER TABLE `client_order` ADD INDEX `client_order_product_type_idx` (`product_type`);';
+                $this->executeSql($q);
+
+                $q = 'UPDATE `product` SET `product_type` = `type` WHERE `product_type` IS NULL;';
+                $this->executeSql($q);
+
+                $q = 'UPDATE `client_order` SET `product_type` = `service_type` WHERE `product_type` IS NULL;';
+                $this->executeSql($q);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

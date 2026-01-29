@@ -39,7 +39,8 @@ class Model_Product extends RedBeanPHP\SimpleModel implements FOSSBilling\Inject
 
     public function getTable(): object
     {
-        $tableName = 'Model_Product' . ucfirst($this->type) . 'Table';
+        $typeCode = $this->product_type ?? $this->type;
+        $tableName = 'Model_Product' . ucfirst($typeCode) . 'Table';
         if (!class_exists($tableName)) {
             $tableName = 'Model_ProductTable';
         }
@@ -53,12 +54,14 @@ class Model_Product extends RedBeanPHP\SimpleModel implements FOSSBilling\Inject
     {
         if ($this->di && isset($this->di['product_type_registry'])) {
             try {
-                return $this->di['product_type_registry']->getHandler($this->type);
+                $typeCode = $this->product_type ?? $this->type;
+
+                return $this->di['product_type_registry']->getHandler($typeCode);
             } catch (\Throwable) {
                 // Fallback to legacy resolution to avoid hard failures.
             }
         }
 
-        return $this->di['mod_service']('service' . $this->type);
+        return $this->di['mod_service']('service' . ($this->product_type ?? $this->type));
     }
 }
