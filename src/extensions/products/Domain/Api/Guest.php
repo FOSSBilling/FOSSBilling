@@ -1,31 +1,17 @@
 <?php
 
+declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
- *
- * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Servicedomain\Api;
+namespace FOSSBilling\ProductType\Domain\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
 
-/**
- * Domain service management.
- */
-class Guest extends \Api_Abstract
+final class Guest extends \Api_Abstract
 {
-    /**
-     * Get configured TLDs which can be ordered. Shows only enabled TLDs.
-     *
-     * @optional bool $allow_register - shows only these TLDs which can be registered
-     * @optional bool $allow_transfer - shows only these TLDs which can be transferred
-     *
-     * @return array - list of TLDs
-     */
     public function tlds($data = []): array
     {
         $allow_register = $data['allow_register'] ?? null;
@@ -53,11 +39,6 @@ class Guest extends \Api_Abstract
         return $result;
     }
 
-    /**
-     * Get TLD pricing information.
-     *
-     * @return array
-     */
     #[RequiredParams(['tld' => 'TLD is missing'])]
     public function pricing($data)
     {
@@ -69,16 +50,7 @@ class Guest extends \Api_Abstract
         return $this->getService()->tldToApiArray($model);
     }
 
-    /**
-     * Check if domain is available for registration. Domain registrar must be
-     * configured in order to get correct results.
-     *
-     * @return true
-     */
-    #[RequiredParams([
-        'tld' => 'TLD is missing',
-        'sld' => 'SLD is missing',
-    ])]
+    #[RequiredParams(['tld' => 'TLD is missing', 'sld' => 'SLD is missing'])]
     public function check($data): bool
     {
         $sld = htmlspecialchars((string) $data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -99,16 +71,7 @@ class Guest extends \Api_Abstract
         return true;
     }
 
-    /**
-     * Check if domain can be transferred. Domain registrar must be
-     * configured in order to get correct results.
-     *
-     * @return true
-     */
-    #[RequiredParams([
-        'tld' => 'TLD is missing',
-        'sld' => 'SLD is missing',
-    ])]
+    #[RequiredParams(['tld' => 'TLD is missing', 'sld' => 'SLD is missing'])]
     public function can_be_transferred($data): bool
     {
         $tld = $this->getService()->tldFindOneByTld($data['tld']);

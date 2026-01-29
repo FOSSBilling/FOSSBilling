@@ -9,13 +9,15 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Servicedomain;
+namespace FOSSBilling\ProductType\Domain;
 
+use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\ProductTypeHandlerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+final class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
@@ -163,7 +165,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      *
      * @return \Model_ServiceDomain
      */
-    public function action_create(\Model_ClientOrder $order)
+    public function create(\Model_ClientOrder $order)
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
@@ -224,7 +226,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      *
      * @return \Model_ServiceDomain
      */
-    public function action_activate(\Model_ClientOrder $order)
+    public function activate(\Model_ClientOrder $order)
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -255,7 +257,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model;
     }
 
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function renew(\Model_ClientOrder $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -274,7 +276,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function suspend(\Model_ClientOrder $order): bool
     {
         return true;
     }
@@ -282,12 +284,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function unsuspend(\Model_ClientOrder $order): bool
     {
         return true;
     }
 
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function cancel(\Model_ClientOrder $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -301,14 +303,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function uncancel(\Model_ClientOrder $order): bool
     {
-        $this->action_activate($order);
+        $this->activate($order);
 
         return true;
     }
 
-    public function action_delete(\Model_ClientOrder $order): void
+    public function delete(\Model_ClientOrder $order): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
@@ -316,7 +318,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($service instanceof \Model_ServiceDomain) {
             // cancel if not canceled
             if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
-                $this->action_cancel($order);
+                $this->cancel($order);
             }
             $this->di['db']->trash($service);
         }

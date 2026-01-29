@@ -108,7 +108,7 @@
 {% if order.status == 'active' %}
 <div class="card-body">
     <h3>{{ 'Nameservers'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicedomain/update_nameservers'|link }}" {{ fb_api_form({message: 'Nameservers Updated'|trans}) }}>
+    <form method="post" action="{{ 'api/admin/product_type/domain/update_nameservers'|link }}" {{ fb_api_form({message: 'Nameservers Updated'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
             <div class="col">
@@ -140,7 +140,7 @@
     <hr>
 
     <h3>{{ 'Domain data'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicedomain/update'|link }}" {{ fb_api_form({message: 'Domain Data Updated'|trans}) }}>
+    <form method="post" action="{{ 'api/admin/product_type/domain/update'|link }}" {{ fb_api_form({message: 'Domain Data Updated'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Transfer code (EPP)'|trans }}: </label>
             <div class="col">
@@ -160,7 +160,7 @@
     <hr>
 
     <h3>{{ 'Update domain contact details'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicedomain/update_contacts'|link }}" {{ fb_api_form({message: 'Domain Contact Details Updated'|trans}) }}>
+    <form method="post" action="{{ 'api/admin/product_type/domain/update_contacts'|link }}" {{ fb_api_form({message: 'Domain Contact Details Updated'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'First Name'|trans }}: </label>
             <div class="col">
@@ -253,7 +253,7 @@
         {% endif %}
 
         document.getElementById('domain-lock').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/lock', { order_id: {{ order.id }} },
+            API.admin.post('product_type/domain/lock', { order_id: {{ order.id }} },
                 (result) => {
                     FOSSBilling.message("{{ 'Domain locked'|trans }}");
 
@@ -266,7 +266,7 @@
         });
 
         document.getElementById('domain-unlock').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/unlock', { order_id: {{ order.id }} },
+            API.admin.post('product_type/domain/unlock', { order_id: {{ order.id }} },
                 (result) => {
                     FOSSBilling.message("{{ 'Domain unlocked'|trans }}");
 
@@ -291,7 +291,7 @@
         {% endif %}
 
         document.getElementById('domain-enable-pp').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/enable_privacy_protection',{ order_id: {{ order.id }} },
+            API.admin.post('product_type/domain/enable_privacy_protection',{ order_id: {{ order.id }} },
                 (result) => {
                     FOSSBilling.message("{{ 'Privacy protection enabled'|trans }}");
 
@@ -304,7 +304,7 @@
         });
 
         document.getElementById('domain-disable-pp').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/disable_privacy_protection', { order_id: {{ order.id }} },
+            API.admin.post('product_type/domain/disable_privacy_protection', { order_id: {{ order.id }} },
                 (result) => {
                     FOSSBilling.message("{{ 'Privacy protection disabled'|trans }}");
 
@@ -317,7 +317,7 @@
         });
 
         document.getElementById('get-epp').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/get_transfer_code', { order_id: {{ order.id}} },
+            API.admin.post('product_type/domain/get_transfer_code', { order_id: {{ order.id}} },
                 (result) => {
                     FOSSBilling.message("{{ 'Domain transfer code is: '|trans }}" + result);
                 });

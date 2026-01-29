@@ -1,7 +1,7 @@
 {% set periods = guest.system_periods %}
 {% set pricing = product.pricing %}
-{% set transfer_tlds = guest.serviceDomain_tlds({ "allow_transfer": 1 }) %}
-{% set tlds = guest.serviceDomain_tlds({"allow_register":1}) %}
+{% set transfer_tlds = guest.product_type_domain_tlds({ "allow_transfer": 1 }) %}
+{% set tlds = guest.product_type_domain_tlds({"allow_register":1}) %}
 <div class="d-flex mb-3">
     <nav class="nav nav-pills flex-column border-end me-3 gap-2">
         {% if tlds is not empty %}
@@ -167,7 +167,7 @@
                 const domain = sld + tld;
 
                 API.guest.post(
-                    'servicedomain/can_be_transferred',
+                    'product_type/domain/can_be_transferred',
                     {sld: sld, tld: tld},
                     function (result) {
                         setTransferPricing(tld);
@@ -195,7 +195,7 @@
                 const domain = sld + tld;
                 document.getElementById('domain-action').value = 'register';
                 API.guest.post(
-                    'servicedomain/check',
+                    'product_type/domain/check',
                     {sld: sld, tld: tld},
                     function (result) {
                         setPricing(tld);
@@ -215,7 +215,7 @@
 
         function setPricing(tld) {
             API.guest.post(
-                'servicedomain/pricing',
+                'product_type/domain/pricing',
                 {tld: tld},
                 function (result) {
                     const yearsSelect = document.getElementById('registration-years');
@@ -254,7 +254,7 @@
 
         function setTransferPricing(tld) {
             API.guest.post(
-                'servicedomain/pricing',
+                'product_type/domain/pricing',
                 {tld: tld},
                 function (result) {
                     const price = formatCurrency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
