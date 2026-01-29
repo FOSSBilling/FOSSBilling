@@ -151,7 +151,7 @@
     {% for i, message in ticket.messages %}
         <div class="card mb-3">
             <div class="card-header" style="cursor: pointer;">
-                <span class="avatar avatar-xs me-2" style="background-image: url({{ message.author.email|gravatar }}?size=20)"></span>
+                <span class="db-avatar avatar avatar-xs me-2" data-avatar-seed="{{ message.author.email|hash('xxh128') }}" data-avatar-size="20"></span>
                 {{ message.author.name }}
                 <span class="ms-auto text-muted">{{ message.created_at|format_datetime }}</span>
             </div>
