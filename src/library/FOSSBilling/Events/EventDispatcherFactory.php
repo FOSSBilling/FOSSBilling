@@ -21,19 +21,18 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
  *
  * This factory creates an EventDispatcher that automatically discovers
  * event listeners from module Service classes using the #[AsEventListener]
- * attribute. Listener discovery is performed lazily on the first dispatch
- * call and cached for subsequent dispatches.
+ * attribute. Listener discovery is performed during initialization.
  */
 final class EventDispatcherFactory
 {
     private EventDispatcher $dispatcher;
     private Container $di;
-    private bool $listenersRegistered = false;
 
     private function __construct(Container $di)
     {
         $this->di = $di;
         $this->dispatcher = new EventDispatcher();
+        $this->discoverAndRegisterListeners();
     }
 
     /**
@@ -46,14 +45,9 @@ final class EventDispatcherFactory
 
     /**
      * Dispatch an event to all registered listeners.
-     *
-     * On the first call, this will scan all active modules for event
-     * listeners and register them. Subsequent calls use the cached listeners.
      */
     public function dispatch(Event $event, ?string $eventName = null): Event
     {
-        $this->ensureListenersRegistered();
-
         $this->di['logger']->setChannel('event')->debug(
             'Dispatching event: ' . ($eventName ?? $event::class),
             ['event_class' => $event::class]
@@ -77,8 +71,6 @@ final class EventDispatcherFactory
      */
     public function getListeners(?string $eventName = null): array
     {
-        $this->ensureListenersRegistered();
-
         return $this->dispatcher->getListeners($eventName);
     }
 
@@ -87,22 +79,7 @@ final class EventDispatcherFactory
      */
     public function hasListeners(?string $eventName = null): bool
     {
-        $this->ensureListenersRegistered();
-
         return $this->dispatcher->hasListeners($eventName);
-    }
-
-    /**
-     * Ensure listeners are registered (lazy initialization).
-     */
-    private function ensureListenersRegistered(): void
-    {
-        if ($this->listenersRegistered) {
-            return;
-        }
-
-        $this->discoverAndRegisterListeners();
-        $this->listenersRegistered = true;
     }
 
     /**
@@ -134,47 +111,53 @@ final class EventDispatcherFactory
             $reflectionClass = new \ReflectionClass($service);
 
             foreach ($reflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
-                $this->processMethodAttributes($service, $method);
+                $attributes = $method->getAttributes(AsEventListener::class);
+                if ($attributes !== []) {
+                    foreach ($attributes as $attribute) {
+                        $this->registerListener($service, $method, $attribute);
+                    }
+                }
             }
         } catch (\Exception $e) {
-            // Log error but continue with other modules
             error_log("Failed to register listeners for module {$moduleName}: " . $e->getMessage());
         }
     }
 
     /**
-     * Process #[AsEventListener] attributes on a method.
+     * Register a single listener from an #[AsEventListener] attribute.
      */
-    private function processMethodAttributes(object $service, \ReflectionMethod $method): void
+    private function registerListener(object $service, \ReflectionMethod $method, \ReflectionAttribute $attribute): void
     {
-        $attributes = $method->getAttributes(AsEventListener::class);
+        $arguments = $attribute->getArguments();
+        $eventName = $arguments['event'] ?? null;
+        $priority = $arguments['priority'] ?? 0;
 
-        foreach ($attributes as $attribute) {
-            $listener = $attribute->newInstance();
-            $eventName = $listener->event;
-            $priority = $listener->priority;
+        $eventName ??= $this->extractEventFromMethod($method);
 
-            if ($eventName === null) {
-                // Try to determine event from first parameter type
-                $parameters = $method->getParameters();
-                if (isset($parameters[0])) {
-                    $type = $parameters[0]->getType();
-                    if ($type instanceof \ReflectionNamedType && !$type->isBuiltin()) {
-                        $eventName = $type->getName();
-                    }
-                }
-            }
-
-            if ($eventName === null) {
-                continue;
-            }
-
-            // Register the listener
-            $this->dispatcher->addListener(
-                $eventName,
-                [$service, $method->getName()],
-                $priority
-            );
+        if ($eventName === null) {
+            return;
         }
+
+        $this->dispatcher->addListener(
+            $eventName,
+            [$service, $method->getName()],
+            $priority
+        );
+    }
+
+    /**
+     * Extract event name from the first parameter type of a method.
+     */
+    private function extractEventFromMethod(\ReflectionMethod $method): ?string
+    {
+        $parameters = $method->getParameters();
+        if (isset($parameters[0])) {
+            $type = $parameters[0]->getType();
+            if ($type instanceof \ReflectionNamedType && !$type->isBuiltin()) {
+                return $type->getName();
+            }
+        }
+
+        return null;
     }
 }
