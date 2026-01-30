@@ -5,6 +5,8 @@
     "build": "node ./esbuild.mjs"
   },
   "dependencies": {
+    "@dicebear/core": "^9.0.0",
+    "@dicebear/identicon": "^9.0.0",
     "github-markdown-css": "^5.7.0",
     "tom-select": "^2.2.2"
   },

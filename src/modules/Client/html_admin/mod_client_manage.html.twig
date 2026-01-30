@@ -55,7 +55,7 @@
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel" aria-labelledby="index-tab">
             <div class="card-body position-relative">
-                <span class="avatar avatar-xl mb-3 avatar-rounded shadow position-absolute top-0 end-0 m-3" style="background-image: url({{ client.email|gravatar }}&size=112)"></span>
+                <span class="db-avatar avatar avatar-xl mb-3 avatar-rounded shadow position-absolute top-0 end-0 m-3" data-avatar-seed="{{ client.email|hash('xxh128') }}" data-avatar-size="112"></span>
 
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <tbody>
