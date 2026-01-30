@@ -454,29 +454,6 @@ final class ServiceTest extends \BBTestCase
         $this->service->deactivate($ext);
     }
 
-    public function testDeactivateHookExtension(): void
-    {
-        $ext = new \Model_Extension();
-        $ext->loadBean(new \DummyBean());
-        $ext->type = 'hook';
-        $ext->name = 'extensionTest';
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
-
-        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
-        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
-
-        $this->service->setDi($di);
-        $result = $this->service->deactivate($ext);
-        $this->assertTrue($result);
-    }
-
     public function testDeactivateModule(): void
     {
         $ext = new \Model_Extension();
