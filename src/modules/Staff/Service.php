@@ -11,7 +11,27 @@
 
 namespace Box\Mod\Staff;
 
+use Box\Mod\Client\Event\AfterClientSignUpEvent;
+use Box\Mod\Order\Event\AfterClientOrderCreateEvent;
+use Box\Mod\Staff\Event\AdminLoginFailedEvent;
+use Box\Mod\Staff\Event\AfterAdminLoginEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffCreateEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffDeleteEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffPasswordChangeEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffUpdateEvent;
+use Box\Mod\Staff\Event\BeforeAdminLoginEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffCreateEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffDeleteEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffPasswordChangeEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffUpdateEvent;
+use Box\Mod\Support\Event\AfterClientCloseTicketEvent;
+use Box\Mod\Support\Event\AfterClientOpenTicketEvent;
+use Box\Mod\Support\Event\AfterClientReplyTicketEvent;
+use Box\Mod\Support\Event\AfterGuestPublicTicketCloseEvent;
+use Box\Mod\Support\Event\AfterGuestPublicTicketOpenEvent;
+use Box\Mod\Support\Event\AfterGuestPublicTicketReplyEvent;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
 {
@@ -71,20 +91,25 @@ class Service implements InjectionAwareInterface
 
     public function login($email, $password, $ip): array
     {
-        $event_params = [];
-        $event_params['email'] = $email;
-        $event_params['ip'] = $ip;
-
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminLogin', 'params' => $event_params]);
+        $this->di['events_manager']->dispatch(new BeforeAdminLoginEvent(
+            email: $email,
+            ip: $ip,
+        ));
 
         $model = $this->authorizeAdmin($email, $password);
         if (!$model instanceof \Model_Admin) {
-            $this->di['events_manager']->fire(['event' => 'onEventAdminLoginFailed', 'params' => $event_params]);
+            $this->di['events_manager']->dispatch(new AdminLoginFailedEvent(
+                email: $email,
+                ip: $ip,
+            ));
 
             throw new \FOSSBilling\InformationException('Check your login details', null, 403);
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminLogin', 'params' => ['id' => $model->id, 'ip' => $ip]]);
+        $this->di['events_manager']->dispatch(new AfterAdminLoginEvent(
+            adminId: $model->id,
+            ip: $ip,
+        ));
 
         $result = [
             'id' => $model->id,
@@ -229,39 +254,35 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientOrderCreate(\Box_Event $event): void
+    #[AsEventListener(event: AfterClientOrderCreateEvent::class)]
+    public function notifyStaffOnClientOrderCreate(AfterClientOrderCreateEvent $event): void
     {
-        $di = $event->getDi();
-        $params = $event->getParameters();
-
         try {
-            $orderModel = $di['db']->load('ClientOrder', $params['id']);
-            $orderTicketService = $di['mod_service']('order');
+            $orderModel = $this->di['db']->load('ClientOrder', $event->orderId);
+            $orderTicketService = $this->di['mod_service']('order');
             $order = $orderTicketService->toApiArray($orderModel, true);
 
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_client_order';
             $email['order'] = $order;
-            $emailService = $di['mod_service']('email');
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    public static function onAfterClientOpenTicket(\Box_Event $event)
+    #[AsEventListener(event: AfterClientOpenTicketEvent::class)]
+    public function notifyStaffOnClientOpenTicket(AfterClientOpenTicketEvent $event): void
     {
-        $di = $event->getDi();
-        $params = $event->getParameters();
-
         try {
-            $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
+            $supportTicketService = $this->di['mod_service']('support');
+            $ticketModel = $supportTicketService->getTicketById($event->ticketId);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
-            $helpdeskModel = $di['db']->load('SupportHelpdesk', $ticketModel->support_helpdesk_id);
-            $emailService = $di['mod_service']('email');
+            $helpdeskModel = $this->di['db']->load('SupportHelpdesk', $ticketModel->support_helpdesk_id);
+            $emailService = $this->di['mod_service']('email');
             if (!empty($helpdeskModel->email)) {
                 $email = [];
                 $email['to'] = $helpdeskModel->email;
@@ -269,7 +290,7 @@ class Service implements InjectionAwareInterface
                 $email['ticket'] = $ticket;
                 $emailService->sendTemplate($email);
 
-                return true;
+                return;
             }
 
             $email = [];
@@ -282,14 +303,12 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientReplyTicket(\Box_Event $event): void
+    #[AsEventListener(event: AfterClientReplyTicketEvent::class)]
+    public function notifyStaffOnClientReplyTicket(AfterClientReplyTicketEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
         try {
-            $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
+            $supportTicketService = $this->di['mod_service']('support');
+            $ticketModel = $supportTicketService->getTicketById($event->ticketId);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
             $email = [];
@@ -297,109 +316,97 @@ class Service implements InjectionAwareInterface
             $email['code'] = 'mod_staff_ticket_reply';
             $email['ticket'] = $ticket;
 
-            $emailService = $di['mod_service']('email');
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    public static function onAfterClientCloseTicket(\Box_Event $event): void
+    #[AsEventListener(event: AfterClientCloseTicketEvent::class)]
+    public function notifyStaffOnClientCloseTicket(AfterClientCloseTicketEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
         try {
-            $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
+            $supportTicketService = $this->di['mod_service']('support');
+            $ticketModel = $supportTicketService->getTicketById($event->ticketId);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_ticket_close';
             $email['ticket'] = $ticket;
 
-            $emailService = $di['mod_service']('email');
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    public static function onAfterGuestPublicTicketOpen(\Box_Event $event): void
+    #[AsEventListener(event: AfterGuestPublicTicketOpenEvent::class)]
+    public function notifyStaffOnGuestPublicTicketOpen(AfterGuestPublicTicketOpenEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
         try {
-            $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getPublicTicketById($params['id']);
+            $supportTicketService = $this->di['mod_service']('support');
+            $ticketModel = $supportTicketService->getPublicTicketById($event->ticketId);
             $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_pticket_open';
             $email['ticket'] = $ticket;
-            $emailService = $di['mod_service']('email');
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    public static function onAfterClientSignUp(\Box_Event $event): bool
+    #[AsEventListener(event: AfterClientSignUpEvent::class)]
+    public function notifyStaffOnClientSignUp(AfterClientSignUpEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
         try {
-            $clientService = $di['mod_service']('client');
+            $clientService = $this->di['mod_service']('client');
 
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_client_signup';
-            $email['c'] = $clientService->get(['id' => $params['id']]);
-            $emailService = $di['mod_service']('email');
+            $email['c'] = $clientService->get(['id' => $event->clientId]);
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
-
-        return true;
     }
 
-    public static function onAfterGuestPublicTicketReply(\Box_Event $event): void
+    #[AsEventListener(event: AfterGuestPublicTicketReplyEvent::class)]
+    public function notifyStaffOnGuestPublicTicketReply(AfterGuestPublicTicketReplyEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
         try {
-            $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getPublicTicketById($params['id']);
+            $supportTicketService = $this->di['mod_service']('support');
+            $ticketModel = $supportTicketService->getPublicTicketById($event->ticketId);
             $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_pticket_reply';
             $email['ticket'] = $ticket;
-            $emailService = $di['mod_service']('email');
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    public static function onAfterGuestPublicTicketClose(\Box_Event $event): void
+    #[AsEventListener(event: AfterGuestPublicTicketCloseEvent::class)]
+    public function notifyStaffOnGuestPublicTicketClose(AfterGuestPublicTicketCloseEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
         try {
-            $supportService = $di['mod_service']('Support');
-            $publicTicket = $di['db']->load('SupportPTicket', $params['id']);
+            $supportService = $this->di['mod_service']('Support');
+            $publicTicket = $this->di['db']->load('SupportPTicket', $event->ticketId);
             $ticket = $supportService->publicToApiArray($publicTicket);
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_pticket_close';
             $email['ticket'] = $ticket;
-            $emailService = $di['mod_service']('Email');
+            $emailService = $this->di['mod_service']('Email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
@@ -511,7 +518,7 @@ class Service implements InjectionAwareInterface
 
     public function update(\Model_Admin $model, $data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffUpdate', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminStaffUpdateEvent(staffId: $model->id));
 
         if ($model->role === 'admin') {
             $this->checkPermissionsAndThrowException('staff', 'create_and_edit_admin');
@@ -527,7 +534,7 @@ class Service implements InjectionAwareInterface
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffUpdate', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminStaffUpdateEvent(staffId: $model->id));
 
         $this->di['logger']->info('Updated staff member %s details', $model->id);
 
@@ -546,12 +553,12 @@ class Service implements InjectionAwareInterface
             $this->checkPermissionsAndThrowException('staff', 'delete_staff');
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffDelete', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminStaffDeleteEvent(staffId: $model->id));
 
         $id = $model->id;
         $this->di['db']->trash($model);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffDelete', 'params' => ['id' => $id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminStaffDeleteEvent(staffId: $id));
 
         $this->di['logger']->info('Deleted staff member %s', $id);
 
@@ -566,7 +573,7 @@ class Service implements InjectionAwareInterface
             $this->checkPermissionsAndThrowException('staff', 'reset_staff_password');
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminStaffPasswordChangeEvent(staffId: $model->id));
 
         $model->pass = $this->di['password']->hashIt($password);
         $model->updated_at = date('Y-m-d H:i:s');
@@ -575,7 +582,7 @@ class Service implements InjectionAwareInterface
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('admin', $model->id);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminStaffPasswordChangeEvent(staffId: $model->id));
 
         $this->di['logger']->info('Changed staff member %s password', $model->id);
 
@@ -592,7 +599,12 @@ class Service implements InjectionAwareInterface
 
         $signature = $data['signature'] ?? null;
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
+        $this->di['events_manager']->dispatch(new BeforeAdminStaffCreateEvent(
+            email: $data['email'],
+            name: $data['name'],
+            adminGroupId: $data['admin_group_id'],
+            data: $data,
+        ));
 
         $model = $this->di['db']->dispense('Admin');
         $model->role = \Model_Admin::ROLE_STAFF;
@@ -611,7 +623,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Staff member with email :email is already registered.', [':email' => $data['email']], 788954);
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);
+        $this->di['events_manager']->dispatch(new AfterAdminStaffCreateEvent(staffId: $newId));
 
         $this->di['logger']->info('Created new staff member %s', $newId);
 

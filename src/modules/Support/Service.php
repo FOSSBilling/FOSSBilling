@@ -11,7 +11,24 @@
 
 namespace Box\Mod\Support;
 
+use Box\Mod\Support\Event\AfterAdminCloseTicketEvent;
+use Box\Mod\Support\Event\AfterAdminOpenTicketEvent;
+use Box\Mod\Support\Event\AfterAdminPublicTicketCloseEvent;
+use Box\Mod\Support\Event\AfterAdminPublicTicketOpenEvent;
+use Box\Mod\Support\Event\AfterAdminPublicTicketReplyEvent;
+use Box\Mod\Support\Event\AfterAdminReplyTicketEvent;
+use Box\Mod\Support\Event\AfterClientCloseTicketEvent;
+use Box\Mod\Support\Event\AfterClientOpenTicketEvent;
+use Box\Mod\Support\Event\AfterClientReplyTicketEvent;
+use Box\Mod\Support\Event\AfterGuestPublicTicketCloseEvent;
+use Box\Mod\Support\Event\AfterGuestPublicTicketOpenEvent;
+use Box\Mod\Support\Event\AfterGuestPublicTicketReplyEvent;
+use Box\Mod\Support\Event\BeforeAdminOpenTicketEvent;
+use Box\Mod\Support\Event\BeforeAdminPublicTicketOpenEvent;
+use Box\Mod\Support\Event\BeforeClientOpenTicketEvent;
+use Box\Mod\Support\Event\BeforeGuestPublicTicketOpenEvent;
 use FOSSBilling\InformationException;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
@@ -27,17 +44,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public static function onAfterClientOpenTicket(\Box_Event $event): void
+    #[AsEventListener(event: AfterClientOpenTicketEvent::class)]
+    public function handleClientOpenTicket(AfterClientOpenTicketEvent $event): void
     {
-        $di = $event->getDi();
-        $params = $event->getParameters();
-        $supportService = $di['mod_service']('support');
-        $emailService = $di['mod_service']('email');
+        $emailService = $this->di['mod_service']('email');
 
         try {
-            $ticketObj = $supportService->getTicketById($params['id']);
-            $identity = $di['loggedin_client'];
-            $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
+            $ticketObj = $this->getTicketById($event->ticketId);
+            $identity = $this->di['loggedin_client'];
+            $ticketArr = $this->toApiArray($ticketObj, true, $identity);
 
             $email = [];
             $email['to_client'] = $ticketObj->client_id;
@@ -45,21 +60,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $this->di['logger']->err($exc->getMessage());
         }
     }
 
-    public static function onAfterAdminOpenTicket(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminOpenTicketEvent::class)]
+    public function handleAdminOpenTicket(AfterAdminOpenTicketEvent $event): void
     {
-        $di = $event->getDi();
-        $supportService = $di['mod_service']('support');
-        $emailService = $di['mod_service']('email');
-        $params = $event->getParameters();
+        $emailService = $this->di['mod_service']('email');
 
         try {
-            $ticketObj = $supportService->getTicketById($params['id']);
-            $identity = $di['loggedin_admin'];
-            $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
+            $ticketObj = $this->getTicketById($event->ticketId);
+            $identity = $this->di['loggedin_admin'];
+            $ticketArr = $this->toApiArray($ticketObj, true, $identity);
 
             $email = [];
             $email['to_client'] = $ticketObj->client_id;
@@ -67,21 +80,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $this->di['logger']->err($exc->getMessage());
         }
     }
 
-    public static function onAfterAdminCloseTicket(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminCloseTicketEvent::class)]
+    public function handleAdminCloseTicket(AfterAdminCloseTicketEvent $event): void
     {
-        $di = $event->getDi();
-        $supportService = $di['mod_service']('support');
-        $emailService = $di['mod_service']('email');
-        $params = $event->getParameters();
+        $emailService = $this->di['mod_service']('email');
 
         try {
-            $identity = $di['loggedin_admin'];
-            $ticketObj = $supportService->getTicketById($params['id']);
-            $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
+            $identity = $this->di['loggedin_admin'];
+            $ticketObj = $this->getTicketById($event->ticketId);
+            $ticketArr = $this->toApiArray($ticketObj, true, $identity);
 
             $email = [];
             $email['to_client'] = $ticketObj->client_id;
@@ -89,21 +100,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $this->di['logger']->err($exc->getMessage());
         }
     }
 
-    public static function onAfterAdminReplyTicket(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminReplyTicketEvent::class)]
+    public function handleAdminReplyTicket(AfterAdminReplyTicketEvent $event): void
     {
-        $di = $event->getDi();
-        $supportService = $di['mod_service']('support');
-        $emailService = $di['mod_service']('email');
-        $params = $event->getParameters();
+        $emailService = $this->di['mod_service']('email');
 
         try {
-            $ticketObj = $supportService->getTicketById($params['id']);
-            $identity = $di['loggedin_admin'];
-            $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
+            $ticketObj = $this->getTicketById($event->ticketId);
+            $identity = $this->di['loggedin_admin'];
+            $ticketArr = $this->toApiArray($ticketObj, true, $identity);
 
             $email = [];
             $email['to_client'] = $ticketObj->client_id;
@@ -111,20 +120,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $this->di['logger']->err($exc->getMessage());
         }
     }
 
-    public static function onAfterGuestPublicTicketOpen(\Box_Event $event): void
+    #[AsEventListener(event: AfterGuestPublicTicketOpenEvent::class)]
+    public function handleGuestPublicTicketOpen(AfterGuestPublicTicketOpenEvent $event): void
     {
-        $di = $event->getDi();
-        $supportService = $di['mod_service']('support');
-        $emailService = $di['mod_service']('email');
-        $params = $event->getParameters();
+        $emailService = $this->di['mod_service']('email');
 
         try {
-            $ticketObj = $supportService->getPublicTicketById($params['id']);
-            $ticketArr = $supportService->publicToApiArray($ticketObj, true);
+            $ticketObj = $this->getPublicTicketById($event->ticketId);
+            $ticketArr = $this->publicToApiArray($ticketObj, true);
 
             $email = [];
             $email['to'] = $ticketArr['author_email'];
@@ -133,21 +140,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $this->di['logger']->err($exc->getMessage());
         }
     }
 
-    public static function onAfterAdminPublicTicketOpen(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminPublicTicketOpenEvent::class)]
+    public function handleAdminPublicTicketOpen(AfterAdminPublicTicketOpenEvent $event): void
     {
-        $di = $event->getDi();
-        $supportService = $di['mod_service']('support');
-        $emailService = $di['mod_service']('email');
-        $params = $event->getParameters();
+        $emailService = $this->di['mod_service']('email');
 
         try {
-            $ticketObj = $supportService->getPublicTicketById($params['id']);
-            $identity = $di['loggedin_admin'];
-            $ticketArr = $supportService->publicToApiArray($ticketObj, true, $identity);
+            $ticketObj = $this->getPublicTicketById($event->ticketId);
+            $identity = $this->di['loggedin_admin'];
+            $ticketArr = $this->publicToApiArray($ticketObj, true, $identity);
 
             $email = [];
             $email['to'] = $ticketArr['author_email'];
@@ -156,21 +161,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $this->di['logger']->err($exc->getMessage());
         }
     }
 
-    public static function onAfterAdminPublicTicketReply(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminPublicTicketReplyEvent::class)]
+    public function handleAdminPublicTicketReply(AfterAdminPublicTicketReplyEvent $event): void
     {
-        $di = $event->getDi();
-        $supportService = $di['mod_service']('support');
-        $emailService = $di['mod_service']('email');
-        $params = $event->getParameters();
+        $emailService = $this->di['mod_service']('email');
 
         try {
-            $ticketObj = $supportService->getPublicTicketById($params['id']);
-            $identity = $di['loggedin_admin'];
-            $ticketArr = $supportService->publicToApiArray($ticketObj, true, $identity);
+            $ticketObj = $this->getPublicTicketById($event->ticketId);
+            $identity = $this->di['loggedin_admin'];
+            $ticketArr = $this->publicToApiArray($ticketObj, true, $identity);
 
             $email = [];
             $email['to'] = $ticketArr['author_email'];
@@ -179,21 +182,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $this->di['logger']->err($exc->getMessage());
         }
     }
 
-    public static function onAfterAdminPublicTicketClose(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminPublicTicketCloseEvent::class)]
+    public function handleAdminPublicTicketClose(AfterAdminPublicTicketCloseEvent $event): void
     {
-        $di = $event->getDi();
-        $supportService = $di['mod_service']('support');
-        $emailService = $di['mod_service']('email');
-        $params = $event->getParameters();
+        $emailService = $this->di['mod_service']('email');
 
         try {
-            $ticketObj = $supportService->getPublicTicketById($params['id']);
-            $identity = $di['loggedin_admin'];
-            $ticketArr = $supportService->publicToApiArray($ticketObj, true, $identity);
+            $ticketObj = $this->getPublicTicketById($event->ticketId);
+            $identity = $this->di['loggedin_admin'];
+            $ticketArr = $this->publicToApiArray($ticketObj, true, $identity);
 
             $email = [];
             $email['to'] = $ticketArr['author_email'];
@@ -202,7 +203,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $this->di['logger']->err($exc->getMessage());
         }
     }
 
@@ -447,9 +448,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($ticket);
 
         if ($identity instanceof \Model_Admin) {
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminCloseTicket', 'params' => ['id' => $ticket->id]]);
+            $this->di['events_manager']->dispatch(new AfterAdminCloseTicketEvent(ticketId: $ticket->id));
         } elseif ($identity instanceof \Model_Client) {
-            $this->di['events_manager']->fire(['event' => 'onAfterClientCloseTicket', 'params' => ['id' => $ticket->id]]);
+            $this->di['events_manager']->dispatch(new AfterClientCloseTicketEvent(ticketId: $ticket->id));
         }
 
         $this->di['logger']->info('Closed ticket "%s"', $ticket->id);
@@ -758,9 +759,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($ticket);
 
         if ($identity instanceof \Model_Admin) {
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminReplyTicket', 'params' => ['id' => $ticket->id]]);
+            $this->di['events_manager']->dispatch(new AfterAdminReplyTicketEvent(ticketId: $ticket->id));
         } elseif ($identity instanceof \Model_Client) {
-            $this->di['events_manager']->fire(['event' => 'onAfterClientReplyTicket', 'params' => ['id' => $ticket->id]]);
+            $this->di['events_manager']->dispatch(new AfterClientReplyTicketEvent(ticketId: $ticket->id));
         }
 
         $this->di['logger']->info('Replied to ticket "%s"', $ticket->id);
@@ -772,7 +773,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $status = $data['status'] ?? \Model_SupportTicket::ONHOLD;
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOpenTicket', 'params' => $data]);
+        $this->di['events_manager']->dispatch(new BeforeAdminOpenTicketEvent(data: $data));
 
         $ticket = $this->di['db']->dispense('SupportTicket');
         $ticket->client_id = $client->id;
@@ -792,7 +793,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOpenTicket', 'params' => ['id' => $ticketId]]);
+        $this->di['events_manager']->dispatch(new AfterAdminOpenTicketEvent(ticketId: $ticketId));
 
         $this->di['logger']->info('Admin opened new ticket "%s"', $ticketId);
 
@@ -812,16 +813,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $event_params = $data;
         $event_params['ip'] = $this->di['request']->getClientIp();
-        $altered = $this->di['events_manager']->fire(['event' => 'onBeforeGuestPublicTicketOpen', 'params' => $event_params]);
+        $beforeEvent = new BeforeGuestPublicTicketOpenEvent(data: $event_params, ip: $this->di['request']->getClientIp());
+        $this->di['events_manager']->dispatch($beforeEvent);
+        $altered = $beforeEvent->getAlteredData();
 
         $status = 'open';
         $subject = $data['subject'] ?? null;
         $message = $data['message'] ?? null;
 
         if (is_array($altered)) {
-            $status = $altered['status'] ?? null;
-            $subject = $altered['subject'] ?? null;
-            $message = $altered['message'] ?? null;
+            $status = $altered['status'] ?? $status;
+            $subject = $altered['subject'] ?? $subject;
+            $message = $altered['message'] ?? $message;
         }
 
         $ticket = $this->di['db']->dispense('SupportPTicket');
@@ -842,7 +845,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterGuestPublicTicketOpen', 'params' => ['id' => $ticketId]]);
+        $this->di['events_manager']->dispatch(new AfterGuestPublicTicketOpenEvent(ticketId: $ticketId));
 
         $this->di['logger']->info('"%s" opened public ticket "%s"', $ticket->author_email, $ticketId);
 
@@ -913,7 +916,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $event_params = $data;
         $event_params['client_id'] = $client->id;
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientOpenTicket', 'params' => $event_params]);
+        $this->di['events_manager']->dispatch(new BeforeClientOpenTicketEvent(data: $event_params, clientId: $client->id));
 
         $ticket = $this->di['db']->dispense('SupportTicket');
         $ticket->client_id = $client->id;
@@ -933,7 +936,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->messageCreateForTicket($ticket, $client, $data['content']);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterClientOpenTicket', 'params' => ['id' => $ticket->id]]);
+        $this->di['events_manager']->dispatch(new AfterClientOpenTicketEvent(ticketId: $ticket->id));
 
         if (
             isset($config['autorespond_enable'])
@@ -1127,10 +1130,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($model);
 
         if ($identity instanceof \Model_Admin) {
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminPublicTicketClose', 'params' => ['id' => $model->id]]);
+            $this->di['events_manager']->dispatch(new AfterAdminPublicTicketCloseEvent(ticketId: $model->id));
             $this->di['logger']->info('Public Ticket %s was closed', $model->id);
         } elseif ($identity instanceof \Model_Guest) {
-            $this->di['events_manager']->fire(['event' => 'onAfterGuestPublicTicketClose', 'params' => ['id' => $model->id]]);
+            $this->di['events_manager']->dispatch(new AfterGuestPublicTicketCloseEvent(ticketId: $model->id));
             $this->di['logger']->info('"%s" closed public ticket "%s"', $model->author_email, $model->id);
         }
 
@@ -1168,7 +1171,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function publicToApiArray(\Model_SupportPTicket $model, bool $deep = true): array
+    public function publicToApiArray(\Model_SupportPTicket $model, bool $deep = true, $identity = null): array
     {
         $data = $this->di['db']->toArray($model);
         $messages = [];
@@ -1219,7 +1222,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminPublicTicketOpen', 'params' => $data]);
+        $this->di['events_manager']->dispatch(new BeforeAdminPublicTicketOpenEvent(data: $data));
 
         $ticket = $this->di['db']->dispense('SupportPTicket');
         $ticket->hash = bin2hex(random_bytes(random_int(100, 127)));
@@ -1240,7 +1243,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminPublicTicketOpen', 'params' => ['id' => $ticketId]]);
+        $this->di['events_manager']->dispatch(new AfterAdminPublicTicketOpenEvent(ticketId: $ticketId));
 
         $this->di['logger']->info('Opened public ticket for email "%s"', $ticket->author_email);
 
@@ -1274,7 +1277,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $ticket->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($ticket);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminPublicTicketReply', 'params' => ['id' => $ticket->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminPublicTicketReplyEvent(ticketId: $ticket->id));
 
         $this->di['logger']->info('Replied to public ticket "%s"', $ticket->id);
 
@@ -1295,7 +1298,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $ticket->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($ticket);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterGuestPublicTicketReply', 'params' => ['id' => $ticket->id]]);
+        $this->di['events_manager']->dispatch(new AfterGuestPublicTicketReplyEvent(ticketId: $ticket->id));
 
         $this->di['logger']->info('Client "%s" replied to public ticket "%s"', $ticket->author_email, $ticket->id);
 

@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Event\AfterAdminSubscriptionCreateEvent;
+use Box\Mod\Invoice\Event\AfterAdminSubscriptionDeleteEvent;
 use FOSSBilling\InjectionAwareInterface;
 
 class ServiceSubscription implements InjectionAwareInterface
@@ -44,7 +46,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $model->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($model);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionCreate', 'params' => ['id' => $newId]]);
+        $this->di['events_manager']->dispatch(new AfterAdminSubscriptionCreateEvent(subscriptionId: $newId));
 
         $this->di['logger']->info('Created subscription %s', $newId);
 
@@ -102,7 +104,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $id = $model->id;
         $this->di['db']->trash($model);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionDelete', 'params' => ['id' => $id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminSubscriptionDeleteEvent(subscriptionId: $id));
 
         $this->di['logger']->info('Removed subscription %s', $id);
 

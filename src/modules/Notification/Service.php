@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Notification;
 
+use Box\Mod\Notification\Event\AfterAdminNotificationAddEvent;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -56,7 +57,7 @@ class Service implements InjectionAwareInterface
         $meta->updated_at = date('Y-m-d H:i:s');
         $id = $this->di['db']->store($meta);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminNotificationAdd', 'params' => ['id' => $id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminNotificationAddEvent(notificationId: $id));
 
         return $id;
     }

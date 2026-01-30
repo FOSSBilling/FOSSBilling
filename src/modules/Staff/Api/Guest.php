@@ -15,6 +15,7 @@
 
 namespace Box\Mod\Staff\Api;
 
+use Box\Mod\Staff\Event\BeforePasswordResetStaffEvent;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \Api_Abstract
@@ -89,7 +90,7 @@ class Guest extends \Api_Abstract
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
             throw new \FOSSBilling\InformationException('Password reset has been disabled');
         }
-        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+        $this->di['events_manager']->dispatch(new BeforePasswordResetStaffEvent());
         $required = [
             'code' => 'Code required',
             'password' => 'Password required',
@@ -134,7 +135,7 @@ class Guest extends \Api_Abstract
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
             throw new \FOSSBilling\InformationException('Password reset has been disabled');
         }
-        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+        $this->di['events_manager']->dispatch(new BeforePasswordResetStaffEvent());
         $required = [
             'email' => 'Email required',
         ];

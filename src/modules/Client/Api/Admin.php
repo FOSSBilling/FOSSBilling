@@ -15,6 +15,14 @@
 
 namespace Box\Mod\Client\Api;
 
+use Box\Mod\Client\Event\AfterAdminClientCreateEvent;
+use Box\Mod\Client\Event\AfterAdminClientDeleteEvent;
+use Box\Mod\Client\Event\AfterAdminClientPasswordChangeEvent;
+use Box\Mod\Client\Event\AfterAdminClientUpdateEvent;
+use Box\Mod\Client\Event\BeforeAdminClientCreateEvent;
+use Box\Mod\Client\Event\BeforeAdminClientDeleteEvent;
+use Box\Mod\Client\Event\BeforeAdminClientPasswordChangeEvent;
+use Box\Mod\Client\Event\BeforeAdminClientUpdateEvent;
 use FOSSBilling\InformationException;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -147,9 +155,22 @@ class Admin extends \Api_Abstract
 
         $validator->isPasswordStrong($data['password']);
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
+        $this->di['events_manager']->dispatch(new BeforeAdminClientCreateEvent(
+            email: $data['email'],
+            firstName: $data['first_name'],
+            lastName: $data['last_name'] ?? null,
+            password: $data['password'] ?? null,
+            data: $data,
+        ));
         $id = $service->adminCreateClient($data);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientCreate', 'params' => $data]);
+        $this->di['events_manager']->dispatch(new AfterAdminClientCreateEvent(
+            clientId: $id,
+            email: $data['email'],
+            firstName: $data['first_name'],
+            lastName: $data['last_name'] ?? null,
+            password: $data['password'] ?? null,
+            data: $data,
+        ));
 
         return $id;
     }
@@ -162,11 +183,15 @@ class Admin extends \Api_Abstract
     {
         $model = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminClientDeleteEvent(
+            clientId: $model->id,
+        ));
 
         $id = $model->id;
         $this->getService()->remove($model);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminClientDeleteEvent(
+            clientId: $id,
+        ));
 
         $this->di['logger']->info('Removed client #%s', $id);
 
@@ -234,7 +259,10 @@ class Admin extends \Api_Abstract
             $client->currency = $data['currency'] ?? $client->currency;
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
+        $this->di['events_manager']->dispatch(new BeforeAdminClientUpdateEvent(
+            clientId: $client->id,
+            data: $data,
+        ));
 
         // Special handling for the phone country codes
         $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
@@ -290,7 +318,9 @@ class Admin extends \Api_Abstract
         $client->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($client);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminClientUpdateEvent(
+            clientId: $client->id,
+        ));
 
         $this->di['logger']->info('Updated client #%s profile', $client->id);
 
@@ -311,7 +341,10 @@ class Admin extends \Api_Abstract
 
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => $data]);
+        $this->di['events_manager']->dispatch(new BeforeAdminClientPasswordChangeEvent(
+            clientId: $client->id,
+            password: $data['password'],
+        ));
 
         $client->pass = $this->di['password']->hashIt($data['password']);
         $client->updated_at = date('Y-m-d H:i:s');
@@ -320,7 +353,10 @@ class Admin extends \Api_Abstract
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('client', $data['id']);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id, 'password' => $data['password']]]);
+        $this->di['events_manager']->dispatch(new AfterAdminClientPasswordChangeEvent(
+            clientId: $client->id,
+            password: $data['password'],
+        ));
 
         $this->di['logger']->info('Changed client #%s password', $client->id);
 

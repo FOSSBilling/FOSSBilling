@@ -15,6 +15,10 @@
 
 namespace Box\Mod\System\Api;
 
+use Box\Mod\System\Event\AfterAdminManualUpdateEvent;
+use Box\Mod\System\Event\AfterAdminUpdateCoreEvent;
+use Box\Mod\System\Event\BeforeAdminManualUpdateEvent;
+use Box\Mod\System\Event\BeforeAdminUpdateCoreEvent;
 use FOSSBilling\Config;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -190,9 +194,9 @@ class Admin extends \Api_Abstract
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
 
         $new_version = $updater->getLatestVersion();
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
+        $this->di['events_manager']->dispatch(new BeforeAdminUpdateCoreEvent());
         $updater->performUpdate();
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
+        $this->di['events_manager']->dispatch(new AfterAdminUpdateCoreEvent());
 
         $this->di['logger']->info('Updated FOSSBilling from %s to %s', \FOSSBilling\Version::VERSION, $new_version);
 
@@ -209,9 +213,9 @@ class Admin extends \Api_Abstract
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
 
         $updater = $this->di['updater'];
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminManualUpdate']);
+        $this->di['events_manager']->dispatch(new BeforeAdminManualUpdateEvent());
         $updater->performManualUpdate();
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminManualUpdate']);
+        $this->di['events_manager']->dispatch(new AfterAdminManualUpdateEvent());
         $this->di['logger']->info('Updated FOSSBilling - applied patches and updated configuration file.');
 
         return true;

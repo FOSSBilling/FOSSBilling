@@ -12,8 +12,31 @@
 namespace Box\Mod\Order;
 
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Order\Event\AfterAdminBatchCancelSuspendedOrdersEvent;
+use Box\Mod\Order\Event\AfterAdminBatchSuspendOrdersEvent;
+use Box\Mod\Order\Event\AfterAdminOrderActivateEvent;
+use Box\Mod\Order\Event\AfterAdminOrderCancelEvent;
+use Box\Mod\Order\Event\AfterAdminOrderCreateEvent;
+use Box\Mod\Order\Event\AfterAdminOrderDeleteEvent;
+use Box\Mod\Order\Event\AfterAdminOrderRenewEvent;
+use Box\Mod\Order\Event\AfterAdminOrderSuspendEvent;
+use Box\Mod\Order\Event\AfterAdminOrderUncancelEvent;
+use Box\Mod\Order\Event\AfterAdminOrderUnsuspendEvent;
+use Box\Mod\Order\Event\AfterAdminOrderUpdateEvent;
+use Box\Mod\Order\Event\BeforeAdminBatchCancelSuspendedOrdersEvent;
+use Box\Mod\Order\Event\BeforeAdminBatchSuspendOrdersEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderActivateEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderCancelEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderCreateEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderDeleteEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderRenewEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderSuspendEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderUncancelEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderUnsuspendEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderUpdateEvent;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
 {
@@ -51,43 +74,35 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public static function onAfterAdminOrderActivate(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminOrderActivateEvent::class)]
+    public function handleOrderActivate(AfterAdminOrderActivateEvent $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
         try {
-            $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
-            $s = $service->getOrderServiceData($order);
-            $orderArr = $service->toApiArray($order, true);
+            $order = $this->di['db']->getExistingModelById('ClientOrder', $event->orderId, 'Order not found');
+            $s = $this->getOrderServiceData($order);
+            $orderArr = $this->toApiArray($order, true);
 
-            $email = $params;
+            $email = $event->extraParams;
             $email['to_client'] = $order->client_id;
             $email['code'] = sprintf('mod_service%s_activated', $orderArr['service_type']);
             $email['service'] = $s;
             $email['order'] = $orderArr;
 
-            $emailService = $di['mod_service']('email');
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    public static function onAfterAdminOrderRenew(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminOrderRenewEvent::class)]
+    public function handleOrderRenew(AfterAdminOrderRenewEvent $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $orderService = $di['mod_service']('order');
-
         try {
-            $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
-            $identity = $di['loggedin_admin'];
-            $service = $orderService->getOrderServiceData($order, $identity);
-            $orderArr = $orderService->toApiArray($order, true, $identity);
+            $order = $this->di['db']->getExistingModelById('ClientOrder', $event->orderId, 'Order not found');
+            $identity = $this->di['loggedin_admin'];
+            $service = $this->getOrderServiceData($order, $identity);
+            $orderArr = $this->toApiArray($order, true, $identity);
 
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
@@ -95,25 +110,21 @@ class Service implements InjectionAwareInterface
             $email['service'] = $service;
             $email['order'] = $orderArr;
 
-            $emailService = $di['mod_service']('email');
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    public static function onAfterAdminOrderSuspend(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminOrderSuspendEvent::class)]
+    public function handleOrderSuspend(AfterAdminOrderSuspendEvent $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
         try {
-            $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
-            $identity = $di['loggedin_admin'];
-            $s = $service->getOrderServiceData($order, $identity);
-            $orderArr = $service->toApiArray($order, true, $identity);
+            $order = $this->di['db']->getExistingModelById('ClientOrder', $event->orderId, 'Order not found');
+            $identity = $this->di['loggedin_admin'];
+            $s = $this->getOrderServiceData($order, $identity);
+            $orderArr = $this->toApiArray($order, true, $identity);
 
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
@@ -121,25 +132,21 @@ class Service implements InjectionAwareInterface
             $email['service'] = $s;
             $email['order'] = $orderArr;
 
-            $emailService = $di['mod_service']('email');
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    public static function onAfterAdminOrderUnsuspend(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminOrderUnsuspendEvent::class)]
+    public function handleOrderUnsuspend(AfterAdminOrderUnsuspendEvent $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
         try {
-            $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
-            $identity = $di['loggedin_admin'];
-            $s = $service->getOrderServiceData($order, $identity);
-            $orderArr = $service->toApiArray($order, true, $identity);
+            $order = $this->di['db']->getExistingModelById('ClientOrder', $event->orderId, 'Order not found');
+            $identity = $this->di['loggedin_admin'];
+            $s = $this->getOrderServiceData($order, $identity);
+            $orderArr = $this->toApiArray($order, true, $identity);
 
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
@@ -147,49 +154,41 @@ class Service implements InjectionAwareInterface
             $email['service'] = $s;
             $email['order'] = $orderArr;
 
-            $emailService = $di['mod_service']('email');
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    public static function onAfterAdminOrderCancel(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminOrderCancelEvent::class)]
+    public function handleOrderCancel(AfterAdminOrderCancelEvent $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
         try {
-            $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
-            $identity = $di['loggedin_admin'];
-            $orderArr = $service->toApiArray($order, true, $identity);
+            $order = $this->di['db']->getExistingModelById('ClientOrder', $event->orderId, 'Order not found');
+            $identity = $this->di['loggedin_admin'];
+            $orderArr = $this->toApiArray($order, true, $identity);
 
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
             $email['code'] = sprintf('mod_service%s_canceled', $orderArr['service_type']);
             $email['order'] = $orderArr;
 
-            $emailService = $di['mod_service']('email');
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    public static function onAfterAdminOrderUncancel(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminOrderUncancelEvent::class)]
+    public function handleOrderUncancel(AfterAdminOrderUncancelEvent $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
         try {
-            $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
-            $identity = $di['loggedin_admin'];
-            $s = $service->getOrderServiceData($order, $identity);
-            $orderArr = $service->toApiArray($order, true, $identity);
+            $order = $this->di['db']->getExistingModelById('ClientOrder', $event->orderId, 'Order not found');
+            $identity = $this->di['loggedin_admin'];
+            $s = $this->getOrderServiceData($order, $identity);
+            $orderArr = $this->toApiArray($order, true, $identity);
 
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
@@ -197,7 +196,7 @@ class Service implements InjectionAwareInterface
             $email['order'] = $orderArr;
             $email['service'] = $s;
 
-            $emailService = $di['mod_service']('email');
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
@@ -501,7 +500,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Currency could not be determined for order');
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCreate', 'params' => $data, 'subject' => $product->type]);
+        $this->di['events_manager']->dispatch(new BeforeAdminOrderCreateEvent(data: $data, productType: $product->type));
 
         $period = (isset($data['period']) && !empty($data['period'])) ? $data['period'] : null;
         $qty = $data['quantity'] ?? 1;
@@ -618,7 +617,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCreate', 'params' => ['id' => $order->id], 'subject' => $product->type]);
+        $this->di['events_manager']->dispatch(new AfterAdminOrderCreateEvent(orderId: $order->id, productType: $product->type));
 
         $this->di['logger']->info('Created order #%s', $id);
 
@@ -671,9 +670,9 @@ class Service implements InjectionAwareInterface
         $list = $this->getOrderAddonsList($order);
         foreach ($list as $addon) {
             try {
-                $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderActivate', 'params' => ['id' => $addon->id]]);
+                $this->di['events_manager']->dispatch(new BeforeAdminOrderActivateEvent(orderId: $addon->id));
                 $this->createFromOrder($addon);
-                $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderActivate', 'params' => ['id' => $addon->id]]);
+                $this->di['events_manager']->dispatch(new AfterAdminOrderActivateEvent(orderId: $addon->id));
             } catch (\Exception $e) {
                 error_log($e->getMessage());
             }
@@ -694,13 +693,10 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $event_params = ['id' => $order->id];
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderActivate', 'params' => $event_params]);
+        $this->di['events_manager']->dispatch(new BeforeAdminOrderActivateEvent(orderId: $order->id));
         $result = $this->createFromOrder($order);
-        if (is_array($result)) {
-            $event_params = [...$event_params, ...$result];
-        }
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderActivate', 'params' => $event_params]);
+        $extraParams = is_array($result) ? $result : [];
+        $this->di['events_manager']->dispatch(new AfterAdminOrderActivateEvent(orderId: $order->id, extraParams: $extraParams));
 
         $this->activateOrderAddons($order);
 
@@ -869,7 +865,7 @@ class Service implements InjectionAwareInterface
 
     public function updateOrder(\Model_ClientOrder $order, array $data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUpdate', 'params' => $data]);
+        $this->di['events_manager']->dispatch(new BeforeAdminOrderUpdateEvent(data: $data));
         $this->updatePeriod($order, $data['period'] ?? null);
 
         $created_at = $data['created_at'] ?? '';
@@ -902,7 +898,7 @@ class Service implements InjectionAwareInterface
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUpdate', 'params' => ['id' => $order->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminOrderUpdateEvent(orderId: $order->id));
 
         $this->di['logger']->info('Update order #%s', $order->id);
 
@@ -911,7 +907,7 @@ class Service implements InjectionAwareInterface
 
     public function renewOrder(\Model_ClientOrder $order): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderRenew', 'params' => ['id' => $order->id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminOrderRenewEvent(orderId: $order->id));
 
         $this->renewFromOrder($order);
 
@@ -928,7 +924,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderRenew', 'params' => ['id' => $order->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminOrderRenewEvent(orderId: $order->id));
         $this->di['logger']->info('Renewed order #%s', $order->id);
 
         return true;
@@ -988,7 +984,7 @@ class Service implements InjectionAwareInterface
     public function suspendFromOrder(\Model_ClientOrder $order, $reason = null, $skipEvent = false): bool
     {
         if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderSuspend', 'params' => ['id' => $order->id]]);
+            $this->di['events_manager']->dispatch(new BeforeAdminOrderSuspendEvent(orderId: $order->id));
         }
 
         if ($order->status != \Model_ClientOrder::STATUS_ACTIVE) {
@@ -1007,7 +1003,7 @@ class Service implements InjectionAwareInterface
         $this->saveStatusChange($order, $note);
 
         if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderSuspend', 'params' => ['id' => $order->id]]);
+            $this->di['events_manager']->dispatch(new AfterAdminOrderSuspendEvent(orderId: $order->id));
         }
 
         $this->di['logger']->info('Suspended order #%s', $order->id);
@@ -1017,7 +1013,7 @@ class Service implements InjectionAwareInterface
 
     public function unsuspendFromOrder(\Model_ClientOrder $order): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUnsuspend', 'params' => ['id' => $order->id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminOrderUnsuspendEvent(orderId: $order->id));
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_UNSUSPEND);
 
@@ -1030,7 +1026,7 @@ class Service implements InjectionAwareInterface
 
         $this->saveStatusChange($order, 'Order unsuspended');
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUnsuspend', 'params' => ['id' => $order->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminOrderUnsuspendEvent(orderId: $order->id));
 
         $this->di['logger']->info('Unsuspended order #%s', $order->id);
 
@@ -1040,7 +1036,7 @@ class Service implements InjectionAwareInterface
     public function cancelFromOrder(\Model_ClientOrder $order, $reason = null, $skipEvent = false): bool
     {
         if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCancel', 'params' => ['id' => $order->id]]);
+            $this->di['events_manager']->dispatch(new BeforeAdminOrderCancelEvent(orderId: $order->id));
         }
 
         if (in_array($order->status, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP])) {
@@ -1061,7 +1057,7 @@ class Service implements InjectionAwareInterface
         $this->saveStatusChange($order, $note);
 
         if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCancel', 'params' => ['id' => $order->id]]);
+            $this->di['events_manager']->dispatch(new AfterAdminOrderCancelEvent(orderId: $order->id));
         }
 
         $this->di['logger']->info('Canceled order #%s', $order->id);
@@ -1071,7 +1067,7 @@ class Service implements InjectionAwareInterface
 
     public function uncancelFromOrder(\Model_ClientOrder $order): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUncancel', 'params' => ['id' => $order->id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminOrderUncancelEvent(orderId: $order->id));
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_UNCANCEL);
 
@@ -1093,7 +1089,7 @@ class Service implements InjectionAwareInterface
 
         $this->saveStatusChange($order, 'Activated canceled order');
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUncancel', 'params' => ['id' => $order->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminOrderUncancelEvent(orderId: $order->id));
 
         $this->di['logger']->info('Uncanceled order #%s', $order->id);
 
@@ -1136,7 +1132,7 @@ class Service implements InjectionAwareInterface
 
     public function deleteFromOrder(\Model_ClientOrder $order, bool $forceDelete = false): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderDelete', 'params' => ['id' => $order->id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminOrderDeleteEvent(orderId: $order->id));
 
         if ($order->status == \Model_ClientOrder::STATUS_PENDING_SETUP) {
             $this->rmInvoiceItemByOrder($order);
@@ -1155,7 +1151,7 @@ class Service implements InjectionAwareInterface
         $this->rmClientOrderStatusByOrder($order);
         $this->rmOrder($order);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderDelete', 'params' => ['id' => $id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminOrderDeleteEvent(orderId: $id));
         $this->di['logger']->info('Deleted order #%s', $id);
 
         return true;
@@ -1172,7 +1168,7 @@ class Service implements InjectionAwareInterface
 
     public function batchSuspendExpired(): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminBatchSuspendOrders']);
+        $this->di['events_manager']->dispatch(new BeforeAdminBatchSuspendOrdersEvent());
 
         $mod = $this->di['mod']('order');
         $c = $mod->getConfig();
@@ -1189,7 +1185,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminBatchSuspendOrders']);
+        $this->di['events_manager']->dispatch(new AfterAdminBatchSuspendOrdersEvent());
 
         $this->di['logger']->info('Executed action to suspend expired orders');
 
@@ -1198,7 +1194,7 @@ class Service implements InjectionAwareInterface
 
     public function batchCancelSuspended(): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminBatchCancelSuspendedOrders']);
+        $this->di['events_manager']->dispatch(new BeforeAdminBatchCancelSuspendedOrdersEvent());
 
         $mod = $this->di['mod']('order');
         $config = $mod->getConfig();
@@ -1232,7 +1228,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminBatchCancelSuspendedOrders']);
+        $this->di['events_manager']->dispatch(new AfterAdminBatchCancelSuspendedOrdersEvent());
 
         $this->di['logger']->info('Executed action to cancel suspended orders');
 

@@ -11,6 +11,11 @@
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Event\AfterAdminTransactionCreateEvent;
+use Box\Mod\Invoice\Event\AfterAdminTransactionProcessEvent;
+use Box\Mod\Invoice\Event\AfterAdminTransactionUpdateEvent;
+use Box\Mod\Invoice\Event\BeforeAdminTransactionCreateEvent;
+use Box\Mod\Invoice\Event\BeforeAdminTransactionUpdateEvent;
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
 
@@ -43,7 +48,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function update(\Model_Transaction $model, array $data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionUpdate', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminTransactionUpdateEvent(transactionId: $model->id));
 
         $model->invoice_id = $data['invoice_id'] ?? $model->invoice_id;
         $model->txn_id = $data['txn_id'] ?? $model->txn_id;
@@ -59,7 +64,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $model->validate_ipn = $data['validate_ipn'] ?? $model->validate_ipn;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionUpdate', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminTransactionUpdateEvent(transactionId: $model->id));
 
         $this->di['logger']->info('Updated transaction #%s', $model->id);
 
@@ -76,7 +81,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function create(array $data)
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
+        $this->di['events_manager']->dispatch(new BeforeAdminTransactionCreateEvent(data: $data));
 
         $skip_validation = isset($data['skip_validation']) && (bool) $data['skip_validation'];
         if (!empty($data['gateway_id'])) {
@@ -148,7 +153,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $this->di['logger']->info('Received transaction %s from payment gateway %s', $newId, $transaction->gateway_id);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionCreate', 'params' => ['id' => $newId]]);
+        $this->di['events_manager']->dispatch(new AfterAdminTransactionCreateEvent(transactionId: $newId));
 
         return $newId;
     }
@@ -362,7 +367,7 @@ class ServiceTransaction implements InjectionAwareInterface
             throw $e;
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionProcess', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminTransactionProcessEvent(transactionId: $model->id));
         $this->di['logger']->info('Processed transaction #%s', $model->id);
 
         return !empty($output) ? $output : true;

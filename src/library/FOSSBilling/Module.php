@@ -28,7 +28,7 @@ class Module implements InjectionAwareInterface
 
     public const CORE_MODULES = ['api', 'activity', 'cart', 'client',
         'cron', 'currency', 'email', 'extension',
-        'hook', 'index', 'invoice', 'order',
+        'index', 'invoice', 'order',
         'page', 'product', 'profile', 'security',
         'servicecustom', 'servicedomain', 'servicedownloadable',
         'servicehosting', 'servicelicense', 'staff', 'stats',

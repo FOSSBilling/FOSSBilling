@@ -205,17 +205,13 @@ $di['mod_service'] = $di->protect(fn ($mod, $sub = '') => $di['mod']($mod)->getS
 $di['mod_config'] = $di->protect(fn ($name) => $di['mod']($name)->getConfig());
 
 /*
+ * Creates the event dispatcher for firing and listening to events.
  *
  * @param void
  *
- * @return \Box_EventManager
+ * @return \FOSSBilling\Events\EventDispatcherFactory
  */
-$di['events_manager'] = function () use ($di) {
-    $service = new Box_EventManager();
-    $service->setDi($di);
-
-    return $service;
-};
+$di['events_manager'] = fn () => FOSSBilling\Events\EventDispatcherFactory::create($di);
 
 /*
  * Creates a new session, applying specified security rules depending on the config.php settings.

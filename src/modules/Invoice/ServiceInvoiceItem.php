@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Event\InvoiceItemHookCallEvent;
 use FOSSBilling\InjectionAwareInterface;
 
 class ServiceInvoiceItem implements InjectionAwareInterface
@@ -100,8 +101,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         if ($item->type == \Model_InvoiceItem::TYPE_HOOK_CALL) {
             try {
-                $params = json_decode($item->rel_id ?? '');
-                $this->di['events_manager']->fire(['event' => $item->task, 'params' => $params]);
+                $params = json_decode($item->rel_id ?? '', true) ?? [];
+                $this->di['events_manager']->dispatch(new InvoiceItemHookCallEvent(task: $item->task, params: $params));
             } catch (\Exception $e) {
                 error_log($e->getMessage());
             }

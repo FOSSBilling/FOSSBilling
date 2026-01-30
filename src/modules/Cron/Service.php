@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Cron;
 
+use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Path;
@@ -48,8 +50,7 @@ class Service
         $this->di['logger']->setChannel('cron')->info('Started executing cron jobs.');
 
         // @core tasks
-        $this->_exec($api, 'hook_batch_connect');
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminCronRun']);
+        $this->di['events_manager']->dispatch(new BeforeAdminCronRunEvent());
 
         $this->_exec($api, 'invoice_batch_pay_with_credits');
         $this->_exec($api, 'invoice_batch_activate_paid');
@@ -71,7 +72,7 @@ class Service
         $count = $this->clearOldSessions() ?? 0;
         $this->di['logger']->setChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
+        $this->di['events_manager']->dispatch(new AfterAdminCronRunEvent());
         $this->di['logger']->setChannel('cron')->info('Finished executing cron jobs.');
 
         return true;

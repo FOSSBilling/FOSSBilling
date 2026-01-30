@@ -11,11 +11,30 @@
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Invoice\Event\AfterAdminGenerateRenewalInvoiceEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceApproveEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceDeleteEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceRefundEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceReminderSentEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceUpdateEvent;
+use Box\Mod\Invoice\Event\AfterInvoiceIsDueEvent;
+use Box\Mod\Invoice\Event\BeforeAdminGenerateRenewalInvoiceEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceApproveEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceDeleteEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceRefundEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceSendReminderEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceSendRemindersEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceUpdateEvent;
+use Box\Mod\Invoice\Event\BeforeClientInvoiceDeleteEvent;
+use Box\Mod\Invoice\Event\BeforeInvoiceIsDueEvent;
 use Dompdf\Dompdf;
 use FOSSBilling\Environment;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Twig\Loader\FilesystemLoader;
@@ -335,21 +354,18 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public static function onAfterAdminInvoicePaymentReceived(\Box_Event $event): bool
+    #[AsEventListener(event: AfterAdminInvoicePaymentReceivedEvent::class)]
+    public function sendPaymentReceivedEmail(AfterAdminInvoicePaymentReceivedEvent $event): bool
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-        $service = $di['mod_service']('invoice');
-
         try {
-            $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            $invoice = $service->toApiArray($invoiceModel, true);
+            $invoiceModel = $this->di['db']->load('Invoice', $event->invoiceId);
+            $invoice = $this->toApiArray($invoiceModel, true);
             if ($invoice['total'] > 0) {
                 $email = [];
                 $email['to_client'] = $invoiceModel->client_id;
                 $email['code'] = 'mod_invoice_paid';
                 $email['invoice'] = $invoice;
-                $emailService = $di['mod_service']('email');
+                $emailService = $this->di['mod_service']('email');
                 $emailService->sendTemplate($email);
             }
         } catch (\Exception $exc) {
@@ -359,20 +375,17 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public static function onAfterAdminInvoiceApprove(\Box_Event $event): bool
+    #[AsEventListener(event: AfterAdminInvoiceApproveEvent::class)]
+    public function sendInvoiceApprovedEmail(AfterAdminInvoiceApproveEvent $event): bool
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-        $service = $di['mod_service']('invoice');
-
         try {
-            $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            $invoice = $service->toApiArray($invoiceModel, true);
+            $invoiceModel = $this->di['db']->load('Invoice', $event->invoiceData['id']);
+            $invoice = $this->toApiArray($invoiceModel, true);
             $email = [];
             $email['to_client'] = $invoiceModel->client_id;
             $email['code'] = 'mod_invoice_created';
             $email['invoice'] = $invoice;
-            $emailService = $di['mod_service']('Email');
+            $emailService = $this->di['mod_service']('Email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
@@ -381,60 +394,54 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public static function onAfterAdminInvoiceReminderSent(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminInvoiceReminderSentEvent::class)]
+    public function onAfterAdminInvoiceReminderSent(AfterAdminInvoiceReminderSentEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-        $service = $di['mod_service']('invoice');
-
         try {
-            $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            $invoice = $service->toApiArray($invoiceModel, ['id' => $params['id']]);
+            $invoiceModel = $this->di['db']->load('Invoice', $event->invoiceId);
+            $invoice = $this->toApiArray($invoiceModel, ['id' => $event->invoiceId]);
             $email = [];
             $email['to_client'] = $invoiceModel->client_id;
             $email['code'] = 'mod_invoice_payment_reminder';
             $email['invoice'] = $invoice;
-            $emailService = $di['mod_service']('Email');
+            $emailService = $this->di['mod_service']('Email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    public static function onAfterAdminCronRun(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminCronRunEvent::class)]
+    public function purgeOldInvoices(AfterAdminCronRunEvent $event): void
     {
-        $di = $event->getDi();
-        $systemService = $di['mod_service']('System');
+        $systemService = $this->di['mod_service']('System');
         $remove_after_days = $systemService->getParamValue('remove_after_days');
         if (isset($remove_after_days) && $remove_after_days) {
             // removing old invoices
             $days = (int) $remove_after_days;
             $sql = 'DELETE FROM invoice WHERE status = :status AND DATEDIFF(NOW(), due_at) > :days';
-            $di['db']->exec($sql, [':days' => $days, ':status' => \Model_Invoice::STATUS_UNPAID]);
+            $this->di['db']->exec($sql, [':days' => $days, ':status' => \Model_Invoice::STATUS_UNPAID]);
         }
     }
 
-    public static function onEventAfterInvoiceIsDue(\Box_Event $event): void
+    #[AsEventListener(event: AfterInvoiceIsDueEvent::class)]
+    public function sendInvoiceDueEmail(AfterInvoiceIsDueEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-        $service = $di['mod_service']('invoice');
-
         // send reminder once a day when 5 days has passed
-        if ($params['days_passed'] != 5) {
+        if ($event->daysUntilDue != 5) {
             return;
         }
 
         try {
-            $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            $invoice = $service->toApiArray($invoiceModel, ['id' => $params['id']]);
+            $invoiceModel = $this->di['db']->load('Invoice', $event->invoiceId);
+            $invoice = $this->toApiArray($invoiceModel, ['id' => $event->invoiceId]);
             $email = [];
             $email['to_client'] = $invoice['client']['id'];
             $email['code'] = 'mod_invoice_due_after';
-            $email['days_passed'] = $params['days_passed'];
+            $email['days_passed'] = $event->daysUntilDue;
             $email['invoice'] = $invoice;
 
-            $emailService = $di['mod_service']('email');
+            $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
@@ -475,7 +482,7 @@ class Service implements InjectionAwareInterface
 
         $this->countIncome($invoice);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoice->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminInvoicePaymentReceivedEvent(invoiceId: $invoice->id));
 
         if ($execute) {
             foreach ($invoiceItems as $item) {
@@ -646,13 +653,14 @@ class Service implements InjectionAwareInterface
 
     public function approveInvoice(\Model_Invoice $invoice, array $data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
+        $invoiceData = $this->toApiArray($invoice);
+        $this->di['events_manager']->dispatch(new BeforeAdminInvoiceApproveEvent(invoiceData: $invoiceData));
 
         $invoice->approved = 1;
         $invoice->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($invoice);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
+        $this->di['events_manager']->dispatch(new AfterAdminInvoiceApproveEvent(invoiceData: $this->toApiArray($invoice)));
 
         if (isset($data['use_credits']) && $data['use_credits']) {
             $this->tryPayWithCredits($invoice);
@@ -747,7 +755,7 @@ class Service implements InjectionAwareInterface
 
     public function refundInvoice(\Model_Invoice $invoice, $note = null): ?int
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceRefund', 'params' => $this->toApiArray($invoice)]);
+        $this->di['events_manager']->dispatch(new BeforeAdminInvoiceRefundEvent(invoiceData: $this->toApiArray($invoice)));
 
         $systemService = $this->di['mod_service']('system');
         $logic = $systemService->getParamValue('invoice_refund_logic', 'manual');
@@ -847,7 +855,7 @@ class Service implements InjectionAwareInterface
                 break;
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceRefund', 'params' => ['id' => $invoice->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminInvoiceRefundEvent(invoiceId: $invoice->id));
 
         $this->di['logger']->info("Refunded invoice #{$invoice->id}.");
 
@@ -858,7 +866,7 @@ class Service implements InjectionAwareInterface
     {
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceUpdate', 'params' => $data]);
+        $this->di['events_manager']->dispatch(new BeforeAdminInvoiceUpdateEvent(data: $data));
 
         $model->gateway_id = empty($data['gateway_id']) ? (empty($model->gateway_id) ? null : $model->gateway_id) : intval($data['gateway_id']);
         $model->text_1 = $data['text_1'] ?? (empty($model->text_1) ? null : $model->text_1);
@@ -926,7 +934,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['db']->store($model);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceUpdate', 'params' => $this->toApiArray($model)]);
+        $this->di['events_manager']->dispatch(new AfterAdminInvoiceUpdateEvent(invoiceData: $this->toApiArray($model)));
 
         $this->di['logger']->info("Updated invoice {$model->id}.");
 
@@ -953,12 +961,12 @@ class Service implements InjectionAwareInterface
 
     public function deleteInvoiceByAdmin(\Model_Invoice $model): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceDelete', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminInvoiceDeleteEvent(invoiceId: $model->id));
 
         $id = $model->id;
         $this->rmInvoice($model);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceDelete', 'params' => ['id' => $id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminInvoiceDeleteEvent(invoiceId: $id));
 
         $this->di['logger']->info('Removed invoice #%s', $id);
 
@@ -967,7 +975,7 @@ class Service implements InjectionAwareInterface
 
     public function deleteInvoiceByClient(\Model_Invoice $model): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientInvoiceDelete', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->dispatch(new BeforeClientInvoiceDeleteEvent(invoiceId: $model->id));
 
         // check if invoice is associated with order
         $invoiceItem = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$model->id]);
@@ -985,13 +993,13 @@ class Service implements InjectionAwareInterface
 
     public function renewInvoice(\Model_ClientOrder $model, array $data)
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminGenerateRenewalInvoiceEvent(orderId: $model->id));
 
         $due_days = isset($data['due_days']) ? (int) $data['due_days'] : null;
         $invoice = $this->generateForOrder($model, $due_days);
         $this->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->id, 'id' => $invoice->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminGenerateRenewalInvoiceEvent(orderId: $model->id, invoiceId: $invoice->id));
 
         $this->di['logger']->info("Generated renewal invoice #{$invoice->id}.");
 
@@ -1118,7 +1126,7 @@ class Service implements InjectionAwareInterface
 
     public function doBatchRemindersSend(): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceSendReminders']);
+        $this->di['events_manager']->dispatch(new BeforeAdminInvoiceSendRemindersEvent());
         $list = $this->getUnpaidInvoicesLateFor();
         foreach ($list as $invoice) {
             $this->sendInvoiceReminder($invoice);
@@ -1143,12 +1151,12 @@ class Service implements InjectionAwareInterface
 
         $before_due_list = $this->di['db']->getAll("SELECT id, DATEDIFF(due_at, NOW()) as days_left FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at > NOW()");
         foreach ($before_due_list as $params) {
-            $this->di['events_manager']->fire(['event' => 'onEventBeforeInvoiceIsDue', 'params' => $params]);
+            $this->di['events_manager']->dispatch(new BeforeInvoiceIsDueEvent(invoiceId: (int) $params['id'], clientId: 0, daysUntilDue: (int) $params['days_left']));
         }
 
         $after_due_list = $this->di['db']->getAll("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0 ))");
         foreach ($after_due_list as $params) {
-            $this->di['events_manager']->fire(['event' => 'onEventAfterInvoiceIsDue', 'params' => $params]);
+            $this->di['events_manager']->dispatch(new AfterInvoiceIsDueEvent(invoiceId: (int) $params['id'], clientId: 0, daysUntilDue: (int) $params['days_passed']));
         }
 
         $ss->setParamValue($key, date('Y-m-d H:i:s'));
@@ -1164,13 +1172,13 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceSendReminder', 'params' => ['id' => $invoice->id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminInvoiceSendReminderEvent(invoiceId: $invoice->id));
 
         $invoice->reminded_at = date('Y-m-d H:i:s');
         $invoice->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($invoice);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceReminderSent', 'params' => ['id' => $invoice->id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminInvoiceReminderSentEvent(invoiceId: $invoice->id));
 
         $this->di['logger']->info('Invoice payment reminder sent');
 

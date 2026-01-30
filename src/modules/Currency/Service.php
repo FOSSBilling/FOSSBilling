@@ -12,11 +12,15 @@ declare(strict_types=1);
 
 namespace Box\Mod\Currency;
 
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Currency\Event\AfterAdminDeleteCurrencyEvent;
+use Box\Mod\Currency\Event\BeforeAdminDeleteCurrencyEvent;
 use Box\Mod\Currency\Repository\CurrencyRepository;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use PrinsFrank\Standards\Currency\CurrencyAlpha3;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -626,11 +630,11 @@ class Service implements InjectionAwareInterface
         }
         $code = $model->getCode();
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminDeleteCurrency', 'params' => ['code' => $code]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminDeleteCurrencyEvent(code: $code));
 
         $this->rm($model);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminDeleteCurrency', 'params' => ['code' => $code]]);
+        $this->di['events_manager']->dispatch(new AfterAdminDeleteCurrencyEvent(code: $code));
 
         $this->di['logger']->info('Removed currency %s', $code);
 
@@ -640,14 +644,12 @@ class Service implements InjectionAwareInterface
     /**
      * If enabled, automatically call _getRate to fetch exchange rates whenever CRON jobs are run.
      */
-    public static function onBeforeAdminCronRun(\Box_Event $event): bool
+    #[AsEventListener(event: BeforeAdminCronRunEvent::class)]
+    public function cronFetchExchangeRates(BeforeAdminCronRunEvent $event): bool
     {
-        $di = $event->getDi();
-        $currencyService = $di['mod_service']('currency');
-
         try {
-            if ($currencyService->isCronEnabled()) {
-                $currencyService->updateCurrencyRates();
+            if ($this->isCronEnabled()) {
+                $this->updateCurrencyRates();
             }
         } catch (\Exception $e) {
             error_log($e->getMessage());

@@ -11,8 +11,14 @@
 
 namespace Box\Mod\Extension;
 
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+use Box\Mod\Extension\Event\AfterAdminActivateExtensionEvent;
+use Box\Mod\Extension\Event\AfterAdminExtensionConfigSaveEvent;
+use Box\Mod\Extension\Event\BeforeAdminActivateExtensionEvent;
+use Box\Mod\Extension\Event\BeforeAdminExtensionConfigSaveEvent;
 use FOSSBilling\Config;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -48,7 +54,7 @@ class Service implements InjectionAwareInterface
             'uninstall_extensions' => [
                 'type' => 'bool',
                 'display_name' => __trans('Uninstall extensions'),
-                'description' => __trans('Allow the staff member to uninstall extensions, including their associated database records and files.'),
+                'description' => __trans('Allows the staff member to uninstall extensions.'),
             ],
         ];
     }
@@ -79,13 +85,11 @@ class Service implements InjectionAwareInterface
         return (bool) $id_or_null;
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): bool
+    #[AsEventListener(event: BeforeAdminCronRunEvent::class)]
+    public function onBeforeAdminCronRun(BeforeAdminCronRunEvent $event): bool
     {
-        $di = $event->getDi();
-        $extensionService = $di['mod_service']('extension');
-
         try {
-            $extensionService->getExtensionsList([]);
+            $this->getExtensionsList([]);
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
@@ -606,7 +610,7 @@ class Service implements InjectionAwareInterface
             $ext_id = $this->di['db']->store($ext);
         }
         $ext_id ??= $ext->id;
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminActivateExtension', 'params' => ['id' => $ext_id]]);
+        $this->di['events_manager']->dispatch(new BeforeAdminActivateExtensionEvent(extensionId: (string) $ext_id));
 
         try {
             $result = $this->activate($ext);
@@ -615,7 +619,7 @@ class Service implements InjectionAwareInterface
 
             throw $e;
         }
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminActivateExtension', 'params' => ['id' => $ext_id]]);
+        $this->di['events_manager']->dispatch(new AfterAdminActivateExtensionEvent(extensionId: (string) $ext_id));
         $this->di['logger']->info('Activated extension "%s"', $data['id']);
 
         return $result;
@@ -653,7 +657,7 @@ class Service implements InjectionAwareInterface
         $ext = $data['ext'];
         $this->getConfig($ext); // Creates new config if it does not exist in DB
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminExtensionConfigSave', 'params' => $data]);
+        $this->di['events_manager']->dispatch(new BeforeAdminExtensionConfigSaveEvent(data: $data));
         $sql = "
             UPDATE extension_meta
             SET meta_value = :config
@@ -670,7 +674,7 @@ class Service implements InjectionAwareInterface
             'config' => $config,
         ];
         $this->di['db']->exec($sql, $params);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminExtensionConfigSave', 'params' => $data]);
+        $this->di['events_manager']->dispatch(new AfterAdminExtensionConfigSaveEvent(data: $data));
         $this->di['logger']->info("Updated extension {$ext} configuration.");
         $this->di['cache']->delete("config_{$ext}");
 
