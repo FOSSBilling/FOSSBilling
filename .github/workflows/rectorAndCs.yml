@@ -19,7 +19,7 @@ jobs:
 
             - name: Cache Composer Dependencies
               id: composer-cache
-              uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+              uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
               with:
                   path: ./src/vendor
                   key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -44,14 +44,14 @@ jobs:
                   php-version: 8.4
 
             - name: Restore Rector Cache
-              uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+              uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
               with:
                   path: ./var/cache/rector
                   key: ${{ env.MONTH }}-rector
                   restore-keys: ${{ env.MONTH }}-rector
 
             - name: Restore CS-Fixer Cache
-              uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+              uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
               with:
                   path: .php-cs-fixer.cache
                   key: ${{ env.MONTH }}-csfixer
