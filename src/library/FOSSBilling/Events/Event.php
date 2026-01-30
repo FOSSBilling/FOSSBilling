@@ -12,20 +12,15 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Events;
 
-use FOSSBilling\InjectionAwareInterface;
-use Pimple\Container;
 use Symfony\Contracts\EventDispatcher\Event as SymfonyEvent;
 
 /**
  * Base event class for all FOSSBilling events.
  *
- * All event classes should extend this class to ensure consistent
- * access to the DI container and common event functionality.
+ * All event classes should extend this class to ensure common event functionality.
  */
-abstract class Event extends SymfonyEvent implements InjectionAwareInterface
+abstract class Event extends SymfonyEvent
 {
-    protected ?Container $di = null;
-
     /**
      * Timestamp when the event occurred.
      */
@@ -34,15 +29,5 @@ abstract class Event extends SymfonyEvent implements InjectionAwareInterface
     public function __construct()
     {
         $this->occurredAt = new \DateTimeImmutable();
-    }
-
-    public function setDi(Container $di): void
-    {
-        $this->di = $di;
-    }
-
-    public function getDi(): ?Container
-    {
-        return $this->di;
     }
 }

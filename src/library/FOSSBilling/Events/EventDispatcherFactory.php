@@ -54,17 +54,11 @@ final class EventDispatcherFactory
     {
         $this->ensureListenersRegistered();
 
-        // Inject DI container into the event if not already set
-        if ($event->getDi() === null) {
-            $event->setDi($this->di);
-        }
-
         $this->di['logger']->setChannel('event')->debug(
             'Dispatching event: ' . ($eventName ?? $event::class),
             ['event_class' => $event::class]
         );
 
-        /* @var Event */
         return $this->dispatcher->dispatch($event, $eventName);
     }
 
