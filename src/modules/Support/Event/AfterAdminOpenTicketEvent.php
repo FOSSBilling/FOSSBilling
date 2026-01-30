@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after an admin opens a support ticket for a client.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminOpenTicketEvent extends Event
 {

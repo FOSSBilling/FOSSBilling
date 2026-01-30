@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before a product is added to the cart.
+ *
+ * @since v0.8.0
  */
 final class BeforeProductAddedToCartEvent extends Event
 {

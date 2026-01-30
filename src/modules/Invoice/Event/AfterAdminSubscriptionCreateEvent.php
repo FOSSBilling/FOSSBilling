@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin creates a subscription.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminSubscriptionCreateEvent extends Event
 {

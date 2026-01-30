@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before admin updates a client.
+ *
+ * @since v0.8.0
  */
 final class BeforeAdminClientUpdateEvent extends Event
 {

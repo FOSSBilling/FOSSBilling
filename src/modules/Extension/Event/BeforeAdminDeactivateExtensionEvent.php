@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before admin deactivates an extension.
+ *
+ * @since v0.8.0
  */
 final class BeforeAdminDeactivateExtensionEvent extends Event
 {

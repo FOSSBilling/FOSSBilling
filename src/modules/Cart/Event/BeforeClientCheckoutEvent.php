@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before a client checks out the cart.
+ *
+ * @since v0.8.0
  */
 final class BeforeClientCheckoutEvent extends Event
 {

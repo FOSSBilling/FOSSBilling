@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin uncancels an order.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminOrderUncancelEvent extends Event
 {

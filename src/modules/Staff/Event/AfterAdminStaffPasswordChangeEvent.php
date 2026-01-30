@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin changes a staff member's password.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminStaffPasswordChangeEvent extends Event
 {

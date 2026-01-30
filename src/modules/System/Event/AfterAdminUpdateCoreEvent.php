@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin updates the core.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminUpdateCoreEvent extends Event
 {

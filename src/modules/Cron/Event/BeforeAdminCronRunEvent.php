@@ -22,6 +22,8 @@ use FOSSBilling\Events\Event;
  * - Syncing external services
  * - Updating exchange rates
  * - Any other scheduled maintenance tasks
+ *
+ * @since v0.8.0
  */
 final class BeforeAdminCronRunEvent extends Event
 {

@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin deletes a client.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminClientDeleteEvent extends Event
 {

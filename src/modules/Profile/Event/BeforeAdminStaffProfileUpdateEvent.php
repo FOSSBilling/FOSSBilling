@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before admin/staff updates their profile.
+ *
+ * @since v0.8.0
  */
 final class BeforeAdminStaffProfileUpdateEvent extends Event
 {

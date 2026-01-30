@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after client changes nameservers.
+ *
+ * @since v0.8.0
  */
 final class AfterClientChangeNameserversEvent extends Event
 {

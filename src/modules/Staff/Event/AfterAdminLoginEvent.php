@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after a successful admin login.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminLoginEvent extends Event
 {

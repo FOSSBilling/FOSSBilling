@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin generates a renewal invoice.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminGenerateRenewalInvoiceEvent extends Event
 {

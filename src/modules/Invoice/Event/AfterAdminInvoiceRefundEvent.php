@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin refunds an invoice.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminInvoiceRefundEvent extends Event
 {

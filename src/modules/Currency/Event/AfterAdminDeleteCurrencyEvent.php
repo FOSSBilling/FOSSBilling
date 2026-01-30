@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin deletes a currency.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminDeleteCurrencyEvent extends Event
 {

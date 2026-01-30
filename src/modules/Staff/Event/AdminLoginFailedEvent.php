@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired when an admin login attempt fails.
+ *
+ * @since v0.8.0
  */
 final class AdminLoginFailedEvent extends Event
 {

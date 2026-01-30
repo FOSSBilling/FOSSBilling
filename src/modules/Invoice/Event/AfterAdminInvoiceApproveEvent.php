@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin approves an invoice.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminInvoiceApproveEvent extends Event
 {

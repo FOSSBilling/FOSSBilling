@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin deletes a subscription.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminSubscriptionDeleteEvent extends Event
 {

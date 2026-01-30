@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before admin creates a staff member.
+ *
+ * @since v0.8.0
  */
 final class BeforeAdminStaffCreateEvent extends Event
 {

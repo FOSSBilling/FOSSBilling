@@ -21,6 +21,8 @@ use FOSSBilling\Events\Event;
  * - Logging cron completion
  * - Cleanup of temporary files created during cron
  * - Sending notifications about cron results
+ *
+ * @since v0.8.0
  */
 final class AfterAdminCronRunEvent extends Event
 {

@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after an admin replies to a public support ticket.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminPublicTicketReplyEvent extends Event
 {

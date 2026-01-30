@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after a service license is reset.
+ *
+ * @since v0.8.0
  */
 final class AfterServicelicenseResetEvent extends Event
 {

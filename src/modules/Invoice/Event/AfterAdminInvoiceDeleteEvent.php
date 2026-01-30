@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin deletes an invoice.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminInvoiceDeleteEvent extends Event
 {

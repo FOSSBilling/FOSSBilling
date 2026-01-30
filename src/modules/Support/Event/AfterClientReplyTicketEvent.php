@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after a client replies to a support ticket.
+ *
+ * @since v0.8.0
  */
 final class AfterClientReplyTicketEvent extends Event
 {

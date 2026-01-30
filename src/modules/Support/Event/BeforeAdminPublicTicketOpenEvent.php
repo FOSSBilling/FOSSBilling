@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before an admin opens a public support ticket.
+ *
+ * @since v0.8.0
  */
 final class BeforeAdminPublicTicketOpenEvent extends Event
 {

@@ -17,6 +17,8 @@ use FOSSBilling\Events\Event;
 /**
  * Event fired before a guest opens a public support ticket.
  * This event can be used to modify the ticket data before creation.
+ *
+ * @since v0.8.0
  */
 final class BeforeGuestPublicTicketOpenEvent extends Event
 {

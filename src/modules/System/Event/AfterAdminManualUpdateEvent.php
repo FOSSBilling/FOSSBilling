@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin performs a manual update.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminManualUpdateEvent extends Event
 {

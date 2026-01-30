@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before theme settings are saved.
+ *
+ * @since v0.8.0
  */
 final class BeforeThemeSettingsSaveEvent extends Event
 {

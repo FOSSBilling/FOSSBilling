@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin activates an extension.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminActivateExtensionEvent extends Event
 {

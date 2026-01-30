@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before an invoice is due.
+ *
+ * @since v0.8.0
  */
 final class BeforeInvoiceIsDueEvent extends Event
 {

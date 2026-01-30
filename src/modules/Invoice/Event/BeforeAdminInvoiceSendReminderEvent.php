@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before admin sends an invoice reminder.
+ *
+ * @since v0.8.0
  */
 final class BeforeAdminInvoiceSendReminderEvent extends Event
 {

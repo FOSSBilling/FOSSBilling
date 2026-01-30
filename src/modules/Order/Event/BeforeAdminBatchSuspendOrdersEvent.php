@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before admin batch suspends expired orders.
+ *
+ * @since v0.8.0
  */
 final class BeforeAdminBatchSuspendOrdersEvent extends Event
 {

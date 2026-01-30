@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before a guest requests a password reset.
+ *
+ * @since v0.8.0
  */
 final class BeforeGuestPasswordResetRequestEvent extends Event
 {

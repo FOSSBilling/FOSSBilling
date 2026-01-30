@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after a client creates an order (via cart checkout).
+ *
+ * @since v0.8.0
  */
 final class AfterClientOrderCreateEvent extends Event
 {

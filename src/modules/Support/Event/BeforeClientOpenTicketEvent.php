@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before a client opens a support ticket.
+ *
+ * @since v0.8.0
  */
 final class BeforeClientOpenTicketEvent extends Event
 {

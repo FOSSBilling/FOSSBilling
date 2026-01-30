@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin adds a notification.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminNotificationAddEvent extends Event
 {

@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before a client profile password reset via hash link.
+ *
+ * @since v0.8.0
  */
 final class BeforeClientProfilePasswordResetEvent extends Event
 {

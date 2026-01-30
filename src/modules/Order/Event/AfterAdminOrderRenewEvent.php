@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin renews an order.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminOrderRenewEvent extends Event
 {

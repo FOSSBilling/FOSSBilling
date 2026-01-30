@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin/staff changes their API key.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminStaffApiKeyChangeEvent extends Event
 {

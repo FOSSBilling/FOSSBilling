@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after a client signs up.
+ *
+ * @since v0.8.0
  */
 final class AfterClientSignUpEvent extends Event
 {

@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after a client updates their profile.
+ *
+ * @since v0.8.0
  */
 final class AfterClientProfileUpdateEvent extends Event
 {

@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after a client profile password reset.
+ *
+ * @since v0.8.0
  */
 final class AfterClientProfilePasswordResetEvent extends Event
 {

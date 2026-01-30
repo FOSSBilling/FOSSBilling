@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before admin updates an extension.
+ *
+ * @since v0.8.0
  */
 final class BeforeAdminUpdateExtensionEvent extends Event
 {

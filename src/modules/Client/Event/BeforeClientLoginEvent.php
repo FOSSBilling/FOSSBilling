@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before a client login attempt.
+ *
+ * @since v0.8.0
  */
 final class BeforeClientLoginEvent extends Event
 {

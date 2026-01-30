@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin processes a transaction.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminTransactionProcessEvent extends Event
 {

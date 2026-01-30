@@ -16,6 +16,8 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired after admin saves extension configuration.
+ *
+ * @since v0.8.0
  */
 final class AfterAdminExtensionConfigSaveEvent extends Event
 {
