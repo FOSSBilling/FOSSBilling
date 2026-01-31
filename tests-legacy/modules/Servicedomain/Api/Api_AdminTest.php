@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Box\Tests\Mod\Servicedomain\Api;
 
+use FOSSBilling\ProductType\Domain\Api\Admin;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class Api_AdminTest extends \BBTestCase
 {
-    protected ?\Box\Mod\Servicedomain\Api\Admin $adminApi;
+    protected ?Admin $adminApi;
 
     public function setUp(): void
     {
-        $this->adminApi = new \Box\Mod\Servicedomain\Api\Admin();
+        $this->adminApi = new Admin();
     }
 
     public function testUpdate(): void
@@ -21,12 +22,12 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
+        $adminApiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['updateDomain'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateDomain')
             ->willReturn(true);
@@ -44,12 +45,12 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
+        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['updateNameservers'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateNameservers')
             ->willReturn(true);
@@ -67,12 +68,12 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
+        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['updateContacts'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateContacts')
             ->willReturn(true);
@@ -90,12 +91,12 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
+        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['enablePrivacyProtection'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('enablePrivacyProtection')
             ->willReturn(true);
@@ -113,12 +114,12 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
+        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['disablePrivacyProtection'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('disablePrivacyProtection')
             ->willReturn(true);
@@ -136,12 +137,12 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
+        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['getTransferCode'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getTransferCode')
             ->willReturn(true);
@@ -159,12 +160,12 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
+        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['lock'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('lock')
             ->willReturn(true);
@@ -182,12 +183,12 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
+        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['unlock'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('unlock')
             ->willReturn(true);
@@ -210,7 +211,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['tldGetSearchQuery'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldGetSearchQuery')
             ->willReturn(['query', []]);
@@ -230,7 +231,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTldGet(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
         $serviceMock->expects($this->atLeastOnce())->method('tldToApiArray')
@@ -251,7 +252,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTldGetTldNotFoundException(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(null);
         $serviceMock->expects($this->never())->method('tldToApiArray')
@@ -275,7 +276,7 @@ final class Api_AdminTest extends \BBTestCase
         $tldMock->loadBean(new \DummyBean());
         $tldMock->tld = '.com';
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn($tldMock);
         $serviceMock->expects($this->atLeastOnce())->method('tldRm')
@@ -302,7 +303,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTldDeleteTldNotFoundException(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(null);
         $serviceMock->expects($this->never())->method('tldRm')
@@ -323,7 +324,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTldCreate(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldAlreadyRegistered')
             ->willReturn(false);
         $serviceMock->expects($this->atLeastOnce())->method('tldCreate')
@@ -348,7 +349,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTldCreateAlreadyRegisteredException(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldAlreadyRegistered')
             ->willReturn(true);
 
@@ -368,7 +369,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTldUpdate(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(new \Model_Tld());
         $serviceMock->expects($this->atLeastOnce())->method('tldUpdate')
@@ -389,7 +390,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTldUpdateTldNotFoundException(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn(null);
         $serviceMock->expects($this->never())->method('tldUpdate')
@@ -418,7 +419,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['registrarGetSearchQuery'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetSearchQuery')
             ->willReturn(['query', []]);
@@ -444,7 +445,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testRegistrarGetPairs(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetPairs')
             ->willReturn([]);
 
@@ -457,7 +458,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testRegistrarGetAvailable(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetAvailable')
             ->willReturn([]);
 
@@ -474,7 +475,7 @@ final class Api_AdminTest extends \BBTestCase
             'ResellerClub', 'Custom',
         ];
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetAvailable')
             ->willReturn($registrars);
         $serviceMock->expects($this->atLeastOnce())->method('registrarCreate')
@@ -499,7 +500,7 @@ final class Api_AdminTest extends \BBTestCase
             'Custom',
         ];
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetAvailable')
             ->willReturn($registrars);
         $serviceMock->expects($this->never())->method('registrarCreate')
@@ -529,7 +530,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('load')
             ->willReturn($registrar);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->never())->method('registrarRm')
             ->willReturn(true);
 
@@ -560,7 +561,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($registrar);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarCopy')
             ->willReturn(true);
 
@@ -590,7 +591,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('load')
             ->willReturn($registrar);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->never())->method('registrarCopy')
             ->willReturn(true);
 
@@ -621,7 +622,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($registrar);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarToApiArray')
             ->willReturn([]);
 
@@ -651,7 +652,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('load')
             ->willReturn($registrar);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->never())->method('registrarToApiArray')
             ->willReturn([]);
 
@@ -674,7 +675,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testBatchSyncExpirationDates(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('batchSyncExpirationDates')
             ->willReturn(true);
 
@@ -695,7 +696,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($registrar);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('registrarUpdate')
             ->willReturn(true);
 
@@ -725,7 +726,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('load')
             ->willReturn($registrar);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->never())->method('registrarUpdate')
             ->willReturn(true);
 
@@ -748,7 +749,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testGetService(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('updateDomain')
             ->willReturn(true);
 
@@ -781,7 +782,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testGetServiceOrderIdMissingException(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->never())->method('updateDomain')
             ->willReturn(true);
 
@@ -815,7 +816,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testGetServiceOrderNotActivatedException(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->never())->method('updateDomain')
             ->willReturn(true);
 

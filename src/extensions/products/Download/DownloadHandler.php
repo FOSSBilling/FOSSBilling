@@ -18,7 +18,7 @@ use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
 
-final class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInterface
+class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInterface
 {
     protected ?Container $di = null;
     private readonly Filesystem $filesystem;

@@ -10,7 +10,7 @@ namespace FOSSBilling\ProductType\Download\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
 
-final class Admin extends \Api_Abstract
+class Admin extends \Api_Abstract
 {
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function upload($data)

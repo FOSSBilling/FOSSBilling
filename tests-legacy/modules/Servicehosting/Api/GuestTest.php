@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
 
+use FOSSBilling\ProductType\Hosting\Api\Client;
+use FOSSBilling\ProductType\Hosting\Api\Guest;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -30,7 +32,7 @@ final class GuestTest extends \BBTestCase
 
         $di['db'] = $dbMock;
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getFreeTlds')
             ->with($model)
@@ -58,7 +60,7 @@ final class GuestTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->never())->method('getFreeTlds');
         $this->api->setService($serviceMock);
         $this->api->setDi($di);

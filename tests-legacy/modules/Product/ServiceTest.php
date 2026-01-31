@@ -111,10 +111,6 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetTypes(): void
     {
-        $modArray = [
-            'servicecustomtest',
-        ];
-
         $expectedArray = [
             'custom' => 'Custom',
             'license' => 'License',
@@ -123,15 +119,13 @@ final class ServiceTest extends \BBTestCase
             'domain' => 'Domain',
         ];
 
-        $expectedArray['customtest'] = 'Customtest';
-
-        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
-        $extensionServiceMock->expects($this->atLeastOnce())
-            ->method('getInstalledMods')
-            ->willReturn($modArray);
-
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extensionServiceMock);
+
+        $registryMock = $this->createMock(\FOSSBilling\ProductTypeRegistry::class);
+        $registryMock->expects($this->atLeastOnce())
+            ->method('getPairs')
+            ->willReturn($expectedArray);
+        $di['product_type_registry'] = $registryMock;
 
         $this->service->setDi($di);
         $result = $this->service->getTypes();

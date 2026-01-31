@@ -1521,7 +1521,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $productServiceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $productServiceMock = $this->createMock(\FOSSBilling\ProductType\Custom\CustomHandler::class);
 
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1543,15 +1543,20 @@ final class ServiceTest extends \BBTestCase
             ->willReturn('1Y');
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock, $productServiceMock) {
+
+        $productTypeRegistryMock = $this->createMock(\FOSSBilling\ProductTypeRegistry::class);
+        $productTypeRegistryMock->expects($this->atLeastOnce())
+            ->method('getHandler')
+            ->with('custom')
+            ->willReturn($productServiceMock);
+        $di['product_type_registry'] = $productTypeRegistryMock;
+
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock) {
             if ($serviceName == 'currency') {
                 return $currencyServiceMock;
             }
             if ($serviceName == 'cart') {
                 return $cartServiceMock;
-            }
-            if ($serviceName == 'servicecustom') {
-                return $productServiceMock;
             }
         });
         $di['events_manager'] = $eventMock;

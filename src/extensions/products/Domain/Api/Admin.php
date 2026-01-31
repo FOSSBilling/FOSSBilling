@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\Domain\Api;
 
-final class Admin extends \Api_Abstract
+class Admin extends \Api_Abstract
 {
     public function update($data)
     {
@@ -174,6 +174,9 @@ final class Admin extends \Api_Abstract
 
     public function registrar_delete($data)
     {
+        $required = ['id' => 'Registrar ID is required'];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarRm($model);
@@ -181,6 +184,9 @@ final class Admin extends \Api_Abstract
 
     public function registrar_copy($data)
     {
+        $required = ['id' => 'Registrar ID is required'];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarCopy($model);
@@ -188,6 +194,9 @@ final class Admin extends \Api_Abstract
 
     public function registrar_get($data)
     {
+        $required = ['id' => 'Registrar ID is required'];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $registrar = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarToApiArray($registrar);
@@ -195,6 +204,9 @@ final class Admin extends \Api_Abstract
 
     public function registrar_update($data)
     {
+        $required = ['id' => 'Registrar ID is required'];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarUpdate($model, $data);

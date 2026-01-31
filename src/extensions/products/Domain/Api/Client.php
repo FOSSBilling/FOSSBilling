@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\Domain\Api;
 
-final class Client extends \Api_Abstract
+class Client extends \Api_Abstract
 {
     public function update_nameservers($data): bool
     {

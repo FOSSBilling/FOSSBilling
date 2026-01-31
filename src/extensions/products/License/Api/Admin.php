@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\License\Api;
 
-final class Admin extends \Api_Abstract
+class Admin extends \Api_Abstract
 {
     public function plugin_get_pairs(array $data): array
     {

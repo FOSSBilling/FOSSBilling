@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Api;
 
+use FOSSBilling\ProductType\License\Api\Guest as LicenseApiGuest;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
-    protected ?Guest $api;
+    protected ?LicenseApiGuest $api;
 
     public function setUp(): void
     {
-        $this->api = new Guest();
+        $this->api = new LicenseApiGuest();
     }
 
     public function testGetDi(): void
@@ -38,7 +39,7 @@ final class GuestTest extends \BBTestCase
             'expires_at' => '2020-01+01',
             'valid' => true,
         ];
-        $serviceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\License\LicenseHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('checkLicenseDetails')
             ->willReturn($licenseResult);

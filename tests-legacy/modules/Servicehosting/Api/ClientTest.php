@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
 
+use FOSSBilling\ProductType\Hosting\Api\Client;
+use FOSSBilling\ProductType\Hosting\Api\Guest;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -35,7 +37,7 @@ final class ClientTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountUsername')
             ->willReturn(true);
@@ -58,7 +60,7 @@ final class ClientTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountDomain')
             ->willReturn(true);
@@ -81,7 +83,7 @@ final class ClientTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountPassword')
             ->willReturn(true);
@@ -95,7 +97,7 @@ final class ClientTest extends \BBTestCase
 
     public function testHpGetPairs(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getHpPairs')
             ->willReturn([]);

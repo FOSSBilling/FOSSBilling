@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Api;
 
+use FOSSBilling\ProductType\License\Api\Admin as LicenseAdmin;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
-    protected ?Admin $api;
+    protected ?LicenseAdmin $api;
 
     public function setUp(): void
     {
-        $this->api = new Admin();
+        $this->api = new LicenseAdmin();
     }
 
     public function testGetDi(): void
@@ -36,7 +37,7 @@ final class AdminTest extends \BBTestCase
             'plugin3' => 'plugin3',
         ];
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\License\LicenseHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getLicensePlugins')
             ->willReturn($licensePluginArray);
@@ -54,14 +55,14 @@ final class AdminTest extends \BBTestCase
             'order_id' => 1,
         ];
 
-        $apiMock = $this->getMockBuilder(Admin::class)
-            ->onlyMethods(['_getService'])
+        $apiMock = $this->getMockBuilder(LicenseAdmin::class)
+            ->onlyMethods(['getServiceModel'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
+            ->method('getServiceModel')
             ->willReturn(new \Model_ServiceLicense());
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\License\LicenseHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
@@ -79,14 +80,14 @@ final class AdminTest extends \BBTestCase
             'order_id' => 1,
         ];
 
-        $apiMock = $this->getMockBuilder(Admin::class)
-            ->onlyMethods(['_getService'])
+        $apiMock = $this->getMockBuilder(LicenseAdmin::class)
+            ->onlyMethods(['getServiceModel'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
+            ->method('getServiceModel')
             ->willReturn(new \Model_ServiceLicense());
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\License\LicenseHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('reset')
             ->willReturn(true);
@@ -121,7 +122,7 @@ final class AdminTest extends \BBTestCase
 
         $this->api->setDi($di);
 
-        $result = $this->api->_getService($data);
+        $result = $this->api->getServiceModel($data);
         $this->assertInstanceOf('\Model_ServiceLicense', $result);
     }
 
@@ -150,6 +151,6 @@ final class AdminTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order is not activated');
-        $this->api->_getService($data);
+        $this->api->getServiceModel($data);
     }
 }

@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\Download\Api;
 
-final class Client extends \Api_Abstract
+class Client extends \Api_Abstract
 {
     public function send_file($data): bool
     {

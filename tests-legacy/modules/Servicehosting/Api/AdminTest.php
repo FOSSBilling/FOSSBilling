@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
 
+use FOSSBilling\ProductType\Hosting\Api\Admin;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -39,7 +40,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountPlan')
             ->willReturn(true);
@@ -86,7 +87,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountUsername')
             ->willReturn(true);
@@ -109,7 +110,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountIp')
             ->willReturn(true);
@@ -132,7 +133,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountDomain')
             ->willReturn(true);
@@ -155,7 +156,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountPassword')
             ->willReturn(true);
@@ -178,7 +179,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('sync')
             ->willReturn(true);
@@ -201,7 +202,7 @@ final class AdminTest extends \BBTestCase
             ->method('_getService')
             ->willReturn($getServiceReturnValue);
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
@@ -215,7 +216,7 @@ final class AdminTest extends \BBTestCase
 
     public function testManagerGetPairs(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServerManagers')
             ->willReturn([]);
@@ -228,7 +229,7 @@ final class AdminTest extends \BBTestCase
 
     public function testServerGetPairs(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServerPairs')
             ->willReturn([]);
@@ -241,7 +242,7 @@ final class AdminTest extends \BBTestCase
 
     public function testAccountGetList(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAccountsSearchQuery')
             ->willReturn(['SQLstring', []]);
@@ -270,7 +271,7 @@ final class AdminTest extends \BBTestCase
 
     public function testServerGetList(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServersSearchQuery')
             ->willReturn(['SQLstring', []]);
@@ -305,7 +306,7 @@ final class AdminTest extends \BBTestCase
 
         $newServerId = 1;
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('createServer')
             ->willReturn($newServerId);
@@ -324,7 +325,7 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toHostingServerApiArray')
             ->willReturn([]);
@@ -348,7 +349,7 @@ final class AdminTest extends \BBTestCase
         // Test case 1: Server can be deleted
         $data['id'] = 1;
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteServer')
             ->willReturn(true);
@@ -394,7 +395,7 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateServer')
             ->willReturn(true);
@@ -418,7 +419,7 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = 1;
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('testConnection')
             ->willReturn(true);
@@ -440,7 +441,7 @@ final class AdminTest extends \BBTestCase
 
     public function testHpGetPairs(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getHpPairs')
             ->willReturn([]);
@@ -452,7 +453,7 @@ final class AdminTest extends \BBTestCase
 
     public function testHpGetList(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getHpSearchQuery')
             ->willReturn(['SQLstring', []]);
@@ -483,7 +484,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_ServiceHostingHp();
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('deleteHp')
             ->willReturn(true);
@@ -519,7 +520,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_ServiceHostingHp();
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toHostingHpApiArray')
             ->willReturn([]);
@@ -546,7 +547,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_ServiceHostingHp();
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateHp')
             ->willReturn(true);
@@ -574,7 +575,7 @@ final class AdminTest extends \BBTestCase
 
         $newHpId = 2;
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('createHp')
             ->willReturn($newHpId);

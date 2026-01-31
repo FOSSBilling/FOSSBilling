@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\License\Api;
 
-final class Client extends \Api_Abstract
+class Client extends \Api_Abstract
 {
     public function reset($data)
     {

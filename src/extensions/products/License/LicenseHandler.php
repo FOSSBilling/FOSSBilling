@@ -14,7 +14,7 @@ use Pimple\Container;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
-final class LicenseHandler implements ProductTypeHandlerInterface
+class LicenseHandler implements ProductTypeHandlerInterface
 {
     protected ?Container $di = null;
 

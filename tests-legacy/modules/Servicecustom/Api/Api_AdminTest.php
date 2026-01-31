@@ -9,16 +9,16 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class Api_AdminTest extends \BBTestCase
 {
-    protected ?\Box\Mod\Servicecustom\Api\Admin $api;
+    protected ?\FOSSBilling\ProductType\Custom\Api\Admin $api;
 
     public function setUp(): void
     {
-        $this->api = new \Box\Mod\Servicecustom\Api\Admin();
+        $this->api = new \FOSSBilling\ProductType\Custom\Api\Admin();
     }
 
     public function testUpdate(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['updateConfig'])->getMock();
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Custom\CustomHandler::class)->onlyMethods(['updateConfig'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateConfig');
 
@@ -36,7 +36,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testUpdateOrderIdNotSetException(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['updateConfig'])->getMock();
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Custom\CustomHandler::class)->onlyMethods(['updateConfig'])->getMock();
         $serviceMock->expects($this->never())
             ->method('updateConfig');
 
@@ -55,7 +55,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testUpdateConfigNotSet(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['updateConfig'])->getMock();
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Custom\CustomHandler::class)->onlyMethods(['updateConfig'])->getMock();
         $serviceMock->expects($this->never())
             ->method('updateConfig');
 
@@ -71,7 +71,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testUpdateConfigIsNotArray(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['updateConfig'])->getMock();
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Custom\CustomHandler::class)->onlyMethods(['updateConfig'])->getMock();
         $serviceMock->expects($this->never())
             ->method('updateConfig');
 
@@ -88,7 +88,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCall(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Custom\CustomHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());
@@ -109,7 +109,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCallArgumentsNotSetException(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Custom\CustomHandler::class);
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());
@@ -126,7 +126,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCallOrderIdNotSetException(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Custom\CustomHandler::class);
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn(new \Model_ServiceCustom());

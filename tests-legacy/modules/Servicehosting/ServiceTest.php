@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting;
 
+use FOSSBilling\ProductType\Hosting\HostingHandler;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    protected ?Service $service;
+    protected ?HostingHandler $service;
 
     public function setUp(): void
     {
-        $this->service = new Service();
+        $this->service = new HostingHandler();
     }
 
     public function testGetDi(): void
@@ -92,7 +93,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
-        $this->service->action_create($orderModel);
+        $this->service->create($orderModel);
     }
 
     //    public function testAction_activate()
@@ -130,7 +131,7 @@ final class ServiceTest extends \BBTestCase
     //        $dbMock->expects($this->atLeastOnce())
     //            ->method('store');
     //
-    //        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)
+    //        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
     //            ->onlyMethods(array('_getAM'))
     //            ->getMock();
     //
@@ -150,7 +151,7 @@ final class ServiceTest extends \BBTestCase
     //
     //        $serviceMock->setDi($di);
     //        $orderModel->config = $confArr;
-    //        $result = $serviceMock->action_activate($orderModel);
+    //        $result = $serviceMock->activate($orderModel);
     //        $this->assertIsArray($result);
     //        $this->assertNotEmpty($result['username']);
     //        $this->assertNotEmpty($result['password']);
@@ -178,7 +179,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
-        $result = $this->service->action_renew($orderModel);
+        $result = $this->service->renew($orderModel);
         $this->assertTrue($result);
     }
 
@@ -198,7 +199,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
-        $this->service->action_renew($orderModel);
+        $this->service->renew($orderModel);
     }
 
     public function testActionSuspend(): void
@@ -222,7 +223,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -234,7 +235,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($AMresultArray);
 
         $serviceMock->setDi($di);
-        $result = $serviceMock->action_suspend($orderModel);
+        $result = $serviceMock->suspend($orderModel);
         $this->assertTrue($result);
     }
 
@@ -254,7 +255,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
-        $this->service->action_suspend($orderModel);
+        $this->service->suspend($orderModel);
     }
 
     public function testActionUnsuspend(): void
@@ -278,7 +279,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -290,7 +291,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($AMresultArray);
 
         $serviceMock->setDi($di);
-        $result = $serviceMock->action_unsuspend($orderModel);
+        $result = $serviceMock->unsuspend($orderModel);
         $this->assertTrue($result);
     }
 
@@ -310,7 +311,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
-        $this->service->action_unsuspend($orderModel);
+        $this->service->unsuspend($orderModel);
     }
 
     public function testActionCancel(): void
@@ -334,7 +335,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -346,7 +347,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($AMresultArray);
 
         $serviceMock->setDi($di);
-        $result = $serviceMock->action_cancel($orderModel);
+        $result = $serviceMock->cancel($orderModel);
         $this->assertTrue($result);
     }
 
@@ -366,7 +367,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
-        $this->service->action_cancel($orderModel);
+        $this->service->cancel($orderModel);
     }
 
     //    public function testAction_uncancel()
@@ -416,7 +417,7 @@ final class ServiceTest extends \BBTestCase
     //
     //
     //
-    //        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)
+    //        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
     //            ->onlyMethods(array('_getAM'))
     //            ->getMock();
     //
@@ -430,7 +431,7 @@ final class ServiceTest extends \BBTestCase
     //
     //
     //        $serviceMock->setDi($di);
-    //        $serviceMock->action_uncancel($orderModel);
+    //        $serviceMock->uncancel($orderModel);
     //    }
 
     public function testActionDelete(): void
@@ -455,14 +456,19 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['action_cancel'])
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+            ->onlyMethods(['_getAM', 'cancel'])
             ->getMock();
+        $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
+        $serverManagerMock->expects($this->atLeastOnce())
+            ->method('cancelAccount');
+        $AMresultArray = [$serverManagerMock, new \Server_Account()];
         $serviceMock->expects($this->atLeastOnce())
-            ->method('action_cancel');
+            ->method('_getAM')
+            ->willReturn($AMresultArray);
 
         $serviceMock->setDi($di);
-        $serviceMock->action_delete($orderModel);
+        $serviceMock->delete($orderModel);
     }
 
     public function testChangeAccountPlan(): void
@@ -484,7 +490,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['_getAM', 'getServerPackage'])
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -515,7 +521,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
 
@@ -568,7 +574,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
 
@@ -622,7 +628,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
 
@@ -676,7 +682,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
 
@@ -730,7 +736,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
 
@@ -1013,7 +1019,7 @@ final class ServiceTest extends \BBTestCase
             ->method('testConnection')
             ->willReturn(true);
 
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['getServerManager'])
             ->getMock();
 
@@ -1170,7 +1176,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->loadBean(new \DummyBean());
 
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['getServerManager'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -1204,7 +1210,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getResellerLoginUrl')
             ->willReturn('/admin/login');
 
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['getServerManager'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -1223,7 +1229,7 @@ final class ServiceTest extends \BBTestCase
         $hostingServerModel->loadBean(new \DummyBean());
         $hostingServerModel->manager = 'Custom';
 
-        $serviceMock = $this->getMockBuilder(Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
             ->onlyMethods(['getServerManager'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -1241,11 +1247,11 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
 
         $tldArray = ['tld' => '.com'];
-        $serviceDomainServiceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
-        $serviceDomainServiceMock->expects($this->atLeastOnce())
+        $domainHandlerMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
+        $domainHandlerMock->expects($this->atLeastOnce())
             ->method('tldToApiArray')
             ->willReturn($tldArray);
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceDomainServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $domainHandlerMock);
 
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());

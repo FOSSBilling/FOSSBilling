@@ -10,7 +10,7 @@ namespace FOSSBilling\ProductType\Domain\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
 
-final class Guest extends \Api_Abstract
+class Guest extends \Api_Abstract
 {
     public function tlds($data = []): array
     {

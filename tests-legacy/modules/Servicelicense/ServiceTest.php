@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense;
 
+use FOSSBilling\ProductType\License\LicenseHandler;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    protected ?Service $service;
+    protected ?LicenseHandler $service;
 
     public function setUp(): void
     {
-        $this->service = new Service();
+        $this->service = new LicenseHandler();
     }
 
     public function testGetDi(): void
@@ -79,7 +80,7 @@ final class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $result = $this->service->action_create($clientOrderModel);
+        $result = $this->service->create($clientOrderModel);
         $this->assertInstanceOf('\Model_ServiceLicense', $result);
     }
 
@@ -110,7 +111,7 @@ final class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $result = $this->service->action_activate($clientOrderModel);
+        $result = $this->service->activate($clientOrderModel);
         $this->assertTrue($result);
     }
 
@@ -144,7 +145,7 @@ final class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $result = $this->service->action_activate($clientOrderModel);
+        $result = $this->service->activate($clientOrderModel);
         $this->assertTrue($result);
     }
 
@@ -179,7 +180,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $this->service->action_activate($clientOrderModel);
+        $result = $this->service->activate($clientOrderModel);
         $this->assertTrue($result);
     }
 
@@ -207,7 +208,7 @@ final class ServiceTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage("License plugin {$serviceLicenseModel->plugin} was not found.");
-        $this->service->action_activate($clientOrderModel);
+        $this->service->activate($clientOrderModel);
     }
 
     public function testActionActivateOrderActivationException(): void
@@ -230,7 +231,7 @@ final class ServiceTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Could not activate order. Service was not created');
-        $this->service->action_activate($clientOrderModel);
+        $this->service->activate($clientOrderModel);
     }
 
     public function testActionDelete(): void
@@ -255,7 +256,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
-        $this->service->action_delete($clientOrderModel);
+        $this->service->delete($clientOrderModel);
     }
 
     public function testReset(): void
@@ -654,7 +655,7 @@ final class ServiceTest extends \BBTestCase
             'format' => 2,
         ];
 
-        $licenseServerMock = $this->getMockBuilder(Server::class)
+        $licenseServerMock = $this->getMockBuilder(\FOSSBilling\ProductType\License\Server::class)
             ->disableOriginalConstructor()
             ->getMock();
         $licenseServerMock->expects($this->atLeastOnce())
@@ -682,7 +683,7 @@ final class ServiceTest extends \BBTestCase
 
         $data = [];
 
-        $licenseServerMock = $this->getMockBuilder(Server::class)
+        $licenseServerMock = $this->getMockBuilder(\FOSSBilling\ProductType\License\Server::class)
             ->disableOriginalConstructor()
             ->getMock();
         $licenseServerMock->expects($this->atLeastOnce())

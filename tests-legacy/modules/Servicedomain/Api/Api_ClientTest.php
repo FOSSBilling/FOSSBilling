@@ -9,11 +9,11 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class Api_ClientTest extends \BBTestCase
 {
-    protected ?\Box\Mod\Servicedomain\Api\Client $clientApi;
+    protected ?\FOSSBilling\ProductType\Domain\Api\Client $clientApi;
 
     public function setUp(): void
     {
-        $this->clientApi = new \Box\Mod\Servicedomain\Api\Client();
+        $this->clientApi = new \FOSSBilling\ProductType\Domain\Api\Client();
     }
 
     public function testUpdateNameservers(): void
@@ -21,12 +21,12 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Client::class)
+        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Client::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['updateNameservers'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateNameservers')
             ->willReturn(true);
@@ -52,12 +52,12 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Client::class)
+        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Client::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['updateContacts'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateContacts')
             ->willReturn(true);
@@ -75,12 +75,12 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Client::class)
+        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Client::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['enablePrivacyProtection'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('enablePrivacyProtection')
             ->willReturn(true);
@@ -98,12 +98,12 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Client::class)
+        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Client::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['disablePrivacyProtection'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('disablePrivacyProtection')
             ->willReturn(true);
@@ -121,12 +121,12 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Client::class)
+        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Client::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['getTransferCode'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getTransferCode')
             ->willReturn(true);
@@ -144,12 +144,12 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Client::class)
+        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Client::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['lock'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('lock')
             ->willReturn(true);
@@ -167,12 +167,12 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Client::class)
+        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Client::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['unlock'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('unlock')
             ->willReturn(true);
@@ -187,7 +187,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testGetService(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('lock')
             ->willReturn(true);
 
@@ -217,7 +217,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testGetServiceOrderIdMissingException(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->never())->method('lock')
             ->willReturn(true);
 
@@ -247,7 +247,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testGetServiceOrderNotFoundException(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->never())->method('lock')
             ->willReturn(true);
 
@@ -279,7 +279,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testGetServiceOrderNotActivatedException(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->never())->method('lock')
             ->willReturn(true);
 

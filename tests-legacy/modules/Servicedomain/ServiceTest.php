@@ -10,11 +10,11 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    protected ?\Box\Mod\Servicedomain\Service $service;
+    protected ?\FOSSBilling\ProductType\Domain\DomainHandler $service;
 
     public function setUp(): void
     {
-        $this->service = new \Box\Mod\Servicedomain\Service();
+        $this->service = new \FOSSBilling\ProductType\Domain\DomainHandler();
     }
 
     public function testDi(): void
@@ -145,7 +145,7 @@ final class ServiceTest extends \BBTestCase
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
         ;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['tldFindOneByTld', 'canBeTransferred'])->getMock();
         $serviceMock->expects($this->{$tldFindOneByTldArr['called']}())->method('tldFindOneByTld')
             ->willReturn($tldFindOneByTldArr['returns']);
@@ -241,7 +241,7 @@ final class ServiceTest extends \BBTestCase
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
         ;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['tldFindOneByTld', 'isDomainAvailable'])->getMock();
         $serviceMock->expects($this->{$tldFindOneByTldArr['called']}())->method('tldFindOneByTld')
             ->willReturn($tldFindOneByTldArr['returns']);
@@ -285,7 +285,7 @@ final class ServiceTest extends \BBTestCase
         $systemServiceMock->expects($this->atLeastOnce())->method('getNameservers')
             ->willReturn($nameservers);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['tldFindOneByTld', 'validateOrderData'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn($tldModel);
@@ -334,7 +334,7 @@ final class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
         $order->client_id = 1;
 
-        $result = $serviceMock->action_create($order);
+        $result = $serviceMock->create($order);
         $this->assertInstanceOf('Model_ServiceDomain', $result);
     }
 
@@ -361,7 +361,7 @@ final class ServiceTest extends \BBTestCase
         $systemServiceMock->expects($this->atLeastOnce())->method('getNameservers')
             ->willReturn([]);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['validateOrderData'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('validateOrderData')
         ;
@@ -380,7 +380,7 @@ final class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
         $order->client_id = 1;
         $this->expectException(\FOSSBilling\Exception::class);
-        $serviceMock->action_create($order);
+        $serviceMock->create($order);
     }
 
     public static function actionActivateProvider(): array
@@ -423,7 +423,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->$transferDomainCalled())->method('transferDomain')
         ;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['_getD', 'syncWhois'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('_getD')
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
@@ -443,7 +443,7 @@ final class ServiceTest extends \BBTestCase
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
         $order->client_id = 1;
-        $result = $serviceMock->action_activate($order);
+        $result = $serviceMock->activate($order);
         $this->assertInstanceOf('Model_ServiceDomain', $result);
     }
 
@@ -463,7 +463,7 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->service->action_activate($order);
+        $this->service->activate($order);
     }
 
     public function testActionRenew(): void
@@ -496,7 +496,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->atLeastOnce())->method('getDomainDetails')
             ->willReturn($registrarDomainMock);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['_getD'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('_getD')
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
@@ -514,7 +514,7 @@ final class ServiceTest extends \BBTestCase
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
         $order->client_id = 1;
-        $result = $serviceMock->action_renew($order);
+        $result = $serviceMock->renew($order);
 
         $this->assertTrue($result);
     }
@@ -536,7 +536,7 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $this->service->action_renew($order);
+        $result = $this->service->renew($order);
 
         $this->assertTrue($result);
     }
@@ -545,7 +545,7 @@ final class ServiceTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $result = $this->service->action_suspend($order);
+        $result = $this->service->suspend($order);
         $this->assertTrue($result);
     }
 
@@ -553,7 +553,7 @@ final class ServiceTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
-        $result = $this->service->action_unsuspend($order);
+        $result = $this->service->unsuspend($order);
         $this->assertTrue($result);
     }
 
@@ -578,7 +578,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->atLeastOnce())->method('deleteDomain')
         ;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['_getD'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('_getD')
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
@@ -590,7 +590,7 @@ final class ServiceTest extends \BBTestCase
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
         $order->client_id = 1;
-        $result = $serviceMock->action_cancel($order);
+        $result = $serviceMock->cancel($order);
 
         $this->assertTrue($result);
     }
@@ -612,22 +612,22 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $this->service->action_cancel($order);
+        $result = $this->service->cancel($order);
 
         $this->assertTrue($result);
     }
 
     public function testActionUncancel(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
-            ->onlyMethods(['action_activate'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('action_activate')
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
+            ->onlyMethods(['activate'])->getMock();
+        $serviceMock->expects($this->atLeastOnce())->method('activate')
             ->willReturn(null);
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
         $order->client_id = 1;
-        $result = $serviceMock->action_uncancel($order);
+        $result = $serviceMock->uncancel($order);
 
         $this->assertTrue($result);
     }
@@ -653,7 +653,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->atLeastOnce())->method('deleteDomain')
         ;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['_getD'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('_getD')
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
@@ -671,7 +671,7 @@ final class ServiceTest extends \BBTestCase
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
         $order->status = \Model_ClientOrder::STATUS_ACTIVE;
-        $result = $serviceMock->action_delete($order);
+        $result = $serviceMock->delete($order);
 
         $this->assertNull($result);
     }
@@ -683,7 +683,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->atLeastOnce())->method('modifyNs')
         ;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['_getD'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('_getD')
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
@@ -741,7 +741,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->atLeastOnce())->method('modifyContact')
         ;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['_getD'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('_getD')
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
@@ -791,7 +791,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->atLeastOnce())->method('getEpp')
             ->willReturn($epp);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['_getD'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('_getD')
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
@@ -811,7 +811,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->atLeastOnce())->method('lock')
         ;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['_getD'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('_getD')
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
@@ -840,7 +840,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->atLeastOnce())->method('unlock')
         ;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['_getD'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('_getD')
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
@@ -869,7 +869,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->atLeastOnce())->method('enablePrivacyProtection')
         ;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['_getD'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('_getD')
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
@@ -898,7 +898,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->atLeastOnce())->method('disablePrivacyProtection')
         ;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['_getD'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('_getD')
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
@@ -927,7 +927,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->atLeastOnce())->method('isDomaincanBeTransferred')
             ->willReturn(true);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['registrarGetRegistrarAdapter'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetRegistrarAdapter')
             ->willReturn($registrarAdapterMock);
@@ -979,7 +979,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock->expects($this->atLeastOnce())->method('isDomainAvailable')
             ->willReturn(true);
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['registrarGetRegistrarAdapter'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetRegistrarAdapter')
             ->willReturn($registrarAdapterMock);
@@ -1198,7 +1198,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnBeforeAdminCronRun(): void
     {
         $di = $this->getDi();
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('batchSyncExpirationDates')
             ->willReturn(true);
@@ -1216,7 +1216,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testBatchSyncExpirationDates(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['syncExpirationDate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('syncExpirationDate')
         ;
@@ -1636,7 +1636,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testRegistrarGetRegistrarAdapter(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['registrarGetConfiguration'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetConfiguration')
             ->willReturn([]);
@@ -1654,7 +1654,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testRegistrarGetRegistrarAdapterNotFoundException(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['registrarGetConfiguration'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetConfiguration')
             ->willReturn([]);
@@ -1724,7 +1724,7 @@ final class ServiceTest extends \BBTestCase
             'form' => 1,
         ];
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['registrarGetRegistrarAdapterConfig', 'registrarGetConfiguration'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetRegistrarAdapterConfig')
             ->willReturn($config);

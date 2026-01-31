@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable\Api;
 
+use FOSSBilling\ProductType\Download\Api\Admin;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -55,9 +56,9 @@ final class AdminTest extends \BBTestCase
         $data['order_id'] = 1;
         $model = new \Model_ClientOrder();
 
-        $modelDownloadableModel = new \Model_ServiceDownloadable();
+        $modelDownloadableModel = new \Model_ServiceDownload();
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Download\DownloadHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateProductFile')
             ->willReturn(true);
@@ -93,7 +94,7 @@ final class AdminTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename": "test.txt"}';
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedownloadable\Service::class)->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \FOSSBilling\ProductType\Download\DownloadHandler::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('saveProductConfig')
             ->with($productModel, $data)
@@ -167,7 +168,7 @@ final class AdminTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{}';
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Download\DownloadHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendProductFile')
             ->with($productModel)
@@ -198,7 +199,7 @@ final class AdminTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename": "test.txt"}';
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Download\DownloadHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendProductFile')
             ->with($productModel)
@@ -229,7 +230,7 @@ final class AdminTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename": "test.txt"}';
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Download\DownloadHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendProductFile')
             ->with($productModel)

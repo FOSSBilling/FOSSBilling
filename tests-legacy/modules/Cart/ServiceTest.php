@@ -804,7 +804,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
-        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceHostingServiceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)->getMock();
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing'])
@@ -843,7 +843,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceHostingServiceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)->getMock();
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isPeriodEnabledForProduct'])
@@ -885,7 +885,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceHostingServiceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)->getMock();
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isStockAvailable'])
@@ -928,7 +928,7 @@ final class ServiceTest extends \BBTestCase
         $productDomainModel->loadBean(new \DummyBean());
         $domainProduct = ['config' => [], 'product' => $productDomainModel];
 
-        $serviceHostingServiceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceHostingServiceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceHostingServiceMock->expects($this->atLeastOnce())
             ->method('getDomainProductFromConfig')
             ->willReturn($domainProduct);
@@ -976,7 +976,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $serviceLicenseServiceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
+        $serviceLicenseServiceMock = $this->createMock(\FOSSBilling\ProductType\License\LicenseHandler::class);
         $serviceLicenseServiceMock->expects($this->atLeastOnce())
             ->method('attachOrderConfig')
             ->willReturn([]);
@@ -1029,7 +1029,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $serviceCustomServiceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
+        $serviceCustomServiceMock = $this->createMock(\FOSSBilling\ProductType\Custom\CustomHandler::class);
         $serviceCustomServiceMock->expects($this->atLeastOnce())
             ->method('validateCustomForm');
 

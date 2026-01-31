@@ -13,7 +13,7 @@ use FOSSBilling\Interfaces\ProductTypeHandlerInterface;
 use Pimple\Container;
 use RedBeanPHP\OODBBean;
 
-final class ApiKeyHandler implements ProductTypeHandlerInterface
+class ApiKeyHandler implements ProductTypeHandlerInterface
 {
     private ?Container $di = null;
 

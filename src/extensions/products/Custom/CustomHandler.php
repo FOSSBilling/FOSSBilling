@@ -15,7 +15,7 @@ use Pimple\Container;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
-final class CustomHandler implements ProductTypeHandlerInterface
+class CustomHandler implements ProductTypeHandlerInterface
 {
     private ?Container $di = null;
     private readonly Filesystem $filesystem;

@@ -12,6 +12,13 @@ class BBTestCase extends PHPUnit\Framework\TestCase
             'url' => 'http://localhost/',
         ];
 
+        $di['product_type_registry'] = function () use ($di) {
+            $registry = new FOSSBilling\ProductTypeRegistry();
+            $registry->setDi($di);
+            $registry->loadFromFilesystem(PATH_ROOT . '/src/extensions/products');
+            return $registry;
+        };
+
         return $di;
     }
 

@@ -14,7 +14,7 @@ namespace FOSSBilling;
 use Pimple\Container;
 use Symfony\Component\Filesystem\Path;
 
-final class ProductTypeRegistry implements InjectionAwareInterface
+class ProductTypeRegistry implements InjectionAwareInterface
 {
     public const string MANIFEST_FILENAME = 'manifest.json';
 

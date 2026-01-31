@@ -9,11 +9,11 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    protected ?\Box\Mod\Servicecustom\Service $service;
+    protected ?\FOSSBilling\ProductType\Custom\CustomHandler $service;
 
     public function setUp(): void
     {
-        $this->service = new \Box\Mod\Servicecustom\Service();
+        $this->service = new \FOSSBilling\ProductType\Custom\CustomHandler();
     }
 
     public function testDi(): void
@@ -158,7 +158,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
-        $result = $this->service->action_create($order);
+        $result = $this->service->create($order);
         $this->assertInstanceOf('Model_ServiceCustom', $result);
     }
 
@@ -182,7 +182,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
-        $result = $this->service->action_activate($order);
+        $result = $this->service->activate($order);
         $this->assertTrue($result);
     }
 
@@ -202,7 +202,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
-        $this->service->action_activate($order);
+        $this->service->activate($order);
     }
 
     public function testActionRenew(): void
@@ -231,7 +231,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
-        $result = $this->service->action_renew($order);
+        $result = $this->service->renew($order);
         $this->assertTrue($result);
     }
 
@@ -252,7 +252,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
         $this->expectException(\Exception::class);
-        $result = $this->service->action_renew($order);
+        $result = $this->service->renew($order);
         $this->assertTrue($result);
     }
 
@@ -282,7 +282,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
-        $result = $this->service->action_suspend($order);
+        $result = $this->service->suspend($order);
         $this->assertTrue($result);
     }
 
@@ -312,7 +312,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
-        $result = $this->service->action_unsuspend($order);
+        $result = $this->service->unsuspend($order);
         $this->assertTrue($result);
     }
 
@@ -342,7 +342,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
-        $result = $this->service->action_cancel($order);
+        $result = $this->service->cancel($order);
         $this->assertTrue($result);
     }
 
@@ -372,7 +372,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
-        $result = $this->service->action_uncancel($order);
+        $result = $this->service->uncancel($order);
         $this->assertTrue($result);
     }
 
@@ -402,7 +402,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
-        $result = $this->service->action_delete($order);
+        $result = $this->service->delete($order);
         $this->assertTrue($result);
     }
 
@@ -502,7 +502,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = 1;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Custom\CustomHandler::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
             ->willReturn($model);
@@ -528,7 +528,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = 1;
 
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
+        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Custom\CustomHandler::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn($model);

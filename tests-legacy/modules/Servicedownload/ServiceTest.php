@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable;
 
+use FOSSBilling\ProductType\Download\DownloadHandler;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    protected ?Service $service;
+    protected ?DownloadHandler $service;
 
     public function setUp(): void
     {
-        $this->service = new Service();
+        $this->service = new DownloadHandler();
     }
 
     public function testGetDi(): void
@@ -52,7 +53,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->config = '{"filename" : "temp/asdcxTest.txt"}';
 
-        $model = new \Model_ServiceDownloadable();
+        $model = new \Model_ServiceDownload();
         $model->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
@@ -72,8 +73,8 @@ final class ServiceTest extends \BBTestCase
         $di['validator'] = $validatorMock;
 
         $this->service->setDi($di);
-        $result = $this->service->action_create($clientOrderModel);
-        $this->assertInstanceOf('\Model_ServiceDownloadable', $result);
+        $result = $this->service->create($clientOrderModel);
+        $this->assertInstanceOf('\Model_ServiceDownload', $result);
     }
 
     public function testActionDelete(): void
@@ -83,7 +84,7 @@ final class ServiceTest extends \BBTestCase
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->willReturn(new \Model_ServiceDownloadable());
+            ->willReturn(new \Model_ServiceDownload());
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -94,7 +95,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
-        $this->service->action_delete($clientOrderModel);
+        $this->service->delete($clientOrderModel);
     }
 
     public function testSaveProductConfig(): void

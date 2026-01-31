@@ -547,10 +547,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionsRoot = Path::join(PATH_ROOT, 'extensions', 'products');
         if (is_dir($extensionsRoot)) {
             $paths[] = Path::join($extensionsRoot, '*', 'templates', 'email');
-            $paths[] = Path::join($extensionsRoot, '*', 'html_email');
+            $legacyExtensionEmailPath = Path::join($extensionsRoot, '*', 'html_email');
+            if (is_dir($legacyExtensionEmailPath)) {
+                $paths[] = $legacyExtensionEmailPath;
+            }
         }
 
-        $finder = $finder->files()->in($paths)->name('*.html.twig');
+        $finder = $finder->files()->in($paths)->name('*.html.twig')->ignoreUnreadableDirs(true);
 
         foreach ($finder as $file) {
             $code = $file->getBasename('.html.twig');
