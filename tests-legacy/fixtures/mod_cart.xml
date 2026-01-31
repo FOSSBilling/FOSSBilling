@@ -41,7 +41,7 @@
     <product id="5" product_category_id="1" product_payment_id="5" type="custom" title="Recurrent payment addon" description="pp" unit="product" active="1" is_addon="1" addons="" setup="after_payment" plugin="" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
     <product id="6" product_category_id="1" product_payment_id="6" type="license" title="License" description="" unit="license" active="1" is_addon="0" addons="[3,4,5]" config='{"prefix":"BOX-FREE-", "length":25, "validate_ip":1}' setup="after_payment" plugin="" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
-    <product id="7" product_category_id="1" product_payment_id="7" type="downloadable" title="Software" description="" unit="product" active="1" is_addon="0" addons="[3,4,5]" config='{"filename":"test.txt"}' setup="after_payment" plugin="" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
+    <product id="7" product_category_id="1" product_payment_id="7" type="download" title="Software" description="" unit="product" active="1" is_addon="0" addons="[3,4,5]" config='{"filename":"test.txt"}' setup="after_payment" plugin="" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     <product id="8" product_category_id="1" product_payment_id="8" type="hosting" title="Shared hosting" description="" unit="month" active="1" is_addon="0" addons="[3,4,5]" config='{"server_id":"1", "hosting_plan_id":"1"}' setup="after_payment" plugin="" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     <product id="9" product_category_id="1" product_payment_id="9" type="hosting" title="Reseller hosting" description="" unit="month" active="1" is_addon="0" addons="[3,4,5]" config='{"server_id":"1", "hosting_plan_id":"1"}' setup="after_payment" plugin="" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     <product id="10" product_category_id="1" type="domain" title="All domains" description="" unit="month" active="1" is_addon="0" addons="[3,4,5]" config='{"all_tlds":1}' setup="after_payment" plugin="" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
@@ -54,7 +54,7 @@
     <client_order id="2" client_id="1" group_id="100" product_id="2" currency="USD" service_type="custom" period="" quantity="1" price="10" status="pending_setup" notes="" config='{"plugin":"Example"}' created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
 
     <client_order id="3" client_id="1" group_id="300" product_id="6" currency="USD" service_type="license" period="1M" quantity="1" price="30" status="pending_setup" notes="" config='{"plugin":"Simple", "prefix":"PRO-"}' created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
-    <client_order id="4" client_id="1" group_id="300" product_id="7" currency="USD" service_type="downloadable" period="" quantity="1" price="30" status="pending_setup" notes="" config='{"filename":"test.txt"}' created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
+    <client_order id="4" client_id="1" group_id="300" product_id="7" currency="USD" service_type="download" period="" quantity="1" price="30" status="pending_setup" notes="" config='{"filename":"test.txt"}' created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     <client_order id="5" client_id="1" group_id="300" product_id="8" currency="USD" service_type="hosting" period="3M" quantity="1" price="30" status="pending_setup" notes="" config='{"server_id":"1", "hosting_plan_id":"1", "sld":"mysuperdomain","tld":".com"}' created_at="2011-10-25 15:23:43" updated_at="2011-10-24 15:23:43"/>
     <client_order id="6" client_id="1" group_id="300" product_id="9" currency="USD" service_type="hosting" period="3M" quantity="1" price="30" status="pending_setup" notes="" config='{"server_id":"1", "hosting_plan_id":"1", "sld":"myresellerdomain","tld":".com"}' created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     <client_order id="7" client_id="1" group_id="300" product_id="10" currency="USD" service_type="domain" period="2Y" quantity="1" price="30" status="pending_setup" notes="" config='{"action":"register","register_tld":".com","register_sld":"admindomain", "register_years":1}' created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
@@ -69,7 +69,7 @@
     <service_custom />
     <service_domain />
     <service_license />
-    <service_downloadable />
+    <service_download />
     <service_hosting />
     <client_order_status />
 

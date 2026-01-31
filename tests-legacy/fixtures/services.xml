@@ -5,7 +5,7 @@
 
     <product id="1" product_category_id="1" product_payment_id="1" type="custom" title="Plugin config test" description="" unit="product" active="1" is_addon="0" setup="after_payment" plugin="Example" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
-    <client_order id="1" client_id="1" service_type="downloadable" service_id="1" status="active"/>
+    <client_order id="1" client_id="1" service_type="download" service_id="1" status="active"/>
     <client_order id="2" client_id="1" service_type="license" service_id="1" status="active"/>
     <client_order id="3" client_id="1" service_type="domain" status="pending_setup" config='{"action":"register","register_tld":".com","register_sld":"test1", "register_years":1}'/>
     <client_order id="4" client_id="1" service_type="domain" status="pending_setup" config='{"action":"transfer","transfer_tld":".com","transfer_sld":"test", "transfer_years":1, "transfer_code":"epp"}'/>
@@ -30,7 +30,7 @@
 
     <service_domain />
     <service_custom id="1" client_id="1" plugin="Example" plugin_config='{"param":"value"}'/>
-    <service_downloadable id="1" client_id="1" filename="test.txt" />
+    <service_download id="1" client_id="1" filename="test.txt" />
     <service_license id="1" client_id="1" license_key="asdasdasd" ips='["123.123.123.123", "111.111.111.111"]'/>
     <service_hosting id="1" client_id="1" service_hosting_server_id="1" service_hosting_hp_id="1" sld="phpunitdomain" tld=".com" ip="126.123.123.147" username="u1234565" pass="1456432132332" reseller="0" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Box\Mod\Servicedownloadable\Api;
+namespace FOSSBilling\ProductType\Download\Api;
 
 use FOSSBilling\ProductType\Download\Api\Admin;
 use PHPUnit\Framework\Attributes\Group;

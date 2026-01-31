@@ -10,7 +10,7 @@
     <client_order id="1" client_id="1" group_id="400" product_id="1" currency="USD" service_type="custom" period="1M" quantity="1" price="10" status="pending_setup" notes="Created order" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     <client_order id="2" client_id="1" group_id="400" product_id="2" currency="USD" service_type="license" period="1M" quantity="1" price="10" status="pending_setup" notes="License order" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     <client_order id="3" client_id="1" group_id="400" product_id="10" currency="USD" service_type="domain" period="1M" quantity="1" price="10" status="pending_setup" notes="" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
-    <client_order id="4" client_id="1" group_id="400" product_id="7" currency="USD" service_type="downloadable" period="" quantity="1" price="10" status="pending_setup" notes="" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
+    <client_order id="4" client_id="1" group_id="400" product_id="7" currency="USD" service_type="download" period="" quantity="1" price="10" status="pending_setup" notes="" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     <client_order id="5" client_id="1" group_id="400" product_id="8" currency="USD" service_type="hosting" period="3M" quantity="1" price="10" status="pending_setup" notes="" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     <client_order_status id="1" client_order_id="400" status="pending" notes="Created order" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
 

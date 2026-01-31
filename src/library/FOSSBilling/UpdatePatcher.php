@@ -541,7 +541,14 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
                 }
 
-                $products = $dbal->executeQuery("SELECT p.id, p.config FROM product p WHERE p.type = 'download'")->fetchAllAssociative();
+                $products = $dbal->executeQuery("SELECT p.id, p.config FROM product p WHERE p.type IN ('download', 'downloadable')")->fetchAllAssociative();
+                $schemaManager = $dbal->createSchemaManager();
+                $downloadTable = null;
+                if ($schemaManager->tablesExist(['service_download'])) {
+                    $downloadTable = 'service_download';
+                } elseif ($schemaManager->tablesExist(['service_downloadable'])) {
+                    $downloadTable = 'service_downloadable';
+                }
 
                 foreach ($products as $product) {
                     $productConfig = json_decode((string) $product['config'], true) ?: [];
@@ -568,8 +575,8 @@ class UpdatePatcher implements InjectionAwareInterface
                         }
                     }
 
-                    if ($foundFilename === null) {
-                        $services = $dbal->executeQuery('SELECT sd.id, sd.filename FROM service_download sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""', ['product_id' => $product['id']])->fetchAllAssociative();
+                    if ($foundFilename === null && $downloadTable !== null) {
+                        $services = $dbal->executeQuery("SELECT sd.id, sd.filename FROM {$downloadTable} sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != \"\"", ['product_id' => $product['id']])->fetchAllAssociative();
 
                         foreach ($services as $service) {
                             $filePath = Path::join(PATH_UPLOADS, md5((string) $service['filename']));
@@ -589,7 +596,9 @@ class UpdatePatcher implements InjectionAwareInterface
                             'id' => $product['id'],
                         ]);
 
-                        $dbal->executeStatement('UPDATE service_download sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id', ['filename' => $foundFilename, 'product_id' => $product['id']]);
+                        if ($downloadTable !== null) {
+                            $dbal->executeStatement("UPDATE {$downloadTable} sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id", ['filename' => $foundFilename, 'product_id' => $product['id']]);
+                        }
 
                         $ordersToUpdate = $dbal->executeQuery('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"', ['product_id' => $product['id']])->fetchAllAssociative();
 
@@ -607,14 +616,19 @@ class UpdatePatcher implements InjectionAwareInterface
                     }
                 }
 
-                $orphans = $dbal->executeQuery('SELECT sd.id, co.config as order_config FROM service_download sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""')->fetchAllAssociative();
+                $orphans = [];
+                if ($downloadTable !== null) {
+                    $orphans = $dbal->executeQuery("SELECT sd.id, co.config as order_config FROM {$downloadTable} sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = \"\"")->fetchAllAssociative();
+                }
 
                 foreach ($orphans as $orphan) {
                     $orderConfig = json_decode($orphan['order_config'] ?? '', true);
                     if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
                         $filePath = Path::join(PATH_UPLOADS, md5((string) $orderConfig['filename']));
                         if ($filesystem->exists($filePath)) {
-                            $dbal->executeStatement('UPDATE service_download SET filename = :filename WHERE id = :id', ['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
+                            if ($downloadTable !== null) {
+                                $dbal->executeStatement("UPDATE {$downloadTable} SET filename = :filename WHERE id = :id", ['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
+                            }
                         }
                     }
                 }
@@ -675,7 +689,11 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->executeSql("UPDATE product SET product_type = 'download' WHERE product_type = 'downloadable'");
                 $this->executeSql("UPDATE client_order SET service_type = 'download' WHERE service_type = 'downloadable'");
                 $this->executeSql("UPDATE client_order SET product_type = 'download' WHERE product_type = 'downloadable'");
-                $this->executeSql("RENAME TABLE service_downloadable TO service_download");
+                $dbal = $this->di['dbal'];
+                $schemaManager = $dbal->createSchemaManager();
+                if ($schemaManager->tablesExist(['service_downloadable']) && !$schemaManager->tablesExist(['service_download'])) {
+                    $dbal->executeStatement('RENAME TABLE service_downloadable TO service_download');
+                }
 
                 $root = Path::join(PATH_ROOT, 'extensions', 'products');
                 if (!is_dir($root)) {
@@ -718,7 +736,6 @@ class UpdatePatcher implements InjectionAwareInterface
                     return;
                 }
 
-                $dbal = $this->di['dbal'];
                 $rows = $dbal->createQueryBuilder()
                     ->select('id', 'permissions')
                     ->from('admin')
