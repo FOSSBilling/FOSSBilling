@@ -248,7 +248,6 @@ final class ServiceTest extends \BBTestCase
 
     public function testClearCache(): void
     {
-        $this->markTestSkipped('This test requires write access to the cache directory which is not available in the test environment.');
         // Create cache directory with .gitkeep if it doesn't exist
         $cacheDir = PATH_CACHE;
         if (!is_dir($cacheDir)) {
