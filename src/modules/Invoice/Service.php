@@ -535,7 +535,12 @@ class Service implements InjectionAwareInterface
         $table = $this->di['mod_service']('Currency');
 
         $invoice->base_income = $table->toBaseCurrency($invoice->currency, $this->getTotal($invoice));
-        $invoice->base_refund = $table->toBaseCurrency($invoice->currency, $invoice->refund);
+        if ($invoice->refund !== null) {
+            $invoice->base_refund = $table->toBaseCurrency($invoice->currency, $invoice->refund);
+        } else {
+            $invoice->base_refund = null;
+        }
+        
         $this->di['db']->store($invoice);
     }
 
