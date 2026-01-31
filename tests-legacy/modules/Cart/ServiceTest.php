@@ -813,8 +813,14 @@ final class ServiceTest extends \BBTestCase
             ->method('isRecurrentPricing')
             ->willReturn(true);
 
+        $registryMock = $this->createMock(\FOSSBilling\ProductTypeRegistry::class);
+        $registryMock->expects($this->any())
+            ->method('getHandler')
+            ->willReturn($serviceHostingServiceMock);
+
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
+        $di['product_type_registry'] = $registryMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
@@ -855,8 +861,14 @@ final class ServiceTest extends \BBTestCase
             ->method('isPeriodEnabledForProduct')
             ->willReturn(false);
 
+        $registryMock = $this->createMock(\FOSSBilling\ProductTypeRegistry::class);
+        $registryMock->expects($this->any())
+            ->method('getHandler')
+            ->willReturn($serviceHostingServiceMock);
+
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
+        $di['product_type_registry'] = $registryMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
@@ -897,8 +909,14 @@ final class ServiceTest extends \BBTestCase
             ->method('isStockAvailable')
             ->willReturn(false);
 
+        $registryMock = $this->createMock(\FOSSBilling\ProductTypeRegistry::class);
+        $registryMock->expects($this->any())
+            ->method('getHandler')
+            ->willReturn($serviceHostingServiceMock);
+
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
+        $di['product_type_registry'] = $registryMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
 
         $serviceMock->setDi($di);

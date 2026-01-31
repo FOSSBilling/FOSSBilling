@@ -62,7 +62,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         $c = $orderService->getConfig($order);
         $this->validateOrderData($c);
 
-        $model = $this->di['db']->dispense('ServiceLicense');
+        $model = $this->di['db']->dispense('ExtProductLicense');
         $model->client_id = $order->client_id;
         $model->validate_ip = (bool) ($c['validate_ip'] ?? false);
         $model->validate_host = (bool) ($c['validate_host'] ?? false);
@@ -88,7 +88,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         $c = $orderService->getConfig($order);
         $iterations = $c['iterations'] ?? 10;
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \Model_ServiceLicense) {
+        if (!$model instanceof \Model_ExtProductLicense) {
             throw new Exception('Could not activate order. Service was not created');
         }
 
@@ -112,7 +112,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
             if ($i++ >= $iterations) {
                 throw new Exception('Maximum number of iterations reached while generating license key');
             }
-        } while ($this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', [':license_key' => $licenseKey]) !== null);
+        } while ($this->di['db']->findOne('ExtProductLicense', 'license_key = :license_key', [':license_key' => $licenseKey]) !== null);
 
         $model->license_key = $licenseKey;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -150,12 +150,12 @@ class LicenseHandler implements ProductTypeHandlerInterface
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
-        if ($service instanceof \Model_ServiceLicense) {
+        if ($service instanceof \Model_ExtProductLicense) {
             $this->di['db']->trash($service);
         }
     }
 
-    public function reset(\Model_ServiceLicense $model): bool
+    public function reset(\Model_ExtProductLicense $model): bool
     {
         $data = [
             'id' => $model->id,
@@ -185,7 +185,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return true;
     }
 
-    public function isLicenseActive(\Model_ServiceLicense $model)
+    public function isLicenseActive(\Model_ExtProductLicense $model)
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
@@ -196,7 +196,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return false;
     }
 
-    public function isValidIp(\Model_ServiceLicense $model, $value)
+    public function isValidIp(\Model_ExtProductLicense $model, $value)
     {
         $defined = $model->getAllowedIps();
         if (empty($defined)) {
@@ -214,7 +214,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return in_array($value, $defined);
     }
 
-    public function isValidVersion(\Model_ServiceLicense $model, $value)
+    public function isValidVersion(\Model_ExtProductLicense $model, $value)
     {
         $defined = $model->getAllowedVersions();
         if (empty($defined)) {
@@ -232,7 +232,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return in_array($value, $defined);
     }
 
-    public function isValidPath(\Model_ServiceLicense $model, $value)
+    public function isValidPath(\Model_ExtProductLicense $model, $value)
     {
         $defined = $model->getAllowedPaths();
         if (empty($defined)) {
@@ -250,7 +250,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return in_array($value, $defined);
     }
 
-    public function isValidHost(\Model_ServiceLicense $model, $value)
+    public function isValidHost(\Model_ExtProductLicense $model, $value)
     {
         $defined = $model->getAllowedHosts();
         if (empty($defined)) {
@@ -268,7 +268,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return in_array($value, $defined);
     }
 
-    public function getAdditionalParams(\Model_ServiceLicense $model, $data = []): array
+    public function getAdditionalParams(\Model_ExtProductLicense $model, $data = []): array
     {
         $plugin = $this->getPlugin($model);
         if (is_object($plugin) && method_exists($plugin, 'validate')) {
@@ -281,14 +281,14 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return [];
     }
 
-    public function getOwnerName(\Model_ServiceLicense $model)
+    public function getOwnerName(\Model_ExtProductLicense $model)
     {
         $client = $this->di['db']->load('Client', $model->client_id);
 
         return $client->getFullName();
     }
 
-    public function getExpirationDate(\Model_ServiceLicense $model)
+    public function getExpirationDate(\Model_ExtProductLicense $model)
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
@@ -299,7 +299,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return date('Y-m-d H:i:s');
     }
 
-    public function toApiArray(\Model_ServiceLicense $model, $deep = false, $identity = null): array
+    public function toApiArray(\Model_ExtProductLicense $model, $deep = false, $identity = null): array
     {
         $result = [
             'license_key' => $model->license_key,
@@ -320,7 +320,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return $result;
     }
 
-    private function addValue(\Model_ServiceLicense $model, $key, $value): void
+    private function addValue(\Model_ExtProductLicense $model, $key, $value): void
     {
         $m = 'getAllowed' . ucfirst($key);
         $allowed = $model->{$m}();
@@ -331,7 +331,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         $this->di['db']->store($model);
     }
 
-    private function getPlugin(\Model_ServiceLicense $model): ?object
+    private function getPlugin(\Model_ExtProductLicense $model): ?object
     {
         $plugins = $this->getLicensePlugins();
         foreach ($plugins as $plugin) {
@@ -357,7 +357,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return null;
     }
 
-    public function update(\Model_ServiceLicense $s, array $data): bool
+    public function update(\Model_ExtProductLicense $s, array $data): bool
     {
         $s->plugin = $data['plugin'] ?? $s->plugin;
         $s->validate_ip = (bool) ($data['validate_ip'] ?? $s->validate_ip);

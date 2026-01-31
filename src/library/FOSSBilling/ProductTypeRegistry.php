@@ -12,11 +12,15 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Pimple\Container;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Filesystem\Path;
 
 class ProductTypeRegistry implements InjectionAwareInterface
 {
     public const string MANIFEST_FILENAME = 'manifest.json';
+    public const string CACHE_KEY = 'product_type_definitions';
+    public const string CACHE_MTIMES_KEY = 'product_type_definitions_mtimes';
+    public const int CACHE_TTL = 86400;
 
     private const array DEFAULT_CAPABILITIES = [
         \Model_ClientOrder::ACTION_CREATE,
@@ -40,6 +44,10 @@ class ProductTypeRegistry implements InjectionAwareInterface
      * @var array<string, object>
      */
     private array $handlers = [];
+    /**
+     * @var array<int, array<string, string>>
+     */
+    private array $loadErrors = [];
 
     public function setDi(Container $di): void
     {
@@ -79,33 +87,113 @@ class ProductTypeRegistry implements InjectionAwareInterface
         }
     }
 
-    public function registerLegacyModule(string $moduleName, array $overrides = []): void
+    /**
+     * Load product type definitions from filesystem with caching.
+     * Cache is invalidated when any manifest file mtime changes.
+     */
+    public function loadFromFilesystemWithCache(string $rootPath): void
     {
-        $normalized = strtolower($moduleName);
-        $code = str_starts_with($normalized, 'service')
-            ? substr($normalized, strlen('service'))
-            : $normalized;
-
-        if ($code === '') {
-            throw new Exception('Legacy module name "%s" cannot be mapped to a product type.', [$moduleName]);
+        if (!is_dir($rootPath)) {
+            return;
         }
 
-        $definition = [
-            'code' => $code,
-            'label' => ucfirst($code),
-            'templates' => [
-                'order' => sprintf('mod_service%s_order.html.twig', $code),
-                'manage' => sprintf('mod_service%s_manage.html.twig', $code),
-            ],
-            'source' => 'legacy',
-            'legacy' => true,
-            'legacy_module' => $normalized,
-        ];
+        if (!$this->di || !isset($this->di['cache'])) {
+            $this->loadFromFilesystem($rootPath);
 
-        $definition = array_replace($definition, $overrides);
-        $this->registerDefinition($definition);
+            return;
+        }
+
+        /** @var FilesystemAdapter $cache */
+        $cache = $this->di['cache'];
+
+        $manifestMtimes = $this->computeManifestMtimes($rootPath);
+
+        $definitionsItem = $cache->getItem(self::CACHE_KEY);
+        $mtimesItem = $cache->getItem(self::CACHE_MTIMES_KEY);
+
+        $cachedMtimes = $mtimesItem->isHit() ? $mtimesItem->get() : null;
+        if (!$definitionsItem->isHit() || !is_array($cachedMtimes) || $cachedMtimes !== $manifestMtimes) {
+            $this->loadFromFilesystem($rootPath);
+
+            $definitionsItem->expiresAfter(self::CACHE_TTL);
+            $definitionsItem->set($this->definitions);
+            $cache->save($definitionsItem);
+
+            $mtimesItem->expiresAfter(self::CACHE_TTL);
+            $mtimesItem->set($manifestMtimes);
+            $cache->save($mtimesItem);
+
+            return;
+        }
+
+        $cachedDefinitions = $definitionsItem->get();
+        if (is_array($cachedDefinitions)) {
+            $this->definitions = $cachedDefinitions;
+        } else {
+            $this->loadFromFilesystem($rootPath);
+        }
     }
 
+    /**
+     * Compute modification times of all manifest files for cache invalidation.
+     *
+     * @return array<string, int> Map of manifest path to mtime
+     */
+    private function computeManifestMtimes(string $rootPath): array
+    {
+        $mtimes = [];
+
+        if (!is_dir($rootPath)) {
+            return $mtimes;
+        }
+
+        $iterator = new \DirectoryIterator($rootPath);
+        foreach ($iterator as $entry) {
+            if (!$entry->isDir() || $entry->isDot()) {
+                continue;
+            }
+
+            $manifestPath = Path::join($entry->getPathname(), self::MANIFEST_FILENAME);
+            if (is_file($manifestPath)) {
+                $mtimes[$manifestPath] = filemtime($manifestPath);
+            }
+        }
+
+        ksort($mtimes);
+
+        return $mtimes;
+    }
+
+    /**
+     * Invalidate the product type definitions cache.
+     */
+    public function invalidateCache(): void
+    {
+        if (!$this->di || !isset($this->di['cache'])) {
+            return;
+        }
+
+        /** @var FilesystemAdapter $cache */
+        $cache = $this->di['cache'];
+
+        $cache->deleteItem(self::CACHE_KEY);
+        $cache->deleteItem(self::CACHE_MTIMES_KEY);
+    }
+
+    /**
+     * Register a product type definition.
+     *
+     * @param array{
+     *     code: string,
+     *     label?: string,
+     *     handler_class?: string,
+     *     handler?: \FOSSBilling\Interfaces\ProductTypeHandlerInterface,
+     *     templates?: array<string, string>,
+     *     capabilities?: string[],
+     *     base_path?: string,
+     *     source?: string
+     * } $definition Product type definition array
+     */
     public function registerDefinition(array $definition): void
     {
         $definition = $this->normalizeDefinition($definition);
@@ -124,11 +212,30 @@ class ProductTypeRegistry implements InjectionAwareInterface
         return isset($this->definitions[strtolower($code)]);
     }
 
+    /**
+     * Get a product type definition.
+     *
+     * @return array{
+     *     code: string,
+     *     label: string,
+     *     handler_class?: string,
+     *     handler?: \FOSSBilling\Interfaces\ProductTypeHandlerInterface,
+     *     templates: array<string, string>,
+     *     capabilities: string[],
+     *     base_path?: string,
+     *     source: string
+     * }
+     *
+     * @throws Exception When product type is not registered
+     */
     public function getDefinition(string $code): array
     {
         $code = strtolower($code);
         if (!isset($this->definitions[$code])) {
-            throw new Exception('Product type "%s" is not registered.', [$code]);
+            throw new Exception(
+                'Product type "%s" is not registered. Available types: %s',
+                [$code, implode(', ', array_keys($this->definitions))]
+            );
         }
 
         return $this->definitions[$code];
@@ -148,7 +255,7 @@ class ProductTypeRegistry implements InjectionAwareInterface
     {
         $code = strtolower($code);
 
-        return 'product_type_' . $code;
+        return 'product_' . $code;
     }
 
     /**
@@ -159,34 +266,50 @@ class ProductTypeRegistry implements InjectionAwareInterface
         return $this->definitions;
     }
 
-    public function getTemplate(string $code, string $key, ?string $fallback = null): string
+    /**
+     * @return array<int, array{name: string, message: string}>
+     */
+    public function getLoadErrors(): array
+    {
+        return $this->loadErrors;
+    }
+
+    public function assertHasDefinitions(string $rootPath): void
+    {
+        if (empty($this->definitions)) {
+            $message = sprintf(
+                'No product types were found in "%s". Ensure product type extensions are installed.',
+                $rootPath
+            );
+            if ($this->di && isset($this->di['logger'])) {
+                $this->di['logger']->critical($message);
+            }
+            throw new Exception($message);
+        }
+    }
+    public function getTemplate(string $code, string $key): string
     {
         $code = strtolower($code);
         $key = strtolower($key);
 
-        try {
-            $definition = $this->getDefinition($code);
-        } catch (Exception) {
-            if ($fallback !== null) {
-                return $fallback;
-            }
-
-            return sprintf('mod_service%s_%s.html.twig', $code, $key);
-        }
+        $definition = $this->getDefinition($code);
 
         $templates = $definition['templates'] ?? [];
-        $template = is_array($templates) ? ($templates[$key] ?? null) : null;
-        if (!is_string($template) || $template === '') {
-            if ($fallback !== null) {
-                return $fallback;
-            }
-
-            return sprintf('mod_service%s_%s.html.twig', $code, $key);
+        if (!is_array($templates) || !isset($templates[$key]) || !is_string($templates[$key]) || $templates[$key] === '') {
+            throw new Exception('Product type "%s" does not define template "%s" in manifest.', [$code, $key]);
         }
 
-        return $template;
+        return $templates[$key];
     }
 
+    /**
+     * Get API class definition for a product type and role.
+     *
+     * @param string $code Product type code
+     * @param string $role API role (admin, client, guest)
+     *
+     * @return array{class: string, file: string|null}|null API definition or null if not configured
+     */
     public function getApiDefinition(string $code, string $role): ?array
     {
         $code = strtolower($code);
@@ -226,33 +349,38 @@ class ProductTypeRegistry implements InjectionAwareInterface
 
         $definition = $this->getDefinition($code);
         $handler = $definition['handler'] ?? null;
-        $isLegacy = !empty($definition['legacy']);
 
         if ($handler === null) {
-            if ($isLegacy) {
-                if (!$this->di) {
-                    throw new Exception('DI container is not set for legacy product type "%s".', [$code]);
-                }
-                $handler = $this->di['mod_service']('service' . $code);
-            } else {
-                $handlerClass = $definition['handler_class'];
-                if (!class_exists($handlerClass)) {
-                    $handlerFile = $this->resolveHandlerFile($definition);
-                    if ($handlerFile !== null) {
-                        if (!is_file($handlerFile)) {
-                            throw new Exception('Product type handler file "%s" was not found.', [$handlerFile]);
-                        }
-                        require_once $handlerFile;
+            $handlerClass = $definition['handler_class'];
+            if (!class_exists($handlerClass)) {
+                $handlerFile = $this->resolveHandlerFile($definition);
+                if ($handlerFile !== null) {
+                    if (!is_file($handlerFile)) {
+                        throw new Exception('Product type handler file "%s" was not found.', [$handlerFile]);
                     }
+
+                    $basePath = $definition['base_path'] ?? null;
+                    $handlerRealpath = realpath($handlerFile);
+                    $baseRealpath = $basePath ? realpath($basePath) : false;
+
+                    if ($handlerRealpath === false) {
+                        throw new Exception('Unable to resolve real path for product type handler file "%s".', [$handlerFile]);
+                    }
+
+                    if ($baseRealpath !== false && !str_starts_with($handlerRealpath, $baseRealpath . DIRECTORY_SEPARATOR)) {
+                        throw new Exception('Product type handler file "%s" is not within allowed directory.', [$handlerFile]);
+                    }
+
+                    require_once $handlerFile;
                 }
-                if (!class_exists($handlerClass)) {
-                    throw new Exception('Product type handler class "%s" was not found.', [$handlerClass]);
-                }
-                $handler = new $handlerClass();
             }
+            if (!class_exists($handlerClass)) {
+                throw new Exception('Product type handler class "%s" was not found.', [$handlerClass]);
+            }
+            $handler = new $handlerClass();
         }
 
-        if (!$isLegacy && !$handler instanceof \FOSSBilling\Interfaces\ProductTypeHandlerInterface) {
+        if (!$handler instanceof \FOSSBilling\Interfaces\ProductTypeHandlerInterface) {
             throw new Exception('Product type handler for "%s" does not implement ProductTypeHandlerInterface.', [$code]);
         }
 
@@ -265,48 +393,30 @@ class ProductTypeRegistry implements InjectionAwareInterface
         return $handler;
     }
 
-    public function dispatchLifecycle(string $code, string $action, \Model_ClientOrder $order)
+    /**
+     * Invoke a lifecycle action on a product type handler.
+     *
+     * @param string            $code   Product type code
+     * @param string            $action Lifecycle action (e.g., 'activate', 'suspend', 'cancel')
+     * @param \Model_ClientOrder $order  Order model
+     *
+     * @return mixed Handler action result
+     *
+     * @throws ProductTypeActionNotSupportedException When product type does not support the action
+     * @throws Exception When product type is not found
+     */
+    public function invokeProductTypeAction(string $code, string $action, \Model_ClientOrder $order)
     {
         $code = strtolower($code);
         $action = strtolower($action);
 
         $handler = $this->getHandler($code);
 
-        if ($handler instanceof \FOSSBilling\Interfaces\ProductTypeHandlerInterface) {
-            if (!method_exists($handler, $action)) {
-                throw new Exception('Product type "%s" does not support action "%s".', [$code, $action]);
-            }
-
-            return $handler->{$action}($order);
+        if (!method_exists($handler, $action)) {
+            throw new ProductTypeActionNotSupportedException($code, $action);
         }
 
-        $legacyMethod = $action;
-        if (method_exists($handler, $legacyMethod)) {
-            return $handler->{$legacyMethod}($order);
-        }
-
-        $legacyMethod = 'action_' . $action;
-        if (!method_exists($handler, $legacyMethod)) {
-            $this->logLegacyMissingMethod($code, $action);
-
-            return null;
-        }
-
-        $this->warnDeprecatedLegacyAction($code);
-
-        $ref = new \ReflectionMethod($handler, $legacyMethod);
-        $paramCount = $ref->getNumberOfParameters();
-        if ($paramCount >= 2) {
-            [$orderBean, $serviceBean] = $this->getLegacyBeans($code, $order, $ref);
-
-            return $handler->{$legacyMethod}($orderBean, $serviceBean);
-        }
-
-        if ($paramCount === 1) {
-            return $handler->{$legacyMethod}($order);
-        }
-
-        return $handler->{$legacyMethod}();
+        return $handler->{$action}($order);
     }
 
     private function readManifest(string $path): array
@@ -334,18 +444,11 @@ class ProductTypeRegistry implements InjectionAwareInterface
 
         $definition['label'] ??= ucfirst($code);
 
-        if (empty($definition['handler_class']) && !empty($definition['service_class'])) {
-            $definition['handler_class'] = $definition['service_class'];
-        }
-
-        $isLegacy = !empty($definition['legacy']);
-
-        if (!$isLegacy && !isset($definition['handler']) && empty($definition['handler_class'])) {
+        if (!isset($definition['handler']) && empty($definition['handler_class'])) {
             throw new Exception('Product type "%s" must define "handler_class" or "handler".', [$code]);
         }
 
-        if (!$isLegacy
-            && isset($definition['handler'])
+        if (isset($definition['handler'])
             && !$definition['handler'] instanceof \FOSSBilling\Interfaces\ProductTypeHandlerInterface
         ) {
             throw new Exception('Product type "%s" handler must implement ProductTypeHandlerInterface.', [$code]);
@@ -356,8 +459,10 @@ class ProductTypeRegistry implements InjectionAwareInterface
             $templates = [];
         }
 
-        $templates['order'] ??= sprintf('mod_service%s_order.html.twig', $code);
-        $templates['manage'] ??= sprintf('mod_service%s_manage.html.twig', $code);
+        if (empty($templates)) {
+            throw new Exception('Product type "%s" must define "templates" in manifest.', [$code]);
+        }
+
         $definition['templates'] = $templates;
 
         $capabilities = $definition['capabilities'] ?? self::DEFAULT_CAPABILITIES;
@@ -401,55 +506,12 @@ class ProductTypeRegistry implements InjectionAwareInterface
         return Path::join($basePath, $apiFile);
     }
 
-    private function getLegacyBeans(string $code, \Model_ClientOrder $order, \ReflectionMethod $method): array
-    {
-        if (!$this->di) {
-            throw new Exception('DI container is not set for legacy product type "%s".', [$code]);
-        }
-
-        $firstParam = $method->getParameters()[0] ?? null;
-        $type = $firstParam?->getType();
-        $expectsModelOrder = $type instanceof \ReflectionNamedType
-            && $type->getName() === \Model_ClientOrder::class;
-
-        $orderBean = $expectsModelOrder
-            ? $order
-            : $this->di['db']->findOne('client_order', 'id = :id', [':id' => $order->id]);
-
-        $serviceBean = null;
-        if (!empty($order->service_id)) {
-            $serviceBean = $this->di['db']->load('service_' . $code, $order->service_id);
-        }
-
-        return [$orderBean, $serviceBean];
-    }
-
-    private function warnDeprecatedLegacyAction(string $code): void
-    {
-        if ($this->di && isset($this->di['logger'])) {
-            $this->di['logger']->warning(
-                'Service module "%s" uses deprecated action_* methods. Please migrate to ProductTypeHandlerInterface.',
-                $code
-            );
-        }
-    }
-
-    private function logLegacyMissingMethod(string $code, string $action): void
-    {
-        if ($this->di && isset($this->di['logger'])) {
-            $this->di['logger']->warning(
-                'Service module "%s" does not implement "%s" or "action_%s".',
-                $code,
-                $action,
-                $action
-            );
-        } else {
-            error_log("Service module {$code} does not implement {$action} or action_{$action}.");
-        }
-    }
-
     private function logManifestError(string $name, \Throwable $exception): void
     {
+        $this->loadErrors[] = [
+            'name' => $name,
+            'message' => $exception->getMessage(),
+        ];
         if ($this->di && isset($this->di['logger'])) {
             $this->di['logger']->error(
                 'Failed to load product type manifest for "%s": %s',

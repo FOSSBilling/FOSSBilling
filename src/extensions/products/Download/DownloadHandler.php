@@ -67,7 +67,7 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
         }
         $this->validateOrderData($c);
 
-        $model = $this->di['db']->dispense('ServiceDownload');
+        $model = $this->di['db']->dispense('ExtProductDownload');
         $model->client_id = $order->client_id;
         $model->filename = $c['filename'];
         $model->downloads = 0;
@@ -112,12 +112,12 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
-        if ($service instanceof \Model_ServiceDownload) {
+        if ($service instanceof \Model_ExtProductDownload) {
             $this->di['db']->trash($service);
         }
     }
 
-    public function toApiArray(\Model_ServiceDownload $model, $deep = false, $identity = null): array
+    public function toApiArray(\Model_ExtProductDownload $model, $deep = false, $identity = null): array
     {
         $productService = $this->di['mod_service']('product');
         $result = [
@@ -190,7 +190,7 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
         return true;
     }
 
-    public function updateProductFile(\Model_ServiceDownload $serviceDownload, \Model_ClientOrder $order, ?string $filename = null): bool
+    public function updateProductFile(\Model_ExtProductDownload $serviceDownload, \Model_ClientOrder $order, ?string $filename = null): bool
     {
         $request = $this->di['request'];
 
@@ -245,7 +245,7 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
         };
     }
 
-    public function sendFile(\Model_ServiceDownload $serviceDownload): bool
+    public function sendFile(\Model_ExtProductDownload $serviceDownload): bool
     {
         $info = $this->toApiArray($serviceDownload);
 

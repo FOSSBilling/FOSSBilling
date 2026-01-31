@@ -66,14 +66,14 @@ class Service implements InjectionAwareInterface
             $email = $params;
             $email['to_client'] = $order->client_id;
             $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
-            $email['code'] = sprintf('mod_service%s_activated', $typeCode);
+            $email['code'] = sprintf('ext_product_%s_activated', $typeCode);
             $email['service'] = $s;
             $email['order'] = $orderArr;
 
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->setChannel('order')->error($exc->getMessage());
         }
     }
 
@@ -93,14 +93,14 @@ class Service implements InjectionAwareInterface
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
             $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
-            $email['code'] = sprintf('mod_service%s_renewed', $typeCode);
+            $email['code'] = sprintf('ext_product_%s_renewed', $typeCode);
             $email['service'] = $service;
             $email['order'] = $orderArr;
 
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->setChannel('order')->error($exc->getMessage());
         }
     }
 
@@ -120,14 +120,14 @@ class Service implements InjectionAwareInterface
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
             $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
-            $email['code'] = sprintf('mod_service%s_suspended', $typeCode);
+            $email['code'] = sprintf('ext_product_%s_suspended', $typeCode);
             $email['service'] = $s;
             $email['order'] = $orderArr;
 
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->setChannel('order')->error($exc->getMessage());
         }
     }
 
@@ -147,14 +147,14 @@ class Service implements InjectionAwareInterface
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
             $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
-            $email['code'] = sprintf('mod_service%s_unsuspended', $typeCode);
+            $email['code'] = sprintf('ext_product_%s_unsuspended', $typeCode);
             $email['service'] = $s;
             $email['order'] = $orderArr;
 
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->setChannel('order')->error($exc->getMessage());
         }
     }
 
@@ -173,13 +173,13 @@ class Service implements InjectionAwareInterface
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
             $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
-            $email['code'] = sprintf('mod_service%s_canceled', $typeCode);
+            $email['code'] = sprintf('ext_product_%s_canceled', $typeCode);
             $email['order'] = $orderArr;
 
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->setChannel('order')->error($exc->getMessage());
         }
     }
 
@@ -199,14 +199,14 @@ class Service implements InjectionAwareInterface
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
             $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
-            $email['code'] = sprintf('mod_service%s_renewed', $typeCode);
+            $email['code'] = sprintf('ext_product_%s_renewed', $typeCode);
             $email['order'] = $orderArr;
             $email['service'] = $s;
 
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->setChannel('order')->error($exc->getMessage());
         }
     }
 
@@ -214,26 +214,13 @@ class Service implements InjectionAwareInterface
     {
         if ($order->service_id !== null) {
             $typeCode = $this->getOrderTypeCode($order);
-            // @deprecated
-            // @todo remove this when doctrine is removed
-            $core_services = [
-                \Model_ProductTable::CUSTOM,
-                \Model_ProductTable::LICENSE,
-                \Model_ProductTable::DOWNLOADABLE,
-                \Model_ProductTable::HOSTING,
-                \Model_ProductTable::DOMAIN,
-            ];
-            if (in_array($typeCode, $core_services)) {
-                $repo_class = $this->_getServiceClassName($typeCode);
-
-                return $this->di['db']->load($repo_class, $order->service_id);
+            if ($typeCode === '') {
+                return null;
             }
 
-            return $this->di['db']->findOne(
-                'service_' . $typeCode,
-                'id = :id',
-                [':id' => $order->service_id]
-            );
+            $repo_class = $this->_getServiceClassName($typeCode);
+
+            return $this->di['db']->load($repo_class, $order->service_id);
         }
 
         return null;
@@ -243,12 +230,26 @@ class Service implements InjectionAwareInterface
     {
         $s = $this->di['tools']->to_camel_case($typeCode, true);
 
-        return 'Service' . ucfirst((string) $s);
+        return 'ExtProduct' . ucfirst((string) $s);
     }
 
     public function getServiceOrder($service)
     {
-        $type = $this->di['tools']->from_camel_case(str_replace('Model_Service', '', $service::class));
+        $class = get_class($service);
+        $type = str_replace('Model_ExtProduct', '', $class);
+        if ($type === $class) {
+            $type = str_replace('Model_', '', $class);
+        }
+        $type = $this->di['tools']->from_camel_case($type);
+        if ($this->di && isset($this->di['product_type_registry'])) {
+            $registry = $this->di['product_type_registry'];
+            if (!$registry->has($type)) {
+                $normalizedType = str_replace('-', '', $type);
+                if ($registry->has($normalizedType)) {
+                    $type = $normalizedType;
+                }
+            }
+        }
 
         $bindings = [
             'service_type' => $type,
@@ -653,7 +654,7 @@ class Service implements InjectionAwareInterface
             try {
                 $this->activateOrder($order);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->setChannel('order')->error($e->getMessage());
             }
         }
 
@@ -688,7 +689,7 @@ class Service implements InjectionAwareInterface
                 $this->createFromOrder($addon);
                 $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderActivate', 'params' => ['id' => $addon->id]]);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->setChannel('order')->error($e->getMessage());
             }
         }
 
@@ -770,7 +771,7 @@ class Service implements InjectionAwareInterface
         if ($productModel instanceof \Model_Product) {
             $this->stockSale($productModel, $order->quantity);
         } else {
-            error_log("Order without product ID detected Order #{$order->id}.");
+            $this->di['logger']->setChannel('order')->error("Order without product ID detected Order #{$order->id}.");
         }
 
         $this->saveStatusChange($order, 'Order activated');
@@ -789,7 +790,7 @@ class Service implements InjectionAwareInterface
         if (empty($typeCode)) {
             throw new Exception('Order has no product type configured');
         }
-        return $this->di['product_type_registry']->dispatchLifecycle($typeCode, $action, $order);
+        return $this->di['product_type_registry']->invokeProductTypeAction($typeCode, $action, $order);
     }
 
     public function stockSale(\Model_Product $product, $qty): bool
@@ -904,7 +905,7 @@ class Service implements InjectionAwareInterface
                 try {
                     $this->renewFromOrder($addon);
                 } catch (\Exception $e) {
-                    error_log($e->getMessage());
+                    $this->di['logger']->setChannel('order')->error($e->getMessage());
                 }
             }
         }
@@ -1129,7 +1130,7 @@ class Service implements InjectionAwareInterface
             if (!$forceDelete) {
                 throw $e;
             }
-            error_log("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
+            $this->di['logger']->setChannel('order')->error("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
         }
 
         $id = $order->id;
@@ -1166,7 +1167,7 @@ class Service implements InjectionAwareInterface
             try {
                 $this->suspendFromOrder($order, $reason);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->setChannel('order')->error($e->getMessage());
             }
         }
 
@@ -1209,7 +1210,7 @@ class Service implements InjectionAwareInterface
                 $order = $this->di['db']->getExistingModelById('ClientOrder', $orderArr['id'], 'Order not found');
                 $this->cancelFromOrder($order, $reason);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->setChannel('order')->error($e->getMessage());
             }
         }
 
@@ -1298,14 +1299,14 @@ class Service implements InjectionAwareInterface
         $orderId = $order->id;
         $service = $this->getOrderService($order);
         if (!is_object($service)) {
-            error_log("Order #{$orderId} has no active service.");
+            $this->di['logger']->setChannel('order')->error("Order #{$orderId} has no active service.");
 
             return null;
         }
         $typeCode = $this->getOrderTypeCode($order);
         $handler = $this->di['product_type_registry']->getHandler($typeCode);
         if (!method_exists($handler, 'toApiArray')) {
-            error_log("Service #{$typeCode} method toApiArray is missing.");
+            $this->di['logger']->setChannel('order')->error("Service #{$typeCode} method toApiArray is missing.");
 
             return null;
         }

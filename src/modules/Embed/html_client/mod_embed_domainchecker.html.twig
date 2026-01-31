@@ -34,7 +34,7 @@
     <fieldset>
         <p>
             <input type="text" id="dsearch" value="" name="sld" />
-            {% set tlds = guest.servicedomain_tlds %}
+            {% set tlds = guest.servicedomain_guest_tlds %}
             <select id="dsearch" name="tld">
                 {% for tld in tlds %}
                 <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>

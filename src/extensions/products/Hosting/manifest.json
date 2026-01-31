@@ -6,22 +6,23 @@
   "handler_file": "HostingHandler.php",
   "api": {
     "admin": {
-      "class": "FOSSBilling\\ProductType\\Hosting\\Api\\Admin",
-      "file": "Api/Admin.php"
+      "class": "FOSSBilling\\ProductType\\Hosting\\Api",
+      "file": "Api.php"
     },
     "client": {
-      "class": "FOSSBilling\\ProductType\\Hosting\\Api\\Client",
-      "file": "Api/Client.php"
+      "class": "FOSSBilling\\ProductType\\Hosting\\Api",
+      "file": "Api.php"
     },
     "guest": {
-      "class": "FOSSBilling\\ProductType\\Hosting\\Api\\Guest",
-      "file": "Api/Guest.php"
+      "class": "FOSSBilling\\ProductType\\Hosting\\Api",
+      "file": "Api.php"
     }
   },
   "templates": {
-    "manage": "mod_servicehosting_manage.html.twig",
-    "config": "mod_servicehosting_config.html.twig",
-    "order_form": "mod_servicehosting_order_form.html.twig"
+    "order": "ext_product_hosting_order.html.twig",
+    "manage": "ext_product_hosting_manage.html.twig",
+    "order_form": "ext_product_hosting_order_form.html.twig",
+    "config": "ext_product_hosting_config.html.twig"
   },
   "source": "core"
 }

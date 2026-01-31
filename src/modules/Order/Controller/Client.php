@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Order\Controller;
 
+use FOSSBilling\Exception;
+
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -81,8 +83,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $typeCode = $order['product_type'] ?? $order['service_type'];
         $servicePartial = $this->resolveTemplate(
             $typeCode,
-            'manage',
-            sprintf('mod_service%s_manage.html.twig', $typeCode)
+            'manage'
         );
 
         return $app->render('mod_order_manage', [
@@ -91,16 +92,20 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         ]);
     }
 
-    private function resolveTemplate(string $type, string $kind, string $fallback): string
+    private function resolveTemplate(string $type, string $kind): string
     {
         if (!$this->di || !isset($this->di['product_type_registry'])) {
-            return $fallback;
+            throw new Exception('Product type registry is not available');
         }
 
         try {
-            return $this->di['product_type_registry']->getTemplate($type, $kind, $fallback);
+            return $this->di['product_type_registry']->getTemplate($type, $kind);
         } catch (\Throwable) {
-            return $fallback;
+            if ($kind === 'order') {
+                return 'mod_order_product';
+            }
+
+            return sprintf('ext_product_%s_%s.html.twig', $type, $kind);
         }
     }
 
@@ -109,8 +114,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
      */
     private function resolveTemplateName(string $type, string $kind): array
     {
-        $default = sprintf('mod_service%s_%s.html.twig', $type, $kind);
-        $template = $this->resolveTemplate($type, $kind, $default);
+        $template = $this->resolveTemplate($type, $kind);
 
         if (str_ends_with($template, '.html.twig')) {
             return [substr($template, 0, -10), $template];

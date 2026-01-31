@@ -62,7 +62,7 @@ class CustomHandler implements ProductTypeHandlerInterface
     {
         $product = $this->di['db']->getExistingModelById('Product', $order->product_id, 'Product not found');
 
-        $model = $this->di['db']->dispense('ServiceCustom');
+        $model = $this->di['db']->dispense('ExtProductCustom');
         $model->client_id = $order->client_id;
         $model->plugin = $product->plugin;
         $model->plugin_config = $product->plugin_config;
@@ -143,12 +143,12 @@ class CustomHandler implements ProductTypeHandlerInterface
         return true;
     }
 
-    public function getConfig(\Model_ServiceCustom $model): array
+    public function getConfig(\Model_ExtProductCustom $model): array
     {
         return json_decode($model->config ?? '', true) ?? [];
     }
 
-    public function toApiArray(\Model_ServiceCustom $model): array
+    public function toApiArray(\Model_ExtProductCustom $model): array
     {
         $data = $this->getConfig($model);
         $data['id'] = $model->id;
@@ -160,7 +160,7 @@ class CustomHandler implements ProductTypeHandlerInterface
         return $data;
     }
 
-    public function customCall(\Model_ServiceCustom $model, $method, $params = [])
+    public function customCall(\Model_ExtProductCustom $model, $method, $params = [])
     {
         $forbidden_methods = [
             'delete',
@@ -198,14 +198,14 @@ class CustomHandler implements ProductTypeHandlerInterface
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
 
-        if (!$s instanceof \Model_ServiceCustom) {
+        if (!$s instanceof \Model_ExtProductCustom) {
             throw new Exception('Order is not activated');
         }
 
         return $s;
     }
 
-    private function callOnAdapter(\Model_ServiceCustom $model, $method, $params = [])
+    private function callOnAdapter(\Model_ExtProductCustom $model, $method, $params = [])
     {
         $plugin = $model->plugin;
         if (empty($plugin)) {
@@ -240,7 +240,7 @@ class CustomHandler implements ProductTypeHandlerInterface
         return $adapter->$method($data, $order_data, $params);
     }
 
-    private function getOrderService(\Model_ClientOrder $order): \Model_ServiceCustom
+    private function getOrderService(\Model_ClientOrder $order): \Model_ExtProductCustom
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -251,7 +251,7 @@ class CustomHandler implements ProductTypeHandlerInterface
         return $model;
     }
 
-    private function touch(\Model_ServiceCustom $model): void
+    private function touch(\Model_ExtProductCustom $model): void
     {
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);

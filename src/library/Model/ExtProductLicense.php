@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2025 FOSSBilling
+ * Copyright 2011-2021 BoxBilling, Inc.
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+class Model_ExtProductLicense extends RedBeanPHP\SimpleModel
+{
+    public function getAllowedIps(): array
+    {
+        return json_decode($this->ips ?? '', true) ?? [];
+    }
+
+    public function getAllowedVersions(): array
+    {
+        return json_decode($this->versions ?? '', true) ?? [];
+    }
+
+    public function getAllowedHosts(): array
+    {
+        return json_decode($this->hosts ?? '', true) ?? [];
+    }
+
+    public function getAllowedPaths(): array
+    {
+        return json_decode($this->paths ?? '', true) ?? [];
+    }
+}

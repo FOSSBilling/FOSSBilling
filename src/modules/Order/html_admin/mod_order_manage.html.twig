@@ -22,7 +22,7 @@
 
 {% set active_menu = 'order' %}
 
-{% set service_partial = service_partial ?? ('mod_service' ~ (order.product_type ?? order.service_type) ~ '_manage.html.twig') %}
+{% set service_partial = service_partial ?? ('ext_product_' ~ (order.product_type ?? order.service_type) ~ '_manage.html.twig') %}
 {% if order.group_master == 1 %}
     {% set addons = admin.order_addons({ 'id': order.id }) %}
 {% endif %}

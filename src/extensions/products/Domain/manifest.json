@@ -6,22 +6,22 @@
   "handler_file": "DomainHandler.php",
   "api": {
     "admin": {
-      "class": "FOSSBilling\\ProductType\\Domain\\Api\\Admin",
-      "file": "Api/Admin.php"
+      "class": "FOSSBilling\\ProductType\\Domain\\Api",
+      "file": "Api.php"
     },
     "client": {
-      "class": "FOSSBilling\\ProductType\\Domain\\Api\\Client",
-      "file": "Api/Client.php"
+      "class": "FOSSBilling\\ProductType\\Domain\\Api",
+      "file": "Api.php"
     },
     "guest": {
-      "class": "FOSSBilling\\ProductType\\Domain\\Api\\Guest",
-      "file": "Api/Guest.php"
+      "class": "FOSSBilling\\ProductType\\Domain\\Api",
+      "file": "Api.php"
     }
   },
   "templates": {
-    "order": "mod_domain_order.html.twig",
-    "manage": "mod_domain_manage.html.twig",
-    "config": "mod_domain_config.html.twig"
+    "order": "ext_product_domain_order.html.twig",
+    "manage": "ext_product_domain_manage.html.twig",
+    "config": "ext_product_domain_config.html.twig"
   },
   "source": "core"
 }

@@ -47,8 +47,8 @@ class Client implements InjectionAwareInterface
     {
         $app->post('/api/:role/:class/:method', 'post_method', ['role', 'class', 'method'], static::class);
         $app->get('/api/:role/:class/:method', 'get_method', ['role', 'class', 'method'], static::class);
-        $app->post('/api/:role/product_type/:code/:method', 'post_product_type_method', ['role', 'code', 'method'], static::class);
-        $app->get('/api/:role/product_type/:code/:method', 'get_product_type_method', ['role', 'code', 'method'], static::class);
+        $app->post('/api/:role/ext/product/:code/:method', 'post_ext_product_method', ['role', 'code', 'method'], static::class);
+        $app->get('/api/:role/ext/product/:code/:method', 'get_ext_product_method', ['role', 'code', 'method'], static::class);
 
         // all other requests are error requests
         $app->get('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
@@ -73,7 +73,7 @@ class Client implements InjectionAwareInterface
         return null;
     }
 
-    public function get_product_type_method(\Box_App $app, $role, $code, $method): null
+    public function get_ext_product_method(\Box_App $app, $role, $code, $method): null
     {
         $class = 'service' . $code;
         $call = $class . '_' . $method;
@@ -100,7 +100,7 @@ class Client implements InjectionAwareInterface
         return null;
     }
 
-    public function post_product_type_method(\Box_App $app, $role, $code, $method): null
+    public function post_ext_product_method(\Box_App $app, $role, $code, $method): null
     {
         $p = $_POST;
 

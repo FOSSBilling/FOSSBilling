@@ -49,42 +49,31 @@ final class Api_Handler implements InjectionAwareInterface
             $arguments = $arguments[0];
         }
 
-        $method = (string) $method;
-        if (str_starts_with($method, 'product_type_')) {
-            $rest = substr($method, strlen('product_type_'));
-            if ($rest === '' || !str_contains($rest, '_')) {
-                throw new FOSSBilling\Exception('Product type method :method must contain underscore', [':method' => $method], 710);
-            }
-            $segments = explode('_', $rest);
-            $code = strtolower((string) array_shift($segments));
-            $mod = 'service' . $code;
-            $method_name = implode('_', $segments);
-        } else {
-            $e = explode('_', $method);
-            $mod = strtolower($e[0]);
-            unset($e[0]);
-            $method_name = implode('_', $e);
-        }
+        $e = explode('_', $method);
+        $mod = strtolower($e[0]);
+        unset($e[0]);
+        $method_name = implode('_', $e);
 
         if (empty($mod)) {
             throw new FOSSBilling\Exception('Invalid module name', null, 714);
         }
 
-        $extensionService = $this->di['mod']('extension')->getService();
-        $isModuleActive = $extensionService->isExtensionActive('mod', $mod);
+        // Check if this is a product type API call (starts with "service")
         $productTypeCode = null;
-
-        if (isset($this->di['product_type_registry'])) {
-            $productTypeCode = $this->resolveProductTypeCode($mod);
-        }
-
-        if ($isModuleActive) {
-            $apiClass = '\Box\Mod\\' . ucfirst($mod) . '\\Api\\' . ucfirst((string) $this->type);
-            if (!class_exists($apiClass) && $productTypeCode !== null) {
-                $isModuleActive = false;
+        if (str_starts_with($mod, 'service') && isset($this->di['product_type_registry'])) {
+            $code = substr($mod, strlen('service'));
+            if (!empty($code)) {
+                $registry = $this->di['product_type_registry'];
+                if ($registry->has($code)) {
+                    $productTypeCode = $code;
+                }
             }
         }
 
+        $extensionService = $this->di['mod']('extension')->getService();
+        $isModuleActive = $extensionService->isExtensionActive('mod', $mod);
+
+        // If not a module and not a product type, throw error
         if (!$isModuleActive && $productTypeCode === null) {
             throw new FOSSBilling\Exception('FOSSBilling module :mod is not installed/activated', [':mod' => $mod], 715);
         }
@@ -94,11 +83,13 @@ final class Api_Handler implements InjectionAwareInterface
             $staff_service = $this->di['mod_service']('Staff');
             $hasPermission = false;
 
-            if ($productTypeCode !== null && isset($this->di['product_type_registry'])) {
+            if ($productTypeCode !== null) {
+                // Product type permission check
                 $registry = $this->di['product_type_registry'];
                 $permissionKey = $registry->getPermissionKey($productTypeCode);
                 $hasPermission = $staff_service->hasPermission($this->identity, $permissionKey);
             } else {
+                // Standard module permission check
                 $hasPermission = $staff_service->hasPermission($this->identity, $mod);
             }
 
@@ -114,11 +105,12 @@ final class Api_Handler implements InjectionAwareInterface
             }
         }
 
+        // Route to product type API or standard module API
         if ($productTypeCode !== null) {
-            return $this->callProductTypeApi($productTypeCode, $method_name, $arguments, $mod);
+            return $this->callProductTypeApi($productTypeCode, $method_name, $arguments);
         }
 
-        $api_class = '\Box\Mod\\' . ucfirst($mod) . '\\Api\\' . ucfirst((string) $this->type);
+        $api_class = '\Box\Mod\\' . ucfirst($mod) . '\Api\\' . ucfirst((string) $this->type);
 
         $api = new $api_class();
 
@@ -146,69 +138,7 @@ final class Api_Handler implements InjectionAwareInterface
         $data = is_array($arguments) ? $arguments : [];
 
         $this->validateRequiredParams($api, $method_name, $data);
-
-        return $api->{$method_name}($arguments);
-    }
-
-    private function resolveProductTypeCode(string $module): ?string
-    {
-        $module = strtolower($module);
-        if (!str_starts_with($module, 'service')) {
-            return null;
-        }
-
-        $code = substr($module, strlen('service'));
-        if ($code === '') {
-            return null;
-        }
-
-        $registry = $this->di['product_type_registry'] ?? null;
-        if (!$registry instanceof FOSSBilling\ProductTypeRegistry) {
-            return null;
-        }
-
-        return $registry->has($code) ? $code : null;
-    }
-
-    private function callProductTypeApi(string $code, string $method_name, $arguments, string $module)
-    {
-        $registry = $this->di['product_type_registry'];
-        $definition = $registry->getApiDefinition($code, $this->type);
-        if ($definition === null) {
-            throw new FOSSBilling\Exception('Product type :mod does not expose :type API', [':mod' => $module, ':type' => $this->type], 715);
-        }
-
-        $api_class = $definition['class'];
-        $api_file = $definition['file'] ?? null;
-
-        if (!class_exists($api_class) && $api_file) {
-            require_once $api_file;
-        }
-
-        if (!class_exists($api_class)) {
-            throw new FOSSBilling\Exception('API class :class not found for product type :mod', [':class' => $api_class, ':mod' => $module], 730);
-        }
-
-        $api = new $api_class();
-
-        if (!$api instanceof Api_Abstract) {
-            throw new FOSSBilling\Exception('Api class must be an instance of Api_Abstract', null, 730);
-        }
-
-        $api->setDi($this->di);
-        $api->setIdentity($this->identity);
-        $api->setIp($this->di['request']->getClientIp());
-        $api->setService($registry->getHandler($code));
-
-        if (!method_exists($api, $method_name) || !is_callable([$api, $method_name])) {
-            $reflector = new ReflectionClass($api);
-            if (!$reflector->hasMethod('__call')) {
-                throw new FOSSBilling\Exception(':type API call :method does not exist for product type :module', [':type' => ucfirst((string) $this->type), ':method' => $method_name, ':module' => $module], 740);
-            }
-        }
-
-        $data = is_array($arguments) ? $arguments : [];
-        $this->validateRequiredParams($api, $method_name, $data);
+        $this->validateRequiredRole($api, $method_name);
 
         return $api->{$method_name}($arguments);
     }
@@ -254,5 +184,131 @@ final class Api_Handler implements InjectionAwareInterface
                 }
             }
         }
+    }
+
+    /**
+     * Validate required role for an API method using attributes.
+     *
+     * @param Api_Abstract $api         The API instance
+     * @param string       $method_name The method name
+     *
+     * @throws FOSSBilling\Exception If the current role is not allowed
+     */
+    public function validateRequiredRole(Api_Abstract $api, string $method_name): void
+    {
+        try {
+            $reflection = new ReflectionMethod($api, $method_name);
+        } catch (ReflectionException) {
+            // Method doesn't exist, skip validation
+            return;
+        }
+
+        $attributes = $reflection->getAttributes(FOSSBilling\Validation\Api\RequiredRole::class);
+
+        // If no RequiredRole attribute, allow access (backward compatible behavior)
+        if (empty($attributes)) {
+            return;
+        }
+
+        // Get current role from identity
+        $currentRole = match (true) {
+            $this->identity instanceof \Model_Admin => 'admin',
+            $this->identity instanceof \Model_Client => 'client',
+            default => 'guest',
+        };
+
+        $allowedRoles = $attributes[0]->newInstance()->roles;
+
+        if (!in_array($currentRole, $allowedRoles, true)) {
+            throw new FOSSBilling\Exception(
+                'Method :method requires one of these roles: :roles. Current role: :current',
+                [
+                    ':method' => $method_name,
+                    ':roles' => implode(', ', $allowedRoles),
+                    ':current' => $currentRole,
+                ]
+            );
+        }
+    }
+
+    /**
+     * Call a product type API method.
+     *
+     * @param string $code      The product type code (e.g., 'domain', 'apikey')
+     * @param string $method    The method name to call
+     * @param mixed  $arguments The arguments to pass to the method
+     *
+     * @return mixed The result of the API call
+     *
+     * @throws FOSSBilling\Exception If the API class is not found or the method doesn't exist
+     */
+    private function callProductTypeApi(string $code, string $method, $arguments)
+    {
+        $registry = $this->di['product_type_registry'];
+
+        // Get the API definition for this product type and role
+        $typeKey = strtolower($this->type);
+
+        try {
+            $apiDefinition = $registry->getApiDefinition($code, $typeKey);
+        } catch (\Throwable) {
+            $apiDefinition = null;
+        }
+
+        if ($apiDefinition === null) {
+            throw new FOSSBilling\Exception('Product type :code does not expose :type API', [':code' => $code, ':type' => $this->type], 715);
+        }
+
+        $apiClass = $apiDefinition['class'];
+        $apiFile = $apiDefinition['file'] ?? null;
+
+        // Load the API class file if specified
+        if (!class_exists($apiClass) && $apiFile && is_file($apiFile)) {
+            require_once $apiFile;
+        }
+
+        if (!class_exists($apiClass)) {
+            throw new FOSSBilling\Exception('API class :class not found for product type :code', [':class' => $apiClass, ':code' => $code], 730);
+        }
+
+        $api = new $apiClass();
+
+        if (!$api instanceof Api_Abstract) {
+            throw new FOSSBilling\Exception('API class must be an instance of Api_Abstract', null, 730);
+        }
+
+        // Set up the API instance
+        $api->setDi($this->di);
+        $api->setIdentity($this->identity);
+        $api->setIp($this->di['request']->getClientIp());
+
+        // Set the service/handler
+        $handler = $registry->getHandler($code);
+        if (method_exists($api, 'setService')) {
+            $api->setService($handler);
+        }
+
+        if (!str_starts_with($method, $typeKey . '_')) {
+            throw new FOSSBilling\Exception(
+                'Product type :code API calls must be prefixed with :prefix',
+                [':code' => $code, ':prefix' => $typeKey . '_'],
+                740
+            );
+        }
+        $methodToCall = $method;
+
+        // Check if method exists
+        if (!method_exists($api, $methodToCall) || !is_callable([$api, $methodToCall])) {
+            $reflector = new ReflectionClass($api);
+            if (!$reflector->hasMethod('__call')) {
+                throw new FOSSBilling\Exception(':type API call :method does not exist for product type :code', [':type' => ucfirst((string) $this->type), ':method' => $methodToCall, ':code' => $code], 740);
+            }
+        }
+
+        $data = is_array($arguments) ? $arguments : [];
+        $this->validateRequiredParams($api, $methodToCall, $data);
+        $this->validateRequiredRole($api, $methodToCall);
+
+        return $api->{$methodToCall}($arguments);
     }
 }

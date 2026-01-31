@@ -216,15 +216,15 @@ class Model_ProductDomainTable extends Model_ProductTable
     #[Override]
     public function getProductPrice(Model_Product $product, ?array $config = null)
     {
-        $domainHandler = null;
-        if (isset($this->di['product_type_registry'])) {
-            $registry = $this->di['product_type_registry'];
-            if ($registry instanceof \FOSSBilling\ProductTypeRegistry && $registry->has('domain')) {
-                $domainHandler = $registry->getHandler('domain');
-            }
+        if (!isset($this->di['product_type_registry'])) {
+            throw new FOSSBilling\Exception('Product type registry is not available');
+        }
+        $registry = $this->di['product_type_registry'];
+        if (!$registry instanceof \FOSSBilling\ProductTypeRegistry || !$registry->has('domain')) {
+            throw new FOSSBilling\Exception('Domain product type is not available');
         }
 
-        $rtable = $domainHandler ?? $this->di['mod_service']('servicedomain', 'Tld');
+        $rtable = $registry->getHandler('domain');
         $tld = '';
 
         if (!isset($config['action'])) {

@@ -111,17 +111,24 @@ class Service implements InjectionAwareInterface
         ];
 
         if ($this->di && isset($this->di['product_type_registry'])) {
+            $registry = $this->di['product_type_registry'];
             try {
-                $registry = $this->di['product_type_registry'];
                 $result['type_label'] = $registry->getDefinition($typeCode)['label'] ?? null;
-                $result['templates'] = [
-                    'order' => $registry->getTemplate($typeCode, 'order'),
-                    'manage' => $registry->getTemplate($typeCode, 'manage'),
-                    'order_form' => $registry->getTemplate($typeCode, 'order_form'),
-                    'config' => $registry->getTemplate($typeCode, 'config'),
-                ];
             } catch (\Throwable) {
                 // Keep API output stable if registry fails.
+            }
+
+            $templates = [];
+            foreach (['order', 'manage', 'order_form', 'config'] as $templateKey) {
+                try {
+                    $templates[$templateKey] = $registry->getTemplate($typeCode, $templateKey);
+                } catch (\Throwable) {
+                    // Allow partial template definitions.
+                }
+            }
+
+            if (!empty($templates)) {
+                $result['templates'] = $templates;
             }
         }
 

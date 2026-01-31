@@ -788,7 +788,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetOrderCoreService(): void
     {
-        $service = new \Model_ServiceCustom();
+        $service = new \Model_ExtProductCustom();
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
@@ -812,12 +812,12 @@ final class ServiceTest extends \BBTestCase
         $order->service_type = \Model_ProductTable::CUSTOM;
 
         $result = $this->service->getOrderService($order);
-        $this->assertInstanceOf('Model_ServiceCustom', $result);
+        $this->assertInstanceOf('Model_ExtProductCustom', $result);
     }
 
     public function testGetOrderNotCoreService(): void
     {
-        $service = new \Model_ServiceCustom();
+        $service = new \Model_ExtProductCustom();
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
@@ -836,12 +836,12 @@ final class ServiceTest extends \BBTestCase
         $order->service_id = 1;
 
         $result = $this->service->getOrderService($order);
-        $this->assertInstanceOf('Model_ServiceCustom', $result);
+        $this->assertInstanceOf('Model_ExtProductCustom', $result);
     }
 
     public function testGetOrderServiceIdNotSet(): void
     {
-        $service = new \Model_ServiceCustom();
+        $service = new \Model_ExtProductCustom();
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
@@ -881,7 +881,7 @@ final class ServiceTest extends \BBTestCase
         $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
-        $service = new \Model_ServiceCustom();
+        $service = new \Model_ExtProductCustom();
         $service->loadBean(new \DummyBean());
         $service->id = 1;
 

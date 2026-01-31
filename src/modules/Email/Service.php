@@ -265,19 +265,31 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $content = $data['default_template'] ?? $this->_getVarsString();
         $description = $data['default_description'] ?? null;
 
-        $matches = [];
-        preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', (string) $code, $matches);
-        $mod = $matches[1];
+        $mod = null;
+        $path = null;
+        $productTypeCode = $this->getProductTypeCodeFromEmailCode($code);
+        if ($productTypeCode !== null) {
+            $mod = 'product_' . $productTypeCode;
+            $path = $this->getProductTypeEmailTemplatePathByType($productTypeCode, $code);
+        } else {
+            $matches = [];
+            preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', (string) $code, $matches);
+            $mod = $matches[1] ?? null;
 
-        $path = Path::join(PATH_MODS, ucfirst($mod), 'html_email', "{$code}.html.twig");
-        if (!$this->filesystem->exists($path)) {
-            $productPath = $this->getProductTypeEmailTemplatePath($mod, $code);
-            if ($productPath !== null) {
-                $path = $productPath;
+            if (is_string($mod) && $mod !== '') {
+                $path = Path::join(PATH_MODS, ucfirst($mod), 'html_email', "{$code}.html.twig");
+            }
+            if (!$path || !$this->filesystem->exists($path)) {
+                $productPath = $this->getProductTypeEmailTemplatePath($mod ?? '', $code);
+                if ($productPath !== null) {
+                    $path = $productPath;
+                }
             }
         }
 
-        if ($this->filesystem->exists($path)) {
+        $mod ??= 'general';
+
+        if ($path && $this->filesystem->exists($path)) {
             $tpl = $this->filesystem->readFile($path);
 
             $ms = [];
@@ -547,10 +559,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionsRoot = Path::join(PATH_ROOT, 'extensions', 'products');
         if (is_dir($extensionsRoot)) {
             $paths[] = Path::join($extensionsRoot, '*', 'templates', 'email');
-            $legacyExtensionEmailPath = Path::join($extensionsRoot, '*', 'html_email');
-            if (is_dir($legacyExtensionEmailPath)) {
-                $paths[] = $legacyExtensionEmailPath;
-            }
         }
 
         $finder = $finder->files()->in($paths)->name('*.html.twig')->ignoreUnreadableDirs(true);
@@ -566,11 +574,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 if ($typeCode === null) {
                     continue;
                 }
-                $module = 'service' . $typeCode;
                 if (!$this->isProductTypeRegistered($typeCode)) {
                     continue;
                 }
-                $code = $this->normalizeProductTypeEmailCode($typeCode, $code);
+                $expectedPrefix = 'ext_product_' . $typeCode . '_';
+                if (!str_starts_with($code, $expectedPrefix)) {
+                    continue;
+                }
             } else {
                 // Skip if module is not active.
                 if (!$extensionService->isExtensionActive('mod', $module)) {
@@ -599,8 +609,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function getProductTypeEmailTemplatePath(string $module, string $code): ?string
     {
-        $typeCode = $this->resolveProductTypeCodeFromModule($module);
+        $typeCode = $this->getProductTypeCodeFromEmailCode($code) ?? $this->resolveProductTypeCodeFromModule($module);
         if ($typeCode === null) {
+            return null;
+        }
+
+        $expectedPrefix = 'ext_product_' . $typeCode . '_';
+        if (!str_starts_with($code, $expectedPrefix)) {
             return null;
         }
 
@@ -611,18 +626,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return null;
         }
 
-        $codeCandidates = $this->getProductTypeEmailCandidates($typeCode, $code);
-        foreach ($codeCandidates as $candidateCode) {
-            $candidates = [
-                Path::join($basePath, 'templates', 'email', "{$candidateCode}.html.twig"),
-                Path::join($basePath, 'html_email', "{$candidateCode}.html.twig"),
-            ];
-
-            foreach ($candidates as $candidate) {
-                if ($this->filesystem->exists($candidate)) {
-                    return $candidate;
-                }
-            }
+        $candidate = Path::join($basePath, 'templates', 'email', "{$code}.html.twig");
+        if ($this->filesystem->exists($candidate)) {
+            return $candidate;
         }
 
         return null;
@@ -631,38 +637,57 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     private function resolveProductTypeCodeFromModule(string $module): ?string
     {
         $module = strtolower($module);
-        $typeCode = str_starts_with($module, 'service')
-            ? substr($module, strlen('service'))
-            : $module;
-
-        if ($typeCode === '' || !$this->isProductTypeRegistered($typeCode)) {
+        if ($module === '' || !$this->isProductTypeRegistered($module)) {
             return null;
         }
 
-        return $typeCode;
+        return $module;
     }
 
-    private function getProductTypeEmailCandidates(string $typeCode, string $code): array
+    private function getProductTypeCodeFromEmailCode(string $code): ?string
     {
-        $typeCode = strtolower($typeCode);
-        $codeCandidates = [$code];
-
-        $servicePrefix = 'mod_service' . $typeCode . '_';
-        $directPrefix = 'mod_' . $typeCode . '_';
-
-        if (str_starts_with($code, $servicePrefix)) {
-            $suffix = substr($code, strlen($servicePrefix));
-            if ($suffix !== '') {
-                $codeCandidates[] = 'mod_' . $typeCode . '_' . $suffix;
-            }
-        } elseif (str_starts_with($code, $directPrefix)) {
-            $suffix = substr($code, strlen($directPrefix));
-            if ($suffix !== '') {
-                $codeCandidates[] = 'mod_service' . $typeCode . '_' . $suffix;
-            }
+        $prefix = 'ext_product_';
+        if (!str_starts_with($code, $prefix)) {
+            return null;
         }
 
-        return array_values(array_unique($codeCandidates));
+        $remaining = substr($code, strlen($prefix));
+        $delimiter = strpos($remaining, '_');
+        if ($delimiter === false) {
+            return null;
+        }
+
+        $typeCode = substr($remaining, 0, $delimiter);
+        if ($typeCode === '') {
+            return null;
+        }
+
+        return strtolower($typeCode);
+    }
+
+    private function getProductTypeEmailTemplatePathByType(string $typeCode, string $code): ?string
+    {
+        if (!isset($this->di['product_type_registry'])) {
+            return null;
+        }
+
+        $registry = $this->di['product_type_registry'];
+        if (!$registry->has($typeCode)) {
+            return null;
+        }
+
+        $definition = $registry->getDefinition($typeCode);
+        $basePath = $definition['base_path'] ?? null;
+        if (!is_string($basePath) || $basePath === '') {
+            return null;
+        }
+
+        $candidate = Path::join($basePath, 'templates', 'email', "{$code}.html.twig");
+        if ($this->filesystem->exists($candidate)) {
+            return $candidate;
+        }
+
+        return null;
     }
 
     private function isProductTypeRegistered(string $code): bool
@@ -674,20 +699,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $registry = $this->di['product_type_registry'];
 
         return $registry->has($code);
-    }
-
-    private function normalizeProductTypeEmailCode(string $typeCode, string $code): string
-    {
-        $typeCode = strtolower($typeCode);
-        $directPrefix = 'mod_' . $typeCode . '_';
-        if (str_starts_with($code, $directPrefix)) {
-            $suffix = substr($code, strlen($directPrefix));
-            if ($suffix !== '') {
-                return 'mod_service' . $typeCode . '_' . $suffix;
-            }
-        }
-
-        return $code;
     }
 
     private function getProductTypeCodeFromPath(string $extensionsRoot, string $path): ?string

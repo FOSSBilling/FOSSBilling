@@ -421,7 +421,17 @@ class UpdatePatcher implements InjectionAwareInterface
             },
             40 => function (): void {
                 // Added `passwordLength` field to server managers
-                $q = 'ALTER TABLE service_hosting_server ADD COLUMN `password_length` TINYINT DEFAULT NULL;';
+                $dbal = $this->di['dbal'];
+                $schemaManager = $dbal->createSchemaManager();
+                
+                // Support both old and new table names during transition
+                if ($schemaManager->tablesExist(['ext_product_hosting_server'])) {
+                    $q = 'ALTER TABLE ext_product_hosting_server ADD COLUMN `password_length` TINYINT DEFAULT NULL;';
+                } elseif ($schemaManager->tablesExist(['service_hosting_server'])) {
+                    $q = 'ALTER TABLE service_hosting_server ADD COLUMN `password_length` TINYINT DEFAULT NULL;';
+                } else {
+                    return; // Table doesn't exist yet
+                }
                 $this->executeSql($q);
             },
             41 => function (): void {
@@ -544,7 +554,9 @@ class UpdatePatcher implements InjectionAwareInterface
                 $products = $dbal->executeQuery("SELECT p.id, p.config FROM product p WHERE p.type IN ('download', 'downloadable')")->fetchAllAssociative();
                 $schemaManager = $dbal->createSchemaManager();
                 $downloadTable = null;
-                if ($schemaManager->tablesExist(['service_download'])) {
+                if ($schemaManager->tablesExist(['ext_product_download'])) {
+                    $downloadTable = 'ext_product_download';
+                } elseif ($schemaManager->tablesExist(['service_download'])) {
                     $downloadTable = 'service_download';
                 } elseif ($schemaManager->tablesExist(['service_downloadable'])) {
                     $downloadTable = 'service_downloadable';
@@ -666,33 +678,103 @@ class UpdatePatcher implements InjectionAwareInterface
                 $q = 'UPDATE `client_order` SET `product_type` = `service_type` WHERE `product_type` IS NULL;';
                 $this->executeSql($q);
 
-                $q = '
-                CREATE TABLE IF NOT EXISTS `service_apikey` (
-                    `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                    `client_id` bigint(20) NOT NULL,
-                    `api_key` varchar(255) DEFAULT NULL,
-                    `config` text NOT NULL,
-                    `created_at` datetime DEFAULT NULL,
-                    `updated_at` datetime DEFAULT NULL,
-                    PRIMARY KEY (`id`),
-                    KEY `client_id_idx` (`client_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
+                $dbal = $this->di['dbal'];
+                $schemaManager = $dbal->createSchemaManager();
+
+                if (
+                    !$schemaManager->tablesExist(['ext_product_apikey'])
+                    && !$schemaManager->tablesExist(['service_apikey'])
+                ) {
+                    $q = '
+                    CREATE TABLE IF NOT EXISTS `ext_product_apikey` (
+                        `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                        `client_id` bigint(20) NOT NULL,
+                        `api_key` varchar(255) DEFAULT NULL,
+                        `config` text NOT NULL,
+                        `created_at` datetime DEFAULT NULL,
+                        `updated_at` datetime DEFAULT NULL,
+                        PRIMARY KEY (`id`),
+                        KEY `client_id_idx` (`client_id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
+                    $this->executeSql($q);
+                }
+
+                $q = "DELETE FROM extension WHERE type = 'mod' AND name IN ('mod_serviceapikey', 'mod_servicecustom', 'mod_servicelicense', 'mod_servicehosting', 'mod_servicedomain', 'mod_servicedownloadable');";
                 $this->executeSql($q);
 
-                $q = "DELETE FROM extension WHERE type = 'mod' AND name IN ('mod_serviceapikey', 'mod_servicecustom', 'mod_servicelicense', 'mod_servicehosting');";
-                $this->executeSql($q);
-
-                $q = "DELETE FROM extension_meta WHERE extension IN ('mod_serviceapikey', 'mod_servicecustom', 'mod_servicelicense', 'mod_servicehosting');";
+                $q = "DELETE FROM extension_meta WHERE extension IN ('mod_serviceapikey', 'mod_servicecustom', 'mod_servicelicense', 'mod_servicehosting', 'mod_servicedomain', 'mod_servicedownloadable');";
                 $this->executeSql($q);
 
                 $this->executeSql("UPDATE product SET type = 'download' WHERE type = 'downloadable'");
                 $this->executeSql("UPDATE product SET product_type = 'download' WHERE product_type = 'downloadable'");
                 $this->executeSql("UPDATE client_order SET service_type = 'download' WHERE service_type = 'downloadable'");
                 $this->executeSql("UPDATE client_order SET product_type = 'download' WHERE product_type = 'downloadable'");
-                $dbal = $this->di['dbal'];
-                $schemaManager = $dbal->createSchemaManager();
-                if ($schemaManager->tablesExist(['service_downloadable']) && !$schemaManager->tablesExist(['service_download'])) {
-                    $dbal->executeStatement('RENAME TABLE service_downloadable TO service_download');
+                $this->executeSql(
+                    "UPDATE email_template SET action_code = CONCAT('ext_product_', SUBSTRING(action_code, LENGTH('mod_service') + 1))
+                    WHERE action_code LIKE 'mod_service%_%'"
+                );
+                if (!$schemaManager->tablesExist(['ext_product_download'])) {
+                    if ($schemaManager->tablesExist(['service_download'])) {
+                        $dbal->executeStatement('RENAME TABLE service_download TO ext_product_download');
+                    } elseif ($schemaManager->tablesExist(['service_downloadable'])) {
+                        $dbal->executeStatement('RENAME TABLE service_downloadable TO ext_product_download');
+                    }
+                }
+
+                $tableMappings = [
+                    'service_apikey' => 'ext_product_apikey',
+                    'service_custom' => 'ext_product_custom',
+                    'service_domain' => 'ext_product_domain',
+                    'service_download' => 'ext_product_download',
+                    'service_hosting' => 'ext_product_hosting',
+                    'service_hosting_hp' => 'ext_product_hosting_plan',
+                    'service_hosting_server' => 'ext_product_hosting_server',
+                    'service_license' => 'ext_product_license',
+                ];
+
+                foreach ($tableMappings as $oldName => $newName) {
+                    if (
+                        $schemaManager->tablesExist([$oldName])
+                        && !$schemaManager->tablesExist([$newName])
+                    ) {
+                        $schemaManager->renameTable($oldName, $newName);
+                    }
+                }
+
+                if ($schemaManager->tablesExist(['ext_product_hosting'])) {
+                    $table = $schemaManager->listTableDetails('ext_product_hosting');
+
+                    if ($table->hasColumn('service_hosting_server_id')) {
+                        $dbal->executeStatement(
+                            'ALTER TABLE ext_product_hosting CHANGE service_hosting_server_id ext_product_hosting_server_id BIGINT(20) DEFAULT NULL'
+                        );
+                    }
+
+                    if ($table->hasColumn('service_hosting_hp_id')) {
+                        $dbal->executeStatement(
+                            'ALTER TABLE ext_product_hosting CHANGE service_hosting_hp_id ext_product_hosting_plan_id BIGINT(20) DEFAULT NULL'
+                        );
+                    }
+
+                    if ($table->hasIndex('service_hosting_server_id_idx')) {
+                        $dbal->executeStatement('ALTER TABLE ext_product_hosting DROP INDEX service_hosting_server_id_idx');
+                    }
+
+                    if ($table->hasIndex('service_hosting_hp_id_idx')) {
+                        $dbal->executeStatement('ALTER TABLE ext_product_hosting DROP INDEX service_hosting_hp_id_idx');
+                    }
+
+                    if (!$table->hasIndex('ext_product_hosting_server_id_idx')) {
+                        $dbal->executeStatement(
+                            'ALTER TABLE ext_product_hosting ADD INDEX ext_product_hosting_server_id_idx (ext_product_hosting_server_id)'
+                        );
+                    }
+
+                    if (!$table->hasIndex('ext_product_hosting_plan_id_idx')) {
+                        $dbal->executeStatement(
+                            'ALTER TABLE ext_product_hosting ADD INDEX ext_product_hosting_plan_id_idx (ext_product_hosting_plan_id)'
+                        );
+                    }
                 }
 
                 $root = Path::join(PATH_ROOT, 'extensions', 'products');
@@ -757,7 +839,7 @@ class UpdatePatcher implements InjectionAwareInterface
                         }
 
                         $legacyPerms = $permissions[$legacyKey];
-                        $newKey = 'product_type_' . $code;
+                        $newKey = 'product_' . $code;
                         $newPerms = $permissions[$newKey] ?? [];
                         if (!is_array($newPerms)) {
                             $newPerms = [];

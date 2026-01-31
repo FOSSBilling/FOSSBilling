@@ -77,11 +77,15 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $product = $api->product_get(['id' => $_POST['product_id'] ?? null]);
         $client = $api->client_get(['id' => $_POST['client_id'] ?? null]);
 
-        $productOrderTemplate = $this->resolveTemplate(
-            $product['type'],
-            'order',
-            sprintf('mod_service%s_order.html.twig', $product['type'])
-        );
+        $productOrderTemplate = null;
+        try {
+            $productOrderTemplate = $this->di['product_type_registry']->getTemplate(
+                $product['type'],
+                'order'
+            );
+        } catch (\Throwable) {
+            $productOrderTemplate = null;
+        }
 
         return $app->render('mod_order_new', [
             'product' => $product,
@@ -99,29 +103,19 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $order = $api->order_get($data);
         $set = ['order' => $order];
         $typeCode = $order['product_type'] ?? $order['service_type'];
-        $set['service_partial'] = $this->resolveTemplate(
-            $typeCode,
-            'manage',
-            sprintf('mod_service%s_manage.html.twig', $typeCode)
-        );
+        try {
+            $set['service_partial'] = $this->di['product_type_registry']->getTemplate(
+                $typeCode,
+                'manage'
+            );
+        } catch (\Throwable) {
+            $set['service_partial'] = null;
+        }
 
         if (isset($order['plugin']) && !empty($order['plugin'])) {
             $set['plugin'] = 'plugin_' . $order['plugin'] . '_manage.html.twig';
         }
 
         return $app->render('mod_order_manage', $set);
-    }
-
-    private function resolveTemplate(string $type, string $kind, string $fallback): string
-    {
-        if (!$this->di || !isset($this->di['product_type_registry'])) {
-            return $fallback;
-        }
-
-        try {
-            return $this->di['product_type_registry']->getTemplate($type, $kind, $fallback);
-        } catch (\Throwable) {
-            return $fallback;
-        }
     }
 }

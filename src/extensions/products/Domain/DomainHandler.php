@@ -163,7 +163,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
     /**
      * Creates domain service object from order.
      *
-     * @return \Model_ServiceDomain
+     * @return \Model_ExtProductDomain
      */
     public function create(\Model_ClientOrder $order)
     {
@@ -184,7 +184,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
 
         $tldModel = $this->tldFindOneByTld($tld);
 
-        $model = $this->di['db']->dispense('ServiceDomain');
+        $model = $this->di['db']->dispense('ExtProductDomain');
         $model->client_id = $order->client_id;
         $model->tld_registrar_id = $tldModel->tld_registrar_id;
         $model->sld = $sld;
@@ -224,13 +224,13 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
     /**
      * Register or transfer domain on activation.
      *
-     * @return \Model_ServiceDomain
+     * @return \Model_ExtProductDomain
      */
     public function activate(\Model_ClientOrder $order)
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \Model_ServiceDomain) {
+        if (!$model instanceof \Model_ExtProductDomain) {
             throw new \FOSSBilling\Exception('Could not activate order. Service was not created');
         }
 
@@ -315,7 +315,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
 
-        if ($service instanceof \Model_ServiceDomain) {
+        if ($service instanceof \Model_ExtProductDomain) {
             // cancel if not canceled
             if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
                 $this->cancel($order);
@@ -324,7 +324,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
         }
     }
 
-    protected function syncWhois(\Model_ServiceDomain $model, \Model_ClientOrder $order)
+    protected function syncWhois(\Model_ExtProductDomain $model, \Model_ClientOrder $order)
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -361,7 +361,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
         $this->di['db']->store($model);
     }
 
-    public function updateNameservers(\Model_ServiceDomain $model, $data): bool
+    public function updateNameservers(\Model_ExtProductDomain $model, $data): bool
     {
         if (!isset($data['ns1'])) {
             throw new \FOSSBilling\InformationException('Nameserver 1 is required');
@@ -396,7 +396,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
         return true;
     }
 
-    public function updateContacts(\Model_ServiceDomain $model, $data): bool
+    public function updateContacts(\Model_ExtProductDomain $model, $data): bool
     {
         $required = [
             'contact' => 'Required field contact is missing',
@@ -445,7 +445,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
         return true;
     }
 
-    public function getTransferCode(\Model_ServiceDomain $model)
+    public function getTransferCode(\Model_ExtProductDomain $model)
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -453,7 +453,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
         return $adapter->getEpp($domain);
     }
 
-    public function lock(\Model_ServiceDomain $model): bool
+    public function lock(\Model_ExtProductDomain $model): bool
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -469,7 +469,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
         return true;
     }
 
-    public function unlock(\Model_ServiceDomain $model): bool
+    public function unlock(\Model_ExtProductDomain $model): bool
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -485,7 +485,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
         return true;
     }
 
-    public function enablePrivacyProtection(\Model_ServiceDomain $model): bool
+    public function enablePrivacyProtection(\Model_ExtProductDomain $model): bool
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -501,7 +501,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
         return true;
     }
 
-    public function disablePrivacyProtection(\Model_ServiceDomain $model): bool
+    public function disablePrivacyProtection(\Model_ExtProductDomain $model): bool
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -571,7 +571,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
         // @todo
     }
 
-    public function toApiArray(\Model_ServiceDomain $model, $deep = false, $identity = null): array
+    public function toApiArray(\Model_ExtProductDomain $model, $deep = false, $identity = null): array
     {
         $data = [
             'domain' => $model->sld . $model->tld,
@@ -635,7 +635,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
         return [$sld, $tld];
     }
 
-    protected function _getD(\Model_ServiceDomain $model): array
+    protected function _getD(\Model_ExtProductDomain $model): array
     {
         $orderService = $this->di['mod_service']('order');
         $order = $orderService->getServiceOrder($model);
@@ -724,9 +724,6 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
                 if (method_exists($handler, 'batchSyncExpirationDates')) {
                     $handler->batchSyncExpirationDates();
                 }
-            } else {
-                $domainService = $di['mod_service']('servicedomain');
-                $domainService->batchSyncExpirationDates();
             }
         } catch (\Exception $e) {
             error_log($e->getMessage());
@@ -745,7 +742,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
             return false;
         }
 
-        $list = $this->di['db']->find('ServiceDomain');
+        $list = $this->di['db']->find('ExtProductDomain');
 
         foreach ($list as $domain) {
             try {
@@ -1035,7 +1032,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
 
     public function registrarRm(\Model_TldRegistrar $model): bool
     {
-        $domains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = :registrar_id', [':registrar_id' => $model->id]);
+        $domains = $this->di['db']->find('ExtProductDomain', 'tld_registrar_id = :registrar_id', [':registrar_id' => $model->id]);
         $count = is_countable($domains) ? count($domains) : 0;
 
         if ($count > 0) {
@@ -1065,7 +1062,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
         ];
     }
 
-    public function updateDomain(\Model_ServiceDomain $s, $data): bool
+    public function updateDomain(\Model_ExtProductDomain $s, $data): bool
     {
         $s->ns1 = $data['ns1'] ?? $s->ns1;
         $s->ns2 = $data['ns2'] ?? $s->ns2;

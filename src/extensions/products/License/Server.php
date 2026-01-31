@@ -55,9 +55,9 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         }
 
         $service = $this->getLicenseService();
-        $model = $this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', [':license_key' => $data['license']]);
+        $model = $this->di['db']->findOne('ExtProductLicense', 'license_key = :license_key', [':license_key' => $data['license']]);
 
-        if (!$model instanceof \Model_ServiceLicense) {
+        if (!$model instanceof \Model_ExtProductLicense) {
             throw new \LogicException('Your license key is invalid.', 1005);
         }
 

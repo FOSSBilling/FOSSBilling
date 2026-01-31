@@ -209,21 +209,6 @@ $di['mod_config'] = $di->protect(fn ($name) => $di['mod']($name)->getConfig());
  *
  * @param void
  *
- * @return FOSSBilling\ProductTypeRegistry
- */
-$di['product_type_registry'] = function () use ($di) {
-    $registry = new FOSSBilling\ProductTypeRegistry();
-    $registry->setDi($di);
-
-    $registry->loadFromFilesystem(Path::join(PATH_ROOT, 'extensions', 'products'));
-
-    return $registry;
-};
-
-/*
- *
- * @param void
- *
  * @return \Box_EventManager
  */
 $di['events_manager'] = function () use ($di) {
@@ -663,16 +648,21 @@ $di['theme'] = function () use ($di) {
 };
 
 /*
- * Loads an existing cart session or creates a new one if there is no session.
+ * Creates a new ProductTypeRegistry instance, loading product type definitions from the extensions/products directory.
+ * Uses caching to avoid filesystem scanning on every request.
  *
  * @param void
  *
- * @return mixed The either existing or new cart.
+ * @return FOSSBilling\ProductTypeRegistry
  */
-$di['cart'] = function () use ($di) {
-    $service = $di['mod_service']('cart');
+$di['product_type_registry'] = function () use ($di) {
+    $registry = new FOSSBilling\ProductTypeRegistry();
+    $registry->setDi($di);
+    $extensionsRoot = Path::join(PATH_ROOT, 'extensions', 'products');
+    $registry->loadFromFilesystemWithCache($extensionsRoot);
+    $registry->assertHasDefinitions($extensionsRoot);
 
-    return $service->getSessionCart();
+    return $registry;
 };
 
 /*

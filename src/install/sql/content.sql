@@ -267,37 +267,37 @@ UNLOCK TABLES;
 
 
 
-# Dump of table service_custom
+# Dump of table ext_product_custom
 # ------------------------------------------------------------
 
 
 
-# Dump of table service_domain
+# Dump of table ext_product_domain
 # ------------------------------------------------------------
 
 
 
-# Dump of table service_download
+# Dump of table ext_product_download
 # ------------------------------------------------------------
 
 
 
-# Dump of table service_hosting
+# Dump of table ext_product_hosting
 # ------------------------------------------------------------
 
 
 
-# Dump of table service_hosting_hp
+# Dump of table ext_product_hosting_plan
 # ------------------------------------------------------------
 
 
 
-# Dump of table service_hosting_server
+# Dump of table ext_product_hosting_server
 # ------------------------------------------------------------
 
 
 
-# Dump of table service_license
+# Dump of table ext_product_license
 # ------------------------------------------------------------
 
 

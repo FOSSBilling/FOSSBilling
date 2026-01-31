@@ -52,16 +52,12 @@ class Model_Product extends RedBeanPHP\SimpleModel implements FOSSBilling\Inject
 
     public function getService()
     {
-        if ($this->di && isset($this->di['product_type_registry'])) {
-            try {
-                $typeCode = $this->product_type ?? $this->type;
-
-                return $this->di['product_type_registry']->getHandler($typeCode);
-            } catch (\Throwable) {
-                // Fallback to legacy resolution to avoid hard failures.
-            }
+        if (!$this->di || !isset($this->di['product_type_registry'])) {
+            throw new \FOSSBilling\Exception('Product type registry is not available');
         }
 
-        return $this->di['mod_service']('service' . ($this->product_type ?? $this->type));
+        $typeCode = $this->product_type ?? $this->type;
+
+        return $this->di['product_type_registry']->getHandler($typeCode);
     }
 }

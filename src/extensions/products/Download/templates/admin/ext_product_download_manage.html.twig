@@ -1,0 +1,72 @@
+<div class="card-body">
+    <h2>{{ 'File information'|trans }}</h2>
+
+    <table class="table card-table table-vcenter table-striped text-nowrap">
+        <tbody>
+            <tr class="noborder">
+                <td>{{ 'Filename'|trans }}:</td>
+                <td>{{ service.filename  }}</td>
+            </tr>
+            <tr>
+                <td>{{ 'Location'|trans }}:</td>
+                <td>{{ service.path }}</td>
+            </tr>
+            <tr>
+                <td>{{ 'Downloads'|trans }}:</td>
+                <td>{{ service.downloads }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <hr>
+
+    <h3>{{ 'Upload new file for this order'|trans }}</h3>
+    <p class="text-muted">{{ 'Use this function to update existing order file. Client will be able to download new file from client area'|trans }}</p>
+
+    <form method="post" action="{{ 'api/admin/ext/product/download/update'|link }}" enctype="multipart/form-data" id="upload-form">
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Upload new file'|trans }}:</label>
+            <div class="col">
+                <input class="form-control" type="file" name="file_data" id="file_data">
+            </div>
+        </div>
+
+        <input type="submit" value="{{ 'Upload'|trans }}" class="btn btn-primary submitForm" id="upload-button">
+
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('upload-form');
+    if (!form) {
+        return;
+    }
+
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const submitButton = form.querySelector('input[type="submit"], button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        const formData = new FormData(form);
+        API.admin.post('ext/product/download/update', formData,
+            function () {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
+                FOSSBilling.message("{{ 'File was uploaded'|trans }}");
+            },
+            function (error) {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
+                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+            }
+        );
+    });
+});
+</script>

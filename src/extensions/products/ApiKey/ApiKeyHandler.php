@@ -38,7 +38,7 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
     {
         $this->assertDi();
 
-        $model = $this->di['db']->dispense('service_apikey');
+        $model = $this->di['db']->dispense('ext_product_apikey');
         $model->client_id = $order->client_id;
         $model->config = $order->config;
         $model->created_at = date('Y-m-d H:i:s');
@@ -120,7 +120,7 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
             throw new Exception('You must provide an API key to check it\'s validity.');
         }
 
-        $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
+        $model = $this->di['db']->findOne('ext_product_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
         if (is_null($model)) {
             throw new Exception('API key does not exist');
         }
@@ -136,7 +136,7 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
             throw new Exception('You must provide an API key to check it\'s validity.');
         }
 
-        $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
+        $model = $this->di['db']->findOne('ext_product_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
         if (is_null($model)) {
             throw new Exception('API key does not exist');
         }
@@ -174,7 +174,7 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
             $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
             $model = $this->getServiceModel($order);
         } else {
-            $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
+            $model = $this->di['db']->findOne('ext_product_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
         }
 
         if (is_null($model)) {
@@ -244,7 +244,7 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
             return null;
         }
 
-        $model = $this->di['db']->load('service_apikey', $order->service_id);
+        $model = $this->di['db']->load('ext_product_apikey', $order->service_id);
         if ((!$model || !$model->id) && $required) {
             throw new Exception('Order does not exist.');
         }
@@ -299,7 +299,7 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
                 default:
                     throw new Exception("Unknown uppercase option ':case:'. API generator only accepts 'lower', 'upper', or 'mixed'.", [':case:' => $case]);
             }
-        } while ($this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $apiKey]) !== null);
+        } while ($this->di['db']->findOne('ext_product_apikey', 'api_key = :api_key', [':api_key' => $apiKey]) !== null);
 
         return $apiKey;
     }

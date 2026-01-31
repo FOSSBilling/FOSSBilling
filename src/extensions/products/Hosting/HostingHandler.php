@@ -114,20 +114,20 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
      *
      * @todo
      */
-    public function action_create(\Model_ClientOrder $order): \Model_ServiceHosting
+    public function action_create(\Model_ClientOrder $order): \Model_ExtProductHosting
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
         $this->validateOrderData($c);
 
-        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $c['server_id'], 'Server from order configuration was not found');
+        $server = $this->di['db']->getExistingModelById('ExtProductHostingServer', $c['server_id'], 'Server from order configuration was not found');
 
-        $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $c['hosting_plan_id'], 'Hosting plan from order configuration was not found');
+        $hp = $this->di['db']->getExistingModelById('ExtProductHostingPlan', $c['hosting_plan_id'], 'Hosting plan from order configuration was not found');
 
-        $model = $this->di['db']->dispense('ServiceHosting');
+        $model = $this->di['db']->dispense('ExtProductHosting');
         $model->client_id = $order->client_id;
-        $model->service_hosting_server_id = $server->id;
-        $model->service_hosting_hp_id = $hp->id;
+        $model->ext_product_hosting_server_id = $server->id;
+        $model->ext_product_hosting_plan_id = $hp->id;
         $model->sld = $c['sld'];
         $model->tld = $c['tld'];
         $model->ip = $server->ip;
@@ -308,7 +308,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
-        if ($service instanceof \Model_ServiceHosting) {
+        if ($service instanceof \Model_ExtProductHosting) {
             // cancel if not canceled
             if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
                 $this->action_cancel($order);
@@ -317,9 +317,9 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         }
     }
 
-    public function changeAccountPlan(\Model_ClientOrder $order, \Model_ServiceHosting $model, \Model_ServiceHostingHp $hp): bool
+    public function changeAccountPlan(\Model_ClientOrder $order, \Model_ExtProductHosting $model, \Model_ExtProductHostingPlan $hp): bool
     {
-        $model->service_hosting_hp_id = $hp->id;
+        $model->ext_product_hosting_plan_id = $hp->id;
         if ($this->_performOnService($order)) {
             $package = $this->getServerPackage($hp);
             [$adapter, $account] = $this->_getAM($model);
@@ -333,7 +333,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return true;
     }
 
-    public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data): bool
+    public function changeAccountUsername(\Model_ClientOrder $order, \Model_ExtProductHosting $model, $data): bool
     {
         if (!isset($data['username']) || empty($data['username'])) {
             throw new InformationException('Account username is missing or is invalid');
@@ -355,7 +355,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return true;
     }
 
-    public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data): bool
+    public function changeAccountIp(\Model_ClientOrder $order, \Model_ExtProductHosting $model, $data): bool
     {
         if (!isset($data['ip']) || empty($data['ip'])) {
             throw new InformationException('Account IP address is missing or is invalid');
@@ -376,7 +376,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return true;
     }
 
-    public function changeAccountDomain(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data): bool
+    public function changeAccountDomain(\Model_ClientOrder $order, \Model_ExtProductHosting $model, $data): bool
     {
         if (
             !isset($data['tld']) || empty($data['tld'])
@@ -402,7 +402,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return true;
     }
 
-    public function changeAccountPassword(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data): bool
+    public function changeAccountPassword(\Model_ClientOrder $order, \Model_ExtProductHosting $model, $data): bool
     {
         if (
             !isset($data['password']) || !isset($data['password_confirm'])
@@ -426,7 +426,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return true;
     }
 
-    public function sync(\Model_ClientOrder $order, \Model_ServiceHosting $model): bool
+    public function sync(\Model_ClientOrder $order, \Model_ExtProductHosting $model): bool
     {
         [$adapter, $account] = $this->_getAM($model);
         $updated = $adapter->synchronizeAccount($account);
@@ -446,7 +446,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return true;
     }
 
-    private function _getDomainOrderId(\Model_ServiceHosting $model)
+    private function _getDomainOrderId(\Model_ExtProductHosting $model)
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
@@ -481,18 +481,18 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
      */
     private function _getServerMangerForOrder($model)
     {
-        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
+        $server = $this->di['db']->getExistingModelById('ExtProductHostingServer', $model->ext_product_hosting_server_id, 'Server not found');
 
         return $this->getServerManager($server);
     }
 
-    public function _getAM(\Model_ServiceHosting $model, ?\Model_ServiceHostingHp $hp = null): array
+    public function _getAM(\Model_ExtProductHosting $model, ?\Model_ExtProductHostingPlan $hp = null): array
     {
-        if (!$hp instanceof \Model_ServiceHostingHp) {
-            $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
+        if (!$hp instanceof \Model_ExtProductHostingPlan) {
+            $hp = $this->di['db']->getExistingModelById('ExtProductHostingPlan', $model->ext_product_hosting_plan_id, 'Hosting plan not found');
         }
 
-        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
+        $server = $this->di['db']->getExistingModelById('ExtProductHostingServer', $model->ext_product_hosting_server_id, 'Server not found');
         $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
 
         $hp_config = $hp->config;
@@ -537,10 +537,10 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return [$adapter, $server_account];
     }
 
-    public function toApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null): array
+    public function toApiArray(\Model_ExtProductHosting $model, $deep = false, $identity = null): array
     {
-        $serviceHostingServerModel = $this->di['db']->load('ServiceHostingServer', $model->service_hosting_server_id);
-        $serviceHostingHpModel = $this->di['db']->load('ServiceHostingHp', $model->service_hosting_hp_id);
+        $serviceHostingServerModel = $this->di['db']->load('ExtProductHostingServer', $model->ext_product_hosting_server_id);
+        $serviceHostingHpModel = $this->di['db']->load('ExtProductHostingPlan', $model->ext_product_hosting_plan_id);
         $server = $this->toHostingServerApiArray($serviceHostingServerModel, $deep, $identity);
         $hp = $this->toHostingHpApiArray($serviceHostingHpModel, $deep, $identity);
 
@@ -557,7 +557,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         ];
     }
 
-    public function toHostingServerApiArray(\Model_ServiceHostingServer $model, $deep = false, $identity = null): array
+    public function toHostingServerApiArray(\Model_ExtProductHostingServer $model, $deep = false, $identity = null): array
     {
         [$cpanel_url, $whm_url] = $this->getManagerUrls($model);
         $result = [
@@ -593,15 +593,15 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return $result;
     }
 
-    public function toHostingAccountApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null): array
+    public function toHostingAccountApiArray(\Model_ExtProductHosting $model, $deep = false, $identity = null): array
     {
         $result = [
             'id' => $model->id,
             'sld' => $model->sld,
             'tld' => $model->tld,
             'client_id' => $model->client_id,
-            'server_id' => $model->service_hosting_server_id,
-            'plan_id' => $model->service_hosting_hp_id,
+            'server_id' => $model->ext_product_hosting_server_id,
+            'plan_id' => $model->ext_product_hosting_plan_id,
             'reseller' => $model->reseller,
         ];
 
@@ -659,7 +659,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return [$sld, $tld];
     }
 
-    public function update(\Model_ServiceHosting $model, array $data): bool
+    public function update(\Model_ExtProductHosting $model, array $data): bool
     {
         if (isset($data['username']) && !empty($data['username'])) {
             $model->username = $data['username'];
@@ -723,7 +723,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
     public function getServerPairs(): array
     {
         $sql = 'SELECT id, name
-                FROM service_hosting_server
+                FROM ext_product_hosting_server
                 ORDER BY id ASC';
         $rows = $this->di['db']->getAll($sql);
 
@@ -738,7 +738,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
     public function getServersSearchQuery($data): array
     {
         $sql = 'SELECT *
-                FROM service_hosting_server
+                FROM ext_product_hosting_server
                 order by id ASC';
 
         return [$sql, []];
@@ -746,13 +746,13 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
 
     public function getAccountsSearchQuery($data): array
     {
-        $sql = 'SELECT * FROM service_hosting';
+        $sql = 'SELECT * FROM ext_product_hosting';
         $params = [];
 
         $serverID = $data['server_id'] ?? null;
 
         if (!empty($serverID)) {
-            $sql = $sql . ' WHERE service_hosting_server_id = :server_id';
+            $sql = $sql . ' WHERE ext_product_hosting_server_id = :server_id';
             $params['server_id'] = $serverID;
         }
 
@@ -763,7 +763,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
 
     public function createServer($name, $ip, $manager, $data)
     {
-        $model = $this->di['db']->dispense('ServiceHostingServer');
+        $model = $this->di['db']->dispense('ExtProductHostingServer');
         $model->name = $name;
         $model->ip = $ip;
 
@@ -799,7 +799,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return $newId;
     }
 
-    public function deleteServer(\Model_ServiceHostingServer $model): bool
+    public function deleteServer(\Model_ExtProductHostingServer $model): bool
     {
         $id = $model->id;
         $this->di['db']->trash($model);
@@ -808,7 +808,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return true;
     }
 
-    public function updateServer(\Model_ServiceHostingServer $model, array $data): bool
+    public function updateServer(\Model_ExtProductHostingServer $model, array $data): bool
     {
         $model->name = $data['name'] ?? $model->name;
         $model->ip = $data['ip'] ?? $model->ip;
@@ -846,7 +846,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
     /**
      * @throws Exception
      */
-    public function getServerManager(\Model_ServiceHostingServer $model)
+    public function getServerManager(\Model_ExtProductHostingServer $model)
     {
         if (empty($model->manager)) {
             throw new Exception('Invalid server manager. Server was not configured properly.', null, 654);
@@ -877,7 +877,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
      * @throws \Server_Exception
      * @throws Exception
      */
-    public function testConnection(\Model_ServiceHostingServer $model)
+    public function testConnection(\Model_ExtProductHostingServer $model)
     {
         $manager = $this->getServerManager($model);
 
@@ -887,7 +887,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
     public function getHpPairs(): array
     {
         $sql = 'SELECT id, name
-                FROM service_hosting_hp';
+                FROM ext_product_hosting_plan';
         $rows = $this->di['db']->getAll($sql);
         $result = [];
         foreach ($rows as $record) {
@@ -900,7 +900,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
     public function getHpSearchQuery($data): array
     {
         $sql = 'SELECT *
-                FROM service_hosting_hp
+                FROM ext_product_hosting_plan
                 ORDER BY id asc';
 
         return [$sql, []];
@@ -909,10 +909,10 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
     /**
      * @throws InformationException
      */
-    public function deleteHp(\Model_ServiceHostingHp $model): bool
+    public function deleteHp(\Model_ExtProductHostingPlan $model): bool
     {
         $id = $model->id;
-        $serviceHosting = $this->di['db']->findOne('ServiceHosting', 'service_hosting_hp_id = ?', [$model->id]);
+        $serviceHosting = $this->di['db']->findOne('ExtProductHosting', 'ext_product_hosting_plan_id = ?', [$model->id]);
         if ($serviceHosting) {
             throw new InformationException('Cannot remove hosting plan which has active accounts');
         }
@@ -922,7 +922,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return true;
     }
 
-    public function toHostingHpApiArray(\Model_ServiceHostingHp $model, $deep = false, $identity = null): array
+    public function toHostingHpApiArray(\Model_ExtProductHostingPlan $model, $deep = false, $identity = null): array
     {
         if (is_null($model->config)) {
             $model->config = '';
@@ -948,7 +948,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         ];
     }
 
-    public function updateHp(\Model_ServiceHostingHp $model, array $data): bool
+    public function updateHp(\Model_ExtProductHostingPlan $model, array $data): bool
     {
         $model->name = $data['name'] ?? $model->name;
         $model->bandwidth = $data['bandwidth'] ?? $model->bandwidth;
@@ -993,7 +993,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
 
     public function createHp($name, $data)
     {
-        $model = $this->di['db']->dispense('ServiceHostingHp');
+        $model = $this->di['db']->dispense('ExtProductHostingPlan');
         $model->name = $name;
 
         $model->bandwidth = $data['bandwidth'] ?? 1024 * 1024;
@@ -1015,7 +1015,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return $newId;
     }
 
-    public function getServerPackage(\Model_ServiceHostingHp $model): \Server_Package
+    public function getServerPackage(\Model_ExtProductHostingPlan $model): \Server_Package
     {
         $config = json_decode($model->config ?? '', true);
         if (!is_array($config)) {
@@ -1040,7 +1040,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
     /**
      * @throws Exception
      */
-    public function getServerManagerWithLog(\Model_ServiceHostingServer $model, \Model_ClientOrder $order)
+    public function getServerManagerWithLog(\Model_ExtProductHostingServer $model, \Model_ClientOrder $order)
     {
         $manager = $this->getServerManager($model);
 
@@ -1057,7 +1057,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
      *
      * @return string[]|false[]
      */
-    public function getManagerUrls(\Model_ServiceHostingServer $model): array
+    public function getManagerUrls(\Model_ExtProductHostingServer $model): array
     {
         try {
             $m = $this->getServerManager($model);
@@ -1074,7 +1074,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
      * Generates either a reseller or standard login link for a given order.
      * If the server manager supports SSO, an SSO link will be returned.
      */
-    public function generateLoginUrl(\Model_ServiceHosting $model): string
+    public function generateLoginUrl(\Model_ExtProductHosting $model): string
     {
         [$adapter, $account] = $this->_getAM($model);
         if ($model->reseller) {
@@ -1141,7 +1141,9 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
                 $domainHandler = $registry->getHandler('domain');
             }
         }
-        $domainHandler ??= $this->di['mod_service']('servicedomain');
+        if ($domainHandler === null) {
+            throw new Exception('Domain product type is not available');
+        }
 
         if (method_exists($domainHandler, 'validateOrderData')) {
             $domainHandler->validateOrderData($dc);
@@ -1179,9 +1181,9 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         if (empty($result)) {
             $query = 'active = 1 and allow_register = 1';
             $tlds = $this->di['db']->find('Tld', $query, []);
-            $serviceDomainService = $this->di['mod_service']('Servicedomain');
+            $domainHandler = $this->di['product_type_registry']->getHandler('domain');
             foreach ($tlds as $model) {
-                $result[] = $serviceDomainService->tldToApiArray($model);
+                $result[] = $domainHandler->tldToApiArray($model);
             }
         }
 

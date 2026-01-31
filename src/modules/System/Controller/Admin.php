@@ -97,22 +97,22 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     {
         $this->di['is_admin_logged'];
 
-        return $app->render('mod_servicehosting_index');
+        return $app->render('ext_product_hosting_index');
     }
 
     public function get_servicehosting_plan(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
-        $hp = $api->servicehosting_hp_get(['id' => $id]);
+        $hp = $api->servicehosting_admin_hp_get(['id' => $id]);
 
-        return $app->render('mod_servicehosting_hp', ['hp' => $hp]);
+        return $app->render('ext_product_hosting_hp', ['hp' => $hp]);
     }
 
     public function get_servicehosting_server(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
-        $server = $api->servicehosting_server_get(['id' => $id]);
+        $server = $api->servicehosting_admin_server_get(['id' => $id]);
 
-        return $app->render('mod_servicehosting_server', ['server' => $server]);
+        return $app->render('ext_product_hosting_server', ['server' => $server]);
     }
 }

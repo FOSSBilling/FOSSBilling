@@ -62,7 +62,7 @@
             </div>
             {% endif %}
 
-            {% set product_order = product_order_template ?? ('mod_service' ~ product.type ~ '_order.html.twig') %}
+            {% set product_order = product_order_template ?? ('ext_product_' ~ product.type ~ '_order.html.twig') %}
             {% if admin.system_template_exists({ 'file': product_order }) %}
                 {{ include(product_order) }}
             {% endif %}

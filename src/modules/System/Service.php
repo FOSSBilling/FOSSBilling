@@ -387,6 +387,16 @@ class Service
             ];
         }
 
+        if (isset($this->di['product_type_registry']) && $this->di['product_type_registry'] instanceof \FOSSBilling\ProductTypeRegistry) {
+            foreach ($this->di['product_type_registry']->getLoadErrors() as $error) {
+                $name = $error['name'] ?? 'unknown';
+                $message = $error['message'] ?? 'Unknown error';
+                $msgs['warning'][] = [
+                    'text' => sprintf('Product type manifest "%s" could not be loaded: %s', $name, $message),
+                ];
+            }
+        }
+
         return $msgs[$type] ?? [];
     }
 

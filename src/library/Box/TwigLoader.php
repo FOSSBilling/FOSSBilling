@@ -54,7 +54,6 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
     #[Override]
     protected function findTemplate($name, $throw = true)
     {
-        // normalize name
         $name = preg_replace('#/{2,}#', '/', strtr($name, '\\', '/'));
 
         if (isset($this->cache[$name])) {
@@ -66,15 +65,27 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
         $paths = [];
         $paths[] = Path::join($this->options['theme'], 'html_custom');
         $paths[] = Path::join($this->options['theme'], 'html');
-        if (isset($name_split[1])) {
-            $moduleName = strtolower((string) $name_split[1]);
+
+        $moduleName = isset($name_split[1]) ? strtolower((string) $name_split[1]) : null;
+        $extProductCode = null;
+
+        if (isset($name_split[0]) && strtolower((string) $name_split[0]) === 'ext' && isset($name_split[2])) {
+            $extProductCode = strtolower((string) $name_split[2]);
+            if ($this->isProductTypeCode($extProductCode)) {
+                foreach ($this->getProductTypeTemplatePaths($extProductCode) as $templatePath) {
+                    $paths[] = $templatePath;
+                }
+            }
+        }
+
+        if ($moduleName !== null && $moduleName !== 'ext') {
             $code = $this->resolveProductTypeCode($moduleName);
             if ($code !== null) {
                 foreach ($this->getProductTypeTemplatePaths($code) as $templatePath) {
                     $paths[] = $templatePath;
                 }
             }
-            $paths[] = Path::join($this->options['mods'], ucfirst($name_split[1]), "html_{$this->options['type']}");
+            $paths[] = Path::join($this->options['mods'], ucfirst($moduleName), "html_{$this->options['type']}");
         }
 
         foreach ($paths as $path) {
@@ -88,6 +99,19 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
         }
 
         throw new Twig\Error\LoaderError(sprintf('Unable to find template "%s" (looked into: %s).', $name, implode(', ', $paths)));
+    }
+
+    private function isProductTypeCode(string $code): bool
+    {
+        if ($this->productTypeRegistry && $this->productTypeRegistry->has($code)) {
+            return true;
+        }
+
+        if ($this->extensionsRoot && is_dir($this->extensionsRoot)) {
+            return $this->resolveExtensionsProductPath($code) !== null;
+        }
+
+        return false;
     }
 
     private function resolveProductTypeCode(string $moduleName): ?string

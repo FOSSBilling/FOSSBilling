@@ -6,17 +6,21 @@
   "handler_file": "ApiKeyHandler.php",
   "api": {
     "admin": {
-      "class": "FOSSBilling\\ProductType\\ApiKey\\Api\\Admin",
-      "file": "Api/Admin.php"
+      "class": "FOSSBilling\\ProductType\\ApiKey\\Api",
+      "file": "Api.php"
     },
     "client": {
-      "class": "FOSSBilling\\ProductType\\ApiKey\\Api\\Client",
-      "file": "Api/Client.php"
+      "class": "FOSSBilling\\ProductType\\ApiKey\\Api",
+      "file": "Api.php"
     },
     "guest": {
-      "class": "FOSSBilling\\ProductType\\ApiKey\\Api\\Guest",
-      "file": "Api/Guest.php"
+      "class": "FOSSBilling\\ProductType\\ApiKey\\Api",
+      "file": "Api.php"
     }
+  },
+  "templates": {
+    "manage": "ext_product_apikey_manage.html.twig",
+    "config": "ext_product_apikey_config.html.twig"
   },
   "source": "core"
 }

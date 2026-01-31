@@ -914,12 +914,12 @@ CREATE TABLE `queue_message` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `service_apikey`
+-- Table structure for table `ext_product_apikey`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `service_apikey` (
+CREATE TABLE `ext_product_apikey` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) NOT NULL,
   `api_key` varchar(255) DEFAULT NULL,
@@ -932,12 +932,12 @@ CREATE TABLE `service_apikey` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `service_custom`
+-- Table structure for table `ext_product_custom`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `service_custom` (
+CREATE TABLE `ext_product_custom` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
   `plugin` varchar(255) DEFAULT NULL,
@@ -961,12 +961,12 @@ CREATE TABLE `service_custom` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `service_domain`
+-- Table structure for table `ext_product_domain`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `service_domain` (
+CREATE TABLE `ext_product_domain` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
   `tld_registrar_id` bigint(20) DEFAULT NULL,
@@ -1006,12 +1006,12 @@ CREATE TABLE `service_domain` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `service_download`
+-- Table structure for table `ext_product_download`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `service_download` (
+CREATE TABLE `ext_product_download` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
   `filename` varchar(100) DEFAULT NULL,
@@ -1024,16 +1024,16 @@ CREATE TABLE `service_download` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `service_hosting`
+-- Table structure for table `ext_product_hosting`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `service_hosting` (
+CREATE TABLE `ext_product_hosting` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
-  `service_hosting_server_id` bigint(20) DEFAULT NULL,
-  `service_hosting_hp_id` bigint(20) DEFAULT NULL,
+  `ext_product_hosting_server_id` bigint(20) DEFAULT NULL,
+  `ext_product_hosting_plan_id` bigint(20) DEFAULT NULL,
   `sld` varchar(255) DEFAULT NULL,
   `tld` varchar(255) DEFAULT NULL,
   `ip` varchar(45) DEFAULT NULL,
@@ -1044,18 +1044,18 @@ CREATE TABLE `service_hosting` (
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`),
-  KEY `service_hosting_server_id_idx` (`service_hosting_server_id`),
-  KEY `service_hosting_hp_id_idx` (`service_hosting_hp_id`)
+  KEY `ext_product_hosting_server_id_idx` (`ext_product_hosting_server_id`),
+  KEY `ext_product_hosting_plan_id_idx` (`ext_product_hosting_plan_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `service_hosting_hp`
+-- Table structure for table `ext_product_hosting_plan`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `service_hosting_hp` (
+CREATE TABLE `ext_product_hosting_plan` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
   `quota` varchar(50) DEFAULT NULL,
@@ -1074,12 +1074,12 @@ CREATE TABLE `service_hosting_hp` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `service_hosting_server`
+-- Table structure for table `ext_product_hosting_server`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `service_hosting_server` (
+CREATE TABLE `ext_product_hosting_server` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
   `ip` varchar(45) DEFAULT NULL,
@@ -1107,12 +1107,12 @@ CREATE TABLE `service_hosting_server` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `service_license`
+-- Table structure for table `ext_product_license`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `service_license` (
+CREATE TABLE `ext_product_license` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
   `license_key` varchar(255) DEFAULT NULL,

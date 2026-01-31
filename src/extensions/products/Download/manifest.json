@@ -6,17 +6,17 @@
   "handler_file": "DownloadHandler.php",
   "api": {
     "admin": {
-      "class": "FOSSBilling\\ProductType\\Download\\Api\\Admin",
-      "file": "Api/Admin.php"
+      "class": "FOSSBilling\\ProductType\\Download\\Api",
+      "file": "Api.php"
     },
     "client": {
-      "class": "FOSSBilling\\ProductType\\Download\\Api\\Client",
-      "file": "Api/Client.php"
+      "class": "FOSSBilling\\ProductType\\Download\\Api",
+      "file": "Api.php"
     }
   },
   "templates": {
-    "manage": "mod_download_manage.html.twig",
-    "config": "mod_download_config.html.twig"
+    "manage": "ext_product_download_manage.html.twig",
+    "config": "ext_product_download_config.html.twig"
   },
   "source": "core"
 }

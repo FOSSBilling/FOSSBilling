@@ -21,7 +21,7 @@ class Simple
         return $this->di;
     }
 
-    public function generate(\Model_ServiceLicense $service, \Model_ClientOrder $order, array $config): string
+    public function generate(\Model_ExtProductLicense $service, \Model_ClientOrder $order, array $config): string
     {
         $length = $config['length'] ?? 25;
         $prefix = $config['prefix'] ?? null;

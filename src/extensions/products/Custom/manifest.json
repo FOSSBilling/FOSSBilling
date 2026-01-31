@@ -6,13 +6,18 @@
   "handler_file": "CustomHandler.php",
   "api": {
     "admin": {
-      "class": "FOSSBilling\\ProductType\\Custom\\Api\\Admin",
-      "file": "Api/Admin.php"
+      "class": "FOSSBilling\\ProductType\\Custom\\Api",
+      "file": "Api.php"
     },
     "client": {
-      "class": "FOSSBilling\\ProductType\\Custom\\Api\\Client",
-      "file": "Api/Client.php"
+      "class": "FOSSBilling\\ProductType\\Custom\\Api",
+      "file": "Api.php"
     }
+  },
+  "templates": {
+    "order": "ext_product_custom_order.html.twig",
+    "manage": "ext_product_custom_manage.html.twig",
+    "config": "ext_product_custom_config.html.twig"
   },
   "source": "core"
 }

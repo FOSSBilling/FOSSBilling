@@ -60,7 +60,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Order Form'|trans }}:</label>
                         <div class="col">
-                            {% set tpl = product_order_form_template ?? ('mod_service' ~ product.type ~ '_order_form.html.twig') %}
+                            {% set tpl = product_order_form_template ?? ('ext_product_' ~ product.type ~ '_order_form.html.twig') %}
                             {% if guest.system_template_exists({ 'file': tpl }) %}
                             <div class="nNote nInformation">
                                 <p>Please edit <strong>{{ tpl }}</strong> file in order to change order form for <strong>{{ product.type }}</strong> category products.</p>
@@ -207,7 +207,7 @@
         </div>
 
         <div class="tab-pane fade" id="tab-config" role="tabpanel" aria-labelledby="config-tab">
-            {% set service_partial = product_config_template ?? ('mod_service' ~ product.type ~ '_config.html.twig') %}
+            {% set service_partial = product_config_template ?? ('ext_product_' ~ product.type ~ '_config.html.twig') %}
             {% if admin.system_template_exists({ 'file': service_partial }) %}
                 {{ include(service_partial, { 'product': product }) }}
             {% else %}

@@ -218,6 +218,26 @@ tests-legacy/                  # Legacy PHPUnit tests
   * The `api-form` can handle most of the create/update tasks, so try using it before resorting to manual API calls.
 * You also should use `api-link` wherever you can when making simple API calls. Read other modules' html_admin templates to see how it's used
 
+#### API Routing Convention
+
+The FOSSBilling API uses a consistent URL routing pattern:
+
+* **Module APIs:** `/api/:role/:module/:method`
+  * Example: `/api/admin/client/get` - Calls the `get` method on the Client module's admin API
+  * Example: `/api/guest/system/version` - Calls the `version` method on the System module's guest API
+
+* **Extension APIs (Product Types):** `/api/:role/ext/:type/:code/:method`
+  * Example: `/api/admin/ext/product/apikey/get_list` - Calls product type APIs using the `service{code}` module pattern
+  * The `:type` is the extension type (currently `product` for product types)
+  * The `:code` is the lowercase product type identifier (e.g., `apikey`, `hosting`, `domain`)
+  * This pattern supports future extension types: `/api/:role/ext/payment/:code/:method`, `/api/:role/ext/registrar/:code/:method`, etc.
+
+For programmatic access to product types from PHP code, use the Product Type Registry directly:
+```php
+$registry = $di['product_type_registry'];
+$handler = $registry->getHandler('apikey');
+```
+
 ### Contributing Workflow
 
 1. **Read Documentation:** Start with `CONTRIBUTING.md` for detailed guidelines

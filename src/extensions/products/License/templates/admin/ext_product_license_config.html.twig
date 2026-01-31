@@ -1,0 +1,90 @@
+{% import 'macro_functions.html.twig' as mf %}
+<div class="card-body">
+    <h5>{{ 'License settings'|trans }}</h5>
+    <form method="post" action="{{ 'api/admin/product/update_config'|link }}" {{ fb_api_form({message: 'License Settings Updated'|trans}) }}>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Prefix'|trans }}:</label>
+            <div class="col">
+                <input type="text" class="form-control" name="config[prefix]" value="{{ product.config.prefix }}">
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Length'|trans }}:</label>
+            <div class="col">
+                <input type="number" class="form-control" name="config[length]" value="{{ product.config.length }}">
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Plugin'|trans }}:</label>
+            <div class="col">
+                {{ mf.selectbox('config[plugin]', admin.servicelicense_admin_plugin_get_pairs, product.config.plugin, 1) }}
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Validate IP'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validateIPYes" type="radio" name="config[validate_ip]" value="1"{% if product.config.validate_ip %} checked{% endif %}>
+                    <label class="form-check-label" for="validateIPYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validateIPNo" type="radio" name="config[validate_ip]" value="0"{% if not product.config.validate_ip %} checked{% endif %}>
+                    <label class="form-check-label" for="validateIPNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Validate Hostname'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validateHostnameYes" type="radio" name="config[validate_host]" value="1"{% if product.config.validate_host %} checked{% endif %}>
+                    <label class="form-check-label" for="validateHostnameYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validateHostnameNo" type="radio" name="config[validate_host]" value="0"{% if not product.config.validate_host %} checked{% endif %}>
+                    <label class="form-check-label" for="validateHostnameNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Validate Version'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validateVersionYes" type="radio" name="config[validate_version]" value="1"{% if product.config.validate_version %} checked{% endif %}>
+                    <label class="form-check-label" for="validateVersionYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validateVersionNo" type="radio" name="config[validate_version]" value="0"{% if not product.config.validate_version %} checked{% endif %}>
+                    <label class="form-check-label" for="validateVersionNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Validate Path'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validatePathYes" type="radio" name="config[validate_path]" value="1"{% if product.config.validate_path %} checked{% endif %}>
+                    <label class="form-check-label" for="validatePathYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="validatePathNo" type="radio" name="config[validate_path]" value="0"{% if not product.config.validate_path %} checked{% endif %}>
+                    <label class="form-check-label" for="validatePathNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" name="id" value="{{ product.id }}">
+        <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+    </form>
+    <hr>
+    <div>
+        <h1>{{ 'License plugins'|trans }}</h1>
+        <p>{{ 'You can create your own license generation plugins for FOSSBilling. Follow these steps to add a new one:'|trans }}</p>
+        <ul>
+            <li>{{ 'A license plugin is a PHP class named'|trans }} <strong>License_PluginName</strong> {{ 'that must include a'|trans }} <code>generate</code> {{ 'method.'|trans }}</li>
+            <li>{{ 'See the default example plugin at'|trans }} <strong>/extensions/products/License/Plugin/Simple.php</strong></li>
+            <li>{{ 'Save your custom plugin in'|trans }} <strong>/extensions/products/License/Plugin/PluginName.php</strong></li>
+            <li>{{ 'FOSSBilling will automatically detect your new plugin.'|trans }}</li>
+            <li><a href="https://fossbilling.org/docs/product-types/license#custom-plugins" target="_blank">{{ 'Read the documentation'|trans }}</a> {{ 'for more details.'|trans }}</li>
+        </ul>
+    </div>
+</div>
