@@ -16,15 +16,17 @@ use FOSSBilling\Events\Event;
 
 /**
  * Event fired before a guest opens a public support ticket.
- * This event can be used to modify the ticket data before creation.
  *
  * @since v0.8.0
  */
 final class BeforeGuestPublicTicketOpenEvent extends Event
 {
     public function __construct(
-        public readonly array $data,
+        public readonly string $email,
         public readonly string $ip,
+        public readonly ?string $name = null,
+        public readonly ?string $subject = null,
+        public readonly ?string $message = null,
     ) {
         parent::__construct();
     }

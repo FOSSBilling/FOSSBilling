@@ -63,8 +63,9 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $spamCheckerService);
 
         $event = new BeforeGuestPublicTicketOpenEvent(
-            data: ['email' => 'test@example.com', 'subject' => 'Test'],
+            email: 'test@example.com',
             ip: '127.0.0.1',
+            subject: 'Test',
         );
 
         $spamCheckerService->setDi($di);

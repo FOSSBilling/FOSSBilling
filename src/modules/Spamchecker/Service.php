@@ -74,14 +74,9 @@ class Service implements InjectionAwareInterface
 
     public function isSpam(BeforeClientSignUpEvent|BeforeGuestPublicTicketOpenEvent $event): void
     {
-        // Extract parameters based on event type
-        if ($event instanceof BeforeClientSignUpEvent) {
-            $params = $this->di['request']->request->all();
-            $params['ip'] = $event->ip;
-            $params['email'] = $event->email;
-        } else {
-            $params = $event->data;
-        }
+        $params = $this->di['request']->request->all();
+        $params['ip'] = $event->ip;
+        $params['email'] = $event->email;
 
         $data = [
             'ip' => $params['ip'] ?? null,
@@ -176,15 +171,7 @@ class Service implements InjectionAwareInterface
         $check = $config['check_temp_emails'] ?? false;
 
         if ($check) {
-            // Extract email based on event type
-            if ($event instanceof BeforeClientSignUpEvent) {
-                $email = $event->email;
-            } else {
-                $params = $event->data;
-                $email = $params['email'] ?? '';
-            }
-
-            $this->isATempEmail($email, true);
+            $this->isATempEmail($event->email, true);
         }
     }
 

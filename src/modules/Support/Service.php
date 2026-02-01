@@ -811,9 +811,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
-        $event_params = $data;
-        $event_params['ip'] = $this->di['request']->getClientIp();
-        $beforeEvent = new BeforeGuestPublicTicketOpenEvent(data: $event_params, ip: $this->di['request']->getClientIp());
+        $beforeEvent = new BeforeGuestPublicTicketOpenEvent(
+            email: $data['email'],
+            ip: $this->di['request']->getClientIp(),
+            name: $data['name'] ?? null,
+            subject: $data['subject'] ?? null,
+            message: $data['message'] ?? null,
+        );
         $this->di['event_dispatcher']->dispatch($beforeEvent);
 
         $status = 'open';
