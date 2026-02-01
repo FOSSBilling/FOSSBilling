@@ -815,17 +815,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $event_params['ip'] = $this->di['request']->getClientIp();
         $beforeEvent = new BeforeGuestPublicTicketOpenEvent(data: $event_params, ip: $this->di['request']->getClientIp());
         $this->di['event_dispatcher']->dispatch($beforeEvent);
-        $altered = $beforeEvent->getAlteredData();
 
         $status = 'open';
         $subject = $data['subject'] ?? null;
         $message = $data['message'] ?? null;
-
-        if (is_array($altered)) {
-            $status = $altered['status'] ?? $status;
-            $subject = $altered['subject'] ?? $subject;
-            $message = $altered['message'] ?? $message;
-        }
 
         $ticket = $this->di['db']->dispense('SupportPTicket');
         $ticket->hash = bin2hex(random_bytes(random_int(100, 127)));

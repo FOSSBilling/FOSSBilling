@@ -22,28 +22,10 @@ use FOSSBilling\Events\Event;
  */
 final class BeforeGuestPublicTicketOpenEvent extends Event
 {
-    private ?array $alteredData = null;
-
     public function __construct(
         public readonly array $data,
         public readonly string $ip,
     ) {
         parent::__construct();
-    }
-
-    /**
-     * Set altered data to be used instead of the original data.
-     */
-    public function setAlteredData(array $data): void
-    {
-        $this->alteredData = $data;
-    }
-
-    /**
-     * Get the altered data if set, null otherwise.
-     */
-    public function getAlteredData(): ?array
-    {
-        return $this->alteredData;
     }
 }
