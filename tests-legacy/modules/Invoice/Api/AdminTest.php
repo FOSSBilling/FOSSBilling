@@ -242,6 +242,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_InvoiceItem();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
@@ -518,13 +519,14 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_Transaction();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($model);
 
-        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;

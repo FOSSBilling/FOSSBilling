@@ -29,9 +29,9 @@ final class ServiceTest extends \BBTestCase
     public function testGetCompany(): void
     {
         $expected = [
-            'www' => 'https://localhost/',
+            'www' => SYSTEM_URL,
             'name' => 'Inc. Test',
-            'email' => 'work@example.eu',
+            'email' => 'work@fossbilling.org',
             'tel' => null,
             'signature' => null,
             'logo_url' => null,
@@ -59,7 +59,7 @@ final class ServiceTest extends \BBTestCase
             ],
             [
                 'param' => 'company_email',
-                'value' => 'work@example.eu',
+                'value' => 'work@fossbilling.org',
             ],
         ];
         $dbMock = $this->createMock('\Box_Database');
@@ -87,7 +87,7 @@ final class ServiceTest extends \BBTestCase
     {
         $expected = [
             'company_name' => 'Inc. Test',
-            'company_email' => 'work@example.eu',
+            'company_email' => 'work@fossbilling.org',
         ];
         $multParamsResults = [
             [
@@ -96,7 +96,7 @@ final class ServiceTest extends \BBTestCase
             ],
             [
                 'param' => 'company_email',
-                'value' => 'work@example.eu',
+                'value' => 'work@fossbilling.org',
             ],
         ];
         $dbMock = $this->createMock('\Box_Database');
@@ -120,9 +120,9 @@ final class ServiceTest extends \BBTestCase
             'company_name' => 'newValue',
         ];
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $logMock = $this->createMock('\Box_Log');
 

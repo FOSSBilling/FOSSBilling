@@ -820,10 +820,10 @@ final class ServiceTest extends \BBTestCase
         $emMock->expects($this->atLeastOnce())
             ->method('flush');
 
-        $manager = $this->createMock('Box_EventManager');
+        $manager = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $manager->expects($this->atLeastOnce())
-            ->method('fire')
-            ->willReturn(true);
+            ->method('dispatch')
+            ->willReturnArgument(0);
 
         $di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();

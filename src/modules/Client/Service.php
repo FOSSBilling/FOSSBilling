@@ -11,7 +11,9 @@
 
 namespace Box\Mod\Client;
 
+use Box\Mod\Client\Event\AfterAdminClientCreateEvent;
 use Box\Mod\Client\Event\AfterClientSignUpEvent;
+use Box\Mod\Client\Event\BeforeAdminClientCreateEvent;
 use Box\Mod\Client\Event\BeforeClientSignUpEvent;
 use Box\Mod\Client\Event\BeforePasswordResetClientEvent;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
@@ -547,7 +549,25 @@ class Service implements InjectionAwareInterface
 
     public function adminCreateClient(array $data)
     {
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminClientCreateEvent(
+            email: $data['email'] ?? '',
+            firstName: $data['first_name'] ?? null,
+            lastName: $data['last_name'] ?? null,
+            password: $data['password'] ?? null,
+            data: $data
+        ));
+
         $client = $this->createClient($data);
+
+        $this->di['event_dispatcher']->dispatch(new AfterAdminClientCreateEvent(
+            clientId: $client->id,
+            email: $client->email,
+            firstName: $client->first_name,
+            lastName: $client->last_name,
+            password: $data['password'] ?? null,
+            data: $data
+        ));
+
         $this->di['logger']->info('Created new client #%s', $client->id);
 
         return $client->id;

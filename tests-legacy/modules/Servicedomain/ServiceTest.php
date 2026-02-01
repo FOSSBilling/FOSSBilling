@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Tests\Mod\Servicedomain;
 
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -1197,19 +1198,18 @@ final class ServiceTest extends \BBTestCase
 
     public function testOnBeforeAdminCronRun(): void
     {
-        $di = $this->getDi();
-        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+            ->onlyMethods(['batchSyncExpirationDates'])
+            ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('batchSyncExpirationDates')
             ->willReturn(true);
-        $di['mod_service'] = $di->protect(fn ($serviceName): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
+        $di = $this->getDi();
+        $serviceMock->setDi($di);
 
-        $result = $this->service->onBeforeAdminCronRun($boxEventMock);
+        $event = new BeforeAdminCronRunEvent();
+        $result = $serviceMock->onBeforeAdminCronRun($event);
 
         $this->assertTrue($result);
     }

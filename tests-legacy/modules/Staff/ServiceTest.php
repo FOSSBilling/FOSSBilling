@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff;
 
+use Box\Mod\Client\Event\AfterClientSignUpEvent;
+use Box\Mod\Support\Event\AfterClientCloseTicketEvent;
+use Box\Mod\Support\Event\AfterClientOpenTicketEvent;
+use Box\Mod\Support\Event\AfterClientReplyTicketEvent;
+use Box\Mod\Support\Event\AfterGuestPublicTicketCloseEvent;
+use Box\Mod\Support\Event\AfterGuestPublicTicketOpenEvent;
+use Box\Mod\Support\Event\AfterGuestPublicTicketReplyEvent;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -37,11 +44,11 @@ final class ServiceTest extends \BBTestCase
         $admin->name = 'Admin';
         $admin->role = 'admin';
 
-        $emMock = $this->getMockBuilder('\Box_EventManager')
+        $emMock = $this->getMockBuilder(\Symfony\Component\EventDispatcher\EventDispatcher::class)
             ->getMock();
         $emMock->expects($this->atLeastOnce())
-            ->method('fire')
-            ->willReturn(true);
+            ->method('dispatch')
+            ->willReturnArgument(0);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -89,11 +96,11 @@ final class ServiceTest extends \BBTestCase
         $password = 'pass';
         $ip = '127.0.0.1';
 
-        $emMock = $this->getMockBuilder('\Box_EventManager')
+        $emMock = $this->getMockBuilder(\Symfony\Component\EventDispatcher\EventDispatcher::class)
             ->getMock();
         $emMock->expects($this->atLeastOnce())
-            ->method('fire')
-            ->willReturn(true);
+            ->method('dispatch')
+            ->willReturnArgument(0);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -237,12 +244,8 @@ final class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testOnAfterClientReplyTicket(): void
+    public function testNotifyStaffOnClientReplyTicket(): void
     {
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getTicketById')
@@ -254,10 +257,6 @@ final class ServiceTest extends \BBTestCase
         $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate');
-
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -271,19 +270,15 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
         $service->setDi($di);
-        $service->onAfterClientReplyTicket($eventMock);
+
+        $ticketId = random_int(1, 100);
+        $event = new AfterClientReplyTicketEvent(ticketId: $ticketId);
+        $service->notifyStaffOnClientReplyTicket($event);
     }
 
-    public function testOnAfterClientReplyTicketException(): void
+    public function testNotifyStaffOnClientReplyTicketException(): void
     {
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getTicketById')
@@ -297,10 +292,6 @@ final class ServiceTest extends \BBTestCase
             ->method('sendTemplate')
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
-
         $service = new Service();
 
         $di = $this->getDi();
@@ -313,19 +304,15 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
         $service->setDi($di);
-        $service->onAfterClientReplyTicket($eventMock);
+
+        $ticketId = random_int(1, 100);
+        $event = new AfterClientReplyTicketEvent(ticketId: $ticketId);
+        $service->notifyStaffOnClientReplyTicket($event);
     }
 
-    public function testOnAfterClientCloseTicket(): void
+    public function testNotifyStaffOnClientCloseTicket(): void
     {
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getTicketById')
@@ -338,10 +325,6 @@ final class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate');
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
-
         $service = new Service();
 
         $di = $this->getDi();
@@ -354,19 +337,15 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
         $service->setDi($di);
-        $service->onAfterClientCloseTicket($eventMock);
+
+        $ticketId = random_int(1, 100);
+        $event = new AfterClientCloseTicketEvent(ticketId: $ticketId);
+        $service->notifyStaffOnClientCloseTicket($event);
     }
 
-    public function testOnAfterClientCloseTicketException(): void
+    public function testNotifyStaffOnClientCloseTicketException(): void
     {
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getTicketById')
@@ -380,10 +359,6 @@ final class ServiceTest extends \BBTestCase
             ->method('sendTemplate')
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
-
         $service = new Service();
 
         $di = $this->getDi();
@@ -396,19 +371,15 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
         $service->setDi($di);
-        $service->onAfterClientCloseTicket($eventMock);
+
+        $ticketId = random_int(1, 100);
+        $event = new AfterClientCloseTicketEvent(ticketId: $ticketId);
+        $service->notifyStaffOnClientCloseTicket($event);
     }
 
-    public function testOnAfterGuestPublicTicketOpen(): void
+    public function testNotifyStaffOnGuestPublicTicketOpen(): void
     {
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getPublicTicketById')
@@ -421,10 +392,6 @@ final class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate');
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
-
         $service = new Service();
 
         $di = $this->getDi();
@@ -437,19 +404,15 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
         $service->setDi($di);
-        $service->onAfterGuestPublicTicketOpen($eventMock);
+
+        $ticketId = random_int(1, 100);
+        $event = new AfterGuestPublicTicketOpenEvent(ticketId: $ticketId);
+        $service->notifyStaffOnGuestPublicTicketOpen($event);
     }
 
-    public function testOnAfterGuestPublicTicketOpenException(): void
+    public function testNotifyStaffOnGuestPublicTicketOpenException(): void
     {
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getPublicTicketById')
@@ -463,10 +426,6 @@ final class ServiceTest extends \BBTestCase
             ->method('sendTemplate')
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
-
         $service = new Service();
 
         $di = $this->getDi();
@@ -479,19 +438,15 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
         $service->setDi($di);
-        $service->onAfterGuestPublicTicketOpen($eventMock);
+
+        $ticketId = random_int(1, 100);
+        $event = new AfterGuestPublicTicketOpenEvent(ticketId: $ticketId);
+        $service->notifyStaffOnGuestPublicTicketOpen($event);
     }
 
-    public function testOnAfterGuestPublicTicketReply(): void
+    public function testNotifyStaffOnGuestPublicTicketReply(): void
     {
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getPublicTicketById')
@@ -504,10 +459,6 @@ final class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate');
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
-
         $service = new Service();
 
         $di = $this->getDi();
@@ -520,19 +471,15 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
         $service->setDi($di);
-        $service->onAfterGuestPublicTicketReply($eventMock);
+
+        $ticketId = random_int(1, 100);
+        $event = new AfterGuestPublicTicketReplyEvent(ticketId: $ticketId);
+        $service->notifyStaffOnGuestPublicTicketReply($event);
     }
 
-    public function testOnAfterGuestPublicTicketReplyException(): void
+    public function testNotifyStaffOnGuestPublicTicketReplyException(): void
     {
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('getPublicTicketById')
@@ -546,10 +493,6 @@ final class ServiceTest extends \BBTestCase
             ->method('sendTemplate')
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
-
         $service = new Service();
 
         $di = $this->getDi();
@@ -562,19 +505,15 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
         $service->setDi($di);
-        $service->onAfterGuestPublicTicketReply($eventMock);
+
+        $ticketId = random_int(1, 100);
+        $event = new AfterGuestPublicTicketReplyEvent(ticketId: $ticketId);
+        $service->notifyStaffOnGuestPublicTicketReply($event);
     }
 
-    public function testOnAfterClientSignUp(): void
+    public function testNotifyStaffOnClientSignUp(): void
     {
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $clientMock = $this->createMock(\Box\Mod\Client\Service::class);
         $clientMock->expects($this->atLeastOnce())
             ->method('get')
@@ -583,10 +522,6 @@ final class ServiceTest extends \BBTestCase
         $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate');
-
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -600,19 +535,15 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
         $service->setDi($di);
-        $service->onAfterClientSignUp($eventMock);
+
+        $clientId = random_int(1, 100);
+        $event = new AfterClientSignUpEvent(clientId: $clientId, email: 'test@example.com', ip: '127.0.0.1');
+        $service->notifyStaffOnClientSignUp($event);
     }
 
-    public function testOnAfterClientSignUpException(): void
+    public function testNotifyStaffOnClientSignUpException(): void
     {
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $clientMock = $this->createMock(\Box\Mod\Client\Service::class);
         $clientMock->expects($this->atLeastOnce())
             ->method('get')
@@ -622,10 +553,6 @@ final class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
-
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
 
         $service = new Service();
 
@@ -639,19 +566,15 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
         $service->setDi($di);
-        $service->onAfterClientSignUp($eventMock);
+
+        $clientId = random_int(1, 100);
+        $event = new AfterClientSignUpEvent(clientId: $clientId, email: 'test@example.com', ip: '127.0.0.1');
+        $service->notifyStaffOnClientSignUp($event);
     }
 
-    public function testOnAfterGuestPublicTicketClose(): void
+    public function testNotifyStaffOnGuestPublicTicketClose(): void
     {
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $supportServiceMock = $this->createMock(\Box\Mod\Support\Service::class);
         $supportServiceMock->expects($this->atLeastOnce())
             ->method('publicToApiArray')
@@ -661,10 +584,6 @@ final class ServiceTest extends \BBTestCase
         $emailServiceMock->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->willThrowException(new \Exception('PHPunit controlled Exception'));
-
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -684,14 +603,14 @@ final class ServiceTest extends \BBTestCase
         });
         $di['db'] = $dbMock;
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
         $service->setDi($di);
-        $service->onAfterGuestPublicTicketClose($eventMock);
+
+        $ticketId = random_int(1, 100);
+        $event = new AfterGuestPublicTicketCloseEvent(ticketId: $ticketId);
+        $service->notifyStaffOnGuestPublicTicketClose($event);
     }
 
-    public function testOnAfterClientOpenTicketModStaffTicketOpen(): void
+    public function testNotifyStaffOnClientOpenTicketModStaffTicketOpen(): void
     {
         $di = $this->getDi();
 
@@ -736,22 +655,15 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = new \Model_Admin();
 
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
-
         $service = new Service();
-        $service->onAfterClientOpenTicket($eventMock);
+        $service->setDi($di);
+
+        $ticketId = random_int(1, 100);
+        $event = new AfterClientOpenTicketEvent(ticketId: $ticketId);
+        $service->notifyStaffOnClientOpenTicket($event);
     }
 
-    public function testOnAfterClientOpenTicketModSupportHelpdeskTicketOpen(): void
+    public function testNotifyStaffOnClientOpenTicketModSupportHelpdeskTicketOpen(): void
     {
         $di = $this->getDi();
 
@@ -799,19 +711,12 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = new \Model_Admin();
 
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getparameters')
-            ->willReturn(['id' => random_int(1, 100)]);
-
         $service = new Service();
-        $service->onAfterClientOpenTicket($eventMock);
+        $service->setDi($di);
+
+        $ticketId = random_int(1, 100);
+        $event = new AfterClientOpenTicketEvent(ticketId: $ticketId);
+        $service->notifyStaffOnClientOpenTicket($event);
     }
 
     public function testGetList(): void
@@ -982,10 +887,11 @@ final class ServiceTest extends \BBTestCase
 
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
+        $adminModel->id = 1;
 
-        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $logMock = $this->createMock('\Box_Log');
 
@@ -1014,10 +920,11 @@ final class ServiceTest extends \BBTestCase
     {
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
+        $adminModel->id = 1;
 
-        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $logMock = $this->createMock('\Box_Log');
 
@@ -1060,10 +967,11 @@ final class ServiceTest extends \BBTestCase
         $plainTextPassword = 'password';
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
+        $adminModel->id = 1;
 
-        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $logMock = $this->createMock('\Box_Log');
 
@@ -1116,9 +1024,9 @@ final class ServiceTest extends \BBTestCase
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
-        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1175,9 +1083,9 @@ final class ServiceTest extends \BBTestCase
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('checkLimits');
 
-        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())

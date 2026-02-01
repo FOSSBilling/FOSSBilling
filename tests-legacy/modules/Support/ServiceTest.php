@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace Box\Tests\Mod\Support;
 
+use Box\Mod\Support\Event\AfterAdminCloseTicketEvent;
+use Box\Mod\Support\Event\AfterAdminOpenTicketEvent;
+use Box\Mod\Support\Event\AfterAdminPublicTicketCloseEvent;
+use Box\Mod\Support\Event\AfterAdminPublicTicketOpenEvent;
+use Box\Mod\Support\Event\AfterAdminPublicTicketReplyEvent;
+use Box\Mod\Support\Event\AfterAdminReplyTicketEvent;
+use Box\Mod\Support\Event\AfterClientOpenTicketEvent;
+use Box\Mod\Support\Event\AfterGuestPublicTicketOpenEvent;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,7 +34,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testOnAfterClientOpenTicket(): void
+    public function testHandleClientOpenTicket(): void
     {
         $toApiArrayReturn = [
             'client' => [
@@ -59,20 +67,14 @@ final class ServiceTest extends \BBTestCase
         $di['loggedin_client'] = new \Model_Client();
         $serviceMock->setDi($di);
 
-        $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getParameters')
-            ->willReturn(['id' => random_int(1, 100)]);
+        $ticketId = random_int(1, 100);
+        $event = new AfterClientOpenTicketEvent(ticketId: $ticketId);
 
-        $result = $serviceMock->onAfterClientOpenTicket($eventMock);
+        $result = $serviceMock->handleClientOpenTicket($event);
         $this->assertNull($result);
     }
 
-    public function testOnAfterAdminOpenTicket(): void
+    public function testHandleAdminOpenTicket(): void
     {
         $toApiArrayReturn = [
             'client' => [
@@ -105,20 +107,14 @@ final class ServiceTest extends \BBTestCase
         $di['loggedin_admin'] = new \Model_Admin();
         $serviceMock->setDi($di);
 
-        $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getParameters')
-            ->willReturn(['id' => random_int(1, 100)]);
+        $ticketId = random_int(1, 100);
+        $event = new AfterAdminOpenTicketEvent(ticketId: $ticketId);
 
-        $result = $serviceMock->onAfterAdminOpenTicket($eventMock);
+        $result = $serviceMock->handleAdminOpenTicket($event);
         $this->assertNull($result);
     }
 
-    public function testOnAfterAdminCloseTicket(): void
+    public function testHandleAdminCloseTicket(): void
     {
         $toApiArrayReturn = [
             'client' => [
@@ -151,20 +147,14 @@ final class ServiceTest extends \BBTestCase
         $di['loggedin_admin'] = new \Model_Admin();
         $serviceMock->setDi($di);
 
-        $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getParameters')
-            ->willReturn(['id' => random_int(1, 100)]);
+        $ticketId = random_int(1, 100);
+        $event = new AfterAdminCloseTicketEvent(ticketId: $ticketId);
 
-        $result = $serviceMock->onAfterAdminCloseTicket($eventMock);
+        $result = $serviceMock->handleAdminCloseTicket($event);
         $this->assertNull($result);
     }
 
-    public function testOnAfterAdminReplyTicket(): void
+    public function testHandleAdminReplyTicket(): void
     {
         $toApiArrayReturn = [
             'client' => [
@@ -197,20 +187,14 @@ final class ServiceTest extends \BBTestCase
         $di['loggedin_admin'] = new \Model_Admin();
         $serviceMock->setDi($di);
 
-        $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getParameters')
-            ->willReturn(['id' => random_int(1, 100)]);
+        $ticketId = random_int(1, 100);
+        $event = new AfterAdminReplyTicketEvent(ticketId: $ticketId);
 
-        $result = $serviceMock->onAfterAdminReplyTicket($eventMock);
+        $result = $serviceMock->handleAdminReplyTicket($event);
         $this->assertNull($result);
     }
 
-    public function testOnAfterGuestPublicTicketOpen(): void
+    public function testHandleGuestPublicTicketOpen(): void
     {
         $toApiArrayReturn = [
             'author_email' => 'email@example.com',
@@ -241,65 +225,14 @@ final class ServiceTest extends \BBTestCase
         });
         $serviceMock->setDi($di);
 
-        $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getParameters')
-            ->willReturn(['id' => random_int(1, 100)]);
+        $ticketId = random_int(1, 100);
+        $event = new AfterGuestPublicTicketOpenEvent(ticketId: $ticketId);
 
-        $result = $serviceMock->onAfterGuestPublicTicketOpen($eventMock);
+        $result = $serviceMock->handleGuestPublicTicketOpen($event);
         $this->assertNull($result);
     }
 
-    public function testOnAfterAdminPublicTicketOpen(): void
-    {
-        $toApiArrayReturn = [
-            'author_email' => 'email@example.com',
-            'author_name' => 'Name',
-        ];
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
-            ->onlyMethods(['getPublicTicketById', 'publicToApiArray'])->getMock();
-        $supportPTicketModel = new \Model_SupportPTicket();
-        $supportPTicketModel->loadBean(new \DummyBean());
-        $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
-            ->willReturn($supportPTicketModel);
-        $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
-            ->willReturn($toApiArrayReturn);
-
-        $emailServiceMock = $this->getMockBuilder(\Box\Mod\Email\Service::class)
-            ->onlyMethods(['sendTemplate'])->getMock();
-        $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
-            ->willReturn(true);
-
-        $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email') {
-                return $emailServiceMock;
-            }
-            if ($serviceName == 'support') {
-                return $serviceMock;
-            }
-        });
-        $di['loggedin_admin'] = new \Model_Admin();
-        $serviceMock->setDi($di);
-
-        $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getParameters')
-            ->willReturn(['id' => random_int(1, 100)]);
-
-        $result = $serviceMock->onAfterAdminPublicTicketOpen($eventMock);
-        $this->assertNull($result);
-    }
-
-    public function testOnAfterAdminPublicTicketReply(): void
+    public function testHandleAdminPublicTicketOpen(): void
     {
         $toApiArrayReturn = [
             'author_email' => 'email@example.com',
@@ -331,20 +264,14 @@ final class ServiceTest extends \BBTestCase
         $di['loggedin_admin'] = new \Model_Admin();
         $serviceMock->setDi($di);
 
-        $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getParameters')
-            ->willReturn(['id' => random_int(1, 100)]);
+        $ticketId = random_int(1, 100);
+        $event = new AfterAdminPublicTicketOpenEvent(ticketId: $ticketId);
 
-        $result = $serviceMock->onAfterAdminPublicTicketReply($eventMock);
+        $result = $serviceMock->handleAdminPublicTicketOpen($event);
         $this->assertNull($result);
     }
 
-    public function testOnAfterAdminPublicTicketClose(): void
+    public function testHandleAdminPublicTicketReply(): void
     {
         $toApiArrayReturn = [
             'author_email' => 'email@example.com',
@@ -376,16 +303,49 @@ final class ServiceTest extends \BBTestCase
         $di['loggedin_admin'] = new \Model_Admin();
         $serviceMock->setDi($di);
 
-        $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getParameters')
-            ->willReturn(['id' => random_int(1, 100)]);
+        $ticketId = random_int(1, 100);
+        $event = new AfterAdminPublicTicketReplyEvent(ticketId: $ticketId);
 
-        $result = $serviceMock->onAfterAdminPublicTicketClose($eventMock);
+        $result = $serviceMock->handleAdminPublicTicketReply($event);
+        $this->assertNull($result);
+    }
+
+    public function testHandleAdminPublicTicketClose(): void
+    {
+        $toApiArrayReturn = [
+            'author_email' => 'email@example.com',
+            'author_name' => 'Name',
+        ];
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
+            ->onlyMethods(['getPublicTicketById', 'publicToApiArray'])->getMock();
+        $supportPTicketModel = new \Model_SupportPTicket();
+        $supportPTicketModel->loadBean(new \DummyBean());
+        $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
+            ->willReturn($supportPTicketModel);
+        $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
+            ->willReturn($toApiArrayReturn);
+
+        $emailServiceMock = $this->getMockBuilder(\Box\Mod\Email\Service::class)
+            ->onlyMethods(['sendTemplate'])->getMock();
+        $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
+            ->willReturn(true);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ($serviceName == 'email') {
+                return $emailServiceMock;
+            }
+            if ($serviceName == 'support') {
+                return $serviceMock;
+            }
+        });
+        $di['loggedin_admin'] = new \Model_Admin();
+        $serviceMock->setDi($di);
+
+        $ticketId = random_int(1, 100);
+        $event = new AfterAdminPublicTicketCloseEvent(ticketId: $ticketId);
+
+        $result = $serviceMock->handleAdminPublicTicketClose($event);
         $this->assertNull($result);
     }
 
@@ -665,8 +625,8 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $eventMock = $this->createMock('\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -676,6 +636,7 @@ final class ServiceTest extends \BBTestCase
 
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
+        $ticket->id = 1;
 
         $result = $this->service->closeTicket($ticket, $identity);
         $this->assertTrue($result);
@@ -1327,8 +1288,8 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($randId);
 
-        $eventMock = $this->createMock('\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -1339,6 +1300,7 @@ final class ServiceTest extends \BBTestCase
 
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
+        $ticket->id = 1;
 
         $result = $this->service->ticketReply($ticket, $identity, 'Content');
         $this->assertIsInt($result);
@@ -1359,8 +1321,8 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($randId);
 
-        $eventMock = $this->createMock('\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -1395,6 +1357,7 @@ final class ServiceTest extends \BBTestCase
     {
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
+        $ticket->id = 1;
 
         $randId = 1;
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -1409,8 +1372,8 @@ final class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn(new \Model_SupportPr());
 
-        $eventMock = $this->createMock('\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $config = [
             'autorespond_enable' => 1,
@@ -1728,8 +1691,8 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $eventMock = $this->createMock('\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -1739,6 +1702,7 @@ final class ServiceTest extends \BBTestCase
 
         $ticket = new \Model_SupportPTicket();
         $ticket->loadBean(new \DummyBean());
+        $ticket->id = 1;
 
         $result = $this->service->publicCloseTicket($ticket, $identity);
         $this->assertTrue($result);
@@ -1928,8 +1892,8 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($randId);
 
-        $eventMock = $this->createMock('\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
@@ -2000,8 +1964,8 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($randId);
 
-        $eventMock = $this->createMock('\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -2012,6 +1976,7 @@ final class ServiceTest extends \BBTestCase
 
         $ticket = new \Model_SupportPTicket();
         $ticket->loadBean(new \DummyBean());
+        $ticket->id = 1;
 
         $admin = new \Model_Admin();
         $admin->loadBean(new \DummyBean());
@@ -2035,8 +2000,8 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($randId);
 
-        $eventMock = $this->createMock('\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -2047,6 +2012,7 @@ final class ServiceTest extends \BBTestCase
 
         $ticket = new \Model_SupportPTicket();
         $ticket->loadBean(new \DummyBean());
+        $ticket->id = 1;
         $ticket->hash = sha1(uniqid());
 
         $admin = new \Model_Admin();

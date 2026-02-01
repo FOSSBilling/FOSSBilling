@@ -650,8 +650,8 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $eventMock = $this->createMock(\Box_EventManager::class);
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -684,8 +684,8 @@ final class ServiceTest extends \BBTestCase
             ->method('activate')
             ->will($this->throwException(new \Exception()));
 
-        $eventMock = $this->createMock(\Box_EventManager::class);
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $di = $this->getDi();
         $di['event_dispatcher'] = $eventMock;
@@ -781,8 +781,8 @@ final class ServiceTest extends \BBTestCase
             ->method('exec')
             ->willReturn([]);
 
-        $eventMock = $this->createMock(\Box_EventManager::class);
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $staffMock = $this->createMock(\Box\Mod\Staff\Service::class);
 

@@ -162,9 +162,9 @@ final class AdminTest extends \BBTestCase
             ->method('deactivate')
             ->willReturn(true);
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())->
-            method('fire');
+            method('dispatch');
 
         $di = $this->getDi();
         $di['event_dispatcher'] = $eventMock;
@@ -195,9 +195,9 @@ final class AdminTest extends \BBTestCase
             ->method('uninstall')
             ->willReturn(true);
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())->
-            method('fire');
+            method('dispatch');
 
         $di = $this->getDi();
         $di['event_dispatcher'] = $eventMock;
@@ -231,9 +231,9 @@ final class AdminTest extends \BBTestCase
             ->method('downloadAndExtract')
             ->willReturn(true);
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())->
-            method('fire');
+            method('dispatch');
 
         $di = $this->getDi();
         $di['event_dispatcher'] = $eventMock;
@@ -268,9 +268,9 @@ final class AdminTest extends \BBTestCase
             ->method('downloadAndExtract')
             ->willReturn(true);
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())->
-            method('fire');
+            method('dispatch');
 
         $dbMock = $this->createMock('\Box_Database');
 

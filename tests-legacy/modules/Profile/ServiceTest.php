@@ -31,11 +31,11 @@ final class ServiceTest extends \BBTestCase
 
     public function testUpdateAdmin(): void
     {
-        $emMock = $this->getMockBuilder('\Box_EventManager')
+        $emMock = $this->getMockBuilder(\Symfony\Component\EventDispatcher\EventDispatcher::class)
             ->getMock();
         $emMock->expects($this->atLeastOnce())
-            ->method('fire')
-            ->willReturn(true);
+            ->method('dispatch')
+            ->willReturnArgument(0);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -50,6 +50,7 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
 
         $data = [
             'signature' => 'new signature',
@@ -65,11 +66,11 @@ final class ServiceTest extends \BBTestCase
 
     public function testGenerateNewApiKey(): void
     {
-        $emMock = $this->getMockBuilder('\Box_EventManager')
+        $emMock = $this->getMockBuilder(\Symfony\Component\EventDispatcher\EventDispatcher::class)
             ->getMock();
         $emMock->expects($this->atLeastOnce())
-            ->method('fire')
-            ->willReturn(true);
+            ->method('dispatch')
+            ->willReturnArgument(0);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -85,6 +86,7 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
 
         $service = new Service();
         $service->setDi($di);
@@ -96,11 +98,11 @@ final class ServiceTest extends \BBTestCase
     public function testChangeAdminPassword(): void
     {
         $password = 'new_pass';
-        $emMock = $this->getMockBuilder('\Box_EventManager')
+        $emMock = $this->getMockBuilder(\Symfony\Component\EventDispatcher\EventDispatcher::class)
             ->getMock();
         $emMock->expects($this->atLeastOnce())
-            ->method('fire')
-            ->willReturn(true);
+            ->method('dispatch')
+            ->willReturnArgument(0);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -121,6 +123,7 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
 
         $service = new Service();
         $service->setDi($di);
@@ -131,11 +134,11 @@ final class ServiceTest extends \BBTestCase
 
     public function testUpdateClient(): void
     {
-        $emMock = $this->getMockBuilder('\Box_EventManager')
+        $emMock = $this->getMockBuilder(\Symfony\Component\EventDispatcher\EventDispatcher::class)
             ->getMock();
         $emMock->expects($this->atLeastOnce())
-            ->method('fire')
-            ->willReturn(true);
+            ->method('dispatch')
+            ->willReturnArgument(0);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -167,6 +170,7 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
 
         $data = [
             'email' => 'email@example.com',
@@ -210,11 +214,11 @@ final class ServiceTest extends \BBTestCase
 
     public function testUpdateClientEmailChangeNotAllowedException(): void
     {
-        $emMock = $this->getMockBuilder('\Box_EventManager')
+        $emMock = $this->getMockBuilder(\Symfony\Component\EventDispatcher\EventDispatcher::class)
             ->getMock();
         $emMock->expects($this->atLeastOnce())
-            ->method('fire')
-            ->willReturn(true);
+            ->method('dispatch')
+            ->willReturnArgument(0);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -242,6 +246,7 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
 
         $data = [
             'email' => 'email@example.com',
@@ -256,11 +261,11 @@ final class ServiceTest extends \BBTestCase
 
     public function testUpdateClientEmailAlreadyRegisteredException(): void
     {
-        $emMock = $this->getMockBuilder('\Box_EventManager')
+        $emMock = $this->getMockBuilder(\Symfony\Component\EventDispatcher\EventDispatcher::class)
             ->getMock();
         $emMock->expects($this->atLeastOnce())
-            ->method('fire')
-            ->willReturn(true);
+            ->method('dispatch')
+            ->willReturnArgument(0);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -292,6 +297,7 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
 
         $data = [
             'email' => 'email@example.com',
@@ -328,11 +334,11 @@ final class ServiceTest extends \BBTestCase
 
     public function testChangeClientPassword(): void
     {
-        $emMock = $this->getMockBuilder('\Box_EventManager')
+        $emMock = $this->getMockBuilder(\Symfony\Component\EventDispatcher\EventDispatcher::class)
             ->getMock();
         $emMock->expects($this->atLeastOnce())
-            ->method('fire')
-            ->willReturn(true);
+            ->method('dispatch')
+            ->willReturnArgument(0);
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -355,6 +361,7 @@ final class ServiceTest extends \BBTestCase
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
 
         $service = new Service();
         $service->setDi($di);

@@ -147,11 +147,12 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(false);
         $serviceMock->expects($this->atLeastOnce())->method('adminCreateClient')->willReturn(1);
 
-        $eventMock = $this->createMock('\\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail')
+            ->willReturn($data['email']);
 
         $di = $this->getDi();
         $di['event_dispatcher'] = $eventMock;
@@ -177,7 +178,8 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(true);
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail')
+            ->willReturn($data['email']);
 
         $di = $this->getDi();
         $di['tools'] = $toolsMock;
@@ -197,13 +199,14 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
 
         $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')->willReturn($model);
 
-        $eventMock = $this->createMock('\\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Client\Service::class)
             ->onlyMethods(['remove'])
@@ -271,6 +274,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
 
         $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -282,11 +286,12 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(false);
         $serviceMock->expects($this->atLeastOnce())->method('canChangeCurrency')->willReturn(true);
 
-        $eventMock = $this->createMock('\\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail')
+            ->willReturn($data['email']);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -355,8 +360,8 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(true);
         $serviceMock->expects($this->never())->method('canChangeCurrency')->willReturn(true);
 
-        $eventMock = $this->createMock('\\Box_EventManager');
-        $eventMock->expects($this->never())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->never())->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -403,6 +408,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
 
         $dbMock = $this->createMock('\\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -411,8 +417,8 @@ final class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')->willReturn(1);
 
-        $eventMock = $this->createMock('\\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
