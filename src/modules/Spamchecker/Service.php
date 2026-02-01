@@ -15,7 +15,6 @@ use Box\Mod\Client\Event\BeforeClientSignUpEvent;
 use Box\Mod\Support\Event\BeforeGuestPublicTicketOpenEvent;
 use EmailChecker\Adapter;
 use EmailChecker\Utilities;
-use FOSSBilling\Events\Event;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
@@ -59,13 +58,10 @@ class Service implements InjectionAwareInterface
         $this->isTemp($event);
     }
 
-    /**
-     * @param Event $event
-     */
-    public function isBlockedIp($event): void
+    public function isBlockedIp(BeforeClientSignUpEvent|BeforeGuestPublicTicketOpenEvent $event): void
     {
         $config = $this->di['mod_config']('Spamchecker');
-        
+
         if (isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
             $blocked_ips = array_map(trim(...), $blocked_ips);
@@ -78,7 +74,15 @@ class Service implements InjectionAwareInterface
 
     public function isSpam(BeforeClientSignUpEvent|BeforeGuestPublicTicketOpenEvent $event): void
     {
-        $params = $event->data;
+        // Extract parameters based on event type
+        if ($event instanceof BeforeClientSignUpEvent) {
+            $params = $this->di['request']->request->all();
+            $params['ip'] = $event->ip;
+            $params['email'] = $event->email;
+        } else {
+            $params = $event->data;
+        }
+
         $data = [
             'ip' => $params['ip'] ?? null,
             'email' => $params['email'] ?? null,
@@ -172,8 +176,13 @@ class Service implements InjectionAwareInterface
         $check = $config['check_temp_emails'] ?? false;
 
         if ($check) {
-            $params = $event->data;
-            $email = $params['email'] ?? '';
+            // Extract email based on event type
+            if ($event instanceof BeforeClientSignUpEvent) {
+                $email = $event->email;
+            } else {
+                $params = $event->data;
+                $email = $params['email'] ?? '';
+            }
 
             $this->isATempEmail($email, true);
         }
