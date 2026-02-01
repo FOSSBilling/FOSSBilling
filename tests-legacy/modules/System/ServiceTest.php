@@ -132,7 +132,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = $logMock;
 
         $systemServiceMock->setDi($di);

@@ -167,7 +167,7 @@ final class AdminTest extends \BBTestCase
             method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
         $this->api->setService($serviceMock);
@@ -200,7 +200,7 @@ final class AdminTest extends \BBTestCase
             method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
         $this->api->setService($serviceMock);
@@ -236,7 +236,7 @@ final class AdminTest extends \BBTestCase
             method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
         $this->api->setService($serviceMock);
@@ -275,7 +275,7 @@ final class AdminTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 

@@ -528,7 +528,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
         $di['logger'] = new \Box_Log();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $transactionService);
 

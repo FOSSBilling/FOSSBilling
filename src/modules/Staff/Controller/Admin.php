@@ -113,7 +113,7 @@ class Admin implements InjectionAwareInterface
     public function get_updatepassword(\Box_App $app, $hash): string
     {
         $data = [];
-        $this->di['events_manager']->dispatch(new BeforePasswordResetStaffEvent());
+        $this->di['event_dispatcher']->dispatch(new BeforePasswordResetStaffEvent());
         $mod = $this->di['mod']('staff');
         $config = $mod->getConfig();
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {

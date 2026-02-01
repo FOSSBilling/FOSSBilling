@@ -57,7 +57,7 @@ class Service implements InjectionAwareInterface
         $meta->updated_at = date('Y-m-d H:i:s');
         $id = $this->di['db']->store($meta);
 
-        $this->di['events_manager']->dispatch(new AfterAdminNotificationAddEvent(notificationId: $id));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminNotificationAddEvent(notificationId: $id));
 
         return $id;
     }

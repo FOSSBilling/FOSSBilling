@@ -48,7 +48,7 @@ final class ServiceSubscriptionTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
 
         $this->service->setDi($di);
 
@@ -167,7 +167,7 @@ final class ServiceSubscriptionTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
         $this->service->setDi($di);
 
         $result = $this->service->delete($subscriptionModel);

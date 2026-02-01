@@ -696,7 +696,7 @@ final class ServiceTest extends \BBTestCase
         $client->loadBean(new \DummyBean());
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $di['request'] = new Request();
@@ -814,7 +814,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
@@ -856,7 +856,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(false);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
@@ -898,7 +898,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(false);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
 
         $serviceMock->setDi($di);
@@ -949,7 +949,7 @@ final class ServiceTest extends \BBTestCase
             ->method('addProduct');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $di['logger'] = new \Box_Log();
 
@@ -1002,7 +1002,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($productModel);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceLicenseServiceMock);
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
@@ -1056,7 +1056,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceCustomServiceMock);
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;

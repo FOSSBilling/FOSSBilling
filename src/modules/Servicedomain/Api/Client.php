@@ -31,11 +31,11 @@ class Client extends \Api_Abstract
     {
         $s = $this->_getService($data);
 
-        $this->di['events_manager']->dispatch(new BeforeClientChangeNameserversEvent(data: $data));
+        $this->di['event_dispatcher']->dispatch(new BeforeClientChangeNameserversEvent(data: $data));
 
         $this->getService()->updateNameservers($s, $data);
 
-        $this->di['events_manager']->dispatch(new AfterClientChangeNameserversEvent(data: $data));
+        $this->di['event_dispatcher']->dispatch(new AfterClientChangeNameserversEvent(data: $data));
 
         return true;
     }

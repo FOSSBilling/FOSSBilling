@@ -38,7 +38,7 @@ final class Api_ClientTest extends \BBTestCase
         method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $clientApiMock->setDi($di);
 
         $data = [];

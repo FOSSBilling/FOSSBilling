@@ -274,7 +274,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $this->service->setDi($di);
         $result = $this->service->reset($serviceLicenseModel);

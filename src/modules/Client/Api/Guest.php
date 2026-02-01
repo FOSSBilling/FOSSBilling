@@ -115,7 +115,7 @@ class Guest extends \Api_Abstract
     {
         $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
-        $this->di['events_manager']->dispatch(new BeforeClientLoginEvent(
+        $this->di['event_dispatcher']->dispatch(new BeforeClientLoginEvent(
             email: $data['email'],
             ip: $this->ip,
             password: $data['password'] ?? null,
@@ -125,7 +125,7 @@ class Guest extends \Api_Abstract
         $client = $service->authorizeClient($data['email'], $data['password']);
 
         if (!$client instanceof \Model_Client) {
-            $this->di['events_manager']->dispatch(new ClientLoginFailedEvent(
+            $this->di['event_dispatcher']->dispatch(new ClientLoginFailedEvent(
                 email: $data['email'],
                 ip: $this->ip,
                 password: $data['password'] ?? null,
@@ -134,7 +134,7 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\InformationException('Please check your login details.', [], 401);
         }
 
-        $this->di['events_manager']->dispatch(new AfterClientLoginEvent(
+        $this->di['event_dispatcher']->dispatch(new AfterClientLoginEvent(
             clientId: $client->id,
             ip: $this->ip,
         ));
@@ -160,12 +160,12 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['email' => 'Email required'])]
     public function reset_password($data): bool
     {
-        $this->di['events_manager']->dispatch(new BeforePasswordResetClientEvent());
+        $this->di['event_dispatcher']->dispatch(new BeforePasswordResetClientEvent());
 
         // Sanitize email
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
-        $this->di['events_manager']->dispatch(new BeforeGuestPasswordResetRequestEvent(
+        $this->di['event_dispatcher']->dispatch(new BeforeGuestPasswordResetRequestEvent(
             email: $data['email'],
         ));
 
@@ -219,7 +219,7 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['hash' => 'No Hash provided', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function update_password($data): bool
     {
-        $this->di['events_manager']->dispatch(new BeforeClientProfilePasswordResetEvent(
+        $this->di['event_dispatcher']->dispatch(new BeforeClientProfilePasswordResetEvent(
             hash: $data['hash'],
         ));
 
@@ -250,7 +250,7 @@ class Guest extends \Api_Abstract
         $emailService->sendTemplate($email);
 
         $this->di['db']->trash($reset);
-        $this->di['events_manager']->dispatch(new AfterClientProfilePasswordResetEvent(
+        $this->di['event_dispatcher']->dispatch(new AfterClientProfilePasswordResetEvent(
             clientId: $c->id,
         ));
 

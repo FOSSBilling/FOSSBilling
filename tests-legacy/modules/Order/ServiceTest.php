@@ -1361,7 +1361,7 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -1417,7 +1417,7 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -1472,7 +1472,7 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getMasterOrderForClient'])
@@ -1554,7 +1554,7 @@ final class ServiceTest extends \BBTestCase
                 return $productServiceMock;
             }
         });
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['db'] = $dbMock;
         $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
         $di['logger'] = new \Box_Log();
@@ -1607,7 +1607,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock = $this->getMockBuilder(Service::class)
@@ -1650,7 +1650,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $serviceMock->setDi($di);
         $result = $serviceMock->activateOrderAddons($clientOrderModel);
@@ -1711,7 +1711,7 @@ final class ServiceTest extends \BBTestCase
             ->with($clientOrderModel);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
@@ -1756,7 +1756,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock = $this->getMockBuilder(Service::class)
@@ -1814,7 +1814,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $this->service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -1838,7 +1838,7 @@ final class ServiceTest extends \BBTestCase
             ->with($clientOrderModel);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 

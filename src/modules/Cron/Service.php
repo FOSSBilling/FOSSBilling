@@ -50,7 +50,7 @@ class Service
         $this->di['logger']->setChannel('cron')->info('Started executing cron jobs.');
 
         // @core tasks
-        $this->di['events_manager']->dispatch(new BeforeAdminCronRunEvent());
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminCronRunEvent());
 
         $this->_exec($api, 'invoice_batch_pay_with_credits');
         $this->_exec($api, 'invoice_batch_activate_paid');
@@ -72,7 +72,7 @@ class Service
         $count = $this->clearOldSessions() ?? 0;
         $this->di['logger']->setChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
 
-        $this->di['events_manager']->dispatch(new AfterAdminCronRunEvent());
+        $this->di['event_dispatcher']->dispatch(new AfterAdminCronRunEvent());
         $this->di['logger']->setChannel('cron')->info('Finished executing cron jobs.');
 
         return true;

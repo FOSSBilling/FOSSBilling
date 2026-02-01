@@ -828,7 +828,7 @@ final class ServiceTest extends \BBTestCase
         $di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
         $di['em'] = $emMock;
-        $di['events_manager'] = $manager;
+        $di['event_dispatcher'] = $manager;
 
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);

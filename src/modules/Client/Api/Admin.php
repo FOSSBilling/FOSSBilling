@@ -155,7 +155,7 @@ class Admin extends \Api_Abstract
 
         $validator->isPasswordStrong($data['password']);
 
-        $this->di['events_manager']->dispatch(new BeforeAdminClientCreateEvent(
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminClientCreateEvent(
             email: $data['email'],
             firstName: $data['first_name'],
             lastName: $data['last_name'] ?? null,
@@ -163,7 +163,7 @@ class Admin extends \Api_Abstract
             data: $data,
         ));
         $id = $service->adminCreateClient($data);
-        $this->di['events_manager']->dispatch(new AfterAdminClientCreateEvent(
+        $this->di['event_dispatcher']->dispatch(new AfterAdminClientCreateEvent(
             clientId: $id,
             email: $data['email'],
             firstName: $data['first_name'],
@@ -183,13 +183,13 @@ class Admin extends \Api_Abstract
     {
         $model = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
-        $this->di['events_manager']->dispatch(new BeforeAdminClientDeleteEvent(
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminClientDeleteEvent(
             clientId: $model->id,
         ));
 
         $id = $model->id;
         $this->getService()->remove($model);
-        $this->di['events_manager']->dispatch(new AfterAdminClientDeleteEvent(
+        $this->di['event_dispatcher']->dispatch(new AfterAdminClientDeleteEvent(
             clientId: $id,
         ));
 
@@ -259,7 +259,7 @@ class Admin extends \Api_Abstract
             $client->currency = $data['currency'] ?? $client->currency;
         }
 
-        $this->di['events_manager']->dispatch(new BeforeAdminClientUpdateEvent(
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminClientUpdateEvent(
             clientId: $client->id,
             data: $data,
         ));
@@ -318,7 +318,7 @@ class Admin extends \Api_Abstract
         $client->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($client);
-        $this->di['events_manager']->dispatch(new AfterAdminClientUpdateEvent(
+        $this->di['event_dispatcher']->dispatch(new AfterAdminClientUpdateEvent(
             clientId: $client->id,
         ));
 
@@ -341,7 +341,7 @@ class Admin extends \Api_Abstract
 
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
-        $this->di['events_manager']->dispatch(new BeforeAdminClientPasswordChangeEvent(
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminClientPasswordChangeEvent(
             clientId: $client->id,
             password: $data['password'],
         ));
@@ -353,7 +353,7 @@ class Admin extends \Api_Abstract
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('client', $data['id']);
 
-        $this->di['events_manager']->dispatch(new AfterAdminClientPasswordChangeEvent(
+        $this->di['event_dispatcher']->dispatch(new AfterAdminClientPasswordChangeEvent(
             clientId: $client->id,
             password: $data['password'],
         ));

@@ -62,7 +62,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($admin);
 
         $di = $this->getDi();
-        $di['events_manager'] = $emMock;
+        $di['event_dispatcher'] = $emMock;
         $di['db'] = $dbMock;
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
@@ -108,7 +108,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(null);
 
         $di = $this->getDi();
-        $di['events_manager'] = $emMock;
+        $di['event_dispatcher'] = $emMock;
         $di['db'] = $dbMock;
         $di['auth'] = $authMock;
 
@@ -1000,7 +1000,7 @@ final class ServiceTest extends \BBTestCase
             ->method('hasPermission')->willReturn(true);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
 
@@ -1032,7 +1032,7 @@ final class ServiceTest extends \BBTestCase
             ->method('hasPermission')->willReturn(true);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
 
@@ -1085,7 +1085,7 @@ final class ServiceTest extends \BBTestCase
             ->method('hasPermission')->willReturn(true);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
         $di['password'] = $passwordMock;
@@ -1142,7 +1142,7 @@ final class ServiceTest extends \BBTestCase
             ->method('hasPermission')->willReturn(true);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
@@ -1201,7 +1201,7 @@ final class ServiceTest extends \BBTestCase
             ->method('hasPermission')->willReturn(true);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);

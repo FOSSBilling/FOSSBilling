@@ -671,7 +671,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
@@ -1334,7 +1334,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $di['request'] = Request::createFromGlobals();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
@@ -1366,7 +1366,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $di['request'] = Request::createFromGlobals();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $this->service->setDi($di);
 
@@ -1439,7 +1439,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $di['request'] = $this->getMockBuilder(Request::class)->getMock();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $supportModMock);
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffServiceMock);
 
@@ -1734,7 +1734,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportPTicket();
@@ -1937,7 +1937,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['tools'] = $toolsMock;
         $di['request'] = Request::createFromGlobals();
         $this->service->setDi($di);
@@ -2006,7 +2006,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['request'] = Request::createFromGlobals();
         $this->service->setDi($di);
 
@@ -2041,7 +2041,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['request'] = Request::createFromGlobals();
         $this->service->setDi($di);
 

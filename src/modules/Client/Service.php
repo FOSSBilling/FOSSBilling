@@ -557,7 +557,7 @@ class Service implements InjectionAwareInterface
     {
         $ip = $this->di['request']->getClientIp();
 
-        $this->di['events_manager']->dispatch(new BeforeClientSignUpEvent(
+        $this->di['event_dispatcher']->dispatch(new BeforeClientSignUpEvent(
             email: $data['email'] ?? '',
             ip: $ip,
             firstName: $data['first_name'] ?? null,
@@ -569,7 +569,7 @@ class Service implements InjectionAwareInterface
         $data['status'] = \Model_Client::ACTIVE;
         $client = $this->createClient($data);
 
-        $this->di['events_manager']->dispatch(new AfterClientSignUpEvent(
+        $this->di['event_dispatcher']->dispatch(new AfterClientSignUpEvent(
             clientId: $client->id,
             email: $client->email,
             ip: $ip,
@@ -713,7 +713,7 @@ class Service implements InjectionAwareInterface
         $required = [
             'hash' => 'Hash required',
         ];
-        $this->di['events_manager']->dispatch(new BeforePasswordResetClientEvent());
+        $this->di['event_dispatcher']->dispatch(new BeforePasswordResetClientEvent());
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);

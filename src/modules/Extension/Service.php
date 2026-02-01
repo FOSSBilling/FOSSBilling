@@ -601,7 +601,7 @@ class Service implements InjectionAwareInterface
             $ext_id = $this->di['db']->store($ext);
         }
         $ext_id ??= $ext->id;
-        $this->di['events_manager']->dispatch(new BeforeAdminActivateExtensionEvent(extensionId: (string) $ext_id));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminActivateExtensionEvent(extensionId: (string) $ext_id));
 
         try {
             $result = $this->activate($ext);
@@ -610,7 +610,7 @@ class Service implements InjectionAwareInterface
 
             throw $e;
         }
-        $this->di['events_manager']->dispatch(new AfterAdminActivateExtensionEvent(extensionId: (string) $ext_id));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminActivateExtensionEvent(extensionId: (string) $ext_id));
         $this->di['logger']->info('Activated extension "%s"', $data['id']);
 
         return $result;
@@ -648,7 +648,7 @@ class Service implements InjectionAwareInterface
         $ext = $data['ext'];
         $this->getConfig($ext); // Creates new config if it does not exist in DB
 
-        $this->di['events_manager']->dispatch(new BeforeAdminExtensionConfigSaveEvent(data: $data));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminExtensionConfigSaveEvent(data: $data));
         $sql = "
             UPDATE extension_meta
             SET meta_value = :config
@@ -665,7 +665,7 @@ class Service implements InjectionAwareInterface
             'config' => $config,
         ];
         $this->di['db']->exec($sql, $params);
-        $this->di['events_manager']->dispatch(new AfterAdminExtensionConfigSaveEvent(data: $data));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminExtensionConfigSaveEvent(data: $data));
         $this->di['logger']->info("Updated extension {$ext} configuration.");
         $this->di['cache']->delete("config_{$ext}");
 

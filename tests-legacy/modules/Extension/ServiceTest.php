@@ -655,7 +655,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -688,7 +688,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $serviceMock->setDi($di);
 
@@ -793,7 +793,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['tools'] = $toolsMock;
         $di['crypt'] = $cryptMock;
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffMock);

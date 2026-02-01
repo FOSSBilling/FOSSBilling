@@ -38,7 +38,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function save_theme_settings(\Box_App $app, $theme): void
     {
-        $this->di['events_manager']->dispatch(new BeforeThemeSettingsSaveEvent(data: $_POST));
+        $this->di['event_dispatcher']->dispatch(new BeforeThemeSettingsSaveEvent(data: $_POST));
 
         $api = $this->di['api_admin'];
 

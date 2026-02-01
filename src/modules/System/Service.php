@@ -281,13 +281,13 @@ class Service
 
     public function updateParams($data): bool
     {
-        $this->di['events_manager']->dispatch(new BeforeAdminSettingsUpdateEvent(data: $data));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminSettingsUpdateEvent(data: $data));
 
         foreach ($data as $key => $val) {
             $this->setParamValue($key, $val, true);
         }
 
-        $this->di['events_manager']->dispatch(new AfterAdminSettingsUpdateEvent());
+        $this->di['event_dispatcher']->dispatch(new AfterAdminSettingsUpdateEvent());
 
         $this->di['logger']->info('Updated system general settings');
 

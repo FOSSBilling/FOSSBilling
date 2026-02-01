@@ -70,7 +70,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     public function get_reset_password_confirm(\Box_App $app, $hash): string
     {
         $service = $this->di['mod_service']('client');
-        $this->di['events_manager']->dispatch(new BeforePasswordResetClientEvent());
+        $this->di['event_dispatcher']->dispatch(new BeforePasswordResetClientEvent());
         $data = [
             'hash' => $hash,
         ];

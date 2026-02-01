@@ -194,9 +194,9 @@ class Admin extends \Api_Abstract
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
 
         $new_version = $updater->getLatestVersion();
-        $this->di['events_manager']->dispatch(new BeforeAdminUpdateCoreEvent());
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminUpdateCoreEvent());
         $updater->performUpdate();
-        $this->di['events_manager']->dispatch(new AfterAdminUpdateCoreEvent());
+        $this->di['event_dispatcher']->dispatch(new AfterAdminUpdateCoreEvent());
 
         $this->di['logger']->info('Updated FOSSBilling from %s to %s', \FOSSBilling\Version::VERSION, $new_version);
 
@@ -213,9 +213,9 @@ class Admin extends \Api_Abstract
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
 
         $updater = $this->di['updater'];
-        $this->di['events_manager']->dispatch(new BeforeAdminManualUpdateEvent());
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminManualUpdateEvent());
         $updater->performManualUpdate();
-        $this->di['events_manager']->dispatch(new AfterAdminManualUpdateEvent());
+        $this->di['event_dispatcher']->dispatch(new AfterAdminManualUpdateEvent());
         $this->di['logger']->info('Updated FOSSBilling - applied patches and updated configuration file.');
 
         return true;

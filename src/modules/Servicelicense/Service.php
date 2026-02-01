@@ -192,7 +192,7 @@ class Service implements InjectionAwareInterface
             'versions' => $model->versions,
             'client_id' => $model->client_id,
         ];
-        $this->di['events_manager']->dispatch(new BeforeServicelicenseResetEvent(data: $data));
+        $this->di['event_dispatcher']->dispatch(new BeforeServicelicenseResetEvent(data: $data));
 
         $model->ips = json_encode([]);
         $model->hosts = json_encode([]);
@@ -207,7 +207,7 @@ class Service implements InjectionAwareInterface
             'client_id' => $model->client_id,
             'updated_at' => $model->updated_at,
         ];
-        $this->di['events_manager']->dispatch(new AfterServicelicenseResetEvent(data: $data));
+        $this->di['event_dispatcher']->dispatch(new AfterServicelicenseResetEvent(data: $data));
 
         return true;
     }

@@ -102,7 +102,7 @@ class Service implements InjectionAwareInterface
 
     public function addItem(\Model_Cart $cart, \Model_Product $product, array $data): bool
     {
-        $this->di['events_manager']->dispatch(new BeforeProductAddedToCartEvent(cartId: $cart->id, productId: $product->id, data: $data));
+        $this->di['event_dispatcher']->dispatch(new BeforeProductAddedToCartEvent(cartId: $cart->id, productId: $product->id, data: $data));
 
         $productService = $product->getService();
 
@@ -194,7 +194,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Added "%s" to shopping cart', $product->title);
 
-        $this->di['events_manager']->dispatch(new AfterProductAddedToCartEvent(cartId: $cart->id, productId: $product->id, data: $data));
+        $this->di['event_dispatcher']->dispatch(new AfterProductAddedToCartEvent(cartId: $cart->id, productId: $product->id, data: $data));
 
         return true;
     }
@@ -480,7 +480,7 @@ class Service implements InjectionAwareInterface
         }
 
         $ip = $this->di['request']->getClientIp();
-        $this->di['events_manager']->dispatch(new BeforeClientCheckoutEvent(clientId: $client->id, cartId: $cart->id, ip: $ip));
+        $this->di['event_dispatcher']->dispatch(new BeforeClientCheckoutEvent(clientId: $client->id, cartId: $cart->id, ip: $ip));
 
         [$order, $invoice, $orders] = $this->createFromCart($client, $gateway_id);
 
@@ -488,7 +488,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Checked out shopping cart');
 
-        $this->di['events_manager']->dispatch(new AfterClientOrderCreateEvent(orderId: $order->id, clientId: $client->id, ip: $ip));
+        $this->di['event_dispatcher']->dispatch(new AfterClientOrderCreateEvent(orderId: $order->id, clientId: $client->id, ip: $ip));
 
         $result = [
             'gateway_id' => $gateway_id,

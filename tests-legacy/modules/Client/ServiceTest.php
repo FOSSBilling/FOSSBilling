@@ -872,7 +872,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['password'] = $passwordMock;

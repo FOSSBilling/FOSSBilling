@@ -630,11 +630,11 @@ class Service implements InjectionAwareInterface
         }
         $code = $model->getCode();
 
-        $this->di['events_manager']->dispatch(new BeforeAdminDeleteCurrencyEvent(code: $code));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminDeleteCurrencyEvent(code: $code));
 
         $this->rm($model);
 
-        $this->di['events_manager']->dispatch(new AfterAdminDeleteCurrencyEvent(code: $code));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminDeleteCurrencyEvent(code: $code));
 
         $this->di['logger']->info('Removed currency %s', $code);
 

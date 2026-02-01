@@ -211,7 +211,7 @@ $di['mod_config'] = $di->protect(fn ($name) => $di['mod']($name)->getConfig());
  *
  * @return \FOSSBilling\Events\EventDispatcherFactory
  */
-$di['events_manager'] = fn () => FOSSBilling\Events\EventDispatcherFactory::create($di);
+$di['event_dispatcher'] = fn () => FOSSBilling\Events\EventDispatcherFactory::create($di);
 
 /*
  * Creates a new session, applying specified security rules depending on the config.php settings.

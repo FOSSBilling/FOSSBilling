@@ -91,14 +91,14 @@ class Service implements InjectionAwareInterface
 
     public function login($email, $password, $ip): array
     {
-        $this->di['events_manager']->dispatch(new BeforeAdminLoginEvent(
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminLoginEvent(
             email: $email,
             ip: $ip,
         ));
 
         $model = $this->authorizeAdmin($email, $password);
         if (!$model instanceof \Model_Admin) {
-            $this->di['events_manager']->dispatch(new AdminLoginFailedEvent(
+            $this->di['event_dispatcher']->dispatch(new AdminLoginFailedEvent(
                 email: $email,
                 ip: $ip,
             ));
@@ -106,7 +106,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Check your login details', null, 403);
         }
 
-        $this->di['events_manager']->dispatch(new AfterAdminLoginEvent(
+        $this->di['event_dispatcher']->dispatch(new AfterAdminLoginEvent(
             adminId: $model->id,
             ip: $ip,
         ));
@@ -518,7 +518,7 @@ class Service implements InjectionAwareInterface
 
     public function update(\Model_Admin $model, $data): bool
     {
-        $this->di['events_manager']->dispatch(new BeforeAdminStaffUpdateEvent(staffId: $model->id));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminStaffUpdateEvent(staffId: $model->id));
 
         if ($model->role === 'admin') {
             $this->checkPermissionsAndThrowException('staff', 'create_and_edit_admin');
@@ -534,7 +534,7 @@ class Service implements InjectionAwareInterface
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
-        $this->di['events_manager']->dispatch(new AfterAdminStaffUpdateEvent(staffId: $model->id));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminStaffUpdateEvent(staffId: $model->id));
 
         $this->di['logger']->info('Updated staff member %s details', $model->id);
 
@@ -553,12 +553,12 @@ class Service implements InjectionAwareInterface
             $this->checkPermissionsAndThrowException('staff', 'delete_staff');
         }
 
-        $this->di['events_manager']->dispatch(new BeforeAdminStaffDeleteEvent(staffId: $model->id));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminStaffDeleteEvent(staffId: $model->id));
 
         $id = $model->id;
         $this->di['db']->trash($model);
 
-        $this->di['events_manager']->dispatch(new AfterAdminStaffDeleteEvent(staffId: $id));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminStaffDeleteEvent(staffId: $id));
 
         $this->di['logger']->info('Deleted staff member %s', $id);
 
@@ -573,7 +573,7 @@ class Service implements InjectionAwareInterface
             $this->checkPermissionsAndThrowException('staff', 'reset_staff_password');
         }
 
-        $this->di['events_manager']->dispatch(new BeforeAdminStaffPasswordChangeEvent(staffId: $model->id));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminStaffPasswordChangeEvent(staffId: $model->id));
 
         $model->pass = $this->di['password']->hashIt($password);
         $model->updated_at = date('Y-m-d H:i:s');
@@ -582,7 +582,7 @@ class Service implements InjectionAwareInterface
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('admin', $model->id);
 
-        $this->di['events_manager']->dispatch(new AfterAdminStaffPasswordChangeEvent(staffId: $model->id));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminStaffPasswordChangeEvent(staffId: $model->id));
 
         $this->di['logger']->info('Changed staff member %s password', $model->id);
 
@@ -599,7 +599,7 @@ class Service implements InjectionAwareInterface
 
         $signature = $data['signature'] ?? null;
 
-        $this->di['events_manager']->dispatch(new BeforeAdminStaffCreateEvent(
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminStaffCreateEvent(
             email: $data['email'],
             name: $data['name'],
             adminGroupId: $data['admin_group_id'],
@@ -623,7 +623,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Staff member with email :email is already registered.', [':email' => $data['email']], 788954);
         }
 
-        $this->di['events_manager']->dispatch(new AfterAdminStaffCreateEvent(staffId: $newId));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminStaffCreateEvent(staffId: $newId));
 
         $this->di['logger']->info('Created new staff member %s', $newId);
 

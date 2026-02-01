@@ -70,7 +70,7 @@ final class ServiceTransactionTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -98,7 +98,7 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
 
         $this->service->setDi($di);
 
@@ -118,7 +118,7 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
 
         $this->service->setDi($di);
 
@@ -345,7 +345,7 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $serviceMock->setDi($di);
 
@@ -526,7 +526,7 @@ final class ServiceTransactionTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);

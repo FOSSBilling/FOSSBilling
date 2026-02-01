@@ -481,7 +481,7 @@ final class ServiceTest extends \BBTestCase
             }
         });
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -705,7 +705,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -820,7 +820,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -889,7 +889,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $itemInvoiceServiceMock);
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
@@ -948,7 +948,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -982,7 +982,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -1013,7 +1013,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
 
         $this->service->setDi($di);
 
@@ -1046,7 +1046,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -1315,7 +1315,7 @@ final class ServiceTest extends \BBTestCase
             ->method('fire');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -1343,7 +1343,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $di['logger'] = new \Box_Log();
 
@@ -1380,7 +1380,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);

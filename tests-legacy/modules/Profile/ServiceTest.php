@@ -45,7 +45,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $emMock;
+        $di['event_dispatcher'] = $emMock;
         $di['db'] = $dbMock;
 
         $model = new \Model_Admin();
@@ -79,7 +79,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $emMock;
+        $di['event_dispatcher'] = $emMock;
         $di['db'] = $dbMock;
         $di['tools'] = new \FOSSBilling\Tools();
 
@@ -115,7 +115,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $emMock;
+        $di['event_dispatcher'] = $emMock;
         $di['db'] = $dbMock;
         $di['password'] = $passwordMock;
 
@@ -159,7 +159,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $emMock;
+        $di['event_dispatcher'] = $emMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
@@ -235,7 +235,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $emMock;
+        $di['event_dispatcher'] = $emMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
@@ -284,7 +284,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $emMock;
+        $di['event_dispatcher'] = $emMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
@@ -349,7 +349,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $emMock;
+        $di['event_dispatcher'] = $emMock;
         $di['db'] = $dbMock;
         $di['password'] = $passwordMock;
 

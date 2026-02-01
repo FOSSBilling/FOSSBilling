@@ -136,9 +136,9 @@ class Admin extends \Api_Abstract
         $ext = $this->_getExtension($data);
         $service = $this->getService();
 
-        $this->di['events_manager']->dispatch(new BeforeAdminUpdateExtensionEvent(extension: $ext));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminUpdateExtensionEvent(extension: $ext));
         $ext2 = $service->update($ext);
-        $this->di['events_manager']->dispatch(new AfterAdminUpdateExtensionEvent(extension: $ext2));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminUpdateExtensionEvent(extension: $ext2));
 
         return $ext2;
     }
@@ -169,12 +169,12 @@ class Admin extends \Api_Abstract
     {
         $ext = $this->_getExtension($data);
 
-        $this->di['events_manager']->dispatch(new BeforeAdminDeactivateExtensionEvent(extensionId: (string) $ext->id));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminDeactivateExtensionEvent(extensionId: (string) $ext->id));
 
         $service = $this->getService();
         $service->deactivate($ext);
 
-        $this->di['events_manager']->dispatch(new AfterAdminDeactivateExtensionEvent(extensionId: (string) $data['id'], type: $data['type']));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminDeactivateExtensionEvent(extensionId: (string) $data['id'], type: $data['type']));
 
         $this->di['logger']->info('Deactivated extension "%s"', $data['type'] . ' ' . $data['id']);
 
@@ -187,11 +187,11 @@ class Admin extends \Api_Abstract
     public function uninstall($data): bool
     {
         $ext = $this->_getExtension($data);
-        $this->di['events_manager']->dispatch(new BeforeAdminUninstallExtensionEvent(extensionId: (string) $ext->id));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminUninstallExtensionEvent(extensionId: (string) $ext->id));
 
         $this->getService()->uninstall($data['type'], $data['id']);
 
-        $this->di['events_manager']->dispatch(new AfterAdminUninstallExtensionEvent(extensionId: (string) $data['id'], type: $data['type']));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminUninstallExtensionEvent(extensionId: (string) $data['id'], type: $data['type']));
 
         return true;
     }
@@ -204,12 +204,12 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function install($data): array
     {
-        $this->di['events_manager']->dispatch(new BeforeAdminInstallExtensionEvent(data: $data));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminInstallExtensionEvent(data: $data));
 
         $service = $this->getService();
         $service->downloadAndExtract($data['type'], $data['id']);
 
-        $this->di['events_manager']->dispatch(new AfterAdminInstallExtensionEvent(data: $data));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminInstallExtensionEvent(data: $data));
 
         return [
             'success' => true,

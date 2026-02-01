@@ -48,13 +48,13 @@ class Service implements InjectionAwareInterface
 
     public function changeAdminPassword(\Model_Admin $admin, $new_password): bool
     {
-        $this->di['events_manager']->dispatch(new BeforeAdminStaffProfilePasswordChangeEvent(adminId: $admin->id, password: $new_password));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminStaffProfilePasswordChangeEvent(adminId: $admin->id, password: $new_password));
 
         $admin->pass = $this->di['password']->hashIt($new_password);
         $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
-        $this->di['events_manager']->dispatch(new AfterAdminStaffProfilePasswordChangeEvent(adminId: $admin->id, password: $new_password));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminStaffProfilePasswordChangeEvent(adminId: $admin->id, password: $new_password));
 
         $this->di['logger']->info('Changed profile password');
 
@@ -63,13 +63,13 @@ class Service implements InjectionAwareInterface
 
     public function generateNewApiKey(\Model_Admin $admin): bool
     {
-        $this->di['events_manager']->dispatch(new BeforeAdminStaffApiKeyChangeEvent(adminId: $admin->id, apiKey: $admin->api_token));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminStaffApiKeyChangeEvent(adminId: $admin->id, apiKey: $admin->api_token));
 
         $admin->api_token = $this->di['tools']->generatePassword(32);
         $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
-        $this->di['events_manager']->dispatch(new AfterAdminStaffApiKeyChangeEvent(adminId: $admin->id, apiKey: $admin->api_token));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminStaffApiKeyChangeEvent(adminId: $admin->id, apiKey: $admin->api_token));
 
         $this->di['logger']->info('Generated new API key');
 
@@ -78,7 +78,7 @@ class Service implements InjectionAwareInterface
 
     public function updateAdmin(\Model_Admin $admin, array $data): bool
     {
-        $this->di['events_manager']->dispatch(new BeforeAdminStaffProfileUpdateEvent(adminId: $admin->id, data: $data));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminStaffProfileUpdateEvent(adminId: $admin->id, data: $data));
 
         $admin->email = $data['email'] ?? $admin->email;
         $admin->name = $data['name'] ?? $admin->name;
@@ -86,7 +86,7 @@ class Service implements InjectionAwareInterface
         $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
-        $this->di['events_manager']->dispatch(new AfterAdminStaffProfileUpdateEvent(adminId: $admin->id, data: $data));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminStaffProfileUpdateEvent(adminId: $admin->id, data: $data));
 
         $this->di['logger']->info('Updated profile');
 
@@ -111,7 +111,7 @@ class Service implements InjectionAwareInterface
 
     public function updateClient(\Model_Client $client, array $data = []): bool
     {
-        $this->di['events_manager']->dispatch(new BeforeClientProfileUpdateEvent(clientId: $client->id, data: $data));
+        $this->di['event_dispatcher']->dispatch(new BeforeClientProfileUpdateEvent(clientId: $client->id, data: $data));
 
         $mod = $this->di['mod']('client');
         $config = $mod->getConfig();
@@ -182,7 +182,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['db']->store($client);
 
-        $this->di['events_manager']->dispatch(new AfterClientProfileUpdateEvent(clientId: $client->id));
+        $this->di['event_dispatcher']->dispatch(new AfterClientProfileUpdateEvent(clientId: $client->id));
 
         $this->di['logger']->info('Updated profile');
 
@@ -203,12 +203,12 @@ class Service implements InjectionAwareInterface
 
     public function changeClientPassword(\Model_Client $client, $new_password): bool
     {
-        $this->di['events_manager']->dispatch(new BeforeClientProfilePasswordChangeEvent(clientId: $client->id, password: $new_password));
+        $this->di['event_dispatcher']->dispatch(new BeforeClientProfilePasswordChangeEvent(clientId: $client->id, password: $new_password));
 
         $client->pass = $this->di['password']->hashIt($new_password);
         $this->di['db']->store($client);
 
-        $this->di['events_manager']->dispatch(new AfterClientProfilePasswordChangeEvent(clientId: $client->id));
+        $this->di['event_dispatcher']->dispatch(new AfterClientProfilePasswordChangeEvent(clientId: $client->id));
 
         $this->di['logger']->info('Changed profile password');
 

@@ -195,7 +195,7 @@ final class GuestTest extends \BBTestCase
         // $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
@@ -244,7 +244,7 @@ final class GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
@@ -269,7 +269,7 @@ final class GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
@@ -327,7 +327,7 @@ final class GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['password'] = $passwordMock;
         $di['logger'] = new \Box_Log();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
@@ -360,7 +360,7 @@ final class GuestTest extends \BBTestCase
         // Dependency injection container setup
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $client = new Guest();
         $client->setDi($di);
