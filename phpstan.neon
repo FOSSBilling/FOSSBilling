@@ -10,6 +10,7 @@ parameters:
 	excludePaths:
 		analyse:
 		- src/vendor
+		- src/extensions/products/*/tests/*
 		- src/library/Model/Admin.php
 		- src/library/Model/Client.php
 		- src/library/Model/Product.php

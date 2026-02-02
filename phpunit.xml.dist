@@ -7,6 +7,8 @@
     </testsuite>
     <testsuite name="Modules">
       <directory>tests-legacy/modules</directory>
+    </testsuite>
+     <testsuite name="Extensions">
       <directory>src/extensions/products/*/tests</directory>
     </testsuite>
   </testsuites>
