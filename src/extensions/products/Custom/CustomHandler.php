@@ -243,7 +243,7 @@ class CustomHandler implements ProductTypeHandlerInterface
         return $adapter->$method($data, $order_data, $params);
     }
 
-    private function getOrderService(\Model_ClientOrder $order): \Model_ExtProductCustom
+    private function getOrderService(\Model_ClientOrder $order): \RedBeanPHP\SimpleModel
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);

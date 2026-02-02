@@ -32,7 +32,6 @@ parameters:
 		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$username\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$sld\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\SimpleModel\:\:\$tld\.$#'
-		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$client_id\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$config\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$api_key\.$#'
 		- '#^Access to an undefined property RedBeanPHP\\OODBBean\:\:\$updated_at\.$#'

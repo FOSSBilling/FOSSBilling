@@ -788,7 +788,7 @@ class Service implements InjectionAwareInterface
     {
         $typeCode = $this->getOrderTypeCode($order);
         if (empty($typeCode)) {
-            throw new Exception('Order has no product type configured');
+            throw new \FOSSBilling\Exception('Order has no product type configured');
         }
 
         return $this->di['product_type_registry']->invokeProductTypeAction($typeCode, $action, $order);

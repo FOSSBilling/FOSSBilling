@@ -107,7 +107,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
 
     public function delete(\Model_ClientOrder $order)
     {
-        return $this->action_delete($order);
+        $this->action_delete($order);
     }
 
     /**
