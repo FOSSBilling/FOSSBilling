@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\ProductType\Custom;
+namespace FOSSBilling\ProductType\Custom\Tests;
 
+use FOSSBilling\ProductType\Custom\CustomHandler;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]

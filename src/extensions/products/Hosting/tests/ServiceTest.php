@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\ProductType\Hosting;
+namespace FOSSBilling\ProductType\Hosting\Tests;
 
+use FOSSBilling\ProductType\Hosting\HostingHandler;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -94,67 +95,6 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
         $this->service->create($orderModel);
     }
-
-    //    public function testAction_activate()
-    //    {
-    //        $orderModel = new \Model_ClientOrder();
-    //        $orderModel->loadBean(new \DummyBean());
-    //
-    //        $confArr = array(
-    //            'server_id' => 1,
-    //            'hosting_plan_id' => 2,
-    //            'sld' => 'great',
-    //            'tld' => 'com',
-    //            'username' => 'username',
-    //            'password' => 'password'
-    //        );
-    //
-    //        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
-    //        $orderServiceMock->expects($this->atLeastOnce())
-    //            ->method('getConfig')
-    //            ->will($this->returnValue($confArr));
-    //
-    //        $servhostingModel = new \Model_ExtProductHosting();
-    //        $servhostingModel->loadBean(new \DummyBean());
-    //        $orderServiceMock->expects($this->atLeastOnce())
-    //            ->method('getOrderService')
-    //            ->will($this->returnValue($servhostingModel));
-    //
-    //
-    //        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-    //        $toolsMock->expects($this->atLeastOnce())
-    //            ->method('generatePassword')
-    //            ->will($this->returnValue('generatePassword'));
-    //
-    //        $dbMock = $this->createMock('\Box_Database');
-    //        $dbMock->expects($this->atLeastOnce())
-    //            ->method('store');
-    //
-    //        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
-    //            ->onlyMethods(array('_getAM'))
-    //            ->getMock();
-    //
-    //        $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
-    //        $serverManagerMock->expects($this->atLeastOnce())
-    //            ->method('createAccount');
-    //
-    //        $AMresultArray = array($serverManagerMock, new \Server_Account());
-    //        $serviceMock->expects($this->atLeastOnce())
-    //            ->method('_getAM')
-    //            ->will($this->returnValue($AMresultArray));
-    //
-    //        $di = $this->getDi();
-    //        $di['db'] = $dbMock;
-    //        $di['tools'] = $toolsMock;
-    //        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
-    //
-    //        $serviceMock->setDi($di);
-    //        $orderModel->config = $confArr;
-    //        $result = $serviceMock->activate($orderModel);
-    //        $this->assertIsArray($result);
-    //        $this->assertNotEmpty($result['username']);
-    //        $this->assertNotEmpty($result['password']);
-    //    }
 
     public function testActionRenew(): void
     {

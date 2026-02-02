@@ -7,7 +7,7 @@
     </testsuite>
     <testsuite name="Modules">
       <directory>tests-legacy/modules</directory>
-      <directory>tests-legacy/extensions/products</directory>
+      <directory>src/extensions/products/*/tests</directory>
     </testsuite>
   </testsuites>
   <php>

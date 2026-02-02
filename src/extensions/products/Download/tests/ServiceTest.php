@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\ProductType\Download;
+namespace FOSSBilling\ProductType\Download\Tests;
 
+use FOSSBilling\ProductType\Download\DownloadHandler;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -107,7 +108,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename": "test.txt"}';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
@@ -122,7 +123,6 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsBool($result);
         $this->assertTrue($result);
 
-        // Verify the config was updated correctly
         $updatedConfig = json_decode($productModel->config, true);
         $this->assertIsArray($updatedConfig);
         $this->assertEquals('test.txt', $updatedConfig['filename']);
@@ -140,7 +140,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename": "existing.txt", "update_orders": true}';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
@@ -155,7 +155,6 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsBool($result);
         $this->assertTrue($result);
 
-        // Verify the config was updated correctly
         $updatedConfig = json_decode($productModel->config, true);
         $this->assertIsArray($updatedConfig);
         $this->assertEquals('existing.txt', $updatedConfig['filename']);
@@ -173,7 +172,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = null;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)

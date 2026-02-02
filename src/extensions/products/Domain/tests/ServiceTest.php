@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\ProductType\Domain;
+namespace FOSSBilling\ProductType\Domain\Tests;
 
+use FOSSBilling\ProductType\Domain\DomainHandler;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -1214,7 +1215,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($handlerMock);
         $di['product_type_registry'] = $registryMock;
 
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
+        $boxEventMock = $this->getMockBuilder(\Box_Event::class)->disableOriginalConstructor()->getMock();
         $boxEventMock->expects($this->atLeastOnce())
             ->method('getDi')
             ->willReturn($di);
