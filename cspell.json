@@ -461,6 +461,7 @@
         "src/.htaccess",
         "phpstan-baseline.neon",
         "Dockerfile",
-        ".ddev/**"
+        ".ddev/**",
+        "src/extensions/products/*/tests/**"
     ]
 }
