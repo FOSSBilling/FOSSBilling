@@ -1,7 +1,6 @@
 <?php
 
 declare(strict_types=1);
-
 /**
  * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0
@@ -15,7 +14,7 @@ namespace FOSSBilling\ProductType\Domain;
 use FOSSBilling\Validation\Api\RequiredParams;
 use FOSSBilling\Validation\Api\RequiredRole;
 
-class Api extends Api_Abstract
+class Api extends \Api_Abstract
 {
     #[RequiredRole(['admin'])]
     public function admin_update($data)
