@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\ProductType\Download\Api;
+namespace FOSSBilling\ProductType\Download\Api\Tests;
 
+use FOSSBilling\ProductType\Download\Api;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -56,7 +57,7 @@ final class AdminTest extends \BBTestCase
         $data['order_id'] = 1;
         $model = new \Model_ClientOrder();
 
-        $modelDownloadableModel = new \Model_ServiceDownload();
+        $modelDownloadableModel = new \Model_ExtProductDownload();
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Download\DownloadHandler::class);
         $serviceMock->expects($this->atLeastOnce())

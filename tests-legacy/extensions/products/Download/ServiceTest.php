@@ -52,7 +52,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->config = '{"filename" : "temp/asdcxTest.txt"}';
 
-        $model = new \Model_ServiceDownload();
+        $model = new \Model_ExtProductDownload();
         $model->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
@@ -73,7 +73,7 @@ final class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->create($clientOrderModel);
-        $this->assertInstanceOf('\Model_ServiceDownload', $result);
+        $this->assertInstanceOf('\Model_ExtProductDownload', $result);
     }
 
     public function testActionDelete(): void
@@ -83,7 +83,7 @@ final class ServiceTest extends \BBTestCase
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->willReturn(new \Model_ServiceDownload());
+            ->willReturn(new \Model_ExtProductDownload());
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())

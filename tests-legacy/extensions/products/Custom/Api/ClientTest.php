@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\ProductType\Custom\Api;
+namespace FOSSBilling\ProductType\Custom\Api\Tests;
 
+use FOSSBilling\ProductType\Custom\Api;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
-final class Api_ClientTest extends \BBTestCase
+final class ClientTest extends \BBTestCase
 {
     protected ?Api $api;
 

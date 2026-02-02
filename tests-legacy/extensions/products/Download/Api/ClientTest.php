@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\ProductType\Download\Api;
+namespace FOSSBilling\ProductType\Download\Api\Tests;
 
+use FOSSBilling\ProductType\Download\Api;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -105,7 +106,7 @@ final class ClientTest extends \BBTestCase
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->willReturn(new \Model_ServiceDownload());
+            ->willReturn(new \Model_ExtProductDownload());
 
         $mockOrder = new \Model_ClientOrder();
         $mockOrder->loadBean(new \DummyBean());

@@ -331,7 +331,7 @@ class Api extends \Api_Abstract
         return $this->getService()->getFreeTlds($product);
     }
 
-    private function getServiceForAdmin($data): array
+    protected function getServiceForAdmin($data): array
     {
         $required = [
             'order_id' => 'Order ID name is missing',
@@ -348,7 +348,7 @@ class Api extends \Api_Abstract
         return [$order, $s];
     }
 
-    private function getServiceForClient($data): array
+    protected function getServiceForClient($data): array
     {
         if (!isset($data['order_id'])) {
             throw new \FOSSBilling\Exception('Order ID is required');

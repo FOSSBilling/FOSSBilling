@@ -159,7 +159,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->create($order);
-        $this->assertInstanceOf('Model_ServiceCustom', $result);
+        $this->assertInstanceOf('Model_ExtProductCustom', $result);
     }
 
     public function testActionActivate(): void
@@ -473,7 +473,7 @@ final class ServiceTest extends \BBTestCase
 
         $result = $this->service->getServiceCustomByOrderId(1);
 
-        $this->assertInstanceOf('Model_ServiceCustom', $result);
+        $this->assertInstanceOf('Model_ExtProductCustom', $result);
     }
 
     public function testGetServiceCustomByOrderIdOrderServiceNotFoundException(): void

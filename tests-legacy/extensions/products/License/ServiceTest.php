@@ -60,7 +60,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
@@ -80,7 +80,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->create($clientOrderModel);
-        $this->assertInstanceOf('\Model_ServiceLicense', $result);
+        $this->assertInstanceOf('\Model_ExtProductLicense', $result);
     }
 
     public function testActionActivate(): void
@@ -88,7 +88,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
@@ -119,7 +119,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
@@ -153,7 +153,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
@@ -188,7 +188,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'TestPlugin';
 
@@ -238,7 +238,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
@@ -260,7 +260,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testReset(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
         $eventMock = $this->createMock('\Box_EventManager');
@@ -287,7 +287,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->status = \Model_ClientOrder::STATUS_ACTIVE;
 
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
@@ -305,7 +305,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsLicenseNotActive(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
@@ -323,7 +323,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidIp(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->ips = '{}';
         $value = '1.1.1.1';
@@ -343,7 +343,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidIpTest2(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->ips = '["2.2.2.2"]';
         $value = '1.1.1.1';
@@ -363,7 +363,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidIpTest3(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->ips = '["2.2.2.2"]';
         $serviceLicenseModel->validate_ip = '3.3.3.3';
@@ -375,7 +375,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidVersion(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->versions = '{}';
         $value = '1.0';
@@ -395,7 +395,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidVersionTest2(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->versions = '["2.0"]';
         $value = '1.0';
@@ -415,7 +415,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidVersionTest3(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->versions = '["2.0"]';
         $serviceLicenseModel->validate_version = '3.3.3.3';
@@ -427,7 +427,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidPath(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->paths = '{}';
         $value = '/var';
@@ -447,7 +447,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidPathTest2(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->paths = '["/"]';
         $value = '/var';
@@ -467,7 +467,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidPathTest3(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->paths = '["/"]';
         $serviceLicenseModel->validate_path = '/user';
@@ -479,7 +479,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidHost(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->hosts = '{}';
         $value = 'site.com';
@@ -499,7 +499,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidHostTest2(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->hosts = '["fossbilling.org"]';
         $value = 'site.com';
@@ -519,7 +519,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidHostTest3(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->hosts = '["fossbilling.org"]';
         $serviceLicenseModel->validate_host = 'example.com';
@@ -531,7 +531,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetAdditionalParams(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
@@ -546,7 +546,7 @@ final class ServiceTest extends \BBTestCase
         $clientModel->first_name = 'John';
         $clientModel->last_name = 'Smith';
 
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
         $expected = $clientModel->first_name . ' ' . $clientModel->last_name;
@@ -573,7 +573,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->expires_at = $expected;
 
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
@@ -593,7 +593,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testToApiArray(): void
     {
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
         $expected = [
@@ -627,7 +627,7 @@ final class ServiceTest extends \BBTestCase
             'pinged_at' => '',
             'plugin' => 'Simple',
         ];
-        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel = new \Model_ExtProductLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');

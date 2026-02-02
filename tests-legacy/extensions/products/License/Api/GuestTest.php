@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\ProductType\License\Api;
+namespace FOSSBilling\ProductType\License\Api\Tests;
 
+use FOSSBilling\ProductType\License\Api;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]

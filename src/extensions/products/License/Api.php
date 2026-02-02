@@ -58,7 +58,7 @@ class Api extends \Api_Abstract
         return $this->getService()->checkLicenseDetails($data);
     }
 
-    private function getServiceModelForAdmin(array $data)
+    protected function getServiceModelForAdmin(array $data)
     {
         $required = ['order_id' => 'Order ID is required'];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
@@ -74,7 +74,7 @@ class Api extends \Api_Abstract
         return $s;
     }
 
-    private function getServiceModelForClient(array $data)
+    protected function getServiceModelForClient(array $data)
     {
         $required = ['order_id' => 'Order ID is required'];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);

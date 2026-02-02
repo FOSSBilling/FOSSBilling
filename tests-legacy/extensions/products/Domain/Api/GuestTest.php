@@ -2,18 +2,19 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\ProductType\Domain\Api;
+namespace FOSSBilling\ProductType\Domain\Api\Tests;
 
+use FOSSBilling\ProductType\Domain\Api;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
-final class Api_GuestTest extends \BBTestCase
+final class GuestTest extends \BBTestCase
 {
-    protected ?Guest $guestApi;
+    protected ?Api $api;
 
     public function setUp(): void
     {
-        $this->guestApi = new Guest();
+        $this->api = new Api();
     }
 
     public function testTlds(): void
@@ -23,7 +24,7 @@ final class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('tldToApiArray')
             ->willReturn([]);
 
-        $this->guestApi->setService($serviceMock);
+        $this->api->setService($serviceMock);
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -33,9 +34,9 @@ final class Api_GuestTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
 
-        $this->guestApi->setDi($di);
+        $this->api->setDi($di);
 
-        $result = $this->guestApi->guest_tlds([]);
+        $result = $this->api->guest_tlds([]);
         $this->assertIsArray($result);
         $this->assertIsArray($result[0]);
     }
@@ -50,14 +51,14 @@ final class Api_GuestTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-        $this->guestApi->setDi($di);
-        $this->guestApi->setService($serviceMock);
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
 
         $data = [
             'tld' => '.com',
         ];
 
-        $result = $this->guestApi->guest_pricing($data);
+        $result = $this->api->guest_pricing($data);
         $this->assertIsArray($result);
     }
 
@@ -74,15 +75,15 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
-        $this->guestApi->setDi($di);
-        $this->guestApi->setService($serviceMock);
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
 
         $data = [
             'tld' => '.com',
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $this->guestApi->guest_pricing($data);
+        $result = $this->api->guest_pricing($data);
         $this->assertIsArray($result);
     }
 
@@ -95,7 +96,7 @@ final class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('isDomainAvailable')
             ->willReturn(true);
 
-        $this->guestApi->setService($serviceMock);
+        $this->api->setService($serviceMock);
 
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
@@ -103,14 +104,14 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
-        $this->guestApi->setDi($di);
+        $this->api->setDi($di);
 
         $data = [
             'tld' => '.com',
             'sld' => 'example',
         ];
 
-        $result = $this->guestApi->guest_check($data);
+        $result = $this->api->guest_check($data);
         $this->assertTrue($result);
     }
 
@@ -122,7 +123,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
-        $this->guestApi->setDi($di);
+        $this->api->setDi($di);
 
         $data = [
             'tld' => '.com',
@@ -130,7 +131,7 @@ final class Api_GuestTest extends \BBTestCase
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->guestApi->guest_check($data);
+        $this->api->guest_check($data);
     }
 
     public function testCheckTldNotFoundException(): void
@@ -142,7 +143,7 @@ final class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('isDomainAvailable')
             ->willReturn(true);
 
-        $this->guestApi->setService($serviceMock);
+        $this->api->setService($serviceMock);
 
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
@@ -150,7 +151,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
-        $this->guestApi->setDi($di);
+        $this->api->setDi($di);
 
         $data = [
             'tld' => '.com',
@@ -158,7 +159,7 @@ final class Api_GuestTest extends \BBTestCase
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->guestApi->guest_check($data);
+        $this->api->guest_check($data);
     }
 
     public function testCheckDomainNotAvailableException(): void
@@ -170,7 +171,7 @@ final class Api_GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('isDomainAvailable')
             ->willReturn(false);
 
-        $this->guestApi->setService($serviceMock);
+        $this->api->setService($serviceMock);
 
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
@@ -178,7 +179,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
-        $this->guestApi->setDi($di);
+        $this->api->setDi($di);
 
         $data = [
             'tld' => '.com',
@@ -186,7 +187,7 @@ final class Api_GuestTest extends \BBTestCase
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->guestApi->guest_check($data);
+        $this->api->guest_check($data);
     }
 
     public function testCanBeTransferred(): void
@@ -202,16 +203,16 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
-        $this->guestApi->setDi($di);
+        $this->api->setDi($di);
 
-        $this->guestApi->setService($serviceMock);
+        $this->api->setService($serviceMock);
 
         $data = [
             'tld' => '.com',
             'sld' => 'example',
         ];
 
-        $result = $this->guestApi->guest_can_be_transferred($data);
+        $result = $this->api->guest_can_be_transferred($data);
         $this->assertTrue($result);
     }
 
@@ -228,8 +229,8 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
-        $this->guestApi->setDi($di);
-        $this->guestApi->setService($serviceMock);
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
 
         $data = [
             'tld' => '.com',
@@ -237,7 +238,7 @@ final class Api_GuestTest extends \BBTestCase
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->guestApi->guest_can_be_transferred($data);
+        $this->api->guest_can_be_transferred($data);
     }
 
     public function testCanBeTransferredCanNotBeTransferredException(): void
@@ -253,8 +254,8 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
-        $this->guestApi->setDi($di);
-        $this->guestApi->setService($serviceMock);
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
 
         $data = [
             'tld' => '.com',
@@ -262,6 +263,6 @@ final class Api_GuestTest extends \BBTestCase
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->guestApi->guest_can_be_transferred($data);
+        $this->api->guest_can_be_transferred($data);
     }
 }

@@ -67,16 +67,16 @@ final class ServiceTest extends \BBTestCase
             ->method('getConfig')
             ->willReturn($confArr);
 
-        $hostingServerModel = new \Model_ServiceHostingServer();
+        $hostingServerModel = new \Model_ExtProductHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
-        $hostingPlansModel = new \Model_ServiceHostingHp();
+        $hostingPlansModel = new \Model_ExtProductHostingPlan();
         $hostingPlansModel->loadBean(new \DummyBean());
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturnOnConsecutiveCalls($hostingServerModel, $hostingPlansModel);
 
-        $servhostingModel = new \Model_ServiceHosting();
+        $servhostingModel = new \Model_ExtProductHosting();
         $servhostingModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -114,7 +114,7 @@ final class ServiceTest extends \BBTestCase
     //            ->method('getConfig')
     //            ->will($this->returnValue($confArr));
     //
-    //        $servhostingModel = new \Model_ServiceHosting();
+    //        $servhostingModel = new \Model_ExtProductHosting();
     //        $servhostingModel->loadBean(new \DummyBean());
     //        $orderServiceMock->expects($this->atLeastOnce())
     //            ->method('getOrderService')
@@ -161,7 +161,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ExtProductHostingPlan();
         $model->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
@@ -206,7 +206,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
@@ -262,7 +262,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
@@ -318,7 +318,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
@@ -384,22 +384,22 @@ final class ServiceTest extends \BBTestCase
     //            ->method('getConfig')
     //            ->will($this->returnValue($confArr));
     //
-    //        $model = new \Model_ServiceHosting();
+    //        $model = new \Model_ExtProductHosting();
     //        $model->loadBean(new \DummyBean());
     //        $orderServiceMock->expects($this->atLeastOnce())
     //            ->method('getOrderService')
     //            ->will($this->returnValue($model));
     //
-    //        $hostingServerModel = new \Model_ServiceHostingServer();
+    //        $hostingServerModel = new \Model_ExtProductHostingServer();
     //        $hostingServerModel->loadBean(new \DummyBean());
-    //        $hostingPlansModel = new \Model_ServiceHostingHp();
+    //        $hostingPlansModel = new \Model_ExtProductHostingPlan();
     //        $hostingPlansModel->loadBean(new \DummyBean());
     //        $dbMock = $this->createMock('\Box_Database');
     //        $dbMock->expects($this->atLeastOnce())
     //            ->method('getExistingModelById')
     //            ->willReturn($hostingServerModel, $hostingPlansModel);
     //
-    //        $servhostingModel = new \Model_ServiceHosting();
+    //        $servhostingModel = new \Model_ExtProductHosting();
     //        $servhostingModel->loadBean(new \DummyBean());
     //        $dbMock->expects($this->atLeastOnce())
     //            ->method('dispense')
@@ -439,7 +439,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel->loadBean(new \DummyBean());
         $orderModel->status = 'active';
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
@@ -475,10 +475,10 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
-        $modelHp = new \Model_ServiceHostingHp();
+        $modelHp = new \Model_ExtProductHostingPlan();
         $modelHp->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
@@ -517,7 +517,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
@@ -552,7 +552,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
         $data = [];
 
@@ -570,7 +570,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
@@ -606,7 +606,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -624,7 +624,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
@@ -660,7 +660,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -678,7 +678,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
@@ -714,7 +714,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -732,7 +732,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
@@ -773,13 +773,13 @@ final class ServiceTest extends \BBTestCase
 
     public function testToApiArray(): void
     {
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
-        $hostingServer = new \Model_ServiceHostingServer();
+        $hostingServer = new \Model_ExtProductHostingServer();
         $hostingServer->loadBean(new \DummyBean());
         $hostingServer->manager = 'Custom';
-        $hostingHp = new \Model_ServiceHostingHp();
+        $hostingHp = new \Model_ExtProductHostingPlan();
         $hostingHp->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
@@ -810,7 +810,7 @@ final class ServiceTest extends \BBTestCase
             'username' => 'testUser',
             'ip' => '1.1.1.1',
         ];
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $model->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
@@ -888,7 +888,7 @@ final class ServiceTest extends \BBTestCase
     {
         $dbMock = $this->createMock('\Box_Database');
 
-        $hostingServerModel = new \Model_ServiceHostingServer();
+        $hostingServerModel = new \Model_ExtProductHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -916,7 +916,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testDeleteServer(): void
     {
-        $hostingServerModel = new \Model_ServiceHostingServer();
+        $hostingServerModel = new \Model_ExtProductHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
@@ -952,7 +952,7 @@ final class ServiceTest extends \BBTestCase
             'secure' => 0,
         ];
 
-        $hostingServerModel = new \Model_ServiceHostingServer();
+        $hostingServerModel = new \Model_ExtProductHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
@@ -971,7 +971,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetServerManager(): void
     {
-        $hostingServerModel = new \Model_ServiceHostingServer();
+        $hostingServerModel = new \Model_ExtProductHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
         $hostingServerModel->manager = 'Custom';
 
@@ -987,7 +987,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetServerManagerManagerNotDefined(): void
     {
-        $hostingServerModel = new \Model_ServiceHostingServer();
+        $hostingServerModel = new \Model_ExtProductHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -998,7 +998,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetServerManagerServerManagerInvalid(): void
     {
-        $hostingServerModel = new \Model_ServiceHostingServer();
+        $hostingServerModel = new \Model_ExtProductHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
         $hostingServerModel->manager = 'Custom';
 
@@ -1026,7 +1026,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getServerManager')
             ->willReturn($serverManagerMock);
 
-        $hostingServerModel = new \Model_ServiceHostingServer();
+        $hostingServerModel = new \Model_ExtProductHostingServer();
         $result = $serviceMock->testConnection($hostingServerModel);
         $this->assertIsBool($result);
         $this->assertTrue($result);
@@ -1073,7 +1073,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testDeleteHp(): void
     {
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ExtProductHostingPlan();
         $model->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
@@ -1091,7 +1091,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testToHostingHpApiArray(): void
     {
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ExtProductHostingPlan();
         $model->loadBean(new \DummyBean());
 
         $result = $this->service->toHostingHpApiArray($model);
@@ -1112,7 +1112,7 @@ final class ServiceTest extends \BBTestCase
             'max_park' => '1',
         ];
 
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ExtProductHostingPlan();
         $model->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
@@ -1131,7 +1131,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testCreateHp(): void
     {
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ExtProductHostingPlan();
         $model->loadBean(new \DummyBean());
         $newId = 1;
 
@@ -1154,7 +1154,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetServerPackage(): void
     {
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ExtProductHostingPlan();
         $model->loadBean(new \DummyBean());
         $model->config = '{}';
 
@@ -1167,7 +1167,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetServerManagerWithLog(): void
     {
-        $hostingServerModel = new \Model_ServiceHostingServer();
+        $hostingServerModel = new \Model_ExtProductHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
         $hostingServerModel->manager = 'Custom';
 
@@ -1197,7 +1197,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetManagerUrls(): void
     {
-        $hostingServerModel = new \Model_ServiceHostingServer();
+        $hostingServerModel = new \Model_ExtProductHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
         $hostingServerModel->manager = 'Custom';
 
@@ -1224,7 +1224,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetManagerUrlsException(): void
     {
-        $hostingServerModel = new \Model_ServiceHostingServer();
+        $hostingServerModel = new \Model_ExtProductHostingServer();
         $hostingServerModel->loadBean(new \DummyBean());
         $hostingServerModel->manager = 'Custom';
 
@@ -1251,6 +1251,13 @@ final class ServiceTest extends \BBTestCase
             ->method('tldToApiArray')
             ->willReturn($tldArray);
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $domainHandlerMock);
+
+        $registryMock = $this->createMock(\FOSSBilling\ProductTypeRegistry::class);
+        $registryMock->expects($this->atLeastOnce())
+            ->method('getHandler')
+            ->with('domain')
+            ->willReturn($domainHandlerMock);
+        $di['product_type_registry'] = $registryMock;
 
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());

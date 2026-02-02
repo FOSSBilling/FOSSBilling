@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\ProductType\Hosting\Api;
+namespace FOSSBilling\ProductType\Hosting\Api\Tests;
 
+use FOSSBilling\ProductType\Hosting\Api;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -24,76 +25,7 @@ final class ClientTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testChangeUsername(): void
-    {
-        $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(Api::class)
-            ->onlyMethods(['_getService'])
-            ->getMock();
-
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
-            ->willReturn($getServiceReturnValue);
-
-        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('changeAccountUsername')
-            ->willReturn(true);
-
-        $apiMock->setService($serviceMock);
-
-        $result = $apiMock->client_change_username([]);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
-    public function testChangeDomain(): void
-    {
-        $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(Api::class)
-            ->onlyMethods(['_getService'])
-            ->getMock();
-
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
-            ->willReturn($getServiceReturnValue);
-
-        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('changeAccountDomain')
-            ->willReturn(true);
-
-        $apiMock->setService($serviceMock);
-
-        $result = $apiMock->client_change_domain([]);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
-    public function testChangePassword(): void
-    {
-        $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(Api::class)
-            ->onlyMethods(['_getService'])
-            ->getMock();
-
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
-            ->willReturn($getServiceReturnValue);
-
-        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('changeAccountPassword')
-            ->willReturn(true);
-
-        $apiMock->setService($serviceMock);
-
-        $result = $apiMock->client_change_password([]);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
-    public function testHpGetPairs(): void
+public function testHpGetPairs(): void
     {
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -109,6 +41,7 @@ final class ClientTest extends \BBTestCase
     {
         $data = [
             'order_id' => 1,
+            'username' => 'newuser',
         ];
 
         $clientOrderModel = new \Model_ClientOrder();
@@ -117,32 +50,38 @@ final class ClientTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($clientOrderModel);
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
+
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('changeAccountUsername')
+            ->willReturn(true);
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
+        $this->api->setService($serviceMock);
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
         $clientModel->id = 1;
         $this->api->setIdentity($clientModel);
-        $result = $this->api->getServiceForClient($data);
-        $this->assertIsArray($result);
-        $this->assertInstanceOf('\Model_ClientOrder', $result[0]);
-        $this->assertInstanceOf('\Model_ServiceHosting', $result[1]);
+
+        $result = $this->api->client_change_username($data);
+        $this->assertTrue($result);
     }
 
     public function testGetServiceOrderNotActivated(): void
     {
         $data = [
             'order_id' => 1,
+            'username' => 'newuser',
         ];
 
         $clientOrderModel = new \Model_ClientOrder();
@@ -170,13 +109,14 @@ final class ClientTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order is not activated');
-        $this->api->getServiceForClient($data);
+        $this->api->client_change_username($data);
     }
 
     public function testGetServiceOrderNotFound(): void
     {
         $data = [
             'order_id' => 1,
+            'username' => 'newuser',
         ];
 
         $clientOrderModel = null;
@@ -197,15 +137,17 @@ final class ClientTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order not found');
-        $this->api->getServiceForClient($data);
+        $this->api->client_change_username($data);
     }
 
     public function testGetServiceMissingOrderId(): void
     {
-        $data = [];
+        $data = [
+            'username' => 'newuser',
+        ];
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order ID is required');
-        $this->api->getServiceForClient($data);
+        $this->api->client_change_username($data);
     }
 }

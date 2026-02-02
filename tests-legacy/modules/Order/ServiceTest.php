@@ -109,6 +109,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = $admin;
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ($serviceName == 'email') {
                 return $emailServiceMock;
@@ -171,6 +172,8 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = $admin;
+        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ($serviceName == 'email') {
                 return $emailServiceMock;
@@ -233,6 +236,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = $admin;
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ($serviceName == 'email') {
                 return $emailServiceMock;
@@ -293,6 +297,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = $admin;
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ($serviceName == 'email') {
                 return $emailServiceMock;
@@ -353,6 +358,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = $admin;
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ($serviceName == 'email') {
                 return $emailServiceMock;
@@ -413,6 +419,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = $admin;
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ($serviceName == 'email') {
                 return $emailServiceMock;
@@ -474,6 +481,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = $admin;
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ($serviceName == 'email') {
                 return $emailServiceMock;
@@ -534,6 +542,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = $admin;
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ($serviceName == 'email') {
                 return $emailServiceMock;
@@ -592,6 +601,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = $admin;
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ($serviceName == 'email') {
                 return $emailServiceMock;
@@ -650,6 +660,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = $admin;
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ($serviceName == 'email') {
                 return $emailServiceMock;
@@ -710,6 +721,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = $admin;
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ($serviceName == 'email') {
                 return $emailServiceMock;
@@ -770,6 +782,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['loggedin_admin'] = $admin;
+        $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
             if ($serviceName == 'email') {
                 return $emailServiceMock;
@@ -820,11 +833,8 @@ final class ServiceTest extends \BBTestCase
         $service = new \Model_ExtProductCustom();
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->never())
-            ->method('getExistingModelById')
-            ->willReturn($service);
         $dbMock->expects($this->atLeastOnce())
-            ->method('findOne')
+            ->method('load')
             ->willReturn($service);
 
         $di = $this->getDi();
@@ -834,6 +844,7 @@ final class ServiceTest extends \BBTestCase
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
         $order->service_id = 1;
+        $order->service_type = 'custom';
 
         $result = $this->service->getOrderService($order);
         $this->assertInstanceOf('Model_ExtProductCustom', $result);

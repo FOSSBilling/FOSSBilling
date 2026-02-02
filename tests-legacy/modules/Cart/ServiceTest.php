@@ -944,6 +944,7 @@ final class ServiceTest extends \BBTestCase
 
         $productDomainModel = new \Model_ProductDomain();
         $productDomainModel->loadBean(new \DummyBean());
+        $productDomainModel->type = 'domain';
         $domainProduct = ['config' => [], 'product' => $productDomainModel];
 
         $serviceHostingServiceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
@@ -970,6 +971,11 @@ final class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $di['logger'] = new \Box_Log();
+
+        $registryMock = $this->createMock(\FOSSBilling\ProductTypeRegistry::class);
+        $registryMock->method('getHandler')
+            ->willReturn($serviceHostingServiceMock);
+        $di['product_type_registry'] = $registryMock;
 
         $serviceMock->setDi($di);
         $productModel->setDi($di);
@@ -1023,6 +1029,12 @@ final class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceLicenseServiceMock);
         $di['logger'] = new \Box_Log();
+
+        $registryMock = $this->createMock(\FOSSBilling\ProductTypeRegistry::class);
+        $registryMock->expects($this->atLeastOnce())
+            ->method('getHandler')
+            ->willReturn($serviceLicenseServiceMock);
+        $di['product_type_registry'] = $registryMock;
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
@@ -1078,6 +1090,12 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceCustomServiceMock);
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
+
+        $registryMock = $this->createMock(\FOSSBilling\ProductTypeRegistry::class);
+        $registryMock->expects($this->atLeastOnce())
+            ->method('getHandler')
+            ->willReturn($serviceCustomServiceMock);
+        $di['product_type_registry'] = $registryMock;
 
         $serviceMock->setDi($di);
         $productModel->setDi($di);

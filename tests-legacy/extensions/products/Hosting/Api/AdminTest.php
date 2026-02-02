@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\ProductType\Hosting\Api;
+namespace FOSSBilling\ProductType\Hosting\Api\Tests;
 
+use FOSSBilling\ProductType\Hosting\Api;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -27,35 +28,35 @@ final class AdminTest extends \BBTestCase
     public function testChangePlan(): void
     {
         $data = [
+            'order_id' => 1,
             'plan_id' => 1,
         ];
 
-        $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(Api::class)
-            ->onlyMethods(['_getService'])
-            ->getMock();
+        $clientOrderModel = new \Model_ClientOrder();
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->willReturnOnConsecutiveCalls($clientOrderModel, new \Model_ExtProductHostingPlan());
 
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
-            ->willReturn($getServiceReturnValue);
+        $model = new \Model_ExtProductHosting();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->willReturn($model);
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountPlan')
             ->willReturn(true);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn(new \Model_ServiceHostingHp());
-
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $apiMock->setDi($di);
-        $apiMock->setService($serviceMock);
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
 
-        $result = $apiMock->admin_change_plan($data);
+        $result = $this->api->admin_change_plan($data);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
@@ -75,145 +76,221 @@ final class AdminTest extends \BBTestCase
         $this->api->admin_change_plan($data);
     }
 
-    public function testChangeUsername(): void
+public function testChangeUsername(): void
     {
-        $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(Api::class)
-            ->onlyMethods(['_getService'])
-            ->getMock();
+        $data = [
+            'order_id' => 1,
+            'username' => 'newuser',
+        ];
 
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
-            ->willReturn($getServiceReturnValue);
+        $clientOrderModel = new \Model_ClientOrder();
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->willReturn($clientOrderModel);
+
+        $model = new \Model_ExtProductHosting();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->willReturn($model);
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountUsername')
             ->willReturn(true);
 
-        $apiMock->setService($serviceMock);
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $result = $apiMock->admin_change_username([]);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
 
-    public function testChangeIp(): void
-    {
-        $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(Api::class)
-            ->onlyMethods(['_getService'])
-            ->getMock();
-
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
-            ->willReturn($getServiceReturnValue);
-
-        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('changeAccountIp')
-            ->willReturn(true);
-
-        $apiMock->setService($serviceMock);
-
-        $result = $apiMock->admin_change_ip([]);
+        $result = $this->api->admin_change_username($data);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
     public function testChangeDomain(): void
     {
-        $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(Api::class)
-            ->onlyMethods(['_getService'])
-            ->getMock();
+        $data = [
+            'order_id' => 1,
+            'domain' => 'newdomain.com',
+        ];
 
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
-            ->willReturn($getServiceReturnValue);
+        $clientOrderModel = new \Model_ClientOrder();
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->willReturn($clientOrderModel);
+
+        $model = new \Model_ExtProductHosting();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->willReturn($model);
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountDomain')
             ->willReturn(true);
 
-        $apiMock->setService($serviceMock);
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $result = $apiMock->admin_change_domain([]);
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $result = $this->api->admin_change_domain($data);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
     public function testChangePassword(): void
     {
-        $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(Api::class)
-            ->onlyMethods(['_getService'])
-            ->getMock();
+        $data = [
+            'order_id' => 1,
+            'password' => 'newpassword',
+        ];
 
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
-            ->willReturn($getServiceReturnValue);
+        $clientOrderModel = new \Model_ClientOrder();
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->willReturn($clientOrderModel);
+
+        $model = new \Model_ExtProductHosting();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->willReturn($model);
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('changeAccountPassword')
             ->willReturn(true);
 
-        $apiMock->setService($serviceMock);
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $result = $apiMock->admin_change_password([]);
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $result = $this->api->admin_change_password($data);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
     public function testSync(): void
     {
-        $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(Api::class)
-            ->onlyMethods(['_getService'])
-            ->getMock();
+        $data = [
+            'order_id' => 1,
+        ];
 
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
-            ->willReturn($getServiceReturnValue);
+        $clientOrderModel = new \Model_ClientOrder();
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->willReturn($clientOrderModel);
+
+        $model = new \Model_ExtProductHosting();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->willReturn($model);
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('sync')
             ->willReturn(true);
 
-        $apiMock->setService($serviceMock);
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $result = $apiMock->admin_sync([]);
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $result = $this->api->admin_sync($data);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
     public function testUpdate(): void
     {
-        $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(Api::class)
-            ->onlyMethods(['_getService'])
-            ->getMock();
+        $data = [
+            'order_id' => 1,
+        ];
 
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
-            ->willReturn($getServiceReturnValue);
+        $clientOrderModel = new \Model_ClientOrder();
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->willReturn($clientOrderModel);
+
+        $model = new \Model_ExtProductHosting();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->willReturn($model);
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('update')
             ->willReturn(true);
 
-        $apiMock->setService($serviceMock);
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $result = $apiMock->admin_update([]);
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $result = $this->api->admin_update($data);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
-    public function testManagerGetPairs(): void
+    public function testChangeIp(): void
+    {
+        $data = [
+            'order_id' => 1,
+            'ip' => '2.2.2.2',
+        ];
+
+        $clientOrderModel = new \Model_ClientOrder();
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->willReturn($clientOrderModel);
+
+        $model = new \Model_ExtProductHosting();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->willReturn($model);
+
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('changeAccountIp')
+            ->willReturn(true);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $result = $this->api->admin_change_ip($data);
+        $this->assertIsBool($result);
+        $this->assertTrue($result);
+    }
+
+public function testManagerGetPairs(): void
     {
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -332,7 +409,7 @@ final class AdminTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturn(new \Model_ServiceHostingServer());
+            ->willReturn(new \Model_ExtProductHostingServer());
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -356,7 +433,7 @@ final class AdminTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturn(new \Model_ServiceHostingServer());
+            ->willReturn(new \Model_ExtProductHostingServer());
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -372,7 +449,7 @@ final class AdminTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturn(new \Model_ServiceHostingServer());
+            ->willReturn(new \Model_ExtProductHostingServer());
 
         // Mock the 'find' method to return a non-empty array, simulating the server being used by service hostings
         $dbMock->expects($this->atLeastOnce())
@@ -402,7 +479,7 @@ final class AdminTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturn(new \Model_ServiceHostingServer());
+            ->willReturn(new \Model_ExtProductHostingServer());
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -426,7 +503,7 @@ final class AdminTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturn(new \Model_ServiceHostingServer());
+            ->willReturn(new \Model_ExtProductHostingServer());
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -481,7 +558,7 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ExtProductHostingPlan();
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -517,7 +594,7 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ExtProductHostingPlan();
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -544,7 +621,7 @@ final class AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ExtProductHostingPlan();
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -593,22 +670,27 @@ final class AdminTest extends \BBTestCase
     {
         $data = [
             'order_id' => 1,
+            'plan_id' => 1,
         ];
 
         $clientOrderModel = new \Model_ClientOrder();
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturn($clientOrderModel);
+            ->willReturnOnConsecutiveCalls($clientOrderModel, new \Model_ExtProductHostingPlan());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ExtProductHosting();
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-        ;
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
+
+        $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('changeAccountPlan')
+            ->willReturn(true);
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
@@ -616,24 +698,24 @@ final class AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
+        $this->api->setService($serviceMock);
 
-        $result = $this->api->getServiceForAdmin($data);
-        $this->assertIsArray($result);
-        $this->assertInstanceOf('\Model_ClientOrder', $result[0]);
-        $this->assertInstanceOf('\Model_ServiceHosting', $result[1]);
+        $result = $this->api->admin_change_plan($data);
+        $this->assertTrue($result);
     }
 
     public function testGetServiceOrderNotActivated(): void
     {
         $data = [
             'order_id' => 1,
+            'plan_id' => 1,
         ];
 
         $clientOrderModel = new \Model_ClientOrder();
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturn($clientOrderModel);
+            ->willReturnOnConsecutiveCalls($clientOrderModel, new \Model_ExtProductHostingPlan());
 
         $model = null;
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
@@ -651,6 +733,6 @@ final class AdminTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order is not activated');
-        $this->api->getServiceForAdmin($data);
+        $this->api->admin_change_plan($data);
     }
 }

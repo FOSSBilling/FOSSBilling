@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\ProductType\License\Api;
+namespace FOSSBilling\ProductType\License\Api\Tests;
 
+use FOSSBilling\ProductType\License\Api;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -36,7 +37,7 @@ final class ClientTest extends \BBTestCase
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('getServiceModelForClient')
-            ->willReturn(new \Model_ServiceLicense());
+            ->willReturn(new \Model_ExtProductLicense());
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\License\LicenseHandler::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -58,7 +59,7 @@ final class ClientTest extends \BBTestCase
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->willReturn(new \Model_ServiceLicense());
+            ->willReturn(new \Model_ExtProductLicense());
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -66,18 +67,24 @@ final class ClientTest extends \BBTestCase
             ->with('ClientOrder')
             ->willReturn(new \Model_ClientOrder());
 
+        $licenseServiceMock = $this->createMock(\FOSSBilling\ProductType\License\LicenseHandler::class);
+        $licenseServiceMock->expects($this->atLeastOnce())
+            ->method('reset')
+            ->willReturn(true);
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->api->setDi($di);
+        $this->api->setService($licenseServiceMock);
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
         $this->api->setIdentity($clientModel);
 
-        $result = $this->api->getServiceModelForClient($data);
-        $this->assertInstanceOf('\Model_ServiceLicense', $result);
+        $result = $this->api->client_reset($data);
+        $this->assertTrue($result);
     }
 
     public function testGetServiceOrderNotActivated(): void
@@ -107,6 +114,6 @@ final class ClientTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order is not activated');
-        $this->api->getServiceModelForClient($data);
+        $this->api->client_reset($data);
     }
 }

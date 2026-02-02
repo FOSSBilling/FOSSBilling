@@ -307,7 +307,7 @@ final class ServiceTest extends \BBTestCase
         $client->phone_cc = 'phone_cc';
         $client->phone = 'phone';
 
-        $serviceDomainModel = new \Model_ServiceDomain();
+        $serviceDomainModel = new \Model_ExtProductDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
@@ -335,7 +335,7 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
 
         $result = $serviceMock->create($order);
-        $this->assertInstanceOf('Model_ServiceDomain', $result);
+        $this->assertInstanceOf('Model_ExtProductDomain', $result);
     }
 
     public function testActionCreateNameserversException(): void
@@ -406,7 +406,7 @@ final class ServiceTest extends \BBTestCase
         $tldModel->loadBean(new \DummyBean());
         $tldModel->tld_registrar_id = 1;
 
-        $domainModel = new \Model_ServiceDomain();
+        $domainModel = new \Model_ExtProductDomain();
         $domainModel->loadBean(new \DummyBean());
         $domainModel->tld_registrar_id = 1;
         $domainModel->action = $action;
@@ -444,7 +444,7 @@ final class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
         $order->client_id = 1;
         $result = $serviceMock->activate($order);
-        $this->assertInstanceOf('Model_ServiceDomain', $result);
+        $this->assertInstanceOf('Model_ExtProductDomain', $result);
     }
 
     public function testActionActivateServiceNotFoundException(): void
@@ -472,7 +472,7 @@ final class ServiceTest extends \BBTestCase
         $tldModel->loadBean(new \DummyBean());
         $tldModel->tld_registrar_id = 1;
 
-        $domainModel = new \Model_ServiceDomain();
+        $domainModel = new \Model_ExtProductDomain();
         $domainModel->loadBean(new \DummyBean());
         $domainModel->tld_registrar_id = 1;
         $domainModel->action = 'register';
@@ -563,7 +563,7 @@ final class ServiceTest extends \BBTestCase
         $tldModel->loadBean(new \DummyBean());
         $tldModel->tld_registrar_id = 1;
 
-        $domainModel = new \Model_ServiceDomain();
+        $domainModel = new \Model_ExtProductDomain();
         $domainModel->loadBean(new \DummyBean());
         $domainModel->tld_registrar_id = 1;
         $domainModel->action = 'register';
@@ -638,7 +638,7 @@ final class ServiceTest extends \BBTestCase
         $tldModel->loadBean(new \DummyBean());
         $tldModel->tld_registrar_id = 1;
 
-        $domainModel = new \Model_ServiceDomain();
+        $domainModel = new \Model_ExtProductDomain();
         $domainModel->loadBean(new \DummyBean());
         $domainModel->tld_registrar_id = 1;
         $domainModel->action = 'register';
@@ -705,7 +705,7 @@ final class ServiceTest extends \BBTestCase
             'ns4' => 'ns4.example.com',
         ];
 
-        $serviceDomainModel = new \Model_ServiceDomain();
+        $serviceDomainModel = new \Model_ExtProductDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->updateNameservers($serviceDomainModel, $data);
 
@@ -727,7 +727,7 @@ final class ServiceTest extends \BBTestCase
     #[DataProvider('updateNameserversExceptionProvider')]
     public function testUpdateNameserversException(array $data): void
     {
-        $serviceDomainModel = new \Model_ServiceDomain();
+        $serviceDomainModel = new \Model_ExtProductDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -775,7 +775,7 @@ final class ServiceTest extends \BBTestCase
                 'phone' => 'phone',
             ],
         ];
-        $serviceDomainModel = new \Model_ServiceDomain();
+        $serviceDomainModel = new \Model_ExtProductDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->updateContacts($serviceDomainModel, $data);
 
@@ -796,7 +796,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('_getD')
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
 
-        $serviceDomainModel = new \Model_ServiceDomain();
+        $serviceDomainModel = new \Model_ExtProductDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->getTransferCode($serviceDomainModel);
 
@@ -826,7 +826,7 @@ final class ServiceTest extends \BBTestCase
         $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
 
-        $serviceDomainModel = new \Model_ServiceDomain();
+        $serviceDomainModel = new \Model_ExtProductDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->lock($serviceDomainModel);
 
@@ -855,7 +855,7 @@ final class ServiceTest extends \BBTestCase
         $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
 
-        $serviceDomainModel = new \Model_ServiceDomain();
+        $serviceDomainModel = new \Model_ExtProductDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->unlock($serviceDomainModel);
 
@@ -884,7 +884,7 @@ final class ServiceTest extends \BBTestCase
         $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
 
-        $serviceDomainModel = new \Model_ServiceDomain();
+        $serviceDomainModel = new \Model_ExtProductDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->enablePrivacyProtection($serviceDomainModel);
 
@@ -913,7 +913,7 @@ final class ServiceTest extends \BBTestCase
         $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
 
-        $serviceDomainModel = new \Model_ServiceDomain();
+        $serviceDomainModel = new \Model_ExtProductDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->disablePrivacyProtection($serviceDomainModel);
 
@@ -1057,7 +1057,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testSyncExpirationDate(): void
     {
-        $model = new \Model_ServiceDomain();
+        $model = new \Model_ExtProductDomain();
         $model->loadBean(new \DummyBean());
         $result = $this->service->syncExpirationDate($model);
 
@@ -1084,7 +1084,7 @@ final class ServiceTest extends \BBTestCase
     #[DataProvider('toApiArrayProvider')]
     public function testToApiArray(?\Model_Admin $identity, string $dbLoadCalled): void
     {
-        $model = new \Model_ServiceDomain();
+        $model = new \Model_ExtProductDomain();
         $model->loadBean(new \DummyBean());
 
         $model->sld = 'sld';
@@ -1198,11 +1198,21 @@ final class ServiceTest extends \BBTestCase
     public function testOnBeforeAdminCronRun(): void
     {
         $di = $this->getDi();
-        $serviceMock = $this->createMock(DomainHandler::class);
-        $serviceMock->expects($this->atLeastOnce())
+        $handlerMock = $this->createMock(DomainHandler::class);
+        $handlerMock->expects($this->atLeastOnce())
             ->method('batchSyncExpirationDates')
             ->willReturn(true);
-        $di['mod_service'] = $di->protect(fn ($serviceName): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
+
+        $registryMock = $this->createMock(\FOSSBilling\ProductTypeRegistry::class);
+        $registryMock->expects($this->atLeastOnce())
+            ->method('has')
+            ->with('domain')
+            ->willReturn(true);
+        $registryMock->expects($this->atLeastOnce())
+            ->method('getHandler')
+            ->with('domain')
+            ->willReturn($handlerMock);
+        $di['product_type_registry'] = $registryMock;
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
         $boxEventMock->expects($this->atLeastOnce())
@@ -1695,7 +1705,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testRegistrarRmHasDomainsException(): void
     {
-        $serviceDomainModel = new \Model_ServiceDomain();
+        $serviceDomainModel = new \Model_ExtProductDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1923,7 +1933,7 @@ final class ServiceTest extends \BBTestCase
             'transfer_code' => 'EPPCODE',
         ];
 
-        $model = new \Model_ServiceDomain();
+        $model = new \Model_ExtProductDomain();
         $model->loadBean(new \DummyBean());
         $model->id = 1;
 
