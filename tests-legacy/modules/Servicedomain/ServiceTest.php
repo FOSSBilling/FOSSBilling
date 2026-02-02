@@ -444,7 +444,7 @@ final class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
         $order->client_id = 1;
         $result = $serviceMock->action_activate($order);
-        $this->assertInstanceOf('Model_ServiceDomain', $result);
+        $this->assertTrue($result);
     }
 
     public function testActionActivateServiceNotFoundException(): void
@@ -622,7 +622,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['action_activate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('action_activate')
-            ->willReturn(null);
+            ->willReturn(true);
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
