@@ -235,7 +235,7 @@ class Service implements InjectionAwareInterface
 
     public function getServiceOrder($service)
     {
-        $class = get_class($service);
+        $class = $service::class;
         $type = str_replace('Model_ExtProduct', '', $class);
         if ($type === $class) {
             $type = str_replace('Model_', '', $class);
@@ -790,6 +790,7 @@ class Service implements InjectionAwareInterface
         if (empty($typeCode)) {
             throw new Exception('Order has no product type configured');
         }
+
         return $this->di['product_type_registry']->invokeProductTypeAction($typeCode, $action, $order);
     }
 

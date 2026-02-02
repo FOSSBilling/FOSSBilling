@@ -78,6 +78,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $client = $api->client_get(['id' => $_POST['client_id'] ?? null]);
 
         $productOrderTemplate = null;
+
         try {
             $productOrderTemplate = $this->di['product_type_registry']->getTemplate(
                 $product['type'],
@@ -103,6 +104,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $order = $api->order_get($data);
         $set = ['order' => $order];
         $typeCode = $order['product_type'] ?? $order['service_type'];
+
         try {
             $set['service_partial'] = $this->di['product_type_registry']->getTemplate(
                 $typeCode,

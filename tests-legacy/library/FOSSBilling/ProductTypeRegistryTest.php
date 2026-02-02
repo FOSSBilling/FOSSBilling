@@ -81,7 +81,7 @@ final class ProductTypeRegistryTest extends \BBTestCase
             $registry = new ProductTypeRegistry();
             $registry->setDi($this->getDi());
 
-            $this->expectException(\FOSSBilling\Exception::class);
+            $this->expectException(Exception::class);
             $this->expectExceptionMessage($emptyDir);
             $registry->assertHasDefinitions($emptyDir);
         } finally {
@@ -252,7 +252,7 @@ final class ProductTypeRegistryTest extends \BBTestCase
         try {
             $registry->getDefinition('nonexistent');
             $this->fail('Expected exception');
-        } catch (\FOSSBilling\Exception $e) {
+        } catch (Exception $e) {
             $message = $e->getMessage();
             $this->assertStringContainsString('is not registered', $message);
             $this->assertStringContainsString('Available types', $message);

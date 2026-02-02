@@ -4,18 +4,16 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\Hosting\Api;
 
-use FOSSBilling\ProductType\Hosting\Api\Client;
-use FOSSBilling\ProductType\Hosting\Api\Api;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
-    protected ?\FOSSBilling\ProductType\Hosting\Api\Api $api;
+    protected ?Api $api;
 
     public function setUp(): void
     {
-        $this->api = new \FOSSBilling\ProductType\Hosting\Api\Api();
+        $this->api = new Api();
     }
 
     public function testFreeTlds(): void

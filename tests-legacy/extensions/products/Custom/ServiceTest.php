@@ -9,11 +9,11 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    protected ?\FOSSBilling\ProductType\Custom\CustomHandler $service;
+    protected ?CustomHandler $service;
 
     public function setUp(): void
     {
-        $this->service = new \FOSSBilling\ProductType\Custom\CustomHandler();
+        $this->service = new CustomHandler();
     }
 
     public function testDi(): void
@@ -502,7 +502,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = 1;
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Custom\CustomHandler::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
+        $serviceMock = $this->getMockBuilder(CustomHandler::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
             ->willReturn($model);
@@ -528,7 +528,7 @@ final class ServiceTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $model->id = 1;
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Custom\CustomHandler::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
+        $serviceMock = $this->getMockBuilder(CustomHandler::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn($model);

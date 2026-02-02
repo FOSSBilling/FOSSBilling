@@ -9,11 +9,11 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ClientTest extends \BBTestCase
 {
-    protected ?\FOSSBilling\ProductType\Download\Api\Api $api;
+    protected ?Api $api;
 
     public function setUp(): void
     {
-        $this->api = new \FOSSBilling\ProductType\Download\Api\Api();
+        $this->api = new Api();
         $this->api->setIdentity(new \Model_Client());
     }
 

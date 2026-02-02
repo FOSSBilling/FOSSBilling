@@ -9,11 +9,11 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class Api_GuestTest extends \BBTestCase
 {
-    protected ?\FOSSBilling\ProductType\Domain\Api\Guest $guestApi;
+    protected ?Guest $guestApi;
 
     public function setUp(): void
     {
-        $this->guestApi = new \FOSSBilling\ProductType\Domain\Api\Guest();
+        $this->guestApi = new Guest();
     }
 
     public function testTlds(): void

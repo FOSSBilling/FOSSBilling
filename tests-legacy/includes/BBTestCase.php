@@ -16,6 +16,7 @@ class BBTestCase extends PHPUnit\Framework\TestCase
             $registry = new FOSSBilling\ProductTypeRegistry();
             $registry->setDi($di);
             $registry->loadFromFilesystem(PATH_ROOT . '/src/extensions/products');
+
             return $registry;
         };
 

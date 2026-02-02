@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\Domain\Api;
 
-
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class Api_AdminTest extends \BBTestCase
 {
-    protected ?\FOSSBilling\ProductType\Domain\Api\Api $api;
+    protected ?Api $api;
 
     public function setUp(): void
     {
-        $this->api = new \FOSSBilling\ProductType\Domain\Api\Api();
+        $this->api = new Api();
         $this->api->setIdentity(new \Model_Admin());
     }
 
@@ -23,7 +22,7 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $adminApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -46,7 +45,7 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $adminApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -69,7 +68,7 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $adminApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -92,7 +91,7 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $adminApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -115,7 +114,7 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $adminApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -138,7 +137,7 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $adminApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -161,7 +160,7 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $adminApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -184,7 +183,7 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $adminApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $adminApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);

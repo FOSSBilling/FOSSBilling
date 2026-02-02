@@ -408,8 +408,9 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function twig_hash($value, $algo = 'xxh128'): string
     {
         if (!in_array($algo, hash_algos(), true)) {
-            throw new \InvalidArgumentException(sprintf('Hash algorithm "%s" is not supported.', $algo));
+            throw new InvalidArgumentException(sprintf('Hash algorithm "%s" is not supported.', $algo));
         }
+
         return hash($algo, (string) $value);
     }
 

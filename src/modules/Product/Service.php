@@ -112,6 +112,7 @@ class Service implements InjectionAwareInterface
 
         if ($this->di && isset($this->di['product_type_registry'])) {
             $registry = $this->di['product_type_registry'];
+
             try {
                 $result['type_label'] = $registry->getDefinition($typeCode)['label'] ?? null;
             } catch (\Throwable) {

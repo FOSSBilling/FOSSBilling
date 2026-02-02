@@ -540,7 +540,7 @@ class Service implements InjectionAwareInterface
         } else {
             $invoice->base_refund = null;
         }
-        
+
         $this->di['db']->store($invoice);
     }
 

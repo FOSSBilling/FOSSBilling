@@ -91,7 +91,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * Handle product extension admin page routes.
-     * Routes like /product/domain/tld/123 or /product/domain/registrar/456
+     * Routes like /product/domain/tld/123 or /product/domain/registrar/456.
      */
     public function get_product_ext_page(\Box_App $app, $type, $page, $id = null): string
     {

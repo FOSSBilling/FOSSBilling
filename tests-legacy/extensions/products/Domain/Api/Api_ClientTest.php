@@ -9,11 +9,11 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class Api_ClientTest extends \BBTestCase
 {
-    protected ?\FOSSBilling\ProductType\Domain\Api\Client $clientApi;
+    protected ?Client $clientApi;
 
     public function setUp(): void
     {
-        $this->clientApi = new \FOSSBilling\ProductType\Domain\Api\Client();
+        $this->clientApi = new Client();
     }
 
     public function testUpdateNameservers(): void
@@ -21,7 +21,7 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $clientApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -52,7 +52,7 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $clientApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -75,7 +75,7 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $clientApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -98,7 +98,7 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $clientApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -121,7 +121,7 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $clientApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -144,7 +144,7 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $clientApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
@@ -167,7 +167,7 @@ final class Api_ClientTest extends \BBTestCase
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
 
-        $clientApiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\Api\Api::class)
+        $clientApiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])->getMock();
         $clientApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);

@@ -423,7 +423,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 // Added `passwordLength` field to server managers
                 $dbal = $this->di['dbal'];
                 $schemaManager = $dbal->createSchemaManager();
-                
+
                 // Support both old and new table names during transition
                 if ($schemaManager->tablesExist(['ext_product_hosting_server'])) {
                     $q = 'ALTER TABLE ext_product_hosting_server ADD COLUMN `password_length` TINYINT DEFAULT NULL;';
@@ -740,6 +740,11 @@ class UpdatePatcher implements InjectionAwareInterface
                         $schemaManager->renameTable($oldName, $newName);
                     }
                 }
+
+                $fileActions = [
+                    Path::join(PATH_ROOT, 'extensions', 'products', 'License', 'Plugin') => Path::join(PATH_ROOT, 'extensions', 'products', 'License', 'plugins'),
+                ];
+                $this->executeFileActions($fileActions);
 
                 if ($schemaManager->tablesExist(['ext_product_hosting'])) {
                     $table = $schemaManager->listTableDetails('ext_product_hosting');

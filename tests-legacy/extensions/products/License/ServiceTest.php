@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\License;
 
-use FOSSBilling\ProductType\License\LicenseHandler;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -655,7 +654,7 @@ final class ServiceTest extends \BBTestCase
             'format' => 2,
         ];
 
-        $licenseServerMock = $this->getMockBuilder(\FOSSBilling\ProductType\License\Server::class)
+        $licenseServerMock = $this->getMockBuilder(Server::class)
             ->disableOriginalConstructor()
             ->getMock();
         $licenseServerMock->expects($this->atLeastOnce())
@@ -683,7 +682,7 @@ final class ServiceTest extends \BBTestCase
 
         $data = [];
 
-        $licenseServerMock = $this->getMockBuilder(\FOSSBilling\ProductType\License\Server::class)
+        $licenseServerMock = $this->getMockBuilder(Server::class)
             ->disableOriginalConstructor()
             ->getMock();
         $licenseServerMock->expects($this->atLeastOnce())

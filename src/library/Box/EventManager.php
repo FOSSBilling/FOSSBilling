@@ -104,6 +104,7 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
                 $handler = $registry->getHandler((string) $code);
             } catch (Throwable $e) {
                 error_log($e->getMessage());
+
                 continue;
             }
 

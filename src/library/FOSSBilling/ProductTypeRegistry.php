@@ -187,7 +187,7 @@ class ProductTypeRegistry implements InjectionAwareInterface
      *     code: string,
      *     label?: string,
      *     handler_class?: string,
-     *     handler?: \FOSSBilling\Interfaces\ProductTypeHandlerInterface,
+     *     handler?: Interfaces\ProductTypeHandlerInterface,
      *     templates?: array<string, string>,
      *     capabilities?: string[],
      *     base_path?: string,
@@ -219,7 +219,7 @@ class ProductTypeRegistry implements InjectionAwareInterface
      *     code: string,
      *     label: string,
      *     handler_class?: string,
-     *     handler?: \FOSSBilling\Interfaces\ProductTypeHandlerInterface,
+     *     handler?: Interfaces\ProductTypeHandlerInterface,
      *     templates: array<string, string>,
      *     capabilities: string[],
      *     base_path?: string,
@@ -232,10 +232,7 @@ class ProductTypeRegistry implements InjectionAwareInterface
     {
         $code = strtolower($code);
         if (!isset($this->definitions[$code])) {
-            throw new Exception(
-                'Product type "%s" is not registered. Available types: %s',
-                [$code, implode(', ', array_keys($this->definitions))]
-            );
+            throw new Exception('Product type "%s" is not registered. Available types: %s', [$code, implode(', ', array_keys($this->definitions))]);
         }
 
         return $this->definitions[$code];
@@ -284,9 +281,11 @@ class ProductTypeRegistry implements InjectionAwareInterface
             if ($this->di && isset($this->di['logger'])) {
                 $this->di['logger']->critical($message);
             }
+
             throw new Exception($message);
         }
     }
+
     public function getTemplate(string $code, string $key): string
     {
         $code = strtolower($code);
@@ -380,7 +379,7 @@ class ProductTypeRegistry implements InjectionAwareInterface
             $handler = new $handlerClass();
         }
 
-        if (!$handler instanceof \FOSSBilling\Interfaces\ProductTypeHandlerInterface) {
+        if (!$handler instanceof Interfaces\ProductTypeHandlerInterface) {
             throw new Exception('Product type handler for "%s" does not implement ProductTypeHandlerInterface.', [$code]);
         }
 
@@ -396,14 +395,14 @@ class ProductTypeRegistry implements InjectionAwareInterface
     /**
      * Invoke a lifecycle action on a product type handler.
      *
-     * @param string            $code   Product type code
-     * @param string            $action Lifecycle action (e.g., 'activate', 'suspend', 'cancel')
+     * @param string             $code   Product type code
+     * @param string             $action Lifecycle action (e.g., 'activate', 'suspend', 'cancel')
      * @param \Model_ClientOrder $order  Order model
      *
      * @return mixed Handler action result
      *
      * @throws ProductTypeActionNotSupportedException When product type does not support the action
-     * @throws Exception When product type is not found
+     * @throws Exception                              When product type is not found
      */
     public function invokeProductTypeAction(string $code, string $action, \Model_ClientOrder $order)
     {
@@ -449,7 +448,7 @@ class ProductTypeRegistry implements InjectionAwareInterface
         }
 
         if (isset($definition['handler'])
-            && !$definition['handler'] instanceof \FOSSBilling\Interfaces\ProductTypeHandlerInterface
+            && !$definition['handler'] instanceof Interfaces\ProductTypeHandlerInterface
         ) {
             throw new Exception('Product type "%s" handler must implement ProductTypeHandlerInterface.', [$code]);
         }

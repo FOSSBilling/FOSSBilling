@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\Download;
 
-use FOSSBilling\ProductType\Download\DownloadHandler;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]

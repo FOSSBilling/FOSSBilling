@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\Hosting\Api;
 
-use FOSSBilling\ProductType\Hosting\Api\Api;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
-    protected ?\FOSSBilling\ProductType\Hosting\Api\Api $api;
+    protected ?Api $api;
 
     public function setUp(): void
     {
-        $this->api = new \FOSSBilling\ProductType\Hosting\Api\Api();
+        $this->api = new Api();
     }
 
     public function testGetDi(): void
@@ -32,7 +31,7 @@ final class AdminTest extends \BBTestCase
         ];
 
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\Api\Api::class)
+        $apiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -79,7 +78,7 @@ final class AdminTest extends \BBTestCase
     public function testChangeUsername(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\Api\Api::class)
+        $apiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -102,7 +101,7 @@ final class AdminTest extends \BBTestCase
     public function testChangeIp(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\Api\Api::class)
+        $apiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -125,7 +124,7 @@ final class AdminTest extends \BBTestCase
     public function testChangeDomain(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\Api\Api::class)
+        $apiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -148,7 +147,7 @@ final class AdminTest extends \BBTestCase
     public function testChangePassword(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\Api\Api::class)
+        $apiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -171,7 +170,7 @@ final class AdminTest extends \BBTestCase
     public function testSync(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\Api\Api::class)
+        $apiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 
@@ -194,7 +193,7 @@ final class AdminTest extends \BBTestCase
     public function testUpdate(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
-        $apiMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\Api\Api::class)
+        $apiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['_getService'])
             ->getMock();
 

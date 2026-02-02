@@ -220,7 +220,7 @@ class Model_ProductDomainTable extends Model_ProductTable
             throw new FOSSBilling\Exception('Product type registry is not available');
         }
         $registry = $this->di['product_type_registry'];
-        if (!$registry instanceof \FOSSBilling\ProductTypeRegistry || !$registry->has('domain')) {
+        if (!$registry instanceof FOSSBilling\ProductTypeRegistry || !$registry->has('domain')) {
             throw new FOSSBilling\Exception('Domain product type is not available');
         }
 

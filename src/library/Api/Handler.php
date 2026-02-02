@@ -212,22 +212,15 @@ final class Api_Handler implements InjectionAwareInterface
 
         // Get current role from identity
         $currentRole = match (true) {
-            $this->identity instanceof \Model_Admin => 'admin',
-            $this->identity instanceof \Model_Client => 'client',
+            $this->identity instanceof Model_Admin => 'admin',
+            $this->identity instanceof Model_Client => 'client',
             default => 'guest',
         };
 
         $allowedRoles = $attributes[0]->newInstance()->roles;
 
         if (!in_array($currentRole, $allowedRoles, true)) {
-            throw new FOSSBilling\Exception(
-                'Method :method requires one of these roles: :roles. Current role: :current',
-                [
-                    ':method' => $method_name,
-                    ':roles' => implode(', ', $allowedRoles),
-                    ':current' => $currentRole,
-                ]
-            );
+            throw new FOSSBilling\Exception('Method :method requires one of these roles: :roles. Current role: :current', [':method' => $method_name, ':roles' => implode(', ', $allowedRoles), ':current' => $currentRole]);
         }
     }
 
@@ -251,7 +244,7 @@ final class Api_Handler implements InjectionAwareInterface
 
         try {
             $apiDefinition = $registry->getApiDefinition($code, $typeKey);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $apiDefinition = null;
         }
 
@@ -289,11 +282,7 @@ final class Api_Handler implements InjectionAwareInterface
         }
 
         if (!str_starts_with($method, $typeKey . '_')) {
-            throw new FOSSBilling\Exception(
-                'Product type :code API calls must be prefixed with :prefix',
-                [':code' => $code, ':prefix' => $typeKey . '_'],
-                740
-            );
+            throw new FOSSBilling\Exception('Product type :code API calls must be prefixed with :prefix', [':code' => $code, ':prefix' => $typeKey . '_'], 740);
         }
         $methodToCall = $method;
 

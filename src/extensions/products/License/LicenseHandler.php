@@ -45,7 +45,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
 
     public function getLicensePlugins(): array
     {
-        $dir = Path::join(__DIR__, 'Plugin');
+        $dir = Path::join(__DIR__, 'plugins');
         $files = [];
 
         $finder = new Finder();
@@ -340,14 +340,9 @@ class LicenseHandler implements ProductTypeHandlerInterface
         foreach ($plugins as $plugin) {
             if ($model->plugin == $plugin['filename']) {
                 require_once $plugin['path'];
-                $class_name = 'FOSSBilling\\ProductType\\License\\Plugin\\' . $model->plugin;
+                $class_name = 'FOSSBilling\\ProductType\\License\\plugins\\' . $model->plugin;
                 if (class_exists($class_name)) {
                     return new $class_name();
-                }
-
-                $legacy_class = 'Box\\Mod\\Servicelicense\\Plugin\\' . $model->plugin;
-                if (class_exists($legacy_class)) {
-                    return new $legacy_class();
                 }
 
                 error_log("License #{$model->id} plugin {$model->plugin} class is invalid.");

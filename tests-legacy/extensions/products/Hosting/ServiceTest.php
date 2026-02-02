@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\Hosting;
 
-use FOSSBilling\ProductType\Hosting\HostingHandler;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -223,7 +222,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -279,7 +278,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -335,7 +334,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -456,7 +455,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM', 'cancel'])
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -490,7 +489,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM', 'getServerPackage'])
             ->getMock();
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
@@ -521,7 +520,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
 
@@ -574,7 +573,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
 
@@ -628,7 +627,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
 
@@ -682,7 +681,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
 
@@ -736,7 +735,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \DummyBean());
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
             ->getMock();
 
@@ -1019,7 +1018,7 @@ final class ServiceTest extends \BBTestCase
             ->method('testConnection')
             ->willReturn(true);
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['getServerManager'])
             ->getMock();
 
@@ -1176,7 +1175,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->loadBean(new \DummyBean());
 
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['getServerManager'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -1210,7 +1209,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getResellerLoginUrl')
             ->willReturn('/admin/login');
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['getServerManager'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -1229,7 +1228,7 @@ final class ServiceTest extends \BBTestCase
         $hostingServerModel->loadBean(new \DummyBean());
         $hostingServerModel->manager = 'Custom';
 
-        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
+        $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['getServerManager'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())

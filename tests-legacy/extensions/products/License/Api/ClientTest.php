@@ -9,11 +9,11 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ClientTest extends \BBTestCase
 {
-    protected ?\FOSSBilling\ProductType\License\Api\Api $api;
+    protected ?Api $api;
 
     public function setUp(): void
     {
-        $this->api = new \FOSSBilling\ProductType\License\Api\Api();
+        $this->api = new Api();
         $this->api->setIdentity(new \Model_Client());
     }
 
@@ -31,7 +31,7 @@ final class ClientTest extends \BBTestCase
             'order_id' => 1,
         ];
 
-        $apiMock = $this->getMockBuilder(\FOSSBilling\ProductType\License\Api\Api::class)
+        $apiMock = $this->getMockBuilder(Api::class)
             ->onlyMethods(['getServiceModelForClient'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
