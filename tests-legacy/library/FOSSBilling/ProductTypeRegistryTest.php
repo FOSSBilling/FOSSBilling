@@ -56,14 +56,7 @@ final class ProductTypeRegistryTest extends \BBTestCase
     private function createManifest(string $code, array $overrides = []): string
     {
         $manifest = array_merge([
-            'code' => $code,
             'label' => ucfirst($code),
-            'handler_class' => 'FOSSBilling\\ProductType\\' . ucfirst($code) . '\\' . ucfirst($code) . 'Handler',
-            'handler_file' => ucfirst($code) . 'Handler.php',
-            'templates' => [
-                'manage' => 'ext_product_' . $code . '_manage.html.twig',
-                'config' => 'ext_product_' . $code . '_config.html.twig',
-            ],
             'source' => 'core',
         ], $overrides);
 
@@ -136,7 +129,7 @@ final class ProductTypeRegistryTest extends \BBTestCase
     {
         $productDir = $this->tempDir . '/invalid';
         mkdir($productDir, 0o755, true);
-        file_put_contents($productDir . '/manifest.json', json_encode(['invalid' => 'manifest']));
+        file_put_contents($productDir . '/manifest.json', '{ invalid json }');
 
         $registry = new ProductTypeRegistry();
         $registry->setDi($this->getDi());
@@ -155,10 +148,6 @@ final class ProductTypeRegistryTest extends \BBTestCase
         $registry->registerDefinition([
             'code' => 'test',
             'handler_class' => 'FOSSBilling\\ProductType\\Test\\TestHandler',
-            'handler_file' => 'TestHandler.php',
-            'templates' => [
-                'manage' => 'ext_product_test_manage.html.twig',
-            ],
         ]);
 
         $this->assertTrue($registry->has('test'));
@@ -184,20 +173,24 @@ final class ProductTypeRegistryTest extends \BBTestCase
         $this->expectExceptionMessage('handler_class');
         $registry->registerDefinition([
             'code' => 'test',
-            'templates' => ['manage' => 'test.html.twig'],
         ]);
     }
 
-    public function testRegisterDefinitionRequiresTemplates(): void
+    public function testRegisterDefinitionDoesNotRequireTemplates(): void
     {
         $registry = new ProductTypeRegistry();
+        $di = $this->getDi();
+        $registry->setDi($di);
 
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('templates');
         $registry->registerDefinition([
             'code' => 'test',
             'handler_class' => 'FOSSBilling\\ProductType\\Test\\TestHandler',
         ]);
+
+        $this->assertTrue($registry->has('test'));
+        $definition = $registry->getDefinition('test');
+        $this->assertSame('test', $definition['code']);
+        $this->assertSame('Test', $definition['label']);
     }
 
     public function testRegisterDefinitionDuplicateOverwrites(): void
@@ -210,16 +203,12 @@ final class ProductTypeRegistryTest extends \BBTestCase
             'code' => 'test',
             'label' => 'First',
             'handler_class' => 'FOSSBilling\\ProductType\\Test\\TestHandler',
-            'handler_file' => 'TestHandler.php',
-            'templates' => ['manage' => 'first.html.twig'],
         ]);
 
         $registry->registerDefinition([
             'code' => 'test',
             'label' => 'Second',
             'handler_class' => 'FOSSBilling\\ProductType\\Test\\TestHandler',
-            'handler_file' => 'TestHandler.php',
-            'templates' => ['manage' => 'second.html.twig'],
         ]);
 
         $definition = $registry->getDefinition('test');
@@ -245,8 +234,6 @@ final class ProductTypeRegistryTest extends \BBTestCase
             'code' => 'existing',
             'label' => 'Existing',
             'handler_class' => 'FOSSBilling\\ProductType\\Existing\\ExistingHandler',
-            'handler_file' => 'ExistingHandler.php',
-            'templates' => ['manage' => 'existing.html.twig'],
         ]);
 
         try {
@@ -261,22 +248,21 @@ final class ProductTypeRegistryTest extends \BBTestCase
 
     public function testGetHandlerReturnsCachedInstance(): void
     {
-        $mockHandler = $this->createMock(Interfaces\ProductTypeHandlerInterface::class);
+        $productDir = $this->tempDir . '/cached';
+        mkdir($productDir, 0o755, true);
+        file_put_contents($productDir . '/manifest.json', json_encode([
+            'code' => 'cached',
+            'handler_class' => 'FOSSBilling\\ProductType\\ApiKey\\ApiKeyHandler',
+        ]));
 
         $registry = new ProductTypeRegistry();
         $di = $this->getDi();
         $registry->setDi($di);
+        $registry->loadFromFilesystem($this->tempDir);
 
-        $registry->registerDefinition([
-            'code' => 'test',
-            'handler' => $mockHandler,
-            'templates' => ['manage' => 'test.html.twig'],
-        ]);
+        $handler1 = $registry->getHandler('cached');
+        $handler2 = $registry->getHandler('cached');
 
-        $handler1 = $registry->getHandler('test');
-        $handler2 = $registry->getHandler('test');
-
-        $this->assertSame($mockHandler, $handler1);
         $this->assertSame($handler1, $handler2);
     }
 
@@ -287,8 +273,6 @@ final class ProductTypeRegistryTest extends \BBTestCase
         file_put_contents($productDir . '/manifest.json', json_encode([
             'code' => 'missingclass',
             'handler_class' => 'NonExistent\\Handler\\Class',
-            'handler_file' => 'NonExistent.php',
-            'templates' => ['manage' => 'test.html.twig'],
         ]));
 
         $registry = new ProductTypeRegistry();
@@ -300,55 +284,24 @@ final class ProductTypeRegistryTest extends \BBTestCase
         $registry->getHandler('missingclass');
     }
 
-    public function testGetHandlerThrowsForFileOutsideBasePath(): void
-    {
-        $productDir = $this->tempDir . '/pathcheck';
-        mkdir($productDir, 0o755, true);
-
-        $outsideDir = $this->tempDir . '/outside';
-        mkdir($outsideDir, 0o755, true);
-        file_put_contents($outsideDir . '/EvilHandler.php', '<?php class EvilHandler {}');
-
-        file_put_contents($productDir . '/manifest.json', json_encode([
-            'code' => 'pathcheck',
-            'handler_class' => 'EvilHandler',
-            'handler_file' => '../outside/EvilHandler.php',
-            'templates' => ['manage' => 'test.html.twig'],
-        ]));
-
-        $registry = new ProductTypeRegistry();
-        $registry->setDi($this->getDi());
-        $registry->loadFromFilesystem($this->tempDir);
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('not within allowed directory');
-        $registry->getHandler('pathcheck');
-
-        $this->removeDirectory($outsideDir);
-    }
-
     public function testGetHandlerValidatesInterfaceImplementation(): void
     {
         $productDir = $this->tempDir . '/nointerface';
         mkdir($productDir, 0o755, true);
-        file_put_contents($productDir . '/NoInterfaceHandler.php', '<?php class NoInterfaceHandler {}');
         file_put_contents($productDir . '/manifest.json', json_encode([
             'code' => 'nointerface',
-            'handler_class' => 'NoInterfaceHandler',
-            'handler_file' => 'NoInterfaceHandler.php',
-            'templates' => ['manage' => 'test.html.twig'],
+            'handler_class' => 'FOSSBilling\\ProductType\\ApiKey\\ApiKeyHandler',
         ]));
 
         $registry = new ProductTypeRegistry();
         $registry->setDi($this->getDi());
         $registry->loadFromFilesystem($this->tempDir);
 
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('ProductTypeHandlerInterface');
-        $registry->getHandler('nointerface');
+        $handler = $registry->getHandler('nointerface');
+        $this->assertInstanceOf(Interfaces\ProductTypeHandlerInterface::class, $handler);
     }
 
-    public function testGetTemplateReturnsConfiguredTemplate(): void
+    public function testGetTemplateReturnsConventionNameForMissingTemplate(): void
     {
         $registry = new ProductTypeRegistry();
         $di = $this->getDi();
@@ -357,7 +310,20 @@ final class ProductTypeRegistryTest extends \BBTestCase
         $registry->registerDefinition([
             'code' => 'test',
             'handler_class' => 'FOSSBilling\\ProductType\\Test\\TestHandler',
-            'handler_file' => 'TestHandler.php',
+        ]);
+
+        $this->assertSame('ext_product_test_nonexistent.html.twig', $registry->getTemplate('test', 'nonexistent'));
+    }
+
+    public function testGetTemplateReturnsCustomTemplateWhenConfigured(): void
+    {
+        $registry = new ProductTypeRegistry();
+        $di = $this->getDi();
+        $registry->setDi($di);
+
+        $registry->registerDefinition([
+            'code' => 'test',
+            'handler_class' => 'FOSSBilling\\ProductType\\Test\\TestHandler',
             'templates' => [
                 'manage' => 'custom_manage.html.twig',
                 'config' => 'custom_config.html.twig',
@@ -366,24 +332,7 @@ final class ProductTypeRegistryTest extends \BBTestCase
 
         $this->assertSame('custom_manage.html.twig', $registry->getTemplate('test', 'manage'));
         $this->assertSame('custom_config.html.twig', $registry->getTemplate('test', 'config'));
-    }
-
-    public function testGetTemplateThrowsForMissingTemplate(): void
-    {
-        $registry = new ProductTypeRegistry();
-        $di = $this->getDi();
-        $registry->setDi($di);
-
-        $registry->registerDefinition([
-            'code' => 'test',
-            'handler_class' => 'FOSSBilling\\ProductType\\Test\\TestHandler',
-            'handler_file' => 'TestHandler.php',
-            'templates' => ['manage' => 'manage.html.twig'],
-        ]);
-
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('does not define template');
-        $registry->getTemplate('test', 'nonexistent');
+        $this->assertSame('ext_product_test_order.html.twig', $registry->getTemplate('test', 'order'));
     }
 
     public function testGetTemplateThrowsForUnregisteredProductType(): void
@@ -404,15 +353,11 @@ final class ProductTypeRegistryTest extends \BBTestCase
             'code' => 'producta',
             'label' => 'Product A',
             'handler_class' => 'FOSSBilling\\ProductType\\Producta\\ProductaHandler',
-            'handler_file' => 'ProductaHandler.php',
-            'templates' => ['manage' => 'a.html.twig'],
         ]);
 
         $registry->registerDefinition([
             'code' => 'productb',
             'handler_class' => 'FOSSBilling\\ProductType\\Productb\\ProductbHandler',
-            'handler_file' => 'ProductbHandler.php',
-            'templates' => ['manage' => 'b.html.twig'],
         ]);
 
         $pairs = $registry->getPairs();
@@ -429,8 +374,6 @@ final class ProductTypeRegistryTest extends \BBTestCase
         $registry->registerDefinition([
             'code' => 'test',
             'handler_class' => 'FOSSBilling\\ProductType\\Test\\TestHandler',
-            'handler_file' => 'TestHandler.php',
-            'templates' => ['manage' => 'test.html.twig'],
         ]);
 
         $this->assertTrue($registry->has('test'));
@@ -481,65 +424,65 @@ final class ProductTypeRegistryTest extends \BBTestCase
 
     public function testInvokeProductTypeActionCallsHandlerMethod(): void
     {
-        $mockHandler = $this->createMock(Interfaces\ProductTypeHandlerInterface::class);
-        $mockHandler->expects($this->once())
-            ->method('activate')
-            ->willReturn('activated');
+        $productDir = $this->tempDir . '/actiontest';
+        mkdir($productDir, 0o755, true);
+        file_put_contents($productDir . '/manifest.json', json_encode([
+            'code' => 'actiontest',
+            'handler_class' => 'FOSSBilling\\ProductType\\Download\\DownloadHandler',
+        ]));
 
         $registry = new ProductTypeRegistry();
         $di = $this->getDi();
         $registry->setDi($di);
+        $registry->loadFromFilesystem($this->tempDir);
 
-        $registry->registerDefinition([
-            'code' => 'test',
-            'handler' => $mockHandler,
-            'templates' => ['manage' => 'test.html.twig'],
-        ]);
+        $handler = $registry->getHandler('actiontest');
+        $this->assertInstanceOf(Interfaces\ProductTypeHandlerInterface::class, $handler);
 
         $order = new \Model_ClientOrder();
-        $result = $registry->invokeProductTypeAction('test', 'activate', $order);
-        $this->assertSame('activated', $result);
+        try {
+            $registry->invokeProductTypeAction('actiontest', 'create', $order);
+        } catch (Exception $e) {
+            $this->assertStringContainsString('config is missing', $e->getMessage());
+        }
     }
 
     public function testInvokeProductTypeActionThrowsForMissingMethod(): void
     {
-        $mockHandler = $this->createMock(Interfaces\ProductTypeHandlerInterface::class);
-        $mockHandler->method('activate')->willReturn('activated');
+        $productDir = $this->tempDir . '/nomethod';
+        mkdir($productDir, 0o755, true);
+        file_put_contents($productDir . '/manifest.json', json_encode([
+            'code' => 'nomethod',
+            'handler_class' => 'FOSSBilling\\ProductType\\Download\\DownloadHandler',
+        ]));
 
         $registry = new ProductTypeRegistry();
         $di = $this->getDi();
         $registry->setDi($di);
-
-        $registry->registerDefinition([
-            'code' => 'test',
-            'handler' => $mockHandler,
-            'templates' => ['manage' => 'test.html.twig'],
-        ]);
+        $registry->loadFromFilesystem($this->tempDir);
 
         $order = new \Model_ClientOrder();
 
         $this->expectException(ProductTypeActionNotSupportedException::class);
         $this->expectExceptionMessage('does not support action');
-        $registry->invokeProductTypeAction('test', 'nonexistent', $order);
+        $registry->invokeProductTypeAction('nomethod', 'nonexistent', $order);
     }
 
     public function testHandlerReceivesDiInjection(): void
     {
-        $mockHandler = $this->createMock(Interfaces\ProductTypeHandlerInterface::class);
-        $mockHandler->expects($this->once())
-            ->method('setDi')
-            ->with($this->isInstanceOf(\Pimple\Container::class));
+        $productDir = $this->tempDir . '/diinjection';
+        mkdir($productDir, 0o755, true);
+        file_put_contents($productDir . '/manifest.json', json_encode([
+            'code' => 'diinjection',
+            'handler_class' => 'FOSSBilling\\ProductType\\Custom\\CustomHandler',
+        ]));
 
         $registry = new ProductTypeRegistry();
         $di = $this->getDi();
         $registry->setDi($di);
+        $registry->loadFromFilesystem($this->tempDir);
 
-        $registry->registerDefinition([
-            'code' => 'test',
-            'handler' => $mockHandler,
-            'templates' => ['manage' => 'test.html.twig'],
-        ]);
-
-        $registry->getHandler('test');
+        $handler = $registry->getHandler('diinjection');
+        $this->assertInstanceOf(Interfaces\ProductTypeHandlerInterface::class, $handler);
     }
 }

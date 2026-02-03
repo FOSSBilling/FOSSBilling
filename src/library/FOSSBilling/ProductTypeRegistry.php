@@ -218,6 +218,7 @@ class ProductTypeRegistry implements InjectionAwareInterface
      *     label: string,
      *     handler_class: string,
      *     capabilities: string[],
+     *     templates?: array<string, string>,
      *     base_path?: string,
      *     source: string
      * }
@@ -289,8 +290,9 @@ class ProductTypeRegistry implements InjectionAwareInterface
 
         $definition = $this->getDefinition($code);
 
-        if (isset($definition['templates'][$key]) && is_string($definition['templates'][$key]) && $definition['templates'][$key] !== '') {
-            return $definition['templates'][$key];
+        $templates = $definition['templates'] ?? null;
+        if (is_array($templates) && isset($templates[$key]) && $templates[$key] !== '') {
+            return $templates[$key];
         }
 
         return 'ext_product_' . $code . '_' . $key . '.html.twig';
@@ -301,17 +303,16 @@ class ProductTypeRegistry implements InjectionAwareInterface
      * Uses convention: {handler_class namespace}\Api for the API class.
      *
      * @param string $code Product type code
-     * @param string $role API role (admin, client, guest)
      *
      * @return array{class: string}|null API definition or null if not configured
      */
-    public function getApiDefinition(string $code, string $role): ?array
+    public function getApiDefinition(string $code): ?array
     {
         $code = strtolower($code);
 
         $definition = $this->getDefinition($code);
-        $handlerClass = $definition['handler_class'] ?? null;
-        if (!is_string($handlerClass) || trim($handlerClass) === '') {
+        $handlerClass = $definition['handler_class'];
+        if (!class_exists($handlerClass)) {
             return null;
         }
 
@@ -346,7 +347,7 @@ class ProductTypeRegistry implements InjectionAwareInterface
             throw new Exception('Product type handler for "%s" does not implement ProductTypeHandlerInterface.', [$code]);
         }
 
-        if ($this->di && method_exists($handler, 'setDi')) {
+        if ($this->di !== null) {
             $handler->setDi($this->di);
         }
 
