@@ -832,6 +832,9 @@ class UpdatePatcher implements InjectionAwareInterface
                 foreach ($rows as $row) {
                     $permissions = json_decode($row['permissions'] ?? '', true);
                     if (!is_array($permissions)) {
+                        if ($this->di && isset($this->di['logger'])) {
+                            $this->di['logger']->debug('Invalid permissions JSON for admin id %s, resetting permissions', [$row['id']]);
+                        }
                         $permissions = [];
                     }
 
