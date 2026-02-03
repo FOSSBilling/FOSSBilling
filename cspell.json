@@ -419,7 +419,8 @@
         "dataurl",
         "tomselect",
         "zindex",
-        "CHARSETS"
+        "CHARSETS",
+        "servicedownloadable"
     ],
     "ignorePaths": [
         "tests-legacy/**",
