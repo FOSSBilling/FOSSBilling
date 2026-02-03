@@ -248,6 +248,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         } else {
             $tld = $rtable->findOneByTld($tld);
         }
+        if (!$tld instanceof \FOSSBilling\ProductType\Domain\Entity\Tld) {
             throw new FOSSBilling\Exception('Unknown TLD. Could not determine registration price');
         }
 
