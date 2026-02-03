@@ -463,6 +463,9 @@
         "phpstan-baseline.neon",
         "Dockerfile",
         ".ddev/**",
-        "src/extensions/products/*/tests/**"
+        "src/extensions/products/*/tests/**",
+        "mtimes",
+        "Mtimes",
+        "MTIMES"
     ]
 }
