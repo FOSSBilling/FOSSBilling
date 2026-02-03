@@ -1,10 +1,5 @@
 {
   "label": "API Key",
   "description": "API key access tokens",
-  "handler_class": "FOSSBilling\\ProductType\\ApiKey\\ApiKeyHandler",
-  "templates": {
-    "manage": "ext_product_apikey_manage.html.twig",
-    "config": "ext_product_apikey_config.html.twig"
-  },
   "source": "core"
 }

@@ -1,10 +1,5 @@
 {
   "label": "Download",
   "description": "Download file products",
-  "handler_class": "FOSSBilling\\ProductType\\Download\\DownloadHandler",
-  "templates": {
-    "manage": "ext_product_download_manage.html.twig",
-    "config": "ext_product_download_config.html.twig"
-  },
   "source": "core"
 }

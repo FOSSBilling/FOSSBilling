@@ -187,8 +187,6 @@ class ProductTypeRegistry implements InjectionAwareInterface
      *     code?: string,
      *     label?: string,
      *     handler_class?: string,
-     *     handler?: Interfaces\ProductTypeHandlerInterface,
-     *     templates?: array<string, string>,
      *     capabilities?: string[],
      *     base_path?: string,
      *     source?: string
@@ -218,9 +216,7 @@ class ProductTypeRegistry implements InjectionAwareInterface
      * @return array{
      *     code: string,
      *     label: string,
-     *     handler_class?: string,
-     *     handler?: Interfaces\ProductTypeHandlerInterface,
-     *     templates: array<string, string>,
+     *     handler_class: string,
      *     capabilities: string[],
      *     base_path?: string,
      *     source: string
@@ -293,12 +289,11 @@ class ProductTypeRegistry implements InjectionAwareInterface
 
         $definition = $this->getDefinition($code);
 
-        $templates = $definition['templates'] ?? [];
-        if (!is_array($templates) || !isset($templates[$key]) || !is_string($templates[$key]) || $templates[$key] === '') {
-            throw new Exception('Product type "%s" does not define template "%s" in manifest.', [$code, $key]);
+        if (isset($definition['templates'][$key]) && is_string($definition['templates'][$key]) && $definition['templates'][$key] !== '') {
+            return $definition['templates'][$key];
         }
 
-        return $templates[$key];
+        return 'ext_product_' . $code . '_' . $key . '.html.twig';
     }
 
     /**
@@ -308,30 +303,13 @@ class ProductTypeRegistry implements InjectionAwareInterface
      * @param string $code Product type code
      * @param string $role API role (admin, client, guest)
      *
-     * @return array{class: string, file: string|null}|null API definition or null if not configured
+     * @return array{class: string}|null API definition or null if not configured
      */
     public function getApiDefinition(string $code, string $role): ?array
     {
         $code = strtolower($code);
-        $role = strtolower($role);
 
         $definition = $this->getDefinition($code);
-
-        if (isset($definition['api']) && is_array($definition['api'])) {
-            $api = $definition['api'][$role] ?? $definition['api']['admin'] ?? null;
-            if ($api !== null) {
-                if (is_string($api)) {
-                    $api = ['class' => $api];
-                }
-                if (is_array($api) && !empty($api['class'])) {
-                    return [
-                        'class' => $api['class'],
-                        'file' => $this->resolveApiFile($definition, $api),
-                    ];
-                }
-            }
-        }
-
         $handlerClass = $definition['handler_class'] ?? null;
         if (!is_string($handlerClass) || trim($handlerClass) === '') {
             return null;
@@ -343,13 +321,9 @@ class ProductTypeRegistry implements InjectionAwareInterface
         }
         $namespace = substr($handlerClass, 0, $lastBackslash);
         $apiClass = $namespace . '\\Api';
-        if ($apiClass === $handlerClass) {
-            $apiClass = $handlerClass . '\\Api';
-        }
 
         return [
             'class' => $apiClass,
-            'file' => null,
         ];
     }
 
@@ -361,37 +335,12 @@ class ProductTypeRegistry implements InjectionAwareInterface
         }
 
         $definition = $this->getDefinition($code);
-        $handler = $definition['handler'] ?? null;
+        $handlerClass = $definition['handler_class'];
 
-        if ($handler === null) {
-            $handlerClass = $definition['handler_class'];
-            if (!class_exists($handlerClass)) {
-                $handlerFile = $this->resolveHandlerFile($definition);
-                if ($handlerFile !== null) {
-                    if (!is_file($handlerFile)) {
-                        throw new Exception('Product type handler file "%s" was not found.', [$handlerFile]);
-                    }
-
-                    $basePath = $definition['base_path'] ?? null;
-                    $handlerRealpath = realpath($handlerFile);
-                    $baseRealpath = $basePath ? realpath($basePath) : false;
-
-                    if ($handlerRealpath === false) {
-                        throw new Exception('Unable to resolve real path for product type handler file "%s".', [$handlerFile]);
-                    }
-
-                    if ($baseRealpath !== false && !str_starts_with($handlerRealpath, $baseRealpath . DIRECTORY_SEPARATOR)) {
-                        throw new Exception('Product type handler file "%s" is not within allowed directory.', [$handlerFile]);
-                    }
-
-                    require_once $handlerFile;
-                }
-            }
-            if (!class_exists($handlerClass)) {
-                throw new Exception('Product type handler class "%s" was not found.', [$handlerClass]);
-            }
-            $handler = new $handlerClass();
+        if (!class_exists($handlerClass)) {
+            throw new Exception('Product type handler class "%s" was not found.', [$handlerClass]);
         }
+        $handler = new $handlerClass();
 
         if (!$handler instanceof Interfaces\ProductTypeHandlerInterface) {
             throw new Exception('Product type handler for "%s" does not implement ProductTypeHandlerInterface.', [$code]);
@@ -448,9 +397,10 @@ class ProductTypeRegistry implements InjectionAwareInterface
 
     private function normalizeDefinition(array $definition): array
     {
+        $basePath = $definition['base_path'] ?? null;
+
         $code = $definition['code'] ?? null;
         if (!is_string($code) || trim($code) === '') {
-            $basePath = $definition['base_path'] ?? null;
             if (is_string($basePath) && trim($basePath) !== '') {
                 $code = strtolower(basename($basePath));
             }
@@ -463,26 +413,14 @@ class ProductTypeRegistry implements InjectionAwareInterface
 
         $definition['label'] ??= ucfirst($code);
 
-        if (!isset($definition['handler']) && empty($definition['handler_class'])) {
-            throw new Exception('Product type "%s" must define "handler_class" or "handler".', [$code]);
+        if (empty($definition['handler_class']) && is_string($basePath) && trim($basePath) !== '') {
+            $dirName = basename($basePath);
+            $definition['handler_class'] = 'FOSSBilling\\ProductType\\' . $dirName . '\\' . $dirName . 'Handler';
         }
 
-        if (isset($definition['handler'])
-            && !$definition['handler'] instanceof Interfaces\ProductTypeHandlerInterface
-        ) {
-            throw new Exception('Product type "%s" handler must implement ProductTypeHandlerInterface.', [$code]);
+        if (empty($definition['handler_class'])) {
+            throw new Exception('Product type "%s" must define "handler_class".', [$code]);
         }
-
-        $templates = $definition['templates'] ?? [];
-        if (!is_array($templates)) {
-            $templates = [];
-        }
-
-        if (empty($templates)) {
-            throw new Exception('Product type "%s" must define "templates" in manifest.', [$code]);
-        }
-
-        $definition['templates'] = $templates;
 
         $capabilities = $definition['capabilities'] ?? self::DEFAULT_CAPABILITIES;
         if (!is_array($capabilities)) {
@@ -491,38 +429,6 @@ class ProductTypeRegistry implements InjectionAwareInterface
         $definition['capabilities'] = array_values(array_unique(array_map('strtolower', $capabilities)));
 
         return $definition;
-    }
-
-    private function resolveHandlerFile(array $definition): ?string
-    {
-        $handlerFile = $definition['handler_file'] ?? null;
-        if (!is_string($handlerFile) || trim($handlerFile) === '') {
-            return null;
-        }
-
-        $handlerFile = trim($handlerFile);
-        $basePath = $definition['base_path'] ?? null;
-        if (!is_string($basePath) || trim($basePath) === '') {
-            return $handlerFile;
-        }
-
-        return Path::join($basePath, $handlerFile);
-    }
-
-    private function resolveApiFile(array $definition, array $apiDefinition): ?string
-    {
-        $apiFile = $apiDefinition['file'] ?? null;
-        if (!is_string($apiFile) || trim($apiFile) === '') {
-            return null;
-        }
-
-        $apiFile = trim($apiFile);
-        $basePath = $definition['base_path'] ?? null;
-        if (!is_string($basePath) || trim($basePath) === '') {
-            return $apiFile;
-        }
-
-        return Path::join($basePath, $apiFile);
     }
 
     private function logManifestError(string $name, \Throwable $exception): void

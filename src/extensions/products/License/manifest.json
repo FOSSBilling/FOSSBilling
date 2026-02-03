@@ -1,10 +1,5 @@
 {
   "label": "License",
   "description": "Software license keys and validation",
-  "handler_class": "FOSSBilling\\ProductType\\License\\LicenseHandler",
-  "templates": {
-    "manage": "ext_product_license_manage.html.twig",
-    "config": "ext_product_license_config.html.twig"
-  },
   "source": "core"
 }

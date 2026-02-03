@@ -1,12 +1,5 @@
 {
   "label": "Hosting",
   "description": "Hosting account provisioning and management",
-  "handler_class": "FOSSBilling\\ProductType\\Hosting\\HostingHandler",
-  "templates": {
-    "order": "ext_product_hosting_order.html.twig",
-    "manage": "ext_product_hosting_manage.html.twig",
-    "order_form": "ext_product_hosting_order_form.html.twig",
-    "config": "ext_product_hosting_config.html.twig"
-  },
   "source": "core"
 }

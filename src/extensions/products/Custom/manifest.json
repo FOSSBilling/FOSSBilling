@@ -1,11 +1,5 @@
 {
   "label": "Custom",
   "description": "Custom services with plugin adapters",
-  "handler_class": "FOSSBilling\\ProductType\\Custom\\CustomHandler",
-  "templates": {
-    "order": "ext_product_custom_order.html.twig",
-    "manage": "ext_product_custom_manage.html.twig",
-    "config": "ext_product_custom_config.html.twig"
-  },
   "source": "core"
 }

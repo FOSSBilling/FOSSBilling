@@ -1,11 +1,5 @@
 {
   "label": "Domain",
   "description": "Domain registration, transfer, and management",
-  "handler_class": "FOSSBilling\\ProductType\\Domain\\DomainHandler",
-  "templates": {
-    "order": "ext_product_domain_order.html.twig",
-    "manage": "ext_product_domain_manage.html.twig",
-    "config": "ext_product_domain_config.html.twig"
-  },
   "source": "core"
 }
