@@ -816,12 +816,17 @@ final class ServiceTest extends \BBTestCase
         $registry->registerDefinition([
             'code' => 'custom',
             'label' => 'Custom',
+            'handler_class' => \FOSSBilling\ProductType\Custom\CustomHandler::class,
             'handler' => $customHandlerMock,
             'templates' => [
                 'html_admin' => null,
                 'html_client' => null,
             ],
         ]);
+
+        $reflection = new \ReflectionClass($registry);
+        $handlersProperty = $reflection->getProperty('handlers');
+        $handlersProperty->setValue($registry, ['custom' => $customHandlerMock]);
 
         $di = $this->getDi();
         $di['product_type_registry'] = $registry;
@@ -854,12 +859,17 @@ final class ServiceTest extends \BBTestCase
         $registry->registerDefinition([
             'code' => 'custom',
             'label' => 'Custom',
+            'handler_class' => \FOSSBilling\ProductType\Custom\CustomHandler::class,
             'handler' => $customHandlerMock,
             'templates' => [
                 'html_admin' => null,
                 'html_client' => null,
             ],
         ]);
+
+        $reflection = new \ReflectionClass($registry);
+        $handlersProperty = $reflection->getProperty('handlers');
+        $handlersProperty->setValue($registry, ['custom' => $customHandlerMock]);
 
         $di = $this->getDi();
         $di['product_type_registry'] = $registry;

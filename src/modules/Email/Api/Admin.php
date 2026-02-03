@@ -31,15 +31,18 @@ class Admin extends \Api_Abstract
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
 
         foreach ($pager['list'] as $key => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
             $pager['list'][$key] = [
-                'id' => $item['id'],
-                'client_id' => $item['client_id'],
-                'sender' => $item['sender'],
-                'recipients' => $item['recipients'],
-                'subject' => $item['subject'],
-                'content_html' => $item['content_html'],
-                'content_text' => $item['content_text'],
-                'created_at' => $item['created_at'],
+                'id' => $item['id'] ?? null,
+                'client_id' => $item['client_id'] ?? null,
+                'sender' => $item['sender'] ?? null,
+                'recipients' => $item['recipients'] ?? null,
+                'subject' => $item['subject'] ?? null,
+                'content_html' => $item['content_html'] ?? null,
+                'content_text' => $item['content_text'] ?? null,
+                'created_at' => $item['created_at'] ?? null,
             ];
         }
 
@@ -304,11 +307,11 @@ class Admin extends \Api_Abstract
 
         $email = [
             'code' => 'mod_email_test',
-            'to' => $currentUser->email,
-            'to_name' => $currentUser->name,
+            'to' => $currentUser?->email,
+            'to_name' => $currentUser?->name,
             'send_now' => true,
             'throw_exceptions' => true,
-            'staff_member_name' => $currentUser->name,
+            'staff_member_name' => $currentUser?->name,
         ];
 
         return $this->getService()->sendTemplate($email);

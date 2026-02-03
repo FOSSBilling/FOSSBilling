@@ -87,14 +87,14 @@ class Service implements InjectionAwareInterface
         try {
             $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
             $identity = $di['loggedin_admin'];
-            $service = $orderService->getOrderServiceData($order, $identity);
-            $orderArr = $service->toApiArray($order, true, $identity);
+            $serviceData = $orderService->getOrderServiceData($order, $identity);
+            $orderArr = $orderService->toApiArray($order, true, $identity);
 
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
             $typeCode = $orderArr['product_type'] ?? $orderArr['service_type'];
             $email['code'] = sprintf('ext_product_%s_renewed', $typeCode);
-            $email['service'] = $service;
+            $email['service'] = $serviceData;
             $email['order'] = $orderArr;
 
             $emailService = $di['mod_service']('email');

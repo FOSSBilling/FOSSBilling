@@ -510,6 +510,14 @@ final class Api_AdminTest extends \BBTestCase
             ->method('sendTemplate')
             ->willReturn(true);
 
+        $di = $this->getDi();
+        $admin = new \Model_Admin();
+        $admin->loadBean(new \DummyBean());
+        $admin->email = 'admin@example.com';
+        $admin->name = 'Admin User';
+        $di['loggedin_admin'] = $admin;
+        $adminApi->setDi($di);
+
         $adminApi->setService($emailService);
 
         $result = $adminApi->send_test([]);

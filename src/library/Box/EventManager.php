@@ -27,7 +27,9 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
     public function fire($data)
     {
         if (!isset($data['event']) || empty($data['event'])) {
-            error_log('Invoked event call without providing event name');
+            if ($this->di !== null && isset($this->di['logger'])) {
+                $this->di['logger']->setChannel('event')->warning('Invoked event call without providing event name');
+            }
 
             return false;
         }

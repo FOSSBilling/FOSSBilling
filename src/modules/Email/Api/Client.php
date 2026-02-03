@@ -33,16 +33,19 @@ class Client extends \Api_Abstract
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
 
         foreach ($pager['list'] as $key => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
             $pager['list'][$key] = [
-                'id' => $item['id'],
-                'client_id' => $item['client_id'],
-                'sender' => $item['sender'],
-                'recipients' => $item['recipients'],
-                'subject' => $item['subject'],
-                'content_html' => $item['content_html'],
-                'content_text' => $item['content_text'],
-                'created_at' => $item['created_at'],
-                'updated_at' => $item['updated_at'],
+                'id' => $item['id'] ?? null,
+                'client_id' => $item['client_id'] ?? null,
+                'sender' => $item['sender'] ?? null,
+                'recipients' => $item['recipients'] ?? null,
+                'subject' => $item['subject'] ?? null,
+                'content_html' => $item['content_html'] ?? null,
+                'content_text' => $item['content_text'] ?? null,
+                'created_at' => $item['created_at'] ?? null,
+                'updated_at' => $item['updated_at'] ?? null,
             ];
         }
 
