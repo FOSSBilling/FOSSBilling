@@ -51,47 +51,34 @@ final class ServiceTest extends \BBTestCase
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
+        $clientOrderModel->client_id = 1;
         $clientOrderModel->config = '{"filename" : "temp/asdcxTest.txt"}';
 
-        $model = new \Model_ExtProductDownload();
-        $model->loadBean(new \DummyBean());
+        $model = new \FOSSBilling\ProductType\Download\Entity\Download(1);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($model);
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn(1);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-        ;
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
         $di['validator'] = $validatorMock;
 
         $this->service->setDi($di);
         $result = $this->service->create($clientOrderModel);
-        $this->assertInstanceOf('\Model_ExtProductDownload', $result);
+        $this->assertInstanceOf('\FOSSBilling\ProductType\Download\Entity\Download', $result);
     }
 
     public function testActionDelete(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \DummyBean());
+        $clientOrderModel->service_id = 1;
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->willReturn(new \Model_ExtProductDownload());
+            ->willReturn(new \FOSSBilling\ProductType\Download\Entity\Download(1));
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManagerForDelete();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);

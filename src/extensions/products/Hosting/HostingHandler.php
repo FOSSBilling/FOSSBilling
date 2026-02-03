@@ -16,6 +16,12 @@ use FOSSBilling\Exception;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Interfaces\ProductTypeHandlerInterface;
+use FOSSBilling\ProductType\Hosting\Entity\Hosting;
+use FOSSBilling\ProductType\Hosting\Entity\HostingPlan;
+use FOSSBilling\ProductType\Hosting\Entity\HostingServer;
+use FOSSBilling\ProductType\Hosting\Repository\HostingPlanRepository;
+use FOSSBilling\ProductType\Hosting\Repository\HostingRepository;
+use FOSSBilling\ProductType\Hosting\Repository\HostingServerRepository;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -24,6 +30,9 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
 {
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
+    private ?HostingRepository $hostingRepository = null;
+    private ?HostingServerRepository $serverRepository = null;
+    private ?HostingPlanRepository $planRepository = null;
 
     public function __construct()
     {
@@ -40,6 +49,43 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return $this->di;
     }
 
+    protected function getHostingRepository(): HostingRepository
+    {
+        if ($this->hostingRepository === null) {
+            $this->hostingRepository = $this->di['em']->getRepository(Hosting::class);
+        }
+
+        return $this->hostingRepository;
+    }
+
+    protected function getServerRepository(): HostingServerRepository
+    {
+        if ($this->serverRepository === null) {
+            $this->serverRepository = $this->di['em']->getRepository(HostingServer::class);
+        }
+
+        return $this->serverRepository;
+    }
+
+    protected function getPlanRepository(): HostingPlanRepository
+    {
+        if ($this->planRepository === null) {
+            $this->planRepository = $this->di['em']->getRepository(HostingPlan::class);
+        }
+
+        return $this->planRepository;
+    }
+
+    protected function loadEntity(int $id): Hosting
+    {
+        $entity = $this->getHostingRepository()->find($id);
+        if (!$entity instanceof Hosting) {
+            throw new Exception('Hosting entity not found');
+        }
+
+        return $entity;
+    }
+
     public function getCartProductTitle($product, array $data)
     {
         try {
@@ -47,7 +93,6 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
 
             return __trans(':hosting for :domain', [':hosting' => $product->title, ':domain' => $sld . $tld]);
         } catch (\Exception $e) {
-            // should never occur, but in case
             error_log($e->getMessage());
         }
 
@@ -70,271 +115,197 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         }
     }
 
-    public function create(\Model_ClientOrder $order)
-    {
-        return $this->action_create($order);
-    }
-
-    public function activate(\Model_ClientOrder $order)
-    {
-        return $this->action_activate($order);
-    }
-
-    public function renew(\Model_ClientOrder $order)
-    {
-        return $this->action_renew($order);
-    }
-
-    public function suspend(\Model_ClientOrder $order)
-    {
-        return $this->action_suspend($order);
-    }
-
-    public function unsuspend(\Model_ClientOrder $order)
-    {
-        return $this->action_unsuspend($order);
-    }
-
-    public function cancel(\Model_ClientOrder $order)
-    {
-        return $this->action_cancel($order);
-    }
-
-    public function uncancel(\Model_ClientOrder $order)
-    {
-        return $this->action_uncancel($order);
-    }
-
-    public function delete(\Model_ClientOrder $order)
-    {
-        $this->action_delete($order);
-    }
-
-    /**
-     * @throws InformationException
-     *
-     * @todo
-     */
-    public function action_create(\Model_ClientOrder $order): \Model_ExtProductHosting
+    public function create(\Model_ClientOrder $order): Hosting
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
         $this->validateOrderData($c);
 
-        $server = $this->di['db']->getExistingModelById('ExtProductHostingServer', $c['server_id'], 'Server from order configuration was not found');
+        $server = $this->loadServerEntity((int) $c['server_id']);
 
-        $hp = $this->di['db']->getExistingModelById('ExtProductHostingPlan', $c['hosting_plan_id'], 'Hosting plan from order configuration was not found');
+        $plan = $this->loadPlanEntity((int) $c['hosting_plan_id']);
 
-        $model = $this->di['db']->dispense('ExtProductHosting');
-        $model->client_id = $order->client_id;
-        $model->ext_product_hosting_server_id = $server->id;
-        $model->ext_product_hosting_plan_id = $hp->id;
-        $model->sld = $c['sld'];
-        $model->tld = $c['tld'];
-        $model->ip = $server->ip;
-        $model->reseller = $c['reseller'] ?? false;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $em = $this->di['em'];
+        $hosting = new Hosting($order->client_id);
+        $hosting->setServer($server);
+        $hosting->setPlan($plan);
+        $hosting->setSld($c['sld']);
+        $hosting->setTld($c['tld']);
+        $hosting->setIp($server->getIp());
+        $hosting->setReseller($c['reseller'] ?? false);
 
-        return $model;
+        $em->persist($hosting);
+        $em->flush();
+
+        return $hosting;
     }
 
-    /**
-     * @throws Exception
-     */
-    public function action_activate(\Model_ClientOrder $order): array
+    public function activate(\Model_ClientOrder $order): array
     {
-        // Retrieve the service associated with the order
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
 
-        // If the service is not found, throw an exception
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
+        if (!$model instanceof Hosting) {
             throw new Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
-        // Retrieve the order's configuration
         $config = $orderService->getConfig($order);
 
-        // Retrieve the server manager for the order
         $serverManager = $this->_getServerMangerForOrder($model);
 
-        // Generate a password for the service
         $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
 
-        // If a password is already specified in the order's configuration, use that instead
         if (isset($config['password']) && !empty($config['password'])) {
             $pass = $config['password'];
         }
 
-        // Generate a username for the service
         if (isset($config['username']) && !empty($config['username'])) {
             $username = $config['username'];
         } else {
-            $username = $serverManager->generateUsername($model->sld . $model->tld);
+            $username = $serverManager->generateUsername($model->getSld() . $model->getTld());
         }
 
-        // Update the service's username and password
-        $model->username = $username;
-        $model->pass = $pass;
+        $model->setUsername($username);
+        $model->setPass($pass);
 
-        // If the order's configuration does not specify that the service should be imported, create an account for the service on the server
         if (!isset($config['import']) || !$config['import']) {
             [$adapter, $account] = $this->_getAM($model);
             $adapter->createAccount($account);
         }
 
-        // Update the service's password to a placeholder value for security reasons
-        $model->pass = '********';
+        $model->setPass('********');
 
-        // Save the service
-        $this->di['db']->store($model);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
 
-        // Return the username and password
         return [
             'username' => $username,
             'password' => $pass,
         ];
     }
 
-    /**
-     * @throws Exception
-     *
-     * @todo
-     */
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function renew(\Model_ClientOrder $order): bool
     {
-        // move expiration period to future
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
+        if (!$model instanceof Hosting) {
             throw new Exception('Order :id has no active service', [':id' => $order->id]);
         }
-        // @todo ?
 
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
 
         return true;
     }
 
-    /**
-     * @throws Exception
-     */
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function suspend(\Model_ClientOrder $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
+        if (!$model instanceof Hosting) {
             throw new Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
         $adapter->suspendAccount($account);
 
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
 
         return true;
     }
 
-    /**
-     * @throws Exception
-     */
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function unsuspend(\Model_ClientOrder $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
+        if (!$model instanceof Hosting) {
             throw new Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
         $adapter->unsuspendAccount($account);
 
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
 
         return true;
     }
 
-    /**
-     * @throws Exception
-     */
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function cancel(\Model_ClientOrder $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
+        if (!$model instanceof Hosting) {
             throw new Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
         $adapter->cancelAccount($account);
 
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
 
         return true;
     }
 
-    /**
-     * @throws Exception
-     */
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function uncancel(\Model_ClientOrder $order): bool
     {
-        $this->action_create($order);
+        $this->create($order);
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
 
-        // Retrieve the server manager for the order
         $serverManager = $this->_getServerMangerForOrder($model);
 
-        // As we replace the password internally with asterisks, generate a new password
         $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
-        $model->pass = $pass;
+        $model->setPass($pass);
 
-        // Retrieve the adapter and account, then create the account on the server
         [$adapter, $account] = $this->_getAM($model);
         $adapter->createAccount($account);
 
-        // Update the service's password to a placeholder value for security reasons
-        $model->pass = '********';
+        $model->setPass('********');
 
-        // Save the service
-        $this->di['db']->store($model);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
 
         return true;
     }
 
-    public function action_delete(\Model_ClientOrder $order): void
+    public function delete(\Model_ClientOrder $order): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
-        if ($service instanceof \Model_ExtProductHosting) {
-            // cancel if not canceled
+        if ($service instanceof Hosting) {
             if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
-                $this->action_cancel($order);
+                $this->cancel($order);
             }
-            $this->di['db']->trash($service);
+            $em = $this->di['em'];
+            $em->remove($service);
+            $em->flush();
         }
     }
 
-    public function changeAccountPlan(\Model_ClientOrder $order, \Model_ExtProductHosting $model, \Model_ExtProductHostingPlan $hp): bool
+    public function changeAccountPlan(\Model_ClientOrder $order, Hosting $model, HostingPlan $hp): bool
     {
-        $model->ext_product_hosting_plan_id = $hp->id;
+        $model->setPlan($hp);
         if ($this->_performOnService($order)) {
             $package = $this->getServerPackage($hp);
             [$adapter, $account] = $this->_getAM($model);
             $adapter->changeAccountPackage($account, $package);
         }
 
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Changed hosting plan of account #%s', $model->id);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
+        $this->di['logger']->info('Changed hosting plan of account #%s', $model->getId());
 
         return true;
     }
 
-    public function changeAccountUsername(\Model_ClientOrder $order, \Model_ExtProductHosting $model, $data): bool
+    public function changeAccountUsername(\Model_ClientOrder $order, Hosting $model, $data): bool
     {
         if (!isset($data['username']) || empty($data['username'])) {
             throw new InformationException('Account username is missing or is invalid');
@@ -347,16 +318,17 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
             $adapter->changeAccountUsername($account, $u);
         }
 
-        $model->username = $u;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $model->setUsername($u);
 
-        $this->di['logger']->info('Changed hosting account %s username', $model->id);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
+        $this->di['logger']->info('Changed hosting account %s username', $model->getId());
 
         return true;
     }
 
-    public function changeAccountIp(\Model_ClientOrder $order, \Model_ExtProductHosting $model, $data): bool
+    public function changeAccountIp(\Model_ClientOrder $order, Hosting $model, $data): bool
     {
         if (!isset($data['ip']) || empty($data['ip'])) {
             throw new InformationException('Account IP address is missing or is invalid');
@@ -369,15 +341,17 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
             $adapter->changeAccountIp($account, $ip);
         }
 
-        $model->ip = $ip;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Changed hosting account %s ip', $model->id);
+        $model->setIp($ip);
+
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
+        $this->di['logger']->info('Changed hosting account %s ip', $model->getId());
 
         return true;
     }
 
-    public function changeAccountDomain(\Model_ClientOrder $order, \Model_ExtProductHosting $model, $data): bool
+    public function changeAccountDomain(\Model_ClientOrder $order, Hosting $model, $data): bool
     {
         if (
             !isset($data['tld']) || empty($data['tld'])
@@ -394,16 +368,18 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
             $adapter->changeAccountDomain($account, $sld . $tld);
         }
 
-        $model->sld = $sld;
-        $model->tld = $tld;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Changed hosting account %s domain', $model->id);
+        $model->setSld($sld);
+        $model->setTld($tld);
+
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
+        $this->di['logger']->info('Changed hosting account %s domain', $model->getId());
 
         return true;
     }
 
-    public function changeAccountPassword(\Model_ClientOrder $order, \Model_ExtProductHosting $model, $data): bool
+    public function changeAccountPassword(\Model_ClientOrder $order, Hosting $model, $data): bool
     {
         if (
             !isset($data['password']) || !isset($data['password_confirm'])
@@ -419,35 +395,38 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
             $adapter->changeAccountPassword($account, $newPassword);
         }
 
-        $model->pass = '******';
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Changed hosting account %s password', $model->id);
+        $model->setPass('******');
+
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
+        $this->di['logger']->info('Changed hosting account %s password', $model->getId());
 
         return true;
     }
 
-    public function sync(\Model_ClientOrder $order, \Model_ExtProductHosting $model): bool
+    public function sync(\Model_ClientOrder $order, Hosting $model): bool
     {
         [$adapter, $account] = $this->_getAM($model);
         $updated = $adapter->synchronizeAccount($account);
 
         if ($account->getUsername() != $updated->getUsername()) {
-            $model->username = $updated->getUsername();
+            $model->setUsername($updated->getUsername());
         }
 
         if ($account->getIp() != $updated->getIp()) {
-            $model->ip = $updated->getIp();
+            $model->setIp($updated->getIp());
         }
 
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Synchronizing hosting account %s with server', $model->id);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
+        $this->di['logger']->info('Synchronizing hosting account %s with server', $model->getId());
 
         return true;
     }
 
-    private function _getDomainOrderId(\Model_ExtProductHosting $model)
+    private function _getDomainOrderId(Hosting $model)
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
@@ -466,7 +445,6 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
 
     private function _performOnService(\Model_ClientOrder $order): bool
     {
-        // If the order matches any of the following status, we should prevent actions such as PW resets or username changes from being performed
         $badStatus = [
             \Model_ClientOrder::STATUS_FAILED_SETUP,
             \Model_ClientOrder::STATUS_PENDING_SETUP,
@@ -477,26 +455,54 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return !in_array($order->status, $badStatus);
     }
 
-    /**
-     * @throws Exception
-     */
-    private function _getServerMangerForOrder($model)
+    private function loadServerEntity(int $id): HostingServer
     {
-        $server = $this->di['db']->getExistingModelById('ExtProductHostingServer', $model->ext_product_hosting_server_id, 'Server not found');
+        $entity = $this->getServerRepository()->find($id);
+        if (!$entity instanceof HostingServer) {
+            throw new Exception('Server not found');
+        }
+
+        return $entity;
+    }
+
+    private function loadPlanEntity(int $id): HostingPlan
+    {
+        $entity = $this->getPlanRepository()->find($id);
+        if (!$entity instanceof HostingPlan) {
+            throw new Exception('Hosting plan not found');
+        }
+
+        return $entity;
+    }
+
+    private function _getServerMangerForOrder(Hosting $model)
+    {
+        $server = $model->getServer();
+        if ($server === null) {
+            throw new Exception('Server not found');
+        }
 
         return $this->getServerManager($server);
     }
 
-    public function _getAM(\Model_ExtProductHosting $model, ?\Model_ExtProductHostingPlan $hp = null): array
+    public function _getAM(Hosting $model, ?HostingPlan $hp = null): array
     {
-        if (!$hp instanceof \Model_ExtProductHostingPlan) {
-            $hp = $this->di['db']->getExistingModelById('ExtProductHostingPlan', $model->ext_product_hosting_plan_id, 'Hosting plan not found');
+        $server = $model->getServer();
+        if ($server === null) {
+            throw new Exception('Server not found');
         }
 
-        $server = $this->di['db']->getExistingModelById('ExtProductHostingServer', $model->ext_product_hosting_server_id, 'Server not found');
-        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
+        if (!$hp instanceof HostingPlan) {
+            $plan = $model->getPlan();
+            if ($plan === null) {
+                throw new Exception('Hosting plan not found');
+            }
+            $hp = $plan;
+        }
 
-        $hp_config = $hp->config;
+        $client = $this->di['db']->load('Client', $model->getClientId());
+
+        $hp_config = $hp->getConfig();
 
         $server_client = new \Server_Client();
         $server_client
@@ -517,15 +523,15 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         $server_account
             ->setClient($server_client)
             ->setPackage($package)
-            ->setUsername($model->username)
-            ->setReseller($model->reseller)
-            ->setDomain($model->sld . $model->tld)
-            ->setPassword($model->pass)
-            ->setNs1($server->ns1)
-            ->setNs2($server->ns2)
-            ->setNs3($server->ns3)
-            ->setNs4($server->ns4)
-            ->setIp($model->ip);
+            ->setUsername($model->getUsername())
+            ->setReseller($model->isReseller())
+            ->setDomain($model->getSld() . $model->getTld())
+            ->setPassword($model->getPass())
+            ->setNs1($server->getNs1())
+            ->setNs2($server->getNs2())
+            ->setNs3($server->getNs3())
+            ->setNs4($server->getNs4())
+            ->setIp($model->getIp());
 
         $orderService = $this->di['mod_service']('order');
         $order = $orderService->getServiceOrder($model);
@@ -538,79 +544,80 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return [$adapter, $server_account];
     }
 
-    public function toApiArray(\Model_ExtProductHosting $model, $deep = false, $identity = null): array
+    public function toApiArray(Hosting $model, $deep = false, $identity = null): array
     {
-        $serviceHostingServerModel = $this->di['db']->load('ExtProductHostingServer', $model->ext_product_hosting_server_id);
-        $serviceHostingHpModel = $this->di['db']->load('ExtProductHostingPlan', $model->ext_product_hosting_plan_id);
-        $server = $this->toHostingServerApiArray($serviceHostingServerModel, $deep, $identity);
-        $hp = $this->toHostingHpApiArray($serviceHostingHpModel, $deep, $identity);
+        $server = $model->getServer();
+        $plan = $model->getPlan();
+
+        $serverData = $server !== null ? $this->toHostingServerApiArray($server, $deep, $identity) : null;
+        $hpData = $plan !== null ? $this->toHostingHpApiArray($plan, $deep, $identity) : null;
 
         return [
-            'ip' => $model->ip,
-            'sld' => $model->sld,
-            'tld' => $model->tld,
-            'domain' => $model->sld . $model->tld,
-            'username' => $model->username,
-            'reseller' => $model->reseller,
-            'server' => $server,
-            'hosting_plan' => $hp,
+            'ip' => $model->getIp(),
+            'sld' => $model->getSld(),
+            'tld' => $model->getTld(),
+            'domain' => $model->getSld() . $model->getTld(),
+            'username' => $model->getUsername(),
+            'reseller' => $model->isReseller(),
+            'server' => $serverData,
+            'hosting_plan' => $hpData,
             'domain_order_id' => $this->_getDomainOrderId($model),
         ];
     }
 
-    public function toHostingServerApiArray(\Model_ExtProductHostingServer $model, $deep = false, $identity = null): array
+    public function toHostingServerApiArray(HostingServer $model, $deep = false, $identity = null): array
     {
         [$cpanel_url, $whm_url] = $this->getManagerUrls($model);
         $result = [
-            'name' => $model->name,
-            'hostname' => $model->hostname,
-            'ip' => $model->ip,
-            'ns1' => $model->ns1,
-            'ns2' => $model->ns2,
-            'ns3' => $model->ns3,
-            'ns4' => $model->ns4,
+            'name' => $model->getName(),
+            'hostname' => $model->getHostname(),
+            'ip' => $model->getIp(),
+            'ns1' => $model->getNs1(),
+            'ns2' => $model->getNs2(),
+            'ns3' => $model->getNs3(),
+            'ns4' => $model->getNs4(),
             'cpanel_url' => $cpanel_url,
             'reseller_cpanel_url' => $whm_url,
         ];
 
         if ($identity instanceof \Model_Admin) {
-            $result['id'] = $model->id;
-            $result['active'] = $model->active;
-            $result['secure'] = $model->secure;
-            $result['assigned_ips'] = json_decode($model->assigned_ips ?? '', true) ?? '';
-            $result['status_url'] = $model->status_url;
-            $result['max_accounts'] = $model->max_accounts;
-            $result['manager'] = $model->manager;
-            $result['config'] = json_decode($model->config ?? '', true) ?? [];
-            $result['username'] = $model->username;
-            $result['password'] = $model->password;
-            $result['accesshash'] = $model->accesshash;
-            $result['port'] = $model->port;
-            $result['passwordLength'] = $model->passwordLength;
-            $result['created_at'] = $model->created_at;
-            $result['updated_at'] = $model->updated_at;
+            $result['id'] = $model->getId();
+            $result['active'] = $model->isActive();
+            $result['secure'] = $model->isSecure();
+            $result['assigned_ips'] = $model->getAssignedIps();
+            $result['status_url'] = $model->getStatusUrl();
+            $result['max_accounts'] = $model->getMaxAccounts();
+            $result['manager'] = $model->getManager();
+            $result['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
+            $result['username'] = $model->getUsername();
+            $result['password'] = $model->getPassword();
+            $result['accesshash'] = $model->getAccessHash();
+            $result['port'] = $model->getPort();
+            $result['passwordLength'] = $model->getPasswordLength();
+            $result['created_at'] = $model->getCreatedAt()?->format('Y-m-d H:i:s');
+            $result['updated_at'] = $model->getUpdatedAt()?->format('Y-m-d H:i:s');
         }
 
         return $result;
     }
 
-    public function toHostingAccountApiArray(\Model_ExtProductHosting $model, $deep = false, $identity = null): array
+    public function toHostingAccountApiArray(Hosting $model, $deep = false, $identity = null): array
     {
         $result = [
-            'id' => $model->id,
-            'sld' => $model->sld,
-            'tld' => $model->tld,
-            'client_id' => $model->client_id,
-            'server_id' => $model->ext_product_hosting_server_id,
-            'plan_id' => $model->ext_product_hosting_plan_id,
-            'reseller' => $model->reseller,
+            'id' => $model->getId(),
+            'sld' => $model->getSld(),
+            'tld' => $model->getTld(),
+            'client_id' => $model->getClientId(),
+            'server_id' => $model->getServer()?->getId(),
+            'plan_id' => $model->getPlan()?->getId(),
+            'reseller' => $model->isReseller(),
         ];
 
         if ($identity instanceof \Model_Admin) {
-            $result['ip'] = $model->ip;
-            $result['username'] = $model->username;
-            $result['created_at'] = $model->created_at;
-            $result['updated_at'] = $model->updated_at;
+            $result['ip'] = $model->getIp();
+            $result['username'] = $model->getUsername();
+            $result['created_at'] = $model->getCreatedAt()?->format('Y-m-d H:i:s');
+            $result['updated_at'] = $model->getUpdatedAt()?->format('Y-m-d H:i:s');
         }
 
         return $result;
@@ -660,21 +667,21 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return [$sld, $tld];
     }
 
-    public function update(\Model_ExtProductHosting $model, array $data): bool
+    public function update(Hosting $model, array $data): bool
     {
         if (isset($data['username']) && !empty($data['username'])) {
-            $model->username = $data['username'];
+            $model->setUsername($data['username']);
         }
 
         if (isset($data['ip']) && !empty($data['ip'])) {
-            $model->ip = $data['ip'];
+            $model->setIp($data['ip']);
         }
 
-        $model->updated_at = date('Y-m-d H:i:s');
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
 
-        $this->di['db']->store($model);
-
-        $this->di['logger']->info('Updated hosting account %s without sending actions to server', $model->id);
+        $this->di['logger']->info('Updated hosting account %s without sending actions to server', $model->getId());
 
         return true;
     }
@@ -723,162 +730,173 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
 
     public function getServerPairs(): array
     {
-        $sql = 'SELECT id, name
-                FROM ext_product_hosting_server
-                ORDER BY id ASC';
-        $rows = $this->di['db']->getAll($sql);
-
-        $result = [];
-        foreach ($rows as $record) {
-            $result[$record['id']] = $record['name'];
-        }
-
-        return $result;
+        return $this->getServerRepository()->getPairs();
     }
 
     public function getServersSearchQuery($data): array
     {
-        $sql = 'SELECT *
-                FROM ext_product_hosting_server
-                order by id ASC';
+        $qb = $this->getServerRepository()->getSearchQueryBuilder($data);
 
-        return [$sql, []];
+        return [$qb->getDQL(), $qb->getParameters()];
     }
 
     public function getAccountsSearchQuery($data): array
     {
-        $sql = 'SELECT * FROM ext_product_hosting';
-        $params = [];
+        $qb = $this->getHostingRepository()->getSearchQueryBuilder($data);
 
-        $serverID = $data['server_id'] ?? null;
-
-        if (!empty($serverID)) {
-            $sql = $sql . ' WHERE ext_product_hosting_server_id = :server_id';
-            $params['server_id'] = $serverID;
-        }
-
-        $sql = $sql . ' ORDER BY id ASC';
-
-        return [$sql, $params];
+        return [$qb->getDQL(), $qb->getParameters()];
     }
 
-    public function createServer($name, $ip, $manager, $data)
+    public function createServer($name, $ip, $manager, $data): int
     {
-        $model = $this->di['db']->dispense('ExtProductHostingServer');
-        $model->name = $name;
-        $model->ip = $ip;
+        $em = $this->di['em'];
+        $server = new HostingServer();
+        $server->setName($name);
+        $server->setIp($ip);
 
-        $model->hostname = $data['hostname'] ?? null;
+        $server->setHostname($data['hostname'] ?? null);
         $assigned_ips = $data['assigned_ips'] ?? '';
         if (!empty($assigned_ips)) {
-            $model->assigned_ips = self::processAssignedIPs($assigned_ips);
+            $server->setAssignedIps(self::processAssignedIPs($assigned_ips));
         }
 
-        $model->active = $data['active'] ?? 1;
-        $model->status_url = $data['status_url'] ?? null;
-        $model->max_accounts = $data['max_accounts'] ?? null;
+        $server->setActive($data['active'] ?? true);
+        $server->setStatusUrl($data['status_url'] ?? null);
+        $server->setMaxAccounts($data['max_accounts'] ?? null);
 
-        $model->ns1 = $data['ns1'] ?? null;
-        $model->ns2 = $data['ns2'] ?? null;
-        $model->ns3 = $data['ns3'] ?? null;
-        $model->ns4 = $data['ns4'] ?? null;
+        $server->setNs1($data['ns1'] ?? null);
+        $server->setNs2($data['ns2'] ?? null);
+        $server->setNs3($data['ns3'] ?? null);
+        $server->setNs4($data['ns4'] ?? null);
 
-        $model->manager = $manager;
-        $model->username = $data['username'] ?? null;
-        $model->password = $data['password'] ?? null;
-        $model->accesshash = $data['accesshash'] ?? null;
-        $model->port = $data['port'] ?? null;
-        $model->passwordLength = is_numeric($data['passwordLength']) ? intval($data['passwordLength']) : null;
-        $model->secure = $data['secure'] ?? 0;
+        $server->setManager($manager);
+        $server->setUsername($data['username'] ?? null);
+        $server->setPassword($data['password'] ?? null);
+        $server->setAccessHash($data['accesshash'] ?? null);
+        $server->setPort($data['port'] ?? null);
+        $server->setPasswordLength(is_numeric($data['passwordLength']) ? intval($data['passwordLength']) : null);
+        $server->setSecure($data['secure'] ?? false);
 
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $newId = $this->di['db']->store($model);
+        $em->persist($server);
+        $em->flush();
 
+        $newId = $server->getId();
         $this->di['logger']->info('Added new hosting server %s', $newId);
 
         return $newId;
     }
 
-    public function deleteServer(\Model_ExtProductHostingServer $model): bool
+    public function deleteServer(HostingServer $model): bool
     {
-        $id = $model->id;
-        $this->di['db']->trash($model);
+        $id = $model->getId();
+        $em = $this->di['em'];
+        $em->remove($model);
+        $em->flush();
         $this->di['logger']->info('Deleted hosting server %s', $id);
 
         return true;
     }
 
-    public function updateServer(\Model_ExtProductHostingServer $model, array $data): bool
+    public function updateServer(HostingServer $model, array $data): bool
     {
-        $model->name = $data['name'] ?? $model->name;
-        $model->ip = $data['ip'] ?? $model->ip;
-        $model->hostname = $data['hostname'] ?? $model->hostname;
+        if (isset($data['name'])) {
+            $model->setName($data['name']);
+        }
+        if (isset($data['ip'])) {
+            $model->setIp($data['ip']);
+        }
+        if (isset($data['hostname'])) {
+            $model->setHostname($data['hostname']);
+        }
 
         $assigned_ips = $data['assigned_ips'] ?? '';
         if (!empty($assigned_ips)) {
-            $model->assigned_ips = self::processAssignedIPs($assigned_ips);
+            $model->setAssignedIps(self::processAssignedIPs($assigned_ips));
         }
 
-        $model->active = $data['active'] ?? $model->active;
-        $model->status_url = $data['status_url'] ?? $model->status_url;
-        $model->max_accounts = $data['max_accounts'] ?? $model->max_accounts;
-        $model->ns1 = $data['ns1'] ?? $model->ns1;
-        $model->ns2 = $data['ns2'] ?? $model->ns2;
-        $model->ns3 = $data['ns3'] ?? $model->ns3;
-        $model->ns4 = $data['ns4'] ?? $model->ns4;
-        $model->manager = $data['manager'] ?? $model->manager;
-        $model->port = is_numeric($data['port']) ? $data['port'] : $model->port;
-        $model->config = json_encode($data['config']) ?? $model->config;
-        $model->secure = $data['secure'] ?? $model->secure;
-        $model->username = $data['username'] ?? $model->username;
-        $model->password = $data['password'] ?? $model->password;
-        $model->accesshash = $data['accesshash'] ?? $model->accesshash;
-        $model->passwordLength = is_numeric($data['passwordLength']) ? $data['passwordLength'] : $model->passwordLength;
-        $model->updated_at = date('Y-m-d H:i:s');
+        if (isset($data['active'])) {
+            $model->setActive($data['active']);
+        }
+        if (isset($data['status_url'])) {
+            $model->setStatusUrl($data['status_url']);
+        }
+        if (isset($data['max_accounts'])) {
+            $model->setMaxAccounts($data['max_accounts']);
+        }
+        if (isset($data['ns1'])) {
+            $model->setNs1($data['ns1']);
+        }
+        if (isset($data['ns2'])) {
+            $model->setNs2($data['ns2']);
+        }
+        if (isset($data['ns3'])) {
+            $model->setNs3($data['ns3']);
+        }
+        if (isset($data['ns4'])) {
+            $model->setNs4($data['ns4']);
+        }
+        if (isset($data['manager'])) {
+            $model->setManager($data['manager']);
+        }
+        if (isset($data['port'])) {
+            $model->setPort(is_numeric($data['port']) ? $data['port'] : null);
+        }
+        if (isset($data['config'])) {
+            $model->setConfig(json_encode($data['config']));
+        }
+        if (isset($data['secure'])) {
+            $model->setSecure($data['secure']);
+        }
+        if (isset($data['username'])) {
+            $model->setUsername($data['username']);
+        }
+        if (isset($data['password'])) {
+            $model->setPassword($data['password']);
+        }
+        if (isset($data['accesshash'])) {
+            $model->setAccessHash($data['accesshash']);
+        }
+        if (is_numeric($data['passwordLength'] ?? null)) {
+            $model->setPasswordLength($data['passwordLength']);
+        }
 
-        $this->di['db']->store($model);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
 
-        $this->di['logger']->info('Update hosting server %s', $model->id);
+        $this->di['logger']->info('Update hosting server %s', $model->getId());
 
         return true;
     }
 
-    /**
-     * @throws Exception
-     */
-    public function getServerManager(\Model_ExtProductHostingServer $model)
+    public function getServerManager(HostingServer $model)
     {
-        if (empty($model->manager)) {
+        if (empty($model->getManager())) {
             throw new Exception('Invalid server manager. Server was not configured properly.', null, 654);
         }
 
         $config = [];
-        $config['ip'] = $model->ip;
-        $config['host'] = $model->hostname;
-        $config['port'] = $model->port;
+        $config['ip'] = $model->getIp();
+        $config['host'] = $model->getHostname();
+        $config['port'] = $model->getPort();
         $config['config'] = [];
-        $config['config'] = json_decode($model->config ?? '', true) ?? [];
-        $config['secure'] = $model->secure;
-        $config['username'] = $model->username;
-        $config['password'] = $model->password;
-        $config['accesshash'] = $model->accesshash;
-        $config['passwordLength'] = $model->passwordLength;
+        $config['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
+        $config['secure'] = $model->isSecure();
+        $config['username'] = $model->getUsername();
+        $config['password'] = $model->getPassword();
+        $config['accesshash'] = $model->getAccessHash();
+        $config['passwordLength'] = $model->getPasswordLength();
 
-        $manager = $this->di['server_manager']($model->manager, $config);
+        $manager = $this->di['server_manager']($model->getManager(), $config);
 
         if (!$manager instanceof \Server_Manager) {
-            throw new Exception('Server manager :adapter is invalid.', [':adapter' => $model->manager]);
+            throw new Exception('Server manager :adapter is invalid.', [':adapter' => $model->getManager()]);
         }
 
         return $manager;
     }
 
-    /**
-     * @throws \Server_Exception
-     * @throws Exception
-     */
-    public function testConnection(\Model_ExtProductHostingServer $model)
+    public function testConnection(HostingServer $model)
     {
         $manager = $this->getServerManager($model);
 
@@ -887,82 +905,81 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
 
     public function getHpPairs(): array
     {
-        $sql = 'SELECT id, name
-                FROM ext_product_hosting_plan';
-        $rows = $this->di['db']->getAll($sql);
-        $result = [];
-        foreach ($rows as $record) {
-            $result[$record['id']] = $record['name'];
-        }
-
-        return $result;
+        return $this->getPlanRepository()->getPairs();
     }
 
     public function getHpSearchQuery($data): array
     {
-        $sql = 'SELECT *
-                FROM ext_product_hosting_plan
-                ORDER BY id asc';
+        $qb = $this->getPlanRepository()->getSearchQueryBuilder($data);
 
-        return [$sql, []];
+        return [$qb->getDQL(), $qb->getParameters()];
     }
 
-    /**
-     * @throws InformationException
-     */
-    public function deleteHp(\Model_ExtProductHostingPlan $model): bool
+    public function deleteHp(HostingPlan $model): bool
     {
-        $id = $model->id;
-        $serviceHosting = $this->di['db']->findOne('ExtProductHosting', 'ext_product_hosting_plan_id = ?', [$model->id]);
-        if ($serviceHosting) {
+        $id = $model->getId();
+        $hostings = $this->getHostingRepository()->findBy(['plan' => $model]);
+        if (!empty($hostings)) {
             throw new InformationException('Cannot remove hosting plan which has active accounts');
         }
-        $this->di['db']->trash($model);
+        $em = $this->di['em'];
+        $em->remove($model);
+        $em->flush();
         $this->di['logger']->info('Deleted hosting plan %s', $id);
 
         return true;
     }
 
-    public function toHostingHpApiArray(\Model_ExtProductHostingPlan $model, $deep = false, $identity = null): array
+    public function toHostingHpApiArray(HostingPlan $model, $deep = false, $identity = null): array
     {
-        if (is_null($model->config)) {
-            $model->config = '';
-        }
-
         return [
-            'id' => $model->id,
-
-            'name' => $model->name,
-            'bandwidth' => $model->bandwidth,
-            'quota' => $model->quota,
-
-            'max_ftp' => $model->max_ftp,
-            'max_sql' => $model->max_sql,
-            'max_pop' => $model->max_pop,
-            'max_sub' => $model->max_sub,
-            'max_park' => $model->max_park,
-            'max_addon' => $model->max_addon,
-            'config' => json_decode($model->config ?? '', true),
-
-            'created_at' => $model->created_at,
-            'updated_at' => $model->updated_at,
+            'id' => $model->getId(),
+            'name' => $model->getName(),
+            'bandwidth' => $model->getBandwidth(),
+            'quota' => $model->getQuota(),
+            'max_ftp' => $model->getMaxFtp(),
+            'max_sql' => $model->getMaxSql(),
+            'max_pop' => $model->getMaxPop(),
+            'max_sub' => $model->getMaxSub(),
+            'max_park' => $model->getMaxPark(),
+            'max_addon' => $model->getMaxAddon(),
+            'config' => json_decode($model->getConfig() ?? '', true),
+            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
     }
 
-    public function updateHp(\Model_ExtProductHostingPlan $model, array $data): bool
+    public function updateHp(HostingPlan $model, array $data): bool
     {
-        $model->name = $data['name'] ?? $model->name;
-        $model->bandwidth = $data['bandwidth'] ?? $model->bandwidth;
-        $model->quota = $data['quota'] ?? $model->quota;
-        $model->max_addon = $data['max_addon'] ?? $model->max_addon;
-        $model->max_ftp = $data['max_ftp'] ?? $model->max_ftp;
-        $model->max_sql = $data['max_sql'] ?? $model->max_sql;
-        $model->max_pop = $data['max_pop'] ?? $model->max_pop;
-        $model->max_sub = $data['max_sub'] ?? $model->max_sub;
-        $model->max_park = $data['max_park'] ?? $model->max_park;
+        if (isset($data['name'])) {
+            $model->setName($data['name']);
+        }
+        if (isset($data['bandwidth'])) {
+            $model->setBandwidth($data['bandwidth']);
+        }
+        if (isset($data['quota'])) {
+            $model->setQuota($data['quota']);
+        }
+        if (isset($data['max_addon'])) {
+            $model->setMaxAddon($data['max_addon']);
+        }
+        if (isset($data['max_ftp'])) {
+            $model->setMaxFtp($data['max_ftp']);
+        }
+        if (isset($data['max_sql'])) {
+            $model->setMaxSql($data['max_sql']);
+        }
+        if (isset($data['max_pop'])) {
+            $model->setMaxPop($data['max_pop']);
+        }
+        if (isset($data['max_sub'])) {
+            $model->setMaxSub($data['max_sub']);
+        }
+        if (isset($data['max_park'])) {
+            $model->setMaxPark($data['max_park']);
+        }
 
-        /* add new config value to hosting plan */
-        $config = json_decode($model->config ?? '', true) ?? [];
+        $config = json_decode($model->getConfig() ?? '', true) ?? [];
 
         $inConfig = $data['config'] ?? null;
 
@@ -983,65 +1000,65 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
             $config[$newConfigName] = $newConfigValue;
         }
 
-        $model->config = json_encode($config);
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $model->setConfig(json_encode($config));
 
-        $this->di['logger']->info('Updated hosting plan %s', $model->id);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
+
+        $this->di['logger']->info('Updated hosting plan %s', $model->getId());
 
         return true;
     }
 
-    public function createHp($name, $data)
+    public function createHp($name, $data): int
     {
-        $model = $this->di['db']->dispense('ExtProductHostingPlan');
-        $model->name = $name;
+        $em = $this->di['em'];
+        $plan = new HostingPlan();
+        $plan->setName($name);
 
-        $model->bandwidth = $data['bandwidth'] ?? 1024 * 1024;
-        $model->quota = $data['quota'] ?? 1024 * 1024;
+        $plan->setBandwidth($data['bandwidth'] ?? '1048576');
+        $plan->setQuota($data['quota'] ?? '1048576');
 
-        $model->max_addon = $data['max_addon'] ?? 1;
-        $model->max_park = $data['max_park'] ?? 1;
-        $model->max_sub = $data['max_sub'] ?? 1;
-        $model->max_pop = $data['max_pop'] ?? 1;
-        $model->max_sql = $data['max_sql'] ?? 1;
-        $model->max_ftp = $data['max_ftp'] ?? 1;
+        $plan->setMaxAddon($data['max_addon'] ?? 1);
+        $plan->setMaxPark($data['max_park'] ?? 1);
+        $plan->setMaxSub($data['max_sub'] ?? 1);
+        $plan->setMaxPop($data['max_pop'] ?? 1);
+        $plan->setMaxSql($data['max_sql'] ?? 1);
+        $plan->setMaxFtp($data['max_ftp'] ?? 1);
 
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $newId = $this->di['db']->store($model);
+        $em->persist($plan);
+        $em->flush();
 
+        $newId = $plan->getId();
         $this->di['logger']->info('Added new hosting plan %s', $newId);
 
         return $newId;
     }
 
-    public function getServerPackage(\Model_ExtProductHostingPlan $model): \Server_Package
+    public function getServerPackage(HostingPlan $model): \Server_Package
     {
-        $config = json_decode($model->config ?? '', true);
+        $config = json_decode($model->getConfig() ?? '', true);
         if (!is_array($config)) {
             $config = [];
         }
 
         $p = new \Server_Package();
         $p->setCustomValues($config)
-            ->setMaxFtp($model->max_ftp)
-            ->setMaxSql($model->max_sql)
-            ->setMaxPop($model->max_pop)
-            ->setMaxSubdomains($model->max_sub)
-            ->setMaxParkedDomains($model->max_park)
-            ->setMaxDomains($model->max_addon)
-            ->setBandwidth($model->bandwidth)
-            ->setQuota($model->quota)
-            ->setName($model->name);
+            ->setMaxFtp($model->getMaxFtp())
+            ->setMaxSql($model->getMaxSql())
+            ->setMaxPop($model->getMaxPop())
+            ->setMaxSubdomains($model->getMaxSub())
+            ->setMaxParkedDomains($model->getMaxPark())
+            ->setMaxDomains($model->getMaxAddon())
+            ->setBandwidth($model->getBandwidth())
+            ->setQuota($model->getQuota())
+            ->setName($model->getName());
 
         return $p;
     }
 
-    /**
-     * @throws Exception
-     */
-    public function getServerManagerWithLog(\Model_ExtProductHostingServer $model, \Model_ClientOrder $order)
+    public function getServerManagerWithLog(HostingServer $model, \Model_ClientOrder $order)
     {
         $manager = $this->getServerManager($model);
 
@@ -1052,13 +1069,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return $manager;
     }
 
-    /**
-     * Returns both the standard and reseller login URLs.
-     * Will not generate SSO links.
-     *
-     * @return string[]|false[]
-     */
-    public function getManagerUrls(\Model_ExtProductHostingServer $model): array
+    public function getManagerUrls(HostingServer $model): array
     {
         try {
             $m = $this->getServerManager($model);
@@ -1071,14 +1082,10 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return [false, false];
     }
 
-    /**
-     * Generates either a reseller or standard login link for a given order.
-     * If the server manager supports SSO, an SSO link will be returned.
-     */
-    public function generateLoginUrl(\Model_ExtProductHosting $model): string
+    public function generateLoginUrl(Hosting $model): string
     {
         [$adapter, $account] = $this->_getAM($model);
-        if ($model->reseller) {
+        if ($model->isReseller()) {
             return $adapter->getResellerLoginUrl($account);
         }
 
@@ -1100,19 +1107,10 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return array_merge($c, $data);
     }
 
-    /**
-     * Validates that the requested domain action is allowed for this product.
-     *
-     * @param array $data          The order data containing domain configuration
-     * @param array $productConfig The product configuration
-     *
-     * @throws InformationException if the domain action is not allowed
-     */
     private function validateDomainAction(array $data, array $productConfig): void
     {
         $action = $data['domain']['action'];
 
-        // Settings default to true for backward compatibility
         $allowRegister = $productConfig['allow_domain_register'] ?? true;
         $allowTransfer = $productConfig['allow_domain_transfer'] ?? true;
         $allowOwn = $productConfig['allow_domain_own'] ?? true;
@@ -1180,8 +1178,7 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         }
 
         if (empty($result)) {
-            $query = 'active = 1 and allow_register = 1';
-            $tlds = $this->di['db']->find('Tld', $query, []);
+            $tlds = $this->di['db']->find('Tld', 'active = 1 and allow_register = 1', []);
             $domainHandler = $this->di['product_type_registry']->getHandler('domain');
             foreach ($tlds as $model) {
                 $result[] = $domainHandler->tldToApiArray($model);
@@ -1191,29 +1188,11 @@ class HostingHandler implements ProductTypeHandlerInterface, InjectionAwareInter
         return $result;
     }
 
-    /**
-     * Post-processing for the assigned IPs.
-     * The data from the server management form (/admin/servicehosting/server/{id}) sends the data like this:
-     * assigned_ips: "10.0.0.1\n10.0.0.2\n"
-     * As you see, it isn't really an array, it also doesn't filter out empty lines and whitespaces at all.
-     *
-     * We can't rely on it as-is. So we need to make sure only the valid IP addresses are going inside the array.
-     * We'll split on any type of line break (\n, \r\n, or \r) and make sure each IP address is valid.
-     *
-     * @param string $assigned_ips Raw string from the form data (example form: /admin/servicehosting/server/{ip})
-     *
-     * @return string JSON encoded array of filtered valid IPs
-     */
     public static function processAssignedIPs(string $assigned_ips): string
     {
-        // Split the input by any type of line break (\n, \r\n, or \r)
         $array = preg_split('/\r\n|\r|\n/', $assigned_ips);
-
-        // Trim each entry and remove any empty strings
         $array = array_map(trim(...), $array);
         $array = array_filter($array, fn ($ip): bool => $ip !== '');
-
-        // Validate that each entry is a valid IP address (works both with IPv4 and IPv6)
         $array = array_filter($array, fn ($ip): mixed => filter_var($ip, FILTER_VALIDATE_IP));
 
         return json_encode(array_values($array));

@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\License;
 
+use FOSSBilling\ProductType\License\Entity\License;
+
 class Server implements \FOSSBilling\InjectionAwareInterface
 {
     private array $_result = [
@@ -32,17 +34,11 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function __construct(private readonly \Box_Log $_log)
-    {
-    }
+    private ?\Box_Log $logger = null;
 
-    private function getServer($key = null, $default = null)
+    public function __construct(?\Box_Log $logger = null)
     {
-        if ($key === null) {
-            return $_SERVER;
-        }
-
-        return $_SERVER[$key] ?? $default;
+        $this->logger = $logger;
     }
 
     public function process($data): array
@@ -58,14 +54,15 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         }
 
         $service = $this->getLicenseService();
-        $model = $this->di['db']->findOne('ExtProductLicense', 'license_key = :license_key', [':license_key' => $data['license']]);
+        $model = $this->di['em']->getRepository(License::class)->findOneBy(['licenseKey' => $data['license']]);
 
-        if (!$model instanceof \Model_ExtProductLicense) {
+        if (!$model instanceof License) {
             throw new \LogicException('Your license key is invalid.', 1005);
         }
 
-        $model->pinged_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $model->setPingedAt(new \DateTime());
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
         if (!isset($data['host']) || empty($data['host'])) {
             throw new \LogicException('Host key is not present in call', 1002);
@@ -105,7 +102,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         }
 
         $this->_result['licensed_to'] = $service->getOwnerName($model);
-        $this->_result['created_at'] = $model->created_at;
+        $this->_result['created_at'] = $model->getCreatedAt()?->format('Y-m-d H:i:s');
         $this->_result['expires_at'] = $service->getExpirationDate($model);
         $this->_result['valid'] = true;
 

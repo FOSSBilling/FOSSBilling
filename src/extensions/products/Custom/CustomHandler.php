@@ -14,19 +14,15 @@ namespace FOSSBilling\ProductType\Custom;
 use FOSSBilling\Environment;
 use FOSSBilling\Exception;
 use FOSSBilling\Interfaces\ProductTypeHandlerInterface;
+use FOSSBilling\ProductType\Custom\Entity\Custom;
+use FOSSBilling\ProductType\Custom\Repository\CustomRepository;
 use Pimple\Container;
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
 class CustomHandler implements ProductTypeHandlerInterface
 {
     private ?Container $di = null;
-    private readonly Filesystem $filesystem;
-
-    public function __construct()
-    {
-        $this->filesystem = new Filesystem();
-    }
+    private ?CustomRepository $repository = null;
 
     public function setDi(Container $di): void
     {
@@ -36,6 +32,25 @@ class CustomHandler implements ProductTypeHandlerInterface
     public function getDi(): ?Container
     {
         return $this->di;
+    }
+
+    protected function getRepository(): CustomRepository
+    {
+        if ($this->repository === null) {
+            $this->repository = $this->di['em']->getRepository(Custom::class);
+        }
+
+        return $this->repository;
+    }
+
+    public function loadEntity(int $id): Custom
+    {
+        $entity = $this->getRepository()->find($id);
+        if (!$entity instanceof Custom) {
+            throw new Exception('Custom service not found');
+        }
+
+        return $entity;
     }
 
     public function validateCustomForm(array &$data, array $product): void
@@ -61,20 +76,20 @@ class CustomHandler implements ProductTypeHandlerInterface
         }
     }
 
-    public function create(\Model_ClientOrder $order)
+    public function create(\Model_ClientOrder $order): Custom
     {
         $product = $this->di['db']->getExistingModelById('Product', $order->product_id, 'Product not found');
 
-        $model = $this->di['db']->dispense('ExtProductCustom');
-        $model->client_id = $order->client_id;
-        $model->plugin = $product->plugin;
-        $model->plugin_config = $product->plugin_config;
-        $model->config = $order->config;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $custom = new Custom($order->client_id);
+        $custom->setPlugin($product->plugin);
+        $custom->setPluginConfig($product->plugin_config);
+        $custom->setConfig($order->config);
 
-        return $model;
+        $em = $this->di['em'];
+        $em->persist($custom);
+        $em->flush();
+
+        return $custom;
     }
 
     public function activate(\Model_ClientOrder $order): bool
@@ -141,29 +156,32 @@ class CustomHandler implements ProductTypeHandlerInterface
         }
 
         $this->callOnAdapter($model, 'delete');
-        $this->di['db']->trash($model);
+
+        $em = $this->di['em'];
+        $em->remove($model);
+        $em->flush();
 
         return true;
     }
 
-    public function getConfig(\Model_ExtProductCustom $model): array
+    public function getConfig(Custom $model): array
     {
-        return json_decode($model->config ?? '', true) ?? [];
+        return json_decode($model->getConfig() ?? '', true) ?? [];
     }
 
-    public function toApiArray(\Model_ExtProductCustom $model): array
+    public function toApiArray(Custom $model): array
     {
         $data = $this->getConfig($model);
-        $data['id'] = $model->id;
-        $data['client_id'] = $model->client_id;
-        $data['plugin'] = $model->plugin;
-        $data['updated_at'] = $model->updated_at;
-        $data['created_at'] = $model->created_at;
+        $data['id'] = $model->getId();
+        $data['client_id'] = $model->getClientId();
+        $data['plugin'] = $model->getPlugin();
+        $data['updated_at'] = $model->getUpdatedAt()?->format('Y-m-d H:i:s');
+        $data['created_at'] = $model->getCreatedAt()?->format('Y-m-d H:i:s');
 
         return $data;
     }
 
-    public function customCall(\Model_ExtProductCustom $model, $method, $params = [])
+    public function customCall(Custom $model, $method, $params = [])
     {
         $forbidden_methods = [
             'delete',
@@ -188,35 +206,35 @@ class CustomHandler implements ProductTypeHandlerInterface
         }
 
         $model = $this->getServiceCustomByOrderId($orderId);
-        $model->config = json_encode($config);
+        $model->setConfig(json_encode($config));
         $this->touch($model);
 
-        $this->di['logger']->info('Custom service updated #%s', $model->id);
+        $this->di['logger']->info('Custom service updated #%s', $model->getId());
     }
 
-    public function getServiceCustomByOrderId($orderId)
+    public function getServiceCustomByOrderId($orderId): Custom
     {
         $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
 
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
 
-        if (!$s instanceof \Model_ExtProductCustom) {
+        if (!$s instanceof Custom) {
             throw new Exception('Order is not activated');
         }
 
         return $s;
     }
 
-    private function callOnAdapter(\Model_ExtProductCustom $model, $method, $params = [])
+    private function callOnAdapter(Custom $model, $method, $params = [])
     {
-        $plugin = $model->plugin;
+        $plugin = $model->getPlugin();
         if (empty($plugin)) {
             return null;
         }
 
         $file = Path::join('Plugin', $plugin, "{$plugin}.php");
-        if (!Environment::isTesting() && !$this->filesystem->exists(Path::join(PATH_LIBRARY, $file))) {
+        if (!Environment::isTesting() && !file_exists(Path::join(PATH_LIBRARY, $file))) {
             $e = new Exception('Plugin class file :file was not found', [':file' => $file], 3124);
             if (DEBUG) {
                 error_log($e->getMessage());
@@ -227,9 +245,9 @@ class CustomHandler implements ProductTypeHandlerInterface
 
         require_once Path::normalize($file);
 
-        $config = json_decode($model->plugin_config ?? '', true) ?? [];
+        $pluginConfig = json_decode($model->getPluginConfig() ?? '', true) ?? [];
 
-        $adapter = new $plugin($config);
+        $adapter = new $plugin($pluginConfig);
 
         if (!method_exists($adapter, $method)) {
             throw new Exception('Plugin :plugin does not support action :action', [':plugin' => $plugin, ':action' => $method], 3125);
@@ -243,20 +261,21 @@ class CustomHandler implements ProductTypeHandlerInterface
         return $adapter->$method($data, $order_data, $params);
     }
 
-    private function getOrderService(\Model_ClientOrder $order): \RedBeanPHP\SimpleModel
+    private function getOrderService(\Model_ClientOrder $order): Custom
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
+        if (!$model instanceof Custom) {
             throw new Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
         return $model;
     }
 
-    private function touch(\Model_ExtProductCustom $model): void
+    private function touch(Custom $model): void
     {
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
     }
 }

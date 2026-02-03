@@ -13,12 +13,14 @@ namespace FOSSBilling\ProductType\ApiKey;
 
 use FOSSBilling\Exception;
 use FOSSBilling\Interfaces\ProductTypeHandlerInterface;
+use FOSSBilling\ProductType\ApiKey\Entity\ApiKey;
+use FOSSBilling\ProductType\ApiKey\Repository\ApiKeyRepository;
 use Pimple\Container;
-use RedBeanPHP\OODBBean;
 
 class ApiKeyHandler implements ProductTypeHandlerInterface
 {
     private ?Container $di = null;
+    private ?ApiKeyRepository $repository = null;
 
     public function setDi(Container $di): void
     {
@@ -30,6 +32,25 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
         return $this->di;
     }
 
+    protected function getRepository(): ApiKeyRepository
+    {
+        if ($this->repository === null) {
+            $this->repository = $this->di['em']->getRepository(ApiKey::class);
+        }
+
+        return $this->repository;
+    }
+
+    protected function loadEntity(int $id): ApiKey
+    {
+        $entity = $this->getRepository()->find($id);
+        if (!$entity instanceof ApiKey) {
+            throw new Exception('API key not found');
+        }
+
+        return $entity;
+    }
+
     public function attachOrderConfig(\Model_Product $product, array $data): array
     {
         $config = json_decode($product->config ?? '', true) ?? [];
@@ -37,81 +58,87 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
         return array_merge($config, $data);
     }
 
-    public function create(\Model_ClientOrder $order)
+    public function create(\Model_ClientOrder $order): ApiKey
     {
         $this->assertDi();
 
-        $model = $this->di['db']->dispense('ext_product_apikey');
-        $model->client_id = $order->client_id;
-        $model->config = $order->config;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $apiKey = new ApiKey($order->client_id);
+        $apiKey->setConfig($order->config);
 
-        return $model;
+        $em = $this->di['em'];
+        $em->persist($apiKey);
+        $em->flush();
+
+        return $apiKey;
     }
 
-    public function activate(\Model_ClientOrder $order)
+    public function activate(\Model_ClientOrder $order): bool
     {
-        $model = $this->getServiceModel($order);
+        $apiKey = $this->getServiceModel($order);
         $config = json_decode($order->config ?? '', true) ?? [];
 
-        $model->api_key = $this->generateKey($config);
-        $this->touch($model);
+        $apiKey->setApiKey($this->generateKey($config));
+
+        $em = $this->di['em'];
+        $em->persist($apiKey);
+        $em->flush();
 
         return true;
     }
 
-    public function renew(\Model_ClientOrder $order)
+    public function renew(\Model_ClientOrder $order): bool
     {
-        $model = $this->getServiceModel($order);
-        $this->touch($model);
+        $apiKey = $this->getServiceModel($order);
+        $this->touch($apiKey);
 
         return true;
     }
 
-    public function suspend(\Model_ClientOrder $order)
+    public function suspend(\Model_ClientOrder $order): bool
     {
-        $model = $this->getServiceModel($order);
-        $this->touch($model);
+        $apiKey = $this->getServiceModel($order);
+        $this->touch($apiKey);
 
         return true;
     }
 
-    public function unsuspend(\Model_ClientOrder $order)
+    public function unsuspend(\Model_ClientOrder $order): bool
     {
-        $model = $this->getServiceModel($order);
-        $this->touch($model);
+        $apiKey = $this->getServiceModel($order);
+        $this->touch($apiKey);
 
         return true;
     }
 
-    public function cancel(\Model_ClientOrder $order)
+    public function cancel(\Model_ClientOrder $order): bool
     {
         return $this->suspend($order);
     }
 
-    public function uncancel(\Model_ClientOrder $order)
+    public function uncancel(\Model_ClientOrder $order): bool
     {
         return $this->unsuspend($order);
     }
 
-    public function delete(\Model_ClientOrder $order)
+    public function delete(\Model_ClientOrder $order): void
     {
-        $model = $this->getServiceModel($order, false);
-        if ($model instanceof OODBBean) {
-            $this->di['db']->trash($model);
+        $apiKey = $this->getServiceModel($order, false);
+
+        if ($apiKey instanceof ApiKey) {
+            $em = $this->di['em'];
+            $em->remove($apiKey);
+            $em->flush();
         }
     }
 
-    public function toApiArray(OODBBean $model, bool $deep = true, $identity = null): array
+    public function toApiArray(ApiKey $model, bool $deep = true, $identity = null): array
     {
         return [
-            'id' => $model->id,
-            'created_at' => $model->created_at,
-            'updated_at' => $model->updated_at,
-            'api_key' => $model->api_key,
-            'config' => json_decode($model->config ?? '', true),
+            'id' => $model->getId(),
+            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
+            'api_key' => $model->getApiKey(),
+            'config' => json_decode($model->getConfig(), true) ?: [],
         ];
     }
 
@@ -123,7 +150,7 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
             throw new Exception('You must provide an API key to check it\'s validity.');
         }
 
-        $model = $this->di['db']->findOne('ext_product_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
+        $model = $this->getRepository()->findOneByApiKey($data['key']);
         if (is_null($model)) {
             throw new Exception('API key does not exist');
         }
@@ -139,12 +166,12 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
             throw new Exception('You must provide an API key to check it\'s validity.');
         }
 
-        $model = $this->di['db']->findOne('ext_product_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
+        $model = $this->getRepository()->findOneByApiKey($data['key']);
         if (is_null($model)) {
             throw new Exception('API key does not exist');
         }
 
-        $rawConfig = json_decode($model->config ?? '', true);
+        $rawConfig = json_decode($model->getConfig() ?? '', true);
         $strippedConfig = [];
         if (!is_array($rawConfig)) {
             $rawConfig = [];
@@ -171,32 +198,30 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
     {
         $this->assertDi();
 
+        $model = null;
+
         if (empty($data['key']) && empty($data['order_id'])) {
             throw new Exception('You must provide either the API key or API key order ID in order to reset it.');
         } elseif (!empty($data['order_id'])) {
             $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
             $model = $this->getServiceModel($order);
         } else {
-            $model = $this->di['db']->findOne('ext_product_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
+            $model = $this->getRepository()->findOneByApiKey($data['key']);
         }
 
         if (is_null($model)) {
             throw new Exception('API key does not exist');
         }
 
-        try {
-            $client = $this->di['loggedin_client'];
-        } catch (\Exception) {
-            $client = null;
-        }
+        $client = $this->di['loggedin_client'] ?? null;
 
-        if (!is_null($client) && $client->id !== $model->client_id) {
+        if (!is_null($client) && $client->id !== $model->getClientId()) {
             throw new Exception('API key does not exist');
         }
 
-        $config = json_decode($model->config ?? '', true);
+        $config = json_decode($model->getConfig() ?? '', true);
 
-        $model->api_key = $this->generateKey($config);
+        $model->setApiKey($this->generateKey($config));
         $this->touch($model);
 
         return true;
@@ -217,25 +242,25 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
             throw new Exception('API key does not exist');
         }
 
-        if (isset($data['api_key']) && $model->api_key !== $data['api_key']) {
+        if (isset($data['api_key']) && $model->getApiKey() !== $data['api_key']) {
             throw new Exception('To change the API key, please use the reset function rather than updating it.');
         }
 
-        $config = !empty($data['config']) ? json_encode($data['config']) : $model->config;
-        $model->config = $config;
+        $config = !empty($data['config']) ? json_encode($data['config']) : $model->getConfig();
+        $model->setConfig($config);
         $this->touch($model);
 
         return true;
     }
 
-    private function touch(OODBBean $model): void
+    private function touch(ApiKey $model): void
     {
-        $this->assertDi();
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
     }
 
-    private function getServiceModel(\Model_ClientOrder $order, bool $required = true): ?OODBBean
+    private function getServiceModel(\Model_ClientOrder $order, bool $required = true): ?ApiKey
     {
         $this->assertDi();
 
@@ -247,12 +272,17 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
             return null;
         }
 
-        $model = $this->di['db']->load('ext_product_apikey', $order->service_id);
-        if ((!$model || !$model->id) && $required) {
-            throw new Exception('Order does not exist.');
+        try {
+            $model = $this->loadEntity((int) $order->service_id);
+        } catch (Exception $e) {
+            if ($required) {
+                throw new Exception('Order does not exist.');
+            }
+
+            return null;
         }
 
-        return $model && $model->id ? $model : null;
+        return $model;
     }
 
     private function generateKey(array $config = []): string
@@ -302,7 +332,7 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
                 default:
                     throw new Exception("Unknown uppercase option ':case:'. API generator only accepts 'lower', 'upper', or 'mixed'.", [':case:' => $case]);
             }
-        } while ($this->di['db']->findOne('ext_product_apikey', 'api_key = :api_key', [':api_key' => $apiKey]) !== null);
+        } while ($this->getRepository()->findOneByApiKey($apiKey) !== null);
 
         return $apiKey;
     }
@@ -314,12 +344,12 @@ class ApiKeyHandler implements ProductTypeHandlerInterface
         }
     }
 
-    private function isActive(OODBBean $model): bool
+    private function isActive(ApiKey $model): bool
     {
         $order = $this->di['db']->findOne(
             'ClientOrder',
             'service_id = :id AND (product_type = "apikey" OR (product_type IS NULL AND service_type = "apikey"))',
-            [':id' => $model->id]
+            [':id' => $model->getId()]
         );
         if (is_null($order)) {
             throw new Exception('API key does not exist');

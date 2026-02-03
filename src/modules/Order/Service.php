@@ -218,9 +218,9 @@ class Service implements InjectionAwareInterface
                 return null;
             }
 
-            $repo_class = $this->_getServiceClassName($typeCode);
+            $handler = $this->di['product_type_registry']->getHandler($typeCode);
 
-            return $this->di['db']->load($repo_class, $order->service_id);
+            return $handler->loadEntity((int) $order->service_id);
         }
 
         return null;
@@ -236,10 +236,18 @@ class Service implements InjectionAwareInterface
     public function getServiceOrder($service)
     {
         $class = $service::class;
+
         $type = str_replace('Model_ExtProduct', '', $class);
         if ($type === $class) {
             $type = str_replace('Model_', '', $class);
         }
+
+        if ($type === $class) {
+            $parts = explode('\\', $class);
+            $entityName = end($parts);
+            $type = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $entityName));
+        }
+
         $type = $this->di['tools']->from_camel_case($type);
         if ($this->di && isset($this->di['product_type_registry'])) {
             $registry = $this->di['product_type_registry'];
@@ -253,7 +261,7 @@ class Service implements InjectionAwareInterface
 
         $bindings = [
             'service_type' => $type,
-            ':service_id' => $service->id,
+            ':service_id' => $service->getId(),
         ];
 
         return $this->di['db']->findOne(

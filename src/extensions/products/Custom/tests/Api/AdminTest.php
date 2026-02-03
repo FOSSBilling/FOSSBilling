@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FOSSBilling\ProductType\Custom\Tests\Api;
 
 use FOSSBilling\ProductType\Custom\Api;
+use FOSSBilling\ProductType\Custom\Entity\Custom as CustomEntity;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -93,7 +94,7 @@ final class AdminTest extends \BBTestCase
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Custom\CustomHandler::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
-            ->willReturn(new \Model_ExtProductCustom());
+            ->willReturn(new CustomEntity(1));
         $serviceMock->expects($this->atLeastOnce())
             ->method('customCall')
             ->willReturn(null);
@@ -114,7 +115,7 @@ final class AdminTest extends \BBTestCase
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Custom\CustomHandler::class);
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
-            ->willReturn(new \Model_ExtProductCustom());
+            ->willReturn(new CustomEntity(1));
         $serviceMock->expects($this->never())
             ->method('customCall')
             ->willReturn(null);
@@ -131,7 +132,7 @@ final class AdminTest extends \BBTestCase
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Custom\CustomHandler::class);
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
-            ->willReturn(new \Model_ExtProductCustom());
+            ->willReturn(new CustomEntity(1));
         $serviceMock->expects($this->never())
             ->method('customCall')
             ->willReturn(null);

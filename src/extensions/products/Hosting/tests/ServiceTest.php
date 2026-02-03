@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\Hosting\Tests;
 
+use FOSSBilling\ProductType\Domain\Entity\Tld;
+use FOSSBilling\ProductType\Hosting\Entity\Hosting;
+use FOSSBilling\ProductType\Hosting\Entity\HostingPlan;
+use FOSSBilling\ProductType\Hosting\Entity\HostingServer;
 use FOSSBilling\ProductType\Hosting\HostingHandler;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -16,14 +20,6 @@ final class ServiceTest extends \BBTestCase
     public function setUp(): void
     {
         $this->service = new HostingHandler();
-    }
-
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->service->setDi($di);
-        $getDi = $this->service->getDi();
-        $this->assertEquals($di, $getDi);
     }
 
     public static function validateOrdertDataProvider(): array
@@ -57,6 +53,7 @@ final class ServiceTest extends \BBTestCase
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
+        $orderModel->client_id = 1;
         $confArr = [
             'server_id' => 1,
             'hosting_plan_id' => 2,
@@ -68,28 +65,51 @@ final class ServiceTest extends \BBTestCase
             ->method('getConfig')
             ->willReturn($confArr);
 
-        $hostingServerModel = new \Model_ExtProductHostingServer();
-        $hostingServerModel->loadBean(new \DummyBean());
-        $hostingPlansModel = new \Model_ExtProductHostingPlan();
-        $hostingPlansModel->loadBean(new \DummyBean());
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturnOnConsecutiveCalls($hostingServerModel, $hostingPlansModel);
+        $hostingServerModel = new HostingServer();
+        $reflId = new \ReflectionProperty($hostingServerModel, 'id');
+        $reflId->setAccessible(true);
+        $reflId->setValue($hostingServerModel, 1);
+        $hostingServerModel->setIp('1.1.1.1');
 
-        $servhostingModel = new \Model_ExtProductHosting();
-        $servhostingModel->loadBean(new \DummyBean());
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($servhostingModel);
+        $hostingPlansModel = new HostingPlan();
+        $reflPlanId = new \ReflectionProperty($hostingPlansModel, 'id');
+        $reflPlanId->setAccessible(true);
+        $reflPlanId->setValue($hostingPlansModel, 2);
 
-        $newserviceHostingId = 4;
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn($newserviceHostingId);
+        $serverRepoStub = $this->createStub(\FOSSBilling\ProductType\Hosting\Repository\HostingServerRepository::class);
+        $serverRepoStub->method('find')
+            ->willReturn($hostingServerModel);
+
+        $planRepoStub = $this->createStub(\FOSSBilling\ProductType\Hosting\Repository\HostingPlanRepository::class);
+        $planRepoStub->method('find')
+            ->willReturn($hostingPlansModel);
+
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturnCallback(function ($class) use ($serverRepoStub, $planRepoStub) {
+                if ($class === HostingServer::class) {
+                    return $serverRepoStub;
+                }
+                if ($class === HostingPlan::class) {
+                    return $planRepoStub;
+                }
+                return null;
+            });
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist')
+            ->willReturnCallback(function ($entity) {
+                if ($entity instanceof Hosting) {
+                    $reflId = new \ReflectionProperty($entity, 'id');
+                    $reflId->setAccessible(true);
+                    $reflId->setValue($entity, 1);
+                }
+            });
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
@@ -100,21 +120,16 @@ final class ServiceTest extends \BBTestCase
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
+        $orderModel->service_id = 1;
 
-        $model = new \Model_ExtProductHostingPlan();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
@@ -146,20 +161,14 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
@@ -202,20 +211,14 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
@@ -258,20 +261,14 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
@@ -309,102 +306,25 @@ final class ServiceTest extends \BBTestCase
         $this->service->cancel($orderModel);
     }
 
-    //    public function testAction_uncancel()
-    //    {
-    //        $orderModel = new \Model_ClientOrder();
-    //        $orderModel->loadBean(new \DummyBean());
-    //        $confArr = array(
-    //            'server_id' => 1,
-    //            'hosting_plan_id' => 2,
-    //            'sld' => 'great',
-    //            'tld' => 'com'
-    //        );
-    //        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
-    //        $orderServiceMock->expects($this->atLeastOnce())
-    //            ->method('getConfig')
-    //            ->will($this->returnValue($confArr));
-    //
-    //        $model = new \Model_ExtProductHosting();
-    //        $model->loadBean(new \DummyBean());
-    //        $orderServiceMock->expects($this->atLeastOnce())
-    //            ->method('getOrderService')
-    //            ->will($this->returnValue($model));
-    //
-    //        $hostingServerModel = new \Model_ExtProductHostingServer();
-    //        $hostingServerModel->loadBean(new \DummyBean());
-    //        $hostingPlansModel = new \Model_ExtProductHostingPlan();
-    //        $hostingPlansModel->loadBean(new \DummyBean());
-    //        $dbMock = $this->createMock('\Box_Database');
-    //        $dbMock->expects($this->atLeastOnce())
-    //            ->method('getExistingModelById')
-    //            ->willReturn($hostingServerModel, $hostingPlansModel);
-    //
-    //        $servhostingModel = new \Model_ExtProductHosting();
-    //        $servhostingModel->loadBean(new \DummyBean());
-    //        $dbMock->expects($this->atLeastOnce())
-    //            ->method('dispense')
-    //            ->will($this->returnValue($servhostingModel));
-    //
-    //        $newserviceHostingId = 4;
-    //        $dbMock->expects($this->atLeastOnce())
-    //            ->method('store')
-    //            ->will($this->returnValue($newserviceHostingId));
-    //
-    //        $di = $this->getDi();
-    //        $di['db'] = $dbMock;
-    //        $di['mod_service'] = $di->protect(fn() => $orderServiceMock);
-    //
-    //
-    //
-    //        $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Hosting\HostingHandler::class)
-    //            ->onlyMethods(array('_getAM'))
-    //            ->getMock();
-    //
-    //        $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
-    //        $serverManagerMock->expects($this->atLeastOnce())
-    //            ->method('createAccount');
-    //        $AMresultArray = array($serverManagerMock, new \Server_Account());
-    //        $serviceMock->expects($this->atLeastOnce())
-    //            ->method('_getAM')
-    //            ->will($this->returnValue($AMresultArray));
-    //
-    //
-    //        $serviceMock->setDi($di);
-    //        $serviceMock->uncancel($orderModel);
-    //    }
-
     public function testActionDelete(): void
     {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
         $orderModel->status = 'active';
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($model);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManagerForDelete();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
-            ->onlyMethods(['_getAM', 'cancel'])
+            ->onlyMethods(['cancel'])
             ->getMock();
-        $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
-        $serverManagerMock->expects($this->atLeastOnce())
-            ->method('cancelAccount');
-        $AMresultArray = [$serverManagerMock, new \Server_Account()];
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('_getAM')
-            ->willReturn($AMresultArray);
 
         $serviceMock->setDi($di);
         $serviceMock->delete($orderModel);
@@ -415,18 +335,25 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
-        $modelHp = new \Model_ExtProductHostingPlan();
-        $modelHp->loadBean(new \DummyBean());
+        $modelHp = new HostingPlan();
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist')
+            ->willReturnCallback(function ($entity) {
+                if ($entity instanceof Hosting) {
+                    $reflId = new \ReflectionProperty($entity, 'id');
+                    $reflId->setAccessible(true);
+                    $reflId->setValue($entity, 1);
+                }
+            });
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
@@ -457,8 +384,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
@@ -473,12 +399,21 @@ final class ServiceTest extends \BBTestCase
             ->method('_getAM')
             ->willReturn($AMresultArray);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist')
+            ->willReturnCallback(function ($entity) {
+                if ($entity instanceof Hosting) {
+                    $reflId = new \ReflectionProperty($entity, 'id');
+                    $reflId->setAccessible(true);
+                    $reflId->setValue($entity, 1);
+                }
+            });
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -492,8 +427,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
         $data = [];
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -510,8 +444,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
@@ -526,12 +459,21 @@ final class ServiceTest extends \BBTestCase
             ->method('_getAM')
             ->willReturn($AMresultArray);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist')
+            ->willReturnCallback(function ($entity) {
+                if ($entity instanceof Hosting) {
+                    $reflId = new \ReflectionProperty($entity, 'id');
+                    $reflId->setAccessible(true);
+                    $reflId->setValue($entity, 1);
+                }
+            });
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -546,8 +488,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Account IP address is missing or is invalid');
@@ -564,8 +505,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
@@ -580,12 +520,21 @@ final class ServiceTest extends \BBTestCase
             ->method('_getAM')
             ->willReturn($AMresultArray);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist')
+            ->willReturnCallback(function ($entity) {
+                if ($entity instanceof Hosting) {
+                    $reflId = new \ReflectionProperty($entity, 'id');
+                    $reflId->setAccessible(true);
+                    $reflId->setValue($entity, 1);
+                }
+            });
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -600,8 +549,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Domain SLD or TLD is missing');
@@ -618,8 +566,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
@@ -634,12 +581,21 @@ final class ServiceTest extends \BBTestCase
             ->method('_getAM')
             ->willReturn($AMresultArray);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist')
+            ->willReturnCallback(function ($entity) {
+                if ($entity instanceof Hosting) {
+                    $reflId = new \ReflectionProperty($entity, 'id');
+                    $reflId->setAccessible(true);
+                    $reflId->setValue($entity, 1);
+                }
+            });
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -654,8 +610,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Account password is missing or is invalid');
@@ -672,8 +627,7 @@ final class ServiceTest extends \BBTestCase
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \DummyBean());
 
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['_getAM'])
@@ -697,12 +651,21 @@ final class ServiceTest extends \BBTestCase
             ->method('_getAM')
             ->willReturn($AMresultArray);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist')
+            ->willReturnCallback(function ($entity) {
+                if ($entity instanceof Hosting) {
+                    $reflId = new \ReflectionProperty($entity, 'id');
+                    $reflId->setAccessible(true);
+                    $reflId->setValue($entity, 1);
+                }
+            });
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -713,19 +676,20 @@ final class ServiceTest extends \BBTestCase
 
     public function testToApiArray(): void
     {
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $hostingServer = new HostingServer();
+        $hostingServer->setManager('Custom');
+        $reflId = new \ReflectionProperty($hostingServer, 'id');
+        $reflId->setAccessible(true);
+        $reflId->setValue($hostingServer, 1);
 
-        $hostingServer = new \Model_ExtProductHostingServer();
-        $hostingServer->loadBean(new \DummyBean());
-        $hostingServer->manager = 'Custom';
-        $hostingHp = new \Model_ExtProductHostingPlan();
-        $hostingHp->loadBean(new \DummyBean());
+        $hostingHp = new HostingPlan();
+        $reflHpId = new \ReflectionProperty($hostingHp, 'id');
+        $reflHpId->setAccessible(true);
+        $reflHpId->setValue($hostingHp, 1);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturnOnConsecutiveCalls($hostingServer, $hostingHp);
+        $model = new Hosting(1);
+        $model->setServer($hostingServer);
+        $model->setPlan($hostingHp);
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
@@ -734,7 +698,6 @@ final class ServiceTest extends \BBTestCase
         $serverManagerCustomMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['server_manager'] = $di->protect(fn ($manager, $config): \PHPUnit\Framework\MockObject\MockObject => $serverManagerCustomMock);
 
@@ -750,15 +713,23 @@ final class ServiceTest extends \BBTestCase
             'username' => 'testUser',
             'ip' => '1.1.1.1',
         ];
-        $model = new \Model_ExtProductHosting();
-        $model->loadBean(new \DummyBean());
+        $model = new Hosting(1);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist')
+            ->willReturnCallback(function ($entity) {
+                if ($entity instanceof Hosting) {
+                    $reflId = new \ReflectionProperty($entity, 'id');
+                    $reflId->setAccessible(true);
+                    $reflId->setValue($entity, 1);
+                }
+            });
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
         $this->service->setDi($di);
 
@@ -792,23 +763,18 @@ final class ServiceTest extends \BBTestCase
             '2' => 'ding',
         ];
 
-        $queryResult = [
-            [
-                'id' => 1,
-                'name' => 'name',
-            ], [
-                'id' => 2,
-                'name' => 'ding',
-            ],
-        ];
+        $serverRepoStub = $this->createStub(\FOSSBilling\ProductType\Hosting\Repository\HostingServerRepository::class);
+        $serverRepoStub->method('getPairs')
+            ->willReturn($expected);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAll')
-            ->willReturn($queryResult);
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->with(\FOSSBilling\ProductType\Hosting\Entity\HostingServer::class)
+            ->willReturn($serverRepoStub);
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $this->service->setDi($di);
 
         $result = $this->service->getServerPairs();
@@ -818,29 +784,48 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetServerSearchQuery(): void
     {
+        $serverRepoStub = $this->createStub(\FOSSBilling\ProductType\Hosting\Repository\HostingServerRepository::class);
+        $qbStub = $this->createStub(\Doctrine\ORM\QueryBuilder::class);
+        $qbStub->method('getDQL')
+            ->willReturn('SELECT hs FROM HostingServer hs WHERE 1=1');
+        $qbStub->method('getParameters')
+            ->willReturn(new \Doctrine\Common\Collections\ArrayCollection());
+        $serverRepoStub->method('getSearchQueryBuilder')
+            ->willReturn($qbStub);
+
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->with(\FOSSBilling\ProductType\Hosting\Entity\HostingServer::class)
+            ->willReturn($serverRepoStub);
+
+        $di = $this->getDi();
+        $di['em'] = $emMock;
+        $this->service->setDi($di);
+
         $result = $this->service->getServersSearchQuery([]);
         $this->assertIsString($result[0]);
-        $this->assertIsArray($result[1]);
-        $this->assertSame([], $result[1]);
+        $this->assertInstanceOf(\Doctrine\Common\Collections\Collection::class, $result[1]);
     }
 
     public function testCreateServer(): void
     {
-        $dbMock = $this->createMock('\Box_Database');
+        $hostingServerModel = new HostingServer();
 
-        $hostingServerModel = new \Model_ExtProductHostingServer();
-        $hostingServerModel->loadBean(new \DummyBean());
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($hostingServerModel);
-
-        $newId = 1;
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn($newId);
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist')
+            ->willReturnCallback(function ($entity) use (&$hostingServerModel) {
+                $hostingServerModel = $entity;
+                $reflId = new \ReflectionProperty($entity, 'id');
+                $reflId->setAccessible(true);
+                $reflId->setValue($entity, 1);
+            });
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -851,20 +836,25 @@ final class ServiceTest extends \BBTestCase
         $data = [];
         $result = $this->service->createServer($name, $ip, $manager, $data);
         $this->assertIsInt($result);
-        $this->assertEquals($newId, $result);
+        $this->assertEquals(1, $result);
     }
 
     public function testDeleteServer(): void
     {
-        $hostingServerModel = new \Model_ExtProductHostingServer();
-        $hostingServerModel->loadBean(new \DummyBean());
+        $hostingServerModel = new HostingServer();
+        $reflId = new \ReflectionProperty($hostingServerModel, 'id');
+        $reflId->setAccessible(true);
+        $reflId->setValue($hostingServerModel, 1);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('remove')
+            ->with($hostingServerModel);
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
         $this->service->setDi($di);
 
@@ -878,7 +868,7 @@ final class ServiceTest extends \BBTestCase
             'name' => 'newName',
             'ip' => '1.1.1.1',
             'hostname' => 'unknownStar',
-            'active' => 1,
+            'active' => true,
             'status_url' => 'na',
             'ns1' => 'ns1.testserver.eu',
             'ns2' => 'ns2.testserver.eu',
@@ -889,18 +879,26 @@ final class ServiceTest extends \BBTestCase
             'password' => 'hardToGuess',
             'accesshash' => 'secret',
             'port' => '23',
-            'secure' => 0,
+            'secure' => false,
         ];
 
-        $hostingServerModel = new \Model_ExtProductHostingServer();
-        $hostingServerModel->loadBean(new \DummyBean());
+        $hostingServerModel = new HostingServer();
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist')
+            ->willReturnCallback(function ($entity) {
+                if ($entity instanceof HostingServer) {
+                    $reflId = new \ReflectionProperty($entity, 'id');
+                    $reflId->setAccessible(true);
+                    $reflId->setValue($entity, 1);
+                }
+            });
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -911,9 +909,8 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetServerManager(): void
     {
-        $hostingServerModel = new \Model_ExtProductHostingServer();
-        $hostingServerModel->loadBean(new \DummyBean());
-        $hostingServerModel->manager = 'Custom';
+        $hostingServerModel = new HostingServer();
+        $hostingServerModel->setManager('Custom');
 
         $serverManagerCustom = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
 
@@ -927,8 +924,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetServerManagerManagerNotDefined(): void
     {
-        $hostingServerModel = new \Model_ExtProductHostingServer();
-        $hostingServerModel->loadBean(new \DummyBean());
+        $hostingServerModel = new HostingServer();
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(654);
@@ -938,16 +934,15 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetServerManagerServerManagerInvalid(): void
     {
-        $hostingServerModel = new \Model_ExtProductHostingServer();
-        $hostingServerModel->loadBean(new \DummyBean());
-        $hostingServerModel->manager = 'Custom';
+        $hostingServerModel = new HostingServer();
+        $hostingServerModel->setManager('Custom');
 
         $di = $this->getDi();
         $di['server_manager'] = $di->protect(fn ($manager, $config): null => null);
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage("Server manager {$hostingServerModel->manager} is invalid.");
+        $this->expectExceptionMessage("Server manager {$hostingServerModel->getManager()} is invalid.");
         $this->service->getServerManager($hostingServerModel);
     }
 
@@ -966,7 +961,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getServerManager')
             ->willReturn($serverManagerMock);
 
-        $hostingServerModel = new \Model_ExtProductHostingServer();
+        $hostingServerModel = new HostingServer();
         $result = $serviceMock->testConnection($hostingServerModel);
         $this->assertIsBool($result);
         $this->assertTrue($result);
@@ -979,23 +974,18 @@ final class ServiceTest extends \BBTestCase
             '2' => 'paid',
         ];
 
-        $queryResult = [
-            [
-                'id' => 1,
-                'name' => 'free',
-            ], [
-                'id' => 2,
-                'name' => 'paid',
-            ],
-        ];
+        $planRepoStub = $this->createStub(\FOSSBilling\ProductType\Hosting\Repository\HostingPlanRepository::class);
+        $planRepoStub->method('getPairs')
+            ->willReturn($expected);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAll')
-            ->willReturn($queryResult);
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->with(\FOSSBilling\ProductType\Hosting\Entity\HostingPlan::class)
+            ->willReturn($planRepoStub);
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $this->service->setDi($di);
 
         $result = $this->service->getHpPairs();
@@ -1005,23 +995,56 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetHpSearchQuery(): void
     {
-        $result = $this->service->getServersSearchQuery([]);
+        $planRepoStub = $this->createStub(\FOSSBilling\ProductType\Hosting\Repository\HostingPlanRepository::class);
+        $qbStub = $this->createStub(\Doctrine\ORM\QueryBuilder::class);
+        $qbStub->method('getDQL')
+            ->willReturn('SELECT hp FROM HostingPlan hp WHERE 1=1');
+        $qbStub->method('getParameters')
+            ->willReturn(new \Doctrine\Common\Collections\ArrayCollection());
+        $planRepoStub->method('getSearchQueryBuilder')
+            ->willReturn($qbStub);
+
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->with(\FOSSBilling\ProductType\Hosting\Entity\HostingPlan::class)
+            ->willReturn($planRepoStub);
+
+        $di = $this->getDi();
+        $di['em'] = $emMock;
+        $this->service->setDi($di);
+
+        $result = $this->service->getHpSearchQuery([]);
         $this->assertIsString($result[0]);
-        $this->assertIsArray($result[1]);
-        $this->assertSame([], $result[1]);
+        $this->assertIsArray($result[1]->toArray());
+        $this->assertSame([], $result[1]->toArray());
     }
 
     public function testDeleteHp(): void
     {
-        $model = new \Model_ExtProductHostingPlan();
-        $model->loadBean(new \DummyBean());
+        $model = new HostingPlan();
+        $reflId = new \ReflectionProperty($model, 'id');
+        $reflId->setAccessible(true);
+        $reflId->setValue($model, 1);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
+        $hostingRepoMock = $this->createMock(\FOSSBilling\ProductType\Hosting\Repository\HostingRepository::class);
+        $hostingRepoMock->expects($this->atLeastOnce())
+            ->method('findBy')
+            ->willReturn([]);
+
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->with(\FOSSBilling\ProductType\Hosting\Entity\Hosting::class)
+            ->willReturn($hostingRepoMock);
+        $emMock->expects($this->atLeastOnce())
+            ->method('remove')
+            ->with($model);
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
         $this->service->setDi($di);
 
@@ -1031,8 +1054,10 @@ final class ServiceTest extends \BBTestCase
 
     public function testToHostingHpApiArray(): void
     {
-        $model = new \Model_ExtProductHostingPlan();
-        $model->loadBean(new \DummyBean());
+        $model = new HostingPlan();
+        $reflId = new \ReflectionProperty($model, 'id');
+        $reflId->setAccessible(true);
+        $reflId->setValue($model, 1);
 
         $result = $this->service->toHostingHpApiArray($model);
         $this->assertIsArray($result);
@@ -1052,15 +1077,20 @@ final class ServiceTest extends \BBTestCase
             'max_park' => '1',
         ];
 
-        $model = new \Model_ExtProductHostingPlan();
-        $model->loadBean(new \DummyBean());
+        $model = new HostingPlan();
+        $reflId = new \ReflectionProperty($model, 'id');
+        $reflId->setAccessible(true);
+        $reflId->setValue($model, 1);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist')
+            ->with($model);
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -1071,32 +1101,49 @@ final class ServiceTest extends \BBTestCase
 
     public function testCreateHp(): void
     {
-        $model = new \Model_ExtProductHostingPlan();
-        $model->loadBean(new \DummyBean());
         $newId = 1;
+        $capturedPlan = null;
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')->willReturn($model);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')->willReturn($newId);
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist')
+            ->willReturnCallback(function ($plan) use (&$capturedPlan, $newId) {
+                $capturedPlan = $plan;
+                // Simulate Doctrine assigning an ID after persist
+                $reflId = new \ReflectionProperty($plan, 'id');
+                $reflId->setAccessible(true);
+                $reflId->setValue($plan, $newId);
+
+                return null;
+            });
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
 
-        $result = $this->service->createHp('Free Plan', []);
+        // Pass string values to override the integer defaults in the service method
+        $data = [
+            'max_addon' => '1',
+            'max_park' => '1',
+            'max_sub' => '1',
+            'max_pop' => '1',
+            'max_sql' => '1',
+            'max_ftp' => '1',
+        ];
+
+        $result = $this->service->createHp('Free Plan', $data);
         $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
 
     public function testGetServerPackage(): void
     {
-        $model = new \Model_ExtProductHostingPlan();
-        $model->loadBean(new \DummyBean());
-        $model->config = '{}';
+        $model = new HostingPlan();
+        $model->setConfig('{}');
 
         $di = $this->getDi();
 
@@ -1107,9 +1154,8 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetServerManagerWithLog(): void
     {
-        $hostingServerModel = new \Model_ExtProductHostingServer();
-        $hostingServerModel->loadBean(new \DummyBean());
-        $hostingServerModel->manager = 'Custom';
+        $hostingServerModel = new HostingServer();
+        $hostingServerModel->setManager('Custom');
 
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1137,9 +1183,8 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetManagerUrls(): void
     {
-        $hostingServerModel = new \Model_ExtProductHostingServer();
-        $hostingServerModel->loadBean(new \DummyBean());
-        $hostingServerModel->manager = 'Custom';
+        $hostingServerModel = new HostingServer();
+        $hostingServerModel->setManager('Custom');
 
         $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
         $serverManagerMock->expects($this->atLeastOnce())
@@ -1164,9 +1209,8 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetManagerUrlsException(): void
     {
-        $hostingServerModel = new \Model_ExtProductHostingServer();
-        $hostingServerModel->loadBean(new \DummyBean());
-        $hostingServerModel->manager = 'Custom';
+        $hostingServerModel = new HostingServer();
+        $hostingServerModel->setManager('Custom');
 
         $serviceMock = $this->getMockBuilder(HostingHandler::class)
             ->onlyMethods(['getServerManager'])
@@ -1199,8 +1243,8 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($domainHandlerMock);
         $di['product_type_registry'] = $registryMock;
 
-        $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \DummyBean());
+        $tldModel = new Tld();
+        $tldModel->setTld('.com');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())

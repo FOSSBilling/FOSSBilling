@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\Hosting;
 
+use FOSSBilling\ProductType\Hosting\Entity\Hosting;
 use FOSSBilling\Validation\Api\RequiredParams;
 use FOSSBilling\Validation\Api\RequiredRole;
 
@@ -341,7 +342,7 @@ class Api extends \Api_Abstract
         $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ExtProductHosting) {
+        if (!$s instanceof Hosting) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 
@@ -361,7 +362,7 @@ class Api extends \Api_Abstract
 
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ExtProductHosting) {
+        if (!$s instanceof Hosting) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

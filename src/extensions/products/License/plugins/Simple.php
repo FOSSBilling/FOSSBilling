@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\License\plugins;
 
+use FOSSBilling\ProductType\License\Entity\License;
+
 class Simple
 {
     protected ?\Pimple\Container $di = null;
@@ -25,7 +27,7 @@ class Simple
         return $this->di;
     }
 
-    public function generate(\Model_ExtProductLicense $service, \Model_ClientOrder $order, array $config): string
+    public function generate(License $service, \Model_ClientOrder $order, array $config): string
     {
         $length = $config['length'] ?? 25;
         $prefix = $config['prefix'] ?? null;

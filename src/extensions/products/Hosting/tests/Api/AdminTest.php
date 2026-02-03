@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace FOSSBilling\ProductType\Hosting\Tests\Api;
 
 use FOSSBilling\ProductType\Hosting\Api;
+use FOSSBilling\ProductType\Hosting\Entity\Hosting;
+use FOSSBilling\ProductType\Hosting\Entity\HostingPlan;
+use FOSSBilling\ProductType\Hosting\Entity\HostingServer;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -36,9 +39,9 @@ final class AdminTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturnOnConsecutiveCalls($clientOrderModel, new \Model_ExtProductHostingPlan());
+            ->willReturnOnConsecutiveCalls($clientOrderModel, new HostingPlan());
 
-        $model = new \Model_ExtProductHosting();
+        $model = new Hosting(1);
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
@@ -76,7 +79,7 @@ final class AdminTest extends \BBTestCase
         $this->api->admin_change_plan($data);
     }
 
-public function testChangeUsername(): void
+    public function testChangeUsername(): void
     {
         $data = [
             'order_id' => 1,
@@ -89,7 +92,7 @@ public function testChangeUsername(): void
             ->method('getExistingModelById')
             ->willReturn($clientOrderModel);
 
-        $model = new \Model_ExtProductHosting();
+        $model = new Hosting(1);
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
@@ -125,7 +128,7 @@ public function testChangeUsername(): void
             ->method('getExistingModelById')
             ->willReturn($clientOrderModel);
 
-        $model = new \Model_ExtProductHosting();
+        $model = new Hosting(1);
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
@@ -161,7 +164,7 @@ public function testChangeUsername(): void
             ->method('getExistingModelById')
             ->willReturn($clientOrderModel);
 
-        $model = new \Model_ExtProductHosting();
+        $model = new Hosting(1);
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
@@ -196,7 +199,7 @@ public function testChangeUsername(): void
             ->method('getExistingModelById')
             ->willReturn($clientOrderModel);
 
-        $model = new \Model_ExtProductHosting();
+        $model = new Hosting(1);
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
@@ -231,7 +234,7 @@ public function testChangeUsername(): void
             ->method('getExistingModelById')
             ->willReturn($clientOrderModel);
 
-        $model = new \Model_ExtProductHosting();
+        $model = new Hosting(1);
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
@@ -267,7 +270,7 @@ public function testChangeUsername(): void
             ->method('getExistingModelById')
             ->willReturn($clientOrderModel);
 
-        $model = new \Model_ExtProductHosting();
+        $model = new Hosting(1);
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
@@ -290,7 +293,7 @@ public function testChangeUsername(): void
         $this->assertTrue($result);
     }
 
-public function testManagerGetPairs(): void
+    public function testManagerGetPairs(): void
     {
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -409,7 +412,7 @@ public function testManagerGetPairs(): void
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturn(new \Model_ExtProductHostingServer());
+            ->willReturn(new HostingServer());
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -433,7 +436,7 @@ public function testManagerGetPairs(): void
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturn(new \Model_ExtProductHostingServer());
+            ->willReturn(new HostingServer());
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -449,7 +452,7 @@ public function testManagerGetPairs(): void
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturn(new \Model_ExtProductHostingServer());
+            ->willReturn(new HostingServer());
 
         // Mock the 'find' method to return a non-empty array, simulating the server being used by service hostings
         $dbMock->expects($this->atLeastOnce())
@@ -479,7 +482,7 @@ public function testManagerGetPairs(): void
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturn(new \Model_ExtProductHostingServer());
+            ->willReturn(new HostingServer());
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -503,7 +506,7 @@ public function testManagerGetPairs(): void
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturn(new \Model_ExtProductHostingServer());
+            ->willReturn(new HostingServer());
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -558,7 +561,7 @@ public function testManagerGetPairs(): void
             'id' => 1,
         ];
 
-        $model = new \Model_ExtProductHostingPlan();
+        $model = new HostingPlan();
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -594,7 +597,7 @@ public function testManagerGetPairs(): void
             'id' => 1,
         ];
 
-        $model = new \Model_ExtProductHostingPlan();
+        $model = new HostingPlan();
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -621,7 +624,7 @@ public function testManagerGetPairs(): void
             'id' => 1,
         ];
 
-        $model = new \Model_ExtProductHostingPlan();
+        $model = new HostingPlan();
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -677,9 +680,9 @@ public function testManagerGetPairs(): void
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturnOnConsecutiveCalls($clientOrderModel, new \Model_ExtProductHostingPlan());
+            ->willReturnOnConsecutiveCalls($clientOrderModel, new HostingPlan());
 
-        $model = new \Model_ExtProductHosting();
+        $model = new Hosting(1);
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
@@ -715,7 +718,7 @@ public function testManagerGetPairs(): void
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->willReturnOnConsecutiveCalls($clientOrderModel, new \Model_ExtProductHostingPlan());
+            ->willReturnOnConsecutiveCalls($clientOrderModel, new HostingPlan());
 
         $model = null;
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);

@@ -801,44 +801,31 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetOrderCoreService(): void
     {
-        $service = new \Model_ExtProductCustom();
+        $customEntity = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflectionClass = new \ReflectionClass($customEntity);
+        $idProperty = $reflectionClass->getProperty('id');
+        $idProperty->setValue($customEntity, 1);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->never())
-            ->method('findOne');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn($service);
+        $customHandlerMock = $this->getMockBuilder(\FOSSBilling\ProductType\Custom\CustomHandler::class)
+            ->onlyMethods(['loadEntity'])->getMock();
+        $customHandlerMock->expects($this->once())->method('loadEntity')
+            ->with(1)
+            ->willReturn($customEntity);
 
-        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        $toolsMock->expects($this->atLeastOnce())->method('to_camel_case')
-            ->willReturn('ServiceCustom');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['tools'] = $toolsMock;
-        $this->service->setDi($di);
-
-        $order = new \Model_ClientOrder();
-        $order->loadBean(new \DummyBean());
-        $order->service_id = 1;
-        $order->service_type = \Model_ProductTable::CUSTOM;
-
-        $result = $this->service->getOrderService($order);
-        $this->assertInstanceOf('Model_ExtProductCustom', $result);
-    }
-
-    public function testGetOrderNotCoreService(): void
-    {
-        $service = new \Model_ExtProductCustom();
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn($service);
+        $registry = new \FOSSBilling\ProductTypeRegistry();
+        $registry->registerDefinition([
+            'code' => 'custom',
+            'label' => 'Custom',
+            'handler' => $customHandlerMock,
+            'templates' => [
+                'html_admin' => null,
+                'html_client' => null,
+            ],
+        ]);
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['product_type_registry'] = $registry;
+        $di['logger'] = $this->createMock('Box_Log');
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
@@ -847,7 +834,45 @@ final class ServiceTest extends \BBTestCase
         $order->service_type = 'custom';
 
         $result = $this->service->getOrderService($order);
-        $this->assertInstanceOf('Model_ExtProductCustom', $result);
+        $this->assertInstanceOf(\FOSSBilling\ProductType\Custom\Entity\Custom::class, $result);
+    }
+
+    public function testGetOrderNotCoreService(): void
+    {
+        $customEntity = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflectionClass = new \ReflectionClass($customEntity);
+        $idProperty = $reflectionClass->getProperty('id');
+        $idProperty->setValue($customEntity, 1);
+
+        $customHandlerMock = $this->getMockBuilder(\FOSSBilling\ProductType\Custom\CustomHandler::class)
+            ->onlyMethods(['loadEntity'])->getMock();
+        $customHandlerMock->expects($this->once())->method('loadEntity')
+            ->with(1)
+            ->willReturn($customEntity);
+
+        $registry = new \FOSSBilling\ProductTypeRegistry();
+        $registry->registerDefinition([
+            'code' => 'custom',
+            'label' => 'Custom',
+            'handler' => $customHandlerMock,
+            'templates' => [
+                'html_admin' => null,
+                'html_client' => null,
+            ],
+        ]);
+
+        $di = $this->getDi();
+        $di['product_type_registry'] = $registry;
+        $di['logger'] = $this->createMock('Box_Log');
+        $this->service->setDi($di);
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->service_id = 1;
+        $order->service_type = 'custom';
+
+        $result = $this->service->getOrderService($order);
+        $this->assertInstanceOf(\FOSSBilling\ProductType\Custom\Entity\Custom::class, $result);
     }
 
     public function testGetOrderServiceIdNotSet(): void
@@ -892,9 +917,9 @@ final class ServiceTest extends \BBTestCase
         $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
-        $service = new \Model_ExtProductCustom();
-        $service->loadBean(new \DummyBean());
-        $service->id = 1;
+        $service = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflection = new \ReflectionProperty($service, 'id');
+        $reflection->setValue($service, 1);
 
         $result = $this->service->getServiceOrder($service);
         $this->assertInstanceOf('Model_ClientOrder', $result);

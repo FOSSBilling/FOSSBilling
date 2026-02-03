@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\Download;
 
+use FOSSBilling\ProductType\Download\Entity\Download;
 use FOSSBilling\Validation\Api\RequiredParams;
 use FOSSBilling\Validation\Api\RequiredRole;
 
@@ -40,7 +41,7 @@ class Api extends \Api_Abstract
 
         $orderService = $this->di['mod_service']('order');
         $serviceDownload = $orderService->getOrderService($order);
-        if (!$serviceDownload instanceof \Model_ExtProductDownload) {
+        if (!$serviceDownload instanceof Download) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 
@@ -85,7 +86,7 @@ class Api extends \Api_Abstract
 
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ExtProductDownload || $order->status !== 'active') {
+        if (!$s instanceof Download || $order->status !== 'active') {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

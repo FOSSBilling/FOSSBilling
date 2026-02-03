@@ -13,6 +13,8 @@ namespace FOSSBilling\ProductType\License;
 
 use FOSSBilling\Exception;
 use FOSSBilling\Interfaces\ProductTypeHandlerInterface;
+use FOSSBilling\ProductType\License\Entity\License;
+use FOSSBilling\ProductType\License\Repository\LicenseRepository;
 use Pimple\Container;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -20,6 +22,7 @@ use Symfony\Component\Finder\Finder;
 class LicenseHandler implements ProductTypeHandlerInterface
 {
     protected ?Container $di = null;
+    protected ?LicenseRepository $repository = null;
 
     public function setDi(Container $di): void
     {
@@ -29,6 +32,25 @@ class LicenseHandler implements ProductTypeHandlerInterface
     public function getDi(): ?Container
     {
         return $this->di;
+    }
+
+    protected function getRepository(): LicenseRepository
+    {
+        if ($this->repository === null) {
+            $this->repository = $this->di['em']->getRepository(License::class);
+        }
+
+        return $this->repository;
+    }
+
+    protected function loadEntity(int $id): License
+    {
+        $entity = $this->getRepository()->find($id);
+        if (!$entity instanceof License) {
+            throw new Exception('License not found');
+        }
+
+        return $entity;
     }
 
     public function attachOrderConfig(\Model_Product $product, array $data): array
@@ -59,30 +81,28 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return $files;
     }
 
-    public function create(\Model_ClientOrder $order)
+    public function create(\Model_ClientOrder $order): License
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
         $this->validateOrderData($c);
 
-        $model = $this->di['db']->dispense('ExtProductLicense');
-        $model->client_id = $order->client_id;
-        $model->validate_ip = (bool) ($c['validate_ip'] ?? false);
-        $model->validate_host = (bool) ($c['validate_host'] ?? false);
-        $model->validate_path = (bool) ($c['validate_path'] ?? false);
-        $model->validate_version = (bool) ($c['validate_version'] ?? false);
-        $model->plugin = $c['plugin'] ?? 'Simple';
+        $license = new License($order->client_id);
+        $license->setValidateIp((bool) ($c['validate_ip'] ?? false));
+        $license->setValidateHost((bool) ($c['validate_host'] ?? false));
+        $license->setValidatePath((bool) ($c['validate_path'] ?? false));
+        $license->setValidateVersion((bool) ($c['validate_version'] ?? false));
+        $license->setPlugin($c['plugin'] ?? 'Simple');
+        $license->setIps(null);
+        $license->setVersions(null);
+        $license->setHosts(null);
+        $license->setPaths(null);
 
-        $model->ips = null;
-        $model->versions = null;
-        $model->hosts = null;
-        $model->paths = null;
+        $em = $this->di['em'];
+        $em->persist($license);
+        $em->flush();
 
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-
-        return $model;
+        return $license;
     }
 
     public function activate(\Model_ClientOrder $order): bool
@@ -90,15 +110,17 @@ class LicenseHandler implements ProductTypeHandlerInterface
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
         $iterations = $c['iterations'] ?? 10;
-        $model = $orderService->getOrderService($order);
-        if (!$model instanceof \Model_ExtProductLicense) {
+
+        if ($order->service_id === null) {
             throw new Exception('Could not activate order. Service was not created');
         }
 
-        $plugin = $this->getPlugin($model);
+        $license = $this->loadEntity((int) $order->service_id);
+
+        $plugin = $this->getPlugin($license);
 
         if (!is_object($plugin)) {
-            throw new Exception('License plugin :plugin was not found.', [':plugin' => $model->plugin]);
+            throw new Exception('License plugin :plugin was not found.', [':plugin' => $license->getPlugin()]);
         }
 
         if (!method_exists($plugin, 'generate')) {
@@ -111,15 +133,17 @@ class LicenseHandler implements ProductTypeHandlerInterface
 
         $i = 0;
         do {
-            $licenseKey = $plugin->generate($model, $order, $c);
+            $licenseKey = $plugin->generate($license, $order, $c);
             if ($i++ >= $iterations) {
                 throw new Exception('Maximum number of iterations reached while generating license key');
             }
-        } while ($this->di['db']->findOne('ExtProductLicense', 'license_key = :license_key', [':license_key' => $licenseKey]) !== null);
+        } while ($this->getRepository()->findOneByLicenseKey($licenseKey) !== null);
 
-        $model->license_key = $licenseKey;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $license->setLicenseKey($licenseKey);
+
+        $em = $this->di['em'];
+        $em->persist($license);
+        $em->flush();
 
         return true;
     }
@@ -153,53 +177,56 @@ class LicenseHandler implements ProductTypeHandlerInterface
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
-        if ($service instanceof \Model_ExtProductLicense) {
-            $this->di['db']->trash($service);
+
+        if ($service instanceof License) {
+            $em = $this->di['em'];
+            $em->remove($service);
+            $em->flush();
         }
     }
 
-    public function reset(\Model_ExtProductLicense $model): bool
+    public function reset(License $model): bool
     {
         $data = [
-            'id' => $model->id,
-            'ips' => $model->ips,
-            'hosts' => $model->hosts,
-            'paths' => $model->paths,
-            'versions' => $model->versions,
-            'client_id' => $model->client_id,
+            'id' => $model->getId(),
+            'ips' => $model->getIps(),
+            'hosts' => $model->getHosts(),
+            'paths' => $model->getPaths(),
+            'versions' => $model->getVersions(),
+            'client_id' => $model->getClientId(),
         ];
         $this->di['events_manager']->fire(['event' => 'onBeforeServicelicenseReset', 'params' => $data]);
 
-        $model->ips = json_encode([]);
-        $model->hosts = json_encode([]);
-        $model->paths = json_encode([]);
-        $model->versions = json_encode([]);
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Reset license %s information', $model->id);
+        $model->setIps(json_encode([]));
+        $model->setHosts(json_encode([]));
+        $model->setPaths(json_encode([]));
+        $model->setVersions(json_encode([]));
+
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
+
+        $this->di['logger']->info('Reset license %s information', $model->getId());
 
         $data = [
-            'id' => $model->id,
-            'client_id' => $model->client_id,
-            'updated_at' => $model->updated_at,
+            'id' => $model->getId(),
+            'client_id' => $model->getClientId(),
+            'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
         $this->di['events_manager']->fire(['event' => 'onAfterServicelicenseReset', 'params' => $data]);
 
         return true;
     }
 
-    public function isLicenseActive(\Model_ExtProductLicense $model)
+    public function isLicenseActive(License $model): bool
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
-        if ($o instanceof \Model_ClientOrder) {
-            return $o->status == \Model_ClientOrder::STATUS_ACTIVE;
-        }
 
-        return false;
+        return $o instanceof \Model_ClientOrder && $o->status === \Model_ClientOrder::STATUS_ACTIVE;
     }
 
-    public function isValidIp(\Model_ExtProductLicense $model, $value)
+    public function isValidIp(License $model, $value): bool
     {
         $defined = $model->getAllowedIps();
         if (empty($defined)) {
@@ -208,7 +235,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
             return true;
         }
 
-        if (!$model->validate_ip) {
+        if (!$model->isValidateIp()) {
             $this->addValue($model, 'ips', $value);
 
             return true;
@@ -217,7 +244,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return in_array($value, $defined);
     }
 
-    public function isValidVersion(\Model_ExtProductLicense $model, $value)
+    public function isValidVersion(License $model, $value): bool
     {
         $defined = $model->getAllowedVersions();
         if (empty($defined)) {
@@ -226,7 +253,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
             return true;
         }
 
-        if (!$model->validate_version) {
+        if (!$model->isValidateVersion()) {
             $this->addValue($model, 'versions', $value);
 
             return true;
@@ -235,7 +262,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return in_array($value, $defined);
     }
 
-    public function isValidPath(\Model_ExtProductLicense $model, $value)
+    public function isValidPath(License $model, $value): bool
     {
         $defined = $model->getAllowedPaths();
         if (empty($defined)) {
@@ -244,7 +271,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
             return true;
         }
 
-        if (!$model->validate_path) {
+        if (!$model->isValidatePath()) {
             $this->addValue($model, 'paths', $value);
 
             return true;
@@ -253,7 +280,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return in_array($value, $defined);
     }
 
-    public function isValidHost(\Model_ExtProductLicense $model, $value)
+    public function isValidHost(License $model, $value): bool
     {
         $defined = $model->getAllowedHosts();
         if (empty($defined)) {
@@ -262,7 +289,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
             return true;
         }
 
-        if (!$model->validate_host) {
+        if (!$model->isValidateHost()) {
             $this->addValue($model, 'hosts', $value);
 
             return true;
@@ -271,7 +298,7 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return in_array($value, $defined);
     }
 
-    public function getAdditionalParams(\Model_ExtProductLicense $model, $data = []): array
+    public function getAdditionalParams(License $model, $data = []): array
     {
         $plugin = $this->getPlugin($model);
         if (is_object($plugin) && method_exists($plugin, 'validate')) {
@@ -284,17 +311,18 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return [];
     }
 
-    public function getOwnerName(\Model_ExtProductLicense $model)
+    public function getOwnerName(License $model): string
     {
-        $client = $this->di['db']->load('Client', $model->client_id);
+        $client = $this->di['db']->load('Client', $model->getClientId());
 
         return $client->getFullName();
     }
 
-    public function getExpirationDate(\Model_ExtProductLicense $model)
+    public function getExpirationDate(License $model): string
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
+
         if ($o instanceof \Model_ClientOrder) {
             return $o->expires_at;
         }
@@ -302,68 +330,98 @@ class LicenseHandler implements ProductTypeHandlerInterface
         return date('Y-m-d H:i:s');
     }
 
-    public function toApiArray(\Model_ExtProductLicense $model, $deep = false, $identity = null): array
+    public function toApiArray(License $model, $deep = false, $identity = null): array
     {
         $result = [
-            'license_key' => $model->license_key,
-            'validate_ip' => (bool) $model->validate_ip,
-            'validate_host' => (bool) $model->validate_host,
-            'validate_version' => (bool) $model->validate_version,
-            'validate_path' => (bool) $model->validate_path,
+            'license_key' => $model->getLicenseKey(),
+            'validate_ip' => $model->isValidateIp(),
+            'validate_host' => $model->isValidateHost(),
+            'validate_version' => $model->isValidateVersion(),
+            'validate_path' => $model->isValidatePath(),
             'ips' => $model->getAllowedIps(),
             'hosts' => $model->getAllowedHosts(),
             'paths' => $model->getAllowedPaths(),
             'versions' => $model->getAllowedVersions(),
-            'pinged_at' => $model->pinged_at,
+            'pinged_at' => $model->getPingedAt()?->format('Y-m-d H:i:s'),
         ];
+
         if ($identity instanceof \Model_Admin) {
-            $result['plugin'] = $model->plugin;
+            $result['plugin'] = $model->getPlugin();
         }
 
         return $result;
     }
 
-    private function addValue(\Model_ExtProductLicense $model, $key, $value): void
+    private function addValue(License $model, $key, $value): void
     {
         $m = 'getAllowed' . ucfirst($key);
         $allowed = $model->{$m}();
         $allowed[] = $value;
 
-        $model->{$key} = json_encode(array_unique($allowed));
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        switch ($key) {
+            case 'ips':
+                $model->setIps(json_encode(array_unique($allowed)));
+
+                break;
+            case 'hosts':
+                $model->setHosts(json_encode(array_unique($allowed)));
+
+                break;
+            case 'paths':
+                $model->setPaths(json_encode(array_unique($allowed)));
+
+                break;
+            case 'versions':
+                $model->setVersions(json_encode(array_unique($allowed)));
+
+                break;
+        }
+
+        $em = $this->di['em'];
+        $em->persist($model);
+        $em->flush();
     }
 
-    private function getPlugin(\Model_ExtProductLicense $model): ?object
+    private function getPlugin(License $model): ?object
     {
         $plugins = $this->getLicensePlugins();
         foreach ($plugins as $plugin) {
-            if ($model->plugin == $plugin['filename']) {
+            if ($model->getPlugin() == $plugin['filename']) {
                 require_once $plugin['path'];
-                $class_name = 'FOSSBilling\\ProductType\\License\\plugins\\' . $model->plugin;
-                if (class_exists($class_name)) {
-                    return new $class_name();
+                $className = 'FOSSBilling\\ProductType\\License\\plugins\\' . $model->getPlugin();
+                if (class_exists($className)) {
+                    return new $className();
                 }
 
-                error_log("License #{$model->id} plugin {$model->plugin} class is invalid.");
+                error_log("License #{$model->getId()} plugin {$model->getPlugin()} class is invalid.");
 
                 return null;
             }
         }
-        error_log("License #{$model->id} plugin {$model->plugin} is invalid.");
+        error_log("License #{$model->getId()} plugin {$model->getPlugin()} is invalid.");
 
         return null;
     }
 
-    public function update(\Model_ExtProductLicense $s, array $data): bool
+    public function update(License $s, array $data): bool
     {
-        $s->plugin = $data['plugin'] ?? $s->plugin;
-        $s->validate_ip = (bool) ($data['validate_ip'] ?? $s->validate_ip);
-        $s->validate_host = (bool) ($data['validate_host'] ?? $s->validate_host);
-        $s->validate_path = (bool) ($data['validate_path'] ?? $s->validate_path);
-        $s->validate_version = (bool) ($data['validate_version'] ?? $s->validate_version);
+        if (isset($data['plugin'])) {
+            $s->setPlugin($data['plugin']);
+        }
+        if (isset($data['validate_ip'])) {
+            $s->setValidateIp((bool) $data['validate_ip']);
+        }
+        if (isset($data['validate_host'])) {
+            $s->setValidateHost((bool) $data['validate_host']);
+        }
+        if (isset($data['validate_path'])) {
+            $s->setValidatePath((bool) $data['validate_path']);
+        }
+        if (isset($data['validate_version'])) {
+            $s->setValidateVersion((bool) $data['validate_version']);
+        }
         if (isset($data['license_key']) && !empty($data['license_key'])) {
-            $s->license_key = $data['license_key'];
+            $s->setLicenseKey($data['license_key']);
         }
 
         foreach (['ips', 'hosts', 'paths', 'versions'] as $key) {
@@ -371,17 +429,35 @@ class LicenseHandler implements ProductTypeHandlerInterface
                 $array = explode(PHP_EOL, $data[$key]);
                 $array = array_map(trim(...), $array);
                 $array = array_diff($array, ['']);
-                $s->{$key} = json_encode($array);
+                switch ($key) {
+                    case 'ips':
+                        $s->setIps(json_encode($array));
+
+                        break;
+                    case 'hosts':
+                        $s->setHosts(json_encode($array));
+
+                        break;
+                    case 'paths':
+                        $s->setPaths(json_encode($array));
+
+                        break;
+                    case 'versions':
+                        $s->setVersions(json_encode($array));
+
+                        break;
+                }
             }
         }
 
-        $s->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($s);
+        $em = $this->di['em'];
+        $em->persist($s);
+        $em->flush();
 
         return true;
     }
 
-    public function checkLicenseDetails(array $data)
+    public function checkLicenseDetails(array $data): array
     {
         $result = [];
         $log = $this->di['logger']->setChannel('license');

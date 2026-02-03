@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FOSSBilling\ProductType\License\Tests\Api;
 
 use FOSSBilling\ProductType\License\Api;
+use FOSSBilling\ProductType\License\Entity\License;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -37,7 +38,7 @@ final class ClientTest extends \BBTestCase
             ->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('getServiceModelForClient')
-            ->willReturn(new \Model_ExtProductLicense());
+            ->willReturn(new License(1));
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\License\LicenseHandler::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -59,7 +60,7 @@ final class ClientTest extends \BBTestCase
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->willReturn(new \Model_ExtProductLicense());
+            ->willReturn(new License(1));
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())

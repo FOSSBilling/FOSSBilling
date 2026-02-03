@@ -1060,10 +1060,10 @@ class Service implements InjectionAwareInterface
         return $discount;
     }
 
-    public function isPromoLinkedToTld(\Model_Promo $promo, \Model_Tld $tld): bool
+    public function isPromoLinkedToTld(\Model_Promo $promo, \FOSSBilling\ProductType\Domain\Entity\Tld $tld): bool
     {
         foreach ($promo->PromoItem as $item) {
-            if ($item->tld_id == $tld->id) {
+            if ($item->tld_id == $tld->getId()) {
                 return true;
             }
         }

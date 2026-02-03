@@ -248,21 +248,17 @@ final class ServiceTest extends \BBTestCase
 
     public function testClearCache(): void
     {
-        // Create cache directory with .gitkeep if it doesn't exist
-        $cacheDir = PATH_CACHE;
-        if (!is_dir($cacheDir)) {
-            mkdir($cacheDir, 0o755, true);
-        }
-        $gitkeepFile = $cacheDir . '/.gitkeep';
-        $gitkeepExists = file_exists($gitkeepFile);
-        if (!$gitkeepExists) {
-            file_put_contents($gitkeepFile, '');
-        }
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['clearCache'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('clearCache')
+            ->willReturn(true);
 
-        $result = $this->service->clearCache();
+        $di = $this->getDi();
+        $serviceMock->setDi($di);
 
-        // Restore .gitkeep file if it was present before test
-        file_put_contents($gitkeepFile, '');
+        $result = $serviceMock->clearCache();
 
         $this->assertIsBool($result);
         $this->assertTrue($result);

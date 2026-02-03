@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\License;
 
+use FOSSBilling\ProductType\License\Entity\License;
 use FOSSBilling\Validation\Api\RequiredRole;
 
 class Api extends \Api_Abstract
@@ -67,7 +68,7 @@ class Api extends \Api_Abstract
 
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ExtProductLicense) {
+        if (!$s instanceof License) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 
@@ -94,7 +95,7 @@ class Api extends \Api_Abstract
 
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ExtProductLicense) {
+        if (!$s instanceof License) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

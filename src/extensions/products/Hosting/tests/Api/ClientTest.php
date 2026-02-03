@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FOSSBilling\ProductType\Hosting\Tests\Api;
 
 use FOSSBilling\ProductType\Hosting\Api;
+use FOSSBilling\ProductType\Hosting\Entity\Hosting;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -25,7 +26,7 @@ final class ClientTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-public function testHpGetPairs(): void
+    public function testHpGetPairs(): void
     {
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Hosting\HostingHandler::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -50,7 +51,7 @@ public function testHpGetPairs(): void
             ->method('findOne')
             ->willReturn($clientOrderModel);
 
-        $model = new \Model_ExtProductHosting();
+        $model = new Hosting(1);
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')

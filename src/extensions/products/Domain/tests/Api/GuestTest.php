@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FOSSBilling\ProductType\Domain\Tests\Api;
 
 use FOSSBilling\ProductType\Domain\Api;
+use FOSSBilling\ProductType\Domain\Entity\Tld;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -29,7 +30,7 @@ final class GuestTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->willReturn([new \Model_Tld()]);
+            ->willReturn([new Tld()]);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -46,7 +47,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['tldFindOneByTld', 'tldToApiArray'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
-            ->willReturn(new \Model_Tld());
+            ->willReturn(new Tld());
         $serviceMock->expects($this->atLeastOnce())->method('tldToApiArray')
             ->willReturn([]);
 
@@ -92,7 +93,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['tldFindOneByTld', 'isDomainAvailable'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
-            ->willReturn(new \Model_Tld());
+            ->willReturn(new Tld());
         $serviceMock->expects($this->atLeastOnce())->method('isDomainAvailable')
             ->willReturn(true);
 
@@ -167,7 +168,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['tldFindOneByTld', 'isDomainAvailable'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
-            ->willReturn(new \Model_Tld());
+            ->willReturn(new Tld());
         $serviceMock->expects($this->atLeastOnce())->method('isDomainAvailable')
             ->willReturn(false);
 
@@ -195,7 +196,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['tldFindOneByTld', 'canBeTransferred'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
-            ->willReturn(new \Model_Tld());
+            ->willReturn(new Tld());
         $serviceMock->expects($this->atLeastOnce())->method('canBeTransferred')
             ->willReturn(true);
 
@@ -246,7 +247,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['tldFindOneByTld', 'canBeTransferred'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
-            ->willReturn(new \Model_Tld());
+            ->willReturn(new Tld());
         $serviceMock->expects($this->atLeastOnce())->method('canBeTransferred')
             ->willReturn(false);
 

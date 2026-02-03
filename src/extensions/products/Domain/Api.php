@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\Domain;
 
+use FOSSBilling\ProductType\Domain\Entity\Domain;
+use FOSSBilling\ProductType\Domain\Entity\Tld;
 use FOSSBilling\Validation\Api\RequiredParams;
 use FOSSBilling\Validation\Api\RequiredRole;
 
@@ -102,7 +104,7 @@ class Api extends \Api_Abstract
             $tld = '.' . $tld;
         }
         $model = $this->getService()->tldFindOneByTld($tld);
-        if (!$model instanceof \Model_Tld) {
+        if (!$model instanceof Tld) {
             throw new \FOSSBilling\Exception('TLD not found');
         }
 
@@ -113,7 +115,7 @@ class Api extends \Api_Abstract
     public function admin_tld_get_id($data)
     {
         $model = $this->getService()->tldFindOneById($data['id']);
-        if (!$model instanceof \Model_Tld) {
+        if (!$model instanceof Tld) {
             throw new \FOSSBilling\Exception('ID not found');
         }
 
@@ -124,7 +126,7 @@ class Api extends \Api_Abstract
     public function admin_tld_delete($data)
     {
         $model = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$model instanceof \Model_Tld) {
+        if (!$model instanceof Tld) {
             throw new \FOSSBilling\Exception('TLD not found');
         }
         $service_domains = $this->di['db']->find('ExtProductDomain', 'tld = :tld', [':tld' => $data['tld']]);
@@ -150,7 +152,7 @@ class Api extends \Api_Abstract
     public function admin_tld_update($data)
     {
         $model = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$model instanceof \Model_Tld) {
+        if (!$model instanceof Tld) {
             throw new \FOSSBilling\Exception('TLD not found');
         }
 
@@ -354,7 +356,7 @@ class Api extends \Api_Abstract
     public function guest_pricing($data)
     {
         $model = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$model instanceof \Model_Tld) {
+        if (!$model instanceof Tld) {
             throw new \FOSSBilling\Exception('TLD not found');
         }
 
@@ -372,7 +374,7 @@ class Api extends \Api_Abstract
         }
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$tld instanceof \Model_Tld) {
+        if (!$tld instanceof Tld) {
             throw new \FOSSBilling\InformationException('Domain availability could not be determined. TLD is not active.');
         }
 
@@ -388,7 +390,7 @@ class Api extends \Api_Abstract
     public function guest_can_be_transferred($data): bool
     {
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$tld instanceof \Model_Tld) {
+        if (!$tld instanceof Tld) {
             throw new \FOSSBilling\InformationException('TLD is not active.');
         }
         if (!$this->getService()->canBeTransferred($tld, $data['sld'])) {
@@ -407,7 +409,7 @@ class Api extends \Api_Abstract
         $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ExtProductDomain) {
+        if (!$s instanceof Domain) {
             throw new \FOSSBilling\Exception('Domain order is not activated');
         }
 
@@ -425,7 +427,7 @@ class Api extends \Api_Abstract
             throw new \FOSSBilling\Exception('Order not found');
         }
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ExtProductDomain) {
+        if (!$s instanceof Domain) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FOSSBilling\ProductType\Domain\Tests\Api;
 
 use FOSSBilling\ProductType\Domain\Api;
+use FOSSBilling\ProductType\Domain\Entity\Tld;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -49,7 +50,7 @@ final class AdminTest extends \BBTestCase
     {
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
-            ->willReturn(new \Model_Tld());
+            ->willReturn(new Tld());
         $serviceMock->expects($this->atLeastOnce())->method('tldToApiArray')
             ->willReturn([]);
 
@@ -68,9 +69,11 @@ final class AdminTest extends \BBTestCase
 
     public function testTldDelete(): void
     {
-        $tldMock = new \Model_Tld();
-        $tldMock->loadBean(new \DummyBean());
-        $tldMock->tld = '.com';
+        $tldMock = new Tld();
+        $prop = new \ReflectionProperty(Tld::class, 'tld');
+        $prop->setValue($tldMock, '.com');
+        $propId = new \ReflectionProperty(Tld::class, 'id');
+        $propId->setValue($tldMock, 1);
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
@@ -80,7 +83,7 @@ final class AdminTest extends \BBTestCase
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->once())->method('find')
-            ->with($this->equalTo('ExtProductDomain'), $this->equalTo('tld = :tld'), $this->equalTo([':tld' => $tldMock->tld]))
+            ->with($this->equalTo('ExtProductDomain'), $this->equalTo('tld = :tld'), $this->equalTo([':tld' => '.com']))
             ->willReturn([]);
 
         $di = $this->getDi();
@@ -103,7 +106,7 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('tldAlreadyRegistered')
             ->willReturn(false);
         $serviceMock->expects($this->atLeastOnce())->method('tldCreate')
-            ->willReturn(true);
+            ->willReturn(1);
 
         $di = $this->getDi();
         $this->api->setDi($di);
@@ -117,14 +120,16 @@ final class AdminTest extends \BBTestCase
         ];
         $result = $this->api->admin_tld_create($data);
 
-        $this->assertTrue($result);
+        $this->assertEquals(1, $result);
     }
 
     public function testTldUpdate(): void
     {
-        $tldMock = new \Model_Tld();
-        $tldMock->loadBean(new \DummyBean());
-        $tldMock->tld = '.com';
+        $tldMock = new Tld();
+        $prop = new \ReflectionProperty(Tld::class, 'tld');
+        $prop->setValue($tldMock, '.com');
+        $propId = new \ReflectionProperty(Tld::class, 'id');
+        $propId->setValue($tldMock, 1);
 
         $serviceMock = $this->createMock(\FOSSBilling\ProductType\Domain\DomainHandler::class);
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')

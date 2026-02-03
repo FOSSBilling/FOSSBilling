@@ -15,6 +15,8 @@ use FOSSBilling\Environment;
 use FOSSBilling\Exception;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Interfaces\ProductTypeHandlerInterface;
+use FOSSBilling\ProductType\Download\Entity\Download;
+use FOSSBilling\ProductType\Download\Repository\DownloadRepository;
 use Pimple\Container;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -24,6 +26,7 @@ use Symfony\Component\HttpFoundation\Response;
 class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInterface
 {
     protected ?Container $di = null;
+    private ?DownloadRepository $repository = null;
     private readonly Filesystem $filesystem;
 
     public function __construct()
@@ -39,6 +42,25 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
     public function getDi(): ?Container
     {
         return $this->di;
+    }
+
+    protected function getRepository(): DownloadRepository
+    {
+        if ($this->repository === null) {
+            $this->repository = $this->di['em']->getRepository(Download::class);
+        }
+
+        return $this->repository;
+    }
+
+    protected function loadEntity(int $id): Download
+    {
+        $entity = $this->getRepository()->find($id);
+        if (!$entity instanceof Download) {
+            throw new Exception('Download not found');
+        }
+
+        return $entity;
     }
 
     public function attachOrderConfig(\Model_Product $product, array $data): array
@@ -62,7 +84,7 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
     }
 
-    public function create(\Model_ClientOrder $order)
+    public function create(\Model_ClientOrder $order): Download
     {
         $c = json_decode($order->config ?? '', true);
         if (!is_array($c)) {
@@ -70,15 +92,15 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
         }
         $this->validateOrderData($c);
 
-        $model = $this->di['db']->dispense('ExtProductDownload');
-        $model->client_id = $order->client_id;
-        $model->filename = $c['filename'];
-        $model->downloads = 0;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $download = new Download($order->client_id);
+        $download->setFilename($c['filename']);
+        $download->setDownloads(0);
 
-        return $model;
+        $em = $this->di['em'];
+        $em->persist($download);
+        $em->flush();
+
+        return $download;
     }
 
     public function activate(\Model_ClientOrder $order): bool
@@ -115,21 +137,24 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
-        if ($service instanceof \Model_ExtProductDownload) {
-            $this->di['db']->trash($service);
+
+        if ($service instanceof Download) {
+            $em = $this->di['em'];
+            $em->remove($service);
+            $em->flush();
         }
     }
 
-    public function toApiArray(\Model_ExtProductDownload $model, $deep = false, $identity = null): array
+    public function toApiArray(Download $model, $deep = false, $identity = null): array
     {
         $productService = $this->di['mod_service']('product');
         $result = [
-            'path' => Path::join(PATH_UPLOADS, md5($model->filename)),
-            'filename' => $model->filename,
+            'path' => Path::join(PATH_UPLOADS, md5($model->getFilename())),
+            'filename' => $model->getFilename(),
         ];
 
         if ($identity instanceof \Model_Admin) {
-            $result['downloads'] = $model->downloads;
+            $result['downloads'] = $model->getDownloads();
         }
 
         return $result;
@@ -179,7 +204,9 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
                 $ordermodel->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($ordermodel);
 
-                $this->updateProductFile($serviceDownload, $ordermodel, $fileName);
+                if ($serviceDownload instanceof Download) {
+                    $this->updateProductFile($serviceDownload, $ordermodel, $fileName);
+                }
             }
         }
 
@@ -193,7 +220,7 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
         return true;
     }
 
-    public function updateProductFile(\Model_ExtProductDownload $serviceDownload, \Model_ClientOrder $order, ?string $filename = null): bool
+    public function updateProductFile(Download $serviceDownload, \Model_ClientOrder $order, ?string $filename = null): bool
     {
         $request = $this->di['request'];
 
@@ -217,17 +244,19 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
                 $config = json_decode($order->config, true);
                 $fileName = $config['filename'] ?? null;
             }
-            if (!$fileName && isset($serviceDownload->filename)) {
-                $fileName = $serviceDownload->filename;
+            if (!$fileName && $serviceDownload->getFilename()) {
+                $fileName = $serviceDownload->getFilename();
             }
             if (!$fileName) {
                 throw new Exception('No filename available for order file update');
             }
         }
 
-        $serviceDownload->filename = $fileName;
-        $serviceDownload->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($serviceDownload);
+        $serviceDownload->setFilename($fileName);
+
+        $em = $this->di['em'];
+        $em->persist($serviceDownload);
+        $em->flush();
 
         $this->di['logger']->info('Uploaded new file for order %s', $order->id);
 
@@ -248,7 +277,7 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
         };
     }
 
-    public function sendFile(\Model_ExtProductDownload $serviceDownload): bool
+    public function sendFile(Download $serviceDownload): bool
     {
         $info = $this->toApiArray($serviceDownload);
 
@@ -258,9 +287,11 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
             throw new Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
-        ++$serviceDownload->downloads;
-        $serviceDownload->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($serviceDownload);
+        $serviceDownload->setDownloads($serviceDownload->getDownloads() + 1);
+
+        $em = $this->di['em'];
+        $em->persist($serviceDownload);
+        $em->flush();
 
         if (!Environment::isTesting()) {
             $response = new Response($this->filesystem->readFile($filePath));
@@ -275,7 +306,7 @@ class DownloadHandler implements ProductTypeHandlerInterface, InjectionAwareInte
             $response->send();
         }
 
-        $this->di['logger']->info('Downloaded service %s file', $serviceDownload->id);
+        $this->di['logger']->info('Downloaded service %s file', $serviceDownload->getId());
 
         return true;
     }

@@ -248,16 +248,15 @@ class Model_ProductDomainTable extends Model_ProductTable
         } else {
             $tld = $rtable->findOneByTld($tld);
         }
-        if (!$tld instanceof Model_Tld) {
             throw new FOSSBilling\Exception('Unknown TLD. Could not determine registration price');
         }
 
         if ($config['action'] == 'register') {
-            return $tld->price_registration;
+            return $tld->getPriceRegistration();
         }
 
         if ($config['action'] == 'transfer') {
-            return $tld->price_transfer;
+            return $tld->getPriceTransfer();
         }
 
         return 0;

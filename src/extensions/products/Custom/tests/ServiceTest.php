@@ -144,23 +144,15 @@ final class ServiceTest extends \BBTestCase
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn(1);
-        $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->willReturn($product);
-        $serviceCustomModel = new \Model_ExtProductCustom();
-        $serviceCustomModel->loadBean(new \DummyBean());
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($serviceCustomModel);
 
-        $di = $this->getDi();
+        $di = $this->getDiWithMockEntityManager();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
         $result = $this->service->create($order);
-        $this->assertInstanceOf('Model_ExtProductCustom', $result);
+        $this->assertInstanceOf(\FOSSBilling\ProductType\Custom\Entity\Custom::class, $result);
     }
 
     public function testActionActivate(): void
@@ -170,9 +162,10 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
         $order->config = 'config';
 
-        $serviceCustomModel = new \Model_ExtProductCustom();
-        $serviceCustomModel->loadBean(new \DummyBean());
-        $serviceCustomModel->plugin = '';
+        $serviceCustomModel = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflection = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'id');
+        $reflection->setValue($serviceCustomModel, 1);
+        $serviceCustomModel->setPlugin('');
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -213,22 +206,17 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
         $order->config = 'config';
 
-        $serviceCustomModel = new \Model_ExtProductCustom();
-        $serviceCustomModel->loadBean(new \DummyBean());
-        $serviceCustomModel->plugin = '';
+        $serviceCustomModel = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflection = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'id');
+        $reflection->setValue($serviceCustomModel, 1);
+        $serviceCustomModel->setPlugin('');
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn(1);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
@@ -264,22 +252,17 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
         $order->config = 'config';
 
-        $serviceCustomModel = new \Model_ExtProductCustom();
-        $serviceCustomModel->loadBean(new \DummyBean());
-        $serviceCustomModel->plugin = '';
+        $serviceCustomModel = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflection = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'id');
+        $reflection->setValue($serviceCustomModel, 1);
+        $serviceCustomModel->setPlugin('');
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn(1);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
@@ -294,22 +277,17 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
         $order->config = 'config';
 
-        $serviceCustomModel = new \Model_ExtProductCustom();
-        $serviceCustomModel->loadBean(new \DummyBean());
-        $serviceCustomModel->plugin = '';
+        $serviceCustomModel = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflection = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'id');
+        $reflection->setValue($serviceCustomModel, 1);
+        $serviceCustomModel->setPlugin('');
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn(1);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
@@ -324,22 +302,17 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
         $order->config = 'config';
 
-        $serviceCustomModel = new \Model_ExtProductCustom();
-        $serviceCustomModel->loadBean(new \DummyBean());
-        $serviceCustomModel->plugin = '';
+        $serviceCustomModel = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflection = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'id');
+        $reflection->setValue($serviceCustomModel, 1);
+        $serviceCustomModel->setPlugin('');
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn(1);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
@@ -354,22 +327,17 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
         $order->config = 'config';
 
-        $serviceCustomModel = new \Model_ExtProductCustom();
-        $serviceCustomModel->loadBean(new \DummyBean());
-        $serviceCustomModel->plugin = '';
+        $serviceCustomModel = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflection = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'id');
+        $reflection->setValue($serviceCustomModel, 1);
+        $serviceCustomModel->setPlugin('');
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn(1);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
@@ -384,22 +352,17 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
         $order->config = 'config';
 
-        $serviceCustomModel = new \Model_ExtProductCustom();
-        $serviceCustomModel->loadBean(new \DummyBean());
-        $serviceCustomModel->plugin = '';
+        $serviceCustomModel = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflection = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'id');
+        $reflection->setValue($serviceCustomModel, 1);
+        $serviceCustomModel->setPlugin('');
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceCustomModel);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash')
-            ->willReturn(null);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManagerForDelete();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
         $this->service->setDi($di);
 
@@ -417,9 +380,8 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $this->service->setDi($di);
 
-        $model = new \Model_ExtProductCustom();
-        $model->loadBean(new \DummyBean());
-        $model->config = json_encode($decoded);
+        $model = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $model->setConfig(json_encode($decoded));
 
         $result = $this->service->getConfig($model);
 
@@ -431,28 +393,33 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $this->service->setDi($di);
 
-        $model = new \Model_ExtProductCustom();
-        $model->loadBean(new \DummyBean());
-        $model->id = 1;
-        $model->client_id = 1;
-        $model->plugin = 'plugin';
-        $model->config = '{"config_param":"config_value"}';
-        $model->updated_at = date('Y-m-d H:i:s');
-        $model->created_at = date('Y-m-d H:i:s');
+        $model = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflectionId = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'id');
+        $reflectionId->setValue($model, 1);
+        $reflectionClientId = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'clientId');
+        $reflectionClientId->setValue($model, 1);
+        $model->setPlugin('plugin');
+        $model->setConfig('{"config_param":"config_value"}');
+        $createdAt = new \DateTime();
+        $updatedAt = new \DateTime();
+        $reflectionCreatedAt = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'createdAt');
+        $reflectionCreatedAt->setValue($model, $createdAt);
+        $reflectionUpdatedAt = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'updatedAt');
+        $reflectionUpdatedAt->setValue($model, $updatedAt);
 
         $result = $this->service->toApiArray($model);
 
-        $this->assertEquals($result['client_id'], $model->client_id);
-        $this->assertEquals($result['plugin'], $model->plugin);
+        $this->assertEquals($result['client_id'], $model->getClientId());
+        $this->assertEquals($result['plugin'], $model->getPlugin());
         $this->assertEquals($result['config_param'], 'config_value');
-        $this->assertEquals($result['updated_at'], $model->updated_at);
-        $this->assertEquals($result['created_at'], $model->created_at);
+        $this->assertEquals($result['updated_at'], $model->getUpdatedAt()->format('Y-m-d H:i:s'));
+        $this->assertEquals($result['created_at'], $model->getCreatedAt()->format('Y-m-d H:i:s'));
     }
 
     public function testCustomCallForbiddenMethodException(): void
     {
         $this->expectException(\Exception::class);
-        $this->service->customCall(new \Model_ExtProductCustom(), 'delete');
+        $this->service->customCall(new \FOSSBilling\ProductType\Custom\Entity\Custom(1), 'delete');
     }
 
     public function testGetServiceCustomByOrderId(): void
@@ -465,7 +432,7 @@ final class ServiceTest extends \BBTestCase
         $orderService = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService'])->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->willReturn(new \Model_ExtProductCustom());
+            ->willReturn(new \FOSSBilling\ProductType\Custom\Entity\Custom(1));
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -474,7 +441,7 @@ final class ServiceTest extends \BBTestCase
 
         $result = $this->service->getServiceCustomByOrderId(1);
 
-        $this->assertInstanceOf('Model_ExtProductCustom', $result);
+        $this->assertInstanceOf(\FOSSBilling\ProductType\Custom\Entity\Custom::class, $result);
     }
 
     public function testGetServiceCustomByOrderIdOrderServiceNotFoundException(): void
@@ -499,23 +466,17 @@ final class ServiceTest extends \BBTestCase
 
     public function testUpdateConfig(): void
     {
-        $model = new \Model_ExtProductCustom();
-        $model->loadBean(new \DummyBean());
-        $model->id = 1;
+        $model = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflection = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'id');
+        $reflection->setValue($model, 1);
 
         $serviceMock = $this->getMockBuilder(CustomHandler::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
             ->willReturn($model);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn(1);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['logger'] = $di['logger'] = $this->createMock('Box_Log');
+        $di = $this->getDiWithMockEntityManager();
+        $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
 
         $config = ['param1' => 'value1'];
@@ -525,23 +486,17 @@ final class ServiceTest extends \BBTestCase
 
     public function testUpdateConfigNotArrayException(): void
     {
-        $model = new \Model_ExtProductCustom();
-        $model->loadBean(new \DummyBean());
-        $model->id = 1;
+        $model = new \FOSSBilling\ProductType\Custom\Entity\Custom(1);
+        $reflection = new \ReflectionProperty(\FOSSBilling\ProductType\Custom\Entity\Custom::class, 'id');
+        $reflection->setValue($model, 1);
 
         $serviceMock = $this->getMockBuilder(CustomHandler::class)->onlyMethods(['getServiceCustomByOrderId'])->getMock();
         $serviceMock->expects($this->never())
             ->method('getServiceCustomByOrderId')
             ->willReturn($model);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->never())
-            ->method('store')
-            ->willReturn(1);
-
         $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['logger'] = $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
 
         $config = '';

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\ProductType\License\Tests;
 
+use FOSSBilling\ProductType\License\Entity\License;
 use FOSSBilling\ProductType\License\LicenseHandler;
 use FOSSBilling\ProductType\License\Server;
 use PHPUnit\Framework\Attributes\Group;
@@ -61,53 +62,58 @@ final class ServiceTest extends \BBTestCase
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
-
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($serviceLicenseModel);
+        $clientOrderModel->client_id = 1;
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
 
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
 
         $result = $this->service->create($clientOrderModel);
-        $this->assertInstanceOf('\Model_ExtProductLicense', $result);
+        $this->assertInstanceOf(License::class, $result);
     }
 
     public function testActionActivate(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
+        $clientOrderModel->service_id = 1;
 
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->plugin = 'Simple';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'plugin', 'Simple');
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
-        $orderServiceMock->expects($this->atLeastOnce())
-            ->method('getOrderService')
-            ->willReturn($serviceLicenseModel);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
+        // Create a mock repository that returns the license entity
+        $repositoryMock = $this->createMock(\FOSSBilling\ProductType\License\Repository\LicenseRepository::class);
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->willReturn($serviceLicenseModel);
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByLicenseKey')
+            ->willReturn(null);
+
+        // Create a mock EntityManager that returns the repository
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->with(License::class)
+            ->willReturn($repositoryMock);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist');
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
@@ -120,28 +126,38 @@ final class ServiceTest extends \BBTestCase
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
+        $clientOrderModel->service_id = 1;
 
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->plugin = 'Simple';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'plugin', 'Simple');
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn(['iterations' => 3]);
-        $orderServiceMock->expects($this->atLeastOnce())
-            ->method('getOrderService')
-            ->willReturn($serviceLicenseModel);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-        $dbMock->expects($this->exactly(3))
-            ->method('findOne')
+        // Create a mock repository that returns the license entity and handles collision detection
+        $repositoryMock = $this->createMock(\FOSSBilling\ProductType\License\Repository\LicenseRepository::class);
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->willReturn($serviceLicenseModel);
+        $repositoryMock->expects($this->exactly(3))
+            ->method('findOneByLicenseKey')
             ->willReturnOnConsecutiveCalls($serviceLicenseModel, $serviceLicenseModel, null);
 
+        // Create a mock EntityManager that returns the repository
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->with(License::class)
+            ->willReturn($repositoryMock);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist');
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
+
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
@@ -154,61 +170,84 @@ final class ServiceTest extends \BBTestCase
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
+        $clientOrderModel->service_id = 1;
 
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->plugin = 'Simple';
+        $serviceLicenseModel = new License(1);
+        $reflId = new \ReflectionProperty($serviceLicenseModel, 'id');
+        $reflId->setAccessible(true);
+        $reflId->setValue($serviceLicenseModel, 1);
+        $this->setPrivateProperty($serviceLicenseModel, 'plugin', 'Simple');
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
-        $orderServiceMock->expects($this->atLeastOnce())
-            ->method('getOrderService')
-            ->willReturn($serviceLicenseModel);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->never())
-            ->method('store');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('findOne')
+        // Create a mock repository that returns the license entity and always finds collision
+        $repositoryMock = $this->createMock(\FOSSBilling\ProductType\License\Repository\LicenseRepository::class);
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('find')
             ->willReturn($serviceLicenseModel);
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByLicenseKey')
+            ->willReturn($serviceLicenseModel); // Always returns the license, causing collision
+
+        // Create a mock EntityManager that returns the repository
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->with(License::class)
+            ->willReturn($repositoryMock);
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $this->service->activate($clientOrderModel);
-        $this->assertTrue($result);
+        $this->expectExceptionMessage('Maximum number of iterations reached while generating license key');
+        $this->service->activate($clientOrderModel);
     }
 
     public function testActionActivatePluginNotFound(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
+        $clientOrderModel->service_id = 1;
 
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->plugin = 'TestPlugin';
+        $serviceLicenseModel = new License(1);
+        $reflId = new \ReflectionProperty($serviceLicenseModel, 'id');
+        $reflId->setAccessible(true);
+        $reflId->setValue($serviceLicenseModel, 1);
+        $this->setPrivateProperty($serviceLicenseModel, 'plugin', 'TestPlugin');
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
-        $orderServiceMock->expects($this->atLeastOnce())
-            ->method('getOrderService')
+
+        // Create a mock repository that returns the license entity
+        $repositoryMock = $this->createMock(\FOSSBilling\ProductType\License\Repository\LicenseRepository::class);
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('find')
             ->willReturn($serviceLicenseModel);
 
+        // Create a mock EntityManager that returns the repository
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManager::class);
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->with(License::class)
+            ->willReturn($repositoryMock);
+
         $di = $this->getDi();
+        $di['em'] = $emMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage("License plugin {$serviceLicenseModel->plugin} was not found.");
+        $this->expectExceptionMessage("License plugin {$serviceLicenseModel->getPlugin()} was not found.");
         $this->service->activate($clientOrderModel);
     }
 
@@ -216,14 +255,12 @@ final class ServiceTest extends \BBTestCase
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
+        // service_id is null by default in DummyBean
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->willReturn([]);
-        $orderServiceMock->expects($this->atLeastOnce())
-            ->method('getOrderService')
-            ->willReturn(null);
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
@@ -240,20 +277,14 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
+        $serviceLicenseModel = new License(1);
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn($serviceLicenseModel);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManagerForDelete();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
@@ -262,19 +293,16 @@ final class ServiceTest extends \BBTestCase
 
     public function testReset(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
+        $serviceLicenseModel = new License(1);
+        $reflId = new \ReflectionProperty($serviceLicenseModel, 'id');
+        $reflId->setAccessible(true);
+        $reflId->setValue($serviceLicenseModel, 1);
 
         $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())->
         method('fire');
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager(['persist', 'flush']);
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventMock;
 
@@ -289,8 +317,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->status = \Model_ClientOrder::STATUS_ACTIVE;
 
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
+        $serviceLicenseModel = new License(1);
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
@@ -307,8 +334,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsLicenseNotActive(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
+        $serviceLicenseModel = new License(1);
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
@@ -325,17 +351,11 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidIp(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->ips = '{}';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'ips', '{}');
         $value = '1.1.1.1';
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
 
         $this->service->setDi($di);
 
@@ -345,17 +365,12 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidIpTest2(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->ips = '["2.2.2.2"]';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'ips', '["2.2.2.2"]');
+        $this->setPrivateProperty($serviceLicenseModel, 'validateIp', false);
         $value = '1.1.1.1';
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
 
         $this->service->setDi($di);
 
@@ -365,10 +380,9 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidIpTest3(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->ips = '["2.2.2.2"]';
-        $serviceLicenseModel->validate_ip = '3.3.3.3';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'ips', '["2.2.2.2"]');
+        $this->setPrivateProperty($serviceLicenseModel, 'validateIp', '3.3.3.3');
         $value = '1.1.1.1';
 
         $result = $this->service->isValidIp($serviceLicenseModel, $value);
@@ -377,17 +391,11 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidVersion(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->versions = '{}';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'versions', '{}');
         $value = '1.0';
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
 
         $this->service->setDi($di);
 
@@ -397,17 +405,11 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidVersionTest2(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->versions = '["2.0"]';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'versions', '["2.0"]');
         $value = '1.0';
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
 
         $this->service->setDi($di);
 
@@ -417,10 +419,9 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidVersionTest3(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->versions = '["2.0"]';
-        $serviceLicenseModel->validate_version = '3.3.3.3';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'versions', '["2.0"]');
+        $this->setPrivateProperty($serviceLicenseModel, 'validateVersion', '3.3.3.3');
         $value = '1.0';
 
         $result = $this->service->isValidVersion($serviceLicenseModel, $value);
@@ -429,17 +430,11 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidPath(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->paths = '{}';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'paths', '{}');
         $value = '/var';
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
 
         $this->service->setDi($di);
 
@@ -449,17 +444,11 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidPathTest2(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->paths = '["/"]';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'paths', '["/"]');
         $value = '/var';
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
 
         $this->service->setDi($di);
 
@@ -469,10 +458,9 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidPathTest3(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->paths = '["/"]';
-        $serviceLicenseModel->validate_path = '/user';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'paths', '["/"]');
+        $this->setPrivateProperty($serviceLicenseModel, 'validatePath', '/user');
         $value = '/var';
 
         $result = $this->service->isValidPath($serviceLicenseModel, $value);
@@ -481,17 +469,11 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidHost(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->hosts = '{}';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'hosts', '{}');
         $value = 'site.com';
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
 
         $this->service->setDi($di);
 
@@ -501,17 +483,12 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidHostTest2(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->hosts = '["fossbilling.org"]';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'hosts', '["fossbilling.org"]');
+        $this->setPrivateProperty($serviceLicenseModel, 'validateHost', false);
         $value = 'site.com';
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
 
         $this->service->setDi($di);
 
@@ -521,10 +498,9 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsValidHostTest3(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->hosts = '["fossbilling.org"]';
-        $serviceLicenseModel->validate_host = 'example.com';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'hosts', '["fossbilling.org"]');
+        $this->setPrivateProperty($serviceLicenseModel, 'validateHost', 'example.com');
         $value = 'site.com';
 
         $result = $this->service->isValidHost($serviceLicenseModel, $value);
@@ -533,9 +509,8 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetAdditionalParams(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
-        $serviceLicenseModel->plugin = 'Simple';
+        $serviceLicenseModel = new License(1);
+        $this->setPrivateProperty($serviceLicenseModel, 'plugin', 'Simple');
 
         $result = $this->service->getAdditionalParams($serviceLicenseModel);
         $this->assertIsArray($result);
@@ -548,8 +523,7 @@ final class ServiceTest extends \BBTestCase
         $clientModel->first_name = 'John';
         $clientModel->last_name = 'Smith';
 
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
+        $serviceLicenseModel = new License(1);
 
         $expected = $clientModel->first_name . ' ' . $clientModel->last_name;
 
@@ -575,8 +549,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->expires_at = $expected;
 
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
+        $serviceLicenseModel = new License(1);
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
@@ -595,8 +568,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testToApiArray(): void
     {
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
+        $serviceLicenseModel = new License(1);
 
         $expected = [
             'license_key' => '',
@@ -629,15 +601,9 @@ final class ServiceTest extends \BBTestCase
             'pinged_at' => '',
             'plugin' => 'Simple',
         ];
-        $serviceLicenseModel = new \Model_ExtProductLicense();
-        $serviceLicenseModel->loadBean(new \DummyBean());
+        $serviceLicenseModel = new License(1);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->getDiWithMockEntityManager();
 
         $this->service->setDi($di);
         $result = $this->service->update($serviceLicenseModel, $data);
@@ -699,5 +665,12 @@ final class ServiceTest extends \BBTestCase
         $result = $this->service->checkLicenseDetails($data);
 
         $this->assertIsArray($result);
+    }
+
+    private function setPrivateProperty(object $object, string $propertyName, mixed $value): void
+    {
+        $reflectionProperty = new \ReflectionProperty($object, $propertyName);
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue($object, $value);
     }
 }

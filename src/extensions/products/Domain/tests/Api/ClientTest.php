@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FOSSBilling\ProductType\Domain\Tests\Api;
 
 use FOSSBilling\ProductType\Domain\Api;
+use FOSSBilling\ProductType\Domain\Entity\Domain;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -18,10 +19,10 @@ final class ClientTest extends \BBTestCase
         $this->api->setIdentity(new \Model_Client());
     }
 
-public function testUpdateNameservers(): void
+    public function testUpdateNameservers(): void
     {
-        $model = new \Model_ExtProductDomain();
-        $model->loadBean(new \DummyBean());
+        $model = new Domain(1);
+        $model->setAction('register');
 
         $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['updateNameservers'])->getMock();
@@ -61,13 +62,13 @@ public function testUpdateNameservers(): void
 
     public function testUpdateContacts(): void
     {
-        $model = new \Model_ExtProductDomain();
-        $model->loadBean(new \DummyBean());
+        $model = new Domain(1);
+        $model->setAction('register');
 
         $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['updateContacts'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('updateContacts')
-            ->willReturn(true);
+            ->willReturn(['contact' => 'updated']);
 
         $orderServiceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['findForClientById', 'getOrderService'])->getMock();
@@ -91,13 +92,14 @@ public function testUpdateNameservers(): void
         ];
         $result = $this->api->client_update_contacts($data);
 
-        $this->assertTrue($result);
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('contact', $result);
     }
 
     public function testEnablePrivacyProtection(): void
     {
-        $model = new \Model_ExtProductDomain();
-        $model->loadBean(new \DummyBean());
+        $model = new Domain(1);
+        $model->setAction('register');
 
         $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['enablePrivacyProtection'])->getMock();
@@ -128,8 +130,8 @@ public function testUpdateNameservers(): void
 
     public function testDisablePrivacyProtection(): void
     {
-        $model = new \Model_ExtProductDomain();
-        $model->loadBean(new \DummyBean());
+        $model = new Domain(1);
+        $model->setAction('register');
 
         $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['disablePrivacyProtection'])->getMock();
@@ -160,8 +162,8 @@ public function testUpdateNameservers(): void
 
     public function testGetTransferCode(): void
     {
-        $model = new \Model_ExtProductDomain();
-        $model->loadBean(new \DummyBean());
+        $model = new Domain(1);
+        $model->setAction('register');
 
         $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['getTransferCode'])->getMock();
@@ -192,8 +194,8 @@ public function testUpdateNameservers(): void
 
     public function testLock(): void
     {
-        $model = new \Model_ExtProductDomain();
-        $model->loadBean(new \DummyBean());
+        $model = new Domain(1);
+        $model->setAction('register');
 
         $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['lock'])->getMock();
@@ -224,8 +226,8 @@ public function testUpdateNameservers(): void
 
     public function testUnlock(): void
     {
-        $model = new \Model_ExtProductDomain();
-        $model->loadBean(new \DummyBean());
+        $model = new Domain(1);
+        $model->setAction('register');
 
         $serviceMock = $this->getMockBuilder(\FOSSBilling\ProductType\Domain\DomainHandler::class)
             ->onlyMethods(['unlock'])->getMock();
@@ -251,7 +253,7 @@ public function testUpdateNameservers(): void
         $data = ['order_id' => 1];
         $result = $this->api->client_unlock($data);
 
-$this->assertTrue($result);
+        $this->assertTrue($result);
     }
 
     public function testGetService(): void
@@ -268,7 +270,7 @@ $this->assertTrue($result);
             ->willReturn(new \Model_ClientOrder());
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->willReturn(new \Model_ExtProductDomain());
+            ->willReturn(new Domain(1));
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
@@ -298,7 +300,7 @@ $this->assertTrue($result);
             ->willReturn(new \Model_ClientOrder());
         $orderService->expects($this->never())
             ->method('getOrderService')
-            ->willReturn(new \Model_ExtProductDomain());
+            ->willReturn(new Domain(1));
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
@@ -328,7 +330,7 @@ $this->assertTrue($result);
             ->willReturn(null);
         $orderService->expects($this->never())
             ->method('getOrderService')
-            ->willReturn(new \Model_ExtProductDomain());
+            ->willReturn(new Domain(1));
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
