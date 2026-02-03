@@ -1,23 +1,7 @@
 {
-  "code": "license",
   "label": "License",
   "description": "Software license keys and validation",
   "handler_class": "FOSSBilling\\ProductType\\License\\LicenseHandler",
-  "handler_file": "LicenseHandler.php",
-  "api": {
-    "admin": {
-      "class": "FOSSBilling\\ProductType\\License\\Api",
-      "file": "Api.php"
-    },
-    "client": {
-      "class": "FOSSBilling\\ProductType\\License\\Api",
-      "file": "Api.php"
-    },
-    "guest": {
-      "class": "FOSSBilling\\ProductType\\License\\Api",
-      "file": "Api.php"
-    }
-  },
   "templates": {
     "manage": "ext_product_license_manage.html.twig",
     "config": "ext_product_license_config.html.twig"

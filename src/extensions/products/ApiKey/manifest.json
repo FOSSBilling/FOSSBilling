@@ -1,23 +1,7 @@
 {
-  "code": "apikey",
   "label": "API Key",
   "description": "API key access tokens",
   "handler_class": "FOSSBilling\\ProductType\\ApiKey\\ApiKeyHandler",
-  "handler_file": "ApiKeyHandler.php",
-  "api": {
-    "admin": {
-      "class": "FOSSBilling\\ProductType\\ApiKey\\Api",
-      "file": "Api.php"
-    },
-    "client": {
-      "class": "FOSSBilling\\ProductType\\ApiKey\\Api",
-      "file": "Api.php"
-    },
-    "guest": {
-      "class": "FOSSBilling\\ProductType\\ApiKey\\Api",
-      "file": "Api.php"
-    }
-  },
   "templates": {
     "manage": "ext_product_apikey_manage.html.twig",
     "config": "ext_product_apikey_config.html.twig"

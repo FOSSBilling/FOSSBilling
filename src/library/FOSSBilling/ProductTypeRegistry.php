@@ -184,7 +184,7 @@ class ProductTypeRegistry implements InjectionAwareInterface
      * Register a product type definition.
      *
      * @param array{
-     *     code: string,
+     *     code?: string,
      *     label?: string,
      *     handler_class?: string,
      *     handler?: Interfaces\ProductTypeHandlerInterface,
@@ -303,6 +303,7 @@ class ProductTypeRegistry implements InjectionAwareInterface
 
     /**
      * Get API class definition for a product type and role.
+     * Uses convention: {handler_class namespace}\Api for the API class.
      *
      * @param string $code Product type code
      * @param string $role API role (admin, client, guest)
@@ -315,27 +316,40 @@ class ProductTypeRegistry implements InjectionAwareInterface
         $role = strtolower($role);
 
         $definition = $this->getDefinition($code);
-        $api = $definition['api'] ?? null;
-        if (!is_array($api)) {
+
+        if (isset($definition['api']) && is_array($definition['api'])) {
+            $api = $definition['api'][$role] ?? $definition['api']['admin'] ?? null;
+            if ($api !== null) {
+                if (is_string($api)) {
+                    $api = ['class' => $api];
+                }
+                if (is_array($api) && !empty($api['class'])) {
+                    return [
+                        'class' => $api['class'],
+                        'file' => $this->resolveApiFile($definition, $api),
+                    ];
+                }
+            }
+        }
+
+        $handlerClass = $definition['handler_class'] ?? null;
+        if (!is_string($handlerClass) || trim($handlerClass) === '') {
             return null;
         }
 
-        $entry = $api[$role] ?? null;
-        if ($entry === null) {
+        $lastBackslash = strrpos($handlerClass, '\\');
+        if ($lastBackslash === false) {
             return null;
         }
-
-        if (is_string($entry)) {
-            $entry = ['class' => $entry];
-        }
-
-        if (!is_array($entry) || empty($entry['class'])) {
-            throw new Exception('Product type "%s" API definition for "%s" must define "class".', [$code, $role]);
+        $namespace = substr($handlerClass, 0, $lastBackslash);
+        $apiClass = $namespace . '\\Api';
+        if ($apiClass === $handlerClass) {
+            $apiClass = $handlerClass . '\\Api';
         }
 
         return [
-            'class' => $entry['class'],
-            'file' => $this->resolveApiFile($definition, $entry),
+            'class' => $apiClass,
+            'file' => null,
         ];
     }
 
@@ -435,6 +449,12 @@ class ProductTypeRegistry implements InjectionAwareInterface
     private function normalizeDefinition(array $definition): array
     {
         $code = $definition['code'] ?? null;
+        if (!is_string($code) || trim($code) === '') {
+            $basePath = $definition['base_path'] ?? null;
+            if (is_string($basePath) && trim($basePath) !== '') {
+                $code = strtolower(basename($basePath));
+            }
+        }
         if (!is_string($code) || trim($code) === '') {
             throw new Exception('Product type definition requires a non-empty "code".');
         }

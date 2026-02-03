@@ -1,23 +1,7 @@
 {
-  "code": "domain",
   "label": "Domain",
   "description": "Domain registration, transfer, and management",
   "handler_class": "FOSSBilling\\ProductType\\Domain\\DomainHandler",
-  "handler_file": "DomainHandler.php",
-  "api": {
-    "admin": {
-      "class": "FOSSBilling\\ProductType\\Domain\\Api",
-      "file": "Api.php"
-    },
-    "client": {
-      "class": "FOSSBilling\\ProductType\\Domain\\Api",
-      "file": "Api.php"
-    },
-    "guest": {
-      "class": "FOSSBilling\\ProductType\\Domain\\Api",
-      "file": "Api.php"
-    }
-  },
   "templates": {
     "order": "ext_product_domain_order.html.twig",
     "manage": "ext_product_domain_manage.html.twig",

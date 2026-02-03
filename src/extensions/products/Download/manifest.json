@@ -1,19 +1,7 @@
 {
-  "code": "download",
   "label": "Download",
   "description": "Download file products",
   "handler_class": "FOSSBilling\\ProductType\\Download\\DownloadHandler",
-  "handler_file": "DownloadHandler.php",
-  "api": {
-    "admin": {
-      "class": "FOSSBilling\\ProductType\\Download\\Api",
-      "file": "Api.php"
-    },
-    "client": {
-      "class": "FOSSBilling\\ProductType\\Download\\Api",
-      "file": "Api.php"
-    }
-  },
   "templates": {
     "manage": "ext_product_download_manage.html.twig",
     "config": "ext_product_download_config.html.twig"
