@@ -711,7 +711,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->executeSql("UPDATE client_order SET product_type = 'download' WHERE product_type = 'downloadable'");
                 $this->executeSql(
                     "UPDATE email_template SET action_code = CONCAT('ext_product_', SUBSTRING(action_code, LENGTH('mod_service') + 1))
-                    WHERE action_code LIKE 'mod_service%_%'"
+                    WHERE action_code LIKE 'mod\\_service%\\_%' ESCAPE '\\'"
                 );
                 if (!$schemaManager->tablesExist(['ext_product_download'])) {
                     if ($schemaManager->tablesExist(['service_download'])) {
