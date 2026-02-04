@@ -243,7 +243,7 @@ final class Api_Handler implements InjectionAwareInterface
         $typeKey = strtolower($this->type);
 
         try {
-            $apiDefinition = $registry->getApiDefinition($code, $typeKey);
+            $apiDefinition = $registry->getApiDefinition($code);
         } catch (Throwable) {
             $apiDefinition = null;
         }
@@ -253,12 +253,6 @@ final class Api_Handler implements InjectionAwareInterface
         }
 
         $apiClass = $apiDefinition['class'];
-        $apiFile = $apiDefinition['file'] ?? null;
-
-        // Load the API class file if specified
-        if (!class_exists($apiClass) && $apiFile && is_file($apiFile)) {
-            require_once $apiFile;
-        }
 
         if (!class_exists($apiClass)) {
             throw new FOSSBilling\Exception('API class :class not found for product type :code', [':class' => $apiClass, ':code' => $code], 730);

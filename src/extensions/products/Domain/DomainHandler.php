@@ -26,9 +26,9 @@ use Symfony\Component\Filesystem\Path;
 class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    private $domainRepository = null;
-    private $tldRepository = null;
-    private $registrarRepository = null;
+    private $domainRepository;
+    private $tldRepository;
+    private $registrarRepository;
     private readonly Filesystem $filesystem;
 
     public function __construct()
@@ -217,7 +217,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
                 throw new \FOSSBilling\InformationException('TLD :tld is not available for registration', [':tld' => $data['register_tld']]);
             }
 
-            $data['register_years'] = $data['register_years'] ?? $tld->getMinYears() ?? 1;
+            $data['register_years'] ??= $tld->getMinYears() ?? 1;
             $years = (int) $data['register_years'];
             if ($years < $tld->getMinYears()) {
                 throw new \FOSSBilling\InformationException('Minimum registration period is :min years', [':min' => $tld->getMinYears()]);
@@ -768,7 +768,7 @@ class DomainHandler implements ProductTypeHandlerInterface, InjectionAwareInterf
 
     public function registrarGetAvailable(): array
     {
-        $query = "SELECT 'registrar', 'name' FROM tld_registrar GROUP BY registrar";
+        $query = 'SELECT registrar, name FROM tld_registrar GROUP BY registrar';
 
         $exists = $this->di['db']->getAssoc($query);
 
