@@ -116,7 +116,7 @@
                                 {% if client %}
                                     <div class="dropdown client-dropdown">
                                         <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            <img class="img-fluid rounded-circle" alt="{{ profile.first_name }} {{ profile.last_name }} gravatar" src="{{ profile.email|gravatar(60) }}" height="25px" width="25px">
+                                            <div class="db-avatar rounded-circle" data-avatar-seed="{{ profile.email|hash('xxh128') }}" data-avatar-size="25" style="width: 25px; height: 25px; display: inline-block;"></div>
                                             <span class="ms-1">{% if profile.company %}{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }}){% else %}{{ profile.first_name }} {{ profile.last_name }}{% endif %}</span>
                                         </button>
                                         <ul class="dropdown-menu">

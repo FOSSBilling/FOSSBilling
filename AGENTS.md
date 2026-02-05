@@ -65,6 +65,8 @@ The application uses a modern PHP architecture with dependency injection, event-
 * **Node.js and npm** for frontend asset management
 * **MySQL/MariaDB** database server
 
+**Important:** If PHP is not installed or configured on the system, try using `ddev` to manage the development environment and run PHP/Composer commands.
+
 ### Dependencies
 
 Install PHP dependencies with Composer:

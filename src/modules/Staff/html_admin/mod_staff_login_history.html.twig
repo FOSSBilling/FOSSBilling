@@ -32,7 +32,7 @@
             <td>{{ event.id }}</td>
             <td>
                 <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
-                    <span class="avatar avatar-xs d-none d-md-inline-block" style="background-image: url({{ event.staff.email|gravatar }}&size=24)"></span>
+                    <span class="db-avatar avatar avatar-xs d-none d-md-inline-block" data-avatar-seed="{{ event.staff.email|hash('xxh128') }}" data-avatar-size="24"></span>
                 </a>
             </td>
             <td>

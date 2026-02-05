@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "8.0.0",
-    "autoprefixer": "10.4.23",
+    "autoprefixer": "10.4.24",
     "postcss": "8.5.6",
     "purgecss": "8.0.0",
     "sass": "1.97.3",
