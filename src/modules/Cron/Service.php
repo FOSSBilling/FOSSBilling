@@ -39,9 +39,6 @@ class Service
         ];
     }
 
-    /**
-     * @todo finish fixing, time to sleep (note: idk what exactly this is referring to. It predates FOSSBilling and is from BoxBilling well before we touched this code)
-     */
     public function runCrons(): bool
     {
         $api = $this->di['api_system'];
@@ -80,7 +77,7 @@ class Service
     /**
      * @param string $method
      */
-    protected function _exec($api, $method, $params = null)
+    protected function _exec($api, $method, $params = null): void
     {
         try {
             $api->{$method}($params);

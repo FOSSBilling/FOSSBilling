@@ -11,7 +11,10 @@
 
 namespace Box\Mod\Branding;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+use \FOSSBilling\InjectionAwareInterface;
+use \FOSSBilling\Interfaces\WidgetProviderInterface;
+
+class Service implements InjectionAwareInterface, WidgetProviderInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -29,6 +32,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         return [
             'hide_permissions' => true,
+        ];
+    }
+
+    public function getWidgets(): array
+    {
+        return [
+            [
+                'slot' => 'client.theme.footer.end',
+                'template' => 'mod_branding_footer',
+            ],
         ];
     }
 

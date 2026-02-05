@@ -133,6 +133,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function getFunctions()
     {
         return [
+            new TwigFunction('render_widgets', $this->twig_render_widgets(...), ['needs_environment' => true, 'is_safe' => ['html']]),
             new TwigFunction('svg_sprite', $this->twig_svg_sprite(...), ['needs_environment' => true, 'is_safe' => ['html']]),
 
             // FOSSBilling API functions
@@ -150,6 +151,45 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function getName(): string
     {
         return 'bb';
+    }
+
+    /**
+     * Part of the Widgets module. Renders the widgets of a specified slot.
+     *
+     * @param \Twig\Environment $env     the Twig environment (injected automatically)
+     * @param string            $slot    name of the slot
+     * @param array             $context optional slot context, such as order or client details
+     *
+     * @return string slot content
+     */
+    public function twig_render_widgets(\Twig\Environment $env, string $slot, array $context = []): string
+    {
+        $widgets = $this->di['mod_service']('Widgets')->getSlotWidgets($slot);
+
+        if (empty($widgets)) {
+            return '';
+        }
+
+        $output = '';
+
+        foreach ($widgets as $widget) {
+            try {
+                $templateName = 'widgets/' . $widget['template'] . '.html.twig';
+                $output .= $env->render($templateName, $context);
+            } catch (\Throwable $e) {
+                // Render error widget on failure
+                $output .= $env->render('widgets/mod_widgets_error.html.twig', array_merge($context, [
+                    'widget' => [
+                        'slot' => $slot,
+                        'mod_name' => $widget['module'],
+                        'template' => $widget['template'],
+                    ],
+                    'error' => \FOSSBilling\Environment::isDevelopment() ? $e->getMessage() : null,
+                ]));
+            }
+        }
+
+        return $output;
     }
 
     public function twig_ipcountryname_filter($value)
