@@ -659,7 +659,7 @@ $di['product_type_registry'] = function () use ($di) {
     $registry = new FOSSBilling\ProductTypeRegistry();
     $registry->setDi($di);
     $extensionsRoot = Path::join(PATH_ROOT, 'extensions', 'products');
-    $registry->loadFromFilesystemWithCache($extensionsRoot);
+    $registry->loadFromFilesystem($extensionsRoot);
     $registry->assertHasDefinitions($extensionsRoot);
 
     return $registry;

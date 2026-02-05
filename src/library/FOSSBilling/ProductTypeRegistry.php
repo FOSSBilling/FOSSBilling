@@ -12,14 +12,13 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Pimple\Container;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
 class ProductTypeRegistry implements InjectionAwareInterface
 {
     public const string MANIFEST_FILENAME = 'manifest.json';
-    public const string CACHE_KEY = 'product_type_definitions';
-    public const string CACHE_MTIMES_KEY = 'product_type_definitions_mtimes';
+    public const string CACHE_KEY = 'extensions.products';
     public const int CACHE_TTL = 86400;
 
     private const array DEFAULT_CAPABILITIES = [
@@ -59,14 +58,32 @@ class ProductTypeRegistry implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function loadFromFilesystem(string $rootPath): void
+    /**
+     * Load product type definitions from filesystem with optional caching.
+     *
+     * @param string $path     Path to scan for product type manifests
+     * @param bool   $useCache Whether to use caching (defaults to true)
+     */
+    public function loadFromFilesystem(string $path, bool $useCache = true): void
     {
-        if (!is_dir($rootPath)) {
+        if (!is_dir($path)) {
             return;
         }
 
-        $iterator = new \DirectoryIterator($rootPath);
-        foreach ($iterator as $entry) {
+        $cache = $useCache && $this->di && isset($this->di['cache']) ? $this->di['cache'] : null;
+
+        // Try to load from cache
+        if ($cache) {
+            $item = $cache->getItem(self::CACHE_KEY);
+            if ($item->isHit() && is_array($cached = $item->get())) {
+                $this->definitions = $cached;
+
+                return;
+            }
+        }
+
+        // Load from filesystem
+        foreach (new \DirectoryIterator($path) as $entry) {
             if (!$entry->isDir() || $entry->isDot()) {
                 continue;
             }
@@ -77,107 +94,24 @@ class ProductTypeRegistry implements InjectionAwareInterface
             }
 
             try {
-                $definition = $this->readManifest($manifestPath);
+                $filesystem = new Filesystem();
+                $contents = $filesystem->readFile($manifestPath);
+                $definition = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
                 $definition['base_path'] ??= $entry->getPathname();
-                $definition['source'] ??= 'extensions';
+                $definition['source'] ??= 'extension';
                 $this->registerDefinition($definition);
             } catch (\Throwable $exception) {
                 $this->logManifestError($entry->getFilename(), $exception);
             }
         }
-    }
 
-    /**
-     * Load product type definitions from filesystem with caching.
-     * Cache is invalidated when any manifest file mtime changes.
-     */
-    public function loadFromFilesystemWithCache(string $rootPath): void
-    {
-        if (!is_dir($rootPath)) {
-            return;
+        // Save to cache
+        if ($cache) {
+            $item = $cache->getItem(self::CACHE_KEY);
+            $item->expiresAfter(self::CACHE_TTL);
+            $item->set($this->definitions);
+            $cache->save($item);
         }
-
-        if (!$this->di || !isset($this->di['cache'])) {
-            $this->loadFromFilesystem($rootPath);
-
-            return;
-        }
-
-        /** @var FilesystemAdapter $cache */
-        $cache = $this->di['cache'];
-
-        $manifestMtimes = $this->computeManifestMtimes($rootPath);
-
-        $definitionsItem = $cache->getItem(self::CACHE_KEY);
-        $mtimesItem = $cache->getItem(self::CACHE_MTIMES_KEY);
-
-        $cachedMtimes = $mtimesItem->isHit() ? $mtimesItem->get() : null;
-        if (!$definitionsItem->isHit() || !is_array($cachedMtimes) || $cachedMtimes !== $manifestMtimes) {
-            $this->loadFromFilesystem($rootPath);
-
-            $definitionsItem->expiresAfter(self::CACHE_TTL);
-            $definitionsItem->set($this->definitions);
-            $cache->save($definitionsItem);
-
-            $mtimesItem->expiresAfter(self::CACHE_TTL);
-            $mtimesItem->set($manifestMtimes);
-            $cache->save($mtimesItem);
-
-            return;
-        }
-
-        $cachedDefinitions = $definitionsItem->get();
-        if (is_array($cachedDefinitions)) {
-            $this->definitions = $cachedDefinitions;
-        } else {
-            $this->loadFromFilesystem($rootPath);
-        }
-    }
-
-    /**
-     * Compute modification times of all manifest files for cache invalidation.
-     *
-     * @return array<string, int> Map of manifest path to mtime
-     */
-    private function computeManifestMtimes(string $rootPath): array
-    {
-        $mtimes = [];
-
-        if (!is_dir($rootPath)) {
-            return $mtimes;
-        }
-
-        $iterator = new \DirectoryIterator($rootPath);
-        foreach ($iterator as $entry) {
-            if (!$entry->isDir() || $entry->isDot()) {
-                continue;
-            }
-
-            $manifestPath = Path::join($entry->getPathname(), self::MANIFEST_FILENAME);
-            if (is_file($manifestPath)) {
-                $mtimes[$manifestPath] = filemtime($manifestPath);
-            }
-        }
-
-        ksort($mtimes);
-
-        return $mtimes;
-    }
-
-    /**
-     * Invalidate the product type definitions cache.
-     */
-    public function invalidateCache(): void
-    {
-        if (!$this->di || !isset($this->di['cache'])) {
-            return;
-        }
-
-        /** @var FilesystemAdapter $cache */
-        $cache = $this->di['cache'];
-
-        $cache->deleteItem(self::CACHE_KEY);
-        $cache->deleteItem(self::CACHE_MTIMES_KEY);
     }
 
     /**
@@ -266,6 +200,17 @@ class ProductTypeRegistry implements InjectionAwareInterface
     public function getLoadErrors(): array
     {
         return $this->loadErrors;
+    }
+
+    /**
+     * Invalidate the product type definitions cache.
+     * Call this after adding/modifying/removing product type manifests.
+     */
+    public function invalidateCache(): void
+    {
+        if ($this->di && isset($this->di['cache'])) {
+            $this->di['cache']->deleteItem(self::CACHE_KEY);
+        }
     }
 
     public function assertHasDefinitions(string $rootPath): void
@@ -380,20 +325,6 @@ class ProductTypeRegistry implements InjectionAwareInterface
         }
 
         return $handler->{$action}($order);
-    }
-
-    private function readManifest(string $path): array
-    {
-        $contents = file_get_contents($path);
-        if ($contents === false) {
-            throw new Exception('Unable to read product type manifest file "%s".', [$path]);
-        }
-
-        try {
-            return json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            throw new Exception('Invalid product type manifest "%s".', [$path]);
-        }
     }
 
     private function normalizeDefinition(array $definition): array
