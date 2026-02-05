@@ -84,8 +84,8 @@ class Service implements InjectionAwareInterface
         }
 
         // Sort each slot's widgets by priority (ascending)
-        foreach ($registry as $slot => &$widgets) {
-            usort($widgets, fn ($a, $b) => $a['priority'] <=> $b['priority']);
+        foreach ($registry as &$widgets) {
+            usort($widgets, fn ($a, $b): int => $a['priority'] <=> $b['priority']);
         }
 
         return $registry;
@@ -177,7 +177,7 @@ class Service implements InjectionAwareInterface
         }
 
         // Sort by slot name for consistent display
-        usort($result, fn ($a, $b) => strcmp($a['slot'], $b['slot']));
+        usort($result, fn ($a, $b): int => strcmp((string) $a['slot'], (string) $b['slot']));
 
         return $result;
     }
