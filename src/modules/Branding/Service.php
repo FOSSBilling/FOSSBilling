@@ -11,8 +11,8 @@
 
 namespace Box\Mod\Branding;
 
-use \FOSSBilling\InjectionAwareInterface;
-use \FOSSBilling\Interfaces\WidgetProviderInterface;
+use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\WidgetProviderInterface;
 
 class Service implements InjectionAwareInterface, WidgetProviderInterface
 {
