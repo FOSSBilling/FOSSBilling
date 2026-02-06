@@ -484,10 +484,11 @@ class Service
         }
     }
 
-    public function clearCache(): bool
+    public function clearCache(?string $cachePath = null): bool
     {
-        $this->filesystem->remove(PATH_CACHE);
-        $this->filesystem->mkdir(PATH_CACHE);
+        $path = $cachePath ?? PATH_CACHE;
+        $this->filesystem->remove($path);
+        $this->filesystem->mkdir($path);
 
         return true;
     }

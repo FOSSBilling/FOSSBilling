@@ -11,7 +11,7 @@ define('BB_DB_NAME', $config['db']['name']);
 define('BB_DB_USER', $config['db']['user']);
 define('BB_DB_PASSWORD', $config['db']['password']);
 define('BB_DB_HOST', $config['db']['host']);
-define('BB_DB_TYPE', $config['db']['type']);
+define('BB_DB_TYPE', $config['db']['driver']);
 
 // Add test libraries
 set_include_path(implode(PATH_SEPARATOR, [

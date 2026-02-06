@@ -29,7 +29,7 @@ final class ServiceTest extends \BBTestCase
     public function testGetCompany(): void
     {
         $expected = [
-            'www' => 'https://localhost/',
+            'www' => SYSTEM_URL,
             'name' => 'Inc. Test',
             'email' => 'work@example.eu',
             'tel' => null,
@@ -248,24 +248,34 @@ final class ServiceTest extends \BBTestCase
 
     public function testClearCache(): void
     {
-        // Create cache directory with .gitkeep if it doesn't exist
-        $cacheDir = PATH_CACHE;
+        // Use a temporary directory for testing instead of PATH_CACHE
+        $cacheDir = sys_get_temp_dir() . '/fossbilling_test_cache_' . uniqid();
+
+        // Create cache directory with .gitkeep
         if (!is_dir($cacheDir)) {
-            mkdir($cacheDir, 0o755, true);
+            mkdir($cacheDir, 0755, true);
         }
+
         $gitkeepFile = $cacheDir . '/.gitkeep';
-        $gitkeepExists = file_exists($gitkeepFile);
-        if (!$gitkeepExists) {
-            file_put_contents($gitkeepFile, '');
-        }
+        file_put_contents($gitkeepFile, '');
 
-        $result = $this->service->clearCache();
+        // Call clearCache with the temp directory
+        $result = $this->service->clearCache($cacheDir);
 
-        // Restore .gitkeep file if it was present before test
+        // Restore .gitkeep file after clearCache removes it
         file_put_contents($gitkeepFile, '');
 
         $this->assertIsBool($result);
         $this->assertTrue($result);
+
+        // Cleanup temp directory
+        if (is_dir($cacheDir)) {
+            // Remove .gitkeep file first, then the directory
+            if (file_exists($gitkeepFile)) {
+                unlink($gitkeepFile);
+            }
+            rmdir($cacheDir);
+        }
     }
 
     public function testGetPeriod(): void

@@ -177,7 +177,7 @@ final class ServicePayGatewayTest extends \BBTestCase
             'description' => null,
             'enabled' => null,
             'test_mode' => null,
-            'callback' => 'https://localhost/ipn.php?',
+            'callback' => SYSTEM_URL . 'ipn.php?',
         ];
 
         $di = $this->getDi();
