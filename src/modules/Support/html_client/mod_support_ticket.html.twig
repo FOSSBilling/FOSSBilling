@@ -133,7 +133,6 @@
                         <div class="card mt-3" id="reply-to">
                             <div class="card-body">
                                 <form id="ticket-reply-form">
-                                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                                     <input type="hidden" name="id" value="{{ ticket.id }}">
                                     <textarea name="content" cols="5" rows="10" class="editor-textarea form-control" required="required"
                                               id="ticket-reply-text"></textarea>

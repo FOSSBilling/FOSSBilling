@@ -49,11 +49,8 @@ const Tools = {
    * @throws {Error} If the CSRF token meta tag is not found.
    */
   getCSRFToken: function () {
-    const metaElement = document.querySelector('meta[name="csrf-token"]');
-    if (!metaElement) {
-      throw new Error('CSRF token meta tag not found');
-    }
-    return metaElement.getAttribute('content');
+    const match = document.cookie.match(/csrf_token=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : null;
   },
 
   /**
@@ -358,6 +355,7 @@ const API = {
 
     const headers = {
       'Accept': 'application/json',
+      'X-CSRF-Token': Tools.getCSRFToken() || '',
     };
     if (body && !isFormData) {
       headers['Content-Type'] = 'application/json';

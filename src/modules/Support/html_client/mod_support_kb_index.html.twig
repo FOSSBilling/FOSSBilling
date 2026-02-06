@@ -31,7 +31,6 @@
                             <span class="small text-muted">{{ 'Explore our knowledge base categories and their associated articles below.'|trans }}</span>
                         </div>
                         <form method="get" action="" class="form-inline">
-                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <input name="_url" type="hidden" value="/support/kb">
                             <div class="input-group">
                                 <input class="form-control" name="q" type="text" value="{{ request.q }}" placeholder="{{ 'What are you looking for?'|trans }}">

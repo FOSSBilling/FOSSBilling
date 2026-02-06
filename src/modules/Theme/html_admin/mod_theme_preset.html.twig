@@ -68,7 +68,6 @@
                 <div class="card-body">
                     <h3 class="card-title">{{ 'Config for'|trans }} {{ current_preset }} {{ 'preset'|trans }}</h3>
                     <div class="" id="theme-settings">
-                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="accordion" id="preset-config">
                             {{ include(template_from_string(settings_html)) }}
                         </div>
