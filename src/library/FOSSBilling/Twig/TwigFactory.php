@@ -209,18 +209,26 @@ class TwigFactory
             $_GET['ajax'] = true;
         }
 
-        // CSRF token.
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            $token = hash('md5', $_COOKIE['PHPSESSID'] ?? '');
-        } else {
-            $token = hash('md5', session_id());
+        // CSRF token - generate once per session and set as cookie for Double-Submit pattern.
+        $session = $this->di['session'];
+        $csrfToken = $session->get('csrf_token');
+        if (empty($csrfToken)) {
+            $csrfToken = bin2hex(random_bytes(32));
+            $session->set('csrf_token', $csrfToken);
+        }
+        setcookie('csrf_token', $csrfToken, [
+            'expires' => 0,
+            'path' => '/',
+            'samesite' => 'Strict',
+            'secure' => isset($_SERVER['HTTPS']),
+        ]);
+
+        $redirectUri = $session->get('redirect_uri');
+        if (!empty($redirectUri)) {
+            $twig->addGlobal('redirect_uri', $redirectUri);
         }
 
-        if (!empty($_SESSION['redirect_uri'])) {
-            $twig->addGlobal('redirect_uri', $_SESSION['redirect_uri']);
-        }
-
-        $twig->addGlobal('CSRFToken', $token);
+        $twig->addGlobal('CSRFToken', $csrfToken);
         $twig->addGlobal('request', $_GET);
         $twig->addGlobal('guest', $this->di['api_guest']);
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);

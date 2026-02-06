@@ -210,8 +210,12 @@ class FOSSBillingExtension
     #[AsTwigFilter('timeago')]
     public function timeago(string $dateTime): string
     {
-        $timeAgo = time() - strtotime($dateTime);
-        $timeAgo = ($timeAgo < 1) ? 1 : $timeAgo;
+        $timestamp = strtotime($dateTime);
+        if ($timestamp === false) {
+            return '';
+        }
+
+        $timeAgo = time() - $timestamp;
         $tokens = [
             315_705_600 => __trans('decade'),
             31_570_560 => __trans('year'),
