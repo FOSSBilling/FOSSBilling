@@ -359,6 +359,28 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    public static function onAfterInvoiceCreate(\Box_Event $event): bool
+    {
+        $params = $event->getParameters();
+        $di = $event->getDi();
+        $service = $di['mod_service']('invoice');
+
+        try {
+            $invoiceModel = $di['db']->load('Invoice', $params['id']);
+            $invoice = $service->toApiArray($invoiceModel, true);
+            $email = [];
+            $email['to_client'] = $invoiceModel->client_id;
+            $email['code'] = 'mod_invoice_created';
+            $email['invoice'] = $invoice;
+            $emailService = $di['mod_service']('Email');
+            $emailService->sendTemplate($email);
+        } catch (\Exception $exc) {
+            error_log($exc->getMessage());
+        }
+
+        return true;
+    }
+
     public static function onAfterAdminInvoiceApprove(\Box_Event $event): bool
     {
         $params = $event->getParameters();
