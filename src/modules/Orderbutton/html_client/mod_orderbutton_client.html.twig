@@ -17,7 +17,7 @@
             <div role="tablist">
                 <div class="tab-content" id="nav-tabContent">
                     <div class="tab-pane show active" id="sign-in" role="tabpanel" aria-labelledby="in-tab" tabindex="0">
-                        <form method="post" action="{{ 'api/guest/client/login'|link }}" {{ fb_api_form({callback: 'onLogin'}) }}>
+                        <form method="post" action="{{ 'client/login'|api_url(role: 'guest') }}" {{ fb_api_form({callback: 'onLogin'}) }}>
                             <div class="row">
                                 <div class="form-floating col-md-7 mb-3">
                                     <input class="form-control form-control-sm" type="email" name="email" id="email"
@@ -47,7 +47,8 @@
                         </form>
                     </div>
                     <div class="tab-pane" id="sign-up" role="tabpanel" aria-labelledby="up-tab" tabindex="0">
-                        <form method="post" action="{{ 'api/guest/client/create'|link }}" {{ fb_api_form({callback: 'onAccountCreate'}) }}>
+                        <form method="post" action="{{ 'client/create'|api_url(role: 'guest') }}" {{ fb_api_form({callback: 'onAccountCreate'}) }}>
+
                             {% set r = guest.client_required %}
                             <div class="row">
                                 <div class="form-floating col-md-7 mb-3">
@@ -228,8 +229,8 @@
                                             <input class="form-control form-control-sm" type="text" name="{{ field_name }}" id="{{ field_name }}"
                                                    value="{{ request.(field_name) }}"
                                                    {% if field.required %}required="required"{% endif %}
-                                                   placeholder="{{ field_name | capitalize }}">
-                                            <label class="ms-2" for="{{ field_name }}">{% if field.title is not empty %}{{ field.title }}{% else %} {{ field_name | capitalize }} {% endif %}</label>
+                                                   placeholder="{{ field_name|capitalize }}">
+                                            <label class="ms-2" for="{{ field_name }}">{% if field.title is not empty %}{{ field.title }}{% else %} {{ field_name|capitalize }} {% endif %}</label>
                                         </div>
                                     </div>
                                 {% endif %}
@@ -240,7 +241,7 @@
                                     <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
                                     <label class="form-check-label" for="flexCheckDefault">
                                         {# TODO: Make this translatable once support for placeholders is implemented #}
-                                        <span>I agree to the <a href="{{ '/tos'|link }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ '/privacy-policy'|link }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
+                                        <span>I agree to the <a href="{{ 'tos'|url }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
                                     </label>
                                 </div>
                             {% endif %}
@@ -255,7 +256,7 @@
                             {% if settings.signup_tos == 'implicit' %}
                                 <div class="mb-1">
                                     {# TODO: Make this translatable once support for placeholders is implemented #}
-                                    <span class="text-muted mb-1">By creating an account, you agree to our <a href="{{ '/tos'|link }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ '/privacy-policy'|link }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
+                                    <span class="text-muted mb-1">By creating an account, you agree to our <a href="{{ 'tos'|url }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
                                 </div>
                             {% endif %}
                         </form>

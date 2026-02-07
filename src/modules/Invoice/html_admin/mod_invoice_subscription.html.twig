@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'invoice/subscriptions'|alink }}">{{ 'Subscriptions'|trans }}</a>
+            <a href="{{ 'invoice/subscriptions'|url }}">{{ 'Subscriptions'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Subscription'|trans }} #{{ subscription.id }}</li>
     </ol>
@@ -43,12 +43,12 @@
                             <tr>
                                 <td class="text-end">{{ 'Client'|trans }}:</td>
                                 <td>
-                                    <a href="{{ 'client/manage'|alink }}/{{ subscription.client.id }}">{{ subscription.client.first_name }} {{ subscription.client.last_name }}</a>
+                                    <a href='{{ "client/manage/#{subscription.client.id}"|url }}'>{{ subscription.client.first_name }} {{ subscription.client.last_name }}</a>
                                 </td>
                             </tr>
                             <tr>
                                 <td class="text-end">{{ 'Amount'|trans }}:</td>
-                                <td>{{ mf.currency_format( subscription.amount, subscription.currency) }} {{ mf.period_name(subscription.period) }}</td>
+                                <td>{{ subscription.amount|format_currency(subscription.currency) }} {{ subscription.period|period_title }}</td>
                             </tr>
                             <tr>
                                 <td class="text-end">{{ 'Payment gateway'|trans }}:</td>
@@ -86,8 +86,8 @@
                 </div>
 
                 <div class="body footer text-center">
-                    <a class="btn btn-primary" href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id }) }}"
-                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/subscriptions'|alink}) }}>
+                    <a class="btn btn-primary" href="{{ 'invoice/subscription_delete'|api_url(query: { 'id': subscription.id }) }}"
+                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/subscriptions'|url}) }}>
                         <svg class="icon icon-tabler" width="24" height="24">
                             <use xlink:href="#delete" />
                         </svg>
@@ -98,7 +98,7 @@
 
             <div class="tab-pane fade" id="tab-manage" role="tabpanel">
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/admin/invoice/subscription_update'|link }}" {{ fb_api_form({reload: true}) }}>
+                    <form method="post" action="{{ 'invoice/subscription_update'|api_url }}" {{ fb_api_form({reload: true}) }}>
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>
                             <div class="col">

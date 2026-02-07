@@ -8,7 +8,7 @@
 
 {% block body_class %}order-manage{% endblock %}
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{{ 'order/service' | link}}">{{ 'Services'|trans }}</a></li>
+<li class="breadcrumb-item"><a href="{{ 'order/service'|url}}">{{ 'Services'|trans }}</a></li>
 <li class="breadcrumb-item active" aria-current="page">{{ order.title }}</li>
 {% endblock %}
 
@@ -47,7 +47,7 @@
 
                         <tr>
                             <td><label>{{ 'Payment amount'|trans }}</label></td>
-                            <td>{{ order.total|money(order.currency) }}</td>
+                            <td>{{ order.total|format_currency(order.currency) }}</td>
                         </tr>
 
                         {% if order.period %}
@@ -84,7 +84,7 @@
                         {% if order.notes %}
                             <tr>
                                 <td><label>{{ 'Order notes'|trans }}</label></td>
-                                <td>{{ order.notes|markdown }}</td>
+                                <td>{{ order.notes|markdown_to_html }}</td>
                             </tr>
                         {% endif %}
 
@@ -92,9 +92,9 @@
                             <tr>
                                 <td><label>{{ 'Active support tickets'|trans }}</label></td>
                                 <td>
-                                    <div class="num"><a href="{{ 'support'|link }}" class="redNum">{{ order.active_tickets }}</a></div>
-                                    {# <div class="num"><a href="{{ 'support'|link }}" class="greenNum">{{ order.active_tickets }}</a></div> #}
-                                    {# <div class="num"><a href="{{ 'support'|link }}" class="bludNum">{{ order.active_tickets }}</a></div> #}
+                                    <div class="num"><a href="{{ 'support'|url }}" class="redNum">{{ order.active_tickets }}</a></div>
+                                    {# <div class="num"><a href="{{ 'support'|url }}" class="greenNum">{{ order.active_tickets }}</a></div> #}
+                                    {# <div class="num"><a href="{{ 'support'|url }}" class="bludNum">{{ order.active_tickets }}</a></div> #}
                                 </td>
                             </tr>
                         {% endif %}
@@ -148,14 +148,14 @@
                             {% for i, addon in addons %}
                                 <tr>
                                     <td>{{ addon.title }}</td>
-                                    <td>{{ addon.total|money(addon.currency) }}</td>
+                                    <td>{{ addon.total|format_currency(addon.currency) }}</td>
                                     <td>{{ addon.period|period_title }}</td>
                                     <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
                                     <td>
                                         <span class="badge {% if addon.status == 'active' %}text-bg-success{% elseif addon.status == 'pending_setup' %}text-bg-warning{% endif %}">{{ mf.status_name(addon.status) }}</span>
                                     </td>
                                     <td class="actions">
-                                        <a class="btn btn-outline-primary btn-sm" href="{{ '/order/service/manage'|link }}/{{ addon.id }}">{{ 'Manage'|trans }}</a>
+                                        <a class="btn btn-outline-primary btn-sm" href='{{ "order/service/manage/#{addon.id}"|url }}'>{{ 'Manage'|trans }}</a>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -330,7 +330,7 @@
                 if (confirm("This will generate new invoice. Are you sure you want to continue?")) {
                     API.client.post('invoice/renewal_invoice', { order_id: {{ order.id }} },
                         (result) => {
-                            window.location = "{{ 'invoice'|link }}" + '/' + result;
+                            window.location = "{{ 'invoice'|url }}" + '/' + result;
                         });
                 }
             });

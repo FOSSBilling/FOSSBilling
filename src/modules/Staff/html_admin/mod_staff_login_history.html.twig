@@ -31,17 +31,17 @@
         <tr>
             <td>{{ event.id }}</td>
             <td>
-                <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
+                <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
                     <span class="db-avatar avatar avatar-xs d-none d-md-inline-block" data-avatar-seed="{{ event.staff.email|hash('xxh128') }}" data-avatar-size="24"></span>
                 </a>
             </td>
             <td>
-                <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
+                <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
                     {{ event.staff.name }}
                 </a>
             </td>
-            <td>{{ event.ip|iplookup }}</td>
-            <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
+            <td>{{ mf.ip_lookup_link(event.ip) }}</td>
+            <td>{{ event.ip|ip_country_name|default('Unknown') }}</td>
             <td>{{ event.created_at|format_datetime }}</td>
         </tr>
         {% else %}

@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'news'|alink }}">{{ 'News'|trans }}</a>
+            <a href="{{ 'news'|url }}">{{ 'News'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ post.title }}</li>
     </ol>
@@ -24,7 +24,7 @@
 
 {% block content %}
 <div class="card">
-    <form method="post" action="{{ 'api/admin/news/update'|link }}" {{ fb_api_form({message: 'Post Updated'|trans}) }}>
+    <form method="post" action="{{ 'news/update'|api_url }}" {{ fb_api_form({message: 'Post Updated'|trans}) }}>
         <div class="card-body">
             <h3>{{ 'Edit post'|trans }}</h3>
             <p class="text-muted">{{ post.title }}</p>
@@ -38,8 +38,8 @@
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}</label>
                 <div class="col">
-                    <textarea class="bb-textarea" name="content" rows="10">{{ post.content }}</textarea>
-                    <small class="my-2 form-hint">{{ 'If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.'|trans|raw }}</small>
+                    <textarea class="editor-textarea" name="content" rows="10">{{ post.content }}</textarea>
+                    <small class="my-2 form-hint">If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.</small>
                 </div>
             </div>
             <div class="mb-3 row">
@@ -130,7 +130,7 @@
         <input type="hidden" name="id" value="{{ post.id }}">
 
         <div class="card-footer d-flex gap-2">
-            <a href="{{ 'news'|alink }}" class="btn btn-secondary">
+            <a href="{{ 'news'|url }}" class="btn btn-secondary">
                 <svg class="icon">
                     <use xlink:href="#arrow-sm-left" />
                 </svg>
@@ -142,4 +142,4 @@
 </div>
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}

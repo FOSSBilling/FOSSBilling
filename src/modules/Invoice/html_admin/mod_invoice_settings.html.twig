@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home"/>
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Invoice settings'|trans }}</li>
     </ol>
@@ -27,7 +27,7 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Invoice settings'|trans }}</h3>
         </div>
-        <form method="post" action="{{ 'api/admin/system/update_params'|link }}" {{ fb_api_form({message: 'Settings Updated'|trans}) }}>
+        <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({message: 'Settings Updated'|trans}) }}>
             <div class="card-body">
                 {% set params = admin.system_get_params %}
                 <div class="mt-3 mb-3 row">
@@ -58,7 +58,7 @@
                 <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Default invoice note'|trans }}</label>
                     <div class="col-md-6">
-                        <textarea class="form-control bb-textarea" name="invoice_default_note" rows="5">{{ params.invoice_default_note }}</textarea>
+                        <textarea class="form-control editor-textarea" name="invoice_default_note" rows="5">{{ params.invoice_default_note }}</textarea>
                         <small class="form-hint">{{ 'Supports markdown format.'|trans }}</small>
                     </div>
                 </div>

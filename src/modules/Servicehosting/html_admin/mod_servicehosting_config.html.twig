@@ -2,7 +2,7 @@
 
 <div class="card-body">
     <h3>{{ 'Hosting settings'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/product/update_config'|link }}" {{ fb_api_form({message: 'Hosting Settings Updated'|trans}) }} id="hosting-settings-form">
+    <form method="post" action="{{ 'product/update_config'|api_url }}" {{ fb_api_form({message: 'Hosting Settings Updated'|trans}) }} id="hosting-settings-form">
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Server'|trans }}:</label>
             <div class="col">
@@ -149,7 +149,7 @@
 
     <div class="d-flex align-items-center mb-3">
         <h3 class="mb-0">{{ 'Hosting plans'|trans }}</h3>
-        <a href="{{ 'servicehosting#tab-new-server'|alink }}" class="ms-auto btn btn-primary">
+        <a href="{{ 'servicehosting#tab-new-server'|url }}" class="ms-auto btn btn-primary">
             <svg class="icon me-2">
                 <use xlink:href="#plus" />
             </svg>
@@ -167,10 +167,10 @@
             {% for id, plan in admin.servicehosting_hp_get_pairs %}
             <tr>
                 <td>
-                    <a href="{{ '/servicehosting/plan'|alink }}/{{ id }}">{{ plan }}</a>
+                    <a href='{{ "servicehosting/plan/#{id}"|url }}'>{{ plan }}</a>
                 </td>
                 <td>
-                    <a class="btn btn-icon" href="{{ '/servicehosting/plan'|alink }}/{{ id }}">
+                    <a class="btn btn-icon" href='{{ "servicehosting/plan/#{id}"|url }}'>
                         <svg class="icon">
                             <use xlink:href="#edit" />
                         </svg>
@@ -188,7 +188,7 @@
 
     <div class="d-flex align-items-center mb-3">
         <h3 class="mb-0">{{ 'Servers'|trans }}</h3>
-        <a href="{{ 'servicehosting#tab-new-server'|alink }}" class="ms-auto btn btn-primary">
+        <a href="{{ 'servicehosting'|url }}#tab-new-server" class="ms-auto btn btn-primary">
             <svg class="icon me-2">
                 <use xlink:href="#plus" />
             </svg>
@@ -206,10 +206,10 @@
             {% for id, server in admin.servicehosting_server_get_pairs %}
             <tr>
                 <td>
-                    <a href="{{ '/servicehosting/server'|alink }}/{{ id }}">{{ server }}</a>
+                    <a href='{{ "servicehosting/server/#{id}"|url }}'>{{ server }}</a>
                 </td>
                 <td>
-                    <a class="btn btn-icon" href="{{ '/servicehosting/server'|alink }}/{{ id }}">
+                    <a class="btn btn-icon" href='{{ "servicehosting/server/#{id}"|url }}'>
                         <svg class="icon">
                             <use xlink:href="#edit" />
                         </svg>

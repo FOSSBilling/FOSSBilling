@@ -115,7 +115,7 @@
             const formData = new FormData(form);
             const data = new URLSearchParams(formData);
 
-            fetch("{{ constant('SYSTEM_URL') }}api/guest/support/ticket_create", {
+            fetch("{{ 'support/ticket_create'|api_url(role='guest') }}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -127,7 +127,7 @@
                 if(json.error) {
                     alert(json.error.message);
                 } else {
-                    parent.window.location = "{{ 'support/contact-us/conversation'|link }}" + '/' + json.result;
+                    parent.window.location = "{{ 'support/contact-us/conversation'|url }}" + '/' + json.result;
                 }
             })
             .catch(error => console.error('Error:', error));

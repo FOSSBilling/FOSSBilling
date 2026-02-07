@@ -11,9 +11,9 @@
             <p class="empty-subtitle text-muted">{{ exception.getMessage }}</p>
             <div class="empty-action">
                 {% if exception.getCode == 403 and not admin %}
-                    <a href="{{ '/staff/login'|alink }}" class="btn btn-primary">{{ 'Login'|trans }}</a>
+                    <a href="{{ 'staff/login'|url }}" class="btn btn-primary">{{ 'Login'|trans }}</a>
                 {% else %}
-                    <a href="{{ '/index'|alink }}" class="btn btn-primary">
+                    <a href="{{ 'index'|url }}" class="btn btn-primary">
                         <svg class="icon">
                             <use xlink:href="#arrow-sm-left" />
                         </svg>

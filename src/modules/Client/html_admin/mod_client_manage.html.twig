@@ -14,7 +14,7 @@
         </svg>
     </li>
     <li class="breadcrumb-item">
-        <a href="{{ 'client'|alink }}">{{ 'Clients'|trans }}</a>
+        <a href="{{ 'client'|url }}">{{ 'Clients'|trans }}</a>
     </li>
     <li class="breadcrumb-item active" aria-current="page">{{ client.first_name }} {{ client.last_name }}</li>
 </ul>
@@ -100,7 +100,7 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Fund balance'|trans }}:</td>
-                            <td class="text-danger fw-bold">{{ mf.currency_format(client.balance, client.currency) }}</td>
+                            <td class="text-danger fw-bold">{{ client.balance|format_currency(client.currency) }}</td>
                         </tr>
                         {% if client.notes %}
                         <tr>
@@ -115,7 +115,7 @@
                         {% endif %}
                         <tr>
                             <td class="text-end">IP:</td>
-                            <td>{%if client.ip %}{{ client.ip|iplookup }}{% else %}{{ 'Unknown'|trans }}{% endif %}</td>
+                            <td>{%if client.ip %}{{ mf.ip_lookup_link(client.ip) }}{% else %}{{ 'Unknown'|trans }}{% endif %}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'API Key'|trans }}:</td>
@@ -137,14 +137,14 @@
             </div>
 
             <div class="card-footer text-center">
-                <a href="{{ 'client/login'|alink }}/{{ client.id }}" class="btn btn-primary" target="_blank">
+                <a href='{{ "client/login/#{client.id}"|url }}' class="btn btn-primary" target="_blank">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#login" />
                     </svg>
                     <span>{{ 'Login to client area'|trans }}</span>
                 </a>
                 <a class="btn btn-danger"
-                    {{ fb_api_link({href: 'api/admin/client/delete'|link({id: client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|alink}) }}>
+                    {{ fb_api_link({href: 'client/delete'|api_url(query: {'id': client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url}) }}>
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
@@ -156,7 +156,7 @@
         <div class="tab-pane fade" id="tab-profile" role="tabpanel">
             <div class="card-body">
                 <h5>{{ 'Client profile details'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/client/update'|link }}" {{ fb_api_form({ message: 'Client Profile Updated'|trans}) }}>
+                <form method="post" action="{{ 'client/update'|api_url }}" {{ fb_api_form({ message: 'Client Profile Updated'|trans}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                         <div class="col">
@@ -396,7 +396,7 @@
                 <hr>
 
                 <h5>{{ 'Change password'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/client/change_password'|link }}" {{ fb_api_form({ message: 'Password Changed'|trans}) }}>
+                <form method="post" action="{{ 'client/change_password'|api_url }}" {{ fb_api_form({ message: 'Password Changed'|trans}) }}>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}</label>
                         <div class="col">
@@ -418,7 +418,7 @@
 
                 <h5>{{ 'Custom fields'|trans }}</h5>
                 <p class="text-muted">{{ 'Use these fields to define custom client details'|trans }}</p>
-                <form method="post" action="{{ 'api/admin/client/update'|link }}" {{ fb_api_form({ message: 'Client Profile Custom Fields Updated'|trans}) }}>
+                <form method="post" action="{{ 'client/update'|api_url }}" {{ fb_api_form({ message: 'Client Profile Custom Fields Updated'|trans}) }}>
                     {% for i in 1..10 %}
                     {% set fn = 'custom_' ~ i %}
                     <div class="form-group mb-3 row">
@@ -458,10 +458,10 @@
                         <tr>
                             <td>{{ order.id }}</td>
                             <td>
-                                <a href="{{ '/order/manage'|alink }}/{{ order.id }}">{{ order.title }}</a>
+                                <a href='{{ "order/manage/#{order.id}"|url }}'>{{ order.title }}</a>
                             </td>
-                            <td>{{ mf.currency_format(order.total, order.currency) }}</td>
-                            <td>{{ mf.period_name(order.period) }}</td>
+                            <td>{{ order.total|format_currency(order.currency) }}</td>
+                            <td>{{ order.period|period_title }}</td>
                             <td>
                                 {% if order.status == 'pending_setup' %}
                                     <span class="badge bg-warning me-1"></span>
@@ -478,7 +478,7 @@
                                 {{ mf.status_name(order.status) }}
                             </td>
                             <td>
-                                <a class="btn btn-icon" href="{{ '/order/manage'|alink }}/{{ order.id }}">
+                                <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#settings" />
                                     </svg>
@@ -495,7 +495,7 @@
             </div>
 
             <div class="card-body">
-                <a href="{{ 'order'|alink({ 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                <a href="{{ 'order'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
                     <svg class="icon">
                         <use xlink:href="#plus" />
                     </svg>
@@ -526,9 +526,9 @@
                         {% for invoice in invoices.list %}
                         <tr>
                             <td>
-                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
+                                <a href='{{ "invoice/manage/#{invoice.id}"|url }}'>{{ invoice.serie_nr }}</a>
                             </td>
-                            <td>{{ mf.currency_format( invoice.total, invoice.currency) }}</td>
+                            <td>{{ invoice.total|format_currency(invoice.currency) }}</td>
                             <td>{{ invoice.created_at|format_date }}</td>
                             <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                             <td>
@@ -547,7 +547,7 @@
                                 {{ mf.status_name(invoice.status) }}
                             </td>
                             <td>
-                                <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
+                                <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
@@ -563,7 +563,7 @@
                 </table>
 
                 <div class="card-body">
-                    <a class="btn btn-primary" {{ fb_api_link({href: 'api/admin/invoice/prepare'|link({client_id: client.id}), callback: 'onAfterInvoicePrepared'}) }}>
+                    <a class="btn btn-primary" {{ fb_api_link({href: 'invoice/prepare'|api_url(query: {'client_id': client.id}), callback: 'onAfterInvoicePrepared'}) }}>
                         <svg class="icon">
                             <use xlink:href="#plus" />
                         </svg>
@@ -596,7 +596,7 @@
                             <td>{{ ticket.id }}</td>
                             <td>{{ ticket.helpdesk.name }}</td>
                             <td>
-                                <a href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">{{ ticket.subject|truncate(30) }}</a>
+                                <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
                             </td>
                             <td>
                                 {% if ticket.status == 'open' %}
@@ -611,7 +611,7 @@
                                 {{ mf.status_name(ticket.status) }}
                             </td>
                             <td>
-                                <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">
+                                <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
@@ -628,7 +628,7 @@
             </div>
 
             <div class="card-body">
-                <a href="{{ 'support'|alink({ 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                <a href="{{ 'support'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
                     <svg class="icon">
                         <use xlink:href="#plus" />
                     </svg>
@@ -656,12 +656,12 @@
                         {% set payments = admin.client_balance_get_list({ 'per_page': 20, 'client_id': client.id }) %}
                         {% for i, tx in payments.list %}
                         <tr>
-                            <td>{{ mf.currency_format(tx.amount, tx.currency) }}</td>
+                            <td>{{ tx.amount|format_currency(tx.currency) }}</td>
                             <td>{{ tx.description }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
                                 <a class="btn btn-icon"
-                                    {{ fb_api_link({href: 'api/admin/client/balance_delete'|link({id: tx.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
+                                    {{ fb_api_link({href: 'client/balance_delete'|api_url(query{ 'id': tx.id }), modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
@@ -680,7 +680,7 @@
 
             <div class="card-body">
                 <h5>{{ 'Add funds for client'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/client/balance_add_funds'|link }}" {{ fb_api_form({ message: 'Funds Added'|trans}) }}>
+                <form method="post" action="{{ 'client/balance_add_funds'|api_url }}" {{ fb_api_form({ message: 'Funds Added'|trans}) }}>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label" for="inputAmount">{{ 'Amount'|trans }}:</label>
                         <div class="col input-group">
@@ -729,8 +729,8 @@
                         {% set logins = admin.client_login_history_get_list({ 'per_page': 10, 'page': request.page, 'client_id': client.id }) %}
                         {% for i, login in logins.list %}
                         <tr>
-                            <td>{{ login.ip|iplookup }}</td>
-                            <td>{{ login.ip|ipcountryname|default('Unknown'|trans) }}</td>
+                            <td>{{ mf.ip_lookup_link(login.ip) }}</td>
+                            <td>{{ login.ip|ip_country_name|default('Unknown'|trans) }}</td>
                             <td>{{ login.created_at|format_datetime }}</td>
                         </tr>
                         {% else %}
@@ -775,7 +775,7 @@
                                         <use xlink:href="#eye" />
                                     </svg>
                                 </button>
-                                <a class="btn btn-icon" href="{{ 'email'|alink }}/{{ email.id }}">
+                                <a class="btn btn-icon" href='{{ "email/#{email.id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#edit"></use>
                                     </svg>
@@ -818,11 +818,15 @@
                             <td>{{ tx.txn_id }}</td>
                             <td>{{ tx.type }}</td>
                             <td>{{ tx.gateway }}</td>
-                            <td>{{ mf.currency_format(tx.amount, tx.currency) }}</td>
+                            <td>{% if tx.amount %}
+                                    {{ tx.amount|format_currency(tx.currency) }}
+                                {% else %}
+                                    -
+                                {% endif %}</td>
                             <td>{{ mf.status_name(tx.status) }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
-                                <a class="btn btn-icon" href="{{ '/invoice/transaction'|alink }}/{{ tx.id }}">
+                                <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
@@ -846,7 +850,7 @@
 {{ include('partial_email_preview.html.twig') }}
 <script>
     function onAfterInvoicePrepared(id) {
-        window.location = "{{ 'invoice/manage/'|alink }}/" + id;
+        window.location = "{{ 'invoice/manage/'|url }}/" + id;
     }
 </script>
 {% endblock %}

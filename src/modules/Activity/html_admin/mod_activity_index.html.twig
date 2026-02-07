@@ -204,11 +204,11 @@
             <td>{{ event.id }}</td>
             <td>
                 {% if event.client %}
-                <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
+                <a href='{{ "client/manage/#{event.client.id}"|url }}'>
                     <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-avatar-seed="{{ event.client.email|hash('xxh128') }}" data-avatar-size="20"></span>
                 </a>
                 {% elseif event.staff %}
-                <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
+                <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
                     <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-avatar-seed="{{ event.staff.email|hash('xxh128') }}" data-avatar-size="24"></span>
                 </a>
                 {% else %}
@@ -217,15 +217,15 @@
             </td>
             <td>
                 {% if event.client %}
-                    <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.name }}</a>
-                    <a href="{{ request._url|link(request|merge({ 'client_id': event.client.id, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
+                    <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.name }}</a>
+                    <a href="{{ request._url|url(request|merge({ 'client_id': event.client.id, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
                         <svg class="icon icon-sm text-muted">
                             <use xlink:href="#filter" />
                         </svg>
                     </a>
                 {% elseif event.staff %}
-                    <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">{{ event.staff.name }}</a>
-                    <a href="{{ request._url|link(request|merge({ 'admin_id': event.staff.id, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
+                    <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>{{ event.staff.name }}</a>
+                    <a href="{{ request._url|url(request|merge({ 'admin_id': event.staff.id, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
                         <svg class="icon icon-sm text-muted">
                             <use xlink:href="#filter" />
                         </svg>
@@ -256,18 +256,9 @@
                 {% endif %}
             </td>
             <td>{{ event.message }}</td>
-            <td>
-                {{ event.ip|iplookup }}
-                {% if event.ip %}
-                    <a href="{{ request._url|link(request|merge({ 'ip': event.ip, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
-                        <svg class="icon icon-sm text-muted">
-                            <use xlink:href="#filter" />
-                        </svg>
-                    </a>
-                {% endif %}
-            </td>
-            <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
-            <td title="{{ event.created_at|timeago }} ago">{{ event.created_at|format_datetime }}</td>
+            <td>{{ mf.ip_lookup_link(event.ip) }}</td>
+            <td>{{ event.ip|ip_country_name|default('Unknown'|trans) }}</td>
+            <td>{{ event.created_at|format_datetime }}</td>
         </tr>
         {% else %}
         <tr>

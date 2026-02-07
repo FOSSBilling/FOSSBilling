@@ -9,7 +9,7 @@
 {% block body_class %}invoice-invoice{% endblock %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{{ '/invoice'|link }}">{{ 'Invoices'|trans }}</a></li>
+    <li class="breadcrumb-item"><a href="{{ 'invoice'|url }}">{{ 'Invoices'|trans }}</a></li>
     <li class="breadcrumb-item active" aria-current="page">#{{ nr }}</li>
 {% endblock %}
 
@@ -24,13 +24,13 @@
                 <div class="card-body">
                     <h5 class="mb-1">{{ 'Payment methods'|trans }}</h5>
                     <p class="small text-muted">{{ 'Please choose a payment type and pay for your chosen products.'|trans }}</p>
-                    <form method="post" action="{{ 'api/guest/invoice/payment'|link }}"
-                        {{ fb_api_form({redirect: ('invoice/'~invoice.hash)|link({ 'auto_redirect': 1 })}) }}>
+                    <form method="post" action="{{ 'invoice/payment'|api_url(role: 'guest') }}"
+                        {{ fb_api_form({ redirect: ('invoice/#{invoice.hash}')|url(query: { 'auto_redirect': 1 }) }) }}>
                         <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
                         <div class="d-flex gap-3">
                             {% for gtw in guest.invoice_gateways %}
                                 {% if invoice.currency in gtw.accepted_currencies %}
-                                {% set banklink = 'invoice/banklink'|link %}
+                                {% set banklink = 'invoice/banklink'|url %}
                                 <div class="invoice-gateway rounded-2 p-2">
                                     <input type="radio" class="btn-check border-0" name="gateway_id" gateway_id="{{ gtw.id }}" id="{{ gtw.id }}" autocomplete="off">
                                     <label class="btn" for="{{ gtw.id }}"
@@ -59,8 +59,8 @@
                         </div>
                         <div class="d-flex align-items-center">
                             <div class="d-flex gap-2 align-items-center justify-content-end">
-                                <a href="{{ 'invoice/pdf'|link }}/{{ invoice.hash }}" target="_blank" class="btn btn-sm btn-danger">{{ 'PDF'|trans }}</a>
-                                <a href="{{ 'invoice/print'|link }}/{{ invoice.hash }}" target="_blank" class="btn btn-sm btn-dark">{{ 'Print'|trans }}</a>
+                                <a href='{{ "invoice/pdf/#{invoice.hash}"|url }}' target="_blank" class="btn btn-sm btn-danger">{{ 'PDF'|trans }}</a>
+                                <a href='{{ "invoice/print/#{invoice.hash}"|url }}' target="_blank" class="btn btn-sm btn-dark">{{ 'Print'|trans }}</a>
                             </div>
                         </div>
                     </div>
@@ -186,7 +186,7 @@
 
                         {% if invoice.text_1 %}
                             <div class="well mt-3">
-                                {{ invoice.text_1|markdown }}
+                                {{ invoice.text_1|markdown_to_html }}
                             </div>
                         {% endif %}
 
@@ -205,7 +205,7 @@
                                     <td>{{ i+1 }}</td>
                                     <td>
                                         {% if item.order_id %}
-                                            <a href="{{ '/order/service'|link }}/manage/{{ item.order_id }}">{{ item.title }}</a>
+                                            <a href='{{ "order/service/manage/#{item.order_id}"|url }}'>{{ item.title }}</a>
                                         {% else %}
                                             {{ item.title }}
                                         {% endif %}
@@ -213,8 +213,8 @@
                                             x {{ item.quantity }} {{ item.unit }}
                                         {% endif %}
                                     </td>
-                                    <td>{{ item.price|money(invoice.currency) }}</td>
-                                    <td class="text-end">{{ item.total|money(invoice.currency) }}</td>
+                                    <td>{{ item.price|format_currency(invoice.currency) }}</td>
+                                    <td class="text-end">{{ item.total|format_currency(invoice.currency) }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -226,18 +226,18 @@
                                     {% if invoice.tax > 0 %}
                                         <tr class="text-end">
                                             <td>{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
-                                            <td>{{ invoice.tax | money(invoice.currency) }}</td>
+                                            <td>{{ invoice.tax|format_currency(invoice.currency) }}</td>
                                         </tr>
                                     {% endif %}
                                     {% if invoice.discount > 0 %}
                                         <tr class="text-end">
                                             <td>{{ 'Discount'|trans }}</td>
-                                            <td>{{ invoice.discount | money(invoice.currency) }}</td>
+                                            <td>{{ invoice.discount|format_currency(invoice.currency) }}</td>
                                         </tr>
                                     {% endif %}
                                     <tr class="text-end">
                                         <td><strong>{{ 'Total'|trans }}</strong></td>
-                                        <td><strong>{{ invoice.total | money(invoice.currency) }}</strong></td>
+                                        <td><strong>{{ invoice.total|format_currency(invoice.currency) }}</strong></td>
                                     </tr>
                                 </table>
                             </div>
@@ -245,7 +245,7 @@
 
                         {% if invoice.text_2 %}
                             <div class="well mt-3">
-                                {{ invoice.text_2|markdown }}
+                                {{ invoice.text_2|markdown_to_html }}
                             </div>
                         {% endif %}
                     </div>
@@ -285,7 +285,7 @@
 
     function paymentPrompt(id, supportsSubscription, title){
         invoiceHash = "{{ invoice.hash }}";
-        backLink    = "{{ 'invoice/banklink'|link }}";
+        backLink = "{{ 'invoice/banklink'|url }}";
         paymentLink = new URL(backLink.concat('/', invoiceHash, '/', id));
         invoiceSubscribable = {{ invoice.subscribable ? 'true' : 'false' }};
 

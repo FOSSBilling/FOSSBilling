@@ -56,7 +56,7 @@
                 searchParams.append(key, value);
             }
 
-            fetch("{{ constant('SYSTEM_URL') }}api/guest/servicedomain/check", {
+            fetch("{{ 'servicedomain/check'|api_url(role='guest') }}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',

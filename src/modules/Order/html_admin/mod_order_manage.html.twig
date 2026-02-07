@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'order'|alink }}">{{ 'Orders'|trans }}</a>
+            <a href="{{ 'order'|url }}">{{ 'Orders'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ order.title }}</li>
     </ul>
@@ -77,24 +77,24 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Client'|trans }}</td>
-                            <td><a href="{{ 'client/manage'|alink }}/{{order.client.id}}">{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
+                            <td><a href='{{ "client/manage/#{order.client.id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Title'|trans }}</td>
-                            <td><a href="{{ 'product/manage'|alink }}/{{ order.product_id }}"><strong>{{ order.title }}</strong></a></td>
+                            <td><a href='{{ "product/manage/#{order.product_id}"|url }}'><strong>{{ order.title }}</strong></a></td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Payment amount'|trans }}</td>
-                            <td>{{ mf.currency_format( order.total, order.currency) }} {% if order.period %}{{mf.period_name(order.period)}}{% endif %} {% if order.quantity > 1 %}({{ order.quantity }} x {{ mf.currency_format( order.price, order.currency) }}){% endif %}</td>
+                            <td>{{ order.total|format_currency(order.currency) }}{% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currency) }}){% endif %}</td>
                         </tr>
                         {% if order.discount and order.discount > 0%}
                         <tr>
                             <td class="text-end">{{ 'Order discount'|trans }}</td>
-                            <td>-{{ mf.currency_format( order.discount, order.currency) }} </td>
+                            <td>-{{ order.discount|format_currency(order.currency) }} </td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Payment amount after discount'|trans }}</td>
-                            <td>{{ mf.currency_format( order.total - order.discount, order.currency) }} </td>
+                            <td>{{ (order.total - order.discount)|format_currency(order.currency)}} </td>
                         </tr>
                         {% endif %}
                         <tr>
@@ -156,7 +156,7 @@
                             <td class="text-end">{{ 'Active support tickets'|trans }}</td>
                             <td>
                                 <div class="num">
-                                    <a href="{{ 'support'|alink({ 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
+                                    <a href="{{ 'support'|url(query: { 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
                                 </div>
                             </td>
                         </tr>
@@ -169,7 +169,7 @@
                 {% set order_actions %}
                     {% if order.status == 'pending_setup' or order.status == 'failed_setup' %}
                     <a class="btn btn-primary"
-                        {{ fb_api_link({href: 'api/admin/order/activate'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        {{ fb_api_link({href: 'order/activate'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
@@ -180,7 +180,7 @@
                     {% if order.status == 'active' or order.status == 'failed_renew' %}
                     {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
                     <a class="btn btn-primary"
-                        {{ fb_api_link({href: 'api/admin/order/renew'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        {{ fb_api_link({href: 'order/renew'|api_url(query: {'id': order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#refresh" />
                         </svg>
@@ -189,7 +189,7 @@
 
                     {% if params.suspend_reason_list|trim == null %}
                     <a class="btn btn-primary"
-                        {{ fb_api_link({href: 'api/admin/order/suspend'|link({id: order.id}), modal: {type: 'prompt', title: 'Suspension Reason'|trans, label: 'Reason for Suspension'|trans, key: 'reason'}, reload: true}) }}>
+                        {{ fb_api_link({href: 'order/suspend'|api_url(query: {'id': order.id}), modal: {type: 'prompt', title: 'Suspension Reason'|trans, label: 'Reason for Suspension'|trans, key: 'reason'}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#pause" />
                         </svg>
@@ -210,7 +210,7 @@
                                 </div>
                             </div>
                             <div id="suspend_popup_panel">
-                                <input type="button" class="btn btn-primary w-100" value="&nbsp;{{ 'Suspend'|trans }}&nbsp;" id="popup_ok" onclick="return susp.suspendOrder('/api/admin/order/suspend?id={{ order.id }}', 'reason');">
+                                <input type="button" class="btn btn-primary w-100" value="&nbsp;{{ 'Suspend'|trans }}&nbsp;" id="popup_ok" onclick=`"return susp.suspendOrder('{{ 'order/suspend'|api_url(query: { 'id': order.id }) }}', 'reason');"`>
                                 <input type="button" class="btn btn-primary" value="&nbsp;Cancel&nbsp;" id="popup_cancel" onclick="return susp.suspenderHide();">
                             </div>
                         </div>
@@ -223,7 +223,7 @@
                     </a>
                     {% endif %}
                     <a class="btn btn-primary"
-                        {{ fb_api_link({href: 'api/admin/order/cancel'|link({id: order.id}), modal: {type: 'prompt', title: 'Cancellation Reason'|trans, label: 'Reason for Cancellation'|trans, key: 'reason'}, reload: true}) }}>
+                        {{ fb_api_link({href: 'order/cancel'|api_url(query: {'id': order.id}), modal: {type: 'prompt', title: 'Cancellation Reason'|trans, label: 'Reason for Cancellation'|trans, key: 'reason'}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#close" />
                         </svg>
@@ -233,7 +233,7 @@
 
                     {% if order.status == 'suspended' %}
                     <a class="btn btn-primary"
-                        {{ fb_api_link({href: 'api/admin/order/unsuspend'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        {{ fb_api_link({href: 'order/unsuspend'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
@@ -243,7 +243,7 @@
 
                     {% if order.status == 'canceled' %}
                     <a class="btn btn-primary"
-                        {{ fb_api_link({href: 'api/admin/order/uncancel'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        {{ fb_api_link({href: 'order/uncancel'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
@@ -260,7 +260,7 @@
 
                     {% if not order.unpaid_invoice_id %}
                     <a class="btn btn-primary"
-                        {{ fb_api_link({href: 'api/admin/invoice/renewal_invoice'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        {{ fb_api_link({href: 'invoice/renewal_invoice'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#plus" />
                         </svg>
@@ -276,7 +276,7 @@
         <div class="modal modal-blur fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-sm">
                 <div class="modal-content">
-                    <form method="post" action="{{ 'api/admin/order/delete'|link }}" {{ fb_api_form({ redirect: 'order'|alink}) }}>
+                    <form method="post" action="{{ 'order/delete'|api_url }}" {{ fb_api_form({ redirect: 'order'|url}) }}>
                         <div class="modal-status bg-danger"></div>
                         <div class="modal-body">
                             <div class="modal-title">{{ 'Are you sure?'|trans }}</div>
@@ -300,7 +300,7 @@
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <h3>{{ 'Order Management'|trans }}</h2>
-                <form method="post" action="{{ 'api/admin/order/update'|link }}" {{ fb_api_form({ reload: true}) }}>
+                <form method="post" action="{{ 'order/update'|api_url }}" {{ fb_api_form({ reload: true}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
                         <div class="col">
@@ -374,7 +374,7 @@
                 </form>
             </div>
 
-            {# <form method="post" action="{{ 'api/admin/order/update'|link }}" data-fb-api='{ "reload": true }'>
+            {# <form method="post" action="{{ 'order/update'|api_url }}">
                 <fieldset>
                     <legend>Order promotion code</legend>
 
@@ -397,7 +397,7 @@
                 <h2>Order parameters</h2>
             </div>
 
-            <form method="post" action="{{ 'api/admin/order/update_config'|link }}" {{ fb_api_form({ message: 'Order Config Updated'|trans}) }}>
+            <form method="post" action="{{ 'order/update_config'|api_url }}" {{ fb_api_form({ message: 'Order Config Updated'|trans}) }}>
                 {% for name, value in order.config %}
                 <div class="mb-3 row">
                     <label class="topLabel">{{ name }}</label>
@@ -419,7 +419,7 @@
                 <h5>{{ 'Order config management'|trans }}</h5>
                 <p class="text-muted">{{ 'Please be cautious and make sure you know what you are doing when editing order config! FOSSBilling relies on these parameters and you might get unexpected results if you change some of them.'|trans }}</p>
 
-                <form method="post" action="{{ 'api/admin/order/update_config'|link }}" {{ fb_api_form({ reload: true}) }}>
+                <form method="post" action="{{ 'order/update_config'|api_url }}" {{ fb_api_form({ reload: true}) }}>
                     {% for key, config in order.config %}
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ key }}</label>
@@ -460,8 +460,8 @@
                     {% for i, addon in addons %}
                     <tr>
                         <td>{{ addon.title }}</td>
-                        <td>{{ mf.period_name(addon.period) }}</td>
-                        <td>{{ mf.currency_format( addon.total, addon.currency) }}</td>
+                        <td>{{ addon.period|period_title }}</td>
+                        <td>{{ addon.total|format_currency(addon.currency) }}</td>
                         <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
                         <td>
                             {% if addon.status == 'pending_setup' or addon.status == 'failed_setup' or addon.status == 'failed_renew' %}
@@ -479,7 +479,7 @@
                             {{ mf.status_name(addon.status) }}
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/order/manage'|alink }}/{{ addon.id }}">
+                            <a class="btn btn-icon" href='{{ "order/manage/#{addon.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
@@ -521,8 +521,8 @@
                     {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id }) %}
                     {% for invoice in invoices.list %}
                     <tr>
-                        <td><a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">#{{ invoice.id }}</a></td>
-                        <td>{{ mf.currency_format( invoice.total, invoice.currency, 1) }}</td>
+                        <td><a href='{{ "invoice/manage/#{invoice.id}"|url }}'>#{{ invoice.id }}</a></td>
+                        <td>{{ invoice.total|format_currency(invoice.currency) }}</td>
                         <td>{{ invoice.created_at|format_date }}</td>
                         <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
                         <td>
@@ -541,7 +541,7 @@
                             {{ mf.status_name(invoice.status) }}
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
+                            <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
@@ -598,7 +598,7 @@
                         <td class="text-wrap">{{ sh.notes }}</td>
                         <td>
                             <a class="btn btn-icon"
-                                {{ fb_api_link({href: 'api/admin/order/status_history_delete'|link({id: sh.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|alink}) }}>
+                                {{ fb_api_link({href: 'order/status_history_delete'|api_url(query: {'id': sh.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|url}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -635,7 +635,7 @@
                         <td>{{ ticket.id }}</td>
                         <td>{{ ticket.helpdesk.name }}</td>
                         <td>
-                            <a href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">{{ ticket.subject|truncate(30) }}</a>
+                            <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
                         </td>
                         <td>
                             {% if order.status == 'pending_setup' %}
@@ -653,7 +653,7 @@
                             {{ mf.status_name(ticket.status) }}
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">
+                            <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>

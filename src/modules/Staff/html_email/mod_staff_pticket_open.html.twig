@@ -38,10 +38,10 @@
 	<h1>Ticket opened</h1>
 	<p>Hello {{ c.name }},</p>
     <p>New public ticket received.</p>
-	<a href="{{'support/public-ticket'|alink }}/{{ ticket.id }}" target="_blank">Reply here.</a>
-    <p>Track the conversation <a href="{{'support/contact-us/conversation'|link }}/{{ ticket.hash }}" target="_blank">here.</a></p>
+	<a href='{{ "support/public-ticket/#{ticket.id}"|url(detect_app_area: false) }}' target="_blank">Reply here.</a>
+    <p>Track the conversation <a href='{{ "support/contact-us/conversation/#{ticket.hash}"|url(detect_app_area: false) }}' target="_blank">here.</a></p>
 
-    <p>You may <a href="{{'admin/staff/login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{'admin/staff/profile'|link}}" target="_blank">edit your profile.</a>
+    <p>You may <a href="{{ 'staff/login'|url(query: { 'email': c.email }, detect_app_area: false) }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(detect_app_area: false) }}" target="_blank">edit your profile.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

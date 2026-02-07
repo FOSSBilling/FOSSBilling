@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'System settings'|trans }}</li>
     </ol>
@@ -53,7 +53,7 @@
         <div class="card">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/system/update_params'|link }}" {{ fb_api_form({ message: 'Company Updated'|trans}) }}>
+                    <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({ message: 'Company Updated'|trans}) }}>
                         <div class="card-body">
                             <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Name'|trans }}</label>
@@ -118,7 +118,7 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'BIC / SWIFT Code' |trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'BIC / SWIFT Code'|trans }}</label>
                                 <div class="col-md-6">
                                     <input class="form-control" type="text" name="company_bic" value="{{ params.company_bic }}">
                                 </div>
@@ -157,42 +157,42 @@
                             </div>
                             <div class="mb-3 row">
                                 <label class="form-label col-3 col-form-label">
-                                    {{ 'Disallow guest API to fetch FOSSBilling version' | trans }}
+                                    {{ 'Disallow guest API to fetch FOSSBilling version'|trans }}
                                     <br/>
-                                    <small class="text-muted">{{'Enabling this functionality may affect modules that depend on it.' | trans }}</small>
+                                    <small class="text-muted">{{'Enabling this functionality may affect modules that depend on it.'|trans }}</small>
                                 </label>
                                 <div class="col">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radio_showPublicYes" type="radio" name="hide_version_public" value="1" {% if params.hide_version_public == "1" %}checked{% endif %}>
                                         <label class="form-check-label" for="radio_showPublicYes">
-                                            {{ 'Yes' | trans }}
+                                            {{ 'Yes'|trans }}
                                         </label>
                                     </div>
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radio_showPublicNo" type="radio" name="hide_version_public" value="0" {% if params.hide_version_public == "0" %}checked{% endif %}>
                                         <label class="form-check-label" for="radio_showPublicNo">
-                                            {{ 'No' | trans }}
+                                            {{ 'No'|trans }}
                                         </label>
                                     </div>
                                 </div>
                             </div>
                             <div class="mb-3 row">
                                 <label class="form-label col-3 col-form-label">
-                                    {{ 'Hide some company information in the guest API' | trans }}
+                                    {{ 'Hide some company information in the guest API'|trans }}
                                     <br/>
-                                    <small class="text-muted">{{'Enabling this will hide some information from the "company" guest API endpoint such as the address, phone number, email, VAT number, and more.' | trans }}</small>
+                                    <small class="text-muted">{{'Enabling this will hide some information from the "company" guest API endpoint such as the address, phone number, email, VAT number, and more.'|trans }}</small>
                                 </label>
                                 <div class="col">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radio_showCompanyPublicYes" type="radio" name="hide_company_public" value="1" {% if params.hide_company_public == "1" %}checked{% endif %}>
                                         <label class="form-check-label" for="radio_showCompanyublicYes">
-                                            {{ 'Yes' | trans }}
+                                            {{ 'Yes'|trans }}
                                         </label>
                                     </div>
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radio_showCompanyPublicNo" type="radio" name="hide_company_public" value="0" {% if params.hide_company_public == "0" %}checked{% endif %}>
                                         <label class="form-check-label" for="radio_showCompanyPublicNo">
-                                            {{ 'No' | trans }}
+                                            {{ 'No'|trans }}
                                         </label>
                                     </div>
                                 </div>
@@ -211,19 +211,19 @@
                 </div>
 
                 <div class="tab-pane fade" id="company-legal" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/system/update_params'|link }}" {{ fb_api_form({ message: 'Company Updated'|trans}) }}>
+                    <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({ message: 'Company Updated'|trans}) }}>
                         <div class="card-body">
                             <div class="mb-3">
                                 <h3>{{ 'Company terms of service, legal regulation'|trans }}</h3>
-                                <textarea class="form-control bb-textarea" name="company_tos" rows="5">{{ params.company_tos }}</textarea>
+                                <textarea class="form-control editor-textarea" name="company_tos" rows="5">{{ params.company_tos }}</textarea>
                             </div>
                             <div class="mb-3">
                                 <h3>{{ 'Company privacy policy'|trans }}</h3>
-                                <textarea class="form-control bb-textarea" name="company_privacy_policy" rows="5">{{ params.company_privacy_policy }}</textarea>
+                                <textarea class="form-control editor-textarea" name="company_privacy_policy" rows="5">{{ params.company_privacy_policy }}</textarea>
                             </div>
                             <div class="mb-3">
                                 <h3>{{ 'Notes'|trans }}</h3>
-                                <textarea class="form-control bb-textarea" name="company_note" rows="5">{{ params.company_note }}</textarea>
+                                <textarea class="form-control editor-textarea" name="company_note" rows="5">{{ params.company_note }}</textarea>
                             </div>
                         </div>
                         <div class="card-footer text-end">
@@ -233,7 +233,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-countries" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({ message: 'Countries Updated'|trans}) }}>
+                    <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({ message: 'Countries Updated'|trans}) }}>
                         <input type="hidden" name="ext" value="mod_system">
                         <div class="card-body">
 {% set default_countries %}
@@ -520,7 +520,7 @@ ZW=Zimbabwe
                     <div class="card-header">
                         <h3 class="card-title">{{ 'Cache control'|trans }}</h3>
                         <div class="card-actions">
-                            <form method="post" action="{{ 'api/admin/system/clear_cache'|link }}" {{ fb_api_form({ message: 'Cache Directory Cleared'|trans}) }}>
+                            <form method="post" action="{{ 'system/clear_cache'|api_url }}" {{ fb_api_form({ message: 'Cache Directory Cleared'|trans}) }}>
                                 <button class="btn btn-danger" type="submit">{{ 'Invalidate cache'|trans }}</button>
                             </form>
                         </div>
@@ -610,7 +610,7 @@ ZW=Zimbabwe
                                     <div class="text-muted small">{{ 'This FOSSBilling instance is automatically sending error reports which helps us improve the software and keep it stable. Thanks!'|trans }}</div>
                                 </div>
                             </div>
-                            <a class="btn btn-danger ms-3" href="{{ 'api/admin/system/toggle_error_reporting'|link }}" {{ fb_api_link({ message: 'Error Reporting Disabled'|trans}) }}>
+                            <a class="btn btn-danger ms-3" href="{{ 'system/toggle_error_reporting'|api_url }}" {{ fb_api_link({ message: 'Error Reporting Disabled'|trans}) }}>
                                 {{ 'Disable error reporting'|trans }}
                             </a>
                         </div>
@@ -627,7 +627,7 @@ ZW=Zimbabwe
                                     <div class="text-muted small">{{ 'Please consider enabling error reporting. This allows us to provide better technical support and helps us proactively improve FOSSBilling.'|trans }}</div>
                                 </div>
                             </div>
-                            <a class="btn btn-success ms-3" href="{{ 'api/admin/system/toggle_error_reporting'|link }}" {{ fb_api_link({ message: 'Error Reporting Enabled'|trans}) }}>
+                            <a class="btn btn-success ms-3" href="{{ 'system/toggle_error_reporting'|api_url }}" {{ fb_api_link({ message: 'Error Reporting Enabled'|trans}) }}>
                                 {{ 'Enable error reporting'|trans }}
                             </a>
                         </div>
@@ -653,9 +653,9 @@ ZW=Zimbabwe
                             {{ "Checking external IP..."|trans }}
                         </div>
 
-                        <form method="post" action="{{ 'api/admin/system/set_interface_ip'|link }}" {{ fb_api_form({ callback: 'onAfterInterfaceSet'}) }}>
+                        <form method="post" action="{{ 'system/set_interface_ip'|api_url }}" {{ fb_api_form({ callback: 'onAfterInterfaceSet'}) }}>
                             <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
-                            
+
                             <div class="col-12 col-lg-3">
                                 <label for="interface">{{ 'Select the default network interface:'|trans }}</label>
                                 <select class="form-select" name="interface" id="interface">
@@ -692,7 +692,7 @@ ZW=Zimbabwe
         // Always show a loading state first
         el.innerText = `{{ "Checking external IP..."|trans }}`;
         el.className = 'alert alert-info';
-    
+
         API.admin.get('system/env', { ip: true }, function (ip) {
             if (ip) {
                 el.innerText = `{{ 'With the current settings, your FOSSBilling instance will have an external IP address of: '|trans }}` + ip;
@@ -745,4 +745,4 @@ ZW=Zimbabwe
 </script>
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}

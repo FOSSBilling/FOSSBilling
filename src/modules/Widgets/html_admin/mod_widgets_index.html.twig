@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'extension'|alink }}">{{ 'Extensions'|trans }}</a>
+            <a href="{{ 'extension'|url }}">{{ 'Extensions'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Widgets'|trans }}</li>
     </ol>
@@ -32,7 +32,7 @@
                 <p class="card-subtitle">{{ 'Modules can register widgets to dynamically display content in theme slots'|trans }}</p>
             </div>
             <div class="card-actions">
-                <a href="{{ 'api/admin/widgets/rebuild'|link }}" class="btn btn-primary"
+                <a href="{{ 'widgets/rebuild'|api_url }}" class="btn btn-primary"
                    {{ fb_api_link({ reload: true, message: 'Widget cache rebuilt successfully'|trans}) }}>
                     <svg class="icon">
                         <use xlink:href="#refresh" />
@@ -56,7 +56,7 @@
                         {{ 'Modules register widgets by implementing a <code>getWidgets()</code> method in their Service class.'|trans|raw }}
                     </p>
                     <div class="empty-action">
-                        <a href="{{ 'extension'|alink }}" class="btn btn-primary">
+                        <a href="{{ 'extension'|url }}" class="btn btn-primary">
                             <svg class="icon">
                                 <use xlink:href="#iPlugin" />
                             </svg>

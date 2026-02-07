@@ -7,6 +7,7 @@
         </button>
     </h2>
     {% if cart.items %}
+    {% set cart_currency = guest.cart_get_currency %}
     <div id="checkout" class="accordion-collapse collapse {% if request.checkout and client %}show{%endif%}" data-bs-parent="#orderManager">
         <div class="accordion-body">
             <div class="accordion-inner" id="checkout-inner">
@@ -28,17 +29,15 @@
                                 {% endif %}
 
                                 {% if item.period %}
-                                    ({{ item.period | period_title }})
+                                    ({{ item.period|period_title }})
                                 {% endif %}
                             </td>
                             <td>
                                 {% if item.discount_price %}
-                                    <del>{{ item.total | money_convert }}</del>
-                                    <strong class="text-success">{{ (item.total-item.discount_price) | money_convert }}</strong>
-
-
+                                    <del>{{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</del>
+                                    <strong class="text-success">{{ (item.total-item.discount_price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong>
                                 {% else %}
-                                    {{ (item.total) | money_convert }}
+                                    {{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
                                 {% endif %}
                             </td>
                             <td><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-sm remove-cart-item" title="{{ 'Remove item'|trans }}"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></td>
@@ -95,10 +94,10 @@
                                 <td>{{ item.title }} {{ 'setup'|trans }}</td>
                                 <td>
                                     {% if item.discount_setup %}
-                                    <del>{{ item.setup_price | money_convert }}</del>
-                                    {{ (item.setup_price - item.discount_setup) | money_convert }}
+                                    <del>{{ (item.setup_price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</del>
+                                    {{ ((item.setup_price - item.discount_setup) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
                                     {% else %}
-                                    {{ item.setup_price | money_convert }}</td>
+                                    {{ (item.setup_price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</td>
                                 {% endif %}
                             </tr>
                         {% endif %}
@@ -113,14 +112,14 @@
                             <a href="#" id="show-promo-field">{{ 'Have a coupon code?'|trans }}</a>
                         {% endif %}
 
-                        <form method="post" action="{{ 'api/guest/cart/apply_promo'|link }}" {{ fb_api_form({message: 'Promo Code Applied to Order'|trans, reload: true}) }}
+                        <form method="post" action="{{ 'cart/apply_promo'|api_url(role: 'guest') }}" {{ fb_api_form({message: 'Promo Code Applied to Order'|trans, reload: true}) }}
                             {% if not cart.promocode %}style="display:none"{% endif %} id="apply-promo">
                             <div class="control-group">
                                 <div class="form-controls">
                                     <div class="input-append">
                                         <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo.required %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
                                         {% if cart.promocode %}
-                                            <a class="btn btn-warning btn-sm mb-1" href="{{ 'api/guest/cart/remove_promo'|link }}" type="button" {{ fb_api_link({reload: true}) }}>{{ 'Remove'|trans }}</a>
+                                            <a class="btn btn-warning btn-sm mb-1" href="{{ 'cart/remove_promo'|api_url(role: 'guest') }}" type="button" {{ fb_api_link({reload: true}) }}>{{ 'Remove'|trans }}</a>
                                         {% else %}
                                             <button class="btn btn-primary btn-sm mb-1" type="submit">{{ 'Apply'|trans }}</button>
                                         {% endif %}
@@ -132,15 +131,14 @@
 
                     <div class="span6">
                         <table class="table table-bordered table-striped">
-
                             {% if cart.discount >0 %}
                                 <tr>
                                     <td><strong>{{ 'Subtotal:'|trans }}</strong></td>
-                                    <td><strong>{{ (cart.subtotal)| money_convert }}</strong></td>
+                                    <td><strong>{{ (cart.subtotal * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
                                 </tr>
                                 <tr>
                                     <td><strong>{{ 'Discount:'|trans }}</strong></td>
-                                    <td><strong>- {{ cart.discount | money_convert }}</strong></td>
+                                    <td><strong>- {{ (cart.discount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
                                 </tr>
                             {% endif %}
 
@@ -150,17 +148,17 @@
                                 {% set tax_amount = cart.total * tax_rate / 100 %}
                                 <tr>
                                     <td><strong>{{ 'VAT'|trans }} ({{ tax_rate }}%) :</strong></td>
-                                    <td><strong>{{ tax_amount | money_convert }}</strong></td>
+                                    <td><strong>{{ (tax_amount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
                                 </tr>
                             {% endif %}
                             <tr>
                                 <td><strong>{{ 'Total:'|trans }}</strong></td>
-                                <td><strong>{{ (cart.total + tax_amount) | money_convert }}</strong></td>
+                                <td><strong>{{ ((cart.total + tax_amount) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
                             </tr>
 
                         </table>
 
-                        <form method="post" action="{{ 'api/client/cart/checkout'|link }}" {{ fb_api_form({callback: 'onOrderCheckout'}) }}>
+                        <form method="post" action="{{ 'cart/checkout'|api_url }}" {{ fb_api_form({callback: 'onOrderCheckout'}) }}>
                             <fieldset>
                                 {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
                                 {% if cart.total and not enough_in_balance %}
@@ -185,7 +183,7 @@
                                                 <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
                                                 <label class="form-check-label" for="flexCheckDefault">
                                                     {# TODO: Make this translatable once support for placeholders is implemented #}
-                                                    <span>I agree to the <a href="{{ '/tos'|link }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ '/privacy-policy'|link }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
+                                                    <span>I agree to the <a href="{{ 'tos'|url }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
                                                 </label>
                                             </div>
                                         {% endif %}
@@ -196,7 +194,7 @@
                             </fieldset>
                             {% if settings.checkout_tos == 'implicit' %}
                                 {# TODO: Make this translatable once support for placeholders is implemented #}
-                                <span class="text-muted">By completing your order, you agree to our <a href="{{ '/tos'|link }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ '/privacy-policy'|link }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
+                                <span class="text-muted">By completing your order, you agree to our <a href="{{ 'tos'|url }}" target="_blank">{{ 'terms of service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'privacy policy'|trans }}</a>.</span>
                             {% endif %}
                         </form>
                     </div>

@@ -9,21 +9,21 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home"/>
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         {% if not request.id %}
             <li class="breadcrumb-item active" aria-current="page">{{ 'Custom form builder'|trans }}</li>
         {% else %}
             {% set form = admin.formbuilder_get_form({ "id": request.id }) %}
             <li class="breadcrumb-item">
-                <a href="{{ 'extension/settings/formbuilder'|alink }}">{{ 'Custom form builder'|trans }}</a>
+                <a href="{{ 'extension/settings/formbuilder'|url }}">{{ 'Custom form builder'|trans }}</a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">{{ form.name }}</li>
         {% endif %}
@@ -69,13 +69,13 @@
                                 <td>{{ form.order_count }}</td>
                                 <td>{{ form.product_count }}</td>
                                 <td>
-                                <a class="btn btn-icon copy-form" href="#" title="Copy" {{ fb_api_link({ reload: true}) }}
+                                <a class="btn btn-icon copy-form" href="#" title="Copy" {{ fb_api_link({ reload: true }) }}
                                    data-form-id="{{ form.id }}">
                                     <svg class="icon">
                                         <use xlink:href="#copy" />
                                     </svg>
                                 </a>
-                                    <a class="btn btn-icon" href="{{ 'extension/settings/formbuilder'|alink({'id' : form.id}) }}" title="Edit">
+                                    <a class="btn btn-icon" href="{{ 'extension/settings/formbuilder'|url(query:{'id' : form.id}) }}" title="Edit">
                                         <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
@@ -95,7 +95,7 @@
         </div>
 
 {#        <div class="tab-pane fade" id="tab-import" role="tabpanel">#}
-{#            <form method="post" action="{{ 'api/admin/formbuilder/import'|link }}" data-fb-api='{ "reload": true }'> #}
+{#            <form method="post" action="{{ 'formbuilder/import'|api_url }}"> #}
 {#                <fieldset>#}
 {#                    <div class="formBottom">#}
 {#                        <textarea name="form" cols="5" rows="5"#}
@@ -113,7 +113,7 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Form options'|trans }}</h3>
         </div>
-        <form method="post" action="{{ 'api/admin/formbuilder/update_form_settings'|link }}" {{ fb_api_form({message: 'Form Options Updated'|trans}) }}>
+        <form method="post" action="{{ 'formbuilder/update_form_settings'|api_url }}" {{ fb_api_form({message: 'Form Options Updated'|trans}) }}>
             <div class="row row-cards">
                 <div class="card-body col-12">
                     <input type="hidden" name="form_id" value="{{ form.id }}">
@@ -160,31 +160,31 @@
             <div class="card-body col-12">
                     <div class="mb-3 row">
                         <div class="d-flex gap-2 flex-wrap mb-3" id="fields">
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a class="btn btn-outline-primary" href="{{ 'formbuilder/add_field'|api_url(query: {'form_id': form.id, 'type': 'text' }) }}" {{ fb_api_link({reload: true}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
                                 <span>{{ 'Text'|trans }}</span>
                             </a>
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a class="btn btn-outline-primary" href="{{ 'formbuilder/add_field'|api_url(query: {'form_id': form.id, 'type': 'select' }) }}" {{ fb_api_link({reload: true}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
                                 <span>{{ 'Dropdown'|trans }}</span>
                             </a>
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a class="btn btn-outline-primary" href="{{ 'formbuilder/add_field'|api_url(query: {'form_id': form.id, 'type': 'radio' }) }}" {{ fb_api_link({reload: true}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
                                 <span>{{ 'Radio'|trans }}</span>
                             </a>
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a class="btn btn-outline-primary" href="{{ 'formbuilder/add_field'|api_url(query:{'form_id': form.id, 'type': 'checkbox' }) }}" {{ fb_api_link({reload: true}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
                                 <span>{{ 'Checkbox'|trans }}</span>
                             </a>
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a class="btn btn-outline-primary" href="{{ 'formbuilder/add_field'|api_url(query: {'form_id': form.id, 'type': 'textarea' }) }}" {{ fb_api_link({reload: true}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
@@ -263,7 +263,7 @@
                     confirmCallback: () => {
                         API.admin.post('formbuilder/delete_form', { id: fid },
                             () => {
-                                window.location = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}";
+                                window.location = "{{ 'extension/settings/formbuilder'|url(query: { 'id': '' }) }}";
                             });
                     }
                 });
@@ -282,7 +282,7 @@
                 promptConfirmCallback: function(title) {
                     API.admin.post('formbuilder/create_form', { name: title },
                         (id) => {
-                            window.location = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id;
+                            window.location = "{{ 'extension/settings/formbuilder'|url(query: { 'id': '' }) }}" + id;
                         });
                 }
             });
@@ -304,7 +304,7 @@
                     promptConfirmCallback: (title) => {
                         API.admin.post('formbuilder/copy_form', { name: title, form_id: fid },
                             (id) => {
-                                window.location = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id;
+                                window.location = "{{ 'extension/settings/formbuilder'|url(query: { 'id': '' }) }}" + id;
                             });
                     }
                 });

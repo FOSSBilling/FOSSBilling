@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+            <a href="{{ 'product'|url }}">{{ 'Products'|trans }}</a>
         </li>
         <li class="breadcrumb-item active">{{ product.title }}</li>
     </ol>
@@ -68,7 +68,7 @@
                             {% else %}
                                 <div class="input-group">
                                     {{ mf.selectbox('form_id', admin.formbuilder_get_pairs, product.form_id, 0, 'None') }}
-                                    <a href="{{ 'extension/settings/formbuilder'|alink }}{% if product.form_id %}?id={{ product.form_id }}{% endif %}" class="btn" id="formbuilder_btn">
+                                    <a href="{{ 'extension/settings/formbuilder'|url }}{% if product.form_id %}?id={{ product.form_id }}{% endif %}" class="btn" id="formbuilder_btn">
                                         {# {{ (product.form_id) ? 'Edit Form' : 'Add new form' }} #}
                                         {% if product.form_id %}
                                         <svg class="icon">
@@ -196,7 +196,7 @@
                     <h2>{{'Description'|trans }}</h2>
                     <div class="form-group mb-3 row">
                         <div class="col">
-                            <textarea class="bb-textarea" name="description" rows="5">{{ product.description }}</textarea>
+                            <textarea class="editor-textarea" name="description" rows="5">{{ product.description }}</textarea>
                         </div>
                     </div>
 
@@ -233,7 +233,7 @@
                                 <label for="addon_{{ addon_id }}">{{ addon_title }}</label>
                             </td>
                             <td class="w-1">
-                                <a class="btn btn-icon" href="{{ '/product/addon'|alink }}/{{ addon_id }}">
+                                <a class="btn btn-icon" href='{{ "product/addon/#{addon_id}"|url }}'>
                                     <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
@@ -249,7 +249,7 @@
                 </table>
 
                 <div class="card-footer">
-                    <a href="{{ 'product/addons'|alink }}#tab-new" class="btn btn-primary">
+                    <a href="{{ 'product/addons'|url }}#tab-new" class="btn btn-primary">
                         <svg class="icon">
                             <use xlink:href="#plus" />
                         </svg>
@@ -303,19 +303,19 @@
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Order Page (via ID)'|trans }}</label>
                     <div class="col">
-                        <input class="form-control" type="text" value="{{ 'order'|link }}/{{ product.id }}" readonly>
+                        <input class="form-control" type="text" value='{{ "order/#{product.id}"|url }}' readonly>
                     </div>
                 </div>
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Order Page (via Link)'|trans }}</label>
                     <div class="col">
-                        <input class="form-control" type="text" value="{{ 'order'|link }}/{{ product.slug }}" readonly>
+                        <input class="form-control" type="text" value='{{ "order/#{product.slug}"|url }}' readonly>
                     </div>
                 </div>
             </div>
 
             <div class="card-footer text-center">
-                <a href="{{ 'order'|link }}/{{ product.slug }}" class="btn btn-primary" target="_blank">
+                <a href='{{ "order/#{product.slug}"|url }}' class="btn btn-primary" target="_blank">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#search" />
                     </svg>
@@ -327,7 +327,7 @@
 </div>
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}
 
 {% block js %}
 <script>
@@ -338,11 +338,11 @@
 
             if (formId !== "") {
                 btn.innerHTML = "{{ 'Edit Form'|trans }}";
-                const href = "{{ 'extension/settings/formbuilder'|alink }}" + (formId ? "?id=" + formId : "");
+                const href = "{{ 'extension/settings/formbuilder'|url(query: { 'id': '' }) }}" + formId;
                 btn.setAttribute('href', href);
             } else {
                 btn.innerHTML = "{{ 'Add New Form'|trans }}";
-                btn.setAttribute('href', "{{ 'extension/settings/formbuilder'|alink }}");
+                btn.setAttribute('href', "{{ 'extension/settings/formbuilder'|url }}");
             }
         }
     });

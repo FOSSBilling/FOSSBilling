@@ -23,14 +23,12 @@
                         <span>{{ 'This update is considered to be a major update, you should check the release notes for any breaking changes.'|trans }}</span>
                     </div>
                 {% endif %}
-
                 {% if update_info['update_type'] == 1 %}
                     <div class="alert alert-warning" role="alert">
                         <span>{{ 'This update is considered to be a minor update, there are low chances of incompatibilities.'|trans }}</span>
                     </div>
                 {% endif %}
-
-                {{ update_info['release_notes']|markdown }}
+                {{ update_info['release_notes']|markdown_to_html }}
             {% else %}
                 <h2 class="card-title">{{ 'There is no update available'|trans }}</h2>
                 <p>{{ 'You appear to be running the latest version of FOSSBilling, so no action is needed at the moment. If you think this is a mistake, you may use the button below to check again.'|trans }}</p>
@@ -38,7 +36,7 @@
         </div>
         <div class="card-footer">
             {% if admin.system_update_available or update_info['branch'] == 'preview' %}
-                <a class="btn btn-primary" href="{{ 'api/admin/system/update_core'|link }}"
+                <a class="btn btn-primary" href="{{ 'system/update_core'|api_url }}"
                     {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
                     <svg class="icon">
                         <use xlink:href="#download" />
@@ -55,13 +53,13 @@
                     {{ 'Update FOSSBilling'|trans }}
                 </a>
             {% endif %}
-            <a class="btn btn-primary" href="{{ 'api/admin/system/recheck_update'|link }}" {{ fb_api_link({ reload: true }) }}>
+            <a class="btn btn-primary" href="{{ 'system/recheck_update'|api_url }}" {{ fb_api_link({ reload: true }) }}>
                 <svg class="icon">
                     <use xlink:href="#refresh" />
                 </svg>
                 {{ 'Check for Updates'|trans }}
             </a>
-            <a class="btn btn-primary" href="{{ 'api/admin/system/manual_update'|link }}"
+            <a class="btn btn-primary" href="{{ 'system/manual_update'|api_url }}"
                 {{ fb_api_link({ message: 'Patches Applied and Configuration Updated'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
                 <svg class="icon">
                     <use xlink:href="#cog-play" />

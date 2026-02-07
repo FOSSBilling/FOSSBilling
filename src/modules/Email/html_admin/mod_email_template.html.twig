@@ -6,17 +6,17 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'extension/settings/email'|alink }}">{{ 'Email'|trans }}</a>
+            <a href="{{ 'extension/settings/email'|url }}">{{ 'Email'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ template.action_code }}</li>
     </ol>
@@ -61,7 +61,7 @@
                         </div>
                         <div class="card-footer d-flex justify-content-between">
                             <a class="btn btn-danger"
-                               href="{{ 'api/admin/email/template_reset'|link({'code' : template.action_code })}}"
+                               href="{{ 'email/template_reset'|api_url(query: {'code' : template.action_code })}}"
                                {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Reset'|trans}, reload: true}) }}>
                                 {{ 'Reset'|trans }}
                             </a>
@@ -175,7 +175,7 @@
                         <p class="card-subtitle">{{ 'Email template playground. Use this tool to try rendering email templates.'|trans }}</p>
 
                         <div class="mb-3">
-                    <textarea class="form-control" id="email-sample-template" rows="20">{% autoescape false %}{% apply markdown %}
+                            <textarea class="form-control" id="email-sample-template" rows="20">{% autoescape false %}{% apply markdown_to_html %}
 This is an example of markdown syntax in email template
 
 *Italic text*
@@ -189,7 +189,7 @@ Lists:
 
 ***
 
-Link to login form: <{{ 'login'|link }}>
+Link to login form: <{{ 'login'|url }}>
 
 Company signature: {{ guest.system_company.signature }}
 
