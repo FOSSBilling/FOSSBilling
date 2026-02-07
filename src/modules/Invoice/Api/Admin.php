@@ -78,7 +78,7 @@ class Admin extends \Api_Abstract
         $charge = false;
 
         // Check if the payment type is "Custom Payment", Add the transaction and process it.
-        if ($payGateway['code'] == 'Custom' && $payGateway['enabled'] == 1) {
+        if (($payGateway['code'] ?? null) == 'Custom' && ($payGateway['enabled'] ?? 0) == 1) {
             // create transaction
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
             $newtx = $transactionService->create([

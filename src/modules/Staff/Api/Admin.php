@@ -31,7 +31,7 @@ class Admin extends \Api_Abstract
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
-            $staff = $this->di['db']->getExistingModelById('Admin', $item['id'], 'Admin is not found');
+            $staff = $this->di['db']->getExistingModelById('Admin', $item['id'] ?? 0, 'Admin is not found');
             $pager['list'][$key] = $this->getService()->toModel_AdminApiArray($staff);
         }
 
@@ -81,7 +81,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function update($data)
     {
-        if (!is_null($data['email'])) {
+        if (isset($data['email']) && !is_null($data['email'])) {
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
         }
 
@@ -281,7 +281,7 @@ class Admin extends \Api_Abstract
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
-            $activity = $this->di['db']->getExistingModelById('ActivityAdminHistory', $item['id'], sprintf('Staff activity item #%s not found', $item['id']));
+            $activity = $this->di['db']->getExistingModelById('ActivityAdminHistory', $item['id'] ?? 0, sprintf('Staff activity item #%s not found', $item['id'] ?? 'unknown'));
             if ($activity) {
                 $pager['list'][$key] = $this->getService()->toActivityAdminHistoryApiArray($activity);
             }
