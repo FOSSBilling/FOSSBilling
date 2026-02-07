@@ -27,8 +27,8 @@ Located in `tests/library/E2E/`:
 
 - `TestCase.php` - Base test case class
 - `ApiClient.php` - HTTP client for API requests
-- `ApiResponse.php` - API response wrapper
-- `ApiAssertions.php` - Custom assertions
+- `Traits/ApiResponse.php` - API response wrapper
+- `Traits/ApiAssertions.php` - Custom assertions
 
 ## Writing New Tests
 
@@ -41,8 +41,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Tests\E2E\Modules\Cart;
 
-use FOSSBilling\Tests\E2E\TestCase;
-use FOSSBilling\Tests\E2E\ApiClient;
+use FOSSBilling\Tests\Library\E2E\TestCase;
+use FOSSBilling\Tests\Library\E2E\ApiClient;
 
 final class ApiGuestTest extends TestCase
 {
