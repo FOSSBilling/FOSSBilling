@@ -98,16 +98,6 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $this->markAsExecuted($item);
         }
 
-        if ($item->type == \Model_InvoiceItem::TYPE_HOOK_CALL) {
-            try {
-                $params = json_decode($item->rel_id ?? '');
-                $this->di['events_manager']->fire(['event' => $item->task, 'params' => $params]);
-            } catch (\Exception $e) {
-                error_log($e->getMessage());
-            }
-            $this->markAsExecuted($item);
-        }
-
         if ($item->type == \Model_InvoiceItem::TYPE_DEPOSIT) {
             // do not request to add funds to client balance
             // associated invoice will have already been marked with a valid transaction and funds added

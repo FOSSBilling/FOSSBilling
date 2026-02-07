@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Theme\Controller;
 
+use Box\Mod\Theme\Event\BeforeThemeSettingsSaveEvent;
+
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -36,7 +38,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function save_theme_settings(\Box_App $app, $theme): void
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeThemeSettingsSave', 'params' => $_POST]);
+        $this->di['event_dispatcher']->dispatch(new BeforeThemeSettingsSaveEvent(data: $_POST));
 
         $api = $this->di['api_admin'];
 

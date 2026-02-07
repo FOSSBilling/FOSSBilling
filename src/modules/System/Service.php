@@ -11,6 +11,9 @@
 
 namespace Box\Mod\System;
 
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+use Box\Mod\System\Event\AfterAdminSettingsUpdateEvent;
+use Box\Mod\System\Event\BeforeAdminSettingsUpdateEvent;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
@@ -20,6 +23,7 @@ use Pimple\Container;
 use PrinsFrank\Standards\Country\CountryAlpha2;
 use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
 use PrinsFrank\Standards\Language\LanguageAlpha2;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -277,13 +281,13 @@ class Service
 
     public function updateParams($data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminSettingsUpdate', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminSettingsUpdateEvent(data: $data));
 
         foreach ($data as $key => $val) {
             $this->setParamValue($key, $val, true);
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminSettingsUpdate']);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminSettingsUpdateEvent());
 
         $this->di['logger']->info('Updated system general settings');
 
@@ -1030,9 +1034,9 @@ class Service
         return true;
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): void
+    #[AsEventListener(event: BeforeAdminCronRunEvent::class)]
+    public function onBeforeAdminCronRun(BeforeAdminCronRunEvent $event): void
     {
-        $di = $event->getDi();
         Reader::updateDefaultDatabases();
 
         try {
@@ -1041,9 +1045,9 @@ class Service
             $loader->getAntLoader()->pruneClassmap();
 
             // Prune the FS cache
-            $cache = $di['cache'];
+            $cache = $this->di['cache'];
             if ($cache->prune()) {
-                $di['logger']->setChannel('cron')->info('Pruned the filesystem cache');
+                $this->di['logger']->setChannel('cron')->info('Pruned the filesystem cache');
             }
         } catch (\Exception $e) {
             error_log($e->getMessage());

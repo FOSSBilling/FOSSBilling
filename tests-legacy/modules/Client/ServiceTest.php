@@ -86,14 +86,14 @@ final class ServiceTest extends \BBTestCase
 
     public function testOnAfterClientSignUp(): void
     {
-        $eventParams = [
-            'password' => 'testPassword',
-            'id' => 1,
-        ];
-
-        $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-            method('getParameters')->willReturn($eventParams);
+        $event = new \Box\Mod\Client\Event\AfterClientSignUpEvent(
+            clientId: 1,
+            email: 'test@example.com',
+            ip: '127.0.0.1',
+            firstName: 'Test',
+            lastName: 'User',
+            password: 'testPassword'
+        );
 
         $service = $this->createMock(\Box\Mod\Email\Service::class);
         $service->expects($this->atLeastOnce())
@@ -104,28 +104,23 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $service);
         $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => false]);
 
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
-        $result = $clientService->onAfterClientSignUp($eventMock);
+        $clientService->onAfterClientSignUp($event);
 
-        $this->assertTrue($result);
+        $this->assertTrue(true);
     }
 
     public function testRequireEmailConfirmonAfterClientSignUp(): void
     {
-        $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
-        $eventParams = [
-            'password' => 'testPassword',
-            'id' => 1,
-            'require_email_confirmation' => true,
-        ];
-
-        $eventMock->expects($this->atLeastOnce())->
-            method('getParameters')->willReturn($eventParams);
+        $event = new \Box\Mod\Client\Event\AfterClientSignUpEvent(
+            clientId: 1,
+            email: 'test@example.com',
+            ip: '127.0.0.1',
+            firstName: 'Test',
+            lastName: 'User',
+            password: 'testPassword'
+        );
 
         $service = $this->createMock(\Box\Mod\Email\Service::class);
         $service->expects($this->atLeastOnce())
@@ -146,26 +141,23 @@ final class ServiceTest extends \BBTestCase
             }
         });
         $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => true]);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
 
-        $clientService = new \Box\Mod\Client\Service();
-        $result = $clientService->onAfterClientSignUp($eventMock);
+        $clientServiceMock->setDi($di);
+        $clientServiceMock->onAfterClientSignUp($event);
 
-        $this->assertTrue($result);
+        $this->assertTrue(true);
     }
 
     public function testExceptiononAfterClientSignUp(): void
     {
-        $eventParams = [
-            'password' => 'testPassword',
-            'id' => 1,
-        ];
-
-        $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-            method('getParameters')->willReturn($eventParams);
+        $event = new \Box\Mod\Client\Event\AfterClientSignUpEvent(
+            clientId: 1,
+            email: 'test@example.com',
+            ip: '127.0.0.1',
+            firstName: 'Test',
+            lastName: 'User',
+            password: 'testPassword'
+        );
 
         $service = $this->createMock(\Box\Mod\Email\Service::class);
         $service->expects($this->atLeastOnce())->
@@ -176,15 +168,12 @@ final class ServiceTest extends \BBTestCase
         $di['mod_config'] = $di->protect(function ($name): void {
             ['require_email_confirmation' => false];
         });
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
 
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
-        $result = $clientService->onAfterClientSignUp($eventMock);
+        $clientService->onAfterClientSignUp($event);
 
-        $this->assertTrue($result);
+        $this->assertTrue(true);
     }
 
     public static function searchQueryData(): array
@@ -856,9 +845,9 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventManagerMock->expects($this->exactly(2))
-            ->method('fire');
+            ->method('dispatch');
 
         $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
@@ -872,7 +861,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['password'] = $passwordMock;

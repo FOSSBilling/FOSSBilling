@@ -13,7 +13,6 @@ class Model_InvoiceItem extends RedBeanPHP\SimpleModel
     final public const string TYPE_DEPOSIT = 'deposit'; // this type of item cannot be charged with credits
     final public const string TYPE_CUSTOM = 'custom';
     final public const string TYPE_ORDER = 'order';
-    final public const string TYPE_HOOK_CALL = 'hook_call';
 
     final public const string TASK_VOID = 'void';
     final public const string TASK_ACTIVATE = 'activate';

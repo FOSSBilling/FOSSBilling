@@ -100,30 +100,6 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $serviceMock->executeTask($invoiceItemModel);
     }
 
-    public function testExecuteTaskTypeHookCall(): void
-    {
-        $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \DummyBean());
-        $invoiceItemModel->type = \Model_InvoiceItem::TYPE_HOOK_CALL;
-        $invoiceItemModel->rel_id = '{}';
-
-        $serviceMock = $this->getMockBuilder(ServiceInvoiceItem::class)
-            ->onlyMethods(['markAsExecuted'])
-            ->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('markAsExecuted');
-
-        $eventManagerMock = $this->createMock('\Box_EventManager');
-        $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
-
-        $di = $this->getDi();
-        $di['events_manager'] = $eventManagerMock;
-        $serviceMock->setDi($di);
-
-        $serviceMock->executeTask($invoiceItemModel);
-    }
-
     public function testExecuteTaskTypeDeposit(): void
     {
         $invoiceItemModel = new \Model_InvoiceItem();

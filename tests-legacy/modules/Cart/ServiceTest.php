@@ -661,10 +661,12 @@ final class ServiceTest extends \BBTestCase
     {
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
+        $cart->id = 1;
         $cart->promo_id = 1;
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
+        $order->id = 1;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['createFromCart', 'isClientAbleToUsePromo', 'rm', 'isPromoAvailableForClientGroup'])->getMock();
@@ -677,8 +679,8 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
             ->willReturn(true);
 
-        $eventMock = $this->createMock('\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $invoice = new \Model_Invoice();
         $invoice->loadBean(new \DummyBean());
@@ -694,12 +696,16 @@ final class ServiceTest extends \BBTestCase
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
+        $client->id = 1;
+
+        $requestMock = $this->createMock(\Symfony\Component\HttpFoundation\Request::class);
+        $requestMock->expects($this->any())->method('getClientIp')->willReturn('127.0.0.1');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
-        $di['request'] = new Request();
+        $di['request'] = $requestMock;
 
         $serviceMock->setDi($di);
         $result = $serviceMock->checkoutCart($cart, $client);
@@ -794,16 +800,18 @@ final class ServiceTest extends \BBTestCase
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
+        $cartModel->id = 1;
 
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
+        $productModel->id = 1;
         $productModel->type = 'Custom';
 
         $data = [];
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
         $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
@@ -814,7 +822,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
@@ -832,16 +840,18 @@ final class ServiceTest extends \BBTestCase
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
+        $cartModel->id = 1;
 
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
+        $productModel->id = 1;
         $productModel->type = 'hosting';
 
         $data = ['period' => '1W'];
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
 
@@ -856,7 +866,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(false);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
@@ -874,16 +884,18 @@ final class ServiceTest extends \BBTestCase
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
+        $cartModel->id = 1;
 
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
+        $productModel->id = 1;
         $productModel->type = 'hosting';
 
         $data = [];
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
 
@@ -898,7 +910,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(false);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
 
         $serviceMock->setDi($di);
@@ -913,16 +925,18 @@ final class ServiceTest extends \BBTestCase
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
+        $cartModel->id = 1;
 
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
+        $productModel->id = 1;
         $productModel->type = 'hosting';
 
         $data = [];
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $productDomainModel = new \Model_ProductDomain();
         $productDomainModel->loadBean(new \DummyBean());
@@ -949,7 +963,7 @@ final class ServiceTest extends \BBTestCase
             ->method('addProduct');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $di['logger'] = new \Box_Log();
 
@@ -965,16 +979,18 @@ final class ServiceTest extends \BBTestCase
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
+        $cartModel->id = 1;
 
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
+        $productModel->id = 1;
         $productModel->type = 'license';
 
         $data = [];
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $serviceLicenseServiceMock = $this->createMock(\Box\Mod\Servicelicense\Service::class);
         $serviceLicenseServiceMock->expects($this->atLeastOnce())
@@ -1002,7 +1018,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($productModel);
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceLicenseServiceMock);
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
@@ -1018,16 +1034,18 @@ final class ServiceTest extends \BBTestCase
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
+        $cartModel->id = 1;
 
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
+        $productModel->id = 1;
         $productModel->type = 'custom';
 
         $data = [];
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $serviceCustomServiceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
         $serviceCustomServiceMock->expects($this->atLeastOnce())
@@ -1056,7 +1074,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceCustomServiceMock);
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;

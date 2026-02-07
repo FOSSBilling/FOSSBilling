@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceReminderSentEvent;
+use Box\Mod\Invoice\Event\AfterInvoiceIsDueEvent;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -234,8 +238,9 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testOnAfterAdminInvoicePaymentReceived(): void
+    public function testSendPaymentReceivedEmail(): void
     {
+        $invoiceId = 1;
         $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['toApiArray'])
             ->getMock();
@@ -248,147 +253,6 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn($arr);
-
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getParameters');
-
-        $emailService = $this->createMock(\Box\Mod\Email\Service::class);
-        $emailService->expects($this->atLeastOnce())
-            ->method('sendTemplate');
-
-        $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \DummyBean());
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn($invoiceModel);
-
-        $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
-            if ($serviceName == 'invoice') {
-                return $serviceMock;
-            }
-            if ($serviceName == 'email') {
-                return $emailService;
-            }
-        });
-        $di['db'] = $dbMock;
-
-        $this->service->setDi($di);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-
-        $result = $this->service->onAfterAdminInvoicePaymentReceived($eventMock);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
-    public function testOnAfterAdminInvoiceReminderSent(): void
-    {
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['toApiArray'])
-            ->getMock();
-        $arr = [
-            'total' => 1,
-            'client' => [
-                'id' => 1,
-            ],
-        ];
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('toApiArray')
-            ->willReturn($arr);
-
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getParameters');
-
-        $emailService = $this->createMock(\Box\Mod\Email\Service::class);
-        $emailService->expects($this->atLeastOnce())
-            ->method('sendTemplate');
-
-        $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \DummyBean());
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn($invoiceModel);
-
-        $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
-            if ($serviceName == 'invoice') {
-                return $serviceMock;
-            }
-            if ($serviceName == 'email' || $serviceName == 'Email') {
-                return $emailService;
-            }
-        });
-        $di['db'] = $dbMock;
-
-        $this->service->setDi($di);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-
-        $this->service->onAfterAdminInvoiceReminderSent($eventMock);
-    }
-
-    public function testOnAfterAdminCronRun(): void
-    {
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $remove_after_days = 64;
-        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('getParamValue')
-            ->with('remove_after_days')
-            ->willReturn($remove_after_days);
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('exec');
-
-        $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
-        $di['db'] = $dbMock;
-
-        $this->service->setDi($di);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-
-        $this->service->onAfterAdminCronRun($eventMock);
-    }
-
-    public function testOnEventAfterInvoiceIsDue(): void
-    {
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['toApiArray'])
-            ->getMock();
-        $arr = [
-            'total' => 1,
-            'client' => [
-                'id' => 1,
-            ],
-        ];
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('toApiArray')
-            ->willReturn($arr);
-
-        $eventMock = $this->getMockBuilder('\Box_Event')
-            ->disableOriginalConstructor()
-            ->getMock();
-        $params = ['days_passed' => 5, 'id' => 1];
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getParameters')
-            ->willReturn($params);
 
         $emailService = $this->createMock(\Box\Mod\Email\Service::class);
         $emailService->expects($this->atLeastOnce())
@@ -413,10 +277,125 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
-        $eventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-        $result = $serviceMock->onEventAfterInvoiceIsDue($eventMock);
+
+        $event = new AfterAdminInvoicePaymentReceivedEvent(invoiceId: $invoiceId);
+        $result = $serviceMock->sendPaymentReceivedEmail($event);
+        $this->assertIsBool($result);
+        $this->assertTrue($result);
+    }
+
+    public function testOnAfterAdminInvoiceReminderSent(): void
+    {
+        $invoiceId = 1;
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['toApiArray'])
+            ->getMock();
+        $arr = [
+            'total' => 1,
+            'client' => [
+                'id' => 1,
+            ],
+        ];
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturn($arr);
+
+        $emailService = $this->createMock(\Box\Mod\Email\Service::class);
+        $emailService->expects($this->atLeastOnce())
+            ->method('sendTemplate');
+
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturn($invoiceModel);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
+            if ($serviceName == 'invoice') {
+                return $serviceMock;
+            }
+            if ($serviceName == 'email' || $serviceName == 'Email') {
+                return $emailService;
+            }
+        });
+        $di['db'] = $dbMock;
+
+        $serviceMock->setDi($di);
+
+        $event = new AfterAdminInvoiceReminderSentEvent(invoiceId: $invoiceId);
+        $serviceMock->onAfterAdminInvoiceReminderSent($event);
+    }
+
+    public function testPurgeOldInvoices(): void
+    {
+        $remove_after_days = 64;
+        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
+        $systemServiceMock->expects($this->atLeastOnce())
+            ->method('getParamValue')
+            ->with('remove_after_days')
+            ->willReturn($remove_after_days);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('exec');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+
+        $event = new AfterAdminCronRunEvent();
+        $this->service->purgeOldInvoices($event);
+    }
+
+    public function testSendInvoiceDueEmail(): void
+    {
+        $invoiceId = 1;
+        $clientId = 1;
+        $daysUntilDue = 5;
+
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['toApiArray'])
+            ->getMock();
+        $arr = [
+            'total' => 1,
+            'client' => [
+                'id' => 1,
+            ],
+        ];
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturn($arr);
+
+        $emailService = $this->createMock(\Box\Mod\Email\Service::class);
+        $emailService->expects($this->atLeastOnce())
+            ->method('sendTemplate');
+
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturn($invoiceModel);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
+            if ($serviceName == 'invoice') {
+                return $serviceMock;
+            }
+            if ($serviceName == 'email') {
+                return $emailService;
+            }
+        });
+        $di['db'] = $dbMock;
+
+        $serviceMock->setDi($di);
+
+        $event = new AfterInvoiceIsDueEvent(invoiceId: $invoiceId, clientId: $clientId, daysUntilDue: $daysUntilDue);
+        $serviceMock->sendInvoiceDueEmail($event);
     }
 
     public function testMarkAsPaid(): void
@@ -430,6 +409,7 @@ final class ServiceTest extends \BBTestCase
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->id = 1;
         $invoiceModel->status = \Model_Invoice::STATUS_UNPAID;
 
         $invoiceItemModel = new \Model_InvoiceItem();
@@ -457,9 +437,9 @@ final class ServiceTest extends \BBTestCase
         $currencyServiceMock->expects($this->atLeastOnce())->method('getCurrencyRepository')
             ->willReturn($currencyRepositoryMock);
 
-        $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventManagerMock = $this->getMockBuilder(\Symfony\Component\EventDispatcher\EventDispatcher::class)->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -481,7 +461,7 @@ final class ServiceTest extends \BBTestCase
             }
         });
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -695,9 +675,9 @@ final class ServiceTest extends \BBTestCase
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
 
-        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -705,7 +685,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -798,9 +778,9 @@ final class ServiceTest extends \BBTestCase
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
 
-        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $systemService = $this->createMock(\Box\Mod\System\Service::class);
         $systemService->expects($this->atLeastOnce())
@@ -820,7 +800,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -869,9 +849,9 @@ final class ServiceTest extends \BBTestCase
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \DummyBean());
 
-        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $itemInvoiceServiceMock = $this->createMock(ServiceInvoiceItem::class);
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
@@ -889,7 +869,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $itemInvoiceServiceMock);
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock = $this->getMockBuilder('\\' . Service::class)
@@ -942,13 +922,14 @@ final class ServiceTest extends \BBTestCase
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->id = 1;
 
-        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -970,10 +951,11 @@ final class ServiceTest extends \BBTestCase
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->id = 1;
 
-        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -982,7 +964,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -1001,10 +983,11 @@ final class ServiceTest extends \BBTestCase
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->id = 1;
 
-        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1013,7 +996,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
 
         $this->service->setDi($di);
 
@@ -1031,6 +1014,7 @@ final class ServiceTest extends \BBTestCase
 
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \DummyBean());
+        $clientOrder->id = 1;
 
         $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['generateForOrder', 'approveInvoice'])
@@ -1041,12 +1025,12 @@ final class ServiceTest extends \BBTestCase
             ->method('generateForOrder')
             ->willReturn($invoiceModel);
 
-        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -1310,12 +1294,12 @@ final class ServiceTest extends \BBTestCase
             ->method('getUnpaidInvoicesLateFor')
             ->willReturn([$invoiceModel]);
 
-        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -1337,13 +1321,13 @@ final class ServiceTest extends \BBTestCase
             ->method('getAll')
             ->willReturn([[]]);
 
-        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $di['logger'] = new \Box_Log();
 
@@ -1369,10 +1353,11 @@ final class ServiceTest extends \BBTestCase
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->id = 1;
 
-        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1380,7 +1365,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
+        $di['event_dispatcher'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
