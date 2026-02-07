@@ -569,6 +569,158 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
+    /**
+     * Get multiple tickets in a batch for API response.
+     *
+     * @param array                           $ids      Array of ticket IDs to fetch
+     * @param bool                            $deep     Whether to include full message history
+     * @param \Model_Admin|\Model_Client|null $identity The requesting identity
+     *
+     * @return array Array of ticket API arrays. Missing IDs are silently skipped.
+     */
+    public function getBatchForApi(array $ids, bool $deep = false, $identity = null): array
+    {
+        $ids = $this->normalizeIds($ids);
+        if (empty($ids)) {
+            return [];
+        }
+
+        if ($deep || $identity instanceof \Model_Admin) {
+            return $this->getBatchForApiWithModels($ids, $deep, $identity);
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $tickets = $this->di['db']->getAll("SELECT * FROM support_ticket WHERE id IN ($placeholders)", $ids);
+        if (empty($tickets)) {
+            return [];
+        }
+
+        $tickets = $this->orderRowsByIds($tickets, $ids);
+        $ticketIds = array_column($tickets, 'id');
+        $helpdeskIds = $this->normalizeIds(array_column($tickets, 'support_helpdesk_id'));
+        $clientIds = $this->normalizeIds(array_column($tickets, 'client_id'));
+
+        $replyCounts = [];
+        if (!empty($ticketIds)) {
+            $placeholders = implode(',', array_fill(0, count($ticketIds), '?'));
+            $countRows = $this->di['db']->getAll(
+                "SELECT support_ticket_id, COUNT(id) as counter
+                FROM support_ticket_message
+                WHERE support_ticket_id IN ($placeholders)
+                GROUP BY support_ticket_id",
+                $ticketIds
+            );
+            foreach ($countRows as $row) {
+                $replyCounts[$row['support_ticket_id']] = (int) $row['counter'];
+            }
+        }
+
+        $firstMessages = [];
+        if (!empty($ticketIds)) {
+            $placeholders = implode(',', array_fill(0, count($ticketIds), '?'));
+            $rows = $this->di['db']->getAll(
+                "SELECT support_ticket_id, MIN(id) as message_id
+                FROM support_ticket_message
+                WHERE support_ticket_id IN ($placeholders)
+                GROUP BY support_ticket_id",
+                $ticketIds
+            );
+            $messageIds = array_column($rows, 'message_id');
+            if (!empty($messageIds)) {
+                $placeholders = implode(',', array_fill(0, count($messageIds), '?'));
+                $messages = $this->di['db']->find('SupportTicketMessage', "id IN ($placeholders)", $messageIds);
+                foreach ($messages as $message) {
+                    $firstMessages[$message->support_ticket_id] = $message;
+                }
+            }
+        }
+
+        $helpdesks = [];
+        if (!empty($helpdeskIds)) {
+            $placeholders = implode(',', array_fill(0, count($helpdeskIds), '?'));
+            $helpdeskModels = $this->di['db']->find('SupportHelpdesk', "id IN ($placeholders)", $helpdeskIds);
+            foreach ($helpdeskModels as $helpdesk) {
+                $helpdesks[$helpdesk->id] = $helpdesk;
+            }
+        }
+
+        $clients = [];
+        if (!empty($clientIds)) {
+            $placeholders = implode(',', array_fill(0, count($clientIds), '?'));
+            $clientModels = $this->di['db']->find('Client', "id IN ($placeholders)", $clientIds);
+            $clientService = $this->di['mod_service']('client');
+            foreach ($clientModels as $client) {
+                $clients[$client->id] = $clientService->toApiArray($client);
+            }
+        }
+
+        $result = [];
+        foreach ($tickets as $ticket) {
+            $data = $ticket;
+            $data['replies'] = $replyCounts[$ticket['id']] ?? 0;
+            $data['first'] = isset($firstMessages[$ticket['id']]) ? $this->messageToApiArray($firstMessages[$ticket['id']]) : null;
+
+            $helpdesk = $helpdesks[$ticket['support_helpdesk_id']] ?? null;
+            $data['helpdesk'] = $helpdesk ? $this->helpdeskToApiArray($helpdesk) : null;
+
+            if (!isset($clients[$ticket['client_id']])) {
+                $this->di['logger']->err('Missing client for ticket ' . $ticket['id']);
+                $data['client'] = [];
+            } else {
+                $data['client'] = $clients[$ticket['client_id']];
+            }
+
+            $result[] = $data;
+        }
+
+        return $result;
+    }
+
+    private function getBatchForApiWithModels(array $ids, bool $deep, $identity): array
+    {
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $tickets = $this->di['db']->find('SupportTicket', "id IN ($placeholders)", $ids);
+        if (empty($tickets)) {
+            return [];
+        }
+
+        $ticketsById = [];
+        foreach ($tickets as $ticket) {
+            $ticketsById[$ticket->id] = $ticket;
+        }
+
+        $result = [];
+        foreach ($ids as $id) {
+            if (isset($ticketsById[$id])) {
+                $result[] = $this->toApiArray($ticketsById[$id], $deep, $identity);
+            }
+        }
+
+        return $result;
+    }
+
+    private function normalizeIds(array $ids): array
+    {
+        return array_values(array_unique(array_map('intval', array_filter($ids, 'is_numeric'))));
+    }
+
+    private function orderRowsByIds(array $rows, array $ids): array
+    {
+        $rowsById = [];
+        foreach ($rows as $row) {
+            $rowsById[(int) $row['id']] = $row;
+        }
+
+        $ordered = [];
+        foreach ($ids as $id) {
+            if (isset($rowsById[$id])) {
+                $ordered[] = $rowsById[$id];
+            }
+        }
+
+        return $ordered;
+    }
+
     public function getClientApiArrayForTicket(\Model_SupportTicket $ticket): array
     {
         $client = $this->di['db']->load('Client', $ticket->client_id);
