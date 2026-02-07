@@ -4,7 +4,31 @@ End-to-end tests for FOSSBilling API endpoints.
 
 ## Running E2E Tests
 
+E2E tests require a running FOSSBilling instance and will be automatically
+skipped if required credentials are not configured.
+
 ```bash
+./src/vendor/bin/phpunit --testsuite E2E
+```
+
+### Environment Variables Required
+
+E2E tests require two environment variables. If either is missing, all E2E tests
+are automatically skipped with a clear message:
+
+| Variable | Description | Required For |
+|----------|-------------|--------------|
+| `APP_URL` | Base URL of your FOSSBilling installation (e.g., `http://localhost`) | All E2E tests |
+| `TEST_API_KEY` | Administrator API key for authentication | All E2E tests |
+
+**Tests are skipped (not failed) when credentials are missing**, allowing the
+full test suite to run in environments without a running instance.
+
+To run E2E tests locally or in CI:
+
+```bash
+export APP_URL="http://localhost"
+export TEST_API_KEY="your-admin-api-key"
 ./src/vendor/bin/phpunit --testsuite E2E
 ```
 
@@ -27,8 +51,8 @@ Located in `tests/library/E2E/`:
 
 - `TestCase.php` - Base test case class
 - `ApiClient.php` - HTTP client for API requests
-- `ApiResponse.php` - API response wrapper
-- `ApiAssertions.php` - Custom assertions
+- `Traits/ApiResponse.php` - API response wrapper
+- `Traits/ApiAssertions.php` - Custom assertions
 
 ## Writing New Tests
 
@@ -41,8 +65,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Tests\E2E\Modules\Cart;
 
-use FOSSBilling\Tests\E2E\TestCase;
-use FOSSBilling\Tests\E2E\ApiClient;
+use FOSSBilling\Tests\Library\E2E\TestCase;
+use FOSSBilling\Tests\Library\E2E\ApiClient;
 
 final class ApiGuestTest extends TestCase
 {
