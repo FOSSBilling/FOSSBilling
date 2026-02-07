@@ -885,7 +885,7 @@ class Service implements InjectionAwareInterface
         $model->freesetup = $data['freesetup'] ?? 0;
         $model->once_per_client = (bool) ($data['once_per_client'] ?? 0);
         $model->recurring = (bool) ($data['recurring'] ?? 0);
-        $model->maxuses = (int) $data['maxuses'] ?? null;
+        $model->maxuses = isset($data['maxuses']) ? (int) $data['maxuses'] : null;
         $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['start_at'])) : null;
         $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['end_at'])) : null;
         $model->products = json_encode($products);

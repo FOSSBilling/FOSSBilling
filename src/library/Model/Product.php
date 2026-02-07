@@ -39,7 +39,7 @@ class Model_Product extends RedBeanPHP\SimpleModel implements FOSSBilling\Inject
 
     public function getTable(): object
     {
-        $tableName = 'Model_Product' . ucfirst($this->type) . 'Table';
+        $tableName = 'Model_Product' . ucfirst($this->type ?? '') . 'Table';
         if (!class_exists($tableName)) {
             $tableName = 'Model_ProductTable';
         }
