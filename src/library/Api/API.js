@@ -45,8 +45,7 @@ const Tools = {
   },
 
   /**
-   * @returns {string} The CSRF token.
-   * @throws {Error} If the CSRF token meta tag is not found.
+   * @returns {string|null} The CSRF token from cookie, or null if not found.
    */
   getCSRFToken: function () {
     const match = document.cookie.match(/csrf_token=([^;]*)/);
