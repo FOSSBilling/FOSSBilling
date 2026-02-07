@@ -356,20 +356,15 @@ class Client implements InjectionAwareInterface
         }
 
         $token = $data->CSRFToken ?? $_POST['CSRFToken'] ?? $_GET['CSRFToken'] ?? null;
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            $expectedToken = (!is_null($_COOKIE['PHPSESSID'])) ? hash('md5', (string) $_COOKIE['PHPSESSID']) : null;
-        } else {
-            $expectedToken = hash('md5', session_id());
-        }
 
-        /* Due to the way the cart works, it creates a new session which causes issues with the CSRF token system.
-         * Due to this, we whitelist the checkout URL.
-         */
-        if (str_contains((string) $_SERVER['REQUEST_URI'], '/api/client/cart/checkout')) {
-            return true;
-        }
+        $cookieToken = $_COOKIE['csrf_token'] ?? null;
+        $headerToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
 
-        if (!is_null($expectedToken) && $expectedToken !== $token) {
+        $sessionToken = $this->di['session']->get('csrf_token');
+
+        $validTokens = array_filter([$cookieToken, $headerToken, $sessionToken]);
+
+        if (empty($validTokens) || !in_array($token, $validTokens, true)) {
             throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
         }
     }

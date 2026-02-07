@@ -9,11 +9,12 @@
  */
 
 /**
- * Get CSRF token from meta tag
+ * Get CSRF token from cookie
  * @returns {string|null} CSRF token or null if not found
  */
 export function getCSRFToken() {
-  return document.querySelector('meta[name="csrf-token"]')?.content || null;
+  const match = document.cookie.match(/csrf_token=([^;]+)/);
+  return match ? match[1] : null;
 }
 
 /**
