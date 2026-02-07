@@ -746,7 +746,7 @@ class Service implements InjectionAwareInterface
         $model->password = $data['password'] ?? null;
         $model->accesshash = $data['accesshash'] ?? null;
         $model->port = $data['port'] ?? null;
-        $model->passwordLength = is_numeric($data['passwordLength']) ? intval($data['passwordLength']) : null;
+        $model->passwordLength = is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : null;
         $model->secure = $data['secure'] ?? 0;
 
         $model->created_at = date('Y-m-d H:i:s');
@@ -787,12 +787,12 @@ class Service implements InjectionAwareInterface
         $model->ns4 = $data['ns4'] ?? $model->ns4;
         $model->manager = $data['manager'] ?? $model->manager;
         $model->port = is_numeric($data['port']) ? $data['port'] : $model->port;
-        $model->config = json_encode($data['config']) ?? $model->config;
+        $model->config = isset($data['config']) ? json_encode($data['config']) : $model->config;
         $model->secure = $data['secure'] ?? $model->secure;
         $model->username = $data['username'] ?? $model->username;
         $model->password = $data['password'] ?? $model->password;
         $model->accesshash = $data['accesshash'] ?? $model->accesshash;
-        $model->passwordLength = is_numeric($data['passwordLength']) ? $data['passwordLength'] : $model->passwordLength;
+        $model->passwordLength = is_numeric($data['passwordLength'] ?? '') ? $data['passwordLength'] : $model->passwordLength;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);

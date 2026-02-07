@@ -35,8 +35,8 @@ class Admin extends \Api_Abstract
                 continue;
             }
             $pager['list'][$key] = [
-                'id' => $item['id'] ?? null,
-                'client_id' => $item['client_id'] ?? null,
+                'id' => $item['id'] ?? '',
+                'client_id' => $item['client_id'] ?? '',
                 'sender' => $item['sender'] ?? '',
                 'recipients' => $item['recipients'] ?? '',
                 'subject' => $item['subject'] ?? '',
@@ -303,15 +303,15 @@ class Admin extends \Api_Abstract
      */
     public function send_test(array $data): bool
     {
-        $currentUser = $this->di['loggedin_admin'];
+        $currentUser = $this->di['loggedin_admin'] ?? null;
 
         $email = [
             'code' => 'mod_email_test',
-            'to' => $currentUser->email,
-            'to_name' => $currentUser->name,
+            'to' => $currentUser?->email ?? '',
+            'to_name' => $currentUser?->name ?? '',
             'send_now' => true,
             'throw_exceptions' => true,
-            'staff_member_name' => $currentUser->name,
+            'staff_member_name' => $currentUser?->name ?? '',
         ];
 
         return $this->getService()->sendTemplate($email);
