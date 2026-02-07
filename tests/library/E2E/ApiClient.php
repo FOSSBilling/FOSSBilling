@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\Tests\E2E;
+namespace FOSSBilling\Tests\Library\E2E;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -46,7 +46,7 @@ class ApiClient
         string $role = 'admin',
         ?string $apiKey = null,
         string $method = 'POST'
-    ): \FOSSBilling\Tests\E2E\Traits\ApiResponse {
+    ): \FOSSBilling\Tests\Library\E2E\Traits\ApiResponse {
         $baseUrl = self::$baseUrl ?? (getenv('APP_URL') ?: 'http://localhost');
         $baseUrl = rtrim($baseUrl, '/');
         $apiKey = $apiKey ?? self::$apiKey ?? getenv('TEST_API_KEY');
@@ -73,7 +73,7 @@ class ApiClient
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        return new \FOSSBilling\Tests\E2E\Traits\ApiResponse($httpCode, $output);
+        return new \FOSSBilling\Tests\Library\E2E\Traits\ApiResponse($httpCode, $output);
     }
 
     public static function resetCookies(): void
@@ -82,12 +82,12 @@ class ApiClient
         $filesystem->remove(self::getCookiePath());
     }
 
-    public static function get(string $endpoint, array $payload = [], ?string $role = null): \FOSSBilling\Tests\E2E\Traits\ApiResponse
+    public static function get(string $endpoint, array $payload = [], ?string $role = null): \FOSSBilling\Tests\Library\E2E\Traits\ApiResponse
     {
         return self::request($endpoint, $payload, $role ?? 'admin', null, 'GET');
     }
 
-    public static function post(string $endpoint, array $payload = [], ?string $role = null): \FOSSBilling\Tests\E2E\Traits\ApiResponse
+    public static function post(string $endpoint, array $payload = [], ?string $role = null): \FOSSBilling\Tests\Library\E2E\Traits\ApiResponse
     {
         return self::request($endpoint, $payload, $role ?? 'admin', null, 'POST');
     }

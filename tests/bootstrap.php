@@ -27,26 +27,19 @@ define('BB_DB_PASSWORD', $config['db']['password']);
 define('BB_DB_HOST', $config['db']['host']);
 define('BB_DB_TYPE', $config['db']['driver']);
 
+// Load E2E infrastructure classes first - required for E2E test discovery
+// Must be loaded before test suite detection so PHPUnit can autoload these classes
+requireE2EInfrastructure();
+
+// Load legacy bootstrap - required for legacy test discovery
+requireLegacyBootstrap();
+
 // Detect test type from environment or current file path
 $testType = getenv('TEST_TYPE') ?: detectTestType();
 
 define('IS_E2E_TEST', $testType === 'e2e');
 define('IS_LEGACY_TEST', $testType === 'legacy');
 define('IS_UNIT_TEST', $testType === 'unit');
-
-// Load appropriate bootstrap
-switch ($testType) {
-    case 'e2e':
-        requireE2EBootstrap();
-        break;
-    case 'unit':
-        requireUnitBootstrap();
-        break;
-    case 'legacy':
-    default:
-        requireLegacyBootstrap();
-        break;
-}
 
 function detectTestType(): string
 {
@@ -84,18 +77,12 @@ function detectTestType(): string
     return 'legacy';
 }
 
-function requireE2EBootstrap(): void
+function requireE2EInfrastructure(): void
 {
     require_once __DIR__ . '/library/E2E/Traits/ApiResponse.php';
     require_once __DIR__ . '/library/E2E/ApiClient.php';
     require_once __DIR__ . '/library/E2E/Traits/ApiAssertions.php';
     require_once __DIR__ . '/library/E2E/TestCase.php';
-}
-
-function requireUnitBootstrap(): void
-{
-    // Unit tests use PSR-4 autoloading via composer
-    // No additional bootstrap needed
 }
 
 function requireLegacyBootstrap(): void

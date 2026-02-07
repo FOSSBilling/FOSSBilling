@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\Tests\E2E\Traits;
+namespace FOSSBilling\Tests\Library\E2E\Traits;
 
 class ApiResponse
 {

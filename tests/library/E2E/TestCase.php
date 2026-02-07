@@ -10,10 +10,10 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\Tests\E2E;
+namespace FOSSBilling\Tests\Library\E2E;
 
-use FOSSBilling\Tests\E2E\Traits\ApiAssertions;
-use FOSSBilling\Tests\E2E\Traits\ApiResponse;
+use FOSSBilling\Tests\Library\E2E\Traits\ApiAssertions;
+use FOSSBilling\Tests\Library\E2E\Traits\ApiResponse;
 
 abstract class TestCase extends \PHPUnit\Framework\TestCase
 {
@@ -48,17 +48,17 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
         return 'client';
     }
 
-    protected function requestAdmin(string $endpoint, array $payload = []): \FOSSBilling\Tests\E2E\Traits\ApiResponse
+    protected function requestAdmin(string $endpoint, array $payload = []): \FOSSBilling\Tests\Library\E2E\Traits\ApiResponse
     {
         return ApiClient::request($endpoint, $payload, $this->getAdminRole());
     }
 
-    protected function requestClient(string $endpoint, array $payload = []): \FOSSBilling\Tests\E2E\Traits\ApiResponse
+    protected function requestClient(string $endpoint, array $payload = []): \FOSSBilling\Tests\Library\E2E\Traits\ApiResponse
     {
         return ApiClient::request($endpoint, $payload, $this->getClientRole());
     }
 
-    protected function requestGuest(string $endpoint, array $payload = []): \FOSSBilling\Tests\E2E\Traits\ApiResponse
+    protected function requestGuest(string $endpoint, array $payload = []): \FOSSBilling\Tests\Library\E2E\Traits\ApiResponse
     {
         return ApiClient::request($endpoint, $payload, 'guest');
     }

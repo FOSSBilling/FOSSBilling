@@ -12,9 +12,9 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Tests\E2E\Modules\Client;
 
-use FOSSBilling\Tests\E2E\TestCase;
-use FOSSBilling\Tests\E2E\ApiClient;
-use FOSSBilling\Tests\E2E\ApiAssertions;
+use FOSSBilling\Tests\Library\E2E\TestCase;
+use FOSSBilling\Tests\Library\E2E\ApiClient;
+use FOSSBilling\Tests\Library\E2E\Traits\ApiAssertions;
 
 final class ApiGuestTest extends TestCase
 {

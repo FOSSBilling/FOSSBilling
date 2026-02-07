@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Tests\E2E\HealthChecks;
 
-use FOSSBilling\Tests\E2E\TestCase;
-use FOSSBilling\Tests\E2E\ApiClient;
+use FOSSBilling\Tests\Library\E2E\TestCase;
+use FOSSBilling\Tests\Library\E2E\ApiClient;
 
 final class ApiTest extends TestCase
 {
