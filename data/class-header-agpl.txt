@@ -1,0 +1,7 @@
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: AGPL-3.0-only
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license https://www.gnu.org/licenses/agpl.txt AGPL-3.0-only
+ */
