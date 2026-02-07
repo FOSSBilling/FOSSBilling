@@ -94,6 +94,11 @@
         "symfony/deprecation-contracts": "^3.6.0",
         "symfony/phpunit-bridge": "^7.4"
     },
+    "autoload-dev": {
+        "psr-4": {
+            "FOSSBilling\\Tests\\": "tests/"
+        }
+    },
     "config": {
         "sort-packages": true,
         "allow-plugins": {

@@ -43,6 +43,9 @@ class Validate
     public function isSldValid(string $sld): bool
     {
         $sld = ltrim($sld, '.');
+        if ($sld === '') {
+            return false;
+        }
         $sld = idn_to_ascii($sld);
         if ($sld === false) {
             return false;
@@ -68,6 +71,9 @@ class Validate
     public function isTldValid(string $tld): bool
     {
         $tld = ltrim($tld, '.');
+        if ($tld === '') {
+            return false;
+        }
         $tld = idn_to_ascii($tld);
         if ($tld === false) {
             return false;
