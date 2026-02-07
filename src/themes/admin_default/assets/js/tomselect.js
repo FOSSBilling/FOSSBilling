@@ -74,15 +74,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const restUrl = new URL(Tools.getBaseURL(autocompleteSelectorEl.dataset.resturl));
             restUrl.searchParams.append("search", query);
 
-            // Add CSRF token if available
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-            if (csrfToken) {
-              restUrl.searchParams.append("CSRFToken", csrfToken);
-            }
+            // Add CSRF token from cookie
+            const csrfTokenMatch = document.cookie.match(/csrf_token=([^;]+)/);
+            const csrfToken = csrfTokenMatch ? csrfTokenMatch[1] : null;
 
             restUrl.searchParams.append("per_page", 5);
 
-            fetch(restUrl)
+            fetch(restUrl, {
+              headers: {
+                'X-CSRF-Token': csrfToken || '',
+              }
+            })
               .then((response) => {
                 if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
@@ -151,12 +153,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         finalUrl.searchParams.append('id', value);
 
-        const csrfToken = getCSRFToken();
-        if (csrfToken) {
-          finalUrl.searchParams.append('CSRFToken', csrfToken);
-        }
+        const csrfTokenMatch = document.cookie.match(/csrf_token=([^;]+)/);
+        const csrfToken = csrfTokenMatch ? csrfTokenMatch[1] : null;
 
-        fetch(finalUrl)
+        fetch(finalUrl, {
+          headers: {
+            'X-CSRF-Token': csrfToken || '',
+          }
+        })
           .then((response) => {
             if (!response.ok) throw new Error('Network response was not ok');
             return response.json();

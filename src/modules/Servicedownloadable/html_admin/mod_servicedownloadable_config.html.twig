@@ -21,7 +21,6 @@
         </div>
     <div class="row mb-3">
         <form method="post" action="{{ 'api/admin/servicedownloadable/upload'|link }}" enctype="multipart/form-data" id="upload-form">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             {% if product.config.filename  %}
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Currently uploaded file'|trans }}:</label>
