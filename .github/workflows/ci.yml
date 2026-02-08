@@ -43,7 +43,7 @@ jobs:
           cp ./src/config-sample.php ./src/config.php
           mkdir -p ./src/data/{cache,log}
           echo APP_ENV=test >> $GITHUB_ENV
-        
+
       - name: 'PHP Tests (PHPStan and PHPUnit)'
         uses: FOSSBilling/.workflows/.github/actions/php-test@74c38ad88ce24f4751e1467524124c7c2cae4e07
         with:
