@@ -35,14 +35,15 @@ uses()
     })
     ->in('Unit');
 
-// Configure E2E tests base - skip if environment not configured
+// Configure E2E tests - requires live instance with API access
+// Run with: ./vendor/bin/pest --testsuite=E2E
+// Requires APP_URL and TEST_API_KEY environment variables
 $appUrl = getenv('APP_URL');
 $testApiKey = getenv('TEST_API_KEY');
 
 if ($appUrl && $testApiKey) {
     uses()
         ->beforeEach(function () use ($appUrl, $testApiKey) {
-            // E2E test setup - configure API client
             \Tests\Helpers\ApiClient::setBaseUrl($appUrl);
             \Tests\Helpers\ApiClient::setApiKey($testApiKey);
         })

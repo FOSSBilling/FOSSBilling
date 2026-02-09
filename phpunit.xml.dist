@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" colors="true" processIsolation="false" stopOnFailure="false" beStrictAboutChangesToGlobalState="true" bootstrap="tests/bootstrap.php" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.4/phpunit.xsd" cacheDirectory=".phpunit.cache" backupStaticProperties="false">
-  <coverage/>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.5/phpunit.xsd"
+    bootstrap="tests/Pest.php"
+    cacheDirectory="cache/phpunit"
+    executionOrder="depends,defects"
+    failOnWarning="false"
+    failOnRisky="false"
+    failOnEmptyTestSuite="false"
+    beStrictAboutOutputDuringTests="false"
+    colors="true"
+    testdox="true"
+    testdoxSummary="true"
+    displayDetailsOnTestsThatTriggerDeprecations="false"
+    displayDetailsOnTestsThatTriggerWarnings="false"
+    defaultTestSuite="Unit,Modules">
   <testsuites>
     <testsuite name="Unit">
       <directory>tests/unit</directory>
@@ -10,6 +22,10 @@
     </testsuite>
     <testsuite name="Legacy">
       <directory>tests/legacy</directory>
+    </testsuite>
+    <testsuite name="E2E">
+      <directory>tests/E2E</directory>
+      <directory>src/modules/*/tests/E2E</directory>
     </testsuite>
   </testsuites>
   <php>
