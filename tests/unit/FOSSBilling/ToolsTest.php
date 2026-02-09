@@ -10,134 +10,108 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\Tests\Unit\FOSSBilling;
+dataset('sanitizeContentProvider', function () {
+    return [
+        // [input, expected_output, allowSafeHtml]
+        ['', '', false],
+        ["Hello\0World", 'HelloWorld', false],
+        ['<script>alert("xss")</script>', 'alert(&quot;xss&quot;)', false], // Text content HTML-encoded
+        ['<p>Hello</p>', 'Hello', false],
+        ['<p>Hello</p>', '<p>Hello</p>', true], // Safe HTML preserved
+        ['Test <img src="x">', 'Test <img />', true], // img converted to self-closing
+    ];
+});
 
-require_once __DIR__ . '/../../../src/load.php';
-require_once __DIR__ . '/../../../src/vendor/autoload.php';
+test('sanitize content', function (string $input, string $expected, bool $allowSafeHtml) {
+    $result = \FOSSBilling\Tools::sanitizeContent($input, $allowSafeHtml);
+    expect($result)->toEqual($expected);
+})->with('sanitizeContentProvider');
 
-use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\Attributes\DataProvider;
+test('sanitize content removes null bytes', function () {
+    $input = "Hello\0World";
+    $result = \FOSSBilling\Tools::sanitizeContent($input, false);
+    expect($result)->not->toContain("\0");
+    expect($result)->toBe('HelloWorld');
+});
 
-final class ToolsTest extends TestCase
-{
-    public static function sanitizeContentProvider(): array
-    {
-        return [
-            // [input, expected_output, allowSafeHtml]
-            ['', '', false],
-            ["Hello\0World", 'HelloWorld', false],
-            ['<script>alert("xss")</script>', 'alert(&quot;xss&quot;)', false], // Text content HTML-encoded
-            ['<p>Hello</p>', 'Hello', false],
-            ['<p>Hello</p>', '<p>Hello</p>', true], // Safe HTML preserved
-            ['Test <img src="x">', 'Test <img />', true], // img converted to self-closing
-        ];
-    }
+test('sanitize content removes script tags', function () {
+    $input = '<p>Hello</p><script>alert("xss")</script>';
+    $result = \FOSSBilling\Tools::sanitizeContent($input, true);
+    expect($result)->not->toContain('<script>');
+    expect($result)->not->toContain('alert');
+});
 
-    #[DataProvider('sanitizeContentProvider')]
-    public function testSanitizeContent(string $input, string $expected, bool $allowSafeHtml): void
-    {
-        $result = \FOSSBilling\Tools::sanitizeContent($input, $allowSafeHtml);
-        $this->assertEquals($expected, $result);
-    }
+test('sanitize content removes java script urls', function () {
+    $input = '<a href="javascript:alert(1)">Click</a>';
+    $result = \FOSSBilling\Tools::sanitizeContent($input, true);
+    expect($result)->not->toContain('javascript:');
+});
 
-    public function testSanitizeContentRemovesNullBytes(): void
-    {
-        $input = "Hello\0World";
-        $result = \FOSSBilling\Tools::sanitizeContent($input, false);
-        $this->assertStringNotContainsString("\0", $result);
-        $this->assertSame('HelloWorld', $result);
-    }
+test('sanitize content removes event handlers', function () {
+    $input = '<p onclick="alert(1)">Hello</p>';
+    $result = \FOSSBilling\Tools::sanitizeContent($input, true);
+    expect($result)->not->toContain('onclick');
+});
 
-    public function testSanitizeContentRemovesScriptTags(): void
-    {
-        $input = '<p>Hello</p><script>alert("xss")</script>';
-        $result = \FOSSBilling\Tools::sanitizeContent($input, true);
-        $this->assertStringNotContainsString('<script>', $result);
-        $this->assertStringNotContainsString('alert', $result);
-    }
+test('sanitize content removes multiple event handlers', function () {
+    $input = '<img src="x" onerror="alert(1)" onload="evil()" onmouseover="bad()">';
+    $result = \FOSSBilling\Tools::sanitizeContent($input, true);
+    expect($result)->not->toContain('onerror');
+    expect($result)->not->toContain('onload');
+    expect($result)->not->toContain('onmouseover');
+});
 
-    public function testSanitizeContentRemovesJavaScriptUrls(): void
-    {
-        $input = '<a href="javascript:alert(1)">Click</a>';
-        $result = \FOSSBilling\Tools::sanitizeContent($input, true);
-        $this->assertStringNotContainsString('javascript:', $result);
-    }
+test('sanitize content allows safe links', function () {
+    $input = '<a href="https://example.com" title="Example">Link</a>';
+    $result = \FOSSBilling\Tools::sanitizeContent($input, true);
+    expect($result)->toContain('href="https://example.com"');
+});
 
-    public function testSanitizeContentRemovesEventHandlers(): void
-    {
-        $input = '<p onclick="alert(1)">Hello</p>';
-        $result = \FOSSBilling\Tools::sanitizeContent($input, true);
-        $this->assertStringNotContainsString('onclick', $result);
-    }
+test('sanitize content strips unsafe attributes', function () {
+    $input = '<p style="color:red">Text</p>';
+    $result = \FOSSBilling\Tools::sanitizeContent($input, true);
 
-    public function testSanitizeContentRemovesMultipleEventHandlers(): void
-    {
-        $input = '<img src="x" onerror="alert(1)" onload="evil()" onmouseover="bad()">';
-        $result = \FOSSBilling\Tools::sanitizeContent($input, true);
-        $this->assertStringNotContainsString('onerror', $result);
-        $this->assertStringNotContainsString('onload', $result);
-        $this->assertStringNotContainsString('onmouseover', $result);
-    }
+    // style attribute is not allowed, so it's stripped
+    expect($result)->not->toContain('style=');
+    expect($result)->toContain('<p>');
+    expect($result)->toContain('</p>');
+});
 
-    public function testSanitizeContentAllowsSafeLinks(): void
-    {
-        $input = '<a href="https://example.com" title="Example">Link</a>';
-        $result = \FOSSBilling\Tools::sanitizeContent($input, true);
-        $this->assertStringContainsString('href="https://example.com"', $result);
-    }
+test('sanitize content handles nested tags', function () {
+    $input = '<div><span>nested<span>deep</span></span></div>';
+    $result = \FOSSBilling\Tools::sanitizeContent($input, true);
+    expect($result)->toContain('<div>');
+    expect($result)->toContain('</div>');
+});
 
-    public function testSanitizeContentStripsUnsafeAttributes(): void
-    {
-        $input = '<p style="color:red">Text</p>';
-        $result = \FOSSBilling\Tools::sanitizeContent($input, true);
-        // style attribute is not allowed, so it's stripped
-        $this->assertStringNotContainsString('style=', $result);
-        $this->assertStringContainsString('<p>', $result);
-        $this->assertStringContainsString('</p>', $result);
-    }
+test('sanitize content strips php tags', function () {
+    $input = '<?php echo "test"; ?>';
+    $result = \FOSSBilling\Tools::sanitizeContent($input, false);
+    expect($result)->not->toContain('<?php');
+    expect($result)->not->toContain('?>');
+});
 
-    public function testSanitizeContentHandlesNestedTags(): void
-    {
-        $input = '<div><span>nested<span>deep</span></span></div>';
-        $result = \FOSSBilling\Tools::sanitizeContent($input, true);
-        $this->assertStringContainsString('<div>', $result);
-        $this->assertStringContainsString('</div>', $result);
-    }
+test('sanitize content strips iframe tags', function () {
+    $input = '<iframe src="https://evil.com"></iframe>';
+    $result = \FOSSBilling\Tools::sanitizeContent($input, false);
+    expect($result)->not->toContain('<iframe');
+});
 
-    public function testSanitizeContentStripsPhpTags(): void
-    {
-        $input = '<?php echo "test"; ?>';
-        $result = \FOSSBilling\Tools::sanitizeContent($input, false);
-        $this->assertStringNotContainsString('<?php', $result);
-        $this->assertStringNotContainsString('?>', $result);
-    }
+test('sanitize content strips object tags', function () {
+    $input = '<object data="evil.swf"></object>';
+    $result = \FOSSBilling\Tools::sanitizeContent($input, false);
+    expect($result)->not->toContain('<object');
+});
 
-    public function testSanitizeContentStripsIframeTags(): void
-    {
-        $input = '<iframe src="https://evil.com"></iframe>';
-        $result = \FOSSBilling\Tools::sanitizeContent($input, false);
-        $this->assertStringNotContainsString('<iframe', $result);
-    }
+test('sanitize content strips embed tags', function () {
+    $input = '<embed src="evil.swf">';
+    $result = \FOSSBilling\Tools::sanitizeContent($input, false);
+    expect($result)->not->toContain('<embed');
+});
 
-    public function testSanitizeContentStripsObjectTags(): void
-    {
-        $input = '<object data="evil.swf"></object>';
-        $result = \FOSSBilling\Tools::sanitizeContent($input, false);
-        $this->assertStringNotContainsString('<object', $result);
-    }
-
-    public function testSanitizeContentStripsEmbedTags(): void
-    {
-        $input = '<embed src="evil.swf">';
-        $result = \FOSSBilling\Tools::sanitizeContent($input, false);
-        $this->assertStringNotContainsString('<embed', $result);
-    }
-
-    public function testSanitizeContentPreservesTextContent(): void
-    {
-        $input = 'Plain text with special chars: < > & " \' /';
-        $result = \FOSSBilling\Tools::sanitizeContent($input, false);
-        $this->assertStringNotContainsString('<', $result);
-        $this->assertStringNotContainsString('>', $result);
-    }
-}
+test('sanitize content preserves text content', function () {
+    $input = 'Plain text with special chars: < > & " \' /';
+    $result = \FOSSBilling\Tools::sanitizeContent($input, false);
+    expect($result)->not->toContain('<');
+    expect($result)->not->toContain('>');
+});
