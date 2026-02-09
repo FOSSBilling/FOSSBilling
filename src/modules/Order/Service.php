@@ -14,9 +14,23 @@ namespace Box\Mod\Order;
 use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\ServiceModuleInterface;
 
 class Service implements InjectionAwareInterface
 {
+    /**
+     * Core service types that have dedicated Model classes.
+     * These services use `load()` to return properly typed models.
+     */
+    public const CORE_SERVICES = [
+        \Model_ProductTable::APIKEY,
+        \Model_ProductTable::CUSTOM,
+        \Model_ProductTable::LICENSE,
+        \Model_ProductTable::DOWNLOADABLE,
+        \Model_ProductTable::HOSTING,
+        \Model_ProductTable::DOMAIN,
+    ];
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -207,21 +221,14 @@ class Service implements InjectionAwareInterface
     public function getOrderService(\Model_ClientOrder $order)
     {
         if ($order->service_id !== null) {
-            // @deprecated
-            // @todo remove this when doctrine is removed
-            $core_services = [
-                \Model_ProductTable::CUSTOM,
-                \Model_ProductTable::LICENSE,
-                \Model_ProductTable::DOWNLOADABLE,
-                \Model_ProductTable::HOSTING,
-                \Model_ProductTable::DOMAIN,
-            ];
-            if (in_array($order->service_type, $core_services)) {
+            // Return a Model_Service* class for core services
+            if (in_array($order->service_type, self::CORE_SERVICES)) {
                 $repo_class = $this->_getServiceClassName($order);
 
                 return $this->di['db']->load($repo_class, $order->service_id);
             }
 
+            // Return raw OODBBean as a fallback for non-core services
             return $this->di['db']->findOne(
                 'service_' . $order->service_type,
                 'id = :id',
@@ -894,43 +901,56 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->find('ClientOrder', 'group_id = :group_id AND client_id = :client_id and (group_master = 0 OR group_master IS NULL)', [':group_id' => $order->group_id, ':client_id' => $order->client_id]);
     }
 
-    protected function _callOnService(\Model_ClientOrder $order, $action)
+    /**
+     * Invoke a lifecycle action on the service module associated with an order.
+     *
+     * This method dispatches lifecycle actions (create, activate, renew, etc.) to the appropriate service module.
+     *
+     * @return mixed the result from the service module's action method, or null if the action is not supported
+     * @see ServiceModuleInterface for the contract that service modules should implement
+     */
+    protected function _callOnService(\Model_ClientOrder $order, string $action): mixed
     {
         $repo = $this->di['mod_service']('service' . $order->service_type);
-        // @deprecated
-        // @todo remove this when doctrine is removed
-        $core_services = [
-            \Model_ProductTable::CUSTOM,
-            \Model_ProductTable::LICENSE,
-            \Model_ProductTable::DOWNLOADABLE,
-            \Model_ProductTable::HOSTING,
-            \Model_ProductTable::DOMAIN,
-        ];
 
-        if (in_array($order->service_type, $core_services)) {
+        if ($repo instanceof ServiceModuleInterface) {
+            $m = 'action_' . $action;
+
+            return $repo->$m($order);
+        } else {
+            $this->di['logger']->warn("Service {$order->service_type} does not implement ServiceModuleInterface. Support for services not implementing the interface will be removed in a future version.");
+        }
+
+        /** @deprecated since v0.8.
+         * Fallback for services not implementing ServiceModuleInterface.
+         * Third-party service modules should implement ServiceModuleInterface as soon as possible.
+         * This fallback will be removed in a future version.
+         */
+        if (in_array($order->service_type, self::CORE_SERVICES)) {
             $m = 'action_' . $action;
             if (!method_exists($repo, $m) || !is_callable([$repo, $m])) {
                 throw new \FOSSBilling\Exception('Service ' . $order->service_type . ' do not support ' . $m);
             }
 
             return $repo->$m($order);
-        }
-        // @new logic for services
-        $o = $this->di['db']->findOne(
-            'client_order',
-            'id = :id',
-            [':id' => $order->id]
-        );
-        $service = null;
-        $sdbname = 'service_' . $order->service_type;
-        if ($order->service_id) {
-            $service = $this->di['db']->load($sdbname, $order->service_id);
-        }
-        if (method_exists($repo, $action) && is_callable([$repo, $action])) {
-            return $repo->$action($o, $service);
+        } else {
+            // @new logic for services
+            $o = $this->di['db']->findOne(
+                'client_order',
+                'id = :id',
+                [':id' => $order->id]
+            );
+            $service = null;
+            $sdbname = 'service_' . $order->service_type;
+            if ($order->service_id) {
+                $service = $this->di['db']->load($sdbname, $order->service_id);
+            }
+            if (method_exists($repo, $action) && is_callable([$repo, $action])) {
+                return $repo->$action($o, $service);
+            }
         }
 
-        error_log("Service {$order->service_type} does not support action {$action}.");
+        $this->di['logger']->debug("Service {$order->service_type} does not support action {$action}.");
 
         return null;
     }
