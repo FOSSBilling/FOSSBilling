@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 'PHP Build'
-        uses: FOSSBilling/.workflows/.github/actions/php-build@11c3d3bb2ce6915aa0fc8af3165402a65400b084
+        uses: FOSSBilling/.workflows/.github/actions/php-build@74c38ad88ce24f4751e1467524124c7c2cae4e07
         with:
           cache-deps: 'true'
           composer-args: '--prefer-dist --optimize-autoloader'
