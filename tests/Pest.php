@@ -46,7 +46,14 @@ if ($appUrl && $testApiKey) {
             \Tests\Helpers\ApiClient::setBaseUrl($appUrl);
             \Tests\Helpers\ApiClient::setApiKey($testApiKey);
         })
-        ->in('E2E');
+        ->in('E2E', '../src/modules/*/tests/E2E');
+} else {
+    // E2E tests require environment configuration
+    uses()
+        ->beforeEach(function () {
+            \PHPUnit\Framework\Assert::markTestSkipped('E2E tests require APP_URL and TEST_API_KEY environment variables');
+        })
+        ->in('E2E', '../src/modules/*/tests/E2E');
 }
 
 /*
