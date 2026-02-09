@@ -1,5 +1,4 @@
 import TomSelect from 'tom-select';
-
 globalThis.TomSelect = TomSelect;
 
 // Unified template function for TomSelect options
