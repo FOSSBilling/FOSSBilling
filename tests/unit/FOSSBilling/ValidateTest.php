@@ -10,248 +10,206 @@
 
 declare(strict_types=1);
 
-namespace FOSSBilling\Tests\Unit\FOSSBilling;
+dataset('domainProvider', function () {
+    return [
+        ['google', true],
+        ['example-domain', true],
+        ['a1', true],
+        ['123', true],
+        ['xn--bcher-kva', true],
+        ['subdomain', true],
+        ['qqq45%%%', false],
+        ['()1google', false],
+        ['//asdasd()()', false],
+        ['--asdasd()()', false],
+        ['', false],
+        ['sub.domain.example', false], // SLD cannot contain dots
+    ];
+});
 
-require_once __DIR__ . '/../../../src/load.php';
-require_once __DIR__ . '/../../../src/vendor/autoload.php';
+test('is sld valid', function (string $domain, bool $expected) {
+    $validate = new \FOSSBilling\Validate();
+    expect($validate->isSldValid($domain))->toEqual($expected);
+})->with('domainProvider');
 
-use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\Attributes\DataProvider;
+dataset('emailProvider', function () {
+    return [
+        ['test@example.com', true],
+        ['test.user@example.com', true],
+        ['test+tag@example.com', true],
+        ['test@subdomain.example.com', true],
+        ['test@example.co.uk', true],
+        ['invalid', false],
+        ['test@', false],
+        ['@example.com', false],
+        ['test example.com', false],
+    ];
+});
 
-final class ValidateTest extends TestCase
-{
-    public static function domainProvider(): array
-    {
-        return [
-            ['google', true],
-            ['example-domain', true],
-            ['a1', true],
-            ['123', true],
-            ['xn--bcher-kva', true],
-            ['subdomain', true],
-            ['qqq45%%%', false],
-            ['()1google', false],
-            ['//asdasd()()', false],
-            ['--asdasd()()', false],
-            ['', false],
-            ['sub.domain.example', false], // SLD cannot contain dots
-        ];
+test('is email valid using builtin filter', function (string $email, bool $expected) {
+    // Validate uses PHP's built-in filter_var for email validation
+    expect(filter_var($email, FILTER_VALIDATE_EMAIL) !== false)->toEqual($expected);
+})->with('emailProvider');
+
+dataset('requiredParamsProvider', function () {
+    return [
+        [
+            ['id' => 1, 'key' => 'value'],
+            ['id' => 'ID is required', 'key' => 'Key is required'],
+            [],
+            false, // expectException
+        ],
+        [
+            ['id' => 1],
+            ['id' => 'ID is required', 'key' => 'Key is required'],
+            [],
+            true, // expectException
+        ],
+        [
+            [],
+            ['id' => 'ID is required'],
+            [':id' => 1],
+            true, // expectException
+        ],
+    ];
+});
+
+test('check required params for array', function (array $data, array $required, array $variables, bool $expectException) {
+    $validate = new \FOSSBilling\Validate();
+
+    if ($expectException) {
+        expect(fn () => $validate->checkRequiredParamsForArray($required, $data, $variables))
+            ->toThrow(\FOSSBilling\Exception::class);
+    } else {
+        expect($validate->checkRequiredParamsForArray($required, $data, $variables))->toBeNull();
     }
+})->with('requiredParamsProvider');
 
-    #[DataProvider('domainProvider')]
-    public function testIsSldValid(string $domain, bool $expected): void
-    {
-        $validate = new \FOSSBilling\Validate();
-        $this->assertEquals($expected, $validate->isSldValid($domain));
-    }
+test('check required params passes with all required', function () {
+    $validate = new \FOSSBilling\Validate();
 
-    public static function emailProvider(): array
-    {
-        return [
-            ['test@example.com', true],
-            ['test.user@example.com', true],
-            ['test+tag@example.com', true],
-            ['test@subdomain.example.com', true],
-            ['test@example.co.uk', true],
-            ['invalid', false],
-            ['test@', false],
-            ['@example.com', false],
-            ['test example.com', false],
-        ];
-    }
+    $data = [
+        'id' => 1,
+        'name' => 'test',
+        'email' => 'test@example.com',
+    ];
 
-    #[DataProvider('emailProvider')]
-    public function testIsEmailValidUsingBuiltinFilter(string $email, bool $expected): void
-    {
-        // Validate uses PHP's built-in filter_var for email validation
-        $this->assertEquals($expected, filter_var($email, FILTER_VALIDATE_EMAIL) !== false);
-    }
+    $required = [
+        'id' => 'ID is required',
+        'name' => 'Name is required',
+        'email' => 'Email is required',
+    ];
 
-    public static function requiredParamsProvider(): array
-    {
-        return [
-            [
-                ['id' => 1, 'key' => 'value'],
-                ['id' => 'ID is required', 'key' => 'Key is required'],
-                [],
-                false, // expectException
-            ],
-            [
-                ['id' => 1],
-                ['id' => 'ID is required', 'key' => 'Key is required'],
-                [],
-                true, // expectException
-            ],
-            [
-                [],
-                ['id' => 'ID is required'],
-                [':id' => 1],
-                true, // expectException
-            ],
-        ];
-    }
+    expect($validate->checkRequiredParamsForArray($required, $data))->toBeNull();
+});
 
-    #[DataProvider('requiredParamsProvider')]
-    public function testCheckRequiredParamsForArray(array $data, array $required, array $variables, bool $expectException): void
-    {
-        $validate = new \FOSSBilling\Validate();
+test('check required params fails with missing key', function () {
+    $validate = new \FOSSBilling\Validate();
 
-        if ($expectException) {
-            $this->expectException(\FOSSBilling\Exception::class);
-            $validate->checkRequiredParamsForArray($required, $data, $variables);
-        } else {
-            $this->assertNull($validate->checkRequiredParamsForArray($required, $data, $variables));
-        }
-    }
+    $data = ['id' => 1];
+    $required = [
+        'id' => 'ID is required',
+        'name' => 'Name is required',
+    ];
 
-    public function testCheckRequiredParamsPassesWithAllRequired(): void
-    {
-        $validate = new \FOSSBilling\Validate();
+    expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
+        ->toThrow(\FOSSBilling\Exception::class, 'Name is required');
+});
 
-        $data = [
-            'id' => 1,
-            'name' => 'test',
-            'email' => 'test@example.com',
-        ];
+test('check required params fails with empty value', function () {
+    $validate = new \FOSSBilling\Validate();
 
-        $required = [
-            'id' => 'ID is required',
-            'name' => 'Name is required',
-            'email' => 'Email is required',
-        ];
+    $data = ['name' => ''];
+    $required = [
+        'name' => 'Name is required',
+    ];
 
-        $this->assertNull($validate->checkRequiredParamsForArray($required, $data));
-    }
+    expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
+        ->toThrow(\FOSSBilling\Exception::class, 'Name is required');
+});
 
-    public function testCheckRequiredParamsFailsWithMissingKey(): void
-    {
-        $validate = new \FOSSBilling\Validate();
+test('check required params fails with null value', function () {
+    $validate = new \FOSSBilling\Validate();
 
-        $data = ['id' => 1];
-        $required = [
-            'id' => 'ID is required',
-            'name' => 'Name is required',
-        ];
+    $data = ['name' => null];
+    $required = [
+        'name' => 'Name is required',
+    ];
 
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Name is required');
+    expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
+        ->toThrow(\FOSSBilling\Exception::class, 'Name is required');
+});
 
-        $validate->checkRequiredParamsForArray($required, $data);
-    }
+test('check required params with zero value passes', function () {
+    $validate = new \FOSSBilling\Validate();
 
-    public function testCheckRequiredParamsFailsWithEmptyValue(): void
-    {
-        $validate = new \FOSSBilling\Validate();
+    $data = ['amount' => 0];
+    $required = [
+        'amount' => 'Amount is required',
+    ];
 
-        $data = ['name' => ''];
-        $required = [
-            'name' => 'Name is required',
-        ];
+    expect($validate->checkRequiredParamsForArray($required, $data))->toBeNull();
+});
 
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Name is required');
+test('check required params with false value fails', function () {
+    $validate = new \FOSSBilling\Validate();
 
-        $validate->checkRequiredParamsForArray($required, $data);
-    }
+    $data = ['enabled' => false];
+    $required = [
+        'enabled' => 'Enabled flag is required',
+    ];
 
-    public function testCheckRequiredParamsFailsWithNullValue(): void
-    {
-        $validate = new \FOSSBilling\Validate();
+    expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
+        ->toThrow(\FOSSBilling\Exception::class, 'Enabled flag is required');
+});
 
-        $data = ['name' => null];
-        $required = [
-            'name' => 'Name is required',
-        ];
+test('check required params with custom error code', function () {
+    $validate = new \FOSSBilling\Validate();
 
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Name is required');
+    $data = [];
+    $required = ['id' => 'ID is required'];
+    $errorCode = 12345;
 
-        $validate->checkRequiredParamsForArray($required, $data);
-    }
-
-    public function testCheckRequiredParamsWithZeroValuePasses(): void
-    {
-        $validate = new \FOSSBilling\Validate();
-
-        $data = ['amount' => 0];
-        $required = [
-            'amount' => 'Amount is required',
-        ];
-
-        $this->assertNull($validate->checkRequiredParamsForArray($required, $data));
-    }
-
-    public function testCheckRequiredParamsWithFalseValueFails(): void
-    {
-        $validate = new \FOSSBilling\Validate();
-
-        $data = ['enabled' => false];
-        $required = [
-            'enabled' => 'Enabled flag is required',
-        ];
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Enabled flag is required');
-
-        $validate->checkRequiredParamsForArray($required, $data);
-    }
-
-    public function testCheckRequiredParamsWithCustomErrorCode(): void
-    {
-        $validate = new \FOSSBilling\Validate();
-
-        $data = [];
-        $required = ['id' => 'ID is required'];
-        $errorCode = 12345;
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionCode($errorCode);
-        $this->expectExceptionMessage('ID is required');
-
+    try {
         $validate->checkRequiredParamsForArray($required, $data, [], $errorCode);
+        expect(false)->toBeTrue('Expected exception was not thrown');
+    } catch (\FOSSBilling\Exception $e) {
+        expect($e->getCode())->toBe($errorCode);
+        expect($e->getMessage())->toBe('ID is required');
     }
+});
 
-    public function testCheckRequiredParamsWithMessagePlaceholder(): void
-    {
-        $validate = new \FOSSBilling\Validate();
+test('check required params with message placeholder', function () {
+    $validate = new \FOSSBilling\Validate();
 
-        $data = [];
-        $required = ['key' => 'Key :key must be set'];
-        $variables = [':key' => 'my_key'];
+    $data = [];
+    $required = ['key' => 'Key :key must be set'];
+    $variables = [':key' => 'my_key'];
 
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Key my_key must be set');
+    expect(fn () => $validate->checkRequiredParamsForArray($required, $data, $variables))
+        ->toThrow(\FOSSBilling\Exception::class, 'Key my_key must be set');
+});
 
-        $validate->checkRequiredParamsForArray($required, $data, $variables);
-    }
+test('check required params with multiple placeholders', function () {
+    $validate = new \FOSSBilling\Validate();
 
-    public function testCheckRequiredParamsWithMultiplePlaceholders(): void
-    {
-        $validate = new \FOSSBilling\Validate();
+    $data = [];
+    $required = ['key' => 'Key :key must be set for array :array'];
+    $variables = [
+        ':key' => 'my_key',
+        ':array' => 'config',
+    ];
 
-        $data = [];
-        $required = ['key' => 'Key :key must be set for array :array'];
-        $variables = [
-            ':key' => 'my_key',
-            ':array' => 'config',
-        ];
+    expect(fn () => $validate->checkRequiredParamsForArray($required, $data, $variables))
+        ->toThrow(\FOSSBilling\Exception::class, 'Key my_key must be set for array config');
+});
 
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Key my_key must be set for array config');
+test('check required params with whitespace fails', function () {
+    $validate = new \FOSSBilling\Validate();
 
-        $validate->checkRequiredParamsForArray($required, $data, $variables);
-    }
+    $data = ['name' => '   '];
+    $required = ['name' => 'Name is required'];
 
-    public function testCheckRequiredParamsWithWhitespaceFails(): void
-    {
-        $validate = new \FOSSBilling\Validate();
-
-        $data = ['name' => '   '];
-        $required = ['name' => 'Name is required'];
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Name is required');
-
-        $validate->checkRequiredParamsForArray($required, $data);
-    }
-}
+    expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
+        ->toThrow(\FOSSBilling\Exception::class, 'Name is required');
+});
