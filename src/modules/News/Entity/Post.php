@@ -123,7 +123,7 @@ class Post implements ApiArrayInterface, TimestampInterface
         $this->updatedAt = new \DateTime();
     }
 
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
     }
@@ -193,7 +193,6 @@ class Post implements ApiArrayInterface, TimestampInterface
         return $this->expiresAt;
     }
 
-    // --- Setters ---
     public function setAdminId(int $adminId): self
     {
         $this->admin_id = $adminId;

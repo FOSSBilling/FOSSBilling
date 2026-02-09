@@ -214,20 +214,6 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Create new public inquiry.
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['name' => 'Name is required', 'email' => 'Email is required', 'subject' => 'Subject is required', 'message' => 'Message is required'])]
-    public function public_ticket_create(array $data): int
-    {
-        $data['subject'] = \FOSSBilling\Tools::sanitizeContent($data['subject'], false);
-        $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
-
-        return $this->getService()->publicTicketCreate($data, $this->getIdentity());
-    }
-
-    /**
      * Get inquiry details.
      *
      * @throws \FOSSBilling\Exception
@@ -251,6 +237,17 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->publicRm($model);
+    }
+
+    /**
+     * Create new public inquiry.
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    #[RequiredParams(['name' => 'Name is required', 'email' => 'Email is required', 'subject' => 'Subject is required', 'message' => 'Message is required'])]
+    public function public_ticket_create(array $data): int
+    {
+        return $this->getService()->publicTicketCreate($data, $this->getIdentity());
     }
 
     /**
@@ -500,6 +497,17 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Create new canned response category.
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    #[RequiredParams(['title' => 'Category title is required'])]
+    public function canned_category_create(array $data): int
+    {
+        return $this->getService()->cannedCategoryCreate($data['title']);
+    }
+
+    /**
      * Get canned response category.
      *
      * @optional string $title - new category title
@@ -527,19 +535,6 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
 
         return $this->getService()->cannedCategoryRm($model);
-    }
-
-    /**
-     * Create canned response category.
-     *
-     * @return int - new category id
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['title' => 'Canned category title is missing'])]
-    public function canned_category_create(array $data): int
-    {
-        return $this->getService()->cannedCategoryCreate($data['title']);
     }
 
     /**

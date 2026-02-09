@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Helpers;
@@ -14,7 +22,7 @@ function model(string $class, array $attributes = []): object
 
     // Handle RedBeanPHP models
     if (method_exists($instance, 'loadBean')) {
-        $instance->loadBean(new \DummyBean());
+        $instance->loadBean(new DummyBean());
     }
 
     foreach ($attributes as $key => $value) {
@@ -50,7 +58,7 @@ function product(array $attributes = []): object
         'id' => random_int(1, 10000),
         'title' => 'Test Product',
         'type' => \Model_ProductTable::CUSTOM,
-        'status' => \Model_ProductTable::STATUS_ACTIVE,
+        'status' => \Model_Product::STATUS_ENABLED,
         'created_at' => date('Y-m-d H:i:s'),
         'updated_at' => date('Y-m-d H:i:s'),
     ];
@@ -68,7 +76,7 @@ function client(array $attributes = []): object
         'email' => 'test' . uniqid() . '@example.com',
         'first_name' => 'Test',
         'last_name' => 'User',
-        'status' => \Model_ClientTable::STATUS_ACTIVE,
+        'status' => \Model_Client::ACTIVE,
         'created_at' => date('Y-m-d H:i:s'),
         'updated_at' => date('Y-m-d H:i:s'),
     ];
@@ -85,7 +93,7 @@ function admin(array $attributes = []): object
         'id' => random_int(1, 10000),
         'email' => 'admin' . uniqid() . '@example.com',
         'name' => 'Admin User',
-        'status' => \Model_AdminTable::STATUS_ACTIVE,
+        'status' => \Model_Admin::STATUS_ACTIVE,
     ];
 
     return model(\Model_Admin::class, array_merge($defaults, $attributes));

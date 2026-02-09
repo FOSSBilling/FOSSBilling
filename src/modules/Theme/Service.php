@@ -19,7 +19,9 @@ use Symfony\Component\Finder\Finder;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    private readonly Filesystem $filesystem;
+    public function __construct(private readonly Filesystem $filesystem = new Filesystem())
+    {
+    }
 
     /**
      * In-request cache for the current admin theme name.
@@ -29,7 +31,7 @@ class Service implements InjectionAwareInterface
     private static ?string $adminThemeCache = null;
     /**
      * In-request cache for the current client theme name.
-     * This cache is used to avoid repeated lookups during a single request.
+     * This cache is used to store theme information during a single request.
      * It is cleared whenever theme settings are changed by calling clearThemeCache().
      */
     private static ?string $clientThemeCache = null;
@@ -42,11 +44,6 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
-    }
-
-    public function __construct()
-    {
-        $this->filesystem = new Filesystem();
     }
 
     /**

@@ -46,7 +46,6 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($entry);
     }
 
-    /** EVENTS  **/
     public static function onAfterClientLogin(\Box_Event $event): void
     {
         $params = $event->getParameters();

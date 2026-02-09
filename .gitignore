@@ -14,10 +14,6 @@ DOCKER_ENV
 docker_tag
 Dockerfile-php-build
 
-### phpunit/phpunit ###
-.phpunit.result.cache
-.phpunit.cache/test-results
-
 ### node_modules ###
 node_modules
 
