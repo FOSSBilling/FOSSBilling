@@ -58,26 +58,30 @@ class Box_Translate
         _bind_textdomain_codeset($this->domain, $codeset);
         _textdomain($this->domain);
 
-        function __trans(string $msgid, ?array $values = null): string
-        {
-            $translated = _gettext($msgid);
+        if (!function_exists('__trans')) {
+            function __trans(string $msgid, ?array $values = null): string
+            {
+                $translated = _gettext($msgid);
 
-            if (is_array($values)) {
-                $translated = strtr($translated, $values);
+                if (is_array($values)) {
+                    $translated = strtr($translated, $values);
+                }
+
+                return $translated;
             }
-
-            return $translated;
         }
 
-        function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null): string
-        {
-            $translated = _ngettext($msgid, $msgidPlural, $number);
+        if (!function_exists('__pluralTrans')) {
+            function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null): string
+            {
+                $translated = _ngettext($msgid, $msgidPlural, $number);
 
-            if (is_array($values)) {
-                $translated = strtr($translated, $values);
+                if (is_array($values)) {
+                    $translated = strtr($translated, $values);
+                }
+
+                return $translated;
             }
-
-            return $translated;
         }
     }
 
