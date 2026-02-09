@@ -1,51 +1,53 @@
 <?php
 
+/**
+ * Copyright 2022-2025 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
 declare(strict_types=1);
 
-namespace FOSSBilling\Tests\E2E\HealthChecks;
+use function Tests\Helpers\assertApiSuccess;
+use function Tests\Helpers\assertApiResultIsArray;
 
-use FOSSBilling\Tests\Library\E2E\TestCase;
-use FOSSBilling\Tests\Library\E2E\ApiClient;
+$testUrls = [
+    '' => 200,
+    'order' => 200,
+    'news' => 200,
+    'privacy-policy' => 200,
+    'sitemap.xml' => 200,
+    'contact-us' => 200,
+    'login' => 200,
+    'signup' => 200,
+    'password-reset' => 200,
+];
 
-final class ApiTest extends TestCase
-{
-    private array $testUrls = [
-        '' => 200,
-        'order' => 200,
-        'news' => 200,
-        'privacy-policy' => 200,
-        'sitemap.xml' => 200,
-        'contact-us' => 200,
-        'login' => 200,
-        'signup' => 200,
-        'password-reset' => 200,
-    ];
+test('urls return ok status', function () use ($testUrls) {
+    $baseUrl = getenv('APP_URL') ?: 'http://localhost';
+    $baseUrl = rtrim($baseUrl, '/');
 
-    public function testUrlsReturnOkStatus(): void
-    {
-        $baseUrl = $this->getBaseUrl();
-        foreach ($this->testUrls as $url => $expectedCode) {
-            $ch = curl_init($baseUrl . $url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_exec($ch);
-            $responseCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+    foreach ($testUrls as $url => $expectedCode) {
+        $ch = curl_init($baseUrl . '/' . $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_exec($ch);
+        $responseCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
-            $this->assertEquals($expectedCode, $responseCode, "URL '{$url}' should return {$expectedCode}");
-        }
+        expect($responseCode)->toEqual($expectedCode, "URL '{$url}' should return {$expectedCode}");
     }
+});
 
-    public function testApiIsFunctional(): void
-    {
-        $result = ApiClient::request('guest/system/company');
-        $this->assertApiSuccess($result);
-        $this->assertIsArray($result->getResult());
-    }
+test('api is functional', function () {
+    $result = \Tests\Helpers\ApiClient::request('guest/system/company');
+    assertApiSuccess($result);
+    expect($result->getResult())->toBeArray();
+});
 
-    public function testSystemIsUpToDate(): void
-    {
-        $result = ApiClient::request('admin/system/is_behind_on_patches');
-        $this->assertApiSuccess($result);
-        $this->assertFalse($result->getResult());
-    }
-}
+test('system is up to date', function () {
+    $result = \Tests\Helpers\ApiClient::request('admin/system/is_behind_on_patches');
+    assertApiSuccess($result);
+    expect($result->getResult())->toBeFalse();
+});
