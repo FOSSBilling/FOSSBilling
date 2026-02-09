@@ -1,6 +1,4 @@
 import TomSelect from 'tom-select';
-import { getCSRFToken } from './utils';
-
 globalThis.TomSelect = TomSelect;
 
 // Unified template function for TomSelect options
