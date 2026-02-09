@@ -18,7 +18,6 @@
     "homepage": "https://fossbilling.org",
     "scripts": {
         "test": "pest",
-        "pest": "pest",
         "phpstan": "phpstan analyze --memory-limit=512M",
         "phpstan:baseline": "phpstan analyze --generate-baseline",
         "cs:check": "php-cs-fixer fix --dry-run --diff",
@@ -87,8 +86,8 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.92.3",
+        "mockery/mockery": "^1.6",
         "pestphp/pest": "^4.0",
-        "pestphp/pest-plugin-drift": "^4.0",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan": "^2.1.33",
         "phpstan/phpstan-deprecation-rules": "^2.0.3",
@@ -97,7 +96,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
+            "Tests\\": "tests/",
+            "Tests\\Modules\\": "src/modules/"
         }
     },
     "config": {

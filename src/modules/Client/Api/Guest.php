@@ -184,11 +184,15 @@ class Guest extends \Api_Abstract
 
         $emailService = $this->di['mod_service']('email');
 
-        // Send the email if the reset request has the same created_at and updated_at or if at least 1 full minute has passed since the last request.
-        if ($reset->created_at == $reset->updated_at) {
-            $emailService->sendTemplate($email);
-        } elseif (strtotime((string) $reset->updated_at) - time() + 60 < 0) {
-            $emailService->sendTemplate($email);
+        // Send email if reset request has same created_at and updated_at or if at least 1 full minute has passed since the last request.
+        try {
+            if ($reset->created_at == $reset->updated_at) {
+                $emailService->sendTemplate($email);
+            } elseif (strtotime((string) $reset->updated_at) - time() + 60 < 0) {
+                $emailService->sendTemplate($email);
+            }
+        } catch (\Exception $exc) {
+            $this->di['logger']->err($exc->getMessage());
         }
 
         // update the client password reset time
@@ -225,11 +229,15 @@ class Guest extends \Api_Abstract
         $this->di['logger']->info('Client requested password reset. Sent to email %s', $c->email);
 
         // send email
-        $email = [];
-        $email['to_client'] = $c->id;
-        $email['code'] = 'mod_client_password_reset_information';
-        $emailService = $this->di['mod_service']('email');
-        $emailService->sendTemplate($email);
+        try {
+            $email = [];
+            $email['to_client'] = $c->id;
+            $email['code'] = 'mod_client_password_reset_information';
+            $emailService = $this->di['mod_service']('email');
+            $emailService->sendTemplate($email);
+        } catch (\Exception $exc) {
+            $this->di['logger']->err($exc->getMessage());
+        }
 
         $this->di['db']->trash($reset);
         $this->di['events_manager']->fire(['event' => 'onAfterClientProfilePasswordReset', 'params' => ['id' => $c->id]]);

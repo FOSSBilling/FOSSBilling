@@ -791,7 +791,6 @@ class Service implements InjectionAwareInterface
     {
         $staff_service = $this->di['mod_service']('Staff');
 
-        // The module isn't active or has no permissions if this is the case, so continue as normal
         if (!$this->isExtensionActive('mod', $module)) {
             return;
         }

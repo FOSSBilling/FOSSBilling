@@ -79,9 +79,8 @@ globalThis.FOSSBilling = {
     }
     return null;
   }
-};
+  };
 
-  //===== Global ajax methods =====//
   document.addEventListener('DOMContentLoaded', function() {
     // Global error handler for unhandled Promise rejections
     window.addEventListener('unhandledrejection', function(event) {
@@ -115,8 +114,8 @@ globalThis.FOSSBilling = {
     // Initialize backToTop
     FOSSBilling.backToTop = backToTop;
     FOSSBilling.backToTop();
+    });
 
-    //===== Form elements styling =====//
     document.addEventListener("click", function(event) {
       const target = event.target;
       if (target.matches("div.msg span.close") || target.closest("div.msg span.close")) {
@@ -140,7 +139,6 @@ globalThis.FOSSBilling = {
       }
     });
 
-    //===== Information boxes =====//
     document.querySelectorAll('.hideit').forEach(element => {
       element.addEventListener('click', function() {
         // Simple fade out effect

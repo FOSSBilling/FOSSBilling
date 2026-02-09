@@ -80,7 +80,7 @@ class Currency implements ApiArrayInterface, TimestampInterface
         $this->updatedAt = new \DateTime();
     }
 
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
     }
@@ -134,7 +134,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
         return $this->updatedAt;
     }
 
-    // --- Setters ---
     public function setTitle(?string $title): self
     {
         $this->title = $title;

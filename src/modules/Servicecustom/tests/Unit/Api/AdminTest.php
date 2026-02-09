@@ -1,0 +1,133 @@
+<?php
+
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+declare(strict_types=1);
+
+use Box\Mod\Servicecustom\Api\Admin;
+use Box\Mod\Servicecustom\Service;
+
+beforeEach(function () {
+    $this->api = new Admin();
+});
+
+test('updates configuration', function () {
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('updateConfig')
+        ->atLeast()->once();
+
+    $data = [
+        'order_id' => 1,
+        'config' => [
+            'param1' => 'value1',
+        ],
+    ];
+
+    $this->api->setService($serviceMock);
+    $this->api->update($data);
+});
+
+test('throws exception when updating without order_id', function () {
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('updateConfig')
+        ->never();
+
+    $data = [
+        'config' => [
+            'param1' => 'value1',
+        ],
+    ];
+
+    $this->api->setService($serviceMock);
+
+    expect(fn () => $this->api->update($data))
+        ->toThrow(\Exception::class);
+});
+
+test('returns true when updating without config', function () {
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('updateConfig')
+        ->never();
+
+    $data = [
+        'order_id' => 1,
+    ];
+
+    $this->api->setService($serviceMock);
+    $result = $this->api->update($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('returns true when config is not an array', function () {
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('updateConfig')
+        ->never();
+
+    $data = [
+        'order_id' => 1,
+        'config' => 'NotArray',
+    ];
+
+    $this->api->setService($serviceMock);
+    $result = $this->api->update($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('calls magic method', function () {
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getServiceCustomByOrderId')
+        ->atLeast()->once()
+        ->andReturn(new \Model_ServiceCustom());
+    $serviceMock->shouldReceive('customCall')
+        ->atLeast()->once()
+        ->andReturn(null);
+
+    $arguments = [
+        0 => [
+            'order_id' => 1,
+        ],
+    ];
+
+    $this->api->setService($serviceMock);
+    $this->api->__call('delete', $arguments);
+});
+
+test('throws exception when calling magic method without arguments', function () {
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getServiceCustomByOrderId')
+        ->never();
+    $serviceMock->shouldReceive('customCall')
+        ->never();
+
+    $arguments = [];
+
+    $this->api->setService($serviceMock);
+
+    expect(fn () => $this->api->__call('delete', $arguments))
+        ->toThrow(\Exception::class);
+});
+
+test('throws exception when calling magic method without order_id', function () {
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getServiceCustomByOrderId')
+        ->never();
+    $serviceMock->shouldReceive('customCall')
+        ->never();
+
+    $arguments = [
+        0 => [],
+    ];
+
+    $this->api->setService($serviceMock);
+
+    expect(fn () => $this->api->__call('delete', $arguments))
+        ->toThrow(\Exception::class);
+});

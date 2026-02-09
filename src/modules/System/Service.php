@@ -27,11 +27,9 @@ use Symfony\Contracts\Cache\ItemInterface;
 class Service
 {
     protected ?Container $di = null;
-    private readonly Filesystem $filesystem;
 
-    public function __construct()
+    public function __construct(private readonly ?Filesystem $filesystem = new Filesystem())
     {
-        $this->filesystem = new Filesystem();
     }
 
     public function setDi(Container $di): void

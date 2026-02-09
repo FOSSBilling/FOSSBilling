@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<dataset>
-    <currency id="1" title="Dollar" code="USD" is_default="1" conversion_rate="1" format="${{price}}" price_format="2" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
-    <currency id="2" title="Euro" code="EUR" is_default="0" conversion_rate="0.75" format="{{price}} EUR" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
-</dataset>
