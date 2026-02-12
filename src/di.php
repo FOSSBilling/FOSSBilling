@@ -311,7 +311,7 @@ $di['twig'] = $di->factory(function () use ($di) {
         $csrfToken = bin2hex(random_bytes(32));
         $session->set('csrf_token', $csrfToken);
     }
-    setcookie('csrf_token', $csrfToken, [
+    setcookie('csrf_token', (string) $csrfToken, [
         'expires' => 0,
         'path' => '/',
         'samesite' => 'Strict',

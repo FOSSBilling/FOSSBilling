@@ -253,7 +253,7 @@ final class ServiceTest extends \BBTestCase
 
         // Create cache directory with .gitkeep
         if (!is_dir($cacheDir)) {
-            mkdir($cacheDir, 0755, true);
+            mkdir($cacheDir, 0o755, true);
         }
 
         $gitkeepFile = $cacheDir . '/.gitkeep';
