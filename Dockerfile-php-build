@@ -1,0 +1,2 @@
+FROM php:cli-alpine
+RUN apk add --update --no-cache bash coreutils git make openssh patch unzip zip

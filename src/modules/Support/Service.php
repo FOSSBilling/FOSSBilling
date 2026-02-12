@@ -701,7 +701,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function normalizeIds(array $ids): array
     {
-        return array_values(array_unique(array_map('intval', array_filter($ids, 'is_numeric'))));
+        return array_values(array_unique(array_map(intval(...), array_filter($ids, is_numeric(...)))));
     }
 
     private function orderRowsByIds(array $rows, array $ids): array
