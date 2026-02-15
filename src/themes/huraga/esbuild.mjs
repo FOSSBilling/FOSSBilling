@@ -239,6 +239,7 @@ async function watch() {
       '.ttf': 'file',
       '.eot': 'file'
     },
+    plugins: [sassPlugin(nodeModulesDir, isProduction)],
     minify: isProduction,
     sourcemap: !isProduction,
     logLevel: 'info'
