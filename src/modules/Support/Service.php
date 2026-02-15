@@ -977,7 +977,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $ticket = $this->di['db']->dispense('SupportPTicket');
-        $ticket->hash = bin2hex(random_bytes(random_int(100, 127)));
+        $ticket->hash = bin2hex(random_bytes(random_int(15, 30)));
         $ticket->author_name = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject = $subject;
@@ -1374,7 +1374,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminPublicTicketOpen', 'params' => $data]);
 
         $ticket = $this->di['db']->dispense('SupportPTicket');
-        $ticket->hash = bin2hex(random_bytes(random_int(100, 127)));
+        $ticket->hash = bin2hex(random_bytes(random_int(15, 30)));
         $ticket->author_name = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject = $data['subject'];
