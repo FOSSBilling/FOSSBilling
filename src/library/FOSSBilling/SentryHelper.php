@@ -44,7 +44,6 @@ class SentryHelper
         'embed',
         'extension',
         'formbuilder',
-        'hook',
         'index',
         'invoice',
         'massmailer',

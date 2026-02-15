@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Spamchecker;
 
+use Box\Mod\Client\Event\BeforeClientSignUpEvent;
+use Box\Mod\Support\Event\BeforeGuestPublicTicketOpenEvent;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -25,9 +27,11 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testOnBeforeClientSignUp(): void
+    public function testRunSignupChecks(): void
     {
-        $spamCheckerService = $this->createMock(Service::class);
+        $spamCheckerService = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['isBlockedIp', 'isSpam', 'isTemp'])
+            ->getMock();
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isBlockedIp');
         $spamCheckerService->expects($this->atLeastOnce())
@@ -35,18 +39,21 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $spamCheckerService);
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
 
-        $this->service->onBeforeClientSignUp($boxEventMock);
+        $event = new BeforeClientSignUpEvent(
+            email: 'test@example.com',
+            ip: '127.0.0.1',
+        );
+
+        $spamCheckerService->setDi($di);
+        $spamCheckerService->runSignupChecks($event);
     }
 
-    public function testOnBeforeGuestPublicTicketOpen(): void
+    public function testRunGuestTicketChecks(): void
     {
-        $spamCheckerService = $this->createMock(Service::class);
+        $spamCheckerService = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['isBlockedIp', 'isSpam', 'isTemp'])
+            ->getMock();
         $spamCheckerService->expects($this->atLeastOnce())
             ->method('isBlockedIp');
         $spamCheckerService->expects($this->atLeastOnce())
@@ -54,13 +61,15 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $spamCheckerService);
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
 
-        $this->service->onBeforeGuestPublicTicketOpen($boxEventMock);
+        $event = new BeforeGuestPublicTicketOpenEvent(
+            email: 'test@example.com',
+            ip: '127.0.0.1',
+            subject: 'Test',
+        );
+
+        $spamCheckerService->setDi($di);
+        $spamCheckerService->runGuestTicketChecks($event);
     }
 
     public function testIsBlockedIpIpNotBlocked(): void
@@ -79,13 +88,16 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
+        $this->service->setDi($di);
 
-        $this->service->isBlockedIp($boxEventMock);
+        $event = new BeforeClientSignUpEvent(
+            email: 'test@example.com',
+            ip: $clientIp,
+        );
+
+        // Should not throw exception since IP is not blocked
+        $this->service->isBlockedIp($event);
+        $this->assertTrue(true); // Test passes if no exception was thrown
     }
 
     public function testIsBlockedIpBlockIpsNotEnabled(): void
@@ -101,13 +113,16 @@ final class ServiceTest extends \BBTestCase
             }
         });
 
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
+        $this->service->setDi($di);
 
-        $this->service->isBlockedIp($boxEventMock);
+        $event = new BeforeClientSignUpEvent(
+            email: 'test@example.com',
+            ip: '127.0.0.1',
+        );
+
+        // Should not throw exception since blocking is disabled
+        $this->service->isBlockedIp($event);
+        $this->assertTrue(true); // Test passes if no exception was thrown
     }
 
     public function dataProviderSpamResponses(): array

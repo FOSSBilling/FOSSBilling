@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Staff\Controller;
 
+use Box\Mod\Staff\Event\BeforePasswordResetStaffEvent;
 use FOSSBilling\InjectionAwareInterface;
 
 class Admin implements InjectionAwareInterface
@@ -112,7 +113,7 @@ class Admin implements InjectionAwareInterface
     public function get_updatepassword(\Box_App $app, $hash): string
     {
         $data = [];
-        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+        $this->di['event_dispatcher']->dispatch(new BeforePasswordResetStaffEvent());
         $mod = $this->di['mod']('staff');
         $config = $mod->getConfig();
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {

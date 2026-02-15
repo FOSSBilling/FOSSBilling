@@ -11,7 +11,11 @@
 
 namespace Box\Mod\Activity;
 
+use Box\Mod\Client\Event\AfterClientLoginEvent;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+use Box\Mod\Staff\Event\AfterAdminLoginEvent;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
 {
@@ -47,50 +51,46 @@ class Service implements InjectionAwareInterface
     }
 
     /** EVENTS  **/
-    public static function onAfterClientLogin(\Box_Event $event): void
+    #[AsEventListener(event: AfterClientLoginEvent::class)]
+    public function logClientLoginHistory(AfterClientLoginEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
-        $extensionService = $di['mod_service']('extension');
+        $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             $ip = null;
         } else {
-            $ip = $params['ip'];
+            $ip = $event->ip;
         }
 
-        $log = $di['db']->dispense('ActivityClientHistory');
-        $log->client_id = $params['id'];
+        $log = $this->di['db']->dispense('ActivityClientHistory');
+        $log->client_id = $event->clientId;
         $log->ip = $ip;
         $log->created_at = date('Y-m-d H:i:s');
 
-        $di['db']->store($log);
+        $this->di['db']->store($log);
     }
 
-    public static function onAfterAdminLogin(\Box_Event $event): void
+    #[AsEventListener(event: AfterAdminLoginEvent::class)]
+    public function logAdminLoginHistory(AfterAdminLoginEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
-        $extensionService = $di['mod_service']('extension');
+        $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             $ip = null;
         } else {
-            $ip = $params['ip'];
+            $ip = $event->ip;
         }
 
-        $log = $di['db']->dispense('ActivityAdminHistory');
-        $log->admin_id = $params['id'];
+        $log = $this->di['db']->dispense('ActivityAdminHistory');
+        $log->admin_id = $event->adminId;
         $log->ip = $ip;
         $log->created_at = date('Y-m-d H:i:s');
 
-        $di['db']->store($log);
+        $this->di['db']->store($log);
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): void
+    #[AsEventListener(event: BeforeAdminCronRunEvent::class)]
+    public function onBeforeAdminCronRun(BeforeAdminCronRunEvent $event): void
     {
-        $di = $event->getDi();
-        $config = $di['mod_service']('extension')->getConfig('mod_activity');
+        $config = $this->di['mod_service']('extension')->getConfig('mod_activity');
 
         $retention = intval($config['max_age'] ?? 90);
         $emailRetention = intval($config['email_max_age'] ?? 0);
@@ -104,13 +104,13 @@ class Service implements InjectionAwareInterface
 
         try {
             if ($retention !== 0) {
-                $di['db']->exec('DELETE FROM activity_admin_history WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
-                $di['db']->exec('DELETE FROM activity_client_history WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
-                $di['db']->exec('DELETE FROM activity_system WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
+                $this->di['db']->exec('DELETE FROM activity_admin_history WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
+                $this->di['db']->exec('DELETE FROM activity_client_history WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
+                $this->di['db']->exec('DELETE FROM activity_system WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
             }
 
             if ($emailRetention !== 0) {
-                $di['db']->exec('DELETE FROM activity_client_email WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $emailAgeInSeconds)]);
+                $this->di['db']->exec('DELETE FROM activity_client_email WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $emailAgeInSeconds)]);
             }
         } catch (\Exception $e) {
             error_log($e->getMessage());

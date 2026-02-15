@@ -263,9 +263,9 @@ final class ServiceTest extends \BBTestCase
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \DummyBean());
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        method('dispatch');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -274,7 +274,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $this->service->setDi($di);
         $result = $this->service->reset($serviceLicenseModel);

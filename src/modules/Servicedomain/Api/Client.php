@@ -11,6 +11,9 @@
 
 namespace Box\Mod\Servicedomain\Api;
 
+use Box\Mod\Servicedomain\Event\AfterClientChangeNameserversEvent;
+use Box\Mod\Servicedomain\Event\BeforeClientChangeNameserversEvent;
+
 /**
  * Domain service management.
  */
@@ -28,11 +31,11 @@ class Client extends \Api_Abstract
     {
         $s = $this->_getService($data);
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientChangeNameservers', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new BeforeClientChangeNameserversEvent(data: $data));
 
         $this->getService()->updateNameservers($s, $data);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterClientChangeNameservers', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new AfterClientChangeNameserversEvent(data: $data));
 
         return true;
     }

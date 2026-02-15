@@ -15,6 +15,7 @@
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Invoice\Event\BeforeAdminTransactionProcessEvent;
 use FOSSBilling\InformationException;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -357,7 +358,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
 
         $output = null;
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionProcess', 'params' => ['id' => $model->id]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminTransactionProcessEvent(transactionId: $model->id));
 
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
 

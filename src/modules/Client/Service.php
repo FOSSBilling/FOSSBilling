@@ -11,9 +11,16 @@
 
 namespace Box\Mod\Client;
 
+use Box\Mod\Client\Event\AfterAdminClientCreateEvent;
+use Box\Mod\Client\Event\AfterClientSignUpEvent;
+use Box\Mod\Client\Event\BeforeAdminClientCreateEvent;
+use Box\Mod\Client\Event\BeforeClientSignUpEvent;
+use Box\Mod\Client\Event\BeforePasswordResetClientEvent;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
 {
@@ -57,33 +64,6 @@ class Service implements InjectionAwareInterface
         $db->store($meta);
 
         return $this->di['tools']->url('/client/confirm-email/' . $hash);
-    }
-
-    public static function onAfterClientSignUp(\Box_Event $event): bool
-    {
-        $di = $event->getDi();
-        $params = $event->getParameters();
-        $config = $di['mod_config']('client');
-        $emailService = $di['mod_service']('email');
-
-        try {
-            $email = [];
-            $email['to_client'] = $params['id'];
-            $email['code'] = 'mod_client_signup';
-            $email['password'] = __trans('The password you chose when creating your account.');
-            $email['require_email_confirmation'] = false;
-            if (isset($config['require_email_confirmation']) && $config['require_email_confirmation']) {
-                $clientService = $di['mod_service']('client');
-                $email['require_email_confirmation'] = true;
-                $email['email_confirmation_link'] = $clientService->generateEmailConfirmationLink($params['id']);
-            }
-
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            error_log($exc->getMessage());
-        }
-
-        return true;
     }
 
     public function getSearchQuery($data, $selectStmt = 'SELECT c.*'): array
@@ -199,6 +179,29 @@ class Service implements InjectionAwareInterface
             'name' => $model->getFullName(),
             'role' => $model->role,
         ];
+    }
+
+    #[AsEventListener(event: AfterClientSignUpEvent::class)]
+    public function onAfterClientSignUp(AfterClientSignUpEvent $event): void
+    {
+        $config = $this->di['mod_config']('client');
+        $emailService = $this->di['mod_service']('email');
+
+        try {
+            $email = [];
+            $email['to_client'] = $event->clientId;
+            $email['code'] = 'mod_client_signup';
+            $email['password'] = __trans('The password you chose when creating your account.');
+            $email['require_email_confirmation'] = false;
+            if (isset($config['require_email_confirmation']) && $config['require_email_confirmation']) {
+                $email['require_email_confirmation'] = true;
+                $email['email_confirmation_link'] = $this->generateEmailConfirmationLink($event->clientId);
+            }
+
+            $emailService->sendTemplate($email);
+        } catch (\Exception $exc) {
+            error_log($exc->getMessage());
+        }
     }
 
     public function emailAlreadyRegistered($new_email, ?\Model_Client $model = null)
@@ -546,9 +549,25 @@ class Service implements InjectionAwareInterface
 
     public function adminCreateClient(array $data)
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminCreateClient', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminClientCreateEvent(
+            email: $data['email'] ?? '',
+            firstName: $data['first_name'] ?? null,
+            lastName: $data['last_name'] ?? null,
+            password: $data['password'] ?? null,
+            data: $data
+        ));
+
         $client = $this->createClient($data);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminCreateClient', 'params' => ['id' => $client->id, 'password' => $data['password']]]);
+
+        $this->di['event_dispatcher']->dispatch(new AfterAdminClientCreateEvent(
+            clientId: $client->id,
+            email: $client->email,
+            firstName: $client->first_name,
+            lastName: $client->last_name,
+            password: $data['password'] ?? null,
+            data: $data
+        ));
+
         $this->di['logger']->info('Created new client #%s', $client->id);
 
         return $client->id;
@@ -556,17 +575,28 @@ class Service implements InjectionAwareInterface
 
     public function guestCreateClient(array $data)
     {
-        $event_params = $data;
-        $event_params['ip'] = $this->di['request']->getClientIp();
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientSignUp', 'params' => $event_params]);
+        $ip = $this->di['request']->getClientIp();
 
-        $data['ip'] = $this->di['request']->getClientIp();
+        $this->di['event_dispatcher']->dispatch(new BeforeClientSignUpEvent(
+            email: $data['email'] ?? '',
+            ip: $ip,
+            firstName: $data['first_name'] ?? null,
+            lastName: $data['last_name'] ?? null,
+            password: $data['password'] ?? null,
+        ));
+
+        $data['ip'] = $ip;
         $data['status'] = \Model_Client::ACTIVE;
         $client = $this->createClient($data);
 
-        $event_params['id'] = $client->id;
-
-        $this->di['events_manager']->fire(['event' => 'onAfterClientSignUp', 'params' => $event_params]);
+        $this->di['event_dispatcher']->dispatch(new AfterClientSignUpEvent(
+            clientId: $client->id,
+            email: $client->email,
+            ip: $ip,
+            firstName: $client->first_name,
+            lastName: $client->last_name,
+            password: $data['password'] ?? null,
+        ));
         $this->di['logger']->info('Client #%s signed up', $client->id);
 
         return $client;
@@ -703,7 +733,7 @@ class Service implements InjectionAwareInterface
         $required = [
             'hash' => 'Hash required',
         ];
-        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
+        $this->di['event_dispatcher']->dispatch(new BeforePasswordResetClientEvent());
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
@@ -725,14 +755,13 @@ class Service implements InjectionAwareInterface
      *
      * @return void
      */
-    public static function onBeforeAdminCronRun(\Box_Event $event): void
+    #[AsEventListener(event: BeforeAdminCronRunEvent::class)]
+    public function pruneExpiredPasswordResets(BeforeAdminCronRunEvent $event): void
     {
-        $di = $event->getDi();
         $sql = 'DELETE FROM client_password_reset WHERE UNIX_TIMESTAMP() - 900 > UNIX_TIMESTAMP(created_at);';
 
         try {
-            $db = $di['db'];
-            $db->exec($sql);
+            $this->di['db']->exec($sql);
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
