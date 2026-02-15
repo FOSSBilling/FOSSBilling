@@ -142,7 +142,7 @@ class Server_Manager_CWP extends Server_Manager
         }
 
         $new->setPackage($acc['account_info']['package_name']);
-        $new->setReseller($acc['account_info']['reseller']);
+        $new->setReseller($acc['account_info']['reseller'] ?? false);
 
         return $new;
     }
