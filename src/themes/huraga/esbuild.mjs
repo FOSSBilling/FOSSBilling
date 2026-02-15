@@ -275,8 +275,8 @@ async function watch() {
 
   console.log('✓ Watching for changes ...\n');
 
-  // Keep the process running
-  await new Promise(() => {});
+  // Keep the process running while in watch mode
+  process.stdin.resume();
 }
 
 const args = process.argv.slice(2);
