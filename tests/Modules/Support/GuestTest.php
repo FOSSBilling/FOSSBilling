@@ -20,8 +20,8 @@ final class GuestTest extends TestCase
 
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertIsString($result->getResult());
-        $this->assertGreaterThanOrEqual(15, strlen($result->getResult()));
-        $this->assertLessThanOrEqual(30, strlen($result->getResult()));
+        $this->assertGreaterThanOrEqual(30, strlen($result->getResult()));
+        $this->assertLessThanOrEqual(60, strlen($result->getResult()));
     }
 
     public function testTicketCreateForGuestDisabled(): void
