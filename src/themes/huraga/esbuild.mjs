@@ -16,6 +16,7 @@ async function cleanBuild() {
     const buildDir = resolve(__dirname, 'assets/build');
     await removeDirContents(buildDir);
   } catch (error) {
+    console.error('Failed to clean build directory:', error);
   }
 }
 
