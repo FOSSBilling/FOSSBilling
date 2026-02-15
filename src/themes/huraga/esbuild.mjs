@@ -85,7 +85,7 @@ async function build() {
     });
 
     await postprocessCssFile(join(cssDir, 'huraga.css'), isProduction);
-    await purgeCssFile(join(cssDir, 'huraga.css'), __dirname, isProduction);
+    await purgeCssFile(join(cssDir, 'huraga.css'), __dirname, isProduction, true);
 
     // Build vendor CSS
     await esbuild.build({
@@ -105,7 +105,7 @@ async function build() {
       logLevel: 'info'
     });
 
-    await purgeCssFile(join(cssDir, 'vendor.css'), __dirname, isProduction);
+    await purgeCssFile(join(cssDir, 'vendor.css'), __dirname, isProduction, true);
 
     // Build markdown CSS
     await esbuild.build({

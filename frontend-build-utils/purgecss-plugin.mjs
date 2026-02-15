@@ -1,5 +1,6 @@
 import { PurgeCSS } from 'purgecss';
 import { readFile, writeFile } from 'fs/promises';
+import path from 'path';
 
 /**
  * PurgeCSS plugin for esbuild
@@ -7,21 +8,35 @@ import { readFile, writeFile } from 'fs/promises';
  *
  * @param {string} themePath - Path to the theme directory
  * @param {boolean} enabled - Whether PurgeCSS is enabled (usually only in production)
+ * @param {boolean} client - Set to true to check client-side module templates. When set to false, admin side will be checked instead.
  * @returns {Promise<void>}
  */
-export async function purgeCssFile(cssFilePath, themePath, enabled = false) {
+export async function purgeCssFile(cssFilePath, themePath, enabled = false, client = false) {
   if (!enabled) {
     return; // Skip in development
   }
 
   try {
     const css = await readFile(cssFilePath, 'utf8');
-
-    const purgeCSSResult = await new PurgeCSS().purge({
-      content: [
+    const modulesPath = path.resolve(import.meta.dirname, '../src/modules');
+    let contentPaths;
+    
+    if (client) {
+      contentPaths = [
         `${themePath}/html/**/*.twig`,
         `${themePath}/assets/**/*.js`,
-      ],
+        `${modulesPath}/*/html_client/**/*.twig`,
+      ];
+    } else {
+      contentPaths = [
+        `${themePath}/html/**/*.twig`,
+        `${themePath}/assets/**/*.js`,
+        `${modulesPath}/*/html_admin/**/*.twig`,
+      ];
+    }
+
+    const purgeCSSResult = await new PurgeCSS().purge({
+      content: contentPaths,
       css: [{
         raw: css,
         extension: 'css'
