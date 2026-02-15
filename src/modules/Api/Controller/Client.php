@@ -355,10 +355,10 @@ class Client implements InjectionAwareInterface
             $data = new \stdClass();
         }
 
-        $token = $data->CSRFToken ?? $_POST['CSRFToken'] ?? $_GET['CSRFToken'] ?? null;
-
         $cookieToken = $_COOKIE['csrf_token'] ?? null;
         $headerToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+
+        $token = $data->CSRFToken ?? $_POST['CSRFToken'] ?? $_GET['CSRFToken'] ?? $headerToken ?? null;
 
         $sessionToken = $this->di['session']->get('csrf_token');
 
