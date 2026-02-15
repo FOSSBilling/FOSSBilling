@@ -109,11 +109,21 @@ Include details about your configuration and environment:
 
 FOSSBilling is not designed to be all things to all people, but we do want it to be as useful and usable as possible. If you have a suggestion for a new feature or an improvement to an existing one then please do submit it. Please be as clear and explicit as you can and provide as much detail as you can, this will make it much easier for the community and maintainers to understand your suggestion and take action.
 
-Before creating enhancement suggestions, please check through the [existing Issues](https://github.com/FOSSBilling/FOSSBilling/issues) and see if somebody has already made the same suggestion. If they have then please don't create a new issue, but instead, add your thoughts and comments to the existing one. 
+Before creating enhancement suggestions, please check through the [existing Issues](https://github.com/FOSSBilling/FOSSBilling/issues) and see if somebody has already made the same suggestion. If they have then please don't create a new issue, but instead, add your thoughts and comments to the existing one.
 
 ### Contributing code
 
 The source code is the heart of FOSSBilling, and we are always interested in quality contributions to improve it, squash bugs, and close open issues. Please follow these guidelines to make things easier for yourself and other contributors.
+
+#### Licensing
+
+FOSSBilling uses per-file licensing. Existing files keep their current license; new files must declare their license explicitly.
+
+* **Default for new files:** `Apache-2.0`
+* **AGPL-3.0-only (optional):** Allowed and encouraged where appropriate, but not required; choose only when the author and maintainers are comfortable
+* **Required:** Add a license header to every new file using the templates `data/class-header.txt` or `data/class-header-agpl.txt`
+* **Modules:** Modules can declare their license via a `LICENSE` file and/or a `license` field in their `manifest.json` (the `LICENSE` file is authoritative if both are present)
+* **Relicensing existing files:** Allowed only with explicit approval from every contributing author on the relevant PR
 
 #### What to work on
 Check out our upcoming Milestones for an overview of what needs to be done. See the Good first issue label for a list of issues that should be relatively easy to get started with. If there's anything you're unsure of, don't hesitate to ask! All of us were just starting once.
