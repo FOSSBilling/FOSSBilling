@@ -21,15 +21,23 @@ use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 putenv('APP_ENV=test');
 define('PATH_TESTS', __DIR__);
 
+// Disable DEBUG mode to prevent FOSSBilling\Exception from logging stack traces
+// Must be defined BEFORE load.php is included
+if (!defined('DEBUG')) {
+    define('DEBUG', false);
+}
+
 // Pre-declare translation functions to prevent Box_Translate from trying to redefine them
 // These stubs will be used if the full translation system isn't initialized
 if (!function_exists('__trans')) {
-    function __trans(string $msgid, ?array $values = null): string {
+    function __trans(string $msgid, ?array $values = null): string
+    {
         return $values ? strtr($msgid, $values) : $msgid;
     }
 }
 if (!function_exists('__pluralTrans')) {
-    function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null): string {
+    function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null): string
+    {
         return $values ? strtr($msgid, $values) : $msgid;
     }
 }
@@ -53,7 +61,7 @@ require_once __DIR__ . '/Datasets/GeographicData.php';
 // This must be done here because it extends Box_Log which is loaded via the autoloader
 // Using eval() to defer class definition until runtime when Box_Log is available
 // @phpstan-ignore-next-line
-if (!class_exists(\Tests\Helpers\TestLogger::class)) {
+if (!class_exists(Tests\Helpers\TestLogger::class)) {
     // @phpstan-ignore-next-line
     eval('
         namespace Tests\Helpers;
@@ -94,8 +102,8 @@ $testApiKey = getenv('TEST_API_KEY');
 if ($appUrl && $testApiKey) {
     uses()
         ->beforeEach(function () use ($appUrl, $testApiKey) {
-            \Tests\Helpers\ApiClient::setBaseUrl($appUrl);
-            \Tests\Helpers\ApiClient::setApiKey($testApiKey);
+            Tests\Helpers\ApiClient::setBaseUrl($appUrl);
+            Tests\Helpers\ApiClient::setApiKey($testApiKey);
         })
         ->in('E2E');
 }

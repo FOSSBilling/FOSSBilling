@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -11,7 +11,11 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\assertApiSuccess;
-use function Tests\Helpers\assertApiResultIsArray;
+
+// Skip E2E tests if environment is not configured
+if (!getenv('APP_URL') || !getenv('TEST_API_KEY')) {
+    return;
+}
 
 $testUrls = [
     '' => 200,
@@ -41,13 +45,13 @@ test('urls return ok status', function () use ($testUrls) {
 });
 
 test('api is functional', function () {
-    $result = \Tests\Helpers\ApiClient::request('guest/system/company');
+    $result = Tests\Helpers\ApiClient::request('guest/system/company');
     assertApiSuccess($result);
     expect($result->getResult())->toBeArray();
 });
 
 test('system is up to date', function () {
-    $result = \Tests\Helpers\ApiClient::request('admin/system/is_behind_on_patches');
+    $result = Tests\Helpers\ApiClient::request('admin/system/is_behind_on_patches');
     assertApiSuccess($result);
     expect($result->getResult())->toBeFalse();
 });

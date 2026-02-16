@@ -45,18 +45,18 @@ test('has expiration time in the future', function (): void {
     expect($expiration)->toBeLessThan($now + 35 * 24 * 60 * 60); // Should be less than 35 days
 });
 
-test('throws exception for invalid period code length', function (): void {
+test('throws exception for invalid period code length', function () {
     expect(fn () => new Box_Period('1'))->toThrow(\FOSSBilling\Exception::class, 'Invalid period code. Period definition must be 2 chars length');
 });
 
-test('throws exception for invalid period unit', function (): void {
+test('throws exception for invalid period unit', function () {
     expect(fn () => new Box_Period('1Z'))->toThrow(\FOSSBilling\Exception::class, 'Period Error. Unit Z is not defined');
 });
 
-test('throws exception for empty period code', function (): void {
+test('throws exception for empty period code', function () {
     expect(fn () => new Box_Period(''))->toThrow(\FOSSBilling\Exception::class, 'Invalid period code. Period definition must be 2 chars length');
 });
 
-test('throws exception for period code that is too long', function (): void {
+test('throws exception for period code that is too long', function () {
     expect(fn () => new Box_Period('123'))->toThrow(\FOSSBilling\Exception::class, 'Invalid period code. Period definition must be 2 chars length');
 });
