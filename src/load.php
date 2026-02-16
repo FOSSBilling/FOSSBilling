@@ -253,7 +253,9 @@ function init(): void
     // Set globals and relevant settings based on the config.
     date_default_timezone_set(Config::getProperty('i18n.timezone', 'UTC'));
     define('ADMIN_PREFIX', Config::getProperty('admin_area_prefix'));
-    define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
+    if (!defined('DEBUG')) {
+        define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
+    }
     define('PATH_DATA', Path::normalize(Config::getProperty('path_data')));
     define('PATH_CACHE', Path::join(PATH_DATA, 'cache'));
     define('PATH_LOG', Path::join(PATH_DATA, 'log'));

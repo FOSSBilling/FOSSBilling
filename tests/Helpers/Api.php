@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -36,7 +36,7 @@ class ApiClient
 
     private static function getCookiePath(): string
     {
-        if (! isset(self::$cookiePath)) {
+        if (!isset(self::$cookiePath)) {
             self::$cookiePath = Path::join(sys_get_temp_dir(), 'fossbilling_e2e_cookies.txt');
         }
 
@@ -48,11 +48,11 @@ class ApiClient
         array $payload = [],
         string $role = 'admin',
         ?string $apiKey = null,
-        string $method = 'POST'
+        string $method = 'POST',
     ): ApiResponse {
         $baseUrl = self::$baseUrl ?? (getenv('APP_URL') ?: 'http://localhost');
         $baseUrl = rtrim($baseUrl, '/');
-        $apiKey = $apiKey ?? self::$apiKey ?? getenv('TEST_API_KEY');
+        $apiKey ??= self::$apiKey ?? getenv('TEST_API_KEY');
 
         $url = rtrim($baseUrl, '/') . '/api/' . ltrim($endpoint, '/');
 
@@ -105,12 +105,13 @@ class ApiResponse
 
     public function __construct(
         private readonly int $code,
-        private readonly string $rawResponse
+        private readonly string $rawResponse,
     ) {
-        $this->decodedResponse = json_decode($this->rawResponse, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        $decoded = json_decode($this->rawResponse, true);
+        if ($decoded === null && json_last_error() !== JSON_ERROR_NONE) {
             throw new \RuntimeException('Invalid JSON response: ' . json_last_error_msg());
         }
+        $this->decodedResponse = $decoded ?? [];
     }
 
     public function getHttpCode(): int
@@ -130,7 +131,7 @@ class ApiResponse
 
     public function wasSuccessful(): bool
     {
-        return $this->decodedResponse && ! $this->decodedResponse['error'];
+        return $this->decodedResponse && !$this->decodedResponse['error'];
     }
 
     public function getErrorMessage(): string
