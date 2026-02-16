@@ -454,29 +454,6 @@ final class ServiceTest extends \BBTestCase
         $this->service->deactivate($ext);
     }
 
-    public function testDeactivateHookExtension(): void
-    {
-        $ext = new \Model_Extension();
-        $ext->loadBean(new \DummyBean());
-        $ext->type = 'hook';
-        $ext->name = 'extensionTest';
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
-
-        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
-        $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
-
-        $this->service->setDi($di);
-        $result = $this->service->deactivate($ext);
-        $this->assertTrue($result);
-    }
-
     public function testDeactivateModule(): void
     {
         $ext = new \Model_Extension();
@@ -673,12 +650,12 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
 
-        $eventMock = $this->createMock(\Box_EventManager::class);
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -707,11 +684,11 @@ final class ServiceTest extends \BBTestCase
             ->method('activate')
             ->will($this->throwException(new \Exception()));
 
-        $eventMock = $this->createMock(\Box_EventManager::class);
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $serviceMock->setDi($di);
 
@@ -804,8 +781,8 @@ final class ServiceTest extends \BBTestCase
             ->method('exec')
             ->willReturn([]);
 
-        $eventMock = $this->createMock(\Box_EventManager::class);
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $staffMock = $this->createMock(\Box\Mod\Staff\Service::class);
 
@@ -816,7 +793,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['tools'] = $toolsMock;
         $di['crypt'] = $cryptMock;
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffMock);

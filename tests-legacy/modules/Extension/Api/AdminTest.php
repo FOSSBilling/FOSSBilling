@@ -162,12 +162,12 @@ final class AdminTest extends \BBTestCase
             ->method('deactivate')
             ->willReturn(true);
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())->
-            method('fire');
+            method('dispatch');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
         $this->api->setService($serviceMock);
@@ -195,12 +195,12 @@ final class AdminTest extends \BBTestCase
             ->method('uninstall')
             ->willReturn(true);
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())->
-            method('fire');
+            method('dispatch');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
         $this->api->setService($serviceMock);
@@ -231,12 +231,12 @@ final class AdminTest extends \BBTestCase
             ->method('downloadAndExtract')
             ->willReturn(true);
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())->
-            method('fire');
+            method('dispatch');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
 
         $this->api->setService($serviceMock);
@@ -268,14 +268,14 @@ final class AdminTest extends \BBTestCase
             ->method('downloadAndExtract')
             ->willReturn(true);
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())->
-            method('fire');
+            method('dispatch');
 
         $dbMock = $this->createMock('\Box_Database');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 

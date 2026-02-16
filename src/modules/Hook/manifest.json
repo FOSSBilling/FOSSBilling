@@ -1,7 +1,0 @@
-{
-  "id": "hook",
-  "type": "mod",
-  "name": "Event hooks subsystem",
-  "description": "FOSSBilling core module",
-  "version": "1.0.0"
-}

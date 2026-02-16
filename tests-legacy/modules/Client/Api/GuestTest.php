@@ -52,12 +52,13 @@ final class GuestTest extends \BBTestCase
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail')
+            ->willReturn($data['email']);
 
         $di = $this->getDi();
-        $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
         $di['validator'] = $validatorMock;
         $di['tools'] = $toolsMock;
+        $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
 
         $client = new Guest();
         $client->setDi($di);
@@ -166,6 +167,7 @@ final class GuestTest extends \BBTestCase
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
+        $model->id = 1;
 
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -176,8 +178,8 @@ final class GuestTest extends \BBTestCase
             ->method('toSessionArray')
             ->willReturn([]);
 
-        $eventMock = $this->createMock('\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
             ->disableOriginalConstructor()
@@ -194,15 +196,20 @@ final class GuestTest extends \BBTestCase
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         // $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
+        $requestMock = $this->createMock(\Symfony\Component\HttpFoundation\Request::class);
+        $requestMock->expects($this->any())->method('getClientIp')->willReturn('127.0.0.1');
+
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $cartServiceMock);
+        $di['request'] = $requestMock;
 
         $client = new Guest();
         $client->setDi($di);
+        $client->setIp('127.0.0.1');
         $client->setService($serviceMock);
 
         $results = $client->login($data);
@@ -214,8 +221,8 @@ final class GuestTest extends \BBTestCase
     {
         $data['email'] = 'John@exmaple.com';
 
-        $eventMock = $this->createMock('\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -244,7 +251,7 @@ final class GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
@@ -258,10 +265,10 @@ final class GuestTest extends \BBTestCase
 
     public function testResetPasswordEmailNotFound(): void
     {
-        $data['email'] = 'joghn@example.eu';
+        $data['email'] = 'nonexistent@fossbilling.org';
 
-        $eventMock = $this->createMock('\Box_EventManager');
-        $eventMock->expects($this->atLeastOnce())->method('fire');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
+        $eventMock->expects($this->atLeastOnce())->method('dispatch');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -269,10 +276,11 @@ final class GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail')
+            ->willReturn($data['email']);
         $di['tools'] = $toolsMock;
 
         $client = new Guest();
@@ -296,9 +304,11 @@ final class GuestTest extends \BBTestCase
 
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
+        $modelClient->id = 1;
 
         $modelPasswordReset = new \Model_ClientPasswordReset();
         $modelPasswordReset->loadBean(new \DummyBean());
+        $modelPasswordReset->client_id = 1;
         $modelPasswordReset->created_at = date('Y-m-d H:i:s', time() - 300);  // Set timestamp to 5 minutes ago
 
         $dbMock->expects($this->once())
@@ -313,9 +323,9 @@ final class GuestTest extends \BBTestCase
         $dbMock->expects($this->once())
             ->method('trash');
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->exactly(2))
-            ->method('fire');
+            ->method('dispatch');
 
         $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->once())
@@ -327,7 +337,7 @@ final class GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['password'] = $passwordMock;
         $di['logger'] = new \Box_Log();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
@@ -353,14 +363,14 @@ final class GuestTest extends \BBTestCase
             ->method('findOne')->willReturn(null);
 
         // Mock for the events manager
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->once())
-            ->method('fire');
+            ->method('dispatch');
 
         // Dependency injection container setup
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
 
         $client = new Guest();
         $client->setDi($di);

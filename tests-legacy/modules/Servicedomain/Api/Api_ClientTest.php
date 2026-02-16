@@ -33,12 +33,12 @@ final class Api_ClientTest extends \BBTestCase
 
         $clientApiMock->setService($serviceMock);
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        method('dispatch');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $clientApiMock->setDi($di);
 
         $data = [];

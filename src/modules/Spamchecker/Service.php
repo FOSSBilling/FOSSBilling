@@ -11,9 +11,12 @@
 
 namespace Box\Mod\Spamchecker;
 
+use Box\Mod\Client\Event\BeforeClientSignUpEvent;
+use Box\Mod\Support\Event\BeforeGuestPublicTicketOpenEvent;
 use EmailChecker\Adapter;
 use EmailChecker\Utilities;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
@@ -39,44 +42,42 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public static function onBeforeClientSignUp(\Box_Event $event): void
+    #[AsEventListener(event: BeforeClientSignUpEvent::class)]
+    public function runSignupChecks(BeforeClientSignUpEvent $event): void
     {
-        $di = $event->getDi();
-        $spamCheckerService = $di['mod_service']('Spamchecker');
-        $spamCheckerService->isBlockedIp($event);
-        $spamCheckerService->isSpam($event);
-        $spamCheckerService->isTemp($event);
+        $this->isBlockedIp($event);
+        $this->isSpam($event);
+        $this->isTemp($event);
     }
 
-    public static function onBeforeGuestPublicTicketOpen(\Box_Event $event): void
+    #[AsEventListener(event: BeforeGuestPublicTicketOpenEvent::class)]
+    public function runGuestTicketChecks(BeforeGuestPublicTicketOpenEvent $event): void
     {
-        $di = $event->getDi();
-        $spamCheckerService = $di['mod_service']('Spamchecker');
-        $spamCheckerService->isBlockedIp($event);
-        $spamCheckerService->isSpam($event);
-        $spamCheckerService->isTemp($event);
+        $this->isBlockedIp($event);
+        $this->isSpam($event);
+        $this->isTemp($event);
     }
 
-    /**
-     * @param \Box_Event $event
-     */
-    public function isBlockedIp($event): void
+    public function isBlockedIp(BeforeClientSignUpEvent|BeforeGuestPublicTicketOpenEvent $event): void
     {
-        $di = $event->getDi();
-        $config = $di['mod_config']('Spamchecker');
+        $config = $this->di['mod_config']('Spamchecker');
+
         if (isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
             $blocked_ips = array_map(trim(...), $blocked_ips);
-            if (in_array($di['request']->getClientIp(), $blocked_ips)) {
-                throw new \FOSSBilling\InformationException('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientIp()], 403);
+
+            if (in_array($this->di['request']->getClientIp(), $blocked_ips)) {
+                throw new \FOSSBilling\InformationException('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $this->di['request']->getClientIp()], 403);
             }
         }
     }
 
-    public function isSpam(\Box_Event $event): void
+    public function isSpam(BeforeClientSignUpEvent|BeforeGuestPublicTicketOpenEvent $event): void
     {
-        $di = $event->getDi();
-        $params = $event->getParameters();
+        $params = $this->di['request']->request->all();
+        $params['ip'] = $event->ip;
+        $params['email'] = $event->email;
+
         $data = [
             'ip' => $params['ip'] ?? null,
             'email' => $params['email'] ?? null,
@@ -84,7 +85,7 @@ class Service implements InjectionAwareInterface
             'recaptcha_response_field' => $params['recaptcha_response_field'] ?? null,
         ];
 
-        $config = $di['mod_config']('Spamchecker');
+        $config = $this->di['mod_config']('Spamchecker');
 
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
             $provider = $config['captcha_provider'] ?? 'recaptcha_v2';
@@ -103,7 +104,7 @@ class Service implements InjectionAwareInterface
                     'body' => [
                         'secret' => $config['captcha_recaptcha_privatekey'],
                         'response' => $params['g-recaptcha-response'],
-                        'remoteip' => $di['request']->getClientIp(),
+                        'remoteip' => $this->di['request']->getClientIp(),
                     ],
                 ]);
                 $content = $response->toArray();
@@ -126,7 +127,7 @@ class Service implements InjectionAwareInterface
                     'body' => [
                         'secret' => $config['turnstile_secret_key'],
                         'response' => $turnstile_response,
-                        'remoteip' => $di['request']->getClientIp(),
+                        'remoteip' => $this->di['request']->getClientIp(),
                     ],
                 ]);
                 $content = $response->toArray();
@@ -149,7 +150,7 @@ class Service implements InjectionAwareInterface
                     'body' => [
                         'secret' => $config['hcaptcha_secret_key'],
                         'response' => $hcaptcha_response,
-                        'remoteip' => $di['request']->getClientIp(),
+                        'remoteip' => $this->di['request']->getClientIp(),
                     ],
                 ]);
                 $content = $response->toArray();
@@ -160,23 +161,17 @@ class Service implements InjectionAwareInterface
             }
         }
         if (isset($config['sfs']) && $config['sfs']) {
-            $spamCheckerService = $di['mod_service']('Spamchecker');
-            $spamCheckerService->isInStopForumSpamDatabase($data);
+            $this->isInStopForumSpamDatabase($data);
         }
     }
 
-    public function isTemp(\Box_Event $event): void
+    public function isTemp(BeforeClientSignUpEvent|BeforeGuestPublicTicketOpenEvent $event): void
     {
-        $di = $event->getDi();
-        $config = $di['mod_config']('Spamchecker');
-
+        $config = $this->di['mod_config']('Spamchecker');
         $check = $config['check_temp_emails'] ?? false;
-        if ($check) {
-            $spamCheckerService = $di['mod_service']('Spamchecker');
-            $params = $event->getParameters();
-            $email = $params['email'] ?? '';
 
-            $spamCheckerService->isATempEmail($email, true);
+        if ($check) {
+            $this->isATempEmail($event->email, true);
         }
     }
 

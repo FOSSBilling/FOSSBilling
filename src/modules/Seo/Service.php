@@ -11,7 +11,9 @@
 
 namespace Box\Mod\Seo;
 
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
@@ -123,16 +125,14 @@ class Service implements InjectionAwareInterface
         return $details;
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): bool
+    #[AsEventListener(event: BeforeAdminCronRunEvent::class)]
+    public function cronPingSitemaps(BeforeAdminCronRunEvent $event): bool
     {
-        $di = $event->getDi();
-        $extensionService = $di['mod_service']('extension');
+        $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_seo');
 
         try {
-            $seoService = $di['mod_service']('seo');
-            $seoService->setDi($di);
-            $seoService->pingSitemap($config);
+            $this->pingSitemap($config);
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }

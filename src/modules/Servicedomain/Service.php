@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Servicedomain;
 
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -712,12 +714,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$d, $adapter];
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): bool
+    #[AsEventListener(event: BeforeAdminCronRunEvent::class)]
+    public function onBeforeAdminCronRun(BeforeAdminCronRunEvent $event): bool
     {
         try {
-            $di = $event->getDi();
-            $domainService = $di['mod_service']('servicedomain');
-            $domainService->batchSyncExpirationDates();
+            $this->batchSyncExpirationDates();
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }

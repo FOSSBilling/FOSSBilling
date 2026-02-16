@@ -56,12 +56,13 @@ final class ServiceTransactionTest extends \BBTestCase
 
     public function testUpdate(): void
     {
-        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \DummyBean());
+        $transactionModel->id = 1;
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -70,7 +71,7 @@ final class ServiceTransactionTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -93,12 +94,12 @@ final class ServiceTransactionTest extends \BBTestCase
 
     public function testCreateInvalidMissinginvoiceId(): void
     {
-        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
 
         $this->service->setDi($di);
 
@@ -113,12 +114,12 @@ final class ServiceTransactionTest extends \BBTestCase
 
     public function testCreateInvalidMissingbbGatewayId(): void
     {
-        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
 
         $this->service->setDi($di);
 
@@ -332,6 +333,7 @@ final class ServiceTransactionTest extends \BBTestCase
     {
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \DummyBean());
+        $transactionModel->id = 1;
 
         $serviceMock = $this->getMockBuilder(ServiceTransaction::class)
             ->onlyMethods(['processTransaction'])
@@ -340,12 +342,12 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('processTransaction')
             ->willReturn('processedOutputString');
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $di = $this->getDi();
-        $di['events_manager'] = $eventMock;
+        $di['event_dispatcher'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $serviceMock->setDi($di);
 
@@ -520,13 +522,13 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($existing);
 
-        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock = $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcher::class);
         $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);

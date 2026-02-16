@@ -40,15 +40,15 @@ final class ServiceSubscriptionTest extends \BBTestCase
             ->method('store')
             ->willReturn($newId);
 
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')
+        $eventsMock = $this->getMockBuilder(\Symfony\Component\EventDispatcher\EventDispatcher::class)
             ->getMock();
         $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
 
         $this->service->setDi($di);
 
@@ -153,21 +153,22 @@ final class ServiceSubscriptionTest extends \BBTestCase
     {
         $subscriptionModel = new \Model_Subscription();
         $subscriptionModel->loadBean(new \DummyBean());
+        $subscriptionModel->id = 1;
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')
+        $eventsMock = $this->getMockBuilder(\Symfony\Component\EventDispatcher\EventDispatcher::class)
             ->getMock();
         $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
+            ->method('dispatch');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['events_manager'] = $eventsMock;
+        $di['event_dispatcher'] = $eventsMock;
         $this->service->setDi($di);
 
         $result = $this->service->delete($subscriptionModel);

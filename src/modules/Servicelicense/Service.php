@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Servicelicense;
 
+use Box\Mod\Servicelicense\Event\AfterServicelicenseResetEvent;
+use Box\Mod\Servicelicense\Event\BeforeServicelicenseResetEvent;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -190,7 +192,7 @@ class Service implements InjectionAwareInterface
             'versions' => $model->versions,
             'client_id' => $model->client_id,
         ];
-        $this->di['events_manager']->fire(['event' => 'onBeforeServicelicenseReset', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new BeforeServicelicenseResetEvent(data: $data));
 
         $model->ips = json_encode([]);
         $model->hosts = json_encode([]);
@@ -205,7 +207,7 @@ class Service implements InjectionAwareInterface
             'client_id' => $model->client_id,
             'updated_at' => $model->updated_at,
         ];
-        $this->di['events_manager']->fire(['event' => 'onAfterServicelicenseReset', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new AfterServicelicenseResetEvent(data: $data));
 
         return true;
     }

@@ -15,6 +15,13 @@
 
 namespace Box\Mod\Client\Api;
 
+use Box\Mod\Client\Event\AfterClientLoginEvent;
+use Box\Mod\Client\Event\AfterClientProfilePasswordResetEvent;
+use Box\Mod\Client\Event\BeforeClientLoginEvent;
+use Box\Mod\Client\Event\BeforeClientProfilePasswordResetEvent;
+use Box\Mod\Client\Event\BeforeGuestPasswordResetRequestEvent;
+use Box\Mod\Client\Event\BeforePasswordResetClientEvent;
+use Box\Mod\Client\Event\ClientLoginFailedEvent;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \Api_Abstract
@@ -108,20 +115,29 @@ class Guest extends \Api_Abstract
     {
         $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
-        $event_params = $data;
-        $event_params['ip'] = $this->ip;
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientLogin', 'params' => $event_params]);
+        $this->di['event_dispatcher']->dispatch(new BeforeClientLoginEvent(
+            email: $data['email'],
+            ip: $this->ip,
+            password: $data['password'] ?? null,
+        ));
 
         $service = $this->getService();
         $client = $service->authorizeClient($data['email'], $data['password']);
 
         if (!$client instanceof \Model_Client) {
-            $this->di['events_manager']->fire(['event' => 'onEventClientLoginFailed', 'params' => $event_params]);
+            $this->di['event_dispatcher']->dispatch(new ClientLoginFailedEvent(
+                email: $data['email'],
+                ip: $this->ip,
+                password: $data['password'] ?? null,
+            ));
 
             throw new \FOSSBilling\InformationException('Please check your login details.', [], 401);
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->id, 'ip' => $this->ip]]);
+        $this->di['event_dispatcher']->dispatch(new AfterClientLoginEvent(
+            clientId: $client->id,
+            ip: $this->ip,
+        ));
 
         $oldSession = $this->di['session']->getId();
         session_regenerate_id();
@@ -144,12 +160,14 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['email' => 'Email required'])]
     public function reset_password($data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
+        $this->di['event_dispatcher']->dispatch(new BeforePasswordResetClientEvent());
 
         // Sanitize email
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new BeforeGuestPasswordResetRequestEvent(
+            email: $data['email'],
+        ));
 
         // Fetch the client by email
         $c = $this->di['db']->findOne('Client', 'email = ?', [$data['email']]);
@@ -201,7 +219,9 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['hash' => 'No Hash provided', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function update_password($data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
+        $this->di['event_dispatcher']->dispatch(new BeforeClientProfilePasswordResetEvent(
+            hash: $data['hash'],
+        ));
 
         if ($data['password'] != $data['password_confirm']) {
             throw new \FOSSBilling\InformationException('Passwords do not match');
@@ -230,7 +250,9 @@ class Guest extends \Api_Abstract
         $emailService->sendTemplate($email);
 
         $this->di['db']->trash($reset);
-        $this->di['events_manager']->fire(['event' => 'onAfterClientProfilePasswordReset', 'params' => ['id' => $c->id]]);
+        $this->di['event_dispatcher']->dispatch(new AfterClientProfilePasswordResetEvent(
+            clientId: $c->id,
+        ));
 
         return true;
     }
