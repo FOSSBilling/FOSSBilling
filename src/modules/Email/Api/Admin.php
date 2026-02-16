@@ -35,8 +35,8 @@ class Admin extends \Api_Abstract
                 continue;
             }
             $pager['list'][$key] = [
-                'id' => $item['id'] ?? '',
-                'client_id' => $item['client_id'] ?? '',
+                'id' => $item['id'],
+                'client_id' => $item['client_id'],
                 'sender' => $item['sender'] ?? '',
                 'recipients' => $item['recipients'] ?? '',
                 'subject' => $item['subject'] ?? '',

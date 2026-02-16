@@ -214,16 +214,13 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Create new inquiry. Send email.
-     *
-     * @return int - inquiry id
+     * Create new public inquiry.
      *
      * @throws \FOSSBilling\Exception
      */
-    #[RequiredParams(['name' => 'Client name parameter is missing', 'email' => 'Client email parameter is missing', 'subject' => 'Subject parameter is missing', 'message' => 'Ticket message is missing'])]
+    #[RequiredParams(['name' => 'Name is required', 'email' => 'Email is required', 'subject' => 'Subject is required', 'message' => 'Message is required'])]
     public function public_ticket_create(array $data): int
     {
-        // Sanitize user input to prevent XSS attacks
         $data['subject'] = \FOSSBilling\Tools::sanitizeContent($data['subject'], false);
         $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
 
