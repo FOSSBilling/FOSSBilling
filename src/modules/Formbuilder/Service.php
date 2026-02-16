@@ -155,7 +155,7 @@ class Service implements InjectionAwareInterface
         $name = $this->slugify($field['name']);
 
         $get_field = $this->getField($field['id']);
-        $field['form_id'] = $get_field['form_id'];
+        $field['form_id'] = $get_field['form_id'] ?? null;
 
         if ($this->formFieldNameExists(['form_id' => $field['form_id'], 'field_name' => $field['name'], 'field_id' => $fieldId])) {
             throw new \FOSSBilling\InformationException('Unfortunately field with this name exists in this form already. Form must have different field names.', null, 7628);

@@ -234,36 +234,36 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $c = $systemService->getCompany();
         $result['seller'] = [
-            'company' => !empty($row['seller_company']) ? $row['seller_company'] : $c['name'],
-            'company_vat' => $row['seller_company_vat'],
-            'company_number' => $row['seller_company_number'],
-            'address' => !empty($row['seller_address']) ? $row['seller_address'] : trim($c['address_1'] . ' ' . $c['address_2'] . ' ' . $c['address_3']),
-            'address_1' => !empty($row['seller_address_1']) ? $row['seller_address_1'] : $c['address_1'],
-            'address_2' => !empty($row['seller_address_2']) ? $row['seller_address_2'] : $c['address_2'],
-            'address_3' => !empty($row['seller_address_3']) ? $row['seller_address_3'] : $c['address_3'],
-            'phone' => !empty($row['seller_phone']) ? $row['seller_phone'] : $c['tel'],
-            'email' => !empty($row['seller_email']) ? $row['seller_email'] : $c['email'],
-            'account_number' => !empty($c['account_number']) ? $c['account_number'] : null,
-            'bank_name' => !empty($c['bank_name']) ? $c['bank_name'] : null,
-            'bic' => !empty($c['bic']) ? $c['bic'] : null,
+            'company' => !empty($row['seller_company']) ? $row['seller_company'] : ($c['name'] ?? ''),
+            'company_vat' => $row['seller_company_vat'] ?? '',
+            'company_number' => $row['seller_company_number'] ?? '',
+            'address' => !empty($row['seller_address']) ? $row['seller_address'] : trim(($c['address_1'] ?? '') . ' ' . ($c['address_2'] ?? '') . ' ' . ($c['address_3'] ?? '')),
+            'address_1' => !empty($row['seller_address_1']) ? $row['seller_address_1'] : ($c['address_1'] ?? ''),
+            'address_2' => !empty($row['seller_address_2']) ? $row['seller_address_2'] : ($c['address_2'] ?? ''),
+            'address_3' => !empty($row['seller_address_3']) ? $row['seller_address_3'] : ($c['address_3'] ?? ''),
+            'phone' => !empty($row['seller_phone']) ? $row['seller_phone'] : ($c['tel'] ?? ''),
+            'email' => !empty($row['seller_email']) ? $row['seller_email'] : ($c['email'] ?? ''),
+            'account_number' => $c['account_number'] ?? null,
+            'bank_name' => $c['bank_name'] ?? null,
+            'bic' => $c['bic'] ?? null,
         ];
 
         /**
          * Removed if($identity instanceof \Model_Admin) {}
          * Generates error when this function is called by cron.
          */
-        $client = $this->di['db']->load('Client', $row['client_id']);
+        $client = isset($row['client_id']) ? $this->di['db']->load('Client', $row['client_id']) : null;
         $clientService = $this->di['mod_service']('client');
         if ($client instanceof \Model_Client) {
             $result['client'] = $clientService->toApiArray($client);
         } else {
             $result['client'] = null;
         }
-        $result['reminded_at'] = $row['reminded_at'];
-        $result['approved'] = (bool) $row['approved'];
-        $result['income'] = $row['base_income'] - $row['base_refund'];
-        $result['refund'] = $row['refund'];
-        $result['credit'] = $row['credit'];
+        $result['reminded_at'] = $row['reminded_at'] ?? null;
+        $result['approved'] = (bool) ($row['approved'] ?? false);
+        $result['income'] = ($row['base_income'] ?? 0) - ($row['base_refund'] ?? 0);
+        $result['refund'] = $row['refund'] ?? 0;
+        $result['credit'] = $row['credit'] ?? 0;
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         $result['subscribable'] = $subscriptionService->isSubscribable($row['id']);
@@ -342,9 +342,9 @@ class Service implements InjectionAwareInterface
         $service = $di['mod_service']('invoice');
 
         try {
-            $invoiceModel = $di['db']->load('Invoice', $params['id']);
+            $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
             $invoice = $service->toApiArray($invoiceModel, true);
-            if ($invoice['total'] > 0) {
+            if (($invoice['total'] ?? 0) > 0) {
                 $email = [];
                 $email['to_client'] = $invoiceModel->client_id;
                 $email['code'] = 'mod_invoice_paid';
@@ -363,20 +363,6 @@ class Service implements InjectionAwareInterface
     {
         $params = $event->getParameters();
         $di = $event->getDi();
-        $service = $di['mod_service']('invoice');
-
-        try {
-            $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            $invoice = $service->toApiArray($invoiceModel, true);
-            $email = [];
-            $email['to_client'] = $invoiceModel->client_id;
-            $email['code'] = 'mod_invoice_created';
-            $email['invoice'] = $invoice;
-            $emailService = $di['mod_service']('Email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            error_log($exc->getMessage());
-        }
 
         return true;
     }
@@ -388,8 +374,8 @@ class Service implements InjectionAwareInterface
         $service = $di['mod_service']('invoice');
 
         try {
-            $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            $invoice = $service->toApiArray($invoiceModel, ['id' => $params['id']]);
+            $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
+            $invoice = $service->toApiArray($invoiceModel, ['id' => $params['id'] ?? 0]);
             $email = [];
             $email['to_client'] = $invoiceModel->client_id;
             $email['code'] = 'mod_invoice_payment_reminder';
@@ -1008,7 +994,7 @@ class Service implements InjectionAwareInterface
         $unpaid = $this->findAllUnpaid($data);
         foreach ($unpaid as $proforma) {
             try {
-                $model = $this->di['db']->getExistingModelById('Invoice', $proforma['id']);
+                $model = $this->di['db']->getExistingModelById('Invoice', $proforma['id'] ?? null);
                 $this->tryPayWithCredits($model);
             } catch (\Exception $e) {
                 if (DEBUG) {
@@ -1090,7 +1076,7 @@ class Service implements InjectionAwareInterface
 
         foreach ($orders as $order) {
             try {
-                $model = $this->di['db']->getExistingModelById('ClientOrder', $order['id']);
+                $model = $this->di['db']->getExistingModelById('ClientOrder', $order['id'] ?? null);
                 $invoice = $this->generateForOrder($model);
                 $this->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
             } catch (\Exception $e) {
@@ -1110,7 +1096,7 @@ class Service implements InjectionAwareInterface
         $invoiceItems = (array) $invoiceItemService->getAllNotExecutePaidItems();
         foreach ($invoiceItems as $item) {
             try {
-                $model = $this->di['db']->getExistingModelById('InvoiceItem', $item['id']);
+                $model = $this->di['db']->getExistingModelById('InvoiceItem', $item['id'] ?? 0);
                 $invoiceItemService->executeTask($model);
             } catch (\Exception $e) {
                 error_log($e->getMessage());

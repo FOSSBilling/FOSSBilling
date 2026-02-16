@@ -276,7 +276,7 @@ class Service implements InjectionAwareInterface
 
     public function getClientCountries($data)
     {
-        $limit = (int) $data['limit'] ?? 10;
+        $limit = (int) ($data['limit'] ?? 10);
         $q = "
             SELECT country, COUNT(id) as clients
             FROM `client`
@@ -292,7 +292,7 @@ class Service implements InjectionAwareInterface
 
     public function getSalesByCountry($data)
     {
-        $limit = (int) $data['limit'] ?? 10;
+        $limit = (int) ($data['limit'] ?? 10);
         $q = "
             SELECT buyer_country, COUNT(id) as sales
             FROM `invoice`

@@ -234,7 +234,7 @@ class Service implements InjectionAwareInterface
 
         foreach ($result as $key => $value) {
             $icon_url = $value['icon_url'] ?? null;
-            if ($icon_url) {
+            if ($icon_url && isset($value['id'])) {
                 $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), basename((string) $icon_url));
                 if ($this->filesystem->exists($iconPath)) {
                     $result[$key]['icon_path'] = 'mod_' . ucfirst((string) $value['id']) . '_' . basename((string) $icon_url);

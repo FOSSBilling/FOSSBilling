@@ -148,7 +148,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->quantity = $data['quantity'] ?? 1;
         $pi->unit = $data['unit'] ?? null;
         $pi->charged = $data['charged'] ?? 0;
-        $pi->price = (float) $data['price'] ?? 0;
+        $pi->price = (float) ($data['price'] ?? 0);
         $pi->taxed = $data['taxed'] ?? false;
         $pi->created_at = date('Y-m-d H:i:s');
         $pi->updated_at = date('Y-m-d H:i:s');

@@ -10,4 +10,5 @@
  */
 class Model_Guest
 {
+    public ?int $id = null;
 }
