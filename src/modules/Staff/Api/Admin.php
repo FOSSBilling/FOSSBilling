@@ -81,7 +81,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function update($data)
     {
-        if (isset($data['email'])) {
+        if (isset($data['email']) && !is_null($data['email'])) {
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
         }
 
