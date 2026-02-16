@@ -103,9 +103,10 @@ class Admin extends \Api_Abstract
     ])]
     public function change_password($data)
     {
-        $this->di['validator']->isPasswordStrong($data['new_password']);
+        $newPassword = $data['new_password'] ?? null;
+        $this->di['validator']->isPasswordStrong($newPassword);
 
-        if ($data['new_password'] != $data['confirm_password']) {
+        if ($newPassword != $data['confirm_password']) {
             throw new \FOSSBilling\InformationException('Passwords do not match');
         }
 
