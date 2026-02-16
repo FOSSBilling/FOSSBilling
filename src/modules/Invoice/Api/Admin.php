@@ -660,9 +660,12 @@ class Admin extends \Api_Abstract
         [$sql, $params] = $subscriptionService->getSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
-        foreach ($pager['list'] as $key => $item) {
-            $subscription = $this->di['db']->getExistingModelById('Subscription', $item['id'], 'Subscription not found');
-            $pager['list'][$key] = $subscriptionService->toApiArray($subscription);
+
+        if (isset($pager['list']) && is_array($pager['list'])) {
+            foreach ($pager['list'] as $key => $item) {
+                $subscription = $this->di['db']->getExistingModelById('Subscription', $item['id'], 'Subscription not found');
+                $pager['list'][$key] = $subscriptionService->toApiArray($subscription);
+            }
         }
 
         return $pager;

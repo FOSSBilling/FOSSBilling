@@ -437,7 +437,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_get($data)
     {
-        $model = $this->di['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
+        $id = $data['id'] ?? null;
+        $model = $this->di['db']->getExistingModelById('Promo', $id, 'Promo not found');
 
         return $this->getService()->toPromoApiArray($model, true, $this->getIdentity());
     }
