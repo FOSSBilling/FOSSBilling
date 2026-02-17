@@ -167,10 +167,14 @@ class Client implements InjectionAwareInterface
     private function isRoleLoggedIn($role): bool
     {
         if ($role == 'client') {
-            $this->di['is_client_logged'];
+            if (!$this->di['is_client_logged']) {
+                throw new \FOSSBilling\Exception('Client not logged in');
+            }
         }
         if ($role == 'admin') {
-            $this->di['is_admin_logged'];
+            if (!$this->di['is_admin_logged']) {
+                throw new \FOSSBilling\Exception('Admin not logged in');
+            }
         }
 
         return true;
@@ -349,7 +353,7 @@ class Client implements InjectionAwareInterface
             return true;
         }
 
-        $input = $this->filesystem->readFile('php://input') ?? '';
+        $input = $this->filesystem->readFile('php://input');
         $data = json_decode($input);
         if (!is_object($data)) {
             $data = new \stdClass();

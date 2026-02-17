@@ -24,7 +24,8 @@ class Currency implements ApiArrayInterface, TimestampInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
-    private int $id;
+    /** @phpstan-ignore property.unusedType */
+    private ?int $id = null;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 50, nullable: true)]
     private ?string $title = null;
@@ -80,8 +81,7 @@ class Currency implements ApiArrayInterface, TimestampInterface
         $this->updatedAt = new \DateTime();
     }
 
-    // --- Getters ---
-    public function getId(): int
+    public function getId(): ?int
     {
         return $this->id;
     }

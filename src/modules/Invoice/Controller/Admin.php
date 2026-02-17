@@ -106,7 +106,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_taxes(\Box_App $app): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         return $app->render('mod_invoice_tax');
     }
@@ -121,7 +123,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_index(\Box_App $app): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         return $app->render('mod_invoice_index');
     }
@@ -144,14 +148,18 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_transactions(\Box_App $app): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         return $app->render('mod_invoice_transactions');
     }
 
     public function get_subscriptions(\Box_App $app): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         return $app->render('mod_invoice_subscriptions');
     }
@@ -166,7 +174,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_gateways(\Box_App $app): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         return $app->render('mod_invoice_gateways');
     }

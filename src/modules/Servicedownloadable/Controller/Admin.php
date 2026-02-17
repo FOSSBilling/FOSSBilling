@@ -32,7 +32,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_download(\Box_App $app, $id): void
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         $api = $this->di['api_admin'];
         $data = [

@@ -253,7 +253,7 @@ class Service implements InjectionAwareInterface
         $mods = [];
         $handle = opendir(PATH_MODS);
         while ($name = readdir($handle)) {
-            if ($name && preg_match('/^[a-zA-Z0-9]+$/', $name)) {
+            if (preg_match('/^[a-zA-Z0-9]+$/', $name)) {
                 $m = $name;
                 $mod = $this->di['mod']($m);
                 if ($mod->isCore()) {
@@ -342,6 +342,9 @@ class Service implements InjectionAwareInterface
 
     /**
      * @return \Model_Extension
+     */
+    /**
+     * @return \Model_Extension|null
      */
     public function findExtension($type, $id)
     {

@@ -351,6 +351,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (Environment::isTesting()) {
+            // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
                 $this->di['logger']->setChannel('email')->info('Skipping email sending in test environment');
             }

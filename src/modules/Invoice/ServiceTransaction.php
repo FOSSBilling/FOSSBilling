@@ -379,7 +379,7 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     public function processTransaction($id)
     {
-        /** @var \Model_Transaction $tx */
+        /** @var \Model_Transaction|null $tx */
         $tx = $this->di['db']->load('Transaction', $id);
         if (!$tx) {
             throw new \FOSSBilling\Exception('Transaction :id not found.', ['id' => $id], 404);

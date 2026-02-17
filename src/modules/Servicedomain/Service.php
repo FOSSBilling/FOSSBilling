@@ -259,7 +259,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
+        if (!$model instanceof \Model_ServiceDomain) {
             throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
         // @adapterAction
@@ -291,7 +291,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
+        if (!$model instanceof \Model_ServiceDomain) {
             throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
         // @adapterAction
@@ -877,7 +877,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @return \Model_Tld
+     * @return \Model_Tld|null
      */
     public function tldFindOneByTld($tld)
     {
@@ -1062,7 +1062,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $s->ns3 = $data['ns3'] ?? $s->ns3;
         $s->ns4 = $data['ns4'] ?? $s->ns4;
 
-        $s->period = (int) $data['period'] ?? $s->period;
+        $s->period = (int) ($data['period'] ?? $s->period);
         $s->privacy = (bool) ($data['privacy'] ?? $s->privacy);
         $s->locked = (bool) ($data['locked'] ?? $s->locked);
         $s->transfer_code = $data['transfer_code'] ?? $s->transfer_code;

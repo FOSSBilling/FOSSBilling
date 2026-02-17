@@ -393,10 +393,6 @@ class Service implements InjectionAwareInterface
                 $rate = $this->_getRate($dc->getCode(), $currency->getCode());
             }
 
-            if (!is_numeric($rate)) {
-                continue;
-            }
-
             $currency->setConversionRate($rate);
             ++$updatedCount;
         }
@@ -455,7 +451,7 @@ class Service implements InjectionAwareInterface
             $rates = $this->getCurrencyLayerRates($from, $validFor, $config['currencylayer_key']);
         } else {
             $key = $config['exchangerate_api_key'] ?? ''; // No key is OK here, we will just use the open API
-            if ($config['sync_rate'] ?? 'auto' === 'auto') {
+            if (($config['sync_rate'] ?? 'auto') === 'auto') {
                 $rates = $this->getExchangeRateAPIRates($from, 0, $key);
             } else {
                 $rates = $this->getExchangeRateAPIRates($from, $validFor, $key);

@@ -168,14 +168,14 @@ class Service implements InjectionAwareInterface
 
         if (isset($field['type'])) {
             if ($field['type'] == 'checkbox' || $field['type'] == 'radio' || $field['type'] == 'select') {
-                if (!$this->isArrayUnique(array_filter($field['values'], strlen(...)))) {
+                if (!$this->isArrayUnique(array_filter($field['values'], fn ($v) => strlen($v) > 0))) {
                     throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' values must be unique', null, 1597);
                 }
-                if (!$this->isArrayUnique(array_filter($field['labels'], strlen(...)))) {
+                if (!$this->isArrayUnique(array_filter($field['labels'], fn ($v) => strlen($v) > 0))) {
                     throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' labels must be unique', null, 1598);
                 }
                 $field['options'] = array_combine($field['labels'], $field['values']);
-                $field['options'] = array_filter($field['options'], strlen(...));
+                $field['options'] = array_filter($field['options'], fn ($v) => strlen($v) > 0);
                 $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
             }
             if ($field['type'] == 'textarea') {

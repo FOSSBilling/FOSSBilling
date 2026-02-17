@@ -334,6 +334,7 @@ class ServicePayGateway implements InjectionAwareInterface
             return [];
         }
 
+        // @phpstan-ignore argument.type
         return call_user_func([$class, 'getConfig']);
     }
 
