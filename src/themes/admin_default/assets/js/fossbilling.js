@@ -140,20 +140,23 @@ globalThis.FOSSBilling = {
       }
     });
 
-    //===== Information boxes =====//
-    document.querySelectorAll('.hideit').forEach(element => {
-      element.addEventListener('click', function() {
-        // Simple fade out effect
-        let opacity = 1;
-        const fadeEffect = setInterval(() => {
-          if (opacity > 0) {
-            opacity -= 0.1;
-            this.style.opacity = opacity;
-          } else {
-            clearInterval(fadeEffect);
-            this.style.display = 'none';
-          }
-        }, 40); // 40ms * 10 steps ~= 400ms duration
-      });
-    });
-  });
+     //===== Information boxes =====//
+     document.querySelectorAll('.hideit').forEach(element => {
+       element.addEventListener('click', function() {
+         // Simple fade out effect
+         let opacity = 1;
+         const fadeEffect = setInterval(() => {
+           if (opacity > 0) {
+             opacity -= 0.1;
+             this.style.opacity = opacity;
+           } else {
+             clearInterval(fadeEffect);
+             this.style.display = 'none';
+           }
+         }, 40); // 40ms * 10 steps ~= 400ms duration
+       });
+     });
+   });
+
+   //===== Tab parameter support =====//
+
