@@ -12,25 +12,21 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function (): void {
-    $this->serviceStub = Mockery::mock(\Box\Mod\Activity\Service::class);
-
-    $this->paginatorStub = Mockery::mock(\FOSSBilling\Pagination::class);
-
-    $this->di = container();
-    $this->di['pager'] = $this->paginatorStub;
-    $this->di['mod_service'] = $this->di->protect(fn (): \Mockery\MockInterface => $this->serviceStub);
-
-    $this->api = new \Api_Handler(new \Model_Admin());
-    $this->api->setDi($this->di);
-    $this->di['api_admin'] = $this->api;
-
-    $this->activity = new \Box\Mod\Activity\Api\Admin();
-    $this->activity->setDi($this->di);
-    $this->activity->setService($this->serviceStub);
-});
-
 test('log get list with staff user', function (): void {
+    $serviceStub = Mockery::mock(\Box\Mod\Activity\Service::class);
+    $paginatorStub = Mockery::mock(\FOSSBilling\Pagination::class);
+    $di = container();
+    $di['pager'] = $paginatorStub;
+    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $serviceStub);
+
+    $api = new \Api_Handler(new \Model_Admin());
+    $api->setDi($di);
+    $di['api_admin'] = $api;
+
+    $activity = new \Box\Mod\Activity\Api\Admin();
+    $activity->setDi($di);
+    $activity->setService($serviceStub);
+
     $simpleResultArr = [
         'list' => [
             [
@@ -43,27 +39,44 @@ test('log get list with staff user', function (): void {
     ];
 
     $serviceMock = Mockery::mock(\Box\Mod\Activity\Service::class);
-    $serviceMock->shouldReceive('getSearchQuery')
-        ->atLeast()->once()
-        ->andReturn(['String', []]);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('getSearchQuery');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(['String', []]);
 
     $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
-        ->andReturn(25);
-    $paginatorMock->shouldReceive('getPaginatedResultSet')
-        ->atLeast()->once()
-        ->andReturn($simpleResultArr);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $paginatorMock->shouldReceive('getDefaultPerPage');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn(25);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $paginatorMock->shouldReceive('getPaginatedResultSet');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn($simpleResultArr);
 
     $model = new \Model_ActivitySystem();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
-    $this->di['pager'] = $paginatorMock;
-    $this->activity->setService($serviceMock);
-    $this->activity->log_get_list([]);
+    $di['pager'] = $paginatorMock;
+    $activity->setService($serviceMock);
+    $activity->log_get_list([]);
 });
 
 test('log get list with client user', function (): void {
+    $serviceStub = Mockery::mock(\Box\Mod\Activity\Service::class);
+    $paginatorStub = Mockery::mock(\FOSSBilling\Pagination::class);
+    $di = container();
+    $di['pager'] = $paginatorStub;
+    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $serviceStub);
+
+    $api = new \Api_Handler(new \Model_Admin());
+    $api->setDi($di);
+    $di['api_admin'] = $api;
+
+    $activity = new \Box\Mod\Activity\Api\Admin();
+    $activity->setDi($di);
+    $activity->setService($serviceStub);
+
     $simpleResultArr = [
         'list' => [
             [
@@ -76,24 +89,27 @@ test('log get list with client user', function (): void {
     ];
 
     $serviceMock = Mockery::mock(\Box\Mod\Activity\Service::class);
-    $serviceMock->shouldReceive('getSearchQuery')
-        ->atLeast()->once()
-        ->andReturn(['String', []]);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('getSearchQuery');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(['String', []]);
 
     $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
-        ->andReturn(25);
-    $paginatorMock->shouldReceive('getPaginatedResultSet')
-        ->atLeast()->once()
-        ->andReturn($simpleResultArr);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $paginatorMock->shouldReceive('getDefaultPerPage');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn(25);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $paginatorMock->shouldReceive('getPaginatedResultSet');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn($simpleResultArr);
 
     $model = new \Model_ActivitySystem();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
-    $this->di['pager'] = $paginatorMock;
-    $this->activity->setService($serviceMock);
-    $this->activity->log_get_list([]);
+    $di['pager'] = $paginatorMock;
+    $activity->setService($serviceMock);
+    $activity->log_get_list([]);
 });
 
 test('log with empty m parameter returns false', function (): void {
@@ -108,9 +124,10 @@ test('log with empty m parameter returns false', function (): void {
 
 test('log email with subject', function (): void {
     $service = Mockery::mock(\Box\Mod\Activity\Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $service->shouldReceive('logEmail')
-        ->atLeast()->once()
-        ->andReturn(true);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $service->shouldReceive('logEmail');
+    $expectation->atLeast()->once();
+    $expectation->andReturn(true);
 
     $di = container();
 

@@ -12,55 +12,60 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->controller = new \Box\Mod\Activity\Controller\Admin();
-});
-
-test('getDi returns dependency injection container', function () {
+test('getDi returns dependency injection container', function (): void {
+    $controller = new \Box\Mod\Activity\Controller\Admin();
     $di = container();
     $dbMock = Mockery::mock('Box_Database');
 
     $di['db'] = $dbMock;
-    $this->controller->setDi($di);
-    $result = $this->controller->getDi();
+    $controller->setDi($di);
+    $result = $controller->getDi();
     expect($result)->toEqual($di);
 });
 
-test('fetchNavigation returns array', function () {
+test('fetchNavigation returns array', function (): void {
+    $controller = new \Box\Mod\Activity\Controller\Admin();
     $di = container();
     $link = 'activity';
 
     $urlMock = Mockery::mock('Box_Url');
-    $urlMock->shouldReceive('adminLink')
-        ->atLeast()->once()
-        ->andReturn('https://fossbilling.org/index.php?_url=/' . $link);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $urlMock->shouldReceive('adminLink');
+    $expectation->atLeast()->once();
+    $expectation->andReturn('https://fossbilling.org/index.php?_url=/' . $link);
     $di['url'] = $urlMock;
 
-    $this->controller->setDi($di);
+    $controller->setDi($di);
 
-    $result = $this->controller->fetchNavigation();
+    $result = $controller->fetchNavigation();
     expect($result)->toBeArray();
 });
 
-test('register configures routes', function () {
+test('register configures routes', function (): void {
+    $controller = new \Box\Mod\Activity\Controller\Admin();
     $boxAppMock = Mockery::mock('\Box_App');
-    $boxAppMock->shouldReceive('get')
-        ->atLeast()->once()
-        ->with('/activity', 'get_index', [], \Box\Mod\Activity\Controller\Admin::class);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $boxAppMock->shouldReceive('get');
+    $expectation->atLeast()->once();
+    $expectation->with('/activity', 'get_index', [], \Box\Mod\Activity\Controller\Admin::class);
 
-    $this->controller->register($boxAppMock);
+    /** @var \Box_App $boxAppMock */
+    $controller->register($boxAppMock);
 });
 
-test('getIndex renders activity index', function () {
+test('getIndex renders activity index', function (): void {
+    $controller = new \Box\Mod\Activity\Controller\Admin();
     $boxAppMock = Mockery::mock('\Box_App');
-    $boxAppMock->shouldReceive('render')
-        ->atLeast()->once()
-        ->with('mod_activity_index');
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $boxAppMock->shouldReceive('render');
+    $expectation->atLeast()->once();
+    $expectation->with('mod_activity_index');
 
     $di = container();
     $di['is_admin_logged'] = true;
 
-    $this->controller->setDi($di);
+    $controller->setDi($di);
 
-    $this->controller->get_index($boxAppMock);
+    /** @var \Box_App $boxAppMock */
+    $controller->get_index($boxAppMock);
 });

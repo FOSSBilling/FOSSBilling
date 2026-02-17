@@ -18,11 +18,11 @@ test('empty fire', function (): void {
 });
 
 test('fire', function (): void {
-    /** @var \Mockery\MockInterface&\Box_Database $dbMock */
     $dbMock = Mockery::mock('Box_Database');
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('getAll');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
     $di = container();
     $di['logger'] = new Box_Log();

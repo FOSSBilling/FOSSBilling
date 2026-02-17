@@ -12,207 +12,218 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->api = new \Box\Mod\Stats\Api\Admin();
-});
-
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets summary', function () {
+test('gets summary', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getSummary')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getSummary');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->get_summary();
+    $result = $api->get_summary();
     expect($result)->toBeArray();
 });
 
-test('gets summary income', function () {
+test('gets summary income', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getSummaryIncome')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getSummaryIncome');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->get_summary_income();
+    $result = $api->get_summary_income();
     expect($result)->toBeArray();
 });
 
-test('gets order statuses', function () {
+test('gets order statuses', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getOrdersStatuses')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getOrdersStatuses');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $data = [];
-    $result = $this->api->get_orders_statuses($data);
+    $result = $api->get_orders_statuses($data);
     expect($result)->toBeArray();
 });
 
-test('gets product summary', function () {
+test('gets product summary', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getProductSummary')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getProductSummary');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $data = [];
-    $result = $this->api->get_product_summary($data);
+    $result = $api->get_product_summary($data);
     expect($result)->toBeArray();
 });
 
-test('gets product sales', function () {
+test('gets product sales', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getProductSales')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getProductSales');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $data = [];
-    $result = $this->api->get_product_sales($data);
+    $result = $api->get_product_sales($data);
     expect($result)->toBeArray();
 });
 
-test('gets income vs refunds', function () {
+test('gets income vs refunds', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('incomeAndRefundStats')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('incomeAndRefundStats');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $data = [];
-    $result = $this->api->get_income_vs_refunds($data);
+    $result = $api->get_income_vs_refunds($data);
     expect($result)->toBeArray();
 });
 
-test('gets refunds', function () {
+test('gets refunds', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getRefunds')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getRefunds');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $data = [];
-    $result = $this->api->get_refunds($data);
+    $result = $api->get_refunds($data);
     expect($result)->toBeArray();
 });
 
-test('gets income', function () {
+test('gets income', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getIncome')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getIncome');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $data = [];
-    $result = $this->api->get_income($data);
+    $result = $api->get_income($data);
     expect($result)->toBeArray();
 });
 
-test('gets orders', function () {
+test('gets orders', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getTableStats')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getTableStats');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $data = [];
-    $result = $this->api->get_orders($data);
+    $result = $api->get_orders($data);
     expect($result)->toBeArray();
 });
 
-test('gets clients', function () {
+test('gets clients', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getTableStats')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getTableStats');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $data = [];
-    $result = $this->api->get_clients($data);
+    $result = $api->get_clients($data);
     expect($result)->toBeArray();
 });
 
-test('gets client countries', function () {
+test('gets client countries', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getClientCountries')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getClientCountries');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $data = [];
-    $result = $this->api->client_countries($data);
+    $result = $api->client_countries($data);
     expect($result)->toBeArray();
 });
 
-test('gets sales countries', function () {
+test('gets sales countries', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getSalesByCountry')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getSalesByCountry');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $data = [];
-    $result = $this->api->sales_countries($data);
+    $result = $api->sales_countries($data);
     expect($result)->toBeArray();
 });
 
-test('gets invoices', function () {
+test('gets invoices', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getTableStats')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getTableStats');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $data = [];
-    $result = $this->api->get_invoices($data);
+    $result = $api->get_invoices($data);
     expect($result)->toBeArray();
 });
 
-test('gets tickets', function () {
+test('gets tickets', function (): void {
+    $api = new \Box\Mod\Stats\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Stats\Service::class);
-    $serviceMock
-    ->shouldReceive('getTableStats')
-    ->atLeast()->once()
-    ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getTableStats');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $data = [];
-    $result = $this->api->get_tickets($data);
+    $result = $api->get_tickets($data);
     expect($result)->toBeArray();
 });

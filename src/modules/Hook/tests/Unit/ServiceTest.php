@@ -13,19 +13,17 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->service = new \Box\Mod\Hook\Service();
-});
-
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $service = new \Box\Mod\Hook\Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets search query', function () {
-    [$sql, $params] = $this->service->getSearchQuery([]);
+test('gets search query', function (): void {
+    $service = new \Box\Mod\Hook\Service();
+    [$sql, $params] = $service->getSearchQuery([]);
 
     expect($sql)->toBeString()
         ->and($params)->toBeArray()
@@ -33,23 +31,27 @@ test('gets search query', function () {
         ->and($params)->toBe([]);
 });
 
-test('converts to api array', function () {
+test('converts to api array', function (): void {
+    $service = new \Box\Mod\Hook\Service();
     $arrMock = ['testing' => 'okey'];
-    $result = $this->service->toApiArray($arrMock);
+    $result = $service->toApiArray($arrMock);
     expect($result)->toBe($arrMock);
 });
 
-test('handles on after admin activate extension', function () {
+test('handles on after admin activate extension', function (): void {
+    $service = new \Box\Mod\Hook\Service();
     $eventParams = [
         'id' => 1,
     ];
 
     $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()
-        ->once()
-        ->andReturn($eventParams);
-    $eventMock->shouldReceive('setReturnValue')->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $eventMock->shouldReceive('getParameters');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($eventParams);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $eventMock->shouldReceive('setReturnValue');
+    $expectation2->atLeast()->once();
 
     $model = new \Model_Extension();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -57,96 +59,110 @@ test('handles on after admin activate extension', function () {
     $model->type = 'mod';
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()
-        ->once()
-        ->andReturn($model);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $dbMock->shouldReceive('load');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn($model);
 
     $hookService = Mockery::mock(\Box\Mod\Hook\Service::class);
-    $hookService->shouldReceive('batchConnect')
-        ->atLeast()
-        ->once();
+    /** @var \Mockery\Expectation $expectation4 */
+    $expectation4 = $hookService->shouldReceive('batchConnect');
+    $expectation4->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $hookService);
 
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()
-        ->once()
-        ->andReturn($di);
+    /** @var \Mockery\Expectation $expectation5 */
+    $expectation5 = $eventMock->shouldReceive('getDi');
+    $expectation5->atLeast()->once();
+    $expectation5->andReturn($di);
 
-    $this->service->setDi($di);
-    $this->service->onAfterAdminActivateExtension($eventMock);
+    $service->setDi($di);
+    /** @var \Box_Event $eventMock */
+    $service->onAfterAdminActivateExtension($eventMock);
     $result = true;
     expect($result)->toBeTrue();
 });
 
-test('handles on after admin activate extension with missing id', function () {
+test('handles on after admin activate extension with missing id', function (): void {
+    $service = new \Box\Mod\Hook\Service();
     $eventParams = [];
 
     $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()
-        ->once()
-        ->andReturn($eventParams);
-    $eventMock->shouldReceive('setReturnValue')->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $eventMock->shouldReceive('getParameters');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($eventParams);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $eventMock->shouldReceive('setReturnValue');
+    $expectation2->atLeast()->once();
 
-    $this->service->onAfterAdminActivateExtension($eventMock);
+    /** @var \Box_Event $eventMock */
+    $service->onAfterAdminActivateExtension($eventMock);
     $result = false;
     expect($result)->toBeFalse();
 });
 
-test('handles on after admin deactivate extension', function () {
+test('handles on after admin deactivate extension', function (): void {
+    $service = new \Box\Mod\Hook\Service();
     $eventParams = [
         'type' => 'mod',
         'id' => 1,
     ];
 
     $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()
-        ->once()
-        ->andReturn($eventParams);
-    $eventMock->shouldReceive('setReturnValue')->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $eventMock->shouldReceive('getParameters');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($eventParams);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $eventMock->shouldReceive('setReturnValue');
+    $expectation2->atLeast()->once();
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $dbMock->shouldReceive('exec');
+    $expectation3->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()
-        ->once()
-        ->andReturn($di);
+    /** @var \Mockery\Expectation $expectation4 */
+    $expectation4 = $eventMock->shouldReceive('getDi');
+    $expectation4->atLeast()->once();
+    $expectation4->andReturn($di);
 
-    $this->service->setDi($di);
-    $this->service->onAfterAdminDeactivateExtension($eventMock);
+    $service->setDi($di);
+    /** @var \Box_Event $eventMock */
+    $service->onAfterAdminDeactivateExtension($eventMock);
     $result = true;
     expect($result)->toBeTrue();
 });
 
-test('batch connects', function () {
+test('batch connects', function (): void {
+    $service = new \Box\Mod\Hook\Service();
     $mod = 'activity';
 
     $data['mods'] = [$mod];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
-        ->atLeast()
-        ->once()
-        ->andReturn(false);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('getCell');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(false);
 
     $extensionModel = new \Model_ExtensionMeta();
     $extensionModel->loadBean(new \Tests\Helpers\DummyBean());
 
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()
-        ->once()
-        ->andReturn($extensionModel);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('dispense');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($extensionModel);
 
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $dbMock->shouldReceive('store');
+    $expectation3->atLeast()->once();
 
     $returnArr = [
         [
@@ -155,22 +171,24 @@ test('batch connects', function () {
             'meta_value' => 'testValue',
         ],
     ];
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()
-        ->once()
-        ->andReturn($returnArr);
+    /** @var \Mockery\Expectation $expectation4 */
+    $expectation4 = $dbMock->shouldReceive('getAll');
+    $expectation4->atLeast()->once();
+    $expectation4->andReturn($returnArr);
 
     $activityServiceMock = Mockery::mock(\Box\Mod\Activity\Service::class);
 
     $boxModMock = Mockery::mock(\FOSSBilling\Module::class);
-    $boxModMock->shouldReceive('hasService')
-        ->atLeast()
-        ->once()
-        ->andReturn(true);
-    $boxModMock->shouldReceive('getService')
-        ->andReturn($activityServiceMock);
-    $boxModMock->shouldReceive('getName')
-        ->andReturn('activity');
+    /** @var \Mockery\Expectation $expectation5 */
+    $expectation5 = $boxModMock->shouldReceive('hasService');
+    $expectation5->atLeast()->once();
+    $expectation5->andReturn(true);
+    /** @var \Mockery\Expectation $expectation6 */
+    $expectation6 = $boxModMock->shouldReceive('getService');
+    $expectation6->andReturn($activityServiceMock);
+    /** @var \Mockery\Expectation $expectation7 */
+    $expectation7 = $boxModMock->shouldReceive('getName');
+    $expectation7->andReturn('activity');
 
     $extensionServiceMock = Mockery::mock(\Box\Mod\Extension\Service::class);
 
@@ -183,9 +201,11 @@ test('batch connects', function () {
         }
     });
     $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
-    $validatorMock->shouldReceive('checkRequiredParamsForArray');
+    /** @var \Mockery\Expectation $validatorExpectation */
+    $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
+    $validatorExpectation->atLeast()->once();
     $di['validator'] = $validatorMock;
-    $this->service->setDi($di);
-    $result = $this->service->batchConnect($mod);
+    $service->setDi($di);
+    $result = $service->batchConnect($mod);
     expect($result)->toBeTrue();
 });

@@ -61,7 +61,9 @@ test('check required params for array', function (array $data, array $required, 
         expect(fn () => $validate->checkRequiredParamsForArray($required, $data, $variables))
             ->toThrow(\FOSSBilling\Exception::class);
     } else {
-        expect($validate->checkRequiredParamsForArray($required, $data, $variables))->toBeNull();
+        // Method returns void on success - wrap in closure and expect no exception
+        expect(fn () => $validate->checkRequiredParamsForArray($required, $data, $variables))
+            ->not->toThrow(\FOSSBilling\Exception::class);
     }
 })->with('requiredParamsProvider');
 
@@ -80,7 +82,9 @@ test('check required params passes with all required', function (): void {
         'email' => 'Email is required',
     ];
 
-    expect($validate->checkRequiredParamsForArray($required, $data))->toBeNull();
+    // Method returns void on success - wrap in closure and expect no exception
+    expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
+        ->not->toThrow(\FOSSBilling\Exception::class);
 });
 
 test('check required params fails with missing key', function (): void {
@@ -128,7 +132,9 @@ test('check required params with zero value passes', function (): void {
         'amount' => 'Amount is required',
     ];
 
-    expect($validate->checkRequiredParamsForArray($required, $data))->toBeNull();
+    // Method returns void on success - wrap in closure and expect no exception
+    expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
+        ->not->toThrow(\FOSSBilling\Exception::class);
 });
 
 test('check required params with false value fails', function (): void {

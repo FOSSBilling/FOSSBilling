@@ -13,80 +13,79 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->api = new \Box\Mod\Hook\Api\Admin();
-});
-
-test('getDi returns dependency injection container', function () {
+test('getDi returns dependency injection container', function (): void {
+    $api = new \Box\Mod\Hook\Api\Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toEqual($di);
 });
 
-test('getList returns array', function () {
+test('getList returns array', function (): void {
+    $api = new \Box\Mod\Hook\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Hook\Service::class);
-
-    $serviceMock->shouldReceive('getSearchQuery')
-        ->atLeast()
-        ->once()
-        ->andReturn(['SqlString', []]);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('getSearchQuery');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(['SqlString', []]);
 
     $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class)->makePartial();
     $paginatorMock->shouldAllowMockingProtectedMethods();
-    $paginatorMock->shouldReceive('getPaginatedResultSet')
-        ->atLeast()
-        ->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $paginatorMock->shouldReceive('getPaginatedResultSet');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn([]);
 
     $di = container();
     $di['pager'] = $paginatorMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $result = $this->api->get_list([]);
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $result = $api->get_list([]);
     expect($result)->toBeArray();
 });
 
-test('call fires event', function () {
+test('call fires event', function (): void {
+    $api = new \Box\Mod\Hook\Api\Admin();
     $data['event'] = 'testEvent';
 
     $eventManager = Mockery::mock('\Box_EventManager');
-    $eventManager->shouldReceive('fire')
-        ->atLeast()
-        ->once()
-        ->andReturn(1);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $eventManager->shouldReceive('fire');
+    $expectation->atLeast()->once();
+    $expectation->andReturn(1);
 
     $di = container();
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['events_manager'] = $eventManager;
 
-    $this->api->setDi($di);
-    $result = $this->api->call($data);
+    $api->setDi($di);
+    $result = $api->call($data);
     expect($result)->not->toBeEmpty();
 });
 
-test('call returns false when event param is missing', function () {
+test('call returns false when event param is missing', function (): void {
+    $api = new \Box\Mod\Hook\Api\Admin();
     $data['event'] = null;
 
-    $result = $this->api->call($data);
+    $result = $api->call($data);
     expect($result)->toBeBool();
     expect($result)->toBeFalse();
 });
 
-test('batchConnect returns result', function () {
+test('batchConnect returns result', function (): void {
+    $api = new \Box\Mod\Hook\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Hook\Service::class);
-
-    $serviceMock->shouldReceive('batchConnect')
-        ->atLeast()
-        ->once()
-        ->andReturn(true);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('batchConnect');
+    $expectation->atLeast()->once();
+    $expectation->andReturn(true);
 
     $di = container();
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->batch_connect([]);
+    $api->setService($serviceMock);
+    $result = $api->batch_connect([]);
     expect($result)->not->toBeEmpty();
 });

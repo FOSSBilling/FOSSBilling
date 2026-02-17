@@ -17,10 +17,10 @@ test('getPairs returns array', function (): void {
     $service = new Service();
 
     $themeService = Mockery::mock(\Box\Mod\Theme\Service::class);
-    $themeService->shouldReceive('getCurrentClientAreaThemeCode')
-        ->atLeast()
-        ->once()
-        ->andReturn('huraga');
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $themeService->shouldReceive('getCurrentClientAreaThemeCode');
+    $expectation->atLeast()->once();
+    $expectation->andReturn('huraga');
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $themeService);

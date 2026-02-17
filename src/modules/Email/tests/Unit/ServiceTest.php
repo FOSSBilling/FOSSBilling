@@ -12,15 +12,7 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-class ServiceEmailTestDouble extends \Box\Mod\Email\Service
-{
-    public function template_render(...$args): string
-    {
-        return '';
-    }
-}
-
-test('di returns dependency injection container', function () {
+test('di returns dependency injection container', function (): void {
     $service = new \Box\Mod\Email\Service();
 
     $di = container();
@@ -31,7 +23,7 @@ test('di returns dependency injection container', function () {
     expect($result)->toBe($di);
 });
 
-dataset('getSearchQueryProvider', function () {
+dataset('getSearchQueryProvider', function (): array {
     return [
         [
             [],
@@ -78,7 +70,7 @@ dataset('getSearchQueryProvider', function () {
     ];
 });
 
-test('getSearchQuery returns query and bindings', function (array $data, string $query, array $bindings) {
+test('getSearchQuery returns query and bindings', function (array $data, string $query, array $bindings): void {
     $service = new \Box\Mod\Email\Service();
     $di = container();
 
@@ -92,7 +84,7 @@ test('getSearchQuery returns query and bindings', function (array $data, string 
     expect($result[1])->toBe($bindings);
 })->with('getSearchQueryProvider');
 
-test('findOneForClientById returns email for client', function () {
+test('findOneForClientById returns email for client', function (): void {
     $service = new \Box\Mod\Email\Service();
     $di = container();
     $id = 5;
@@ -123,7 +115,7 @@ test('findOneForClientById returns email for client', function () {
     expect($result->client_id)->toBe($activityEmail->client_id);
 });
 
-test('rmByClient removes emails for client', function () {
+test('rmByClient removes emails for client', function (): void {
     $service = new \Box\Mod\Email\Service();
     $di = container();
 
@@ -150,7 +142,7 @@ test('rmByClient removes emails for client', function () {
     expect($result)->toBeTrue();
 });
 
-test('rm removes email', function () {
+test('rm removes email', function (): void {
     $service = new \Box\Mod\Email\Service();
     $di = container();
 
@@ -170,7 +162,7 @@ test('rm removes email', function () {
     expect($result)->toBeTrue();
 });
 
-test('toApiArray returns API array for email', function () {
+test('toApiArray returns API array for email', function (): void {
     $service = new \Box\Mod\Email\Service();
 
     $id = 10;
@@ -212,7 +204,7 @@ test('toApiArray returns API array for email', function () {
     expect($result)->toBe($expected);
 });
 
-test('setVars encrypts and sets variables', function () {
+test('setVars encrypts and sets variables', function (): void {
     $service = new \Box\Mod\Email\Service();
 
     $di = container();
@@ -236,7 +228,7 @@ test('setVars encrypts and sets variables', function () {
     expect($result)->toBeTrue();
 });
 
-test('getVars decrypts and returns variables', function () {
+test('getVars decrypts and returns variables', function (): void {
     $service = new \Box\Mod\Email\Service();
 
     $di = container();
@@ -261,7 +253,7 @@ test('getVars decrypts and returns variables', function () {
     expect($result)->toBe($expected);
 });
 
-test('sendTemplate returns false when template does not exist', function () {
+test('sendTemplate returns false when template does not exist', function (): void {
     $service = new \Box\Mod\Email\Service();
     $di = container();
 
@@ -309,7 +301,7 @@ test('sendTemplate returns false when template does not exist', function () {
     expect($result)->toBeFalse();
 });
 
-test('sendTemplate sends email when template exists', function () {
+test('sendTemplate sends email when template exists', function (): void {
 
     $data = [
         'code' => 'mod_email_test',
@@ -386,7 +378,7 @@ test('sendTemplate sends email when template exists', function () {
     expect($result)->toBeTrue();
 });
 
-dataset('sendTemplateExistsStaffProvider', function () {
+dataset('sendTemplateExistsStaffProvider', function (): array {
     return [
         [
             [
@@ -415,7 +407,7 @@ dataset('sendTemplateExistsStaffProvider', function () {
     ];
 });
 
-test('sendTemplate handles to_staff and to_client options', function (array $data, string $clientGetExpects, string $staffgetListExpects) {
+test('sendTemplate handles to_staff and to_client options', function (array $data, string $clientGetExpects, string $staffgetListExpects): void {
 
     $service = new \Box\Mod\Email\Service();
 
@@ -536,7 +528,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
     expect($result)->toBeTrue();
 })->with('sendTemplateExistsStaffProvider');
 
-test('resend resends email', function () {
+test('resend resends email', function (): void {
 
     $service = new \Box\Mod\Email\Service();
 
@@ -579,7 +571,7 @@ test('resend resends email', function () {
     expect($result)->toBeTrue();
 });
 
-dataset('templateGetSearchQueryProvider', function () {
+dataset('templateGetSearchQueryProvider', function (): array {
     return [
         [
             [],
@@ -622,7 +614,7 @@ dataset('templateGetSearchQueryProvider', function () {
     ];
 });
 
-test('templateGetSearchQuery returns query and bindings', function (array $data, string $query, array $bindings) {
+test('templateGetSearchQuery returns query and bindings', function (array $data, string $query, array $bindings): void {
     $service = new \Box\Mod\Email\Service();
     $di = container();
 
@@ -636,7 +628,7 @@ test('templateGetSearchQuery returns query and bindings', function (array $data,
     expect($result[1])->toBe($bindings);
 })->with('templateGetSearchQueryProvider');
 
-test('templateToApiArray returns API array for template', function () {
+test('templateToApiArray returns API array for template', function (): void {
     $id = 1;
     $action_code = 'code';
     $category = 'category';
@@ -671,7 +663,7 @@ test('templateToApiArray returns API array for template', function () {
     expect($result)->toBe($expected);
 });
 
-test('templateToApiArray returns deep array with vars', function () {
+test('templateToApiArray returns deep array with vars', function (): void {
     $id = 1;
     $action_code = 'code';
     $category = 'category';
@@ -717,7 +709,7 @@ test('templateToApiArray returns deep array with vars', function () {
     expect($result)->toBe($expected);
 });
 
-dataset('template_updateProvider', function () {
+dataset('template_updateProvider', function (): array {
     return [
         [
             [
@@ -742,7 +734,7 @@ dataset('template_updateProvider', function () {
     ];
 });
 
-test('updateTemplate updates template', function (array $data, string $templateRenderExpects) {
+test('updateTemplate updates template', function (array $data, string $templateRenderExpects): void {
 
     $id = 1;
     $model = new \Model_EmailTemplate();
@@ -790,7 +782,7 @@ test('updateTemplate updates template', function (array $data, string $templateR
     expect($result)->toBeTrue();
 })->with('template_updateProvider');
 
-test('getEmailById returns email by ID', function () {
+test('getEmailById returns email by ID', function (): void {
     $service = new \Box\Mod\Email\Service();
 
     $id = 1;
@@ -812,7 +804,7 @@ test('getEmailById returns email by ID', function () {
     expect($result->id)->toBe($id);
 });
 
-test('getEmailById throws exception when email not found', function () {
+test('getEmailById throws exception when email not found', function (): void {
     $service = new \Box\Mod\Email\Service();
 
     $db = Mockery::mock('Box_Database');
@@ -828,7 +820,7 @@ test('getEmailById throws exception when email not found', function () {
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('templateCreate creates new template', function () {
+test('templateCreate creates new template', function (): void {
 
     $service = new \Box\Mod\Email\Service();
 
@@ -864,7 +856,7 @@ test('templateCreate creates new template', function () {
     expect($result)->toBe($emailTemplateModel);
 });
 
-dataset('batchTemplateGenerateProvider', function () {
+dataset('batchTemplateGenerateProvider', function (): array {
     return [
         [true, false, 'never', 'never'],
         [false, true, 'atLeastOnce', 'atLeastOnce'],
@@ -872,7 +864,7 @@ dataset('batchTemplateGenerateProvider', function () {
     ];
 });
 
-test('templateBatchGenerate generates templates in batch', function (bool $findOneReturn, bool $isExtensionActiveReturn, string $findOneExpects, string $dispenseExpects) {
+test('templateBatchGenerate generates templates in batch', function (bool $findOneReturn, bool $isExtensionActiveReturn, string $findOneExpects, string $dispenseExpects): void {
 
     $service = new \Box\Mod\Email\Service();
 
@@ -915,7 +907,7 @@ test('templateBatchGenerate generates templates in batch', function (bool $findO
     expect($result)->toBeTrue();
 })->with('batchTemplateGenerateProvider');
 
-test('templateBatchDisable disables all templates', function () {
+test('templateBatchDisable disables all templates', function (): void {
 
     $service = new \Box\Mod\Email\Service();
 
@@ -934,7 +926,7 @@ test('templateBatchDisable disables all templates', function () {
     expect($result)->toBeTrue();
 });
 
-test('templateBatchEnable enables all templates', function () {
+test('templateBatchEnable enables all templates', function (): void {
 
     $service = new \Box\Mod\Email\Service();
 
@@ -953,7 +945,7 @@ test('templateBatchEnable enables all templates', function () {
     expect($result)->toBeTrue();
 });
 
-test('batchSend processes email queue', function () {
+test('batchSend processes email queue', function (): void {
 
     $service = new \Box\Mod\Email\Service();
 
@@ -1007,7 +999,7 @@ test('batchSend processes email queue', function () {
     expect($result)->toBeNull();
 });
 
-test('resetTemplateByCode resets template by code', function () {
+test('resetTemplateByCode resets template by code', function (): void {
 
     $service = new \Box\Mod\Email\Service();
 
@@ -1052,7 +1044,7 @@ test('resetTemplateByCode resets template by code', function () {
     expect($result)->toBeTrue();
 });
 
-test('resetTemplateByCode throws exception when template not found', function () {
+test('resetTemplateByCode throws exception when template not found', function (): void {
     $service = new \Box\Mod\Email\Service();
 
     $db = Mockery::mock('Box_Database');
@@ -1068,7 +1060,7 @@ test('resetTemplateByCode throws exception when template not found', function ()
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('sendMail queues email for sending', function () {
+test('sendMail queues email for sending', function (): void {
 
     $dbMock = Mockery::mock('\Box_Database');
 

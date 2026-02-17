@@ -13,26 +13,23 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 use Box\Mod\Page\Api\Admin;
 
-beforeEach(function (): void {
-    $this->api = new Admin();
-});
-
 test('getDi returns dependency injection container', function (): void {
+    $api = new Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toEqual($di);
 });
 
 test('getPairs returns page pairs array', function (): void {
+    $api = new Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Page\Service::class);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getPairs');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $serviceMock->shouldReceive('getPairs')
-        ->atLeast()
-        ->once()
-        ->andReturn([]);
-
-    $this->api->setService($serviceMock);
-    $result = $this->api->get_pairs();
+    $api->setService($serviceMock);
+    $result = $api->get_pairs();
     expect($result)->toBeArray();
 });

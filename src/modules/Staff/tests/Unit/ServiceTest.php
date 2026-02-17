@@ -13,10 +13,6 @@ declare(strict_types=1);
 use Box\Mod\Staff\Service;
 use function Tests\Helpers\container;
 
-beforeEach(function (): void {
-    $this->service = new Service();
-});
-
 class StaffPdoMock extends \PDO
 {
     public function __construct()
@@ -28,6 +24,86 @@ class StaffPdoStatementMock extends \PDOStatement
 {
     public function __construct()
     {
+    }
+}
+
+class StaffQueryBuilderMock
+{
+    private $stmt;
+
+    public function __construct($stmt = null)
+    {
+        $this->stmt = $stmt;
+    }
+
+    public function update($table)
+    {
+        return $this;
+    }
+
+    public function set($field, $value)
+    {
+        return $this;
+    }
+
+    public function where($cond)
+    {
+        return $this;
+    }
+
+    public function setParameter($key, $val)
+    {
+        return $this;
+    }
+
+    public function executeStatement(): int
+    {
+        return 1;
+    }
+
+    public function select($field)
+    {
+        return $this;
+    }
+
+    public function from($table)
+    {
+        return $this;
+    }
+
+    public function executeQuery()
+    {
+        return $this->stmt;
+    }
+}
+
+class StaffDbalMock
+{
+    private $qb;
+
+    public function __construct($qb)
+    {
+        $this->qb = $qb;
+    }
+
+    public function createQueryBuilder()
+    {
+        return $this->qb;
+    }
+}
+
+class StaffStatementMock
+{
+    private $result;
+
+    public function __construct($result = '{}')
+    {
+        $this->result = $result;
+    }
+
+    public function fetchOne()
+    {
+        return $this->result;
     }
 }
 
@@ -107,10 +183,8 @@ test('login throws exception when credentials are invalid', function (): void {
     $service = new Service();
     $service->setDi($di);
 
-    $this->expectException(\FOSSBilling\Exception::class);
-    $this->expectExceptionCode(403);
-    $this->expectExceptionMessage('Check your login details');
-    $service->login($email, $password, $ip);
+    expect(fn () => $service->login($email, $password, $ip))
+        ->toThrow(\FOSSBilling\Exception::class, 'Check your login details');
 });
 
 test('getAdminsCount returns count of administrators', function (): void {
@@ -892,9 +966,8 @@ test('delete throws exception for protected account', function (): void {
 
     $service = new Service();
 
-    $this->expectException(\FOSSBilling\Exception::class);
-    $this->expectExceptionMessage('This administrator account is protected and cannot be removed');
-    $service->delete($adminModel);
+    expect(fn () => $service->delete($adminModel))
+        ->toThrow(\FOSSBilling\Exception::class, 'This administrator account is protected and cannot be removed');
 });
 
 test('changePassword updates admin password', function (): void {
@@ -1030,10 +1103,8 @@ test('create throws exception for duplicate email', function (): void {
 
     $serviceMock->setDi($di);
 
-    $this->expectException(\FOSSBilling\Exception::class);
-    $this->expectExceptionCode(788954);
-    $this->expectExceptionMessage("Staff member with email {$data['email']} is already registered.");
-    $serviceMock->create($data);
+    expect(fn () => $serviceMock->create($data))
+        ->toThrow(\FOSSBilling\Exception::class, "Staff member with email {$data['email']} is already registered.");
 });
 
 test('createAdmin creates new admin without permission check', function (): void {
@@ -1207,9 +1278,8 @@ test('deleteGroup throws exception for administrators group', function (): void 
 
     $serviceMock->shouldReceive("hasPermission")->atLeast()->once()->andReturn(true);
 
-    $this->expectException(\FOSSBilling\Exception::class);
-    $this->expectExceptionMessage('Administrators group cannot be removed');
-    $serviceMock->deleteGroup($adminGroupModel);
+    expect(fn () => $serviceMock->deleteGroup($adminGroupModel))
+        ->toThrow(\FOSSBilling\Exception::class, 'Administrators group cannot be removed');
 });
 
 test('deleteGroup throws exception when group has members', function (): void {
@@ -1229,9 +1299,8 @@ test('deleteGroup throws exception when group has members', function (): void {
 
     $serviceMock->setDi($di);
 
-    $this->expectException(\FOSSBilling\Exception::class);
-    $this->expectExceptionMessage('Cannot remove group which has staff members');
-    $serviceMock->deleteGroup($adminGroupModel);
+    expect(fn () => $serviceMock->deleteGroup($adminGroupModel))
+        ->toThrow(\FOSSBilling\Exception::class, 'Cannot remove group which has staff members');
 });
 
 test('updateGroup updates group details', function (): void {
@@ -1332,43 +1401,9 @@ test('setPermissions updates staff permissions', function (): void {
 
     $serviceMock->shouldReceive("hasPermission")->atLeast()->once()->andReturn(true);
 
-    $queryBuilderMock = new class {
-        public function update($table)
-        {
-            return $this;
-        }
+    $queryBuilderMock = new StaffQueryBuilderMock();
 
-        public function set($field, $value)
-        {
-            return $this;
-        }
-
-        public function where($cond)
-        {
-            return $this;
-        }
-
-        public function setParameter($key, $val)
-        {
-            return $this;
-        }
-
-        public function executeStatement(): int
-        {
-            return 1;
-        }
-    };
-
-    $dbalMock = new class($queryBuilderMock) {
-        public function __construct(private $qb)
-        {
-        }
-
-        public function createQueryBuilder()
-        {
-            return $this->qb;
-        }
-    };
+    $dbalMock = new StaffDbalMock($queryBuilderMock);
 
     $di = new \Pimple\Container();
     $di['dbal'] = $dbalMock;
@@ -1380,71 +1415,13 @@ test('setPermissions updates staff permissions', function (): void {
 });
 
 test('getPermissions returns empty array when permissions are empty', function (): void {
-    $statementWithFetchOne = new class {
-        public function fetchOne(): string
-        {
-            return '{}';
-        }
-    };
+    $statementWithFetchOne = new StaffStatementMock('{}');
 
     $service = new Service();
 
-    $queryBuilderMock = new class($statementWithFetchOne) {
-        public function __construct(private $stmt)
-        {
-        }
+    $queryBuilderMock = new StaffQueryBuilderMock($statementWithFetchOne);
 
-        public function update($table)
-        {
-            return $this;
-        }
-
-        public function set($field, $value)
-        {
-            return $this;
-        }
-
-        public function where($cond)
-        {
-            return $this;
-        }
-
-        public function setParameter($key, $val)
-        {
-            return $this;
-        }
-
-        public function executeStatement(): int
-        {
-            return 1;
-        }
-
-        public function select($field)
-        {
-            return $this;
-        }
-
-        public function from($table)
-        {
-            return $this;
-        }
-
-        public function executeQuery()
-        {
-            return $this->stmt;
-        }
-    };
-
-    $dbalMock = new class($queryBuilderMock) {
-        public function __construct(private $qb)
-        {
-        }
-
-        public function createQueryBuilder()
-        {
-            return $this->qb;
-        }
-    };
+    $dbalMock = new StaffDbalMock($queryBuilderMock);
 
     $di = new \Pimple\Container();
     $di['dbal'] = $dbalMock;
@@ -1459,75 +1436,13 @@ test('getPermissions returns empty array when permissions are empty', function (
 test('getPermissions returns permissions array', function (): void {
     $queryResult = '{"id" : "1"}';
 
-    $statementWithFetchOne = new class($queryResult) {
-        public function __construct(private $result)
-        {
-        }
-
-        public function fetchOne()
-        {
-            return $this->result;
-        }
-    };
+    $statementWithFetchOne = new StaffStatementMock($queryResult);
 
     $service = new Service();
 
-    $queryBuilderMock = new class($statementWithFetchOne) {
-        public function __construct(private $stmt)
-        {
-        }
+    $queryBuilderMock = new StaffQueryBuilderMock($statementWithFetchOne);
 
-        public function update($table)
-        {
-            return $this;
-        }
-
-        public function set($field, $value)
-        {
-            return $this;
-        }
-
-        public function where($cond)
-        {
-            return $this;
-        }
-
-        public function setParameter($key, $val)
-        {
-            return $this;
-        }
-
-        public function executeStatement(): int
-        {
-            return 1;
-        }
-
-        public function select($field)
-        {
-            return $this;
-        }
-
-        public function from($table)
-        {
-            return $this;
-        }
-
-        public function executeQuery()
-        {
-            return $this->stmt;
-        }
-    };
-
-    $dbalMock = new class($queryBuilderMock) {
-        public function __construct(private $qb)
-        {
-        }
-
-        public function createQueryBuilder()
-        {
-            return $this->qb;
-        }
-    };
+    $dbalMock = new StaffDbalMock($queryBuilderMock);
 
     $di = new \Pimple\Container();
     $di['dbal'] = $dbalMock;

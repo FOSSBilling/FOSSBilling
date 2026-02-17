@@ -12,67 +12,72 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->service = new \Box\Mod\Stats\Service();
-});
-
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $service = new \Box\Mod\Stats\Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets order statuses', function () {
+test('gets order statuses', function (): void {
+    $service = new \Box\Mod\Stats\Service();
     $orderServiceMock = Mockery::mock(\Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('counter')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $orderServiceMock->shouldReceive('counter');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getOrdersStatuses([]);
+    $result = $service->getOrdersStatuses([]);
     expect($result)->toBeArray();
 });
 
-test('gets product summary', function () {
+test('gets product summary', function (): void {
+    $service = new \Box\Mod\Stats\Service();
     $data = [];
 
     $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    $resultMock->shouldReceive('fetchAllAssociative')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $resultMock->shouldReceive('fetchAllAssociative');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn([]);
 
     $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('executeQuery')
-        ->atLeast()->once()
-        ->andReturn($resultMock);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbalMock->shouldReceive('executeQuery');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($resultMock);
 
     $di = container();
     $di['dbal'] = $dbalMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getProductSummary($data);
+    $service->setDi($di);
+    $result = $service->getProductSummary($data);
     expect($result)->toBeArray();
 });
 
-test('gets summary', function () {
+test('gets summary', function (): void {
+    $service = new \Box\Mod\Stats\Service();
     $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    $resultMock->shouldReceive('fetchOne')
-        ->atLeast()->once()
-        ->andReturn(null);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $resultMock->shouldReceive('fetchOne');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(null);
 
     $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('executeQuery')
-        ->atLeast()->once()
-        ->andReturn($resultMock);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbalMock->shouldReceive('executeQuery');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($resultMock);
 
     $di = container();
     $di['dbal'] = $dbalMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $expected = [
         'clients_total' => null,
@@ -100,25 +105,28 @@ test('gets summary', function () {
         'tickets_last_month' => null,
     ];
 
-    $result = $this->service->getSummary();
+    $result = $service->getSummary();
     expect($result)->toBeArray()
         ->and($result)->toBe($expected);
 });
 
-test('gets summary income', function () {
+test('gets summary income', function (): void {
+    $service = new \Box\Mod\Stats\Service();
     $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    $resultMock->shouldReceive('fetchOne')
-        ->atLeast()->once()
-        ->andReturn(null);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $resultMock->shouldReceive('fetchOne');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(null);
 
     $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('executeQuery')
-        ->atLeast()->once()
-        ->andReturn($resultMock);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbalMock->shouldReceive('executeQuery');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($resultMock);
 
     $di = container();
     $di['dbal'] = $dbalMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $expected = [
         'total' => null,
@@ -128,36 +136,40 @@ test('gets summary income', function () {
         'last_month' => null,
     ];
 
-    $result = $this->service->getSummaryIncome();
+    $result = $service->getSummaryIncome();
     expect($result)->toBeArray()
         ->and($result)->toBe($expected);
 });
 
-test('gets product sales', function () {
+test('gets product sales', function (): void {
+    $service = new \Box\Mod\Stats\Service();
     $res = ['testProduct' => 1];
     $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    $resultMock->shouldReceive('fetchAllKeyValue')
-        ->atLeast()->once()
-        ->andReturn($res);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $resultMock->shouldReceive('fetchAllKeyValue');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($res);
 
     $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('executeQuery')
-        ->atLeast()->once()
-        ->andReturn($resultMock);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbalMock->shouldReceive('executeQuery');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($resultMock);
 
     $di = container();
     $di['dbal'] = $dbalMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'date_from' => 'yesterday',
         'date_to' => 'now',
     ];
-    $result = $this->service->getProductSales($data);
+    $result = $service->getProductSales($data);
     expect($result)->toBeArray();
 });
 
-test('gets income and refund stats', function () {
+test('gets income and refund stats', function (): void {
+    $service = new \Box\Mod\Stats\Service();
     $res = [
         [
             'refund' => 0,
@@ -165,132 +177,149 @@ test('gets income and refund stats', function () {
         ],
     ];
     $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    $resultMock->shouldReceive('fetchAllAssociative')
-        ->atLeast()->once()
-        ->andReturn($res);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $resultMock->shouldReceive('fetchAllAssociative');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($res);
 
     $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('executeQuery')
-        ->atLeast()->once()
-        ->andReturn($resultMock);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbalMock->shouldReceive('executeQuery');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($resultMock);
 
     $di = container();
     $di['dbal'] = $dbalMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->incomeAndRefundStats([]);
+    $result = $service->incomeAndRefundStats([]);
     expect($result)->toBeArray()
         ->and($result)->toBe($res[0]);
 });
 
-test('gets refunds', function () {
+test('gets refunds', function (): void {
+    $service = new \Box\Mod\Stats\Service();
     $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    $resultMock->shouldReceive('fetchAllKeyValue')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $resultMock->shouldReceive('fetchAllKeyValue');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn([]);
 
     $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('executeQuery')
-        ->atLeast()->once()
-        ->andReturn($resultMock);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbalMock->shouldReceive('executeQuery');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($resultMock);
 
     $di = container();
     $di['dbal'] = $dbalMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'date_from' => 'yesterday',
         'date_to' => 'now',
     ];
-    $result = $this->service->getRefunds($data);
+    $result = $service->getRefunds($data);
     expect($result)->toBeArray();
 });
 
-test('gets income', function () {
+test('gets income', function (): void {
+    $service = new \Box\Mod\Stats\Service();
     $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    $resultMock->shouldReceive('fetchAllKeyValue')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $resultMock->shouldReceive('fetchAllKeyValue');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn([]);
 
     $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('executeQuery')
-        ->atLeast()->once()
-        ->andReturn($resultMock);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbalMock->shouldReceive('executeQuery');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($resultMock);
 
     $di = container();
     $di['dbal'] = $dbalMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'date_from' => 'yesterday',
         'date_to' => 'now',
     ];
-    $result = $this->service->getIncome($data);
+    $result = $service->getIncome($data);
     expect($result)->toBeArray();
 });
 
-test('gets client countries', function () {
+test('gets client countries', function (): void {
+    $service = new \Box\Mod\Stats\Service();
     $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    $resultMock->shouldReceive('fetchAllKeyValue')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $resultMock->shouldReceive('fetchAllKeyValue');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn([]);
 
     $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('executeQuery')
-        ->atLeast()->once()
-        ->andReturn($resultMock);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbalMock->shouldReceive('executeQuery');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($resultMock);
 
     $di = container();
     $di['dbal'] = $dbalMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getClientCountries([]);
+    $result = $service->getClientCountries([]);
     expect($result)->toBeArray();
 });
 
-test('gets sales by country', function () {
+test('gets sales by country', function (): void {
+    $service = new \Box\Mod\Stats\Service();
     $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    $resultMock->shouldReceive('fetchAllKeyValue')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $resultMock->shouldReceive('fetchAllKeyValue');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn([]);
 
     $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('executeQuery')
-        ->atLeast()->once()
-        ->andReturn($resultMock);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbalMock->shouldReceive('executeQuery');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($resultMock);
 
     $di = container();
     $di['dbal'] = $dbalMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getSalesByCountry([]);
+    $result = $service->getSalesByCountry([]);
     expect($result)->toBeArray();
 });
 
-test('gets table stats', function () {
+test('gets table stats', function (): void {
+    $service = new \Box\Mod\Stats\Service();
     $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    $resultMock->shouldReceive('fetchAllKeyValue')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $resultMock->shouldReceive('fetchAllKeyValue');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn([]);
 
     $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('executeQuery')
-        ->atLeast()->once()
-        ->andReturn($resultMock);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbalMock->shouldReceive('executeQuery');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($resultMock);
 
     $di = container();
     $di['dbal'] = $dbalMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'date_from' => 'yesterday',
         'date_to' => 'now',
     ];
-    $result = $this->service->getTableStats('client', $data);
+    $result = $service->getTableStats('client', $data);
     expect($result)->toBeArray();
 });
