@@ -429,11 +429,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        try {
-            $client = $this->di['loggedin_client'];
-        } catch (\Exception) {
-            $client = null;
-        }
+        $client = $this->di['loggedin_client'];
 
         if (is_null($client)) {
             return false;
@@ -728,24 +724,6 @@ class Service implements InjectionAwareInterface
     public function findActivePromoByCode($code)
     {
         return $this->di['db']->findOne('Promo', 'code = :code AND active = 1 ORDER BY id ASC', [':code' => $code]);
-    }
-
-    private function getItemPrice(\Model_CartProduct $model)
-    {
-        $product = $this->di['db']->load('Product', $model->product_id);
-        $config = $this->getItemConfig($model);
-        $repo = $product->getTable();
-
-        return $repo->getProductPrice($product, $config);
-    }
-
-    private function getItemSetupPrice(\Model_CartProduct $model)
-    {
-        $product = $this->di['db']->load('Product', $model->product_id);
-        $config = $this->getItemConfig($model);
-        $repo = $product->getTable();
-
-        return $repo->getProductSetupPrice($product, $config);
     }
 
     /**

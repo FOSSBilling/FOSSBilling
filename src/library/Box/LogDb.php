@@ -15,9 +15,9 @@ class Box_LogDb
     /**
      * Class constructor.
      *
-     * @param object $service - module service class object
+     * @param object|string $service - module service class object or class name
      */
-    public function __construct(protected $service)
+    public function __construct(protected object|string $service)
     {
     }
 

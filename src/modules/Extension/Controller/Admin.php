@@ -62,21 +62,27 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_index(\Box_App $app): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         return $app->render('mod_extension_index');
     }
 
     public function get_langs(\Box_App $app): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         return $app->render('mod_extension_languages');
     }
 
     public function get_settings(\Box_App $app, $mod): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
         $extensionService = $this->di['mod_service']('Extension');
         $extensionService->hasManagePermission($mod, $app);
 

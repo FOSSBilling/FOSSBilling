@@ -62,14 +62,18 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_index(\Box_App $app): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         return $app->render('mod_security_index');
     }
 
     public function ip_lookup(\Box_App $app): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
         $record = [];
 
         if (isset($_GET['ip']) && filter_var($_GET['ip'], FILTER_VALIDATE_IP)) {
