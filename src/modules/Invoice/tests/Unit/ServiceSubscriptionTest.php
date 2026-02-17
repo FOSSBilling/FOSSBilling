@@ -15,10 +15,6 @@ use Box\Mod\Invoice\ServiceSubscription;
 use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Invoice\ServicePayGateway;
 
-beforeEach(function () {
-    $service = new ServiceSubscription();
-});
-
 test('gets dependency injection container', function (): void {
     $service = new \Box\Mod\Invoice\ServiceSubscription();
     $di = container();

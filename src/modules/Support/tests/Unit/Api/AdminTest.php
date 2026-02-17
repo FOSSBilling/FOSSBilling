@@ -12,9 +12,7 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->adminApi = new \Box\Mod\Support\Api\Admin();
-});
+
 
 test('ticket get list', function (): void {
     $api = new \Box\Mod\Support\Api\Admin();
@@ -49,17 +47,18 @@ test('ticket get list', function (): void {
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [];
-        $result = $this->adminApi->ticket_get_list($data);
+        $result = $api->ticket_get_list($data);
 
         expect($result)->toBeArray();
     });
 
-    test('ticket get', function () {
+    test('ticket get', function (): void {
+        $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -72,19 +71,20 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->ticket_get($data);
+        $result = $api->ticket_get($data);
 
         expect($result)->toBeArray();
     });
 
-    test('ticket update', function () {
+    test('ticket update', function (): void {
+        $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -97,19 +97,20 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->ticket_update($data);
+        $result = $api->ticket_update($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('ticket message update', function () {
+    test('ticket message update', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -122,20 +123,21 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [
             'id' => 1,
             'content' => 'Content',
         ];
-        $result = $this->adminApi->ticket_message_update($data);
+        $result = $api->ticket_message_update($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('ticket delete', function () {
+    test('ticket delete', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -148,19 +150,20 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->ticket_delete($data);
+        $result = $api->ticket_delete($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('ticket reply', function () {
+    test('ticket reply', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -173,21 +176,22 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
             'content' => 'Content',
         ];
-        $result = $this->adminApi->ticket_reply($data);
+        $result = $api->ticket_reply($data);
 
         expect($result)->toBeInt();
     });
 
-    test('ticket close', function () {
+    test('ticket close', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -203,20 +207,21 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->ticket_close($data);
+        $result = $api->ticket_close($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('ticket close already closed', function () {
+    test('ticket close already closed', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \Tests\Helpers\DummyBean());
         $ticket->status = \Model_SupportTicket::CLOSED;
@@ -233,19 +238,20 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->ticket_close($data);
+        $result = $api->ticket_close($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('ticket create', function () {
+    test('ticket create', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -265,10 +271,10 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'client_id' => 1,
@@ -276,13 +282,14 @@ test('ticket get list', function (): void {
             'subject' => 'Subject',
             'support_helpdesk_id' => 1,
         ];
-        $result = $this->adminApi->ticket_create($data);
+        $result = $api->ticket_create($data);
 
         expect($result)->toBeInt();
         expect($result)->toEqual($randID);
     });
 
-    test('batch ticket auto close', function () {
+    test('batch ticket auto close', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('getExpired')->atLeast()->once()
             ->andReturn([['id' => 1], ['id' => 2]]);
@@ -299,19 +306,20 @@ test('ticket get list', function (): void {
     ->atLeast()->once()
     ->andReturn($ticket);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
         $di = container();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createStub('\Box_Log');
-        $this->adminApi->setDi($di);
-        $this->adminApi->setService($serviceMock);
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->adminApi->batch_ticket_auto_close([]);
+        $result = $api->batch_ticket_auto_close([]);
 
         expect($result)->toBeTrue();
     });
 
-    test('batch ticket auto close not closed', function () {
+    test('batch ticket auto close not closed', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \Tests\Helpers\DummyBean());
         $ticket->id = 1;
@@ -328,31 +336,33 @@ test('ticket get list', function (): void {
     ->atLeast()->once()
     ->andReturn($ticket);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
         $di = container();
         $di['logger'] = $this->createStub('\Box_Log');
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
-        $result = $this->adminApi->batch_ticket_auto_close([]);
+        $api->setDi($di);
+        $result = $api->batch_ticket_auto_close([]);
 
         expect($result)->toBeTrue();
     });
 
-    test('batch public ticket auto close', function () {
+    test('batch public ticket auto close', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('publicGetExpired')->atLeast()->once()
             ->andReturn([new \Model_SupportPTicket(), new \Model_SupportPTicket()]);
         $serviceMock->shouldReceive('publicAutoClose')->atLeast()->once()
             ->andReturn(true);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
-        $result = $this->adminApi->batch_public_ticket_auto_close([]);
+        $result = $api->batch_public_ticket_auto_close([]);
 
         expect($result)->toBeTrue();
     });
 
-    test('batch public ticket auto close not closed', function () {
+    test('batch public ticket auto close not closed', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $ticket = new \Model_SupportPTicket();
         $ticket->loadBean(new \Tests\Helpers\DummyBean());
         $ticket->id = 1;
@@ -363,16 +373,17 @@ test('ticket get list', function (): void {
         $serviceMock->shouldReceive('publicAutoClose')->atLeast()->once()
         ;
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
         $di = container();
         $di['logger'] = $this->createStub('\Box_Log');
-        $this->adminApi->setDi($di);
-        $result = $this->adminApi->batch_public_ticket_auto_close([]);
+        $api->setDi($di);
+        $result = $api->batch_public_ticket_auto_close([]);
 
         expect($result)->toBeTrue();
     });
 
-    test('ticket get statuses', function () {
+    test('ticket get statuses', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
             \Model_SupportPTicket::ONHOLD => 'On hold',
@@ -384,14 +395,15 @@ test('ticket get list', function (): void {
         $serviceMock->shouldReceive('counter')->atLeast()->once()
             ->andReturn($statuses);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
-        $result = $this->adminApi->ticket_get_statuses([]);
+        $result = $api->ticket_get_statuses([]);
 
         expect($result)->toEqual($statuses);
     });
 
-    test('ticket get statuses titles set', function () {
+    test('ticket get statuses titles set', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
             \Model_SupportPTicket::ONHOLD => 'On hold',
@@ -403,17 +415,18 @@ test('ticket get list', function (): void {
         $serviceMock->shouldReceive('counter')
             ->andReturn($statuses);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [
             'titles' => true,
         ];
-        $result = $this->adminApi->ticket_get_statuses($data);
+        $result = $api->ticket_get_statuses($data);
 
         expect($result)->toEqual($statuses);
     });
 
-    test('public ticket get list', function () {
+    test('public ticket get list', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $resultSet = [
             'list' => [
                 0 => ['id' => 1],
@@ -443,27 +456,28 @@ test('ticket get list', function (): void {
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [];
-        $result = $this->adminApi->public_ticket_get_list($data);
+        $result = $api->public_ticket_get_list($data);
 
         expect($result)->toBeArray();
     });
 
-    test('public ticket create', function () {
+    test('public ticket create', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $randID = 1;
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('publicTicketCreate')->atLeast()->once()
             ->andReturn($randID);
 
         $di = container();
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'name' => 'Name',
@@ -472,13 +486,14 @@ test('ticket get list', function (): void {
             'message' => 'Message',
         ];
 
-        $result = $this->adminApi->public_ticket_create($data);
+        $result = $api->public_ticket_create($data);
 
         expect($result)->toBeInt();
         expect($result)->toEqual($randID);
     });
 
-    test('public ticket get', function () {
+    test('public ticket get', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -492,19 +507,20 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->public_ticket_get($data);
+        $result = $api->public_ticket_get($data);
 
         expect($result)->toBeArray();
     });
 
-    test('public ticket delete', function () {
+    test('public ticket delete', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -517,19 +533,20 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->public_ticket_delete($data);
+        $result = $api->public_ticket_delete($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('public ticket close', function () {
+    test('public ticket close', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -542,20 +559,21 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->public_ticket_close($data);
+        $result = $api->public_ticket_close($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('public ticket update', function () {
+    test('public ticket update', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -568,20 +586,21 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->public_ticket_update($data);
+        $result = $api->public_ticket_update($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('public ticket reply', function () {
+    test('public ticket reply', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -594,21 +613,22 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
             'content' => 'Content',
         ];
-        $result = $this->adminApi->public_ticket_reply($data);
+        $result = $api->public_ticket_reply($data);
 
         expect($result)->toBeInt();
     });
 
-    test('public ticket get statuses', function () {
+    test('public ticket get statuses', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
             \Model_SupportPTicket::ONHOLD => 'On hold',
@@ -620,14 +640,15 @@ test('ticket get list', function (): void {
         $serviceMock->shouldReceive('publicCounter')->atLeast()->once()
             ->andReturn($statuses);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
-        $result = $this->adminApi->public_ticket_get_statuses([]);
+        $result = $api->public_ticket_get_statuses([]);
 
         expect($result)->toEqual($statuses);
     });
 
-    test('public ticket get statuses titles set', function () {
+    test('public ticket get statuses titles set', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
             \Model_SupportPTicket::ONHOLD => 'On hold',
@@ -639,17 +660,18 @@ test('ticket get list', function (): void {
         $serviceMock->shouldReceive('publicCounter')
             ->andReturn($statuses);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [
             'titles' => true,
         ];
-        $result = $this->adminApi->public_ticket_get_statuses($data);
+        $result = $api->public_ticket_get_statuses($data);
 
         expect($result)->toEqual($statuses);
     });
 
-    test('helpdesk get list', function () {
+    test('helpdesk get list', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class)->makePartial();
         $paginatorMock
     ->shouldReceive('getPaginatedResultSet')
@@ -663,30 +685,32 @@ test('ticket get list', function (): void {
         $di = container();
         $di['pager'] = $paginatorMock;
 
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [];
-        $result = $this->adminApi->helpdesk_get_list($data);
+        $result = $api->helpdesk_get_list($data);
 
         expect($result)->toBeArray();
     });
 
-    test('helpdesk get pairs', function () {
+    test('helpdesk get pairs', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('helpdeskGetPairs')->atLeast()->once()
             ->andReturn([]);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [];
-        $result = $this->adminApi->helpdesk_get_pairs($data);
+        $result = $api->helpdesk_get_pairs($data);
 
         expect($result)->toBeArray();
     });
 
-    test('helpdesk get', function () {
+    test('helpdesk get', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -699,20 +723,21 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->helpdesk_get($data);
+        $result = $api->helpdesk_get($data);
 
         expect($result)->toBeArray();
     });
 
-    test('helpdesk update', function () {
+    test('helpdesk update', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -725,39 +750,41 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->helpdesk_update($data);
+        $result = $api->helpdesk_update($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('helpdesk create', function () {
+    test('helpdesk create', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('helpdeskCreate')->atLeast()->once()
             ->andReturn(1);
 
         $di = container();
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->helpdesk_create($data);
+        $result = $api->helpdesk_create($data);
 
         expect($result)->toBeInt();
     });
 
-    test('helpdesk delete', function () {
+    test('helpdesk delete', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -770,20 +797,21 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 'General',
         ];
-        $result = $this->adminApi->helpdesk_delete($data);
+        $result = $api->helpdesk_delete($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('canned get list', function () {
+    test('canned get list', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $resultSet = [
             'list' => [
                 0 => ['id' => 1],
@@ -813,17 +841,18 @@ test('ticket get list', function (): void {
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [];
-        $result = $this->adminApi->canned_get_list($data);
+        $result = $api->canned_get_list($data);
 
         expect($result)->toBeArray();
     });
 
-    test('canned pairs', function () {
+    test('canned pairs', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getAssoc')
@@ -832,15 +861,16 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
         $data = [];
-        $result = $this->adminApi->canned_pairs();
+        $result = $api->canned_pairs();
 
         expect($result)->toBeArray();
     });
 
-    test('canned get', function () {
+    test('canned get', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -853,20 +883,21 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->canned_get($data);
+        $result = $api->canned_get($data);
 
         expect($result)->toBeArray();
     });
 
-    test('canned delete', function () {
+    test('canned delete', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -879,41 +910,43 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->canned_delete($data);
+        $result = $api->canned_delete($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('canned create', function () {
+    test('canned create', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('cannedCreate')->atLeast()->once()
             ->andReturn(1);
 
         $di = container();
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'title' => 'Title',
             'category_id' => random_int(1, 100),
             'content' => 'Content',
         ];
-        $result = $this->adminApi->canned_create($data);
+        $result = $api->canned_create($data);
 
         expect($result)->toBeInt();
     });
 
-    test('canned update', function () {
+    test('canned update', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('cannedUpdate')->atLeast()->once()
             ->andReturn(true);
@@ -926,20 +959,21 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 'Title',
         ];
-        $result = $this->adminApi->canned_update($data);
+        $result = $api->canned_update($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('canned category pairs', function () {
+    test('canned category pairs', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getAssoc')
@@ -948,19 +982,20 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 'Title',
         ];
-        $result = $this->adminApi->canned_category_pairs($data);
+        $result = $api->canned_category_pairs($data);
 
         expect($result)->toBeArray();
     });
 
-    test('canned category get', function () {
+    test('canned category get', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('getExistingModelById')
@@ -973,20 +1008,21 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->canned_category_get($data);
+        $result = $api->canned_category_get($data);
 
         expect($result)->toBeArray();
     });
 
-    test('canned category update', function () {
+    test('canned category update', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $supportCategory = new \Model_SupportPrCategory();
         $supportCategory->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1003,21 +1039,22 @@ test('ticket get list', function (): void {
         $di = container();
         $di['db'] = $dbMock;
 
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
             'title' => 'Updated Title',
         ];
-        $result = $this->adminApi->canned_category_update($data);
+        $result = $api->canned_category_update($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('canned category delete', function () {
+    test('canned category delete', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $supportCategory = new \Model_SupportPrCategory();
         $supportCategory->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1033,38 +1070,40 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->canned_category_delete($data);
+        $result = $api->canned_category_delete($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('canned category create', function () {
+    test('canned category create', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('cannedCategoryCreate')->atLeast()->once()
             ->andReturn(1);
 
         $di = container();
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [
             'title' => 'Title',
         ];
-        $result = $this->adminApi->canned_category_create($data);
+        $result = $api->canned_category_create($data);
 
         expect($result)->toBeInt();
     });
 
-    test('note create', function () {
+    test('note create', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('noteCreate')->atLeast()->once()
             ->andReturn(1);
@@ -1077,21 +1116,22 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'ticket_id' => 1,
             'note' => 'Note',
         ];
-        $result = $this->adminApi->note_create($data);
+        $result = $api->note_create($data);
 
         expect($result)->toBeInt();
     });
 
-    test('note delete', function () {
+    test('note delete', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('noteRm')->atLeast()->once()
             ->andReturn(true);
@@ -1104,20 +1144,21 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
-        $this->adminApi->setIdentity(new \Model_Admin());
+        $api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->note_delete($data);
+        $result = $api->note_delete($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('task complete', function () {
+    test('task complete', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('ticketTaskComplete')->atLeast()->once()
             ->andReturn(true);
@@ -1130,19 +1171,20 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->adminApi->setDi($di);
+        $api->setDi($di);
 
-        $this->adminApi->setService($serviceMock);
+        $api->setService($serviceMock);
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->adminApi->task_complete($data);
+        $result = $api->task_complete($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('batch delete', function () {
+    test('batch delete', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $activityMock = Mockery::mock(\Box\Mod\Support\Api\Admin::class)->makePartial();
         $activityMock->shouldReceive('ticket_delete')->atLeast()->once()->andReturn(true);
 
@@ -1153,7 +1195,8 @@ test('ticket get list', function (): void {
         expect($result)->toBeTrue();
     });
 
-    test('batch delete public', function () {
+    test('batch delete public', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $activityMock = Mockery::mock(\Box\Mod\Support\Api\Admin::class)->makePartial();
         $activityMock->shouldReceive('public_ticket_delete')->atLeast()->once()->andReturn(true);
 
@@ -1168,7 +1211,8 @@ test('ticket get list', function (): void {
     * Knowledge Base Tests.
     */
 
-    test('kb article get list', function () {
+    test('kb article get list', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $di = container();
 
         $adminApi = new \Box\Mod\Support\Api\Admin();
@@ -1192,7 +1236,8 @@ test('ticket get list', function (): void {
         expect($result)->toBeArray();
     });
 
-    test('kb article get', function () {
+    test('kb article get', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $data = [
@@ -1227,7 +1272,8 @@ test('ticket get list', function (): void {
         expect($result)->toBeArray();
     });
 
-    test('kb article get not found exception', function () {
+    test('kb article get not found exception', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $data = [
@@ -1247,7 +1293,8 @@ test('ticket get list', function (): void {
         expect(fn () => $adminApi->kb_article_get($data))->toThrow(\FOSSBilling\Exception::class);
     });
 
-    test('kb article create', function () {
+    test('kb article create', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $data = [
@@ -1273,7 +1320,8 @@ test('ticket get list', function (): void {
         expect($result)->toEqual($id);
     });
 
-    test('kb article update', function () {
+    test('kb article update', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $data = [
@@ -1301,7 +1349,8 @@ test('ticket get list', function (): void {
         expect($result)->toBeTrue();
     });
 
-    test('kb article delete', function () {
+    test('kb article delete', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $data = [
@@ -1327,7 +1376,8 @@ test('ticket get list', function (): void {
         expect($result)->toBeTrue();
     });
 
-    test('kb article delete not found exception', function () {
+    test('kb article delete not found exception', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $db = Mockery::mock('Box_Database');
@@ -1349,7 +1399,8 @@ test('ticket get list', function (): void {
         expect(fn () => $adminApi->kb_article_delete(['id' => 1]))->toThrow(\FOSSBilling\Exception::class);
     });
 
-    test('kb category get list', function () {
+    test('kb category get list', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $willReturn = [
@@ -1384,7 +1435,8 @@ test('ticket get list', function (): void {
         expect($result)->toEqual($willReturn);
     });
 
-    test('kb category get', function () {
+    test('kb category get', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $db = Mockery::mock('Box_Database');
@@ -1413,7 +1465,8 @@ test('ticket get list', function (): void {
         expect($result)->toBeArray();
     });
 
-    test('kb category get id not set exception', function () {
+    test('kb category get id not set exception', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $apiHandler = new \Api_Handler(new \Model_Admin());
@@ -1424,7 +1477,8 @@ test('ticket get list', function (): void {
             ->toThrow(\FOSSBilling\InformationException::class);
     });
 
-    test('kb category get not found exception', function () {
+    test('kb category get not found exception', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $db = Mockery::mock('Box_Database');
@@ -1451,7 +1505,8 @@ test('ticket get list', function (): void {
         expect(fn () => $adminApi->kb_category_get($data))->toThrow(\FOSSBilling\Exception::class);
     });
 
-    test('kb category create', function () {
+    test('kb category create', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $kbService = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
@@ -1474,7 +1529,8 @@ test('ticket get list', function (): void {
         expect($result)->toBeInt();
     });
 
-    test('kb category update', function () {
+    test('kb category update', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $kbService = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
@@ -1507,7 +1563,8 @@ test('ticket get list', function (): void {
         expect($result)->toBeTrue();
     });
 
-    test('kb category update id not set', function () {
+    test('kb category update id not set', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $apiHandler = new \Api_Handler(new \Model_Admin());
@@ -1518,7 +1575,8 @@ test('ticket get list', function (): void {
             ->toThrow(\FOSSBilling\InformationException::class);
     });
 
-    test('kb category update not found', function () {
+    test('kb category update not found', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $kbService = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
@@ -1548,7 +1606,8 @@ test('ticket get list', function (): void {
         expect(fn () => $adminApi->kb_category_update($data))->toThrow(\FOSSBilling\Exception::class);
     });
 
-    test('kb category delete', function () {
+    test('kb category delete', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $kbService = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
@@ -1577,7 +1636,8 @@ test('ticket get list', function (): void {
         expect($result)->toBeTrue();
     });
 
-    test('kb category delete id not set', function () {
+    test('kb category delete id not set', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $apiHandler = new \Api_Handler(new \Model_Admin());
@@ -1588,7 +1648,8 @@ test('ticket get list', function (): void {
             ->toThrow(\FOSSBilling\InformationException::class);
     });
 
-    test('kb category delete not found', function () {
+    test('kb category delete not found', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $kbService = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
@@ -1615,7 +1676,8 @@ test('ticket get list', function (): void {
         expect(fn () => $adminApi->kb_category_delete($data))->toThrow(\FOSSBilling\Exception::class);
     });
 
-    test('kb category get pairs', function () {
+    test('kb category get pairs', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $adminApi = new \Box\Mod\Support\Api\Admin();
 
         $kbService = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();

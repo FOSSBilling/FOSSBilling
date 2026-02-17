@@ -13,10 +13,6 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 use Box\Mod\Invoice\ServicePayGateway;
 
-beforeEach(function () {
-    $service = new ServicePayGateway();
-});
-
 test('gets dependency injection container', function (): void {
     $service = new \Box\Mod\Invoice\ServicePayGateway();
     $di = container();

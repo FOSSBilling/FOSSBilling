@@ -13,10 +13,6 @@ use function Tests\Helpers\container;
 use Box\Mod\Profile\Api\Client;
 use Box\Mod\Profile\Service;
 
-beforeEach(function () {
-    $api = new Client();
-});
-
 test('gets client profile', function (): void {
     $api = new \Box\Mod\Profile\Api\Client();
     $clientService = Mockery::mock(\Box\Mod\Client\Service::class);

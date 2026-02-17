@@ -12,18 +12,16 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->api = new \Box\Mod\Client\Api\Client();
-});
-
-test('getDi returns dependency injection container', function () {
+test('getDi returns dependency injection container', function (): void {
+    $api = new \Box\Mod\Client\Api\Client();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toEqual($di);
 });
 
-test('balanceGetList returns array', function () {
+test('balanceGetList returns array', function (): void {
+    $api = new \Box\Mod\Client\Api\Client();
     $data = [];
 
     $model = new \Model_Client();
@@ -64,16 +62,17 @@ test('balanceGetList returns array', function () {
     $di['pager'] = $pagerMock;
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $this->api->setIdentity($model);
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setIdentity($model);
 
-    $result = $this->api->balance_get_list($data);
+    $result = $api->balance_get_list($data);
 
     expect($result)->toBeArray();
 });
 
-test('balanceGetTotal returns float', function () {
+test('balanceGetTotal returns float', function (): void {
+    $api = new \Box\Mod\Client\Api\Client();
     $balanceAmount = 0.00;
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -87,16 +86,17 @@ test('balanceGetTotal returns float', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn ($name, $sub): \Mockery\MockInterface => $serviceMock);
 
-    $this->api->setDi($di);
-    $this->api->setIdentity($model);
+    $api->setDi($di);
+    $api->setIdentity($model);
 
-    $result = $this->api->balance_get_total();
+    $result = $api->balance_get_total();
 
     expect($result)->toBeFloat();
     expect($result)->toEqual($balanceAmount);
 });
 
-test('isTaxable returns boolean', function () {
+test('isTaxable returns boolean', function (): void {
+    $api = new \Box\Mod\Client\Api\Client();
     $clientIsTaxable = true;
 
     $serviceMock = Mockery::mock(\Box\Mod\Client\Service::class);
@@ -108,10 +108,10 @@ test('isTaxable returns boolean', function () {
     $client = new \Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
 
-    $this->api->setService($serviceMock);
-    $this->api->setIdentity($client);
+    $api->setService($serviceMock);
+    $api->setIdentity($client);
 
-    $result = $this->api->is_taxable();
+    $result = $api->is_taxable();
     expect($result)->toBeBool();
     expect($result)->toEqual($clientIsTaxable);
 });

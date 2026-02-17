@@ -12,11 +12,8 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->adminApi = new \Box\Mod\Cart\Api\Admin();
-});
-
 test('getList returns array', function (): void {
+    $adminApi = new \Box\Mod\Cart\Api\Admin();
     $api = new \Box\Mod\Cart\Api\Admin();
     $simpleResultArr = [
         'list' => [
@@ -50,17 +47,18 @@ test('getList returns array', function (): void {
     $di['pager'] = $paginatorMock;
     $di['db'] = $dbMock;
 
-    $this->adminApi->setDi($di);
+    $adminApi->setDi($di);
 
-    $this->adminApi->setService($serviceMock);
+    $adminApi->setService($serviceMock);
 
     $data = [];
-    $result = $this->adminApi->get_list($data);
+    $result = $adminApi->get_list($data);
 
     expect($result)->toBeArray();
 });
 
 test('get returns array', function (): void {
+    $adminApi = new \Box\Mod\Cart\Api\Admin();
     $api = new \Box\Mod\Cart\Api\Admin();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -74,19 +72,20 @@ test('get returns array', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->adminApi->setDi($di);
+    $adminApi->setDi($di);
 
-    $this->adminApi->setService($serviceMock);
+    $adminApi->setService($serviceMock);
 
     $data = [
         'id' => 1,
     ];
-    $result = $this->adminApi->get($data);
+    $result = $adminApi->get($data);
 
     expect($result)->toBeArray();
 });
 
 test('batchExpire returns true', function (): void {
+    $adminApi = new \Box\Mod\Cart\Api\Admin();
     $api = new \Box\Mod\Cart\Api\Admin();
 
     $logStub = $this->createStub('\Box_Log');
@@ -104,12 +103,12 @@ test('batchExpire returns true', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = $logStub;
-    $this->adminApi->setDi($di);
+    $adminApi->setDi($di);
 
     $data = [
         'id' => 1,
     ];
-    $result = $this->adminApi->batch_expire($data);
+    $result = $adminApi->batch_expire($data);
 
     expect($result)->toBeTrue();
 });

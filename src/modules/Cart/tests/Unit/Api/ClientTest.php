@@ -12,11 +12,8 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function (): void {
-    $this->clientApi = new \Box\Mod\Cart\Api\Client();
-});
-
 test('checkout processes cart and returns result array', function (): void {
+    $clientApi = new \Box\Mod\Cart\Api\Client();
     $api = new \Box\Mod\Cart\Api\Client();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
@@ -36,20 +33,20 @@ test('checkout processes cart and returns result array', function (): void {
     ->atLeast()->once()
     ->andReturn($checkOutCartResult);
 
-    $this->clientApi->setService($serviceMock);
+    $clientApi->setService($serviceMock);
 
     $client = new \Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
 
-    $this->clientApi->setIdentity($client);
+    $clientApi->setIdentity($client);
 
     $data = [
         'id' => 1,
     ];
     $di = container();
 
-    $this->clientApi->setDi($di);
-    $result = $this->clientApi->checkout($data);
+    $clientApi->setDi($di);
+    $result = $clientApi->checkout($data);
 
     expect($result)->toBeArray();
 });

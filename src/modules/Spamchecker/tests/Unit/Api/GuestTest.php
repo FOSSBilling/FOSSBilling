@@ -12,10 +12,6 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $api = new \Box\Mod\Spamchecker\Api\Guest();
-});
-
 dataset('recaptcha config', function () {
     return [
         [

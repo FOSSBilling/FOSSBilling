@@ -24,10 +24,6 @@ use Box\Mod\Currency\Service as CurrencyService;
 use Box\Mod\Currency\Repository\CurrencyRepository;
 use Box\Mod\Currency\Entity\Currency as CurrencyEntity;
 
-beforeEach(function () {
-    $service = new Service();
-});
-
 test('gets dependency injection container', function (): void {
     $service = new \Box\Mod\Invoice\Service();
     $di = container();

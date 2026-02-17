@@ -12,10 +12,6 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $service = new \Box\Mod\Servicelicense\Service();
-});
-
 test('getDi', function (): void {
     $service = new \Box\Mod\Servicelicense\Service();
     $di = container();

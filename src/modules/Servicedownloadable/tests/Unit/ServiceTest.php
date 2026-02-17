@@ -14,10 +14,6 @@ use function Tests\Helpers\container;
 use Box\Mod\Servicedownloadable\Service;
 use Box\Mod\Order\Service as OrderService;
 
-beforeEach(function () {
-    $service = new Service();
-});
-
 test('gets dependency injection container', function (): void {
     $service = new \Box\Mod\Servicedownloadable\Service();
     $di = container();

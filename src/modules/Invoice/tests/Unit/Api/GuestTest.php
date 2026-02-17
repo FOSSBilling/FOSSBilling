@@ -15,10 +15,6 @@ use Box\Mod\Invoice\Api\Guest;
 use Box\Mod\Invoice\Service;
 use Box\Mod\Invoice\ServicePayGateway;
 
-beforeEach(function () {
-    $api = new Guest();
-});
-
 test('gets dependency injection container', function (): void {
     $api = new \Box\Mod\Invoice\Api\Guest();
     $di = container();

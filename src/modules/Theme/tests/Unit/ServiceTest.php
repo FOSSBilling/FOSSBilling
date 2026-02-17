@@ -14,10 +14,6 @@ use function Tests\Helpers\container;
 use Box\Mod\Theme\Model;
 use Box\Mod\Theme\Service;
 
-beforeEach(function (): void {
-    $service = new Service();
-});
-
 test('getDi returns the dependency injection container', function (): void {
     $service = new \Box\Mod\Theme\Service();
     $di = container();

@@ -22,10 +22,6 @@ dataset('validateOrderDataProvider', function () {
     ];
 });
 
-beforeEach(function (): void {
-    $service = new Service();
-});
-
 test('testGetDi', function (): void {
     $service = new \Box\Mod\Servicehosting\Service();
     $di = container();
