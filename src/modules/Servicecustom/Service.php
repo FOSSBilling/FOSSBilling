@@ -252,7 +252,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $file = Path::join('Plugin', $plugin, "{$plugin}.php");
         if (!Environment::isTesting() && !$this->filesystem->exists(Path::join(PATH_LIBRARY, $file))) {
             $e = new \FOSSBilling\Exception('Plugin class file :file was not found', [':file' => $file], 3124);
-            // @phpstan-ignore if.alwaysFalse
+
             if (DEBUG) {
                 error_log($e->getMessage());
             }

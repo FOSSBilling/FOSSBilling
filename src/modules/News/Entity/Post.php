@@ -27,7 +27,7 @@ class Post implements ApiArrayInterface, TimestampInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
-    /** @phpstan-ignore property.unusedType */
+
     private ?int $id = null;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
