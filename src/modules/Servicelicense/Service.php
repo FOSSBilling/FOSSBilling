@@ -408,7 +408,7 @@ class Service implements InjectionAwareInterface
     {
         $result = [];
         $log = $this->di['logger']->setChannel('license');
-
+        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
         if (DEBUG) {
             $log->debug(print_r($data, true));
         }

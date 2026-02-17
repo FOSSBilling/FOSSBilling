@@ -42,6 +42,7 @@ function checkInstaller(): void
     }
 
     // If the config file exists and not install.php, but the install folder does, perform some cleanup.
+    // @phpstan-ignore booleanNot.alwaysTrue (DEBUG is a runtime constant)
     if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install')) && !DEBUG) {
         $filesystem->remove('install');
     }
@@ -78,7 +79,8 @@ function checkSSL(): void
 {
     global $request;
 
-    if (!empty(Config::getProperty('security.force_https')) && Config::getProperty('security.force_https') && !Environment::isCLI()) {
+    $force_https = Config::getProperty('security.force_https');
+    if ($force_https && !Environment::isCLI()) {
         if (!Tools::isHTTPS()) {
             header('Location: https://' . $request->getHost() . $request->getRequestUri());
             exit;
@@ -172,6 +174,7 @@ function exceptionHandler(Exception|Error $e)
         return false;
     }
 
+    // @phpstan-ignore booleanAnd.alwaysFalse, booleanAnd.rightAlwaysFalse (DEBUG is a runtime constant)
     if (defined('DEBUG') && DEBUG && $filesystem->exists(PATH_VENDOR)) {
         /**
          * If advanced debugging is enabled, print Whoops instead of our error page.
@@ -183,6 +186,7 @@ function exceptionHandler(Exception|Error $e)
         $prettyPage->addDataTable('FOSSBilling environment', [
             'PHP Version' => PHP_VERSION,
             'Error code' => $e->getCode(),
+            // @phpstan-ignore nullCoalesce.expr (INSTANCE_ID is a runtime constant that may not be defined during analysis)
             'Instance ID' => INSTANCE_ID ?? 'Unknown',
         ]);
         $whoops->pushHandler($prettyPage);
@@ -295,6 +299,7 @@ function postInit(): void
     ini_set('error_log', Path::join(PATH_LOG, 'php_error.log'));
     error_reporting(E_ALL);
 
+    // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
     if (DEBUG) {
         ini_set('display_errors', '1');
         ini_set('display_startup_errors', '1');

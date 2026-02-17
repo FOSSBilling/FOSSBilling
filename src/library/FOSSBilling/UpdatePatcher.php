@@ -81,8 +81,8 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['api']['rate_limit_whitelist'] ??= [];
         $newConfig['debug_and_monitoring'] ??= [];
         $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
-        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
-        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
+        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'];
+        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'];
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
 
         // Instance ID handling

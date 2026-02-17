@@ -242,6 +242,7 @@ class SentryHelper
 
     public static function skipReporting(?string $module = null, ?string $theme = null): bool
     {
+        // @phpstan-ignore-next-line
         if (!defined('INSTANCE_ID') || !INSTANCE_ID || INSTANCE_ID === 'Unknown' || INSTANCE_ID === 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX') {
             return true;
         }

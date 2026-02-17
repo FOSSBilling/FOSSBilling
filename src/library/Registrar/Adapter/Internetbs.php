@@ -369,7 +369,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         }
 
         if ($this->isTestEnv()) {
-            error_log(print_r($result, 1));
+            error_log(print_r($result, true));
         }
 
         return $result;
@@ -466,6 +466,8 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
     /**
      * Checks whether privacy is enabled.
+     *
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
      */
     private function _isPrivacyEnabled(Registrar_Domain $domain): bool
     {

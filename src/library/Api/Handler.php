@@ -71,6 +71,7 @@ final class Api_Handler implements InjectionAwareInterface
                 if ($this->_acl_exception) {
                     throw new FOSSBilling\Exception('You do not have access to the :mod module', [':mod' => $mod], 725);
                 }
+                // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
                 if (DEBUG) {
                     error_log('You do not have access to ' . $mod . ' module');
                 }

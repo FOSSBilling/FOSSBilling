@@ -56,6 +56,7 @@ class Api_Abstract implements InjectionAwareInterface
      */
     public function getMod()
     {
+        // @phpstan-ignore booleanNot.alwaysFalse (Runtime check to ensure mod is set)
         if (!$this->mod) {
             throw new FOSSBilling\Exception('Mod object is not set for the service');
         }

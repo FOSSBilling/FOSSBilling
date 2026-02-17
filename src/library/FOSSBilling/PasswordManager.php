@@ -68,7 +68,8 @@ class PasswordManager
     public function hashIt(string $password): string
     {
         $hash = password_hash($password, $this->algo, $this->options);
-        if (!is_string($hash)) {
+        // @phpstan-ignore identical.alwaysFalse (password_hash can return false on failure)
+        if ($hash === false) {
             throw new \Exception("Password hashing failed with {$this->algo} and the following options: " . print_r($this->options, true));
         }
 

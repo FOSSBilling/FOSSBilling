@@ -151,6 +151,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         }
 
         // do not log debug level messages if debug is OFF
+        // @phpstan-ignore identical.alwaysTrue (DEBUG is a runtime constant that may be true during debugging)
         if ($event['priority'] > self::INFO && DEBUG === false) {
             return;
         }

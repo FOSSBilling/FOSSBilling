@@ -25,7 +25,10 @@ class EntityManagerFactory
     {
         $finder = new Finder();
         $finder->directories()->in(PATH_MODS . '/*/Entity')->depth('== 0');
-        $moduleEntityPaths = iterator_to_array($finder);
+        $moduleEntityPaths = [];
+        foreach ($finder as $file) {
+            $moduleEntityPaths[] = $file->getPathname();
+        }
 
         $config = ORMSetup::createAttributeMetadataConfiguration(
             paths: $moduleEntityPaths,

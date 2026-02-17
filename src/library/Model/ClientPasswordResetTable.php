@@ -32,7 +32,7 @@ class Model_ClientPasswordResetTable implements FOSSBilling\InjectionAwareInterf
         }
 
         $r->ip = $ip;
-        $r->hash = hash('sha256', random_int(50, random_int(10, 99)));
+        $r->hash = hash('sha256', (string) random_int(50, random_int(10, 99)));
         $r->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($r);
 

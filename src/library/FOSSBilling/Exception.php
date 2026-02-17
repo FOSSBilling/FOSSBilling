@@ -36,6 +36,7 @@ class Exception extends \Exception
             $message = strtr($message, $variables);
         }
 
+        // @phpstan-ignore booleanAnd.leftAlwaysFalse (DEBUG is a runtime constant that may be true during debugging)
         if (DEBUG && $logStack) {
             error_log("Exception: $message");
             error_log('Stack trace:');

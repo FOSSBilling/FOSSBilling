@@ -110,7 +110,7 @@ class Mail
      */
     public function setPriority(int $priority): void
     {
-        if (is_int($priority) && $priority >= Email::PRIORITY_HIGHEST && $priority <= Email::PRIORITY_LOWEST) {
+        if ($priority >= Email::PRIORITY_HIGHEST && $priority <= Email::PRIORITY_LOWEST) {
             $this->email->priority($priority);
         } else {
             throw new InformationException('Provided priority (:priority) is invalid. Please provide an integer between 1 and 5 or use the pre-defined symfony constants.', [':priority' => $priority]);

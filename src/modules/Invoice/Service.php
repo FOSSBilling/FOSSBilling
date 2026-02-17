@@ -711,7 +711,7 @@ class Service implements InjectionAwareInterface
 
             return true;
         }
-
+        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
         if (DEBUG) {
             $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->id} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
         }

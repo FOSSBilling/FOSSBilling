@@ -808,7 +808,7 @@ class Server_Manager_Directadmin extends Server_Manager
         parse_str($data, $response);
 
         // Log the parsed response data for debugging purposes
-        $this->getLog()->debug('Parsed Response: ' . print_r($response, 1));
+        $this->getLog()->debug('Parsed Response: ' . print_r($response, true));
 
         // Return the parsed response data
         return $response;

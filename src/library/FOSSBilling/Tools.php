@@ -298,7 +298,7 @@ class Tools
             $knownInterfaces = [];
         }
 
-        if ($interface && $interface !== '0' && in_array($interface, $knownInterfaces)) {
+        if ($interface !== '0' && in_array($interface, $knownInterfaces)) {
             return $interface;
         }
 

@@ -68,7 +68,7 @@ if (!empty($_GET['restore_session'])) {
     session_id($_GET['restore_session']);
 }
 
-$di['session'];
+$_ = $di['session'];
 $timeCollector->stopMeasure('session_start');
 
 if (strncasecmp((string) $url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
