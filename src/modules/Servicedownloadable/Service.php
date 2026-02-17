@@ -13,12 +13,13 @@ namespace Box\Mod\Servicedownloadable;
 
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\ServiceModuleInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
 
-class Service implements InjectionAwareInterface
+class Service implements InjectionAwareInterface, ServiceModuleInterface
 {
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
@@ -59,10 +60,7 @@ class Service implements InjectionAwareInterface
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
     }
 
-    /**
-     * @return \Model_ServiceDownloadable
-     */
-    public function action_create(\Model_ClientOrder $order)
+    public function action_create(\Model_ClientOrder $order): \Model_ServiceDownloadable
     {
         $c = json_decode($order->config ?? '', true);
         if (!is_array($c)) {

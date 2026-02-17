@@ -12,10 +12,11 @@
 namespace Box\Mod\Servicelicense;
 
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\ServiceModuleInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
-class Service implements InjectionAwareInterface
+class Service implements InjectionAwareInterface, ServiceModuleInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -63,10 +64,7 @@ class Service implements InjectionAwareInterface
         return $files;
     }
 
-    /**
-     * @return \Model_ServiceLicense
-     */
-    public function action_create(\Model_ClientOrder $order)
+    public function action_create(\Model_ClientOrder $order): \Model_ServiceLicense
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);

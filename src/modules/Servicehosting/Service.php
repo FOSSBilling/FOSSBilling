@@ -14,11 +14,12 @@ namespace Box\Mod\Servicehosting;
 use FOSSBilling\Exception;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\ServiceModuleInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
-class Service implements InjectionAwareInterface
+class Service implements InjectionAwareInterface, ServiceModuleInterface
 {
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
@@ -149,7 +150,7 @@ class Service implements InjectionAwareInterface
         // Save the service
         $this->di['db']->store($model);
 
-        // Return the username and password
+        // Return the username and password for event listeners
         return [
             'username' => $username,
             'password' => $pass,

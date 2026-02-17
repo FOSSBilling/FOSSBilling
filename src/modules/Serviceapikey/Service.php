@@ -13,9 +13,9 @@ declare(strict_types=1);
 namespace Box\Mod\Serviceapikey;
 
 use FOSSBilling\InjectionAwareInterface;
-use RedBeanPHP\OODBBean;
+use FOSSBilling\Interfaces\ServiceModuleInterface;
 
-class Service implements InjectionAwareInterface
+class Service implements InjectionAwareInterface, ServiceModuleInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -36,9 +36,9 @@ class Service implements InjectionAwareInterface
         return array_merge($config, $data);
     }
 
-    public function create(OODBBean $order)
+    public function action_create(\Model_ClientOrder $order): \Model_ServiceApikey
     {
-        $model = $this->di['db']->dispense('service_apikey');
+        $model = $this->di['db']->dispense('ServiceApikey');
         $model->client_id = $order->client_id;
         $model->config = $order->config;
 
@@ -49,13 +49,16 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
-    public function activate(OODBBean $order, OODBBean $model): bool
+    public function action_activate(\Model_ClientOrder $order): bool
     {
-        $config = json_decode($order->config ?? '', true);
-        if (!is_object($model)) {
-            throw new \FOSSBilling\Exception('Order does not exist.');
+        $orderService = $this->di['mod_service']('order');
+        $model = $orderService->getOrderService($order);
+
+        if (!$model instanceof \Model_ServiceApikey) {
+            throw new \FOSSBilling\Exception('Could not activate order. Service was not created');
         }
 
+        $config = json_decode($order->config ?? '', true);
         $model->api_key = $this->generateKey($config);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -63,40 +66,62 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function suspend(OODBBean $order, OODBBean $model): bool
+    public function action_renew(\Model_ClientOrder $order): bool
     {
+        return true;
+    }
+
+    public function action_suspend(\Model_ClientOrder $order): bool
+    {
+        $orderService = $this->di['mod_service']('order');
+        $model = $orderService->getOrderService($order);
+
+        if (!$model instanceof \Model_ServiceApikey) {
+            throw new \FOSSBilling\Exception('Could not suspend order. Service was not created');
+        }
+
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         return true;
     }
 
-    public function unsuspend(OODBBean $order, OODBBean $model): bool
+    public function action_unsuspend(\Model_ClientOrder $order): bool
     {
+        $orderService = $this->di['mod_service']('order');
+        $model = $orderService->getOrderService($order);
+
+        if (!$model instanceof \Model_ServiceApikey) {
+            throw new \FOSSBilling\Exception('Could not unsuspend order. Service was not created');
+        }
+
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         return true;
     }
 
-    public function cancel(OODBBean $order, OODBBean $model): bool
+    public function action_cancel(\Model_ClientOrder $order): bool
     {
-        return $this->suspend($order, $model);
+        return $this->action_suspend($order);
     }
 
-    public function uncancel(OODBBean $order, OODBBean $model): bool
+    public function action_uncancel(\Model_ClientOrder $order): bool
     {
-        return $this->unsuspend($order, $model);
+        return $this->action_unsuspend($order);
     }
 
-    public function delete(?OODBBean $order, ?OODBBean $model): void
+    public function action_delete(\Model_ClientOrder $order): void
     {
-        if (is_object($model)) {
+        $orderService = $this->di['mod_service']('order');
+        $model = $orderService->getOrderService($order);
+
+        if ($model instanceof \Model_ServiceApikey) {
             $this->di['db']->trash($model);
         }
     }
 
-    public function toApiArray(OODBBean $model): array
+    public function toApiArray(\Model_ServiceApikey $model, bool $deep = false, mixed $identity = null): array
     {
         return [
             'id' => $model->id,
@@ -337,7 +362,7 @@ class Service implements InjectionAwareInterface
         return $apiKey;
     }
 
-    private function isActive(OODBBean $model): bool
+    private function isActive(\Model_ServiceApikey $model): bool
     {
         $order = $this->di['db']->findOne('ClientOrder', 'service_id = :id AND service_type = "apikey"', [':id' => $model->id]);
         if (is_null($order)) {
