@@ -48,6 +48,7 @@ class Admin extends \Api_Abstract
 
         $event = $data['event'];
         $params = $data['params'] ?? null;
+        // @phpstan-ignore if.alwaysFalse
         if (DEBUG) {
             try {
                 $this->di['logger']->info($event . ': ' . var_export($params, true));
