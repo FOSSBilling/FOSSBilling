@@ -526,7 +526,7 @@ class Service implements InjectionAwareInterface
         } else {
             $invoice->base_refund = null;
         }
-        
+
         $this->di['db']->store($invoice);
     }
 
@@ -667,7 +667,6 @@ class Service implements InjectionAwareInterface
         $epsilon = 0.05;
 
         if (abs($balance - $required) < $epsilon || $balance - $required > 0.00001) {
-            // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
                 $this->di['logger']->setChannel('billing')->info("Setting invoice {$invoice->id} as paid with credits for the amount of {$required}.");
             }
@@ -689,7 +688,7 @@ class Service implements InjectionAwareInterface
 
             return true;
         }
-        // @phpstan-ignore if.alwaysFalse
+
         if (DEBUG) {
             $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->id} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
         }
@@ -831,7 +830,6 @@ class Service implements InjectionAwareInterface
                 break;
 
             case 'manual':
-                // @phpstan-ignore if.alwaysFalse
                 if (DEBUG) {
                     error_log('Refunds are managed manually. No actions performed.');
                 }
@@ -1000,7 +998,6 @@ class Service implements InjectionAwareInterface
                 $model = $this->di['db']->getExistingModelById('Invoice', $proforma['id'] ?? null);
                 $this->tryPayWithCredits($model);
             } catch (\Exception $e) {
-                // @phpstan-ignore if.alwaysFalse
                 if (DEBUG) {
                     error_log($e->getMessage());
                 }

@@ -33,14 +33,12 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    /** @phpstan-ignore property.onlyWritten */
     public function __construct(private readonly \Box_Log $_log)
     {
     }
 
     /**
      * @param string $key
-     * @phpstan-ignore method.unused
      */
     private function getServer($key = null, $default = null)
     {
