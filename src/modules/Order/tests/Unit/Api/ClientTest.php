@@ -14,10 +14,6 @@ use function Tests\Helpers\container;
 use Box\Mod\Order\Api\Client;
 use Box\Mod\Order\Service;
 
-beforeEach(function () {
-    $api = new Client();
-});
-
 test('gets dependency injection container', function (): void {
     $api = new \Box\Mod\Order\Api\Client();
     $di = container();

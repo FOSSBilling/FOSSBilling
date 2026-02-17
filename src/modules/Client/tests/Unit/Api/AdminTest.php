@@ -12,18 +12,16 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->adminClient = new \Box\Mod\Client\Api\Admin();
-});
-
-test('getDi returns dependency injection container', function () {
+test('getDi returns dependency injection container', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $di = container();
-    $this->adminClient->setDi($di);
-    $getDi = $this->adminClient->getDi();
+    $adminClient->setDi($di);
+    $getDi = $adminClient->getDi();
     expect($getDi)->toEqual($di);
 });
 
-test('getList returns array', function () {
+test('getList returns array', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $simpleResultArr = [
         'list' => [
             ['id' => 1],
@@ -59,29 +57,31 @@ test('getList returns array', function () {
     $di['pager'] = $pagerMock;
     $di['db'] = $dbMock;
 
-    $this->adminClient->setService($serviceMock);
-    $this->adminClient->setDi($di);
+    $adminClient->setService($serviceMock);
+    $adminClient->setDi($di);
     $data = [];
 
-    $result = $this->adminClient->get_list($data);
+    $result = $adminClient->get_list($data);
     expect($result)->toBeArray();
 });
 
-test('getPairs returns array', function () {
+test('getPairs returns array', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('getPairs')->atLeast()->once()->andReturn([]);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $serviceMock);
 
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
     $data = ['id' => 1];
-    $result = $this->adminClient->get_pairs($data);
+    $result = $adminClient->get_pairs($data);
     expect($result)->toBeArray();
 });
 
-test('get returns array', function () {
+test('get returns array', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -92,13 +92,14 @@ test('get returns array', function () {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $this->adminClient->setService($serviceMock);
+    $adminClient->setService($serviceMock);
 
-    $result = $this->adminClient->get([]);
+    $result = $adminClient->get([]);
     expect($result)->toBeArray();
 });
 
-test('login returns array', function () {
+test('login returns array', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
@@ -125,14 +126,15 @@ test('login returns array', function () {
     $validatorStub = $this->createStub(\FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
 
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
     $data = ['id' => 1];
-    $result = $this->adminClient->login($data);
+    $result = $adminClient->login($data);
     expect($result)->toBeArray();
 });
 
-test('create returns int', function () {
+test('create returns int', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data = [
         'email' => 'email@example.com',
         'first_name' => 'John', 'password' => 'StrongPass123',
@@ -155,15 +157,16 @@ test('create returns int', function () {
     $di['events_manager'] = $eventMock;
     $di['tools'] = $toolsMock;
 
-    $this->adminClient->setDi($di);
-    $this->adminClient->setService($serviceMock);
+    $adminClient->setDi($di);
+    $adminClient->setService($serviceMock);
 
-    $result = $this->adminClient->create($data);
+    $result = $adminClient->create($data);
 
     expect($result)->toBeInt();
 });
 
-test('create throws exception when email is already registered', function () {
+test('create throws exception when email is already registered', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data = [
         'email' => 'email@example.com',
         'first_name' => 'John', 'password' => 'StrongPass123',
@@ -178,13 +181,14 @@ test('create throws exception when email is already registered', function () {
     $di = container();
     $di['tools'] = $toolsMock;
 
-    $this->adminClient->setDi($di);
-    $this->adminClient->setService($serviceMock);
+    $adminClient->setDi($di);
+    $adminClient->setService($serviceMock);
 
-    $this->adminClient->create($data);
+    $adminClient->create($data);
 })->throws(\FOSSBilling\Exception::class, 'This email address is already registered.');
 
-test('delete returns true', function () {
+test('delete returns true', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data = ['id' => 1];
 
     $model = new \Model_Client();
@@ -207,13 +211,14 @@ test('delete returns true', function () {
     $validatorStub = $this->createStub(\FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
 
-    $this->adminClient->setDi($di);
-    $this->adminClient->setService($serviceMock);
-    $result = $this->adminClient->delete($data);
+    $adminClient->setDi($di);
+    $adminClient->setService($serviceMock);
+    $result = $adminClient->delete($data);
     expect($result)->toBeTrue();
 });
 
-test('update returns true', function () {
+test('update returns true', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data = [
         'id' => 1,
         'first_name' => 'John', 'password' => 'StrongPass123',
@@ -281,12 +286,13 @@ test('update returns true', function () {
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['tools'] = $toolsMock;
 
-    $this->adminClient->setDi($di);
-    $result = $this->adminClient->update($data);
+    $adminClient->setDi($di);
+    $result = $adminClient->update($data);
     expect($result)->toBeTrue();
 });
 
-test('update throws exception when email is already registered', function () {
+test('update throws exception when email is already registered', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data = [
         'id' => 1,
         'first_name' => 'John', 'password' => 'StrongPass123',
@@ -352,27 +358,29 @@ test('update throws exception when email is already registered', function () {
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
     $di['tools'] = $toolsMock;
 
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
-    $this->adminClient->update($data);
+    $adminClient->update($data);
 })->throws(\FOSSBilling\Exception::class, 'This email address is already registered.');
 
-test('update throws exception when id is not passed', function () {
+test('update throws exception when id is not passed', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data = [];
 
     $di = container();
 
     $di['validator'] = new \FOSSBilling\Validate();
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
     // Validate required parameters before calling update
     $validator = $di['validator'];
     $validator->checkRequiredParamsForArray(['id' => 'Client ID was not passed'], $data);
 
-    $this->adminClient->update($data);
+    $adminClient->update($data);
 })->throws(\FOSSBilling\Exception::class, 'Client ID was not passed');
 
-test('changePassword returns true', function () {
+test('changePassword returns true', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data = [
         'id' => 1,
         'password' => 'strongPass',
@@ -407,13 +415,14 @@ test('changePassword returns true', function () {
     $di['validator'] = $validatorStub;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $profileService);
 
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
-    $result = $this->adminClient->change_password($data);
+    $result = $adminClient->change_password($data);
     expect($result)->toBeTrue();
 });
 
-test('changePassword throws exception when passwords do not match', function () {
+test('changePassword throws exception when passwords do not match', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data = [
         'id' => 1,
         'password' => 'strongPass',
@@ -424,12 +433,13 @@ test('changePassword throws exception when passwords do not match', function () 
 
     $di = container();
     $di['validator'] = $validatorStub;
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
-    $this->adminClient->change_password($data);
+    $adminClient->change_password($data);
 })->throws(\FOSSBilling\Exception::class, 'Passwords do not match');
 
-test('balanceGetList returns array', function () {
+test('balanceGetList returns array', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $simpleResultArr = [
         'list' => [
             [
@@ -464,13 +474,14 @@ test('balanceGetList returns array', function () {
     $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $serviceMock);
     $di['pager'] = $pagerMock;
 
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
-    $result = $this->adminClient->balance_get_list($data);
+    $result = $adminClient->balance_get_list($data);
     expect($result)->toBeArray();
 });
 
-test('balanceDelete returns true', function () {
+test('balanceDelete returns true', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -490,13 +501,14 @@ test('balanceDelete returns true', function () {
     $validatorStub = $this->createStub(\FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
 
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
-    $result = $this->adminClient->balance_delete($data);
+    $result = $adminClient->balance_delete($data);
     expect($result)->toBeTrue();
 });
 
-test('balanceAddFunds returns true', function () {
+test('balanceAddFunds returns true', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data = [
         'id' => 1,
         'amount' => '1.00',
@@ -520,13 +532,14 @@ test('balanceAddFunds returns true', function () {
     $validatorStub = $this->createStub(\FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
 
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
-    $result = $this->adminClient->balance_add_funds($data);
+    $result = $adminClient->balance_add_funds($data);
     expect($result)->toBeTrue();
 });
 
-test('batchExpirePasswordReminders returns true', function () {
+test('batchExpirePasswordReminders returns true', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $expiredArr = [
         new \Model_ClientPasswordReset(),
     ];
@@ -542,13 +555,14 @@ test('batchExpirePasswordReminders returns true', function () {
     $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $serviceMock);
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
-    $result = $this->adminClient->batch_expire_password_reminders();
+    $result = $adminClient->batch_expire_password_reminders();
     expect($result)->toBeTrue();
 });
 
-test('loginHistoryGetList returns array', function () {
+test('loginHistoryGetList returns array', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data = [];
     $pagerResultSet = [
         'list' => [],
@@ -570,40 +584,43 @@ test('loginHistoryGetList returns array', function () {
     $di = container();
     $di['pager'] = $pagerMock;
 
-    $this->adminClient->setDi($di);
-    $this->adminClient->setService($serviceMock);
+    $adminClient->setDi($di);
+    $adminClient->setService($serviceMock);
 
-    $result = $this->adminClient->login_history_get_list($data);
+    $result = $adminClient->login_history_get_list($data);
     expect($result)->toBeArray();
 });
 
-test('getStatuses returns array', function () {
+test('getStatuses returns array', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('counter')->atLeast()->once()->andReturn([]);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $serviceMock);
 
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
-    $result = $this->adminClient->get_statuses([]);
+    $result = $adminClient->get_statuses([]);
     expect($result)->toBeArray();
 });
 
-test('groupGetPairs returns array', function () {
+test('groupGetPairs returns array', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('getGroupPairs')->atLeast()->once()->andReturn([]);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $serviceMock);
 
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
-    $result = $this->adminClient->group_get_pairs([]);
+    $result = $adminClient->group_get_pairs([]);
     expect($result)->toBeArray();
 });
 
-test('groupCreate returns int', function () {
+test('groupCreate returns int', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data['title'] = 'test Group';
 
     $newGroupId = 1;
@@ -611,15 +628,16 @@ test('groupCreate returns int', function () {
     $serviceMock->shouldReceive('createGroup')->atLeast()->once()->andReturn($newGroupId);
 
     $di = container();
-    $this->adminClient->setService($serviceMock);
-    $this->adminClient->setDi($di);
-    $result = $this->adminClient->group_create($data);
+    $adminClient->setService($serviceMock);
+    $adminClient->setDi($di);
+    $result = $adminClient->group_create($data);
 
     expect($result)->toBeInt();
     expect($result)->toEqual($newGroupId);
 });
 
-test('groupUpdate returns true', function () {
+test('groupUpdate returns true', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data['id'] = '2';
     $data['title'] = 'test Group updated';
 
@@ -639,14 +657,15 @@ test('groupUpdate returns true', function () {
     $validatorStub = $this->createStub(\FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
 
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
-    $result = $this->adminClient->group_update($data);
+    $result = $adminClient->group_update($data);
 
     expect($result)->toBeTrue();
 });
 
-test('groupDelete returns true', function () {
+test('groupDelete returns true', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data['id'] = '2';
 
     $model = new \Model_ClientGroup();
@@ -670,15 +689,16 @@ test('groupDelete returns true', function () {
     $validatorStub = $this->createStub(\FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
 
-    $this->adminClient->setDi($di);
-    $this->adminClient->setService($serviceMock);
+    $adminClient->setDi($di);
+    $adminClient->setService($serviceMock);
 
-    $result = $this->adminClient->group_delete($data);
+    $result = $adminClient->group_delete($data);
 
     expect($result)->toBeTrue();
 });
 
-test('groupGet returns array', function () {
+test('groupGet returns array', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $data['id'] = '2';
 
     $model = new \Model_ClientGroup();
@@ -696,14 +716,15 @@ test('groupGet returns array', function () {
     $validatorStub = $this->createStub(\FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
 
-    $this->adminClient->setDi($di);
+    $adminClient->setDi($di);
 
-    $result = $this->adminClient->group_get($data);
+    $result = $adminClient->group_get($data);
 
     expect($result)->toBeArray();
 });
 
-test('batchDelete returns true', function () {
+test('batchDelete returns true', function (): void {
+    $adminClient = new \Box\Mod\Client\Api\Admin();
     $activityMock = Mockery::mock(\Box\Mod\Client\Api\Admin::class)->makePartial();
     $activityMock->shouldReceive('delete')->atLeast()->once()->andReturn(true);
 

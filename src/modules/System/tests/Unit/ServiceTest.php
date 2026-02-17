@@ -14,10 +14,6 @@ use function Tests\Helpers\container;
 use Box\Mod\System\Service;
 use Twig\Environment;
 
-beforeEach(function (): void {
-    $service = new Service();
-});
-
 test('getParamValue throws exception when key parameter is missing', function (): void {
     $service = new \Box\Mod\System\Service();
     $param = [];

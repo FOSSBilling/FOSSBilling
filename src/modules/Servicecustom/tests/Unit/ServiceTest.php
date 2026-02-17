@@ -15,10 +15,6 @@ use Box\Mod\Servicecustom\Service;
 use Box\Mod\Formbuilder\Service as FormbuilderService;
 use Box\Mod\Order\Service as OrderService;
 
-beforeEach(function () {
-    $service = new Service();
-});
-
 afterEach(function () {
     Mockery::close();
 });

@@ -15,10 +15,6 @@ use Box\Mod\Support\Service;
 use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Email\Service as EmailService;
 
-beforeEach(function () {
-    $service = new Service();
-});
-
 /*
  * Dependency Injection Tests
  */

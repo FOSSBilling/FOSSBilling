@@ -13,10 +13,6 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 use Box\Mod\Servicehosting\Api\Guest;
 
-beforeEach(function (): void {
-    $api = new Guest();
-});
-
 test('testFreeTlds', function (): void {
     $api = new \Box\Mod\Servicehosting\Api\Guest();
     $di = container();

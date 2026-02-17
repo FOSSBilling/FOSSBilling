@@ -12,10 +12,6 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $api = new \Box\Mod\Servicelicense\Api\Admin();
-});
-
 test('gets dependency injection container', function (): void {
     $api = new \Box\Mod\Servicelicense\Api\Admin();
     $di = container();

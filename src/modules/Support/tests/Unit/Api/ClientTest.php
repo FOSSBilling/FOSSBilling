@@ -12,11 +12,8 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->clientApi = new \Box\Mod\Support\Api\Client();
-});
-
 test('ticket get list', function (): void {
+    $clientApi = new \Box\Mod\Support\Api\Client();
     $api = new \Box\Mod\Support\Api\Client();
         $simpleResultArr = [
             'list' => [
@@ -49,22 +46,23 @@ test('ticket get list', function (): void {
         $di['pager'] = $paginatorMock;
         $di['db'] = $dbMock;
 
-        $this->clientApi->setDi($di);
+        $clientApi->setDi($di);
 
         $client = new \Model_Client();
         $client->loadBean(new \Tests\Helpers\DummyBean());
         $client->id = 1;
 
-        $this->clientApi->setService($serviceMock);
-        $this->clientApi->setIdentity($client);
+        $clientApi->setService($serviceMock);
+        $clientApi->setIdentity($client);
 
         $data = [];
-        $result = $this->clientApi->ticket_get_list($data);
+        $result = $clientApi->ticket_get_list($data);
 
         expect($result)->toBeArray();
     });
 
-    test('ticket get', function () {
+    test('ticket get', function (): void {
+        $clientApi = new \Box\Mod\Support\Api\Client();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('findOneByClient')->atLeast()->once()
             ->andReturn(new \Model_SupportTicket());
@@ -72,36 +70,38 @@ test('ticket get list', function (): void {
             ->andReturn([]);
 
         $di = container();
-        $this->clientApi->setDi($di);
+        $clientApi->setDi($di);
 
         $client = new \Model_Client();
         $client->loadBean(new \Tests\Helpers\DummyBean());
         $client->id = 1;
 
-        $this->clientApi->setService($serviceMock);
-        $this->clientApi->setIdentity($client);
+        $clientApi->setService($serviceMock);
+        $clientApi->setIdentity($client);
 
         $data = [
             'id' => 1,
         ];
-        $result = $this->clientApi->ticket_get($data);
+        $result = $clientApi->ticket_get($data);
 
         expect($result)->toBeArray();
     });
 
-    test('helpdesk get pairs', function () {
+    test('helpdesk get pairs', function (): void {
+        $clientApi = new \Box\Mod\Support\Api\Client();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('helpdeskGetPairs')->atLeast()->once()
             ->andReturn([0 => 'General']);
 
-        $this->clientApi->setService($serviceMock);
+        $clientApi->setService($serviceMock);
 
-        $result = $this->clientApi->helpdesk_get_pairs();
+        $result = $clientApi->helpdesk_get_pairs();
 
         expect($result)->toBeArray();
     });
 
-    test('ticket create', function () {
+    test('ticket create', function (): void {
+        $clientApi = new \Box\Mod\Support\Api\Client();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('ticketCreateForClient')->atLeast()->once()
             ->andReturn(1);
@@ -114,26 +114,27 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->clientApi->setDi($di);
+        $clientApi->setDi($di);
 
         $client = new \Model_Client();
         $client->loadBean(new \Tests\Helpers\DummyBean());
         $client->id = 1;
 
-        $this->clientApi->setService($serviceMock);
-        $this->clientApi->setIdentity($client);
+        $clientApi->setService($serviceMock);
+        $clientApi->setIdentity($client);
 
         $data = [
             'content' => 'Content',
             'subject' => 'Subject',
             'support_helpdesk_id' => 1,
         ];
-        $result = $this->clientApi->ticket_create($data);
+        $result = $clientApi->ticket_create($data);
 
         expect($result)->toBeInt();
     });
 
-    test('ticket reply', function () {
+    test('ticket reply', function (): void {
+        $clientApi = new \Box\Mod\Support\Api\Client();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('canBeReopened')->atLeast()->once()
             ->andReturn(true);
@@ -148,26 +149,27 @@ test('ticket get list', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $this->clientApi->setDi($di);
+        $clientApi->setDi($di);
 
         $client = new \Model_Client();
         $client->loadBean(new \Tests\Helpers\DummyBean());
         $client->id = 1;
 
-        $this->clientApi->setService($serviceMock);
-        $this->clientApi->setIdentity($client);
+        $clientApi->setService($serviceMock);
+        $clientApi->setIdentity($client);
 
         $data = [
             'content' => 'Content',
             'id' => 1,
         ];
-        $result = $this->clientApi->ticket_reply($data);
+        $result = $clientApi->ticket_reply($data);
 
         expect($result)->toBeBool();
         expect($result)->toBeTrue();
     });
 
-    test('ticket reply can not be reopened exception', function () {
+    test('ticket reply can not be reopened exception', function (): void {
+        $clientApi = new \Box\Mod\Support\Api\Client();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('canBeReopened')->atLeast()->once()
             ->andReturn(false);
@@ -183,23 +185,24 @@ test('ticket get list', function (): void {
         $di = container();
         $di['db'] = $dbMock;
 
-        $this->clientApi->setDi($di);
+        $clientApi->setDi($di);
 
         $client = new \Model_Client();
         $client->loadBean(new \Tests\Helpers\DummyBean());
         $client->id = 1;
 
-        $this->clientApi->setService($serviceMock);
-        $this->clientApi->setIdentity($client);
+        $clientApi->setService($serviceMock);
+        $clientApi->setIdentity($client);
 
         $data = [
             'content' => 'Content',
             'id' => 1,
         ];
-        expect(fn () => $this->clientApi->ticket_reply($data))->toThrow(\FOSSBilling\Exception::class);
+        expect(fn () => $clientApi->ticket_reply($data))->toThrow(\FOSSBilling\Exception::class);
     });
 
-    test('ticket close', function () {
+    test('ticket close', function (): void {
+        $clientApi = new \Box\Mod\Support\Api\Client();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('findOneByClient')->atLeast()->once()
             ->andReturn(new \Model_SupportTicket());
@@ -207,20 +210,20 @@ test('ticket get list', function (): void {
             ->andReturn(true);
 
         $di = container();
-        $this->clientApi->setDi($di);
+        $clientApi->setDi($di);
 
         $client = new \Model_Client();
         $client->loadBean(new \Tests\Helpers\DummyBean());
         $client->id = 1;
 
-        $this->clientApi->setService($serviceMock);
-        $this->clientApi->setIdentity($client);
+        $clientApi->setService($serviceMock);
+        $clientApi->setIdentity($client);
 
         $data = [
             'content' => 'Content',
             'id' => 1,
         ];
-        $result = $this->clientApi->ticket_close($data);
+        $result = $clientApi->ticket_close($data);
 
         expect($result)->toBeTrue();
     });

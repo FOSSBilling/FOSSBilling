@@ -26,11 +26,6 @@ class ExtensionPdoStatementsMock extends \PDOStatement
     }
 }
 
-beforeEach(function () {
-    $this->filesystemMock = Mockery::mock(\Symfony\Component\Filesystem\Filesystem::class);
-    $service = new \Box\Mod\Extension\Service($this->filesystemMock);
-});
-
 test('getDi returns the dependency injection container', function (): void {
     $service = new \Box\Mod\Extension\Service();
     $di = container();

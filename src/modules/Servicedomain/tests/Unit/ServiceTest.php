@@ -15,10 +15,6 @@ use Box\Mod\Servicedomain\Service;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\System\Service as SystemService;
 
-beforeEach(function () {
-    $service = new Service();
-});
-
 afterEach(function () {
     Mockery::close();
 });

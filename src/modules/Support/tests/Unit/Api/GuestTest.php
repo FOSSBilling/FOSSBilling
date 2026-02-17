@@ -12,20 +12,17 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->guestApi = new \Box\Mod\Support\Api\Guest();
-});
-
 test('ticket create', function (): void {
+    $guestApi = new \Box\Mod\Support\Api\Guest();
     $api = new \Box\Mod\Support\Api\Guest();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('ticketCreateForGuest')->atLeast()->once()
             ->andReturn(bin2hex(random_bytes(random_int(100, 127))));
 
         $di = container();
-        $this->guestApi->setDi($di);
+        $guestApi->setDi($di);
 
-        $this->guestApi->setService($serviceMock);
+        $guestApi->setService($serviceMock);
 
         $data = [
             'name' => 'Name',
@@ -33,21 +30,22 @@ test('ticket create', function (): void {
             'subject' => 'Subject',
             'message' => 'Message',
         ];
-        $result = $this->guestApi->ticket_create($data);
+        $result = $guestApi->ticket_create($data);
 
         expect($result)->toBeString();
         expect(strlen($result))->toBeGreaterThan(0);
     });
 
-    test('ticket create message too short exception', function () {
+    test('ticket create message too short exception', function (): void {
+        $guestApi = new \Box\Mod\Support\Api\Guest();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('ticketCreateForGuest')
             ->andReturn(sha1(uniqid()));
 
         $di = container();
-        $this->guestApi->setDi($di);
+        $guestApi->setDi($di);
 
-        $this->guestApi->setService($serviceMock);
+        $guestApi->setService($serviceMock);
 
         $data = [
             'name' => 'Name',
@@ -56,10 +54,11 @@ test('ticket create', function (): void {
             'message' => '',
         ];
 
-        expect(fn () => $this->guestApi->ticket_create($data))->toThrow(\FOSSBilling\Exception::class);
+        expect(fn () => $guestApi->ticket_create($data))->toThrow(\FOSSBilling\Exception::class);
     });
 
-    test('ticket get', function () {
+    test('ticket get', function (): void {
+        $guestApi = new \Box\Mod\Support\Api\Guest();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('publicFindOneByHash')->atLeast()->once()
             ->andReturn(new \Model_SupportPTicket());
@@ -67,19 +66,20 @@ test('ticket create', function (): void {
             ->andReturn([]);
 
         $di = container();
-        $this->guestApi->setDi($di);
+        $guestApi->setDi($di);
 
-        $this->guestApi->setService($serviceMock);
+        $guestApi->setService($serviceMock);
 
         $data = [
             'hash' => sha1(uniqid()),
         ];
-        $result = $this->guestApi->ticket_get($data);
+        $result = $guestApi->ticket_get($data);
 
         expect($result)->toBeArray();
     });
 
-    test('ticket close', function () {
+    test('ticket close', function (): void {
+        $guestApi = new \Box\Mod\Support\Api\Guest();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('publicFindOneByHash')->atLeast()->once()
             ->andReturn(new \Model_SupportPTicket());
@@ -87,20 +87,21 @@ test('ticket create', function (): void {
             ->andReturn(true);
 
         $di = container();
-        $this->guestApi->setDi($di);
+        $guestApi->setDi($di);
 
-        $this->guestApi->setService($serviceMock);
-        $this->guestApi->setIdentity(new \Model_Guest());
+        $guestApi->setService($serviceMock);
+        $guestApi->setIdentity(new \Model_Guest());
 
         $data = [
             'hash' => sha1(uniqid()),
         ];
-        $result = $this->guestApi->ticket_close($data);
+        $result = $guestApi->ticket_close($data);
 
         expect($result)->toBeTrue();
     });
 
-    test('ticket reply', function () {
+    test('ticket reply', function (): void {
+        $guestApi = new \Box\Mod\Support\Api\Guest();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('publicFindOneByHash')->atLeast()->once()
             ->andReturn(new \Model_SupportPTicket());
@@ -108,15 +109,15 @@ test('ticket create', function (): void {
             ->andReturn(sha1(uniqid()));
 
         $di = container();
-        $this->guestApi->setDi($di);
+        $guestApi->setDi($di);
 
-        $this->guestApi->setService($serviceMock);
+        $guestApi->setService($serviceMock);
 
         $data = [
             'hash' => sha1(uniqid()),
             'message' => 'Message',
         ];
-        $result = $this->guestApi->ticket_reply($data);
+        $result = $guestApi->ticket_reply($data);
 
         expect($result)->toBeString();
         expect(strlen($result))->toEqual(40);

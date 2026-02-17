@@ -13,10 +13,6 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 use Box\Mod\Servicelicense\Api\Guest;
 
-beforeEach(function (): void {
-    $api = new Guest();
-});
-
 test('getDi returns dependency injection container', function (): void {
     $api = new \Box\Mod\Servicelicense\Api\Guest();
     $di = container();

@@ -13,10 +13,6 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 use Symfony\Component\HttpFoundation\Request;
 
-beforeEach(function () {
-    $service = new \Box\Mod\Spamchecker\Service();
-});
-
 test('dependency injection', function (): void {
     $service = new \Box\Mod\Spamchecker\Service();
     $di = container();

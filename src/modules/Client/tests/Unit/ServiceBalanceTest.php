@@ -12,18 +12,16 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->service = new \Box\Mod\Client\ServiceBalance();
-});
-
-test('getDi returns dependency injection container', function () {
+test('getDi returns dependency injection container', function (): void {
+    $service = new \Box\Mod\Client\ServiceBalance();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toEqual($di);
 });
 
-test('deductFunds creates balance record', function () {
+test('deductFunds creates balance record', function (): void {
+    $service = new \Box\Mod\Client\ServiceBalance();
     $di = container();
 
     $clientBalance = new \Model_ClientBalance();
@@ -39,7 +37,7 @@ test('deductFunds creates balance record', function () {
         ->atLeast()->once();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -51,7 +49,7 @@ test('deductFunds creates balance record', function () {
         'rel_id' => 1,
     ];
 
-    $result = $this->service->deductFunds($clientModel, $amount, $description, $extra);
+    $result = $service->deductFunds($clientModel, $amount, $description, $extra);
 
     expect($result)->toBeInstanceOf(\Model_ClientBalance::class);
     expect($result->amount)->toEqual(-$amount);
@@ -60,7 +58,8 @@ test('deductFunds creates balance record', function () {
     expect($result->type)->toEqual('default');
 });
 
-test('deductFunds throws exception for invalid description', function () {
+test('deductFunds throws exception for invalid description', function (): void {
+    $service = new \Box\Mod\Client\ServiceBalance();
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -71,10 +70,11 @@ test('deductFunds throws exception for invalid description', function () {
         'rel_id' => 1,
     ];
 
-    $this->service->deductFunds($clientModel, $amount, $description, $extra);
+    $service->deductFunds($clientModel, $amount, $description, $extra);
 })->throws(\FOSSBilling\Exception::class, 'Funds description is invalid');
 
-test('deductFunds throws exception for invalid amount', function () {
+test('deductFunds throws exception for invalid amount', function (): void {
+    $service = new \Box\Mod\Client\ServiceBalance();
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -85,5 +85,5 @@ test('deductFunds throws exception for invalid amount', function () {
         'rel_id' => 1,
     ];
 
-    $this->service->deductFunds($clientModel, $amount, $description, $extra);
+    $service->deductFunds($clientModel, $amount, $description, $extra);
 })->throws(\FOSSBilling\Exception::class, 'Funds amount is invalid');

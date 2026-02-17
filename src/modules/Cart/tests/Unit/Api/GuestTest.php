@@ -12,11 +12,8 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function (): void {
-    $this->guestApi = new \Box\Mod\Cart\Api\Guest();
-});
-
 test('get cart', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
@@ -24,14 +21,15 @@ test('get cart', function (): void {
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
-    $result = $this->guestApi->get();
+    $result = $guestApi->get();
 
     expect($result)->toBeArray();
 });
 
 test('reset cart', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
@@ -39,14 +37,15 @@ test('reset cart', function (): void {
     $serviceMock->shouldReceive('resetCart')->atLeast()->once()
         ->andReturn(true);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
-    $result = $this->guestApi->reset();
+    $result = $guestApi->reset();
 
     expect($result)->toBeTrue();
 });
 
 test('set currency', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
@@ -68,19 +67,20 @@ test('set currency', function (): void {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $currencyServiceMock);
-    $this->guestApi->setDi($di);
+    $guestApi->setDi($di);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
     $data = [
         'currency' => 'EUR',
     ];
-    $result = $this->guestApi->set_currency($data);
+    $result = $guestApi->set_currency($data);
 
     expect($result)->toBeTrue();
 });
 
 test('set currency throws not found exception when currency does not exist', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')
@@ -100,9 +100,9 @@ test('set currency throws not found exception when currency does not exist', fun
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $currencyServiceMock);
-    $this->guestApi->setDi($di);
+    $guestApi->setDi($di);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
     $data = [
         'currency' => 'EUR',
@@ -110,10 +110,11 @@ test('set currency throws not found exception when currency does not exist', fun
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Currency not found');
-    $this->guestApi->set_currency($data);
+    $guestApi->set_currency($data);
 });
 
 test('get currency', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
@@ -142,19 +143,20 @@ test('get currency', function (): void {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $currencyServiceMock);
-    $this->guestApi->setDi($di);
+    $guestApi->setDi($di);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
     $data = [
         'currency' => 'EUR',
     ];
-    $result = $this->guestApi->get_currency();
+    $result = $guestApi->get_currency();
 
     expect($result)->toBeArray();
 });
 
 test('get currency not found returns default', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
@@ -186,19 +188,20 @@ test('get currency not found returns default', function (): void {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $currencyServiceMock);
-    $this->guestApi->setDi($di);
+    $guestApi->setDi($di);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
     $data = [
         'currency' => 'EUR',
     ];
-    $result = $this->guestApi->get_currency();
+    $result = $guestApi->get_currency();
 
     expect($result)->toBeArray();
 });
 
 test('apply promo', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
@@ -217,19 +220,20 @@ test('apply promo', function (): void {
         ->andReturn(true);
 
     $di = container();
-    $this->guestApi->setDi($di);
+    $guestApi->setDi($di);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
     $data = [
         'promocode' => 'CODE',
     ];
-    $result = $this->guestApi->apply_promo($data);
+    $result = $guestApi->apply_promo($data);
 
     expect($result)->toBeTrue();
 });
 
 test('apply promo not found exception', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
@@ -248,9 +252,9 @@ test('apply promo not found exception', function (): void {
         ->andReturn(true);
 
     $di = container();
-    $this->guestApi->setDi($di);
+    $guestApi->setDi($di);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
     $data = [
         'promocode' => 'CODE',
@@ -258,10 +262,11 @@ test('apply promo not found exception', function (): void {
 
     $this->expectException(\FOSSBilling\InformationException::class);
     $this->expectExceptionMessage('The promo code has expired or does not exist');
-    $this->guestApi->apply_promo($data);
+    $guestApi->apply_promo($data);
 });
 
 test('apply promo can not be applied', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
@@ -280,9 +285,9 @@ test('apply promo can not be applied', function (): void {
         ->andReturn(false);
 
     $di = container();
-    $this->guestApi->setDi($di);
+    $guestApi->setDi($di);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
     $data = [
         'promocode' => 'CODE',
@@ -290,10 +295,11 @@ test('apply promo can not be applied', function (): void {
 
     $this->expectException(\FOSSBilling\InformationException::class);
     $this->expectExceptionMessage('The promo code has expired or does not exist');
-    $this->guestApi->apply_promo($data);
+    $guestApi->apply_promo($data);
 });
 
 test('apply promo can not be applied for user', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
@@ -310,9 +316,9 @@ test('apply promo can not be applied for user', function (): void {
         ->andReturn(false);
 
     $di = container();
-    $this->guestApi->setDi($di);
+    $guestApi->setDi($di);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
     $data = [
         'promocode' => 'CODE',
@@ -320,10 +326,11 @@ test('apply promo can not be applied for user', function (): void {
 
     $this->expectException(\FOSSBilling\InformationException::class);
     $this->expectExceptionMessage('Promo code cannot be applied to your account');
-    $this->guestApi->apply_promo($data);
+    $guestApi->apply_promo($data);
 });
 
 test('remove promo', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
@@ -335,14 +342,15 @@ test('remove promo', function (): void {
     $serviceMock->shouldReceive('removePromo')->atLeast()->once()
         ->andReturn(true);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
-    $result = $this->guestApi->remove_promo();
+    $result = $guestApi->remove_promo();
 
     expect($result)->toBeTrue();
 });
 
 test('remove item', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
@@ -355,20 +363,21 @@ test('remove item', function (): void {
         ->andReturn(true);
 
     $di = container();
-    $this->guestApi->setDi($di);
+    $guestApi->setDi($di);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
     $data = [
         'id' => 1,
     ];
 
-    $result = $this->guestApi->remove_item($data);
+    $result = $guestApi->remove_item($data);
 
     expect($result)->toBeTrue();
 });
 
 test('add item', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
@@ -389,21 +398,22 @@ test('add item', function (): void {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->guestApi->setDi($di);
+    $guestApi->setDi($di);
 
-    $this->guestApi->setService($serviceMock);
+    $guestApi->setService($serviceMock);
 
     $data = [
         'id' => 1,
         'multiple' => true,
     ];
 
-    $result = $this->guestApi->add_item($data);
+    $result = $guestApi->add_item($data);
 
     expect($result)->toBeTrue();
 });
 
 test('add item single resets cart', function (): void {
+    $guestApi = new \Box\Mod\Cart\Api\Guest();
     $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());

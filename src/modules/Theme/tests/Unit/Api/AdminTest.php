@@ -13,10 +13,6 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 use Box\Mod\Theme\Api\Admin;
 
-beforeEach(function (): void {
-    $api = new Admin();
-});
-
 test('testGetDi', function (): void {
     $api = new \Box\Mod\Theme\Api\Admin();
     $di = container();

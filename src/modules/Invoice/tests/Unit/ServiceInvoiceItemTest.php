@@ -16,10 +16,6 @@ use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Invoice\Service as InvoiceService;
 
-beforeEach(function () {
-    $service = new ServiceInvoiceItem();
-});
-
 test('gets dependency injection container', function (): void {
     $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
     $di = container();

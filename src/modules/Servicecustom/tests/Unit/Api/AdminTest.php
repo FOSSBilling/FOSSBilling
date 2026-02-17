@@ -13,10 +13,6 @@ declare(strict_types=1);
 use Box\Mod\Servicecustom\Api\Admin;
 use Box\Mod\Servicecustom\Service;
 
-beforeEach(function () {
-    $api = new Admin();
-});
-
 test('updates configuration', function (): void {
     $api = new \Box\Mod\Servicecustom\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);

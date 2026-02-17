@@ -12,18 +12,16 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->service = new \Box\Mod\Client\Service();
-});
-
-test('getDi returns dependency injection container', function () {
+test('getDi returns dependency injection container', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toEqual($di);
 });
 
-test('approveClientEmailByHash returns true', function () {
+test('approveClientEmailByHash returns true', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $database = Mockery::mock('\Box_Database');
     $database->shouldReceive('getRow')
         ->atLeast()->once()
@@ -34,13 +32,14 @@ test('approveClientEmailByHash returns true', function () {
     $di = container();
     $di['db'] = $database;
 
-    $this->service->setDi($di);
-    $result = $this->service->approveClientEmailByHash('');
+    $service->setDi($di);
+    $result = $service->approveClientEmailByHash('');
 
     expect($result)->toBeTrue();
 });
 
-test('approveClientEmailByHash throws exception for invalid hash', function () {
+test('approveClientEmailByHash throws exception for invalid hash', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $database = Mockery::mock('\Box_Database');
     $database->shouldReceive('getRow')
         ->atLeast()->once()
@@ -49,12 +48,13 @@ test('approveClientEmailByHash throws exception for invalid hash', function () {
     $di = container();
     $di['db'] = $database;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $this->service->approveClientEmailByHash('');
+    $service->approveClientEmailByHash('');
 })->throws(\FOSSBilling\Exception::class, 'Invalid email confirmation link');
 
-test('generateEmailConfirmationLink returns string', function () {
+test('generateEmailConfirmationLink returns string', function (): void {
+    $service = new \Box\Mod\Client\Service();
 
     $model = new \Model_ExtensionMeta();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -79,16 +79,17 @@ test('generateEmailConfirmationLink returns string', function () {
     $di['db'] = $database;
     $di['tools'] = $toolsMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $clientId = 1;
-    $result = $this->service->generateEmailConfirmationLink($clientId);
+    $result = $service->generateEmailConfirmationLink($clientId);
 
     expect($result)->toBeString();
     expect(str_contains($result, '/client/confirm-email/'))->toBeTrue();
 });
 
-test('onAfterClientSignUp returns true', function () {
+test('onAfterClientSignUp returns true', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $eventParams = [
         'password' => 'testPassword',
         'id' => 1,
@@ -99,26 +100,27 @@ test('onAfterClientSignUp returns true', function () {
         ->atLeast()->once()
         ->andReturn($eventParams);
 
-    $service = Mockery::mock(\Box\Mod\Email\Service::class);
-    $service->shouldReceive('sendTemplate')
+    $emailService = Mockery::mock(\Box\Mod\Email\Service::class);
+    $emailService->shouldReceive('sendTemplate')
         ->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $service);
+    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $emailService);
     $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => false]);
 
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
 
-    $this->service->setDi($di);
-    $result = $this->service->onAfterClientSignUp($eventMock);
+    $service->setDi($di);
+    $result = $service->onAfterClientSignUp($eventMock);
 
     expect($result)->toBeTrue();
 });
 
-test('onAfterClientSignUp with email confirmation required returns true', function () {
+test('onAfterClientSignUp with email confirmation required returns true', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $eventMock = Mockery::mock('\Box_Event');
     $eventParams = [
         'password' => 'testPassword',
@@ -130,8 +132,8 @@ test('onAfterClientSignUp with email confirmation required returns true', functi
         ->atLeast()->once()
         ->andReturn($eventParams);
 
-    $service = Mockery::mock(\Box\Mod\Email\Service::class);
-    $service->shouldReceive('sendTemplate')
+    $emailService = Mockery::mock(\Box\Mod\Email\Service::class);
+    $emailService->shouldReceive('sendTemplate')
         ->atLeast()->once()
         ->andReturn(true);
 
@@ -141,9 +143,9 @@ test('onAfterClientSignUp with email confirmation required returns true', functi
         ->andReturn('Link_string');
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($serviceName) use ($service, $clientServiceMock) {
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $clientServiceMock) {
         if ($serviceName == 'email') {
-            return $service;
+            return $emailService;
         }
         if ($serviceName == 'client') {
             return $clientServiceMock;
@@ -154,12 +156,13 @@ test('onAfterClientSignUp with email confirmation required returns true', functi
         ->atLeast()->once()
         ->andReturn($di);
 
-    $result = $this->service->onAfterClientSignUp($eventMock);
+    $result = $service->onAfterClientSignUp($eventMock);
 
     expect($result)->toBeTrue();
 });
 
-test('onAfterClientSignUp handles exception gracefully', function () {
+test('onAfterClientSignUp handles exception gracefully', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $eventParams = [
         'password' => 'testPassword',
         'id' => 1,
@@ -170,13 +173,13 @@ test('onAfterClientSignUp handles exception gracefully', function () {
         ->atLeast()->once()
         ->andReturn($eventParams);
 
-    $service = Mockery::mock(\Box\Mod\Email\Service::class);
-    $service->shouldReceive('sendTemplate')
+    $emailService = Mockery::mock(\Box\Mod\Email\Service::class);
+    $emailService->shouldReceive('sendTemplate')
         ->atLeast()->once()
         ->andThrow(new \Exception('exception created in unit test'));
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $service);
+    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $emailService);
     $di['mod_config'] = $di->protect(function ($name): void {
         ['require_email_confirmation' => false];
     });
@@ -184,8 +187,8 @@ test('onAfterClientSignUp handles exception gracefully', function () {
         ->atLeast()->once()
         ->andReturn($di);
 
-    $this->service->setDi($di);
-    $result = $this->service->onAfterClientSignUp($eventMock);
+    $service->setDi($di);
+    $result = $service->onAfterClientSignUp($eventMock);
 
     expect($result)->toBeTrue();
 });
@@ -255,7 +258,8 @@ dataset('searchQueryData', [
 ]);
 
 test('getSearchQuery returns correct query and params', function ($data, $expectedStr, $expectedParams) {
-    $result = $this->service->getSearchQuery($data);
+    $service = new \Box\Mod\Client\Service();
+    $result = $service->getSearchQuery($data);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
 
@@ -263,17 +267,19 @@ test('getSearchQuery returns correct query and params', function ($data, $expect
     expect(array_diff_key($result[1], $expectedParams))->toEqual([]);
 })->with('searchQueryData');
 
-test('getSearchQuery with custom select statement', function () {
+test('getSearchQuery with custom select statement', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $data = [];
     $selectStmt = 'c.id, CONCAT(c.first_name, c.last_name) as full_name';
-    $result = $this->service->getSearchQuery($data, $selectStmt);
+    $result = $service->getSearchQuery($data, $selectStmt);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
 
     expect(str_contains($result[0], $selectStmt))->toBeTrue($result[0]);
 });
 
-test('getPairs returns array', function () {
+test('getPairs returns array', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $data = [];
 
     $database = Mockery::mock('\Box_Database');
@@ -284,12 +290,13 @@ test('getPairs returns array', function () {
     $di = container();
     $di['db'] = $database;
 
-    $this->service->setDi($di);
-    $result = $this->service->getPairs($data);
+    $service->setDi($di);
+    $result = $service->getPairs($data);
     expect($result)->toBeArray();
 });
 
-test('toSessionArray returns array with expected keys', function () {
+test('toSessionArray returns array with expected keys', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $expectedArrayKeys = [
         'id' => 1,
         'email' => 'email@example.com',
@@ -299,13 +306,14 @@ test('toSessionArray returns array with expected keys', function () {
 
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
-    $result = $this->service->toSessionArray($model);
+    $result = $service->toSessionArray($model);
 
     expect($result)->toBeArray();
     expect(array_diff_key($result, $expectedArrayKeys))->toEqual([]);
 });
 
-test('emailAlreadyRegistered returns boolean', function () {
+test('emailAlreadyRegistered returns boolean', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $email = 'test@example.com';
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -317,24 +325,26 @@ test('emailAlreadyRegistered returns boolean', function () {
     $di = container();
     $di['db'] = $database;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->emailAlreadyRegistered($email);
+    $result = $service->emailAlreadyRegistered($email);
     expect($result)->toBeBool();
 });
 
-test('emailAlreadyRegistered with model returns false for same email', function () {
+test('emailAlreadyRegistered with model returns false for same email', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $email = 'test@example.com';
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->email = $email;
 
-    $result = $this->service->emailAlreadyRegistered($email, $model);
+    $result = $service->emailAlreadyRegistered($email, $model);
     expect($result)->toBeBool();
     expect($result)->toBeFalse();
 });
 
-test('canChangeCurrency returns true when no invoices exist', function () {
+test('canChangeCurrency returns true when no invoices exist', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $currency = 'EUR';
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -348,13 +358,14 @@ test('canChangeCurrency returns true when no invoices exist', function () {
     $di = container();
     $di['db'] = $database;
 
-    $this->service->setDi($di);
-    $result = $this->service->canChangeCurrency($model, $currency);
+    $service->setDi($di);
+    $result = $service->canChangeCurrency($model, $currency);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('canChangeCurrency returns true when model currency is not set', function () {
+test('canChangeCurrency returns true when model currency is not set', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $currency = 'EUR';
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -362,12 +373,13 @@ test('canChangeCurrency returns true when model currency is not set', function (
     $database = Mockery::mock('\Box_Database');
     $database->shouldReceive('findOne')->never();
 
-    $result = $this->service->canChangeCurrency($model, $currency);
+    $result = $service->canChangeCurrency($model, $currency);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('canChangeCurrency returns false when currencies are identical', function () {
+test('canChangeCurrency returns false when currencies are identical', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $currency = 'EUR';
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -376,12 +388,13 @@ test('canChangeCurrency returns false when currencies are identical', function (
     $database = Mockery::mock('\Box_Database');
     $database->shouldReceive('findOne')->never();
 
-    $result = $this->service->canChangeCurrency($model, $currency);
+    $result = $service->canChangeCurrency($model, $currency);
     expect($result)->toBeBool();
     expect($result)->toBeFalse();
 });
 
-test('canChangeCurrency throws exception when client has invoices', function () {
+test('canChangeCurrency throws exception when client has invoices', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $currency = 'EUR';
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -399,9 +412,9 @@ test('canChangeCurrency throws exception when client has invoices', function () 
     $di = container();
     $di['db'] = $database;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $this->service->canChangeCurrency($model, $currency);
+    $service->canChangeCurrency($model, $currency);
 })->throws(\FOSSBilling\Exception::class, 'Currency cannot be changed. Client already has invoices issued.');
 
 dataset('searchBalanceQueryData', [
@@ -429,6 +442,7 @@ dataset('searchBalanceQueryData', [
 ]);
 
 test('getBalanceSearchQuery returns correct query and params', function ($data, $expectedStr, $expectedParams) {
+    $service = new \Box\Mod\Client\Service();
     $di = container();
 
     $clientBalanceService = new \Box\Mod\Client\ServiceBalance();
@@ -442,7 +456,8 @@ test('getBalanceSearchQuery returns correct query and params', function ($data, 
     expect(array_diff_key($params, $expectedParams))->toEqual([]);
 })->with('searchBalanceQueryData');
 
-test('addFunds returns true', function () {
+test('addFunds returns true', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $modelClient = new \Model_Client();
     $modelClient->loadBean(new \Tests\Helpers\DummyBean());
     $modelClient->currency = 'USD';
@@ -463,23 +478,25 @@ test('addFunds returns true', function () {
     $di = container();
     $di['db'] = $database;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->addFunds($modelClient, $amount, $description);
+    $result = $service->addFunds($modelClient, $amount, $description);
     expect($result)->toBeTrue();
 });
 
-test('addFunds throws exception when currency is not defined', function () {
+test('addFunds throws exception when currency is not defined', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $modelClient = new \Model_Client();
     $modelClient->loadBean(new \Tests\Helpers\DummyBean());
 
     $amount = '2.22';
     $description = 'test description';
 
-    $this->service->addFunds($modelClient, $amount, $description);
+    $service->addFunds($modelClient, $amount, $description);
 })->throws(\FOSSBilling\Exception::class, "You must define the client's currency before adding funds.");
 
-test('addFunds throws exception when amount is missing', function () {
+test('addFunds throws exception when amount is missing', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $modelClient = new \Model_Client();
     $modelClient->loadBean(new \Tests\Helpers\DummyBean());
     $modelClient->currency = 'USD';
@@ -487,10 +504,11 @@ test('addFunds throws exception when amount is missing', function () {
     $amount = null;
     $description = '';
 
-    $this->service->addFunds($modelClient, $amount, $description);
+    $service->addFunds($modelClient, $amount, $description);
 })->throws(\FOSSBilling\Exception::class, 'Funds amount is invalid');
 
-test('addFunds throws exception when description is invalid', function () {
+test('addFunds throws exception when description is invalid', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $modelClient = new \Model_Client();
     $modelClient->loadBean(new \Tests\Helpers\DummyBean());
     $modelClient->currency = 'USD';
@@ -498,10 +516,11 @@ test('addFunds throws exception when description is invalid', function () {
     $amount = '2.22';
     $description = null;
 
-    $this->service->addFunds($modelClient, $amount, $description);
+    $service->addFunds($modelClient, $amount, $description);
 })->throws(\FOSSBilling\Exception::class, 'Funds description is invalid');
 
-test('getExpiredPasswordReminders returns array', function () {
+test('getExpiredPasswordReminders returns array', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $database = Mockery::mock('\Box_Database');
     $database->shouldReceive('find')
         ->atLeast()->once()
@@ -510,9 +529,9 @@ test('getExpiredPasswordReminders returns array', function () {
     $di = container();
     $di['db'] = $database;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getExpiredPasswordReminders();
+    $result = $service->getExpiredPasswordReminders();
     expect($result)->toBeArray();
 });
 
@@ -534,10 +553,11 @@ dataset('searchHistoryQueryData', [
 ]);
 
 test('getHistorySearchQuery returns correct query and params', function ($data, $expectedStr, $expectedParams) {
+    $service = new \Box\Mod\Client\Service();
     $di = container();
 
-    $this->service->setDi($di);
-    [$sql, $params] = $this->service->getHistorySearchQuery($data);
+    $service->setDi($di);
+    [$sql, $params] = $service->getHistorySearchQuery($data);
     expect($sql)->not->toBeEmpty();
     expect($sql)->toBeString();
     expect($params)->toBeArray();
@@ -546,7 +566,8 @@ test('getHistorySearchQuery returns correct query and params', function ($data, 
     expect(array_diff_key($params, $expectedParams))->toEqual([]);
 })->with('searchHistoryQueryData');
 
-test('counter returns array', function () {
+test('counter returns array', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $database = Mockery::mock('\Box_Database');
     $database->shouldReceive('getAssoc')
         ->atLeast()->once()
@@ -555,9 +576,9 @@ test('counter returns array', function () {
     $di = container();
     $di['db'] = $database;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->counter();
+    $result = $service->counter();
     expect($result)->toBeArray();
 
     $expected = [
@@ -568,7 +589,8 @@ test('counter returns array', function () {
     ];
 });
 
-test('getGroupPairs returns array', function () {
+test('getGroupPairs returns array', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $database = Mockery::mock('\Box_Database');
     $database->shouldReceive('getAssoc')
         ->atLeast()->once()
@@ -577,13 +599,14 @@ test('getGroupPairs returns array', function () {
     $di = container();
     $di['db'] = $database;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getGroupPairs();
+    $result = $service->getGroupPairs();
     expect($result)->toBeArray();
 });
 
-test('clientAlreadyExists returns true when client exists', function () {
+test('clientAlreadyExists returns true when client exists', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $database = Mockery::mock('\Box_Database');
@@ -594,13 +617,14 @@ test('clientAlreadyExists returns true when client exists', function () {
     $di = container();
     $di['db'] = $database;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->clientAlreadyExists('email@example.com');
+    $result = $service->clientAlreadyExists('email@example.com');
     expect($result)->toBeTrue();
 });
 
-test('getByLoginDetails returns Model_Client', function () {
+test('getByLoginDetails returns Model_Client', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $database = Mockery::mock('\Box_Database');
@@ -611,9 +635,9 @@ test('getByLoginDetails returns Model_Client', function () {
     $di = container();
     $di['db'] = $database;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getByLoginDetails('email@example.com', 'password');
+    $result = $service->getByLoginDetails('email@example.com', 'password');
     expect($result)->toBeInstanceOf(\Model_Client::class);
 });
 
@@ -623,6 +647,7 @@ dataset('getProvider', [
 ]);
 
 test('get returns Model_Client', function ($fieldName, $fieldValue) {
+    $service = new \Box\Mod\Client\Service();
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -634,14 +659,15 @@ test('get returns Model_Client', function ($fieldName, $fieldValue) {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [$fieldName => $fieldValue];
-    $result = $this->service->get($data);
+    $result = $service->get($data);
     expect($result)->toBeInstanceOf(\Model_Client::class);
 })->with('getProvider');
 
-test('get throws exception when client not found', function () {
+test('get throws exception when client not found', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
@@ -650,13 +676,14 @@ test('get throws exception when client not found', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = ['id' => 0];
-    $this->service->get($data);
+    $service->get($data);
 })->throws(\FOSSBilling\Exception::class, 'Client not found');
 
-test('getClientBalance returns numeric', function () {
+test('getClientBalance returns numeric', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -668,13 +695,14 @@ test('getClientBalance returns numeric', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getClientBalance($model);
+    $result = $service->getClientBalance($model);
     expect($result)->toBeNumeric();
 });
 
-test('toApiArray returns array', function () {
+test('toApiArray returns array', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $model = new \Model_Client();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->custom_1 = 'custom field';
@@ -723,25 +751,27 @@ dataset('isClientTaxableProvider', [
 ]);
 
 test('isClientTaxable returns correct value', function ($getParamValueReturn, $tax_exempt, $expected) {
-    $service = Mockery::mock(\Box\Mod\System\Service::class);
-    $service->shouldReceive('getParamValue')
+    $service = new \Box\Mod\Client\Service();
+    $systemService = Mockery::mock(\Box\Mod\System\Service::class);
+    $systemService->shouldReceive('getParamValue')
         ->atLeast()->once()
         ->andReturn($getParamValueReturn);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $service);
+    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $systemService);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $client = new \Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
     $client->tax_exempt = $tax_exempt;
 
-    $result = $this->service->isClientTaxable($client);
+    $result = $service->isClientTaxable($client);
     expect($result)->toEqual($expected);
 })->with('isClientTaxableProvider');
 
-test('adminCreateClient returns int', function () {
+test('adminCreateClient returns int', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
     $clientModel->id = 1;
@@ -780,13 +810,14 @@ test('adminCreateClient returns int', function () {
     $di['mod'] = $di->protect(fn (): \Mockery\MockInterface => $modMock);
     $di['password'] = $passwordMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->adminCreateClient($data);
+    $result = $service->adminCreateClient($data);
     expect($result)->toBeInt();
 });
 
-test('deleteGroup returns true', function () {
+test('deleteGroup returns true', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once();
@@ -797,15 +828,16 @@ test('deleteGroup returns true', function () {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $model = new \Model_ClientGroup();
     $model->loadBean(new \Tests\Helpers\DummyBean());
-    $result = $this->service->deleteGroup($model);
+    $result = $service->deleteGroup($model);
     expect($result)->toBeTrue();
 });
 
-test('deleteGroup throws exception when group has clients', function () {
+test('deleteGroup throws exception when group has clients', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $clientModel = new \Model_Client();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
@@ -815,14 +847,15 @@ test('deleteGroup throws exception when group has clients', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $model = new \Model_ClientGroup();
     $model->loadBean(new \Tests\Helpers\DummyBean());
-    $this->service->deleteGroup($model);
+    $service->deleteGroup($model);
 })->throws(\FOSSBilling\Exception::class, 'Cannot remove groups with clients');
 
-test('authorizeClient returns null when email not found', function () {
+test('authorizeClient returns null when email not found', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $email = 'example@fossbilling.vm';
     $password = '123456';
 
@@ -842,13 +875,14 @@ test('authorizeClient returns null when email not found', function () {
     $di['db'] = $dbMock;
     $di['auth'] = $authMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->authorizeClient($email, $password);
+    $result = $service->authorizeClient($email, $password);
     expect($result)->toBeNull();
 });
 
-test('authorizeClient returns Model_Client', function () {
+test('authorizeClient returns Model_Client', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $email = 'example@fossbilling.vm';
     $password = '123456';
 
@@ -872,13 +906,14 @@ test('authorizeClient returns Model_Client', function () {
     $di['auth'] = $authMock;
     $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => false]);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->authorizeClient($email, $password);
+    $result = $service->authorizeClient($email, $password);
     expect($result)->toBeInstanceOf(\Model_Client::class);
 });
 
-test('authorizeClient with confirmed email returns Model_Client', function () {
+test('authorizeClient with confirmed email returns Model_Client', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $email = 'example@fossbilling.vm';
     $password = '123456';
 
@@ -903,13 +938,14 @@ test('authorizeClient with confirmed email returns Model_Client', function () {
     $di['auth'] = $authMock;
     $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => true]);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->authorizeClient($email, $password);
+    $result = $service->authorizeClient($email, $password);
     expect($result)->toBeInstanceOf(\Model_Client::class);
 });
 
-test('canChangeEmail returns true', function () {
+test('canChangeEmail returns true', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
     $email = 'client@fossbilling.org';
@@ -920,13 +956,14 @@ test('canChangeEmail returns true', function () {
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($modName): array => $config);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->canChangeEmail($clientModel, $email);
+    $result = $service->canChangeEmail($clientModel, $email);
     expect($result)->toBeTrue();
 });
 
-test('canChangeEmail returns true when emails are the same', function () {
+test('canChangeEmail returns true when emails are the same', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
     $email = 'client@fossbilling.org';
@@ -939,13 +976,14 @@ test('canChangeEmail returns true when emails are the same', function () {
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($modName): array => $config);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->canChangeEmail($clientModel, $email);
+    $result = $service->canChangeEmail($clientModel, $email);
     expect($result)->toBeTrue();
 });
 
-test('canChangeEmail returns true with empty config', function () {
+test('canChangeEmail returns true with empty config', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
     $email = 'client@fossbilling.org';
@@ -954,13 +992,14 @@ test('canChangeEmail returns true with empty config', function () {
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($modName): array => $config);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->canChangeEmail($clientModel, $email);
+    $result = $service->canChangeEmail($clientModel, $email);
     expect($result)->toBeTrue();
 });
 
-test('canChangeEmail throws exception when email change is disabled', function () {
+test('canChangeEmail throws exception when email change is disabled', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
     $email = 'client@fossbilling.org';
@@ -971,12 +1010,13 @@ test('canChangeEmail throws exception when email change is disabled', function (
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($modName): array => $config);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $this->service->canChangeEmail($clientModel, $email);
+    $service->canChangeEmail($clientModel, $email);
 })->throws(\FOSSBilling\Exception::class, 'Email address cannot be changed');
 
-test('checkExtraRequiredFields throws exception for missing field', function () {
+test('checkExtraRequiredFields throws exception for missing field', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $required = ['id'];
     $data = [];
 
@@ -984,11 +1024,12 @@ test('checkExtraRequiredFields throws exception for missing field', function () 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($modName): array => $config);
 
-    $this->service->setDi($di);
-    $this->service->checkExtraRequiredFields($data);
+    $service->setDi($di);
+    $service->checkExtraRequiredFields($data);
 })->throws(\FOSSBilling\Exception::class, 'Field Id cannot be empty');
 
-test('checkCustomFields throws exception for required field', function () {
+test('checkCustomFields throws exception for required field', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $custom_field = [
         'custom_field_name' => [
             'active' => true,
@@ -1001,11 +1042,12 @@ test('checkCustomFields throws exception for required field', function () {
     $di['mod_config'] = $di->protect(fn ($modName): array => $config);
 
     $data = [];
-    $this->service->setDi($di);
-    $this->service->checkCustomFields($data);
+    $service->setDi($di);
+    $service->checkCustomFields($data);
 })->throws(\FOSSBilling\Exception::class, 'Field custom_field_title cannot be empty');
 
-test('checkCustomFields returns null when field is not required', function () {
+test('checkCustomFields returns null when field is not required', function (): void {
+    $service = new \Box\Mod\Client\Service();
     $custom_field = [
         'custom_field_name' => [
             'active' => true,
@@ -1018,7 +1060,7 @@ test('checkCustomFields returns null when field is not required', function () {
     $di['mod_config'] = $di->protect(fn ($modName): array => $config);
 
     $data = [];
-    $this->service->setDi($di);
-    $result = $this->service->checkCustomFields($data);
+    $service->setDi($di);
+    $result = $service->checkCustomFields($data);
     expect($result)->toBeNull();
 });

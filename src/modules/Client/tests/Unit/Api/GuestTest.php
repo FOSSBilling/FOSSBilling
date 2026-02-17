@@ -12,18 +12,16 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->guestClient = new \Box\Mod\Client\Api\Guest();
-});
-
-test('getDi returns dependency injection container', function () {
+test('getDi returns dependency injection container', function (): void {
+    $guestClient = new \Box\Mod\Client\Api\Guest();
     $di = container();
-    $this->guestClient->setDi($di);
-    $getDi = $this->guestClient->getDi();
+    $guestClient->setDi($di);
+    $getDi = $guestClient->getDi();
     expect($getDi)->toEqual($di);
 });
 
-test('create returns int', function () {
+test('create returns int', function (): void {
+    $guestClient = new \Box\Mod\Client\Api\Guest();
     $configArr = [
         'disable_signup' => false,
         'required' => [],
@@ -63,16 +61,17 @@ test('create returns int', function () {
     $di['validator'] = $validatorMock;
     $di['tools'] = $toolsMock;
 
-    $this->guestClient->setDi($di);
-    $this->guestClient->setService($serviceMock);
+    $guestClient->setDi($di);
+    $guestClient->setService($serviceMock);
 
-    $result = $this->guestClient->create($data);
+    $result = $guestClient->create($data);
 
     expect($result)->toBeInt();
     expect($result)->toEqual($model->id);
 });
 
-test('create throws exception when client exists', function () {
+test('create throws exception when client exists', function (): void {
+    $guestClient = new \Box\Mod\Client\Api\Guest();
     $configArr = [
         'disable_signup' => false,
     ];
@@ -105,13 +104,14 @@ test('create throws exception when client exists', function () {
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
     $di['tools'] = $toolsMock;
 
-    $this->guestClient->setDi($di);
-    $this->guestClient->setService($serviceMock);
+    $guestClient->setDi($di);
+    $guestClient->setService($serviceMock);
 
-    $this->guestClient->create($data);
+    $guestClient->create($data);
 })->throws(\FOSSBilling\Exception::class, 'This email address is already registered.');
 
-test('create throws exception when signup is disabled', function () {
+test('create throws exception when signup is disabled', function (): void {
+    $guestClient = new \Box\Mod\Client\Api\Guest();
     $configArr = [
         'disable_signup' => true,
     ];
@@ -124,12 +124,13 @@ test('create throws exception when signup is disabled', function () {
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
-    $this->guestClient->setDi($di);
+    $guestClient->setDi($di);
 
-    $this->guestClient->create($data);
+    $guestClient->create($data);
 })->throws(\FOSSBilling\Exception::class, 'New registrations are temporary disabled');
 
-test('create throws exception when passwords do not match', function () {
+test('create throws exception when passwords do not match', function (): void {
+    $guestClient = new \Box\Mod\Client\Api\Guest();
     $configArr = [
         'disable_signup' => false,
     ];
@@ -142,12 +143,13 @@ test('create throws exception when passwords do not match', function () {
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
-    $this->guestClient->setDi($di);
+    $guestClient->setDi($di);
 
-    $this->guestClient->create($data);
+    $guestClient->create($data);
 })->throws(\FOSSBilling\Exception::class, 'Passwords do not match.');
 
-test('login returns array', function () {
+test('login returns array', function (): void {
+    $guestClient = new \Box\Mod\Client\Api\Guest();
     $data = [
         'email' => 'test@example.com',
         'password' => 'sezam',
@@ -188,15 +190,16 @@ test('login returns array', function () {
     $di['tools'] = $toolsStub;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $cartServiceMock);
 
-    $this->guestClient->setDi($di);
-    $this->guestClient->setService($serviceMock);
+    $guestClient->setDi($di);
+    $guestClient->setService($serviceMock);
 
-    $results = $this->guestClient->login($data);
+    $results = $guestClient->login($data);
 
     expect($results)->toBeArray();
 });
 
-test('resetPassword returns true with new flow', function () {
+test('resetPassword returns true with new flow', function (): void {
+    $guestClient = new \Box\Mod\Client\Api\Guest();
     $data['email'] = 'John@exmaple.com';
 
     $eventMock = Mockery::mock('\Box_EventManager');
@@ -230,13 +233,14 @@ test('resetPassword returns true with new flow', function () {
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['tools'] = $toolsMock;
 
-    $this->guestClient->setDi($di);
+    $guestClient->setDi($di);
 
-    $result = $this->guestClient->reset_password($data);
+    $result = $guestClient->reset_password($data);
     expect($result)->toBeTrue();
 });
 
-test('resetPassword returns true when email not found', function () {
+test('resetPassword returns true when email not found', function (): void {
+    $guestClient = new \Box\Mod\Client\Api\Guest();
     $data['email'] = 'joghn@example.eu';
 
     $eventMock = Mockery::mock('\Box_EventManager');
@@ -254,13 +258,14 @@ test('resetPassword returns true when email not found', function () {
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
     $di['tools'] = $toolsMock;
 
-    $this->guestClient->setDi($di);
+    $guestClient->setDi($di);
 
-    $result = $this->guestClient->reset_password($data);
+    $result = $guestClient->reset_password($data);
     expect($result)->toBeTrue();
 });
 
-test('updatePassword returns true', function () {
+test('updatePassword returns true', function (): void {
+    $guestClient = new \Box\Mod\Client\Api\Guest();
     $data = [
         'hash' => 'hashedString',
         'password' => 'newPassword',
@@ -300,13 +305,14 @@ test('updatePassword returns true', function () {
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $emailServiceMock);
 
-    $this->guestClient->setDi($di);
+    $guestClient->setDi($di);
 
-    $result = $this->guestClient->update_password($data);
+    $result = $guestClient->update_password($data);
     expect($result)->toBeTrue();
 });
 
-test('updatePassword throws exception when reset not found', function () {
+test('updatePassword throws exception when reset not found', function (): void {
+    $guestClient = new \Box\Mod\Client\Api\Guest();
     $data = [
         'hash' => 'hashedString',
         'password' => 'newPassword',
@@ -323,19 +329,20 @@ test('updatePassword throws exception when reset not found', function () {
     $di['db'] = $dbMock;
     $di['events_manager'] = $eventMock;
 
-    $this->guestClient->setDi($di);
+    $guestClient->setDi($di);
 
-    $this->guestClient->update_password($data);
+    $guestClient->update_password($data);
 })->throws(\FOSSBilling\Exception::class, 'The link has expired or you have already reset your password.');
 
-test('required returns array', function () {
+test('required returns array', function (): void {
+    $guestClient = new \Box\Mod\Client\Api\Guest();
     $configArr = [];
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
 
-    $this->guestClient->setDi($di);
+    $guestClient->setDi($di);
 
-    $result = $this->guestClient->required();
+    $result = $guestClient->required();
     expect($result)->toBeArray();
 });

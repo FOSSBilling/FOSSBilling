@@ -16,10 +16,6 @@ use Box\Mod\Client\Service as ClientService;
 use Box\Mod\System\Service as SystemService;
 use Box\Mod\Invoice\ServiceInvoiceItem;
 
-beforeEach(function () {
-    $service = new ServiceTax();
-});
-
 test('gets dependency injection container', function (): void {
     $service = new \Box\Mod\Invoice\ServiceTax();
     $di = container();

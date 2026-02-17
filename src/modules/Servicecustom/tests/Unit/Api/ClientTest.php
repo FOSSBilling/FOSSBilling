@@ -13,10 +13,6 @@ declare(strict_types=1);
 use Box\Mod\Servicecustom\Api\Client;
 use Box\Mod\Servicecustom\Service;
 
-beforeEach(function () {
-    $api = new Client();
-});
-
 test('calls magic method', function (): void {
     $api = new \Box\Mod\Servicecustom\Api\Client();
     $serviceMock = Mockery::mock(Service::class);

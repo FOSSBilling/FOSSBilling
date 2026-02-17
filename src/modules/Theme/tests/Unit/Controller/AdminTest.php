@@ -12,18 +12,16 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function (): void {
-    $this->controller = new \Box\Mod\Theme\Controller\Admin();
-});
-
 test('getDi returns dependency injection container', function (): void {
+    $controller = new \Box\Mod\Theme\Controller\Admin();
     $di = container();
-    $this->controller->setDi($di);
-    $result = $this->controller->getDi();
+    $controller->setDi($di);
+    $result = $controller->getDi();
     expect($result)->toEqual($di);
 });
 
 test('register configures routes', function (): void {
+    $controller = new \Box\Mod\Theme\Controller\Admin();
     $boxAppMock = Mockery::mock('\Box_App');
     $boxAppMock->shouldReceive('get')
         ->atLeast()
@@ -32,10 +30,11 @@ test('register configures routes', function (): void {
         ->atLeast()
         ->once();
 
-    $this->controller->register($boxAppMock);
+    $controller->register($boxAppMock);
 });
 
 test('getTheme renders theme preset', function (): void {
+    $controller = new \Box\Mod\Theme\Controller\Admin();
     $di = container();
 
     $boxAppMock = Mockery::mock('\Box_App');
@@ -96,6 +95,6 @@ test('getTheme renders theme preset', function (): void {
     $di['db'] = $this->createStub('Box_Database');
     $di['is_admin_logged'] = true;
     $di['mod'] = $di->protect(fn () => $modMock);
-    $this->controller->setDi($di);
-    $this->controller->get_theme($boxAppMock, 'huraga');
+    $controller->setDi($di);
+    $controller->get_theme($boxAppMock, 'huraga');
 });
