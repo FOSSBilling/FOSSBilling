@@ -154,7 +154,7 @@ class Service
     }
 
     /**
-     * @param string[] $params
+     * @param mixed $params
      *
      * @return mixed[]
      */
@@ -847,10 +847,8 @@ class Service
         $config = $mod->getConfig();
         if (isset($config['countries'])) {
             preg_match_all('#([A-Z]{2})=(.+)#', $config['countries'], $matches);
-            if (isset($matches[1]) && !empty($matches[1]) && isset($matches[2]) && !empty($matches[2])) {
-                if ((is_countable($matches[1]) ? count($matches[1]) : 0) == (is_countable($matches[2]) ? count($matches[2]) : 0)) {
-                    $countries = array_combine($matches[1], $matches[2]);
-                }
+            if (!empty($matches[1]) && !empty($matches[2]) && count($matches[1]) == count($matches[2])) {
+                $countries = array_combine($matches[1], $matches[2]);
             }
         }
 

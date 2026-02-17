@@ -526,7 +526,7 @@ class Service implements InjectionAwareInterface
         } else {
             $invoice->base_refund = null;
         }
-        
+
         $this->di['db']->store($invoice);
     }
 
@@ -688,6 +688,7 @@ class Service implements InjectionAwareInterface
 
             return true;
         }
+
         if (DEBUG) {
             $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->id} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
         }

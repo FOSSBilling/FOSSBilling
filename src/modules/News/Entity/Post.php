@@ -27,7 +27,8 @@ class Post implements ApiArrayInterface, TimestampInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
-    private int $id;
+
+    private ?int $id = null;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
     private int $admin_id;
@@ -102,8 +103,8 @@ class Post implements ApiArrayInterface, TimestampInterface
             'publish_at' => $this->getPublishAt()?->format('Y-m-d H:i:s'),
             'published_at' => $this->getPublishedAt()?->format('Y-m-d H:i:s'),
             'expires_at' => $this->getExpiresAt()?->format('Y-m-d H:i:s'),
-            'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
-            'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
+            'created_at' => $this->getCreatedAt()->format('Y-m-d H:i:s'),
+            'updated_at' => $this->getUpdatedAt()->format('Y-m-d H:i:s'),
             'author' => $this->adminData, /* @todo Doctrine: Replace with actual Admin entity and remove $adminData once it's migrated to Doctrine. */
             'excerpt' => $excerpt,
         ];
@@ -123,8 +124,7 @@ class Post implements ApiArrayInterface, TimestampInterface
         $this->updatedAt = new \DateTime();
     }
 
-    // --- Getters ---
-    public function getId(): int
+    public function getId(): ?int
     {
         return $this->id;
     }

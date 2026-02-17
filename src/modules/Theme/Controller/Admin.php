@@ -64,6 +64,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $service->updateSettings($t, $preset, $_POST);
             $service->regenerateThemeCssAndJsFiles($t, $preset, $api);
         } catch (\Exception $e) {
+            $error = $e->getMessage();
             error_log($e->getMessage());
         }
 
@@ -83,7 +84,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_theme(\Box_App $app, $theme): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         $mod = $this->di['mod']('theme');
         $service = $mod->getService();

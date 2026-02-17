@@ -74,14 +74,18 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_index(\Box_App $app): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         return $app->render('mod_product_index');
     }
 
     public function get_addons(\Box_App $app): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         return $app->render('mod_product_addons');
     }
@@ -125,7 +129,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_promos(\Box_App $app): string
     {
-        $this->di['is_admin_logged'];
+        if (!$this->di['is_admin_logged']) {
+            throw new \FOSSBilling\Exception('Admin not logged in');
+        }
 
         return $app->render('mod_product_promos');
     }

@@ -36,8 +36,14 @@ class Service implements InjectionAwareInterface
         return array_merge($config, $data);
     }
 
+    /**
+     * @param OODBBean $order with client_id and config properties
+     *
+     * @return OODBBean
+     */
     public function create(OODBBean $order)
     {
+        /** @var OODBBean $model */
         $model = $this->di['db']->dispense('service_apikey');
         $model->client_id = $order->client_id;
         $model->config = $order->config;
@@ -49,13 +55,15 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
+    /**
+     * @param OODBBean $order
+     * @param OODBBean $model
+     *
+     * @return bool
+     */
     public function activate(OODBBean $order, OODBBean $model): bool
     {
         $config = json_decode($order->config ?? '', true);
-        if (!is_object($model)) {
-            throw new \FOSSBilling\Exception('Order does not exist.');
-        }
-
         $model->api_key = $this->generateKey($config);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -63,6 +71,12 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * @param OODBBean $order
+     * @param OODBBean $model
+     *
+     * @return bool
+     */
     public function suspend(OODBBean $order, OODBBean $model): bool
     {
         $model->updated_at = date('Y-m-d H:i:s');
@@ -71,6 +85,12 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * @param OODBBean $order
+     * @param OODBBean $model
+     *
+     * @return bool
+     */
     public function unsuspend(OODBBean $order, OODBBean $model): bool
     {
         $model->updated_at = date('Y-m-d H:i:s');
@@ -79,16 +99,32 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * @param OODBBean $order
+     * @param OODBBean $model
+     *
+     * @return bool
+     */
     public function cancel(OODBBean $order, OODBBean $model): bool
     {
         return $this->suspend($order, $model);
     }
 
+    /**
+     * @param OODBBean $order
+     * @param OODBBean $model
+     *
+     * @return bool
+     */
     public function uncancel(OODBBean $order, OODBBean $model): bool
     {
         return $this->unsuspend($order, $model);
     }
 
+    /**
+     * @param OODBBean|null $order
+     * @param OODBBean|null $model
+     */
     public function delete(?OODBBean $order, ?OODBBean $model): void
     {
         if (is_object($model)) {
@@ -96,6 +132,11 @@ class Service implements InjectionAwareInterface
         }
     }
 
+    /**
+     * @param OODBBean $model
+     *
+     * @return array
+     */
     public function toApiArray(OODBBean $model): array
     {
         return [
@@ -118,6 +159,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('You must provide an API key to check it\'s validity.');
         }
 
+        /** @var OODBBean|null $model */
         $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
         if (is_null($model)) {
             throw new \FOSSBilling\Exception('API key does not exist');
@@ -137,6 +179,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('You must provide an API key to check it\'s validity.');
         }
 
+        /** @var OODBBean|null $model */
         $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
         if (is_null($model)) {
             throw new \FOSSBilling\Exception('API key does not exist');
@@ -181,8 +224,10 @@ class Service implements InjectionAwareInterface
         } elseif (!empty($data['order_id'])) {
             $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
             $orderService = $this->di['mod_service']('order');
+            /** @var OODBBean|null $model */
             $model = $orderService->getOrderService($order);
         } else {
+            /** @var OODBBean|null $model */
             $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
         }
 
@@ -190,11 +235,9 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
-        try {
-            $this->di['is_client_logged'];
+        $client = null;
+        if ($this->di['is_client_logged']) {
             $client = $this->di['loggedin_client'];
-        } catch (\Exception) {
-            $client = null;
         }
 
         if (!is_null($client) && $client->id !== $model->client_id) {
@@ -225,6 +268,7 @@ class Service implements InjectionAwareInterface
 
         $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
         $orderService = $this->di['mod_service']('order');
+        /** @var OODBBean|null $model */
         $model = $orderService->getOrderService($order);
 
         if (is_null($model)) {
@@ -337,6 +381,11 @@ class Service implements InjectionAwareInterface
         return $apiKey;
     }
 
+    /**
+     * @param OODBBean $model
+     *
+     * @return bool
+     */
     private function isActive(OODBBean $model): bool
     {
         $order = $this->di['db']->findOne('ClientOrder', 'service_id = :id AND service_type = "apikey"', [':id' => $model->id]);

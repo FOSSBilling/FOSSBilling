@@ -291,7 +291,7 @@ class Service implements InjectionAwareInterface
         }
         if (is_array($data['addons'] ?? null)) {
             $addons = array_values(array_filter($data['addons']));
-            if (is_null($addons)) {
+            if (empty($addons)) {
                 $model->addons = null;
             } else {
                 $model->addons = json_encode($addons);
@@ -927,12 +927,12 @@ class Service implements InjectionAwareInterface
         $model->used = $data['used'] ?? $model->used;
         $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['start_at'])) : null;
         $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['end_at'])) : null;
-        $model->maxuses = (int) $data['maxuses'] ?? $model->maxuses;
+        $model->maxuses = (int) ($data['maxuses'] ?? $model->maxuses);
 
         if (!is_array($data['products'] ?? null)) {
             $model->products = null;
         } else {
-            $products = array_values(array_filter($data['products'] ?? null));
+            $products = array_values(array_filter($data['products']));
             if (empty($products)) {
                 $model->products = null;
             } else {
@@ -942,7 +942,7 @@ class Service implements InjectionAwareInterface
         if (!is_array($data['client_groups'] ?? null)) {
             $model->client_groups = null;
         } else {
-            $client_groups = array_values(array_filter($data['client_groups'] ?? null));
+            $client_groups = array_values(array_filter($data['client_groups']));
             if (empty($client_groups)) {
                 $model->client_groups = null;
             } else {
@@ -953,7 +953,7 @@ class Service implements InjectionAwareInterface
         if (!is_array($data['periods'] ?? null)) {
             $model->periods = null;
         } else {
-            $periods = array_values(array_filter($data['periods'] ?? null));
+            $periods = array_values(array_filter($data['periods']));
             if (empty($periods)) {
                 $model->periods = null;
             } else {

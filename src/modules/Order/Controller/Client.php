@@ -65,7 +65,9 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_orders(\Box_App $app): string
     {
-        $this->di['is_client_logged'];
+        if (!$this->di['is_client_logged']) {
+            throw new \FOSSBilling\Exception('Client not logged in');
+        }
 
         return $app->render('mod_order_list');
     }
