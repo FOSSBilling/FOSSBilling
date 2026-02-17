@@ -13,18 +13,16 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 use Box\Mod\Product\Service;
 
-beforeEach(function () {
-    $this->service = new Service();
-});
-
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $service = new Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets product pairs', function () {
+test('gets product pairs', function (): void {
+    $service = new Service();
     $data = [
         'type' => 'domain',
         'products_only' => true,
@@ -43,26 +41,29 @@ test('gets product pairs', function () {
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()->once()
-        ->andReturn($execArray);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('getAll');
+    $expectation->atLeast()->once();
+    $expectation->andReturn($execArray);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getPairs($data);
+    $result = $service->getPairs($data);
     expect($result)->toBeArray();
     expect($result)->toBe($expectArray);
 });
 
-test('converts product to api array', function () {
+test('converts product to api array', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getStartingFromPrice')
-        ->atLeast()->once();
-    $serviceMock->shouldReceive('getUpgradablePairs')
-        ->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('getStartingFromPrice');
+    $expectation1->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $serviceMock->shouldReceive('getUpgradablePairs');
+    $expectation2->atLeast()->once();
 
     $productPaymentArray = [
         'type' => 'free',
@@ -70,9 +71,10 @@ test('converts product to api array', function () {
         \Model_ProductPayment::ONCE => ['price' => 1, 'setup' => 10],
         \Model_ProductPayment::RECURRENT => [],
     ];
-    $serviceMock->shouldReceive('toProductPaymentApiArray')
-        ->atLeast()->once()
-        ->andReturn($productPaymentArray);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $serviceMock->shouldReceive('toProductPaymentApiArray');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn($productPaymentArray);
 
     $model = new \Model_Product();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -87,14 +89,15 @@ test('converts product to api array', function () {
     $modelProductPayment = new \Model_ProductPayment();
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturnUsing(function ($type) use ($modelProductPayment, $modelProductCategory) {
-            return match ($type) {
-                'ProductPayment' => $modelProductPayment,
-                'ProductCategory' => $modelProductCategory,
-            };
-        });
+    /** @var \Mockery\Expectation $expectation4 */
+    $expectation4 = $dbMock->shouldReceive('load');
+    $expectation4->atLeast()->once();
+    $expectation4->andReturnUsing(function ($type) use ($modelProductPayment, $modelProductCategory) {
+        return match ($type) {
+            'ProductPayment' => $modelProductPayment,
+            'ProductCategory' => $modelProductCategory,
+        };
+    });
 
     $di = container();
     $di['db'] = $dbMock;
@@ -107,7 +110,8 @@ test('converts product to api array', function () {
     expect($result)->toBeArray();
 });
 
-test('gets product types', function () {
+test('gets product types', function (): void {
+    $service = new Service();
     $modArray = [
         'servicecustomtest',
     ];
@@ -123,51 +127,57 @@ test('gets product types', function () {
     $expectedArray['customtest'] = 'Customtest';
 
     $extensionServiceMock = Mockery::mock(\Box\Mod\Extension\Service::class);
-    $extensionServiceMock->shouldReceive('getInstalledMods')
-        ->atLeast()->once()
-        ->andReturn($modArray);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $extensionServiceMock->shouldReceive('getInstalledMods');
+    $expectation->atLeast()->once();
+    $expectation->andReturn($modArray);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $extensionServiceMock);
 
-    $this->service->setDi($di);
-    $result = $this->service->getTypes();
+    $service->setDi($di);
+    $result = $service->getTypes();
     expect($result)->toBeArray();
     expect($result)->toBe($expectedArray);
 });
 
-test('gets main domain product', function () {
+test('gets main domain product', function (): void {
+    $service = new Service();
     $model = new \Model_Product();
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('findOne');
+    $expectation->atLeast()->once();
+    $expectation->andReturn($model);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getMainDomainProduct();
+    $result = $service->getMainDomainProduct();
     expect($result)->toBeInstanceOf('\Model_Product');
 });
 
-test('gets payment types', function () {
+test('gets payment types', function (): void {
+    $service = new Service();
     $expected = [
         'free' => 'Free',
         'once' => 'One time',
         'recurrent' => 'Recurrent',
     ];
 
-    $result = $this->service->getPaymentTypes();
+    $result = $service->getPaymentTypes();
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
 
-test('creates a product', function () {
+test('creates a product', function (): void {
+    $service = new Service();
     $systemServiceMock = Mockery::mock(\Box\Mod\System\Service::class);
-    $systemServiceMock->shouldReceive('checkLimits');
+    /** @var \Mockery\Expectation $expectation0 */
+    $expectation0 = $systemServiceMock->shouldReceive('checkLimits');
 
     $modelPayment = new \Model_ProductPayment();
     $modelPayment->loadBean(new \Tests\Helpers\DummyBean());
@@ -178,25 +188,29 @@ test('creates a product', function () {
     $newProductId = 1;
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
-        ->atLeast()->once()
-        ->andReturn(0);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('getCell');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(0);
 
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturnUsing(function ($type) use ($modelPayment, $modelProduct) {
-            return match ($type) {
-                'ProductPayment' => $modelPayment,
-                'Product' => $modelProduct,
-            };
-        });
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('dispense');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturnUsing(function ($type) use ($modelPayment, $modelProduct) {
+        return match ($type) {
+            'ProductPayment' => $modelPayment,
+            'Product' => $modelProduct,
+        };
+    });
 
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($newProductId);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $dbMock->shouldReceive('store');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn($newProductId);
 
     $toolMock = Mockery::mock(\FOSSBilling\Tools::class);
-    $toolMock->shouldReceive('slug');
+    /** @var \Mockery\Expectation $expectation4 */
+    $expectation4 = $toolMock->shouldReceive('slug');
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $systemServiceMock);
@@ -204,13 +218,13 @@ test('creates a product', function () {
     $di['tools'] = $toolMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
-    $result = $this->service->createProduct('title', 'domain');
+    $service->setDi($di);
+    $result = $service->createProduct('title', 'domain');
     expect($result)->toBeInt();
     expect($result)->toBe($newProductId);
 });
 
-test('throws exception when updating product with missing pricing type', function () {
+test('throws exception when updating product with missing pricing type', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
     $typesArr = [
@@ -218,9 +232,10 @@ test('throws exception when updating product with missing pricing type', functio
         'once' => 'One time',
         'recurrent' => 'Recurrent',
     ];
-    $serviceMock->shouldReceive('getPaymentTypes')
-        ->atLeast()->once()
-        ->andReturn($typesArr);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getPaymentTypes');
+    $expectation->atLeast()->once();
+    $expectation->andReturn($typesArr);
 
     $data = ['pricing' => []];
 
@@ -231,7 +246,7 @@ test('throws exception when updating product with missing pricing type', functio
         ->toThrow(\FOSSBilling\Exception::class, 'Pricing type is required');
 });
 
-test('updates a product', function () {
+test('updates a product', function (): void {
     $modelProduct = new \Model_Product();
     $modelProduct->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -242,9 +257,10 @@ test('updates a product', function () {
         'once' => 'One time',
         'recurrent' => 'Recurrent',
     ];
-    $serviceMock->shouldReceive('getPaymentTypes')
-        ->atLeast()->once()
-        ->andReturn($typesArr);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('getPaymentTypes');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($typesArr);
 
     $data = [
         'pricing' => [
@@ -281,13 +297,15 @@ test('updates a product', function () {
     $modelProductPayment->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($modelProductPayment);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('getExistingModelById');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($modelProductPayment);
 
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $dbMock->shouldReceive('store');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn(1);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -299,7 +317,8 @@ test('updates a product', function () {
     expect($result)->toBeTrue();
 });
 
-test('updates priority', function () {
+test('updates priority', function (): void {
+    $service = new Service();
     $data = [
         'priority' => [
             1 => 10,
@@ -311,23 +330,26 @@ test('updates priority', function () {
     $modelProduct->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn($modelProduct);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('load');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($modelProduct);
 
-    $dbMock->shouldReceive('store');
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('store');
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->updatePriority($data);
+    $result = $service->updatePriority($data);
     expect($result)->toBeTrue();
 });
 
-test('updates config', function () {
+test('updates config', function (): void {
+    $service = new Service();
     $modelProduct = new \Model_Product();
     $modelProduct->loadBean(new \Tests\Helpers\DummyBean());
     $modelProduct->config = '{"settings":5,"max":"10"}';
@@ -342,20 +364,22 @@ test('updates config', function () {
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('store');
+    $expectation->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->updateConfig($modelProduct, $data);
+    $result = $service->updateConfig($modelProduct, $data);
     expect($result)->toBeTrue();
 });
 
-test('gets addons', function () {
+test('gets addons', function (): void {
+    $service = new Service();
     $addonsRows = [
         [
             'id' => 1,
@@ -368,22 +392,24 @@ test('gets addons', function () {
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()->once()
-        ->andReturn($addonsRows);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('getAll');
+    $expectation->atLeast()->once();
+    $expectation->andReturn($addonsRows);
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getAddons();
+    $result = $service->getAddons();
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
 
-test('creates an addon', function () {
+test('creates an addon', function (): void {
+    $service = new Service();
     $newProductId = 1;
 
     $modelPayment = new \Model_ProductPayment();
@@ -393,52 +419,59 @@ test('creates an addon', function () {
     $modelProduct->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($newProductId);
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturnUsing(function ($type) use ($modelPayment, $modelProduct) {
-            return match ($type) {
-                'ProductPayment' => $modelPayment,
-                'Product' => $modelProduct,
-            };
-        });
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('store');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($newProductId);
+
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('dispense');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturnUsing(function ($type) use ($modelPayment, $modelProduct) {
+        return match ($type) {
+            'ProductPayment' => $modelPayment,
+            'Product' => $modelProduct,
+        };
+    });
 
     $toolMock = Mockery::mock(\FOSSBilling\Tools::class);
-    $toolMock->shouldReceive('slug')
-        ->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $toolMock->shouldReceive('slug');
+    $expectation3->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['tools'] = $toolMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->createAddon('title');
+    $result = $service->createAddon('title');
     expect($result)->toBeInt();
     expect($result)->toBe($newProductId);
 });
 
-test('throws exception when deleting product with active orders', function () {
+test('throws exception when deleting product with active orders', function (): void {
+    $service = new Service();
     $model = new \Model_Product();
 
     $orderServiceMock = Mockery::mock(\Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('productHasOrders')
-        ->atLeast()->once()
-        ->andReturn(true);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $orderServiceMock->shouldReceive('productHasOrders');
+    $expectation->atLeast()->once();
+    $expectation->andReturn(true);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    expect(fn () => $this->service->deleteProduct($model))
+    expect(fn () => $service->deleteProduct($model))
         ->toThrow(\FOSSBilling\Exception::class, 'Cannot remove product which has active orders.');
 });
 
-test('gets product category pairs', function () {
+test('gets product category pairs', function (): void {
+    $service = new Service();
     $execArray = [
         [
             'id' => 1,
@@ -451,70 +484,78 @@ test('gets product category pairs', function () {
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()->once()
-        ->andReturn($execArray);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('getAll');
+    $expectation->atLeast()->once();
+    $expectation->andReturn($execArray);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getProductCategoryPairs();
+    $service->setDi($di);
+    $result = $service->getProductCategoryPairs();
     expect($result)->toBeArray();
     expect($result)->toBe($expectArray);
 });
 
-test('updates a category', function () {
+test('updates a category', function (): void {
+    $service = new Service();
     $model = new \Model_ProductCategory();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('store');
+    $expectation->atLeast()->once();
+    $expectation->andReturn(1);
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->updateCategory($model, 'title', 'decription', 'http://urltoimg.com/img.jpg');
+    $result = $service->updateCategory($model, 'title', 'decription', 'http://urltoimg.com/img.jpg');
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('creates a category', function () {
+test('creates a category', function (): void {
+    $service = new Service();
     $newCategoryId = 1;
 
     $systemServiceMock = Mockery::mock(\Box\Mod\System\Service::class);
-    $systemServiceMock->shouldReceive('checkLimits');
+    /** @var \Mockery\Expectation $expectation0 */
+    $expectation0 = $systemServiceMock->shouldReceive('checkLimits');
 
     $model = new \Model_ProductCategory();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($model);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('dispense');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($model);
 
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($newCategoryId);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('store');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($newCategoryId);
 
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $systemServiceMock);
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->createCategory('title');
+    $result = $service->createCategory('title');
     expect($result)->toBeInt();
     expect($result)->toBe($newCategoryId);
 });
 
-test('throws exception when removing category with products', function () {
+test('throws exception when removing category with products', function (): void {
+    $service = new Service();
     $modelProductCategory = new \Model_ProductCategory();
     $modelProductCategory->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -522,43 +563,48 @@ test('throws exception when removing category with products', function () {
     $modelProduct->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($modelProduct);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('findOne');
+    $expectation->atLeast()->once();
+    $expectation->andReturn($modelProduct);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    expect(fn () => $this->service->removeProductCategory($modelProductCategory))
+    expect(fn () => $service->removeProductCategory($modelProductCategory))
         ->toThrow(\FOSSBilling\Exception::class, 'Cannot remove product category with products');
 });
 
-test('removes a product category', function () {
+test('removes a product category', function (): void {
+    $service = new Service();
     $modelProductCategory = new \Model_ProductCategory();
     $modelProductCategory->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('findOne');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(null);
 
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('trash');
+    $expectation2->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->removeProductCategory($modelProductCategory);
+    $result = $service->removeProductCategory($modelProductCategory);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('gets promo search query', function () {
+test('gets promo search query', function (): void {
+    $service = new Service();
     $data = [
         'search' => 'keyword',
         'id' => 1,
@@ -566,17 +612,19 @@ test('gets promo search query', function () {
     ];
 
     $di = container();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    [$sql, $params] = $this->service->getPromoSearchQuery($data);
+    [$sql, $params] = $service->getPromoSearchQuery($data);
 
     expect($sql)->toBeString();
     expect($params)->toBeArray();
 });
 
-test('creates a promo', function () {
+test('creates a promo', function (): void {
+    $service = new Service();
     $systemServiceMock = Mockery::mock(\Box\Mod\System\Service::class);
-    $systemServiceMock->shouldReceive('checkLimits');
+    /** @var \Mockery\Expectation $expectation0 */
+    $expectation0 = $systemServiceMock->shouldReceive('checkLimits');
 
     $model = new \Model_Promo();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -584,49 +632,57 @@ test('creates a promo', function () {
     $newPromoId = 1;
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($model);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($newPromoId);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('findOne');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(null);
+
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('dispense');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($model);
+
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $dbMock->shouldReceive('store');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn($newPromoId);
 
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $systemServiceMock);
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
-    $result = $this->service->createPromo('code', 'percentage', 50, [], [], [], []);
+    $service->setDi($di);
+    $result = $service->createPromo('code', 'percentage', 50, [], [], [], []);
     expect($result)->toBeInt();
     expect($result)->toBe($newPromoId);
 });
 
-test('converts promo to api array', function () {
+test('converts promo to api array', function (): void {
+    $service = new Service();
     $model = new \Model_Promo();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->products = '{}';
     $model->periods = '{}';
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('toArray');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
     $di = container();
     $di['db'] = $dbMock;
     $di['tools'] = Mockery::mock(\FOSSBilling\Tools::class);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->toPromoApiArray($model);
+    $result = $service->toPromoApiArray($model);
     expect($result)->toBeArray();
 });
 
-test('updates a promo', function () {
+test('updates a promo', function (): void {
+    $service = new Service();
     $model = new \Model_Promo();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -647,40 +703,46 @@ test('updates a promo', function () {
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('store');
+    $expectation->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
-    $result = $this->service->updatePromo($model, $data);
+    $service->setDi($di);
+    $result = $service->updatePromo($model, $data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('deletes a promo', function () {
+test('deletes a promo', function (): void {
+    $service = new Service();
     $model = new \Model_Promo();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
-        ->atLeast()->once();
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('exec');
+    $expectation1->atLeast()->once();
+
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('trash');
+    $expectation2->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
-    $result = $this->service->deletePromo($model);
+    $service->setDi($di);
+    $result = $service->deletePromo($model);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('gets product search query', function () {
+test('gets product search query', function (): void {
+    $service = new Service();
     $data = [
         'search' => 'keyword',
         'type' => 'domain',
@@ -689,15 +751,16 @@ test('gets product search query', function () {
     ];
 
     $di = container();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    [$sql, $params] = $this->service->getProductSearchQuery($data);
+    [$sql, $params] = $service->getProductSearchQuery($data);
 
     expect($sql)->toBeString();
     expect($params)->toBeArray();
 });
 
-test('converts product category to api array', function () {
+test('converts product category to api array', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $model = new \Model_ProductCategory();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -706,20 +769,22 @@ test('converts product category to api array', function () {
     $modelProduct->type = 'custom';
     $categoryProductsArr = [$modelProduct];
 
-    $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getCategoryProducts')
-        ->atLeast()->once()
-        ->andReturn($categoryProductsArr);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('getCategoryProducts');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($categoryProductsArr);
 
     $apiArrayResult = ['price_starting_from' => 1];
-    $serviceMock->shouldReceive('toApiArray')
-        ->atLeast()->once()
-        ->andReturn($apiArrayResult);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $serviceMock->shouldReceive('toApiArray');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($apiArrayResult);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $dbMock->shouldReceive('toArray');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn([]);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -729,7 +794,8 @@ test('converts product category to api array', function () {
     expect($result)->toBeArray();
 });
 
-test('converts product category to api array with minimum price', function () {
+test('converts product category to api array with minimum price', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $model = new \Model_ProductCategory();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -738,30 +804,32 @@ test('converts product category to api array with minimum price', function () {
     $modelProduct->type = 'custom';
     $categoryProductsArr = [$modelProduct, $modelProduct, $modelProduct, $modelProduct];
 
-    $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getCategoryProducts')
-        ->atLeast()->once()
-        ->andReturn($categoryProductsArr);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('getCategoryProducts');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($categoryProductsArr);
 
     $min = 1;
 
-    $serviceMock->shouldReceive('toApiArray')
-        ->atLeast()->once()
-        ->andReturnUsing(function () {
-            static $count = 0;
-            $count++;
-            return match ($count) {
-                1 => ['price_starting_from' => 4],
-                2 => ['price_starting_from' => 5],
-                3 => ['price_starting_from' => 2],
-                4 => ['price_starting_from' => 1],
-            };
-        });
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $serviceMock->shouldReceive('toApiArray');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturnUsing(function () {
+        static $count = 0;
+        $count++;
+        return match ($count) {
+            1 => ['price_starting_from' => 4],
+            2 => ['price_starting_from' => 5],
+            3 => ['price_starting_from' => 2],
+            4 => ['price_starting_from' => 1],
+        };
+    });
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $dbMock->shouldReceive('toArray');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn([]);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -772,47 +840,53 @@ test('converts product category to api array with minimum price', function () {
     expect($result['price_starting_from'])->toBe($min);
 });
 
-test('finds one active product by id', function () {
+test('finds one active product by id', function (): void {
+    $service = new Service();
     $model = new \Model_Product();
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('findOne');
+    $expectation->atLeast()->once();
+    $expectation->andReturn($model);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->findOneActiveById(1);
+    $service->setDi($di);
+    $result = $service->findOneActiveById(1);
     expect($result)->toBeInstanceOf('\Model_Product');
 });
 
-test('finds one active product by slug', function () {
+test('finds one active product by slug', function (): void {
+    $service = new Service();
     $model = new \Model_Product();
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('findOne');
+    $expectation->atLeast()->once();
+    $expectation->andReturn($model);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->findOneActiveBySlug('product/1');
+    $service->setDi($di);
+    $result = $service->findOneActiveBySlug('product/1');
     expect($result)->toBeInstanceOf('\Model_Product');
 });
 
-test('gets product category search query', function () {
-    [$sql, $params] = $this->service->getProductCategorySearchQuery([]);
+test('gets product category search query', function (): void {
+    $service = new Service();
+    [$sql, $params] = $service->getProductCategorySearchQuery([]);
 
     expect($sql)->toBeString();
     expect($params)->toBeArray();
     expect($params)->toBe([]);
 });
 
-test('gets starting from price for free product', function () {
+test('gets starting from price for free product', function (): void {
+    $service = new Service();
     $productModel = new \Model_Product();
     $productModel->loadBean(new \Tests\Helpers\DummyBean());
     $productModel->product_payment_id = 1;
@@ -822,76 +896,85 @@ test('gets starting from price for free product', function () {
     $productPaymentModel->type = 'free';
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn($productPaymentModel);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('load');
+    $expectation->atLeast()->once();
+    $expectation->andReturn($productPaymentModel);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getStartingFromPrice($productModel);
+    $service->setDi($di);
+    $result = $service->getStartingFromPrice($productModel);
 
     expect($result)->toBeInt();
     expect($result)->toBe(0);
 });
 
-test('returns null for starting price when payment not defined', function () {
+test('returns null for starting price when payment not defined', function (): void {
+    $service = new Service();
     $productModel = new \Model_Product();
     $productModel->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->getStartingFromPrice($productModel);
+    $result = $service->getStartingFromPrice($productModel);
 
     expect($result)->toBeNull();
 });
 
-test('gets starting from price for domain type', function () {
+test('gets starting from price for domain type', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $productModel = new \Model_Product();
     $productModel->loadBean(new \Tests\Helpers\DummyBean());
     $productModel->type = Service::DOMAIN;
     $productModel->product_payment_id = 1;
 
-    $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getStartingDomainPrice')
-        ->atLeast()->once()
-        ->andReturn(10.00);
-    $serviceMock->shouldReceive('getStartingPrice')
-        ->never();
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('getStartingDomainPrice');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(10.00);
+
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $serviceMock->shouldReceive('getStartingPrice');
+    $expectation2->never();
 
     $result = $serviceMock->getStartingFromPrice($productModel);
     expect($result)->not()->toBeNull();
 });
 
-test('gets upgradable pairs', function () {
+test('gets upgradable pairs', function (): void {
+    $service = new Service();
     $productModel = new \Model_Product();
     $productModel->loadBean(new \Tests\Helpers\DummyBean());
     $productModel->upgrades = '{}';
 
     $expected = [];
 
-    $result = $this->service->getUpgradablePairs($productModel);
+    $result = $service->getUpgradablePairs($productModel);
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
 
-test('gets product titles by ids', function () {
+test('gets product titles by ids', function (): void {
+    $service = new Service();
     $ids = ['1', '2'];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('getAll');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getProductTitlesByIds($ids);
+    $result = $service->getProductTitlesByIds($ids);
     expect($result)->toBeArray();
 });
 
-test('gets category products', function () {
+test('gets category products', function (): void {
+    $service = new Service();
     $productCategoryModel = new \Model_ProductCategory();
     $productCategoryModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -899,27 +982,30 @@ test('gets category products', function () {
     $productModel->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([$productModel]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('find');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([$productModel]);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getCategoryProducts($productCategoryModel);
+    $service->setDi($di);
+    $result = $service->getCategoryProducts($productCategoryModel);
     expect($result)->toBeArray();
 });
 
-test('converts product payment to api array', function () {
+test('converts product payment to api array', function (): void {
+    $service = new Service();
     $productPaymentModel = new \Model_ProductPayment();
     $productPaymentModel->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->toProductPaymentApiArray($productPaymentModel);
+    $result = $service->toProductPaymentApiArray($productPaymentModel);
     expect($result)->toBeArray();
 });
 
-test('gets starting price', function () {
+test('gets starting price', function (): void {
+    $service = new Service();
     $productPaymentModel = new \Model_ProductPayment();
     $productPaymentModel->loadBean(new \Tests\Helpers\DummyBean());
     $productPaymentModel->type = 'recurrent';
@@ -941,16 +1027,17 @@ test('gets starting price', function () {
     $productPaymentModel->tria_enabled = true;
     $productPaymentModel->tria_price = 14;
 
-    $result = $this->service->getStartingPrice($productPaymentModel);
+    $result = $service->getStartingPrice($productPaymentModel);
     expect($result)->toBeInt();
     expect($result)->toBe($minPrice);
 });
 
-test('checks if product can upgrade to another product', function () {
+test('checks if product can upgrade to another product', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getUpgradablePairs')
-        ->atLeast()->once()
-        ->andReturn(['2' => 'Hossting']);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getUpgradablePairs');
+    $expectation->atLeast()->once();
+    $expectation->andReturn(['2' => 'Hossting']);
 
     $productModel = new \Model_Product();
     $productModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -964,11 +1051,12 @@ test('checks if product can upgrade to another product', function () {
     expect($result)->toBeTrue();
 });
 
-test('returns false when upgrade is impossible', function () {
+test('returns false when upgrade is impossible', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getUpgradablePairs')
-        ->atLeast()->once()
-        ->andReturn(['4' => 'Domain']);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getUpgradablePairs');
+    $expectation->atLeast()->once();
+    $expectation->andReturn(['4' => 'Domain']);
 
     $productModel = new \Model_Product();
     $productModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -982,7 +1070,8 @@ test('returns false when upgrade is impossible', function () {
     expect($result)->toBeFalse();
 });
 
-test('returns false when trying to upgrade to same product', function () {
+test('returns false when trying to upgrade to same product', function (): void {
+    $service = new Service();
     $productModel = new \Model_Product();
     $productModel->loadBean(new \Tests\Helpers\DummyBean());
     $productModel->id = 1;
@@ -991,6 +1080,6 @@ test('returns false when trying to upgrade to same product', function () {
     $newProductModel->loadBean(new \Tests\Helpers\DummyBean());
     $newProductModel->id = 1;
 
-    $result = $this->service->canUpgradeTo($productModel, $newProductModel);
+    $result = $service->canUpgradeTo($productModel, $newProductModel);
     expect($result)->toBeFalse();
 });

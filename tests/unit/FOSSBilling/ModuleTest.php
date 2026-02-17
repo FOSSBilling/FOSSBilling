@@ -14,11 +14,11 @@ use FOSSBilling\Module;
 use function Tests\Helpers\container;
 
 test('empty config', function (): void {
-    /** @var \Mockery\MockInterface&\Box_Database $dbMock */
     $dbMock = Mockery::mock('Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('findOne');
+    $expectation->atLeast()->once();
+    $expectation->andReturn(null);
 
     $di = container();
     $di['db'] = $dbMock;

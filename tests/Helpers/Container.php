@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -40,14 +40,18 @@ function container(): Container
 function accessPrivate(object $instance, string $property, mixed $value = null): mixed
 {
     $refl = new \ReflectionClass($instance);
-    $prop = $refl->hasProperty($property) ? $refl->getProperty($property) : null;
+    $prop = null;
 
-    // Check parent class if property not found in current class
-    if (!$prop) {
-        $prop = $refl->getParentClass()?->getProperty($property);
+    if ($refl->hasProperty($property)) {
+        $prop = $refl->getProperty($property);
+    } else {
+        $parentClass = $refl->getParentClass();
+        if ($parentClass && $parentClass->hasProperty($property)) {
+            $prop = $parentClass->getProperty($property);
+        }
     }
 
-    if (!$prop || $prop->isStatic()) {
+    if ($prop === null || $prop->isStatic()) {
         return null;
     }
 

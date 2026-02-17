@@ -14,50 +14,50 @@ use function Tests\Helpers\container;
 use Box\Mod\Formbuilder\Api\Admin;
 use Box\Mod\Formbuilder\Service;
 
-beforeEach(function () {
-    $this->service = new Service();
-    $this->api = new Admin();
-});
-
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $api = new Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('creates a form', function () {
+test('creates a form', function (): void {
+    $api = new Admin();
     $data = ['name' => 'testForm'];
     $createdFormId = 1;
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('addNewForm')
-        ->atLeast()->once()
-        ->andReturn($createdFormId);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('addNewForm');
+    $expectation->atLeast()->once();
+    $expectation->andReturn($createdFormId);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
     $di = container();
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->create_form($data);
+    $result = $api->create_form($data);
     expect($result)->toBeInt()->toBe($createdFormId);
 });
 
-test('throws exception when form type is not in predefined list', function () {
+test('throws exception when form type is not in predefined list', function (): void {
+    $api = new Admin();
     $data = [
         'name' => 'testName',
         'type' => 'custom',
     ];
 
     $di = container();
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    expect(fn () => $this->api->create_form($data))
+    expect(fn () => $api->create_form($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Form style was not found in predefined list');
 });
 
-test('adds a field to a form', function () {
+test('adds a field to a form', function (): void {
+    $api = new Admin();
     $data = [
         'type' => 'text',
         'options' => ['sameValue'],
@@ -66,169 +66,200 @@ test('adds a field to a form', function () {
     $newFieldId = 2;
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('typeValidation')
-        ->atLeast()->once()
-        ->andReturn(true);
-    $serviceMock->shouldReceive('isArrayUnique')
-        ->atLeast()->once()
-        ->andReturn(true);
-    $serviceMock->shouldReceive('addNewField')
-        ->atLeast()->once()
-        ->andReturn($newFieldId);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('typeValidation');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(true);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $serviceMock->shouldReceive('isArrayUnique');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn(true);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $serviceMock->shouldReceive('addNewField');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn($newFieldId);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->add_field($data);
+    $result = $api->add_field($data);
     expect($result)->toBeInt()->toBe($newFieldId);
 });
 
-test('throws exception when adding field with missing type', function () {
+test('throws exception when adding field with missing type', function (): void {
+    $api = new Admin();
     $data = [];
 
-    expect(fn () => $this->api->add_field($data))
+    expect(fn () => $api->add_field($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Form field type is invalid');
 });
 
-test('throws exception when field options are not unique', function () {
+test('throws exception when field options are not unique', function (): void {
+    $api = new Admin();
+    $service = new Service();
     $data = [
         'type' => 'text',
         'options' => ['sameValue', 'sameValue'],
     ];
 
-    $this->api->setService($this->service);
+    $api->setService($service);
 
-    expect(fn () => $this->api->add_field($data))
+    expect(fn () => $api->add_field($data))
         ->toThrow(\FOSSBilling\InformationException::class, 'This input type must have unique values');
 });
 
-test('throws exception when adding field without form id', function () {
+test('throws exception when adding field without form id', function (): void {
+    $api = new Admin();
+    $service = new Service();
     $data = [
         'type' => 'text',
         'options' => ['sameValue'],
     ];
 
-    $this->api->setService($this->service);
+    $api->setService($service);
 
-    expect(fn () => $this->api->add_field($data))
+    expect(fn () => $api->add_field($data))
         ->toThrow(\FOSSBilling\InformationException::class, 'Form id was not passed');
 });
 
-test('gets a form', function () {
+test('gets a form', function (): void {
+    $api = new Admin();
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('getForm')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getForm');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
     $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
-    $validatorMock->shouldReceive('checkRequiredParamsForArray')->atLeast()->once();
+    /** @var \Mockery\Expectation $validatorExpectation */
+    $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
+    $validatorExpectation->atLeast()->once();
 
     $di = container();
     $di['validator'] = $validatorMock;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->get_form($data);
+    $api->setService($serviceMock);
+    $result = $api->get_form($data);
     expect($result)->toBeArray();
 });
 
-test('gets form fields', function () {
+test('gets form fields', function (): void {
+    $api = new Admin();
     $data['form_id'] = 1;
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('getFormFields')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getFormFields');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
     $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
-    $validatorMock->shouldReceive('checkRequiredParamsForArray')->atLeast()->once();
+    /** @var \Mockery\Expectation $validatorExpectation */
+    $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
+    $validatorExpectation->atLeast()->once();
 
     $di = container();
     $di['validator'] = $validatorMock;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->get_form_fields($data);
+    $api->setService($serviceMock);
+    $result = $api->get_form_fields($data);
     expect($result)->toBeArray();
 });
 
-test('gets a field', function () {
+test('gets a field', function (): void {
+    $api = new Admin();
     $data['id'] = 3;
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('getField')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getField');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
     $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
-    $validatorMock->shouldReceive('checkRequiredParamsForArray')->atLeast()->once();
+    /** @var \Mockery\Expectation $validatorExpectation */
+    $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
+    $validatorExpectation->atLeast()->once();
 
     $di = container();
     $di['validator'] = $validatorMock;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->get_field($data);
+    $result = $api->get_field($data);
     expect($result)->toBeArray();
 });
 
-test('gets all forms', function () {
+test('gets all forms', function (): void {
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('getForms')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getForms');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->get_forms();
+    $result = $api->get_forms();
     expect($result)->toBeArray();
 });
 
-test('deletes a form', function () {
+test('deletes a form', function (): void {
+    $api = new Admin();
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('removeForm')
-        ->atLeast()->once()
-        ->andReturn(true);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('removeForm');
+    $expectation->atLeast()->once();
+    $expectation->andReturn(true);
 
     $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
-    $validatorMock->shouldReceive('checkRequiredParamsForArray')->atLeast()->once();
+    /** @var \Mockery\Expectation $validatorExpectation */
+    $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
+    $validatorExpectation->atLeast()->once();
 
     $di = container();
     $di['validator'] = $validatorMock;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->delete_form($data);
+    $result = $api->delete_form($data);
     expect($result)->toBeTrue();
 });
 
-test('deletes a field', function () {
+test('deletes a field', function (): void {
+    $api = new Admin();
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('removeField')
-        ->atLeast()->once()
-        ->andReturn(true);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('removeField');
+    $expectation->atLeast()->once();
+    $expectation->andReturn(true);
 
     $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
-    $validatorMock->shouldReceive('checkRequiredParamsForArray')->atLeast()->once();
+    /** @var \Mockery\Expectation $validatorExpectation */
+    $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
+    $validatorExpectation->atLeast()->once();
 
     $di = container();
     $di['validator'] = $validatorMock;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->delete_field($data);
+    $result = $api->delete_field($data);
     expect($result)->toBeTrue();
 });
 
-test('updates a field', function () {
+test('updates a field', function (): void {
+    $api = new Admin();
     $updatedFieldId = 1;
     $data = [
         'id' => $updatedFieldId,
@@ -236,40 +267,47 @@ test('updates a field', function () {
     ];
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('updateField')
-        ->atLeast()->once()
-        ->andReturn($updatedFieldId);
-    $serviceMock->shouldReceive('isArrayUnique')
-        ->atLeast()->once()
-        ->andReturn(true);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('updateField');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($updatedFieldId);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $serviceMock->shouldReceive('isArrayUnique');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn(true);
 
     $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
-    $validatorMock->shouldReceive('checkRequiredParamsForArray')->atLeast()->once();
+    /** @var \Mockery\Expectation $validatorExpectation */
+    $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
+    $validatorExpectation->atLeast()->once();
 
     $di = container();
     $di['validator'] = $validatorMock;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->update_field($data);
+    $result = $api->update_field($data);
     expect($result)->toBeInt()->toBe($updatedFieldId);
 });
 
-test('gets form pairs', function () {
+test('gets form pairs', function (): void {
+    $api = new Admin();
     $data = [];
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('getFormPairs')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('getFormPairs');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->get_pairs($data);
+    $result = $api->get_pairs($data);
     expect($result)->toBeArray();
 });
 
-test('copies a form', function () {
+test('copies a form', function (): void {
+    $api = new Admin();
     $newFormId = 2;
     $data = [
         'form_id' => 1,
@@ -277,30 +315,34 @@ test('copies a form', function () {
     ];
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('duplicateForm')
-        ->atLeast()->once()
-        ->andReturn($newFormId);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('duplicateForm');
+    $expectation->atLeast()->once();
+    $expectation->andReturn($newFormId);
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->copy_form($data);
+    $api->setService($serviceMock);
+    $result = $api->copy_form($data);
     expect($result)->toBeInt()->toBe($newFormId);
 });
 
-test('throws exception when copying form without id', function () {
+test('throws exception when copying form without id', function (): void {
+    $api = new Admin();
     $data = [];
 
-    expect(fn () => $this->api->copy_form($data))
+    expect(fn () => $api->copy_form($data))
         ->toThrow(\FOSSBilling\InformationException::class, 'Form id was not passed');
 });
 
-test('throws exception when copying form without name', function () {
+test('throws exception when copying form without name', function (): void {
+    $api = new Admin();
     $data = ['form_id' => 1];
 
-    expect(fn () => $this->api->copy_form($data))
+    expect(fn () => $api->copy_form($data))
         ->toThrow(\FOSSBilling\InformationException::class, 'Form name was not passed');
 });
 
-test('updates form settings', function () {
+test('updates form settings', function (): void {
+    $api = new Admin();
     $data = [
         'form_id' => 1,
         'form_name' => 'testForm',
@@ -308,16 +350,18 @@ test('updates form settings', function () {
     ];
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('updateFormSettings')
-        ->atLeast()->once()
-        ->andReturn(true);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $serviceMock->shouldReceive('updateFormSettings');
+    $expectation->atLeast()->once();
+    $expectation->andReturn(true);
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->update_form_settings($data);
+    $api->setService($serviceMock);
+    $result = $api->update_form_settings($data);
     expect($result)->toBeTrue();
 });
 
-test('throws exception when updating form settings with missing fields', function ($missingField, $exceptionMessage) {
+test('throws exception when updating form settings with missing fields', function ($missingField, $exceptionMessage): void {
+    $api = new Admin();
     $data = [
         'form_id' => 1,
         'form_name' => 'testForm',
@@ -325,7 +369,7 @@ test('throws exception when updating form settings with missing fields', functio
     ];
     unset($data[$missingField]);
 
-    expect(fn () => $this->api->update_form_settings($data))
+    expect(fn () => $api->update_form_settings($data))
         ->toThrow(\FOSSBilling\Exception::class, $exceptionMessage);
 })->with([
     ['form_id', 'Form id was not passed'],

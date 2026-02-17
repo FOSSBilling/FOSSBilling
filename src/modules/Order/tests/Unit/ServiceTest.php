@@ -27,18 +27,16 @@ class OrderPdoStatementsMock extends \PDOStatement
     }
 }
 
-beforeEach(function () {
-    $this->service = new Service();
-});
-
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $service = new Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('counts orders by status', function () {
+test('counts orders by status', function (): void {
+    $service = new Service();
     $counter = [
         \Model_ClientOrder::STATUS_ACTIVE => 1,
     ];
@@ -50,9 +48,9 @@ test('counts orders by status', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->counter();
+    $result = $service->counter();
     expect($result)->toBeArray();
     expect($result)->toHaveKey('total');
     expect($result['total'])->toBe(array_sum($counter));
@@ -63,7 +61,7 @@ test('counts orders by status', function () {
     expect($result)->toHaveKey(\Model_ClientOrder::STATUS_CANCELED);
 });
 
-test('fires event after admin activates order', function () {
+test('fires event after admin activates order', function (): void {
     $params = ['id' => 1];
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -122,7 +120,7 @@ test('fires event after admin activates order', function () {
     $serviceMock->onAfterAdminOrderActivate($eventMock);
 });
 
-test('logs exception when email fails on activate', function () {
+test('logs exception when email fails on activate', function (): void {
     $params = ['id' => 1];
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -188,7 +186,7 @@ test('logs exception when email fails on activate', function () {
     expect($loggerMock->calls[0]['params'][0])->toBe('Email send failure');
 });
 
-test('fires event after admin renews order', function () {
+test('fires event after admin renews order', function (): void {
     $params = ['id' => 1];
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -245,7 +243,7 @@ test('fires event after admin renews order', function () {
     $serviceMock->onAfterAdminOrderRenew($eventMock);
 });
 
-test('logs exception when email fails on renew', function () {
+test('logs exception when email fails on renew', function (): void {
     $params = ['id' => 1];
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -309,7 +307,7 @@ test('logs exception when email fails on renew', function () {
     expect($loggerMock->calls[0]['params'][0])->toBe('Email send failure');
 });
 
-test('fires event after admin suspends order', function () {
+test('fires event after admin suspends order', function (): void {
     $params = ['id' => 1];
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -787,15 +785,16 @@ test('logs exception when email fails on uncancel', function () {
     expect($loggerMock->calls[0]['params'][0])->toBe('Email send failure');
 });
 
-test('gets order core service', function () {
-    $service = new \Model_ServiceCustom();
+test('gets order core service', function (): void {
+    $orderService = new Service();
+    $modelService = new \Model_ServiceCustom();
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
         ->never();
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
-        ->andReturn($service);
+        ->andReturn($modelService);
 
     $toolsMock = Mockery::mock(\FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('to_camel_case')
@@ -805,63 +804,66 @@ test('gets order core service', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['tools'] = $toolsMock;
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->service_id = 1;
     $order->service_type = \Model_ProductTable::CUSTOM;
 
-    $result = $this->service->getOrderService($order);
+    $result = $orderService->getOrderService($order);
     expect($result)->toBeInstanceOf('Model_ServiceCustom');
 });
 
-test('gets order non-core service', function () {
-    $service = new \Model_ServiceCustom();
+test('gets order non-core service', function (): void {
+    $orderService = new Service();
+    $modelService = new \Model_ServiceCustom();
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->never()
-        ->andReturn($service);
+        ->andReturn($modelService);
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
-        ->andReturn($service);
+        ->andReturn($modelService);
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->service_id = 1;
 
-    $result = $this->service->getOrderService($order);
+    $result = $orderService->getOrderService($order);
     expect($result)->toBeInstanceOf('Model_ServiceCustom');
 });
 
-test('returns null when service id not set', function () {
-    $service = new \Model_ServiceCustom();
+test('returns null when service id not set', function (): void {
+    $orderService = new Service();
+    $modelService = new \Model_ServiceCustom();
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->never()
-        ->andReturn($service);
+        ->andReturn($modelService);
     $dbMock->shouldReceive('findOne')
         ->never()
-        ->andReturn($service);
+        ->andReturn($modelService);
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->getOrderService($order);
+    $result = $orderService->getOrderService($order);
     expect($result)->toBeNull();
 });
 
-test('gets service order', function () {
+test('gets service order', function (): void {
+    $orderService = new Service();
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -878,28 +880,30 @@ test('gets service order', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['tools'] = $toolsMock;
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
-    $service = new \Model_ServiceCustom();
-    $service->loadBean(new \Tests\Helpers\DummyBean());
-    $service->id = 1;
+    $modelService = new \Model_ServiceCustom();
+    $modelService->loadBean(new \Tests\Helpers\DummyBean());
+    $modelService->id = 1;
 
-    $result = $this->service->getServiceOrder($service);
+    $result = $orderService->getServiceOrder($modelService);
     expect($result)->toBeInstanceOf('Model_ClientOrder');
 });
 
-test('gets order config', function () {
+test('gets order config', function (): void {
+    $orderService = new Service();
     $di = container();
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->getConfig($order);
+    $result = $orderService->getConfig($order);
     expect($result)->toBeArray();
 });
 
-test('checks if product has orders', function ($order, $expectedResult) {
+test('checks if product has orders', function ($order, $expectedResult): void {
+    $orderService = new Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
@@ -907,20 +911,21 @@ test('checks if product has orders', function ($order, $expectedResult) {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
     $product = new \Model_Product();
     $product->loadBean(new \Tests\Helpers\DummyBean());
     $product->id = 1;
 
-    $result = $this->service->productHasOrders($product);
+    $result = $orderService->productHasOrders($product);
     expect($result)->toBe($expectedResult);
 })->with([
     [new \Model_ClientOrder(), true],
     [null, false],
 ]);
 
-test('saves status change', function () {
+test('saves status change', function (): void {
+    $orderService = new Service();
     $orderStatus = new \Model_ClientOrderStatus();
     $orderStatus->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -934,16 +939,16 @@ test('saves status change', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->saveStatusChange($order);
+    $result = $orderService->saveStatusChange($order);
     expect($result)->toBeNull();
 });
 
-test('gets soon expiring active orders', function () {
+test('gets soon expiring active orders', function (): void {
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -964,7 +969,8 @@ test('gets soon expiring active orders', function () {
     $serviceMock->getSoonExpiringActiveOrders();
 });
 
-test('gets soon expiring active orders query', function () {
+test('gets soon expiring active orders query', function (): void {
+    $orderService = new Service();
     $randId = 1;
 
     $orderStatus = new \Model_ClientOrderStatus();
@@ -978,13 +984,13 @@ test('gets soon expiring active orders query', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $systemService);
 
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
     $data = ['client_id' => $randId];
-    $result = $this->service->getSoonExpiringActiveOrdersQuery($data);
+    $result = $orderService->getSoonExpiringActiveOrdersQuery($data);
 
     $expectedQuery = 'SELECT *
                 FROM client_order
@@ -1007,7 +1013,8 @@ test('gets soon expiring active orders query', function () {
     expect($result[1])->toBe($expectedBindings);
 });
 
-test('gets related order id by type', function () {
+test('gets related order id by type', function (): void {
+    $orderService = new Service();
     $id = 1;
     $model = new \Model_ClientOrder();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -1021,14 +1028,15 @@ test('gets related order id by type', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
-    $result = $this->service->getRelatedOrderIdByType($model, 'domain');
+    $result = $orderService->getRelatedOrderIdByType($model, 'domain');
     expect($result)->toBeInt();
     expect($result)->toBe($id);
 });
 
-test('returns null when related order not found', function () {
+test('returns null when related order not found', function (): void {
+    $orderService = new Service();
     $model = new \Model_ClientOrder();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->id = 1;
@@ -1041,25 +1049,27 @@ test('returns null when related order not found', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
-    $result = $this->service->getRelatedOrderIdByType($model, 'domain');
+    $result = $orderService->getRelatedOrderIdByType($model, 'domain');
     expect($result)->toBeNull();
 });
 
-test('gets logger', function () {
+test('gets logger', function (): void {
+    $orderService = new Service();
     $model = new \Model_ClientOrder();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
     $di = container();
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
-    $result = $this->service->getLogger($model);
+    $result = $orderService->getLogger($model);
     expect($result)->toBeInstanceOf('\Box_Log');
 });
 
-test('converts order to api array', function () {
+test('converts order to api array', function (): void {
+    $orderService = new Service();
     $model = new \Model_ClientOrder();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->config = '{}';
@@ -1113,8 +1123,8 @@ test('converts order to api array', function () {
     });
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->toApiArray($model, true, new \Model_Admin());
+    $orderService->setDi($di);
+    $result = $orderService->toApiArray($model, true, new \Model_Admin());
 
     expect($result)->toHaveKey('config');
     expect($result)->toHaveKey('total');
@@ -1125,12 +1135,13 @@ test('converts order to api array', function () {
     expect($result)->toHaveKey('client');
 });
 
-test('gets search query with various filters', function (array $data, string $expectedStr, array $expectedParams) {
+test('gets search query with various filters', function (array $data, string $expectedStr, array $expectedParams): void {
+    $orderService = new Service();
     $di = container();
 
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
-    $result = $this->service->getSearchQuery($data);
+    $result = $orderService->getSearchQuery($data);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
 
@@ -1227,7 +1238,8 @@ test('gets search query with various filters', function (array $data, string $ex
     ],
 ]);
 
-test('throws exception when creating order with missing currency', function () {
+test('throws exception when creating order with missing currency', function (): void {
+    $orderService = new Service();
     $modelClient = new \Model_Client();
     $modelClient->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1251,13 +1263,14 @@ test('throws exception when creating order with missing currency', function () {
         }
     });
 
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
-    expect(fn () => $this->service->createOrder($modelClient, $modelProduct, []))
+    expect(fn () => $orderService->createOrder($modelClient, $modelProduct, []))
         ->toThrow(\FOSSBilling\Exception::class, 'Currency could not be determined for order');
 });
 
-test('throws exception when creating order for out of stock product', function () {
+test('throws exception when creating order for out of stock product', function (): void {
+    $orderService = new Service();
     $modelClient = new \Model_Client();
     $modelClient->loadBean(new \Tests\Helpers\DummyBean());
     $modelClient->currency = 'USD';
@@ -1299,13 +1312,14 @@ test('throws exception when creating order for out of stock product', function (
 
     $di['events_manager'] = $eventMock;
 
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
-    expect(fn () => $this->service->createOrder($modelClient, $modelProduct, []))
+    expect(fn () => $orderService->createOrder($modelClient, $modelProduct, []))
         ->toThrow(\FOSSBilling\InformationException::class, 'Product 1 is out of stock.');
 });
 
-test('throws exception when creating addon order with missing group id', function () {
+test('throws exception when creating addon order with missing group id', function (): void {
+    $orderService = new Service();
     $modelClient = new \Model_Client();
     $modelClient->loadBean(new \Tests\Helpers\DummyBean());
     $modelClient->currency = 'USD';
@@ -1348,13 +1362,14 @@ test('throws exception when creating addon order with missing group id', functio
 
     $di['events_manager'] = $eventMock;
 
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
-    expect(fn () => $this->service->createOrder($modelClient, $modelProduct, []))
+    expect(fn () => $orderService->createOrder($modelClient, $modelProduct, []))
         ->toThrow(\FOSSBilling\Exception::class, 'Group ID parameter is missing for addon product order');
 });
 
-test('throws exception when creating order with parent not found', function () {
+test('throws exception when creating order with parent not found', function (): void {
+    $orderService = new Service();
     $modelClient = new \Model_Client();
     $modelClient->loadBean(new \Tests\Helpers\DummyBean());
     $modelClient->currency = 'USD';
@@ -1407,7 +1422,8 @@ test('throws exception when creating order with parent not found', function () {
         ->toThrow(\FOSSBilling\Exception::class, 'Parent order 1 was not found');
 });
 
-test('creates order', function () {
+test('creates order', function (): void {
+    $orderService = new Service();
     $modelClient = new \Model_Client();
     $modelClient->loadBean(new \Tests\Helpers\DummyBean());
     $modelClient->currency = 'USD';
@@ -1476,12 +1492,13 @@ test('creates order', function () {
     $di['period'] = $di->protect(fn (): \Mockery\MockInterface => $periodMock);
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
-    $result = $this->service->createOrder($modelClient, $modelProduct, ['period' => '1Y', 'price' => '10', 'notes' => 'test']);
+    $orderService->setDi($di);
+    $result = $orderService->createOrder($modelClient, $modelProduct, ['period' => '1Y', 'price' => '10', 'notes' => 'test']);
     expect($result)->toBe($newId);
 });
 
-test('gets master order for client', function () {
+test('gets master order for client', function (): void {
+    $orderService = new Service();
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1496,17 +1513,18 @@ test('gets master order for client', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
-    $result = $this->service->getMasterOrderForClient($clientModel, 1);
+    $orderService->setDi($di);
+    $result = $orderService->getMasterOrderForClient($clientModel, 1);
     expect($result)->toBeInstanceOf('Model_ClientOrder');
 });
 
-test('throws exception when activating non-pending order', function () {
+test('throws exception when activating non-pending order', function (): void {
+    $orderService = new Service();
     $clientOrderModel = new \Model_ClientOrder();
     $clientOrderModel->loadBean(new \Tests\Helpers\DummyBean());
     $clientOrderModel->status = \Model_ClientOrder::STATUS_CANCELED;
 
-    expect(fn () => $this->service->activateOrder($clientOrderModel))
+    expect(fn () => $orderService->activateOrder($clientOrderModel))
         ->toThrow(\FOSSBilling\Exception::class, 'Only pending setup or failed orders can be activated');
 });
 
@@ -1562,7 +1580,8 @@ test('activates order addons', function () {
     expect($result)->toBeTrue();
 });
 
-test('gets order addons list', function () {
+test('gets order addons list', function (): void {
+    $orderService = new Service();
     $modelClientOrder = new \Model_ClientOrder();
     $modelClientOrder->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1574,14 +1593,15 @@ test('gets order addons list', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
-    $result = $this->service->getOrderAddonsList($modelClientOrder);
+    $result = $orderService->getOrderAddonsList($modelClientOrder);
     expect($result)->toBeArray();
     expect($result[0])->toBeInstanceOf('\Model_ClientOrder');
 });
 
-test('handles stock sale', function () {
+test('handles stock sale', function (): void {
+    $orderService = new Service();
     $productModel = new \Model_Product();
     $productModel->loadBean(new \Tests\Helpers\DummyBean());
     $productModel->stock_control = 1;
@@ -1592,13 +1612,14 @@ test('handles stock sale', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
-    $result = $this->service->stockSale($productModel, 2);
+    $result = $orderService->stockSale($productModel, 2);
     expect($result)->toBeTrue();
 });
 
-test('updates order', function () {
+test('updates order', function (): void {
+    $orderService = new Service();
     $clientOrderModel = new \Model_ClientOrder();
     $clientOrderModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1689,7 +1710,8 @@ test('renews from order', function () {
     $serviceMock->renewFromOrder($clientOrderModel);
 });
 
-test('throws exception when suspending non-active order', function () {
+test('throws exception when suspending non-active order', function (): void {
+    $orderService = new Service();
     $clientOrderModel = new \Model_ClientOrder();
     $clientOrderModel->loadBean(new \Tests\Helpers\DummyBean());
     $clientOrderModel->status = \Model_ClientOrder::STATUS_SUSPENDED;
@@ -1700,9 +1722,9 @@ test('throws exception when suspending non-active order', function () {
     $di = container();
     $di['events_manager'] = $eventMock;
 
-    $this->service->setDi($di);
+    $orderService->setDi($di);
 
-    expect(fn () => $this->service->suspendFromOrder($clientOrderModel))
+    expect(fn () => $orderService->suspendFromOrder($clientOrderModel))
         ->toThrow(\FOSSBilling\Exception::class, 'Only active orders can be suspended');
 });
 
@@ -1732,7 +1754,8 @@ test('suspends from order', function () {
     expect($result)->toBeTrue();
 });
 
-test('removes orders by client', function () {
+test('removes orders by client', function (): void {
+    $orderService = new Service();
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1817,15 +1840,16 @@ test('removes orders by client', function () {
 
     $di = new \Pimple\Container();
     $di['dbal'] = $dbalMock;
-    $this->service->setDi($di);
-    $this->service->rmByClient($clientModel);
+    $orderService->setDi($di);
+    $orderService->rmByClient($clientModel);
 
     expect($queryBuilderMock->getDeleteTable())->toBe('client_order');
     expect($queryBuilderMock->getWhereCond())->toBe('client_id = :id');
     expect($queryBuilderMock->getParamId())->toBe($clientModel->id);
 });
 
-test('updates period', function () {
+test('updates period', function (): void {
+    $orderService = new Service();
     $period = '1Y';
     $di = container();
 
@@ -1833,14 +1857,15 @@ test('updates period', function () {
     $periodMock->shouldReceive('getCode');
     $di['period'] = $di->protect(fn (): \Mockery\MockInterface => $periodMock);
 
-    $this->service->setDi($di);
+    $orderService->setDi($di);
     $clientOrder = new \Model_ClientOrder();
     $clientOrder->loadBean(new \Tests\Helpers\DummyBean());
-    $result = $this->service->updatePeriod($clientOrder, $period);
+    $result = $orderService->updatePeriod($clientOrder, $period);
     expect($result)->toBe(1);
 });
 
-test('updates period when empty', function () {
+test('updates period when empty', function (): void {
+    $orderService = new Service();
     $period = '';
     $di = container();
     $periodMock = Mockery::mock('\Box_Period');
@@ -1848,14 +1873,15 @@ test('updates period when empty', function () {
         ->never();
     $di['period'] = $di->protect(fn (): \Mockery\MockInterface => $periodMock);
 
-    $this->service->setDi($di);
+    $orderService->setDi($di);
     $clientOrder = new \Model_ClientOrder();
     $clientOrder->loadBean(new \Tests\Helpers\DummyBean());
-    $result = $this->service->updatePeriod($clientOrder, $period);
+    $result = $orderService->updatePeriod($clientOrder, $period);
     expect($result)->toBe(2);
 });
 
-test('updates period when not set', function () {
+test('updates period when not set', function (): void {
+    $orderService = new Service();
     $period = null;
     $di = container();
     $periodMock = Mockery::mock('\Box_Period');
@@ -1863,22 +1889,24 @@ test('updates period when not set', function () {
         ->never();
     $di['period'] = $di->protect(fn (): \Mockery\MockInterface => $periodMock);
 
-    $this->service->setDi($di);
+    $orderService->setDi($di);
     $clientOrder = new \Model_ClientOrder();
     $clientOrder->loadBean(new \Tests\Helpers\DummyBean());
-    $result = $this->service->updatePeriod($clientOrder, $period);
+    $result = $orderService->updatePeriod($clientOrder, $period);
     expect($result)->toBe(0);
 });
 
-test('updates order meta when not set', function () {
+test('updates order meta when not set', function (): void {
+    $orderService = new Service();
     $meta = null;
     $clientOrder = new \Model_ClientOrder();
     $clientOrder->loadBean(new \Tests\Helpers\DummyBean());
-    $result = $this->service->updateOrderMeta($clientOrder, $meta);
+    $result = $orderService->updateOrderMeta($clientOrder, $meta);
     expect($result)->toBe(0);
 });
 
-test('updates order meta when empty', function () {
+test('updates order meta when empty', function (): void {
+    $orderService = new Service();
     $meta = [];
     $di = container();
 
@@ -1887,14 +1915,15 @@ test('updates order meta when empty', function () {
         ->atLeast()->once();
     $di['db'] = $dBMock;
 
-    $this->service->setDi($di);
+    $orderService->setDi($di);
     $clientOrder = new \Model_ClientOrder();
     $clientOrder->loadBean(new \Tests\Helpers\DummyBean());
-    $result = $this->service->updateOrderMeta($clientOrder, $meta);
+    $result = $orderService->updateOrderMeta($clientOrder, $meta);
     expect($result)->toBe(1);
 });
 
-test('updates order meta', function () {
+test('updates order meta', function (): void {
+    $orderService = new Service();
     $meta = ['key' => 'value'];
     $di = container();
 
@@ -1914,9 +1943,9 @@ test('updates order meta', function () {
         ->atLeast()->once();
     $di['db'] = $dBMock;
 
-    $this->service->setDi($di);
+    $orderService->setDi($di);
     $clientOrder = new \Model_ClientOrder();
     $clientOrder->loadBean(new \Tests\Helpers\DummyBean());
-    $result = $this->service->updateOrderMeta($clientOrder, $meta);
+    $result = $orderService->updateOrderMeta($clientOrder, $meta);
     expect($result)->toBe(2);
 });

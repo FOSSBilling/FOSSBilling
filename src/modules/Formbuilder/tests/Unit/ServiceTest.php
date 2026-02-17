@@ -13,18 +13,16 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 use Box\Mod\Formbuilder\Service;
 
-beforeEach(function () {
-    $this->service = new Service();
-});
-
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $service = new Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets form field types', function () {
+test('gets form field types', function (): void {
+    $service = new Service();
     $expected = [
         'text' => 'Text input',
         'select' => 'Dropdown',
@@ -33,20 +31,22 @@ test('gets form field types', function () {
         'textarea' => 'Text area',
     ];
 
-    $result = $this->service->getFormFieldsTypes();
+    $result = $service->getFormFieldsTypes();
     expect($result)->toBe($expected);
 });
 
-test('validates field types', function (string $type, bool $expected) {
-    $result = $this->service->typeValidation($type);
+test('validates field types', function (string $type, bool $expected): void {
+    $service = new Service();
+    $result = $service->typeValidation($type);
     expect($result)->toBe($expected);
 })->with([
     ['select', true],
     ['custom', false],
 ]);
 
-test('checks if array is unique', function (array $data, bool $expected) {
-    $result = $this->service->isArrayUnique($data);
+test('checks if array is unique', function (array $data, bool $expected): void {
+    $service = new Service();
+    $result = $service->isArrayUnique($data);
     expect($result)->toBe($expected);
 })->with([
     [['sameValue', 'sameValue'], false],
@@ -54,7 +54,8 @@ test('checks if array is unique', function (array $data, bool $expected) {
     [[], true],
 ]);
 
-test('adds a new form', function () {
+test('adds a new form', function (): void {
+    $service = new Service();
     $newFormId = 1;
     $data = [
         'name' => 'testName',
@@ -65,24 +66,27 @@ test('adds a new form', function () {
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($model);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($newFormId);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('dispense');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($model);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('store');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($newFormId);
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->addNewForm($data);
+    $result = $service->addNewForm($data);
     expect($result)->toBeInt()->toBe($newFormId);
 });
 
-test('adds a new field', function () {
+test('adds a new field', function (): void {
+    $service = new Service();
     $newFieldId = 1;
     $data = [
         'form_id' => 1,
@@ -94,27 +98,31 @@ test('adds a new field', function () {
     $model->id = 2;
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($model);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($newFieldId);
-    $dbMock->shouldReceive('getCell')
-        ->atLeast()->once()
-        ->andReturn(0);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('dispense');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($model);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('store');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($newFieldId);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $dbMock->shouldReceive('getCell');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn(0);
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->addNewField($data);
+    $result = $service->addNewField($data);
     expect($result)->toBeInt()->toBe($newFieldId);
 });
 
-test('updates a field', function (string $fieldType) {
+test('updates a field', function (string $fieldType): void {
+    $service = new Service();
     $updateFieldId = 2;
     $data = [
         'id' => $updateFieldId,
@@ -138,21 +146,26 @@ test('updates a field', function (string $fieldType) {
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($model);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($updateFieldId);
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-    $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
-        ->andReturn($modelArray);
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('dispense');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($model);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('store');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($updateFieldId);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $dbMock->shouldReceive('getExistingModelById');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn($model);
+    /** @var \Mockery\Expectation $expectation4 */
+    $expectation4 = $dbMock->shouldReceive('toArray');
+    $expectation4->atLeast()->once();
+    $expectation4->andReturn($modelArray);
+    /** @var \Mockery\Expectation $expectation5 */
+    $expectation5 = $dbMock->shouldReceive('findOne');
+    $expectation5->atLeast()->once();
+    $expectation5->andReturn(null);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -162,16 +175,16 @@ test('updates a field', function (string $fieldType) {
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $di['validator'] = $validatorMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->updateField($data);
+    $result = $service->updateField($data);
     expect($result)->toBeInt()->toBe($updateFieldId);
 })->with([
     ['select'],
     ['textarea'],
 ]);
 
-test('throws exception when updating field with existing name', function () {
+test('throws exception when updating field with existing name', function (): void {
     $data = [
         'id' => 2,
         'form_id' => 1,
@@ -180,16 +193,17 @@ test('throws exception when updating field with existing name', function () {
     ];
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('formFieldNameExists')
-        ->atLeast()->once()
-        ->andReturn(true);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('formFieldNameExists');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(true);
     $serviceMock->shouldReceive('getField');
 
     expect(fn () => $serviceMock->updateField($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Unfortunately field with this name exists in this form already. Form must have different field names.');
 });
 
-test('throws exception when field values are not unique', function () {
+test('throws exception when field values are not unique', function (): void {
     $data = [
         'id' => 2,
         'form_id' => 1,
@@ -201,16 +215,17 @@ test('throws exception when field values are not unique', function () {
     ];
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('formFieldNameExists')
-        ->atLeast()->once()
-        ->andReturn(false);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('formFieldNameExists');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(false);
     $serviceMock->shouldReceive('getField');
 
     expect(fn () => $serviceMock->updateField($data))
         ->toThrow(\FOSSBilling\Exception::class, ucfirst($data['type']) . ' values must be unique');
 });
 
-test('throws exception when field labels are not unique', function () {
+test('throws exception when field labels are not unique', function (): void {
     $data = [
         'id' => 2,
         'form_id' => 1,
@@ -222,16 +237,17 @@ test('throws exception when field labels are not unique', function () {
     ];
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('formFieldNameExists')
-        ->atLeast()->once()
-        ->andReturn(false);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('formFieldNameExists');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(false);
     $serviceMock->shouldReceive('getField');
 
     expect(fn () => $serviceMock->updateField($data))
         ->toThrow(\FOSSBilling\Exception::class, ucfirst($data['type']) . ' labels must be unique');
 });
 
-test('throws exception when textarea size is invalid', function () {
+test('throws exception when textarea size is invalid', function (): void {
     $data = [
         'id' => 2,
         'form_id' => 1,
@@ -245,16 +261,18 @@ test('throws exception when textarea size is invalid', function () {
     ];
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('formFieldNameExists')
-        ->atLeast()->once()
-        ->andReturn(false);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('formFieldNameExists');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(false);
     $serviceMock->shouldReceive('getField');
 
     expect(fn () => $serviceMock->updateField($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Textarea size options must be integer values');
 });
 
-test('gets a form', function () {
+test('gets a form', function (): void {
+    $service = new Service();
     $modelArray = [
         'style' => '',
         'id' => 1,
@@ -270,72 +288,82 @@ test('gets a form', function () {
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-    $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
-        ->andReturn($modelArray);
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()->once()
-        ->andReturn($getAllResult);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('getExistingModelById');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($model);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('toArray');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($modelArray);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $dbMock->shouldReceive('getAll');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn($getAllResult);
 
     $di = container();
     $di['db'] = $dbMock;
 
     $formId = 1;
 
-    $this->service->setDi($di);
-    $result = $this->service->getForm($formId);
+    $service->setDi($di);
+    $result = $service->getForm($formId);
     expect($result)->toBeArray();
 });
 
-test('gets form fields', function () {
-    $formId = 1;
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()->once()
-        ->andReturn([]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $this->service->setDi($di);
-    $result = $this->service->getFormFields($formId);
-    expect($result)->toBeArray();
-});
-
-test('gets form fields count', function () {
+test('gets form fields', function (): void {
+    $service = new Service();
     $formId = 1;
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('getAll');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getFormFieldsCount($formId);
+    $service->setDi($di);
+    $result = $service->getFormFields($formId);
     expect($result)->toBeArray();
 });
 
-test('gets form pairs', function () {
+test('gets form fields count', function (): void {
+    $service = new Service();
     $formId = 1;
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAssoc')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('getCell');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getFormPairs();
+    $service->setDi($di);
+    $result = $service->getFormFieldsCount($formId);
     expect($result)->toBeArray();
 });
 
-test('gets a field', function () {
+test('gets form pairs', function (): void {
+    $service = new Service();
+    $formId = 1;
+    $dbMock = Mockery::mock('\Box_Database');
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('getAssoc');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $service->setDi($di);
+    $result = $service->getFormPairs();
+    expect($result)->toBeArray();
+});
+
+test('gets a field', function (): void {
+    $service = new Service();
     $fieldId = 2;
     $modelArray = [
         'id' => 2,
@@ -343,18 +371,20 @@ test('gets a field', function () {
     ];
 
     $expectedArray = $modelArray;
-    $expectedArray['options'] = json_decode($expectedArray['options'] ?? '');
+    $expectedArray['options'] = json_decode($expectedArray['options']);
 
     $model = new \Model_FormField();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-    $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
-        ->andReturn($modelArray);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('getExistingModelById');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($model);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('toArray');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($modelArray);
 
     $di = container();
     $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
@@ -362,50 +392,56 @@ test('gets a field', function () {
     $di['validator'] = $validatorMock;
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getField($fieldId);
+    $service->setDi($di);
+    $result = $service->getField($fieldId);
     expect($result)->toBeArray();
     expect($result['id'])->toBe($fieldId);
 });
 
-test('removes a form', function () {
+test('removes a form', function (): void {
+    $service = new Service();
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
-        ->times(4);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('exec');
+    $expectation->times(4);
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
     $formId = 1;
-    $result = $this->service->removeForm($formId);
+    $result = $service->removeForm($formId);
     expect($result)->toBeTrue();
 });
 
-test('removes a field', function () {
+test('removes a field', function (): void {
+    $service = new Service();
     $data = ['id' => 1];
 
     $model = new \Model_FormField();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once();
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('getExistingModelById');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($model);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('trash');
+    $expectation2->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
-    $result = $this->service->removeField($data);
+    $service->setDi($di);
+    $result = $service->removeField($data);
     expect($result)->toBeTrue();
 });
 
-test('checks if form field name exists', function () {
+test('checks if form field name exists', function (): void {
+    $service = new Service();
     $data = [
         'field_name' => 'testingName',
         'form_id' => 2,
@@ -413,33 +449,36 @@ test('checks if form field name exists', function () {
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(new \Model_FormField());
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('findOne');
+    $expectation->atLeast()->once();
+    $expectation->andReturn(new \Model_FormField());
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->formFieldNameExists($data);
+    $service->setDi($di);
+    $result = $service->formFieldNameExists($data);
     expect($result)->toBeTrue();
 });
 
-test('gets all forms', function () {
+test('gets all forms', function (): void {
+    $service = new Service();
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('getAll');
+    $expectation->atLeast()->once();
+    $expectation->andReturn([]);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getForms();
+    $service->setDi($di);
+    $result = $service->getForms();
     expect($result)->toBeArray();
 });
 
-test('duplicates a form', function () {
+test('duplicates a form', function (): void {
     $data = [
         'form_id' => 1,
         'name' => 'testForm',
@@ -452,15 +491,18 @@ test('duplicates a form', function () {
     ];
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getFormFields')
-        ->atLeast()->once()
-        ->andReturn($fields);
-    $serviceMock->shouldReceive('addNewForm')
-        ->atLeast()->once()
-        ->andReturn($newFormId);
-    $serviceMock->shouldReceive('addNewField')
-        ->atLeast()->once()
-        ->andReturn($newFieldId);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $serviceMock->shouldReceive('getFormFields');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($fields);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $serviceMock->shouldReceive('addNewForm');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn($newFormId);
+    /** @var \Mockery\Expectation $expectation3 */
+    $expectation3 = $serviceMock->shouldReceive('addNewField');
+    $expectation3->atLeast()->once();
+    $expectation3->andReturn($newFieldId);
 
     $di = container();
     $di['logger'] = new \Tests\Helpers\TestLogger();
@@ -470,7 +512,8 @@ test('duplicates a form', function () {
     expect($result)->toBeInt()->toBe($newFormId);
 });
 
-test('updates form settings', function () {
+test('updates form settings', function (): void {
+    $service = new Service();
     $data = [
         'type' => 'default',
         'form_name' => 'testForm',
@@ -478,14 +521,15 @@ test('updates form settings', function () {
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
-        ->times(2);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('exec');
+    $expectation->times(2);
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
-    $result = $this->service->updateFormSettings($data);
+    $service->setDi($di);
+    $result = $service->updateFormSettings($data);
     expect($result)->toBeTrue();
 });

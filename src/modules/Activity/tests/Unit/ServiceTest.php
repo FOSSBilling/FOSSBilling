@@ -27,7 +27,7 @@ dataset('searchFilters', function () {
     ];
 });
 
-test('dependency injection', function () {
+test('dependency injection', function (): void {
     $service = new \Box\Mod\Activity\Service();
 
     $di = container();
@@ -39,7 +39,7 @@ test('dependency injection', function () {
     expect($result)->toEqual($di);
 });
 
-test('get search query', function (array $filterKey, string $search, bool $expected) {
+test('get search query', function (array $filterKey, string $search, bool $expected): void {
     $di = container();
     $service = new \Box\Mod\Activity\Service();
     $service->setDi($di);
@@ -49,7 +49,7 @@ test('get search query', function (array $filterKey, string $search, bool $expec
     expect(str_contains($result[0], $search))->toEqual($expected);
 })->with('searchFilters');
 
-test('log email', function () {
+test('log email', function (): void {
     $service = new \Box\Mod\Activity\Service();
     $data = [
         'client_id' => 1,
@@ -65,12 +65,14 @@ test('log email', function () {
 
     $di = container();
     $dbMock = Mockery::mock('Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($model);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn([]);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('dispense');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn($model);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('store');
+    $expectation2->atLeast()->once();
+    $expectation2->andReturn([]);
 
     $di['db'] = $dbMock;
     $service->setDi($di);
@@ -79,7 +81,8 @@ test('log email', function () {
     expect($result)->toBeTrue();
 });
 
-test('to api array', function () {
+test('to api array', function (): void {
+    $service = new \Box\Mod\Activity\Service();
     $clientHistoryModel = new \Model_ActivityClientHistory();
     $clientHistoryModel->loadBean(new \Tests\Helpers\DummyBean());
     $clientHistoryModel->client_id = 1;
@@ -88,15 +91,15 @@ test('to api array', function () {
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->with('Client', $clientHistoryModel->client_id, 'Client not found')
-        ->andReturn($clientModel);
+    /** @var \Mockery\Expectation $expectation */
+    $expectation = $dbMock->shouldReceive('getExistingModelById');
+    $expectation->atLeast()->once();
+    $expectation->with('Client', $clientHistoryModel->client_id, 'Client not found');
+    $expectation->andReturn($clientModel);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $service = new \Box\Mod\Activity\Service();
     $service->setDi($di);
 
     $result = $service->toApiArray($clientHistoryModel);
@@ -112,7 +115,8 @@ test('to api array', function () {
     expect($result['client'])->toHaveKey('email');
 });
 
-test('remove by client', function () {
+test('remove by client', function (): void {
+    $service = new \Box\Mod\Activity\Service();
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
     $clientModel->id = 1;
@@ -121,18 +125,19 @@ test('remove by client', function () {
     $activitySystemModel->loadBean(new \Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->with('ActivitySystem', 'client_id = ?', [$clientModel->id])
-        ->andReturn([$activitySystemModel]);
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once()
-        ->with($activitySystemModel);
+    /** @var \Mockery\Expectation $expectation1 */
+    $expectation1 = $dbMock->shouldReceive('find');
+    $expectation1->atLeast()->once();
+    $expectation1->with('ActivitySystem', 'client_id = ?', [$clientModel->id]);
+    $expectation1->andReturn([$activitySystemModel]);
+    /** @var \Mockery\Expectation $expectation2 */
+    $expectation2 = $dbMock->shouldReceive('trash');
+    $expectation2->atLeast()->once();
+    $expectation2->with($activitySystemModel);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $service = new \Box\Mod\Activity\Service();
     $service->setDi($di);
 
     $service->rmByClient($clientModel);
