@@ -17,9 +17,9 @@
     ],
     "homepage": "https://fossbilling.org",
     "scripts": {
-        "test": "pest",
-        "phpstan": "phpstan analyze --memory-limit=512M",
-        "phpstan:baseline": "phpstan analyze --generate-baseline",
+        "test": "pest --test-directory ../tests",
+        "phpstan": "phpstan analyze --memory-limit=1G",
+        "phpstan:baseline": "phpstan analyze --memory-limit=1G --generate-baseline",
         "cs:check": "php-cs-fixer fix --dry-run --diff",
         "cs:fix": "php-cs-fixer fix",
         "rector:check": "rector --dry-run",

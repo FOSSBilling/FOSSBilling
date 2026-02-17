@@ -28,17 +28,19 @@ class ExtensionPdoStatementsMock extends \PDOStatement
 
 beforeEach(function () {
     $this->filesystemMock = Mockery::mock(\Symfony\Component\Filesystem\Filesystem::class);
-    $this->service = new \Box\Mod\Extension\Service($this->filesystemMock);
+    $service = new \Box\Mod\Extension\Service($this->filesystemMock);
 });
 
-test('getDi returns the dependency injection container', function () {
+test('getDi returns the dependency injection container', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('isCoreModule checks if module is core module', function () {
+test('isCoreModule checks if module is core module', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $coreModules = ['extension', 'cron', 'staff'];
     $modMock = Mockery::mock(\FOSSBilling\Module::class);
     $modMock->shouldReceive('getCoreModules')
@@ -49,14 +51,15 @@ test('isCoreModule checks if module is core module', function () {
     $di = container();
     $di['mod'] = $di->protect(fn ($name): \Mockery\MockInterface => $modMock);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->isCoreModule('extension');
+    $result = $service->isCoreModule('extension');
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('isExtensionActive returns false when module not found', function () {
+test('isExtensionActive returns false when module not found', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $coreModules = ['extension', 'cron', 'staff'];
     $modMock = Mockery::mock(\FOSSBilling\Module::class);
     $modMock->shouldReceive('getCoreModules')
@@ -74,14 +77,15 @@ test('isExtensionActive returns false when module not found', function () {
     $di['db'] = $dbMock;
     $di['mod'] = $di->protect(fn ($name): \Mockery\MockInterface => $modMock);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->isExtensionActive('mod', 'ModDoesNotExists');
+    $result = $service->isExtensionActive('mod', 'ModDoesNotExists');
     expect($result)->toBeBool();
     expect($result)->toBeFalse();
 });
 
-test('removeNotExistingModules removes non-existing modules', function () {
+test('removeNotExistingModules removes non-existing modules', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $model = new \Model_Extension();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->name = 'extensionName';
@@ -102,9 +106,9 @@ test('removeNotExistingModules removes non-existing modules', function () {
     $di['db'] = $dbMock;
     $di['mod'] = $di->protect(fn ($name): \Mockery\MockInterface => $modMock);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->removeNotExistingModules();
+    $result = $service->removeNotExistingModules();
     expect($result)->toBeInt();
     expect($result > 0)->toBeTrue();
 });
@@ -117,10 +121,11 @@ $searchQueryData = [
 ];
 
 test('getSearchQuery returns correct SQL and params', function (array $data, string $expectedStr, array $expectedParams) {
+    $service = new \Box\Mod\Extension\Service();
     $di = container();
 
-    $this->service->setDi($di);
-    [$sql, $params] = $this->service->getSearchQuery($data);
+    $service->setDi($di);
+    [$sql, $params] = $service->getSearchQuery($data);
 
     expect($sql)->toBeString();
     expect($params)->toBeArray();
@@ -129,7 +134,8 @@ test('getSearchQuery returns correct SQL and params', function (array $data, str
     expect([])->toBe(array_diff_key($params, $expectedParams));
 })->with($searchQueryData);
 
-test('getExtensionsList returns filtered extensions list', function () {
+test('getExtensionsList returns filtered extensions list', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $data = [
         'has_settings' => true,
         'active' => true,
@@ -175,13 +181,14 @@ test('getExtensionsList returns filtered extensions list', function () {
     $di['db'] = $dbMock;
     $di['mod'] = $di->protect(fn ($name): \Mockery\MockInterface => $modMock);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getExtensionsList($data);
+    $result = $service->getExtensionsList($data);
     expect($result)->toBeArray();
 });
 
-test('getExtensionsList returns only installed extensions', function () {
+test('getExtensionsList returns only installed extensions', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $data = [
         'installed' => true,
     ];
@@ -221,13 +228,14 @@ test('getExtensionsList returns only installed extensions', function () {
     $di['db'] = $dbMock;
     $di['mod'] = $di->protect(fn ($name): \Mockery\MockInterface => $modMock);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getExtensionsList($data);
+    $result = $service->getExtensionsList($data);
     expect($result)->toBeArray();
 });
 
-test('getAdminNavigation returns admin navigation', function () {
+test('getAdminNavigation returns admin navigation', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $extensionServiceMock = Mockery::mock(\Box\Mod\Extension\Service::class)->makePartial();
     $extensionServiceMock->shouldAllowMockingProtectedMethods();
     $extensionServiceMock->shouldReceive('getConfig')
@@ -309,12 +317,13 @@ test('getAdminNavigation returns admin navigation', function () {
     $di['url'] = $urlMock;
     $di['dbal'] = $dbalMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getAdminNavigation(new \Model_Admin());
+    $service->setDi($di);
+    $result = $service->getAdminNavigation(new \Model_Admin());
     expect($result)->toBeArray();
 });
 
-test('findExtension finds an extension', function () {
+test('findExtension finds an extension', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
         ->atLeast()
@@ -324,12 +333,13 @@ test('findExtension finds an extension', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->findExtension('mod', 'id');
+    $service->setDi($di);
+    $result = $service->findExtension('mod', 'id');
     expect($result)->toBeInstanceOf('\Model_Extension');
 });
 
-test('update throws exception for extensions that need manual update', function () {
+test('update throws exception for extensions that need manual update', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $model = new \Model_Extension();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->type = 'mod';
@@ -345,13 +355,14 @@ test('update throws exception for extensions that need manual update', function 
     $di['extension_manager'] = $extensionStub;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $staffService);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    expect(fn () => $this->service->update($model))
+    expect(fn () => $service->update($model))
         ->toThrow(\FOSSBilling\Exception::class, 'Visit the extension directory for more information on updating this extension.');
 });
 
-test('activate activates an extension', function () {
+test('activate activates an extension', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $ext = new \Model_Extension();
     $ext->loadBean(new \Tests\Helpers\DummyBean());
     $ext->type = 'mod';
@@ -403,13 +414,14 @@ test('activate activates an extension', function () {
     $di['mod'] = $di->protect(fn ($name): \Mockery\MockInterface => $modMock);
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $staffService);
 
-    $this->service->setDi($di);
-    $result = $this->service->activate($ext);
+    $service->setDi($di);
+    $result = $service->activate($ext);
     expect($result)->toBeArray();
     expect($result)->toBe($expectedResult);
 });
 
-test('deactivate deactivates an extension', function () {
+test('deactivate deactivates an extension', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $ext = new \Model_Extension();
     $ext->loadBean(new \Tests\Helpers\DummyBean());
     $ext->type = 'mod';
@@ -433,13 +445,14 @@ test('deactivate deactivates an extension', function () {
 
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $staffService);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->deactivate($ext);
+    $result = $service->deactivate($ext);
     expect($result)->toBeTrue();
 });
 
-test('deactivate throws exception for core modules', function () {
+test('deactivate throws exception for core modules', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $ext = new \Model_Extension();
     $ext->loadBean(new \Tests\Helpers\DummyBean());
     $ext->type = 'mod';
@@ -459,13 +472,14 @@ test('deactivate throws exception for core modules', function () {
 
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $staffService);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    expect(fn () => $this->service->deactivate($ext))
+    expect(fn () => $service->deactivate($ext))
         ->toThrow(\FOSSBilling\Exception::class, 'Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
 });
 
-test('deactivate deactivates hook extension', function () {
+test('deactivate deactivates hook extension', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $ext = new \Model_Extension();
     $ext->loadBean(new \Tests\Helpers\DummyBean());
     $ext->type = 'hook';
@@ -492,7 +506,8 @@ test('deactivate deactivates hook extension', function () {
     expect($result)->toBeTrue();
 });
 
-test('deactivate deactivates module', function () {
+test('deactivate deactivates module', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $ext = new \Model_Extension();
     $ext->loadBean(new \Tests\Helpers\DummyBean());
     $ext->type = 'mod';
@@ -516,13 +531,14 @@ test('deactivate deactivates module', function () {
 
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $staffService);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->deactivate($ext);
+    $result = $service->deactivate($ext);
     expect($result)->toBeTrue();
 });
 
-test('uninstall uninstalls an extension', function () {
+test('uninstall uninstalls an extension', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')->andReturn(null);
 
@@ -586,7 +602,8 @@ test('uninstall uninstalls an extension', function () {
     expect($result)->toBeTrue();
 });
 
-test('downloadAndExtract throws exception when download URL is missing', function () {
+test('downloadAndExtract throws exception when download URL is missing', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $extensionMock = Mockery::mock(\FOSSBilling\ExtensionManager::class);
 
     $extensionMock->shouldReceive('getLatestExtensionRelease')
@@ -601,13 +618,14 @@ test('downloadAndExtract throws exception when download URL is missing', functio
     $di['extension_manager'] = $extensionMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $staffService);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    expect(fn () => $this->service->downloadAndExtract('mod', 'extensionId'))
+    expect(fn () => $service->downloadAndExtract('mod', 'extensionId'))
         ->toThrow(\Exception::class, 'Couldn\'t find a valid download URL for the extension.');
 });
 
-test('getInstalledMods returns installed modules', function () {
+test('getInstalledMods returns installed modules', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $dbalMock = new class {
         public function createQueryBuilder(): object
         {
@@ -653,12 +671,13 @@ test('getInstalledMods returns installed modules', function () {
     $di = new \Pimple\Container();
     $di['dbal'] = $dbalMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getInstalledMods();
+    $service->setDi($di);
+    $result = $service->getInstalledMods();
     expect($result)->toBe([]);
 });
 
-test('activateExistingExtension activates existing extension', function () {
+test('activateExistingExtension activates existing extension', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $data = [
         'id' => 'extensionId',
         'type' => 'extensionType',
@@ -706,7 +725,8 @@ test('activateExistingExtension activates existing extension', function () {
     expect($result)->toBeArray();
 });
 
-test('activateExistingExtension throws exception on activation failure', function () {
+test('activateExistingExtension throws exception on activation failure', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $data = [
         'id' => 'extensionId',
         'type' => 'extensionType',
@@ -738,7 +758,8 @@ test('activateExistingExtension throws exception on activation failure', functio
         ->toThrow(\Exception::class);
 });
 
-test('getConfig returns extension config', function () {
+test('getConfig returns extension config', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $data = [
         'ext' => 'extensionName',
     ];
@@ -760,13 +781,14 @@ test('getConfig returns extension config', function () {
     $di['crypt'] = $cryptMock;
     $di['cache'] = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getConfig($data['ext']);
+    $result = $service->getConfig($data['ext']);
     expect($result)->toBeArray();
 });
 
-test('getConfig creates new ExtensionMeta when not found', function () {
+test('getConfig creates new ExtensionMeta when not found', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $data = [
         'ext' => 'extensionName',
     ];
@@ -792,14 +814,15 @@ test('getConfig creates new ExtensionMeta when not found', function () {
     $di['db'] = $dbMock;
     $di['cache'] = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
 
-    $this->service->setDi($di);
-    $result = $this->service->getConfig($data['ext']);
+    $service->setDi($di);
+    $result = $service->getConfig($data['ext']);
 
     expect($result)->toBeArray();
     expect($result)->toBe(['ext' => 'extensionName']);
 });
 
-test('setConfig sets extension config', function () {
+test('setConfig sets extension config', function (): void {
+    $service = new \Box\Mod\Extension\Service();
     $data = [
         'ext' => 'extensionName',
     ];

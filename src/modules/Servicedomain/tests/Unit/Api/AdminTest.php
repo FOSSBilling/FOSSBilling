@@ -20,7 +20,8 @@ beforeEach(function () {
     $this->adminApi = new Admin();
 });
 
-test('updates domain', function () {
+test('updates domain', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -42,7 +43,8 @@ test('updates domain', function () {
     expect($result)->toBeTrue();
 });
 
-test('updates nameservers', function () {
+test('updates nameservers', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -64,7 +66,8 @@ test('updates nameservers', function () {
     expect($result)->toBeTrue();
 });
 
-test('updates contacts', function () {
+test('updates contacts', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -86,7 +89,8 @@ test('updates contacts', function () {
     expect($result)->toBeTrue();
 });
 
-test('enables privacy protection', function () {
+test('enables privacy protection', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -108,7 +112,8 @@ test('enables privacy protection', function () {
     expect($result)->toBeTrue();
 });
 
-test('disables privacy protection', function () {
+test('disables privacy protection', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -130,7 +135,8 @@ test('disables privacy protection', function () {
     expect($result)->toBeTrue();
 });
 
-test('gets transfer code', function () {
+test('gets transfer code', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -152,7 +158,8 @@ test('gets transfer code', function () {
     expect($result)->toBeTrue();
 });
 
-test('locks domain', function () {
+test('locks domain', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -174,7 +181,8 @@ test('locks domain', function () {
     expect($result)->toBeTrue();
 });
 
-test('unlocks domain', function () {
+test('unlocks domain', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -196,7 +204,8 @@ test('unlocks domain', function () {
     expect($result)->toBeTrue();
 });
 
-test('gets tld list', function () {
+test('gets tld list', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $paginatorMock = Mockery::mock(Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
@@ -222,7 +231,8 @@ test('gets tld list', function () {
     expect($result)->toBeArray();
 });
 
-test('gets tld', function () {
+test('gets tld', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -243,7 +253,8 @@ test('gets tld', function () {
     expect($result)->toBeArray();
 });
 
-test('throws exception when getting tld not found', function () {
+test('throws exception when getting tld not found', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -263,7 +274,8 @@ test('throws exception when getting tld not found', function () {
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('deletes tld', function () {
+test('deletes tld', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $tldMock = new \Model_Tld();
     $tldMock->loadBean(new \Tests\Helpers\DummyBean());
     $tldMock->tld = '.com';
@@ -296,7 +308,8 @@ test('deletes tld', function () {
     expect($result)->toBeTrue();
 });
 
-test('throws exception when deleting tld not found', function () {
+test('throws exception when deleting tld not found', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -316,7 +329,8 @@ test('throws exception when deleting tld not found', function () {
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('creates tld', function () {
+test('creates tld', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldAlreadyRegistered')
         ->atLeast()->once()
@@ -341,7 +355,8 @@ test('creates tld', function () {
     expect($result)->toBeInt();
 });
 
-test('throws exception when creating already registered tld', function () {
+test('throws exception when creating already registered tld', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldAlreadyRegistered')
         ->atLeast()->once()
@@ -359,7 +374,8 @@ test('throws exception when creating already registered tld', function () {
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('updates tld', function () {
+test('updates tld', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -380,7 +396,8 @@ test('updates tld', function () {
     expect($result)->toBeTrue();
 });
 
-test('throws exception when updating tld not found', function () {
+test('throws exception when updating tld not found', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -400,7 +417,8 @@ test('throws exception when updating tld not found', function () {
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('gets registrar list', function () {
+test('gets registrar list', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $paginatorMock = Mockery::mock(Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
@@ -432,7 +450,8 @@ test('gets registrar list', function () {
     expect($result)->toBeArray();
 });
 
-test('gets registrar pairs', function () {
+test('gets registrar pairs', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('registrarGetPairs')
         ->atLeast()->once()
@@ -445,7 +464,8 @@ test('gets registrar pairs', function () {
     expect($result)->toBeArray();
 });
 
-test('gets available registrars', function () {
+test('gets available registrars', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('registrarGetAvailable')
         ->atLeast()->once()
@@ -458,7 +478,8 @@ test('gets available registrars', function () {
     expect($result)->toBeArray();
 });
 
-test('installs registrar', function () {
+test('installs registrar', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $registrars = [
         'ResellerClub', 'Custom',
     ];
@@ -483,7 +504,8 @@ test('installs registrar', function () {
     expect($result)->toBeTrue();
 });
 
-test('throws exception when installing unavailable registrar', function () {
+test('throws exception when installing unavailable registrar', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $registrars = [
         'Custom',
     ];
@@ -507,7 +529,8 @@ test('throws exception when installing unavailable registrar', function () {
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('throws exception when deleting registrar without id', function () {
+test('throws exception when deleting registrar without id', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $apiHandler = new \Api_Handler(new \Model_Admin());
     $reflection = new \ReflectionClass($apiHandler);
     $method = $reflection->getMethod('validateRequiredParams');
@@ -516,7 +539,8 @@ test('throws exception when deleting registrar without id', function () {
         ->toThrow(\FOSSBilling\InformationException::class);
 });
 
-test('copies registrar', function () {
+test('copies registrar', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $registrar = new \Model_TldRegistrar();
     $registrar->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -545,7 +569,8 @@ test('copies registrar', function () {
     expect($result)->toBeTrue();
 });
 
-test('throws exception when copying registrar without id', function () {
+test('throws exception when copying registrar without id', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $apiHandler = new \Api_Handler(new \Model_Admin());
     $reflection = new \ReflectionClass($apiHandler);
     $method = $reflection->getMethod('validateRequiredParams');
@@ -554,7 +579,8 @@ test('throws exception when copying registrar without id', function () {
         ->toThrow(\FOSSBilling\InformationException::class);
 });
 
-test('gets registrar', function () {
+test('gets registrar', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $registrar = new \Model_TldRegistrar();
     $registrar->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -583,7 +609,8 @@ test('gets registrar', function () {
     expect($result)->toBeArray();
 });
 
-test('throws exception when getting registrar without id', function () {
+test('throws exception when getting registrar without id', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $registrar = new \Model_TldRegistrar();
     $registrar->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -612,7 +639,8 @@ test('throws exception when getting registrar without id', function () {
         ->toThrow(\FOSSBilling\InformationException::class);
 });
 
-test('batch syncs expiration dates', function () {
+test('batch syncs expiration dates', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('batchSyncExpirationDates')
         ->atLeast()->once()
@@ -625,7 +653,8 @@ test('batch syncs expiration dates', function () {
     expect($result)->toBeTrue();
 });
 
-test('updates registrar', function () {
+test('updates registrar', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $registrar = new \Model_TldRegistrar();
     $registrar->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -654,7 +683,8 @@ test('updates registrar', function () {
     expect($result)->toBeTrue();
 });
 
-test('throws exception when updating registrar without id', function () {
+test('throws exception when updating registrar without id', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $registrar = new \Model_TldRegistrar();
     $registrar->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -683,7 +713,8 @@ test('throws exception when updating registrar without id', function () {
         ->toThrow(\FOSSBilling\InformationException::class);
 });
 
-test('gets service', function () {
+test('gets service', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateDomain')
         ->atLeast()->once()
@@ -716,7 +747,8 @@ test('gets service', function () {
     expect($result)->toBeTrue();
 });
 
-test('throws exception when getting service without order_id', function () {
+test('throws exception when getting service without order_id', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateDomain')
         ->never();
@@ -748,7 +780,8 @@ test('throws exception when getting service without order_id', function () {
         ->toThrow(\FOSSBilling\InformationException::class);
 });
 
-test('throws exception when getting service for not activated order', function () {
+test('throws exception when getting service for not activated order', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateDomain')
         ->never();

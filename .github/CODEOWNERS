@@ -5,4 +5,4 @@
 /src/library/FOSSBilling/GeoIP/ @BelleNottelling
 /src/library/FOSSBilling/Fingerprint.php @BelleNottelling
 /src/library/FOSSBilling/SentryHelper.php @BelleNottelling
-/src/tests/ @BelleNottelling
+/tests/ @BelleNottelling

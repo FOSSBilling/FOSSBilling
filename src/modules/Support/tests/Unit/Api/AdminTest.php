@@ -16,7 +16,8 @@ beforeEach(function () {
     $this->adminApi = new \Box\Mod\Support\Api\Admin();
 });
 
-test('ticket get list', function () {
+test('ticket get list', function (): void {
+    $api = new \Box\Mod\Support\Api\Admin();
         $simpleResultArr = [
             'list' => [
                 ['id' => 1],

@@ -14,17 +14,19 @@ use function Tests\Helpers\container;
 use Box\Mod\Servicelicense\Api\Guest;
 
 beforeEach(function (): void {
-    $this->api = new Guest();
+    $api = new Guest();
 });
 
 test('getDi returns dependency injection container', function (): void {
+    $api = new \Box\Mod\Servicelicense\Api\Guest();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toEqual($di);
 });
 
 test('check returns license details array', function (): void {
+    $api = new \Box\Mod\Servicelicense\Api\Guest();
     $data = [
         'license' => 'license1234',
         'host' => 'fossbilling.org',
@@ -43,8 +45,8 @@ test('check returns license details array', function (): void {
         ->once()
         ->andReturn($licenseResult);
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->check($data);
+    $api->setService($serviceMock);
+    $result = $api->check($data);
 
     expect($result)->toBeArray();
 });

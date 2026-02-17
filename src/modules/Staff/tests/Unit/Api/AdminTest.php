@@ -12,18 +12,17 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->api = new \Box\Mod\Staff\Api\Admin();
-});
-
-test('get di', function () {
+test('get di', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
+    $api = new \Box\Mod\Staff\Api\Admin();
         $di = container();
-        $this->api->setDi($di);
-        $getDi = $this->api->getDi();
+        $api->setDi($di);
+        $getDi = $api->getDi();
         expect($getDi)->toEqual($di);
     });
 
-    test('get list', function () {
+    test('get list', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data = [];
 
         $serviceMock = Mockery::mock(\Box\Mod\Staff\Service::class);
@@ -57,14 +56,15 @@ test('get di', function () {
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->get_list($data);
+        $result = $api->get_list($data);
         expect($result)->toBeArray();
     });
 
-    test('get', function () {
+    test('get', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data['id'] = 1;
 
         $serviceMock = Mockery::mock(\Box\Mod\Staff\Service::class);
@@ -82,14 +82,15 @@ test('get di', function () {
         $di = container();
         $di['db'] = $dbMock;
 
-        $this->api->setService($serviceMock);
-        $this->api->setDi($di);
+        $api->setService($serviceMock);
+        $api->setDi($di);
 
-        $result = $this->api->get($data);
+        $result = $api->get($data);
         expect($result)->toBeArray();
     });
 
-    test('update', function () {
+    test('update', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data['id'] = 1;
 
         $serviceMock = Mockery::mock(\Box\Mod\Staff\Service::class);
@@ -107,15 +108,16 @@ test('get di', function () {
         $di = container();
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->update($data);
+        $result = $api->update($data);
         expect($result)->toBeBool();
         expect($result)->toBeTrue();
     });
 
-    test('delete', function () {
+    test('delete', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data['id'] = 1;
 
         $serviceMock = Mockery::mock(\Box\Mod\Staff\Service::class);
@@ -133,15 +135,16 @@ test('get di', function () {
         $di = container();
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->delete($data);
+        $result = $api->delete($data);
         expect($result)->toBeBool();
         expect($result)->toBeTrue();
     });
 
-    test('change password', function () {
+    test('change password', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data = [
             'id' => '1',
             'password' => 'test!23A',
@@ -170,14 +173,15 @@ test('get di', function () {
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-        $result = $this->api->change_password($data);
+        $api->setDi($di);
+        $api->setService($serviceMock);
+        $result = $api->change_password($data);
 
         expect(true)->toBeTrue();
     });
 
-    test('change password password do not match', function () {
+    test('change password password do not match', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data = [
             'id' => '1',
             'password' => 'test!23A',
@@ -185,12 +189,13 @@ test('get di', function () {
         ];
 
         $di = container();
-        $this->api->setDi($di);
-        expect(fn () => $this->api->change_password($data))
+        $api->setDi($di);
+        expect(fn () => $api->change_password($data))
             ->toThrow(\FOSSBilling\Exception::class, 'Passwords do not match');
     });
 
-    test('create', function () {
+    test('create', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data = [
             'admin_group_id' => '1',
             'password' => 'test!23A',
@@ -219,15 +224,16 @@ test('get di', function () {
         $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
         $di['tools'] = $toolsMock;
 
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->create($data);
+        $result = $api->create($data);
         expect($result)->toBeInt();
         expect($result)->toEqual($newStaffId);
     });
 
-    test('permissions get', function () {
+    test('permissions get', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data['id'] = 1;
 
         $staffModel = new \Model_Admin();
@@ -248,14 +254,15 @@ test('get di', function () {
         $di = container();
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->permissions_get($data);
+        $result = $api->permissions_get($data);
         expect($result)->toBeArray();
     });
 
-    test('permissions update', function () {
+    test('permissions update', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data = [
             'id' => '1',
             'permissions' => 'default',
@@ -280,27 +287,29 @@ test('get di', function () {
         $di['db'] = $dbMock;
         $di['logger'] = new \Tests\Helpers\TestLogger();
 
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->permissions_update($data);
+        $result = $api->permissions_update($data);
         expect($result)->toBeBool();
         expect($result)->toBeTrue();
     });
 
-    test('group get pairs', function () {
+    test('group get pairs', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $serviceMock = Mockery::mock(\Box\Mod\Staff\Service::class);
         $serviceMock
     ->shouldReceive('getAdminGroupPair')
     ->atLeast()->once()
     ->andReturn([]);
 
-        $this->api->setService($serviceMock);
-        $result = $this->api->group_get_pairs([]);
+        $api->setService($serviceMock);
+        $result = $api->group_get_pairs([]);
         expect($result)->toBeArray();
     });
 
-    test('group get list', function () {
+    test('group get list', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data = [];
 
         $serviceMock = Mockery::mock(\Box\Mod\Staff\Service::class);
@@ -318,14 +327,15 @@ test('get di', function () {
         $di = container();
         $di['pager'] = $pagerMock;
 
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->group_get_list($data);
+        $result = $api->group_get_list($data);
         expect($result)->toBeArray();
     });
 
-    test('group create', function () {
+    test('group create', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data['name'] = 'Prime Group';
         $newGroupId = 1;
 
@@ -336,15 +346,16 @@ test('get di', function () {
     ->andReturn($newGroupId);
 
         $di = container();
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->group_create($data);
+        $result = $api->group_create($data);
         expect($result)->toBeInt();
         expect($result)->toEqual($newGroupId);
     });
 
-    test('group get', function () {
+    test('group get', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data['id'] = '1';
 
         $serviceMock = Mockery::mock(\Box\Mod\Staff\Service::class);
@@ -362,15 +373,16 @@ test('get di', function () {
         $di = container();
         $di['db'] = $dbMock;
 
-        $this->api->setIdentity(new \Model_Admin());
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->group_get($data);
+        $result = $api->group_get($data);
         expect($result)->toBeArray();
     });
 
-    test('group delete', function () {
+    test('group delete', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data['id'] = '1';
 
         $serviceMock = Mockery::mock(\Box\Mod\Staff\Service::class);
@@ -388,16 +400,17 @@ test('get di', function () {
         $di = container();
         $di['db'] = $dbMock;
 
-        $this->api->setIdentity(new \Model_Admin());
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->group_delete($data);
+        $result = $api->group_delete($data);
         expect($result)->toBeBool();
         expect($result)->toBeTrue();
     });
 
-    test('group update', function () {
+    test('group update', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data['id'] = '1';
 
         $serviceMock = Mockery::mock(\Box\Mod\Staff\Service::class);
@@ -415,16 +428,17 @@ test('get di', function () {
         $di = container();
         $di['db'] = $dbMock;
 
-        $this->api->setIdentity(new \Model_Admin());
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->group_update($data);
+        $result = $api->group_update($data);
         expect($result)->toBeBool();
         expect($result)->toBeTrue();
     });
 
-    test('login history get list', function () {
+    test('login history get list', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data = [];
 
         $serviceMock = Mockery::mock(\Box\Mod\Staff\Service::class);
@@ -458,14 +472,15 @@ test('get di', function () {
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->login_history_get_list($data);
+        $result = $api->login_history_get_list($data);
         expect($result)->toBeArray();
     });
 
-    test('login history get', function () {
+    test('login history get', function (): void {
+    $api = new \Box\Mod\Staff\Api\Admin();
         $data['id'] = '1';
 
         $serviceMock = Mockery::mock(\Box\Mod\Staff\Service::class);
@@ -483,10 +498,10 @@ test('get di', function () {
         $di = container();
         $di['db'] = $dbMock;
 
-        $this->api->setIdentity(new \Model_Admin());
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+        $api->setIdentity(new \Model_Admin());
+        $api->setDi($di);
+        $api->setService($serviceMock);
 
-        $result = $this->api->login_history_get($data);
+        $result = $api->login_history_get($data);
         expect($result)->toBeArray();
     });

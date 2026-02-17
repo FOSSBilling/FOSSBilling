@@ -19,17 +19,19 @@ use Box\Mod\Invoice\ServiceTax;
 use Box\Mod\Invoice\ServiceTransaction;
 
 beforeEach(function () {
-    $this->api = new Admin();
+    $api = new Admin();
 });
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets invoice list', function () {
+test('gets invoice list', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSearchQuery')
         ->atLeast()->once()
@@ -46,13 +48,14 @@ test('gets invoice list', function () {
     $di = container();
     $di['pager'] = $paginatorMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $result = $this->api->get_list([]);
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $result = $api->get_list([]);
     expect($result)->toBeArray();
 });
 
-test('gets an invoice', function () {
+test('gets an invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
@@ -68,16 +71,17 @@ test('gets an invoice', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $this->api->setIdentity(new \Model_Admin());
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setIdentity(new \Model_Admin());
 
     $data['id'] = 1;
-    $result = $this->api->get($data);
+    $result = $api->get($data);
     expect($result)->toBeArray();
 });
 
-test('marks invoice as paid', function () {
+test('marks invoice as paid', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
         'execute' => true,
@@ -118,14 +122,15 @@ test('marks invoice as paid', function () {
         }
         return $serviceMock;
     });
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->mark_as_paid($data);
+    $result = $api->mark_as_paid($data);
     expect($result)->toBeTrue();
 });
 
-test('prepares an invoice', function () {
+test('prepares an invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'client_id' => 1,
     ];
@@ -150,14 +155,15 @@ test('prepares an invoice', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->prepare($data);
+    $result = $api->prepare($data);
     expect($result)->toBeInt()->toBe($newInvoiceId);
 });
 
-test('approves an invoice', function () {
+test('approves an invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -177,14 +183,15 @@ test('approves an invoice', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->approve($data);
+    $result = $api->approve($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('refunds an invoice', function () {
+test('refunds an invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -204,14 +211,15 @@ test('refunds an invoice', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->refund($data);
+    $result = $api->refund($data);
     expect($result)->toBeInt()->toBe($newNegativeInvoiceId);
 });
 
-test('updates an invoice', function () {
+test('updates an invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -231,14 +239,15 @@ test('updates an invoice', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->update($data);
+    $result = $api->update($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('deletes an invoice item', function () {
+test('deletes an invoice item', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -259,13 +268,14 @@ test('deletes an invoice item', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->item_delete($data);
+    $result = $api->item_delete($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('deletes an invoice', function () {
+test('deletes an invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -285,14 +295,15 @@ test('deletes an invoice', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->delete($data);
+    $result = $api->delete($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('creates renewal invoice', function () {
+test('creates renewal invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -313,14 +324,15 @@ test('creates renewal invoice', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->renewal_invoice($data);
+    $result = $api->renewal_invoice($data);
     expect($result)->toBeInt()->toBe($newInvoiceId);
 });
 
-test('throws exception when creating renewal invoice for free order', function () {
+test('throws exception when creating renewal invoice for free order', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -337,25 +349,27 @@ test('throws exception when creating renewal invoice for free order', function (
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    expect(fn () => $this->api->renewal_invoice($data))
+    expect(fn () => $api->renewal_invoice($data))
         ->toThrow(\FOSSBilling\Exception::class, sprintf('Order %d is free. No need to generate invoice.', $model->id));
 });
 
-test('processes batch pay with credits', function () {
+test('processes batch pay with credits', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('doBatchPayWithCredits')
         ->atLeast()->once()
         ->andReturn(true);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->batch_pay_with_credits([]);
+    $result = $api->batch_pay_with_credits([]);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('pays invoice with credits', function () {
+test('pays invoice with credits', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -375,62 +389,67 @@ test('pays invoice with credits', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->pay_with_credits($data);
+    $result = $api->pay_with_credits($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('generates batch invoices', function () {
+test('generates batch invoices', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('generateInvoicesForExpiringOrders')
         ->atLeast()->once()
         ->andReturn(true);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->batch_generate();
+    $result = $api->batch_generate();
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('activates paid invoices in batch', function () {
+test('activates paid invoices in batch', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('doBatchPaidInvoiceActivation')
         ->atLeast()->once()
         ->andReturn(true);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->batch_activate_paid();
+    $result = $api->batch_activate_paid();
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('sends reminders in batch', function () {
+test('sends reminders in batch', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('doBatchRemindersSend')
         ->atLeast()->once()
         ->andReturn(true);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->batch_send_reminders([]);
+    $result = $api->batch_send_reminders([]);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('invokes due event in batch', function () {
+test('invokes due event in batch', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('doBatchInvokeDueEvent')
         ->atLeast()->once()
         ->andReturn(true);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->batch_invoke_due_event([]);
+    $result = $api->batch_invoke_due_event([]);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('sends reminder for an invoice', function () {
+test('sends reminder for an invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -450,26 +469,28 @@ test('sends reminder for an invoice', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->send_reminder($data);
+    $result = $api->send_reminder($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('gets invoice statuses', function () {
+test('gets invoice statuses', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('counter')
         ->atLeast()->once()
         ->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->get_statuses([]);
+    $result = $api->get_statuses([]);
     expect($result)->toBeArray();
 });
 
-test('processes all transactions', function () {
+test('processes all transactions', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('processReceivedATransactions')
         ->atLeast()->once()
@@ -478,12 +499,13 @@ test('processes all transactions', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
-    $this->api->setDi($di);
-    $result = $this->api->transaction_process_all([]);
+    $api->setDi($di);
+    $result = $api->transaction_process_all([]);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('processes a transaction', function () {
+test('processes a transaction', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -510,13 +532,14 @@ test('processes a transaction', function () {
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->transaction_process($data);
+    $result = $api->transaction_process($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('updates a transaction', function () {
+test('updates a transaction', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -537,13 +560,14 @@ test('updates a transaction', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->transaction_update($data);
+    $result = $api->transaction_update($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('creates a transaction', function () {
+test('creates a transaction', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $newTransactionId = 1;
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('create')
@@ -552,13 +576,14 @@ test('creates a transaction', function () {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->transaction_create([]);
+    $result = $api->transaction_create([]);
     expect($result)->toBeInt()->toBe($newTransactionId);
 });
 
-test('deletes a transaction', function () {
+test('deletes a transaction', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -579,13 +604,14 @@ test('deletes a transaction', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->transaction_delete($data);
+    $result = $api->transaction_delete($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('gets a transaction', function () {
+test('gets a transaction', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -606,13 +632,14 @@ test('gets a transaction', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->transaction_get($data);
+    $result = $api->transaction_get($data);
     expect($result)->toBeArray();
 });
 
-test('gets transaction list', function () {
+test('gets transaction list', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
@@ -630,12 +657,13 @@ test('gets transaction list', function () {
     $di['pager'] = $paginatorMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
-    $this->api->setDi($di);
-    $result = $this->api->transaction_get_list([]);
+    $api->setDi($di);
+    $result = $api->transaction_get_list([]);
     expect($result)->toBeArray();
 });
 
-test('gets transaction statuses', function () {
+test('gets transaction statuses', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('counter')
         ->atLeast()->once()
@@ -644,13 +672,14 @@ test('gets transaction statuses', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->transaction_get_statuses([]);
+    $result = $api->transaction_get_statuses([]);
     expect($result)->toBeArray();
 });
 
-test('gets transaction status pairs', function () {
+test('gets transaction status pairs', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('getStatusPairs')
         ->atLeast()->once()
@@ -659,13 +688,14 @@ test('gets transaction status pairs', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->transaction_get_statuses_pairs([]);
+    $result = $api->transaction_get_statuses_pairs([]);
     expect($result)->toBeArray();
 });
 
-test('gets transaction statuses list', function () {
+test('gets transaction statuses list', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('getStatuses')
         ->atLeast()->once()
@@ -674,13 +704,14 @@ test('gets transaction statuses list', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->transaction_statuses([]);
+    $result = $api->transaction_statuses([]);
     expect($result)->toBeArray();
 });
 
-test('gets transaction gateway statuses', function () {
+test('gets transaction gateway statuses', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('getGatewayStatuses')
         ->atLeast()->once()
@@ -689,13 +720,14 @@ test('gets transaction gateway statuses', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->transaction_gateway_statuses([]);
+    $result = $api->transaction_gateway_statuses([]);
     expect($result)->toBeArray();
 });
 
-test('gets transaction types', function () {
+test('gets transaction types', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('getTypes')
         ->atLeast()->once()
@@ -704,13 +736,14 @@ test('gets transaction types', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->transaction_types([]);
+    $result = $api->transaction_types([]);
     expect($result)->toBeArray();
 });
 
-test('gets gateway list', function () {
+test('gets gateway list', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $gatewayService = Mockery::mock(ServicePayGateway::class);
     $gatewayService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
@@ -728,12 +761,13 @@ test('gets gateway list', function () {
     $di['pager'] = $paginatorMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
 
-    $this->api->setDi($di);
-    $result = $this->api->gateway_get_list([]);
+    $api->setDi($di);
+    $result = $api->gateway_get_list([]);
     expect($result)->toBeArray();
 });
 
-test('gets gateway pairs', function () {
+test('gets gateway pairs', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $gatewayService = Mockery::mock(ServicePayGateway::class);
     $gatewayService->shouldReceive('getPairs')
         ->atLeast()->once()
@@ -741,13 +775,14 @@ test('gets gateway pairs', function () {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->gateway_get_pairs([]);
+    $result = $api->gateway_get_pairs([]);
     expect($result)->toBeArray();
 });
 
-test('gets available gateways', function () {
+test('gets available gateways', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $gatewayService = Mockery::mock(ServicePayGateway::class);
     $gatewayService->shouldReceive('getAvailable')
         ->atLeast()->once()
@@ -755,13 +790,14 @@ test('gets available gateways', function () {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->gateway_get_available([]);
+    $result = $api->gateway_get_available([]);
     expect($result)->toBeArray();
 });
 
-test('installs a gateway', function () {
+test('installs a gateway', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'code' => 'PP',
     ];
@@ -773,13 +809,14 @@ test('installs a gateway', function () {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->gateway_install($data);
+    $result = $api->gateway_install($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('gets a gateway', function () {
+test('gets a gateway', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -800,13 +837,14 @@ test('gets a gateway', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->gateway_get($data);
+    $result = $api->gateway_get($data);
     expect($result)->toBeArray();
 });
 
-test('copies a gateway', function () {
+test('copies a gateway', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -827,13 +865,14 @@ test('copies a gateway', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->gateway_copy($data);
+    $result = $api->gateway_copy($data);
     expect($result)->toBeInt()->toBe($newGatewayId);
 });
 
-test('updates a gateway', function () {
+test('updates a gateway', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -854,13 +893,14 @@ test('updates a gateway', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->gateway_update($data);
+    $result = $api->gateway_update($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('deletes a gateway', function () {
+test('deletes a gateway', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -881,13 +921,14 @@ test('deletes a gateway', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->gateway_delete($data);
+    $result = $api->gateway_delete($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('gets subscription list', function () {
+test('gets subscription list', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
     $subscriptionService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
@@ -905,12 +946,13 @@ test('gets subscription list', function () {
     $di['pager'] = $paginatorMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $subscriptionService);
 
-    $this->api->setDi($di);
-    $result = $this->api->subscription_get_list([]);
+    $api->setDi($di);
+    $result = $api->subscription_get_list([]);
     expect($result)->toBeArray();
 });
 
-test('creates a subscription', function () {
+test('creates a subscription', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'client_id' => 1,
         'gateway_id' => 1,
@@ -937,13 +979,14 @@ test('creates a subscription', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $subscriptionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->subscription_create($data);
+    $result = $api->subscription_create($data);
     expect($result)->toBeInt()->toBe($newSubscriptionId);
 });
 
-test('throws exception when creating subscription with currency mismatch', function () {
+test('throws exception when creating subscription with currency mismatch', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'client_id' => 1,
         'gateway_id' => 1,
@@ -963,13 +1006,14 @@ test('throws exception when creating subscription with currency mismatch', funct
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    expect(fn () => $this->api->subscription_create($data))
+    expect(fn () => $api->subscription_create($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Client currency must match subscription currency. Check if clients currency is defined.');
 });
 
-test('updates a subscription', function () {
+test('updates a subscription', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -990,13 +1034,14 @@ test('updates a subscription', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $subscriptionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->subscription_update($data);
+    $result = $api->subscription_update($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('gets a subscription', function () {
+test('gets a subscription', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -1017,13 +1062,14 @@ test('gets a subscription', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $subscriptionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->subscription_get($data);
+    $result = $api->subscription_get($data);
     expect($result)->toBeArray();
 });
 
-test('deletes a subscription', function () {
+test('deletes a subscription', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -1044,13 +1090,14 @@ test('deletes a subscription', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $subscriptionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->subscription_delete($data);
+    $result = $api->subscription_delete($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('deletes a tax', function () {
+test('deletes a tax', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -1071,13 +1118,14 @@ test('deletes a tax', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $taxService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->tax_delete($data);
+    $result = $api->tax_delete($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('creates a tax', function () {
+test('creates a tax', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -1090,13 +1138,14 @@ test('creates a tax', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $taxService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->tax_create($data);
+    $result = $api->tax_create($data);
     expect($result)->toBeInt()->toBe($newTaxId);
 });
 
-test('gets tax list', function () {
+test('gets tax list', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $taxService = Mockery::mock(ServiceTax::class);
     $taxService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
@@ -1114,13 +1163,14 @@ test('gets tax list', function () {
     $di['pager'] = $paginatorMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $taxService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->tax_get_list([]);
+    $result = $api->tax_get_list([]);
     expect($result)->toBeArray();
 });
 
-test('deletes invoices in batch', function () {
+test('deletes invoices in batch', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $activityMock = Mockery::mock(Admin::class)->makePartial();
     $activityMock->shouldReceive('delete')->atLeast()->once()->andReturn(true);
 
@@ -1131,7 +1181,8 @@ test('deletes invoices in batch', function () {
     expect($result)->toBeTrue();
 });
 
-test('deletes subscriptions in batch', function () {
+test('deletes subscriptions in batch', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $activityMock = Mockery::mock(Admin::class)->makePartial();
     $activityMock->shouldReceive('subscription_delete')->atLeast()->once()->andReturn(true);
 
@@ -1142,7 +1193,8 @@ test('deletes subscriptions in batch', function () {
     expect($result)->toBeTrue();
 });
 
-test('deletes transactions in batch', function () {
+test('deletes transactions in batch', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $activityMock = Mockery::mock(Admin::class)->makePartial();
     $activityMock->shouldReceive('transaction_delete')->atLeast()->once()->andReturn(true);
 
@@ -1153,7 +1205,8 @@ test('deletes transactions in batch', function () {
     expect($result)->toBeTrue();
 });
 
-test('deletes taxes in batch', function () {
+test('deletes taxes in batch', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $activityMock = Mockery::mock(Admin::class)->makePartial();
     $activityMock->shouldReceive('tax_delete')->atLeast()->once()->andReturn(true);
 
@@ -1164,7 +1217,8 @@ test('deletes taxes in batch', function () {
     expect($result)->toBeTrue();
 });
 
-test('gets a tax', function () {
+test('gets a tax', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $taxService = Mockery::mock(ServiceTax::class);
     $taxService->shouldReceive('toApiArray')
         ->atLeast()->once()
@@ -1181,16 +1235,17 @@ test('gets a tax', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $taxService);
 
-    $this->api->setDi($di);
-    $this->api->setService($taxService);
-    $this->api->setIdentity(new \Model_Admin());
+    $api->setDi($di);
+    $api->setService($taxService);
+    $api->setIdentity(new \Model_Admin());
 
     $data['id'] = 1;
-    $result = $this->api->tax_get($data);
+    $result = $api->tax_get($data);
     expect($result)->toBeArray();
 });
 
-test('updates a tax', function () {
+test('updates a tax', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Admin();
     $taxService = Mockery::mock(ServiceTax::class);
     $taxService->shouldReceive('update')
         ->atLeast()->once()
@@ -1207,11 +1262,11 @@ test('updates a tax', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $taxService);
 
-    $this->api->setDi($di);
-    $this->api->setService($taxService);
-    $this->api->setIdentity(new \Model_Admin());
+    $api->setDi($di);
+    $api->setService($taxService);
+    $api->setIdentity(new \Model_Admin());
 
     $data['id'] = 1;
-    $result = $this->api->tax_update($data);
+    $result = $api->tax_update($data);
     expect($result)->toBeBool()->toBeTrue();
 });

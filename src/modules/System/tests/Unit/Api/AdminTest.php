@@ -13,17 +13,19 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 beforeEach(function () {
-    $this->api = new \Box\Mod\System\Api\Admin();
+    $api = new \Box\Mod\System\Api\Admin();
 });
 
-test('dependency injection', function () {
+test('dependency injection', function (): void {
+    $api = new \Box\Mod\System\Api\Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toEqual($di);
 });
 
-test('get params', function () {
+test('get params', function (): void {
+    $api = new \Box\Mod\System\Api\Admin();
     $data = [];
 
     $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
@@ -32,13 +34,14 @@ test('get params', function () {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->get_params($data);
+    $result = $api->get_params($data);
     expect($result)->toBeArray();
 });
 
-test('update params', function () {
+test('update params', function (): void {
+    $api = new \Box\Mod\System\Api\Admin();
     $data = [];
 
     $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
@@ -47,19 +50,20 @@ test('update params', function () {
     ->atLeast()->once()
     ->andReturn(true);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->update_params($data);
+    $result = $api->update_params($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('messages', function () {
+test('messages', function (): void {
+    $api = new \Box\Mod\System\Api\Admin();
     $data = [];
 
     $di = container();
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
     $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
     $serviceMock
@@ -67,13 +71,14 @@ test('messages', function () {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->messages($data);
+    $result = $api->messages($data);
     expect($result)->toBeArray();
 });
 
-test('template exists', function () {
+test('template exists', function (): void {
+    $api = new \Box\Mod\System\Api\Admin();
     $data = [
         'file' => 'testing.txt',
     ];
@@ -84,14 +89,15 @@ test('template exists', function () {
     ->atLeast()->once()
     ->andReturn(true);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->template_exists($data);
+    $result = $api->template_exists($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('string render', function () {
+test('string render', function (): void {
+    $api = new \Box\Mod\System\Api\Admin();
     $data = [
         '_tpl' => 'default',
     ];
@@ -103,14 +109,15 @@ test('string render', function () {
     ->andReturn('returnStringType');
     $di = container();
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->string_render($data);
+    $result = $api->string_render($data);
     expect($result)->toBeString();
 });
 
-test('env', function () {
+test('env', function (): void {
+    $api = new \Box\Mod\System\Api\Admin();
     $data = [];
 
     $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
@@ -121,14 +128,15 @@ test('env', function () {
 
     $di = container();
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->env($data);
+    $result = $api->env($data);
     expect($result)->toBeArray();
 });
 
-test('is allowed', function () {
+test('is allowed', function (): void {
+    $api = new \Box\Mod\System\Api\Admin();
     $data = [
         'mod' => 'extension',
     ];
@@ -150,9 +158,9 @@ test('is allowed', function () {
         return false;
     });
     $di['validator'] = $validatorStub;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->is_allowed($data);
+    $result = $api->is_allowed($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });

@@ -14,10 +14,11 @@ use function Tests\Helpers\container;
 use Box\Mod\Servicehosting\Api\Guest;
 
 beforeEach(function (): void {
-    $this->api = new Guest();
+    $api = new Guest();
 });
 
 test('testFreeTlds', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Guest();
     $di = container();
 
     $model = new \Model_Product();
@@ -37,14 +38,15 @@ test('testFreeTlds', function (): void {
     ->atLeast()->once()
         ->with($model)
     ->andReturn([]);
-    $this->api->setService($serviceMock);
-    $this->api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setDi($di);
 
-    $result = $this->api->free_tlds(['product_id' => 1]);
+    $result = $api->free_tlds(['product_id' => 1]);
     expect($result)->toBeArray();
 });
 
 test('testFreeTldsProductTypeIsNotHosting', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Guest();
     $di = container();
 
     $model = new \Model_Product();
@@ -62,10 +64,10 @@ test('testFreeTldsProductTypeIsNotHosting', function (): void {
 
     $serviceMock = Mockery::mock(\Box\Mod\Servicehosting\Service::class);
     $serviceMock->shouldReceive('getFreeTlds');
-    $this->api->setService($serviceMock);
-    $this->api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setDi($di);
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Product type is invalid');
-    $this->api->free_tlds(['product_id' => 1]);
+    $api->free_tlds(['product_id' => 1]);
 });

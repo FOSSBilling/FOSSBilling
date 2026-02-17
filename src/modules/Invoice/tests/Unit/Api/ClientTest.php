@@ -17,17 +17,19 @@ use Box\Mod\Invoice\ServiceTransaction;
 use Box\Mod\Invoice\ServiceTax;
 
 beforeEach(function () {
-    $this->api = new Client();
+    $api = new Client();
 });
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets an invoice', function () {
+test('gets an invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
@@ -43,16 +45,17 @@ test('gets an invoice', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $this->api->setIdentity(new \Model_Admin());
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setIdentity(new \Model_Admin());
 
     $data['hash'] = md5('1');
-    $result = $this->api->get($data);
+    $result = $api->get($data);
     expect($result)->toBeArray();
 });
 
-test('throws exception when invoice is not found', function () {
+test('throws exception when invoice is not found', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $dbMock = Mockery::mock('\Box_Database');
     $model = new \Model_Invoice();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -63,15 +66,16 @@ test('throws exception when invoice is not found', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setIdentity(new \Model_Admin());
+    $api->setDi($di);
+    $api->setIdentity(new \Model_Admin());
 
     $data['hash'] = md5('1');
-    expect(fn () => $this->api->get($data))
+    expect(fn () => $api->get($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Invoice was not found');
 });
 
-test('updates an invoice', function () {
+test('updates an invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateInvoice')
         ->atLeast()->once()
@@ -87,16 +91,17 @@ test('updates an invoice', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $this->api->setIdentity(new \Model_Admin());
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setIdentity(new \Model_Admin());
 
     $data['hash'] = md5('1');
-    $result = $this->api->update($data);
+    $result = $api->update($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('throws exception when updating invoice not found', function () {
+test('throws exception when updating invoice not found', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $dbMock = Mockery::mock('\Box_Database');
     $model = new \Model_Invoice();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -107,15 +112,16 @@ test('throws exception when updating invoice not found', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setIdentity(new \Model_Admin());
+    $api->setDi($di);
+    $api->setIdentity(new \Model_Admin());
 
     $data['hash'] = md5('1');
-    expect(fn () => $this->api->update($data))
+    expect(fn () => $api->update($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Invoice was not found');
 });
 
-test('throws exception when updating paid invoice', function () {
+test('throws exception when updating paid invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $dbMock = Mockery::mock('\Box_Database');
     $model = new \Model_Invoice();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -127,15 +133,16 @@ test('throws exception when updating paid invoice', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setIdentity(new \Model_Admin());
+    $api->setDi($di);
+    $api->setIdentity(new \Model_Admin());
 
     $data['hash'] = md5('1');
-    expect(fn () => $this->api->update($data))
+    expect(fn () => $api->update($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Paid Invoice cannot be modified');
 });
 
-test('creates renewal invoice', function () {
+test('creates renewal invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $generatedHash = 'generatedHashString';
 
     $serviceMock = Mockery::mock(Service::class);
@@ -159,18 +166,19 @@ test('creates renewal invoice', function () {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
     $identity = new \Model_Admin();
     $identity->loadBean(new \Tests\Helpers\DummyBean());
-    $this->api->setIdentity($identity);
+    $api->setIdentity($identity);
 
     $data['order_id'] = 1;
-    $result = $this->api->renewal_invoice($data);
+    $result = $api->renewal_invoice($data);
     expect($result)->toBeString()->toBe($generatedHash);
 });
 
-test('throws exception when creating renewal invoice for free order', function () {
+test('throws exception when creating renewal invoice for free order', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $dbMock = Mockery::mock('\Box_Database');
     $clientOrder = new \Model_ClientOrder();
     $clientOrder->loadBean(new \Tests\Helpers\DummyBean());
@@ -185,18 +193,19 @@ test('throws exception when creating renewal invoice for free order', function (
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->api->setDi($di);
+    $api->setDi($di);
     $identity = new \Model_Admin();
     $identity->loadBean(new \Tests\Helpers\DummyBean());
-    $this->api->setIdentity($identity);
+    $api->setIdentity($identity);
 
     $data['order_id'] = 1;
 
-    expect(fn () => $this->api->renewal_invoice($data))
+    expect(fn () => $api->renewal_invoice($data))
         ->toThrow(\FOSSBilling\Exception::class, sprintf('Order %d is free. No need to generate invoice.', $clientOrder->id));
 });
 
-test('throws exception when creating renewal invoice for order not found', function () {
+test('throws exception when creating renewal invoice for order not found', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $dbMock = Mockery::mock('\Box_Database');
     $clientOrder = new \Model_ClientOrder();
     $clientOrder->loadBean(new \Tests\Helpers\DummyBean());
@@ -209,18 +218,19 @@ test('throws exception when creating renewal invoice for order not found', funct
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
+    $api->setDi($di);
     $identity = new \Model_Admin();
     $identity->loadBean(new \Tests\Helpers\DummyBean());
-    $this->api->setIdentity($identity);
+    $api->setIdentity($identity);
 
     $data['order_id'] = 1;
 
-    expect(fn () => $this->api->renewal_invoice($data))
+    expect(fn () => $api->renewal_invoice($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Order not found');
 });
 
-test('creates funds invoice', function () {
+test('creates funds invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $generatedHash = 'generatedHashString';
 
     $serviceMock = Mockery::mock(Service::class);
@@ -235,18 +245,19 @@ test('creates funds invoice', function () {
     $di = container();
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
     $identity = new \Model_Client();
     $identity->loadBean(new \Tests\Helpers\DummyBean());
-    $this->api->setIdentity($identity);
+    $api->setIdentity($identity);
 
     $data['amount'] = 10;
-    $result = $this->api->funds_invoice($data);
+    $result = $api->funds_invoice($data);
     expect($result)->toBeString()->toBe($generatedHash);
 });
 
-test('deletes an invoice', function () {
+test('deletes an invoice', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('deleteInvoiceByClient')
         ->atLeast()->once()
@@ -263,18 +274,19 @@ test('deletes an invoice', function () {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
     $identity = new \Model_Client();
     $identity->loadBean(new \Tests\Helpers\DummyBean());
-    $this->api->setIdentity($identity);
+    $api->setIdentity($identity);
 
     $data['hash'] = md5('1');
-    $result = $this->api->delete($data);
+    $result = $api->delete($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('gets transaction list', function () {
+test('gets transaction list', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
@@ -292,16 +304,17 @@ test('gets transaction list', function () {
     $di['pager'] = $paginatorMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
     $identity = new \Model_Client();
     $identity->loadBean(new \Tests\Helpers\DummyBean());
-    $this->api->setIdentity($identity);
-    $result = $this->api->transaction_get_list([]);
+    $api->setIdentity($identity);
+    $result = $api->transaction_get_list([]);
     expect($result)->toBeArray();
 });
 
-test('gets tax rate for client', function () {
+test('gets tax rate for client', function (): void {
+    $api = new \Box\Mod\Invoice\Api\Client();
     $client = new \Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -318,9 +331,9 @@ test('gets tax rate for client', function () {
             return $invoiceTaxService;
         }
     });
-    $this->api->setDi($di);
-    $this->api->setIdentity($client);
+    $api->setDi($di);
+    $api->setIdentity($client);
 
-    $result = $this->api->get_tax_rate();
+    $result = $api->get_tax_rate();
     expect($result)->toBe($taxRate);
 });

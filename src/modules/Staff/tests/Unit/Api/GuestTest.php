@@ -12,18 +12,17 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function () {
-    $this->api = new \Box\Mod\Staff\Api\Guest();
-});
-
-test('get di', function () {
+test('get di', function (): void {
+    $api = new \Box\Mod\Staff\Api\Guest();
+    $api = new \Box\Mod\Staff\Api\Guest();
         $di = container();
-        $this->api->setDi($di);
-        $getDi = $this->api->getDi();
+        $api->setDi($di);
+        $getDi = $api->getDi();
         expect($getDi)->toEqual($di);
     });
 
-    test('create', function () {
+    test('create', function (): void {
+    $api = new \Box\Mod\Staff\Api\Guest();
         $adminId = 1;
 
         $apiMock = Mockery::mock(\Box\Mod\Staff\Api\Guest::class)->makePartial();
@@ -62,7 +61,8 @@ test('get di', function () {
         expect($result)->toBeTrue();
     });
 
-    test('create exception', function () {
+    test('create exception', function (): void {
+    $api = new \Box\Mod\Staff\Api\Guest();
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock
     ->shouldReceive('findOne')
@@ -72,18 +72,19 @@ test('get di', function () {
         $di = container();
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
+        $api->setDi($di);
 
         $data = [
             'email' => 'example@fossbilling.org',
             'password' => 'EasyToGuess',
         ];
 
-        expect(fn () => $this->api->create($data))
+        expect(fn () => $api->create($data))
             ->toThrow(\FOSSBilling\Exception::class, 'Administrator account already exists');
     });
 
-    test('login without email', function () {
+    test('login without email', function (): void {
+    $api = new \Box\Mod\Staff\Api\Guest();
         $guestApi = new \Box\Mod\Staff\Api\Guest();
 
         $apiHandler = new \Api_Handler(new \Model_Admin());
@@ -94,7 +95,8 @@ test('get di', function () {
             ->toThrow(\FOSSBilling\InformationException::class);
     });
 
-    test('login without password', function () {
+    test('login without password', function (): void {
+    $api = new \Box\Mod\Staff\Api\Guest();
         $guestApi = new \Box\Mod\Staff\Api\Guest();
 
         $di = container();
@@ -104,7 +106,8 @@ test('get di', function () {
         expect(fn () => $guestApi->login(['email' => 'email@domain.com']))->toThrow(\FOSSBilling\Exception::class);
     });
 
-    test('successful login', function () {
+    test('successful login', function (): void {
+    $api = new \Box\Mod\Staff\Api\Guest();
         $modMock = Mockery::mock('\\' . \FOSSBilling\Module::class);
         $modMock
     ->shouldReceive('getConfig')
@@ -136,7 +139,8 @@ test('get di', function () {
         expect($result)->toBeArray();
     });
 
-    test('login check ip exception', function () {
+    test('login check ip exception', function (): void {
+    $api = new \Box\Mod\Staff\Api\Guest();
         $modMock = Mockery::mock('\\' . \FOSSBilling\Module::class);
         $configArr = [
             'allowed_ips' => '1.1.1.1' . PHP_EOL . '2.2.2.2',

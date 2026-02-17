@@ -17,17 +17,19 @@ use Box\Mod\System\Service as SystemService;
 use Box\Mod\Invoice\ServiceInvoiceItem;
 
 beforeEach(function () {
-    $this->service = new ServiceTax();
+    $service = new ServiceTax();
 });
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets tax rate for client by country and state', function () {
+test('gets tax rate for client by country and state', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
     $taxRateExpected = 0.21;
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -49,14 +51,15 @@ test('gets tax rate for client by country and state', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $clientServiceMock);
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getTaxRateForClient($clientModel);
+    $result = $service->getTaxRateForClient($clientModel);
     expect($result)->toBeFloat();
     expect($result)->toBe($taxRateExpected);
 });
 
-test('gets tax rate for client by country', function () {
+test('gets tax rate for client by country', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
     $taxRateExpected = 0.21;
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -83,14 +86,15 @@ test('gets tax rate for client by country', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $clientServiceMock);
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getTaxRateForClient($clientModel);
+    $result = $service->getTaxRateForClient($clientModel);
     expect($result)->toBeFloat();
     expect($result)->toBe($taxRateExpected);
 });
 
-test('gets tax rate for client', function () {
+test('gets tax rate for client', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
     $taxRateExpected = 0.21;
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -117,14 +121,15 @@ test('gets tax rate for client', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $clientServiceMock);
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getTaxRateForClient($clientModel);
+    $result = $service->getTaxRateForClient($clientModel);
     expect($result)->toBeFloat();
     expect($result)->toBe($taxRateExpected);
 });
 
-test('returns zero tax rate when tax not found', function () {
+test('returns zero tax rate when tax not found', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -141,15 +146,16 @@ test('returns zero tax rate when tax not found', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $clientServiceMock);
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $taxRateExpected = 0;
-    $result = $this->service->getTaxRateForClient($clientModel);
+    $result = $service->getTaxRateForClient($clientModel);
     expect($result)->toBeInt();
     expect($result)->toBe($taxRateExpected);
 });
 
-test('returns zero tax rate when client is not taxable', function () {
+test('returns zero tax rate when client is not taxable', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -163,25 +169,27 @@ test('returns zero tax rate when client is not taxable', function () {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $clientServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $taxRateExpected = 0;
-    $result = $this->service->getTaxRateForClient($clientModel);
+    $result = $service->getTaxRateForClient($clientModel);
     expect($result)->toBeInt();
     expect($result)->toBe($taxRateExpected);
 });
 
-test('returns zero tax when tax rate is zero', function () {
+test('returns zero tax when tax rate is zero', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
     $invoiceModel = new \Model_Invoice();
     $invoiceModel->loadBean(new \Tests\Helpers\DummyBean());
     $invoiceModel->taxrate = 0;
 
-    $result = $this->service->getTax($invoiceModel);
+    $result = $service->getTax($invoiceModel);
     expect($result)->toBeInt();
     expect($result)->toBe(0);
 });
 
-test('gets tax', function () {
+test('gets tax', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
     $invoiceModel = new \Model_Invoice();
     $invoiceModel->loadBean(new \Tests\Helpers\DummyBean());
     $invoiceModel->taxrate = 15;
@@ -204,12 +212,13 @@ test('gets tax', function () {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemService);
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getTax($invoiceModel);
+    $service->setDi($di);
+    $result = $service->getTax($invoiceModel);
     expect($result)->toBeInt();
 });
 
-test('deletes a tax', function () {
+test('deletes a tax', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
     $taxModel = new \Model_Tax();
     $taxModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -220,13 +229,14 @@ test('deletes a tax', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->delete($taxModel);
+    $result = $service->delete($taxModel);
     expect($result)->toBeTrue();
 });
 
-test('creates a tax', function () {
+test('creates a tax', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('checkLimits')
         ->atLeast()->once();
@@ -246,17 +256,18 @@ test('creates a tax', function () {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'name' => 'tax',
         'taxrate' => '0.18',
     ];
-    $result = $this->service->create($data);
+    $result = $service->create($data);
     expect($result)->toBeInt()->toBe($newId);
 });
 
-test('updates a tax', function () {
+test('updates a tax', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
     $taxModel = new \Model_Tax();
     $taxModel->loadBean(new \Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
@@ -267,24 +278,26 @@ test('updates a tax', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'name' => 'tax',
         'taxrate' => '0.18',
     ];
-    $result = $this->service->update($taxModel, $data);
+    $result = $service->update($taxModel, $data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('gets search query', function () {
-    $result = $this->service->getSearchQuery([]);
+test('gets search query', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
+    $result = $service->getSearchQuery([]);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
     expect($result[1])->toBe([]);
 });
 
-test('converts to api array', function () {
+test('converts to api array', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTax();
     $taxModel = new \Model_Tax();
     $taxModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -296,8 +309,8 @@ test('converts to api array', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->toApiArray($taxModel);
+    $result = $service->toApiArray($taxModel);
     expect($result)->toBeArray();
 });

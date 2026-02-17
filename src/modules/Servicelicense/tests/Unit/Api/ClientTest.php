@@ -13,17 +13,19 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 beforeEach(function () {
-    $this->api = new \Box\Mod\Servicelicense\Api\Client();
+    $api = new \Box\Mod\Servicelicense\Api\Client();
 });
 
-test('getDi returns dependency injection container', function () {
+test('getDi returns dependency injection container', function (): void {
+    $api = new \Box\Mod\Servicelicense\Api\Client();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toEqual($di);
 });
 
-test('reset returns true', function () {
+test('reset returns true', function (): void {
+    $api = new \Box\Mod\Servicelicense\Api\Client();
     $data = [
         'order_id' => 1,
     ];
@@ -48,7 +50,8 @@ test('reset returns true', function () {
     expect($result)->toBeTrue();
 });
 
-test('getService returns service license model', function () {
+test('getService returns service license model', function (): void {
+    $api = new \Box\Mod\Servicelicense\Api\Client();
     $data['order_id'] = 1;
 
     $orderServiceMock = Mockery::mock(\Box\Mod\Order\Service::class);
@@ -67,17 +70,18 @@ test('getService returns service license model', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
-    $this->api->setIdentity($clientModel);
+    $api->setIdentity($clientModel);
 
-    $result = $this->api->_getService($data);
+    $result = $api->_getService($data);
     expect($result)->toBeInstanceOf(\Model_ServiceLicense::class);
 });
 
-test('getService throws exception when order not activated', function () {
+test('getService throws exception when order not activated', function (): void {
+    $api = new \Box\Mod\Servicelicense\Api\Client();
     $data['order_id'] = 1;
 
     $orderServiceMock = Mockery::mock(\Box\Mod\Order\Service::class);
@@ -96,11 +100,11 @@ test('getService throws exception when order not activated', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
-    $this->api->setIdentity($clientModel);
+    $api->setIdentity($clientModel);
 
-    $this->api->_getService($data);
+    $api->_getService($data);
 })->throws(\FOSSBilling\Exception::class, 'Order is not activated');

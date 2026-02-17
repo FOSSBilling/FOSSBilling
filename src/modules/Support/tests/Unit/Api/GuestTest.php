@@ -16,7 +16,8 @@ beforeEach(function () {
     $this->guestApi = new \Box\Mod\Support\Api\Guest();
 });
 
-test('ticket create', function () {
+test('ticket create', function (): void {
+    $api = new \Box\Mod\Support\Api\Guest();
         $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
         $serviceMock->shouldReceive('ticketCreateForGuest')->atLeast()->once()
             ->andReturn(bin2hex(random_bytes(random_int(100, 127))));

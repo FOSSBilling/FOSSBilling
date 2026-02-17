@@ -17,6 +17,7 @@ beforeEach(function (): void {
 });
 
 test('checkout processes cart and returns result array', function (): void {
+    $api = new \Box\Mod\Cart\Api\Client();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
 

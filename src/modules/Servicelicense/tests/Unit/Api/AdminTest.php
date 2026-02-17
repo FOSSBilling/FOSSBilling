@@ -13,17 +13,19 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 beforeEach(function () {
-    $this->api = new \Box\Mod\Servicelicense\Api\Admin();
+    $api = new \Box\Mod\Servicelicense\Api\Admin();
 });
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $api = new \Box\Mod\Servicelicense\Api\Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets plugin pairs', function () {
+test('gets plugin pairs', function (): void {
+    $api = new \Box\Mod\Servicelicense\Api\Admin();
     $licensePluginArray[]['filename'] = 'plugin1';
     $licensePluginArray[]['filename'] = 'plugin2';
     $licensePluginArray[]['filename'] = 'plugin3';
@@ -40,14 +42,15 @@ test('gets plugin pairs', function () {
         ->once()
         ->andReturn($licensePluginArray);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->plugin_get_pairs([]);
+    $result = $api->plugin_get_pairs([]);
     expect($result)->toBeArray()
         ->and($result)->toBe($expected);
 });
 
-test('updates license', function () {
+test('updates license', function (): void {
+    $api = new \Box\Mod\Servicelicense\Api\Admin();
     $data = [
         'order_id' => 1,
     ];
@@ -72,7 +75,8 @@ test('updates license', function () {
         ->and($result)->toBeTrue();
 });
 
-test('resets license', function () {
+test('resets license', function (): void {
+    $api = new \Box\Mod\Servicelicense\Api\Admin();
     $data = [
         'order_id' => 1,
     ];
@@ -97,7 +101,8 @@ test('resets license', function () {
         ->and($result)->toBeTrue();
 });
 
-test('gets service', function () {
+test('gets service', function (): void {
+    $api = new \Box\Mod\Servicelicense\Api\Admin();
     $data['order_id'] = 1;
 
     $orderServiceMock = Mockery::mock(\Box\Mod\Order\Service::class);
@@ -116,13 +121,14 @@ test('gets service', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->_getService($data);
+    $result = $api->_getService($data);
     expect($result)->toBeInstanceOf(\Model_ServiceLicense::class);
 });
 
-test('throws exception when order not activated', function () {
+test('throws exception when order not activated', function (): void {
+    $api = new \Box\Mod\Servicelicense\Api\Admin();
     $data['order_id'] = 1;
 
     $orderServiceMock = Mockery::mock(\Box\Mod\Order\Service::class);
@@ -141,8 +147,8 @@ test('throws exception when order not activated', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    expect(fn () => $this->api->_getService($data))
+    expect(fn () => $api->_getService($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Order is not activated');
 });

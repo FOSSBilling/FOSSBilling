@@ -13,17 +13,19 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 beforeEach(function () {
-    $this->api = new \Box\Mod\System\Api\Guest();
+    $api = new \Box\Mod\System\Api\Guest();
 });
 
-test('getDi returns set dependency injection container', function () {
+test('getDi returns set dependency injection container', function (): void {
+    $api = new \Box\Mod\System\Api\Guest();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toEqual($di);
 });
 
-test('version returns string when admin is logged in', function () {
+test('version returns string when admin is logged in', function (): void {
+    $api = new \Box\Mod\System\Api\Guest();
     $authorizationMock = Mockery::mock('\Box_Authorization');
     $authorizationMock
     ->shouldReceive('isAdminLoggedIn')
@@ -44,14 +46,15 @@ test('version returns string when admin is logged in', function () {
     ->with('hide_version_public')
     ->andReturn(0);
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $result = $this->api->version();
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $result = $api->version();
 
     expect($result)->toBeString()->not->toBeEmpty();
 });
 
-test('version returns string when public display is enabled', function () {
+test('version returns string when public display is enabled', function (): void {
+    $api = new \Box\Mod\System\Api\Guest();
     $authorizationMock = Mockery::mock('\Box_Authorization');
     $authorizationMock
     ->shouldReceive('isAdminLoggedIn')
@@ -72,14 +75,15 @@ test('version returns string when public display is enabled', function () {
         ->with('hide_version_public')
     ->andReturn(0);
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $result = $this->api->version();
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $result = $api->version();
 
     expect($result)->toBeString()->not->toBeEmpty();
 });
 
-test('version returns empty string when public display is disabled', function () {
+test('version returns empty string when public display is disabled', function (): void {
+    $api = new \Box\Mod\System\Api\Guest();
     $authorizationMock = Mockery::mock('\Box_Authorization');
     $authorizationMock
     ->shouldReceive('isAdminLoggedIn')
@@ -96,14 +100,15 @@ test('version returns empty string when public display is disabled', function ()
         ->with('hide_version_public')
     ->andReturn(1);
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $result = $this->api->version();
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $result = $api->version();
 
     expect($result)->toBeString()->toBeEmpty();
 });
 
-test('company returns company data when public display is enabled', function () {
+test('company returns company data when public display is enabled', function (): void {
+    $api = new \Box\Mod\System\Api\Guest();
     $companyData = ['companyName' => 'TestCo'];
 
     $authMock = Mockery::mock('\Box_Authorization');
@@ -127,14 +132,15 @@ test('company returns company data when public display is enabled', function () 
 
     $di = container();
     $di['auth'] = $authMock;
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $result = $this->api->company();
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $result = $api->company();
 
     expect($result)->toBeArray()->not->toBeEmpty();
 });
 
-test('company filters sensitive data when public display is disabled', function () {
+test('company filters sensitive data when public display is disabled', function (): void {
+    $api = new \Box\Mod\System\Api\Guest();
     $companyData = [
         'companyName' => 'TestCo',
         'vat_number' => 'Test VAT',
@@ -168,9 +174,9 @@ test('company filters sensitive data when public display is disabled', function 
 
     $di = container();
     $di['auth'] = $authMock;
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $result = $this->api->company();
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $result = $api->company();
 
     expect($result)->toBeArray();
     expect($result)->not->toHaveKey('vat_number');
@@ -183,7 +189,8 @@ test('company filters sensitive data when public display is disabled', function 
     expect($result)->not->toHaveKey('address_3');
 });
 
-test('period_title returns period title string', function () {
+test('period_title returns period title string', function (): void {
+    $api = new \Box\Mod\System\Api\Guest();
     $data = ['code' => 'periodCode'];
 
     $servuceMock = Mockery::mock(\Box\Mod\System\Service::class);
@@ -193,24 +200,26 @@ test('period_title returns period title string', function () {
     ->andReturn('periodTtitleValue');
     $di = container();
 
-    $this->api->setDi($di);
-    $this->api->setService($servuceMock);
+    $api->setDi($di);
+    $api->setService($servuceMock);
 
-    $result = $this->api->period_title($data);
+    $result = $api->period_title($data);
     expect($result)->toBeString();
 });
 
-test('period_title returns dash when code is missing', function () {
+test('period_title returns dash when code is missing', function (): void {
+    $api = new \Box\Mod\System\Api\Guest();
     $data = [];
     $expected = '-';
     $di = container();
 
-    $this->api->setDi($di);
-    $result = $this->api->period_title($data);
+    $api->setDi($di);
+    $result = $api->period_title($data);
     expect($result)->toBeString()->toEqual($expected);
 });
 
-test('get_pending_messages returns and clears pending messages', function () {
+test('get_pending_messages returns and clears pending messages', function (): void {
+    $api = new \Box\Mod\System\Api\Guest();
     $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
     $messageArr = ['Important message to user'];
     $serviceMock
@@ -220,7 +229,7 @@ test('get_pending_messages returns and clears pending messages', function () {
 
     $serviceMock->shouldReceive('clearPendingMessages')->atLeast()->once();
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->get_pending_messages();
+    $api->setService($serviceMock);
+    $result = $api->get_pending_messages();
     expect($result)->toBeArray()->toEqual($messageArr);
 });

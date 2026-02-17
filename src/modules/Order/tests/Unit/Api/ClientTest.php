@@ -15,17 +15,19 @@ use Box\Mod\Order\Api\Client;
 use Box\Mod\Order\Service;
 
 beforeEach(function () {
-    $this->api = new Client();
+    $api = new Client();
 });
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $api = new \Box\Mod\Order\Api\Client();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets order list', function () {
+test('gets order list', function (): void {
+    $api = new \Box\Mod\Order\Api\Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSearchQuery')
         ->atLeast()->once()
@@ -59,20 +61,21 @@ test('gets order list', function () {
     $di['pager'] = $paginatorMock;
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
     $client = new Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
     $client->id = 1;
 
-    $this->api->setIdentity($client);
-    $this->api->setService($serviceMock);
+    $api->setIdentity($client);
+    $api->setService($serviceMock);
 
-    $result = $this->api->get_list([]);
+    $result = $api->get_list([]);
     expect($result)->toBeArray();
 });
 
-test('gets expiring order list', function () {
+test('gets expiring order list', function (): void {
+    $api = new \Box\Mod\Order\Api\Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSoonExpiringActiveOrdersQuery')
         ->atLeast()->once()
@@ -89,21 +92,22 @@ test('gets expiring order list', function () {
     $di = container();
     $di['pager'] = $paginatorMock;
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
     $client = new Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
     $client->id = 1;
 
-    $this->api->setIdentity($client);
-    $this->api->setService($serviceMock);
+    $api->setIdentity($client);
+    $api->setService($serviceMock);
 
     $data = ['expiring' => true];
-    $result = $this->api->get_list($data);
+    $result = $api->get_list($data);
     expect($result)->toBeArray();
 });
 
-test('gets an order', function () {
+test('gets an order', function (): void {
+    $api = new \Box\Mod\Order\Api\Client();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -124,7 +128,8 @@ test('gets an order', function () {
     expect($result)->toBeArray();
 });
 
-test('gets order addons', function () {
+test('gets order addons', function (): void {
+    $api = new \Box\Mod\Order\Api\Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getOrderAddonsList')
         ->atLeast()->once()
@@ -149,7 +154,8 @@ test('gets order addons', function () {
     expect($result[0])->toBeArray();
 });
 
-test('gets order service data', function () {
+test('gets order service data', function (): void {
+    $api = new \Box\Mod\Order\Api\Client();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -174,7 +180,8 @@ test('gets order service data', function () {
     expect($result)->toBeArray();
 });
 
-test('gets upgradable products', function () {
+test('gets upgradable products', function (): void {
+    $api = new \Box\Mod\Order\Api\Client();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -205,7 +212,8 @@ test('gets upgradable products', function () {
     expect($result)->toBeArray();
 });
 
-test('deletes a pending order', function () {
+test('deletes a pending order', function (): void {
+    $api = new \Box\Mod\Order\Api\Client();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
@@ -227,7 +235,8 @@ test('deletes a pending order', function () {
     expect($result)->toBeTrue();
 });
 
-test('throws exception when deleting non-pending order', function () {
+test('throws exception when deleting non-pending order', function (): void {
+    $api = new \Box\Mod\Order\Api\Client();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -249,7 +258,8 @@ test('throws exception when deleting non-pending order', function () {
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('gets order for client', function () {
+test('gets order for client', function (): void {
+    $api = new \Box\Mod\Order\Api\Client();
     $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
 
@@ -269,16 +279,17 @@ test('gets order for client', function () {
 
     $di = container();
     $di['validator'] = $validatorMock;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $this->api->setService($serviceMock);
-    $this->api->setIdentity($client);
+    $api->setService($serviceMock);
+    $api->setIdentity($client);
 
     $data = ['id' => 1];
-    $this->api->get($data);
+    $api->get($data);
 });
 
-test('throws exception when order not found for client', function () {
+test('throws exception when order not found for client', function (): void {
+    $api = new \Box\Mod\Order\Api\Client();
     $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
 
@@ -295,13 +306,13 @@ test('throws exception when order not found for client', function () {
 
     $di = container();
     $di['validator'] = $validatorMock;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $this->api->setService($serviceMock);
-    $this->api->setIdentity($client);
+    $api->setService($serviceMock);
+    $api->setIdentity($client);
 
     $data = ['id' => 1];
 
-    expect(fn () => $this->api->get($data))
+    expect(fn () => $api->get($data))
         ->toThrow(\FOSSBilling\Exception::class);
 });

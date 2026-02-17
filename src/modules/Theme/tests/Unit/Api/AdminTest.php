@@ -14,30 +14,33 @@ use function Tests\Helpers\container;
 use Box\Mod\Theme\Api\Admin;
 
 beforeEach(function (): void {
-    $this->api = new Admin();
+    $api = new Admin();
 });
 
 test('testGetDi', function (): void {
+    $api = new \Box\Mod\Theme\Api\Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
 test('testGetList', function (): void {
+    $api = new \Box\Mod\Theme\Api\Admin();
     $systemServiceMock = Mockery::mock(\Box\Mod\Theme\Service::class);
     $systemServiceMock->shouldReceive('getThemes')
         ->atLeast()
         ->once()
         ->andReturn([]);
 
-    $this->api->setService($systemServiceMock);
+    $api->setService($systemServiceMock);
 
-    $result = $this->api->get_list([]);
+    $result = $api->get_list([]);
     expect($result)->toBeArray();
 });
 
 test('testGet', function (): void {
+    $api = new \Box\Mod\Theme\Api\Admin();
     $data = [
         'code' => 'themeCode',
     ];
@@ -49,14 +52,15 @@ test('testGet', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $this->api->setDi($di);
-    $this->api->setService($systemServiceMock);
+    $api->setDi($di);
+    $api->setService($systemServiceMock);
 
-    $result = $this->api->get($data);
+    $result = $api->get($data);
     expect($result)->toBeArray();
 });
 
 test('testSelectNotAdminTheme', function (): void {
+    $api = new \Box\Mod\Theme\Api\Admin();
     $data = [
         'code' => 'pjw',
     ];
@@ -79,14 +83,15 @@ test('testSelectNotAdminTheme', function (): void {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $systemServiceMock);
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->select($data);
+    $result = $api->select($data);
     expect($result)->toBeTrue();
 });
 
 test('testSelectAdminTheme', function (): void {
+    $api = new \Box\Mod\Theme\Api\Admin();
     $data = [
         'code' => 'pjw',
     ];
@@ -109,14 +114,15 @@ test('testSelectAdminTheme', function (): void {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $systemServiceMock);
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->select($data);
+    $result = $api->select($data);
     expect($result)->toBeTrue();
 });
 
 test('testPresetDelete', function (): void {
+    $api = new \Box\Mod\Theme\Api\Admin();
     $data = [
         'code' => 'themeCode',
         'preset' => 'themePreset',
@@ -134,15 +140,16 @@ test('testPresetDelete', function (): void {
         ->once();
 
     $di = container();
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->preset_delete($data);
+    $result = $api->preset_delete($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
 test('testPresetSelect', function (): void {
+    $api = new \Box\Mod\Theme\Api\Admin();
     $data = [
         'code' => 'themeCode',
         'preset' => 'themePreset',
@@ -160,11 +167,11 @@ test('testPresetSelect', function (): void {
         ->once();
 
     $di = container();
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->preset_select($data);
+    $result = $api->preset_select($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });

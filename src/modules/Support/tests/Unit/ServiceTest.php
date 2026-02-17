@@ -16,17 +16,18 @@ use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Email\Service as EmailService;
 
 beforeEach(function () {
-    $this->service = new Service();
+    $service = new Service();
 });
 
 /*
  * Dependency Injection Tests
  */
 
-test('gets and sets dependency injection container', function () {
+test('gets and sets dependency injection container', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
@@ -34,7 +35,8 @@ test('gets and sets dependency injection container', function () {
  * Event Handler Tests
  */
 
-test('handles after client open ticket event', function () {
+test('handles after client open ticket event', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $toApiArrayReturn = [
         'client' => [
             'id' => 1,
@@ -79,7 +81,8 @@ test('handles after client open ticket event', function () {
     expect($result)->toBeNull();
 });
 
-test('handles after admin open ticket event', function () {
+test('handles after admin open ticket event', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $toApiArrayReturn = [
         'client' => [
             'id' => 1,
@@ -124,7 +127,8 @@ test('handles after admin open ticket event', function () {
     expect($result)->toBeNull();
 });
 
-test('handles after admin close ticket event', function () {
+test('handles after admin close ticket event', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $toApiArrayReturn = [
         'client' => [
             'id' => 1,
@@ -169,7 +173,8 @@ test('handles after admin close ticket event', function () {
     expect($result)->toBeNull();
 });
 
-test('handles after admin reply ticket event', function () {
+test('handles after admin reply ticket event', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $toApiArrayReturn = [
         'client' => [
             'id' => 1,
@@ -214,7 +219,8 @@ test('handles after admin reply ticket event', function () {
     expect($result)->toBeNull();
 });
 
-test('handles after guest public ticket open event', function () {
+test('handles after guest public ticket open event', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $toApiArrayReturn = [
         'author_email' => 'email@example.com',
         'author_name' => 'Name',
@@ -257,7 +263,8 @@ test('handles after guest public ticket open event', function () {
     expect($result)->toBeNull();
 });
 
-test('handles after admin public ticket open event', function () {
+test('handles after admin public ticket open event', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $toApiArrayReturn = [
         'author_email' => 'email@example.com',
         'author_name' => 'Name',
@@ -301,7 +308,8 @@ test('handles after admin public ticket open event', function () {
     expect($result)->toBeNull();
 });
 
-test('handles after admin public ticket reply event', function () {
+test('handles after admin public ticket reply event', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $toApiArrayReturn = [
         'author_email' => 'email@example.com',
         'author_name' => 'Name',
@@ -345,7 +353,8 @@ test('handles after admin public ticket reply event', function () {
     expect($result)->toBeNull();
 });
 
-test('handles after admin public ticket close event', function () {
+test('handles after admin public ticket close event', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $toApiArrayReturn = [
         'author_email' => 'email@example.com',
         'author_name' => 'Name',
@@ -393,7 +402,8 @@ test('handles after admin public ticket close event', function () {
  * Ticket Tests
  */
 
-test('gets ticket by id', function () {
+test('gets ticket by id', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
@@ -401,13 +411,14 @@ test('gets ticket by id', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getTicketById(1);
+    $result = $service->getTicketById(1);
     expect($result)->toBeInstanceOf(\Model_SupportTicket::class);
 });
 
-test('gets public ticket by id', function () {
+test('gets public ticket by id', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $supportPTicketModel = new \Model_SupportPTicket();
     $supportPTicketModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -417,18 +428,20 @@ test('gets public ticket by id', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getPublicTicketById(1);
+    $result = $service->getPublicTicketById(1);
     expect($result)->toBeInstanceOf(\Model_SupportPTicket::class);
 });
 
-test('gets statuses', function () {
-    $result = $this->service->getStatuses();
+test('gets statuses', function (): void {
+    $service = new \Box\Mod\Support\Service();
+    $result = $service->getStatuses();
     expect($result)->toBeArray();
 });
 
-test('finds one by client', function () {
+test('finds one by client', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $supportTicketModel = new \Model_SupportTicket();
     $supportTicketModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -438,17 +451,18 @@ test('finds one by client', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $client = new \Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
     $client->id = 1;
 
-    $result = $this->service->findOneByClient($client, 1);
+    $result = $service->findOneByClient($client, 1);
     expect($result)->toBeInstanceOf(\Model_SupportTicket::class);
 });
 
-test('throws exception when ticket not found by client', function () {
+test('throws exception when ticket not found by client', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
@@ -456,13 +470,13 @@ test('throws exception when ticket not found by client', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $client = new \Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
     $client->id = 1;
 
-    $this->service->findOneByClient($client, 1);
+    $service->findOneByClient($client, 1);
 })->throws(\FOSSBilling\Exception::class);
 
 dataset('searchQueryData', [
@@ -503,14 +517,16 @@ dataset('searchQueryData', [
 ]);
 
 test('gets search query', function ($data) {
+    $service = new \Box\Mod\Support\Service();
     $di = container();
-    $this->service->setDi($di);
-    [$query, $bindings] = $this->service->getSearchQuery($data);
+    $service->setDi($di);
+    [$query, $bindings] = $service->getSearchQuery($data);
     expect($query)->toBeString();
     expect($bindings)->toBeArray();
 })->with('searchQueryData');
 
-test('counts tickets', function () {
+test('counts tickets', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $arr = [
         \Model_SupportTicket::OPENED => 1,
         \Model_SupportTicket::ONHOLD => 1,
@@ -523,15 +539,16 @@ test('counts tickets', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->counter();
+    $result = $service->counter();
     expect($result)->toBeArray();
     expect($result)->toHaveKey('total');
     expect($result['total'])->toBe(array_sum($arr));
 });
 
-test('gets latest tickets', function () {
+test('gets latest tickets', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
@@ -541,14 +558,15 @@ test('gets latest tickets', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getLatest();
+    $result = $service->getLatest();
     expect($result)->toBeArray();
     expect($result[0])->toBeInstanceOf(\Model_SupportTicket::class);
 });
 
-test('gets expired tickets', function () {
+test('gets expired tickets', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
@@ -558,14 +576,15 @@ test('gets expired tickets', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getExpired();
+    $result = $service->getExpired();
     expect($result)->toBeArray();
     expect($result[0])->toBeArray();
 });
 
-test('counts by status', function () {
+test('counts by status', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()->once()
@@ -573,13 +592,14 @@ test('counts by status', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->countByStatus('open');
+    $result = $service->countByStatus('open');
     expect($result)->toBeInt();
 });
 
-test('gets active tickets count for order', function () {
+test('gets active tickets count for order', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()->once()
@@ -587,16 +607,17 @@ test('gets active tickets count for order', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->getActiveTicketsCountForOrder($order);
+    $result = $service->getActiveTicketsCountForOrder($order);
     expect($result)->toBeInt();
 });
 
-test('checks if task already exists returns true', function () {
+test('checks if task already exists returns true', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $supportTicketModel = new \Model_SupportTicket();
     $supportTicketModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -606,16 +627,17 @@ test('checks if task already exists returns true', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $client = new \Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->checkIfTaskAlreadyExists($client, 1, \Model_SupportTicket::REL_TYPE_ORDER, \Model_SupportTicket::REL_TASK_UPGRADE);
+    $result = $service->checkIfTaskAlreadyExists($client, 1, \Model_SupportTicket::REL_TYPE_ORDER, \Model_SupportTicket::REL_TASK_UPGRADE);
     expect($result)->toBeTrue();
 });
 
-test('checks if task already exists returns false', function () {
+test('checks if task already exists returns false', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
@@ -623,12 +645,12 @@ test('checks if task already exists returns false', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $client = new \Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->checkIfTaskAlreadyExists($client, 1, \Model_SupportTicket::REL_TYPE_ORDER, \Model_SupportTicket::REL_TASK_CANCEL);
+    $result = $service->checkIfTaskAlreadyExists($client, 1, \Model_SupportTicket::REL_TYPE_ORDER, \Model_SupportTicket::REL_TASK_CANCEL);
     expect($result)->toBeFalse();
 });
 
@@ -638,6 +660,7 @@ dataset('closeTicketIdentities', [
 ]);
 
 test('closes a ticket', function ($identity) {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
@@ -650,16 +673,17 @@ test('closes a ticket', function ($identity) {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['events_manager'] = $eventMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->closeTicket($ticket, $identity);
+    $result = $service->closeTicket($ticket, $identity);
     expect($result)->toBeTrue();
 })->with('closeTicketIdentities');
 
-test('auto closes a ticket', function () {
+test('auto closes a ticket', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
@@ -668,16 +692,17 @@ test('auto closes a ticket', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->autoClose($ticket);
+    $result = $service->autoClose($ticket);
     expect($result)->toBeTrue();
 });
 
-test('checks if ticket can be reopened when not closed', function () {
+test('checks if ticket can be reopened when not closed', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $helpdesk = new \Model_SupportHelpdesk();
     $helpdesk->loadBean(new \Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
@@ -686,16 +711,17 @@ test('checks if ticket can be reopened when not closed', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->canBeReopened($ticket);
+    $result = $service->canBeReopened($ticket);
     expect($result)->toBeTrue();
 });
 
-test('checks if ticket can be reopened', function () {
+test('checks if ticket can be reopened', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $helpdesk = new \Model_SupportHelpdesk();
     $helpdesk->loadBean(new \Tests\Helpers\DummyBean());
     $helpdesk->support_helpdesk_id = 1;
@@ -709,17 +735,18 @@ test('checks if ticket can be reopened', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
     $ticket->status = \Model_SupportTicket::CLOSED;
 
-    $result = $this->service->canBeReopened($ticket);
+    $result = $service->canBeReopened($ticket);
     expect($result)->toBeTrue();
 });
 
-test('removes tickets by client', function () {
+test('removes tickets by client', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $model = new \Model_SupportTicket();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->id = 1;
@@ -735,16 +762,17 @@ test('removes tickets by client', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $client = new \Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->rmByClient($client);
+    $result = $service->rmByClient($client);
     expect($result)->toBeNull();
 });
 
-test('removes a ticket', function () {
+test('removes a ticket', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $callCount = 0;
     $dbMock->shouldReceive('find')
@@ -761,16 +789,17 @@ test('removes a ticket', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->rm($ticket);
+    $result = $service->rm($ticket);
     expect($result)->toBeTrue();
 });
 
-test('converts ticket to api array', function () {
+test('converts ticket to api array', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $supportTicketMessageModel = new \Model_SupportTicketMessage();
     $supportTicketMessageModel->loadBean(new \Tests\Helpers\DummyBean());
     $helpdesk = new \Model_SupportHelpdesk();
@@ -831,7 +860,8 @@ test('converts ticket to api array', function () {
     expect(count($result['messages']))->toBe(count($ticketMessages));
 });
 
-test('converts ticket to api array with rel details', function () {
+test('converts ticket to api array with rel details', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
@@ -892,7 +922,8 @@ test('converts ticket to api array with rel details', function () {
     expect(count($result['messages']))->toBe(count($ticketMessages));
 });
 
-test('gets client api array for ticket', function () {
+test('gets client api array for ticket', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
@@ -907,16 +938,17 @@ test('gets client api array for ticket', function () {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->getClientApiArrayForTicket($ticket);
+    $result = $service->getClientApiArrayForTicket($ticket);
     expect($result)->toBeArray();
 });
 
-test('gets client api array for ticket when client not exists', function () {
+test('gets client api array for ticket when client not exists', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
@@ -929,12 +961,12 @@ test('gets client api array for ticket when client not exists', function () {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->getClientApiArrayForTicket($ticket);
+    $result = $service->getClientApiArrayForTicket($ticket);
     expect($result)->toBeArray();
 });
 
@@ -943,19 +975,21 @@ test('gets client api array for ticket when client not exists', function () {
  */
 
 test('canned get search query', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $di = container();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'search' => 'query',
     ];
 
-    [$query, $bindings] = $this->service->cannedGetSearchQuery($data);
+    [$query, $bindings] = $service->cannedGetSearchQuery($data);
     expect($query)->toBeString();
     expect($bindings)->toBeArray();
 });
 
 test('canned get grouped pairs', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $pairs = [
         0 => [
             'id' => 1,
@@ -971,7 +1005,7 @@ test('canned get grouped pairs', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $expected = [
         'General' => [
@@ -979,12 +1013,13 @@ test('canned get grouped pairs', function (): void {
         ],
     ];
 
-    $result = $this->service->cannedGetGroupedPairs();
+    $result = $service->cannedGetGroupedPairs();
     expect($result)->toBeArray();
     expect($result)->toEqual($expected);
 });
 
 test('canned rm', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('trash')
         ->atLeast()->once()
@@ -993,16 +1028,17 @@ test('canned rm', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $canned = new \Model_SupportPr();
     $canned->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->cannedRm($canned);
+    $result = $service->cannedRm($canned);
     expect($result)->toBeTrue();
 });
 
 test('canned to api array', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $category = new \Model_SupportPrCategory();
     $category->loadBean(new \Tests\Helpers\DummyBean());
     $category->id = 1;
@@ -1018,12 +1054,12 @@ test('canned to api array', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $canned = new \Model_SupportPr();
     $canned->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->cannedToApiArray($canned);
+    $result = $service->cannedToApiArray($canned);
     expect($result)->toBeArray();
     expect($result)->toHaveKey('category');
     expect($result['category'])->toBeArray();
@@ -1032,6 +1068,7 @@ test('canned to api array', function (): void {
 });
 
 test('canned to api array category not found', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('toArray')
         ->atLeast()->once()
@@ -1042,18 +1079,19 @@ test('canned to api array category not found', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $canned = new \Model_SupportPr();
     $canned->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->cannedToApiArray($canned);
+    $result = $service->cannedToApiArray($canned);
     expect($result)->toBeArray();
     expect($result)->toHaveKey('category');
     expect($result['category'])->toEqual([]);
 });
 
 test('canned category get pairs', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAssoc')
         ->atLeast()->once()
@@ -1061,13 +1099,14 @@ test('canned category get pairs', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->cannedCategoryGetPairs();
+    $result = $service->cannedCategoryGetPairs();
     expect($result)->toBeArray();
 });
 
 test('canned category rm', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('trash')
         ->atLeast()->once()
@@ -1076,16 +1115,17 @@ test('canned category rm', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $canned = new \Model_SupportPrCategory();
     $canned->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->cannedCategoryRm($canned);
+    $result = $service->cannedCategoryRm($canned);
     expect($result)->toBeTrue();
 });
 
 test('canned category to api array', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('toArray')
         ->atLeast()->once()
@@ -1094,16 +1134,17 @@ test('canned category to api array', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $canned = new \Model_SupportPrCategory();
     $canned->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->cannedCategoryToApiArray($canned);
+    $result = $service->cannedCategoryToApiArray($canned);
     expect($result)->toBeArray();
 });
 
 test('canned create', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $randId = 1;
     $helpDeskModel = new \Model_SupportPr();
     $helpDeskModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -1125,14 +1166,15 @@ test('canned create', function (): void {
     $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->cannedCreate('Name', 1, 'Content');
+    $result = $service->cannedCreate('Name', 1, 'Content');
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 });
 
 test('canned update', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
@@ -1141,7 +1183,7 @@ test('canned update', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $model = new \Model_SupportPr();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -1152,11 +1194,12 @@ test('canned update', function (): void {
         'content' => 1,
     ];
 
-    $result = $this->service->cannedUpdate($model, $data);
+    $result = $service->cannedUpdate($model, $data);
     expect($result)->toBeTrue();
 });
 
 test('canned category create', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $randId = 1;
     $supportPrCategoryModel = new \Model_SupportPrCategory();
     $supportPrCategoryModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -1172,14 +1215,15 @@ test('canned category create', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->cannedCategoryCreate('Name');
+    $result = $service->cannedCategoryCreate('Name');
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 });
 
 test('canned category update', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $randId = 1;
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
@@ -1189,12 +1233,12 @@ test('canned category update', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $model = new \Model_SupportPrCategory();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->cannedCategoryUpdate($model, 'Title');
+    $result = $service->cannedCategoryUpdate($model, 'Title');
     expect($result)->toBeTrue();
 });
 
@@ -1203,13 +1247,14 @@ test('canned category update', function (): void {
  */
 
 test('helpdesk get search query', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $di = container();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'search' => 'SearchQuery',
     ];
-    [$query, $bindings] = $this->service->helpdeskGetSearchQuery($data);
+    [$query, $bindings] = $service->helpdeskGetSearchQuery($data);
 
     $expectedBindings = [
         ':name' => '%SearchQuery%',
@@ -1223,6 +1268,7 @@ test('helpdesk get search query', function (): void {
 });
 
 test('helpdesk get pairs', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAssoc')
         ->atLeast()->once()
@@ -1230,13 +1276,14 @@ test('helpdesk get pairs', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->helpdeskGetPairs();
+    $result = $service->helpdeskGetPairs();
     expect($result)->toBeArray();
 });
 
 test('helpdesk rm', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
@@ -1248,17 +1295,18 @@ test('helpdesk rm', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $helpdesk = new \Model_SupportHelpdesk();
     $helpdesk->loadBean(new \Tests\Helpers\DummyBean());
     $helpdesk->id = 1;
     
-    $result = $this->service->helpdeskRm($helpdesk);
+    $result = $service->helpdeskRm($helpdesk);
     expect($result)->toBeTrue();
 });
 
 test('helpdesk rm has tickets exception', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
@@ -1269,17 +1317,18 @@ test('helpdesk rm has tickets exception', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $helpdesk = new \Model_SupportHelpdesk();
     $helpdesk->loadBean(new \Tests\Helpers\DummyBean());
     $helpdesk->id = 1;
     
     $this->expectException(\FOSSBilling\Exception::class);
-    $this->service->helpdeskRm($helpdesk);
+    $service->helpdeskRm($helpdesk);
 });
 
 test('helpdesk to api array', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('toArray')
         ->atLeast()->once()
@@ -1287,17 +1336,18 @@ test('helpdesk to api array', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $helpdesk = new \Model_SupportHelpdesk();
     $helpdesk->loadBean(new \Tests\Helpers\DummyBean());
     $helpdesk->id = 1;
     
-    $result = $this->service->helpdeskToApiArray($helpdesk);
+    $result = $service->helpdeskToApiArray($helpdesk);
     expect($result)->toBeArray();
 });
 
 test('helpdesk update', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
@@ -1306,7 +1356,7 @@ test('helpdesk update', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $helpdesk = new \Model_SupportHelpdesk();
     $helpdesk->loadBean(new \Tests\Helpers\DummyBean());
@@ -1319,11 +1369,12 @@ test('helpdesk update', function (): void {
         'signature' => 'Signature',
     ];
 
-    $result = $this->service->helpdeskUpdate($helpdesk, $data);
+    $result = $service->helpdeskUpdate($helpdesk, $data);
     expect($result)->toBeTrue();
 });
 
 test('helpdesk create', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $randId = 1;
     $helpDeskModel = new \Model_SupportHelpdesk();
     $helpDeskModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -1339,7 +1390,7 @@ test('helpdesk create', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'name' => 'Name',
@@ -1349,7 +1400,7 @@ test('helpdesk create', function (): void {
         'signature' => 'Signature',
     ];
 
-    $result = $this->service->helpdeskCreate($data);
+    $result = $service->helpdeskCreate($data);
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 });
@@ -1359,6 +1410,7 @@ test('helpdesk create', function (): void {
  */
 
 test('kb search articles', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $willReturn = [
         'pages' => 5,
         'page' => 2,
@@ -1374,9 +1426,9 @@ test('kb search articles', function (): void {
 
     $di = container();
     $di['pager'] = $pagerMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbSearchArticles('active', 'keyword', 'category');
+    $result = $service->kbSearchArticles('active', 'keyword', 'category');
     expect($result)->toBeArray();
     expect($result)->toHaveKey('list');
     expect($result['list'])->toBeArray();
@@ -1387,6 +1439,7 @@ test('kb search articles', function (): void {
 });
 
 test('kb find active article by id', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $model = new \Model_SupportKbArticle();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1397,14 +1450,15 @@ test('kb find active article by id', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbFindActiveArticleById(5);
+    $result = $service->kbFindActiveArticleById(5);
     expect($result)->toBeInstanceOf(\Model_SupportKbArticle::class);
     expect($result)->toEqual($model);
 });
 
 test('kb find active article by slug', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $model = new \Model_SupportKbArticle();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1415,14 +1469,15 @@ test('kb find active article by slug', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbFindActiveArticleBySlug('slug');
+    $result = $service->kbFindActiveArticleBySlug('slug');
     expect($result)->toBeInstanceOf(\Model_SupportKbArticle::class);
     expect($result)->toEqual($model);
 });
 
 test('kb find active', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
@@ -1430,13 +1485,14 @@ test('kb find active', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbFindActive();
+    $result = $service->kbFindActive();
     expect($result)->toBeArray();
 });
 
 test('kb hit view', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
@@ -1444,17 +1500,18 @@ test('kb hit view', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $modelKb = new \Model_SupportKbArticle();
     $modelKb->loadBean(new \Tests\Helpers\DummyBean());
     $modelKb->views = 10;
 
-    $result = $this->service->kbHitView($modelKb);
+    $result = $service->kbHitView($modelKb);
     expect($result)->toBeNull();
 });
 
 test('kb rm', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('trash')
         ->atLeast()->once()
@@ -1463,14 +1520,14 @@ test('kb rm', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $modelKb = new \Model_SupportKbArticle();
     $modelKb->loadBean(new \Tests\Helpers\DummyBean());
     $modelKb->id = 1;
     $modelKb->views = 10;
 
-    $result = $this->service->kbRm($modelKb);
+    $result = $service->kbRm($modelKb);
     expect($result)->toBeNull();
 });
 
@@ -1561,6 +1618,7 @@ dataset('kbToApiArrayProvider', function () {
 });
 
 test('kb to api array', function (\Model_SupportKbArticle $model, array $expected, bool $deep, ?\Model_Admin $identity, \Model_SupportKbArticleCategory $category): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
@@ -1568,13 +1626,14 @@ test('kb to api array', function (\Model_SupportKbArticle $model, array $expecte
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbToApiArray($model, $deep, $identity);
+    $result = $service->kbToApiArray($model, $deep, $identity);
     expect($result)->toEqual($expected);
 })->with('kbToApiArrayProvider');
 
 test('kb create article', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $randId = 1;
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
@@ -1596,14 +1655,15 @@ test('kb create article', function (): void {
     $di['db'] = $dbMock;
     $di['tools'] = $toolsMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbCreateArticle(1, 'Title', 'Active', 'Content');
+    $result = $service->kbCreateArticle(1, 'Title', 'Active', 'Content');
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 });
 
 test('kb update article', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $randId = 1;
     $model = new \Model_SupportKbArticle();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -1619,14 +1679,15 @@ test('kb update article', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbUpdateArticle($randId, 1, 'Title', 'article-slug', 'active', 'content', 1);
+    $result = $service->kbUpdateArticle($randId, 1, 'Title', 'article-slug', 'active', 'content', 1);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
 test('kb update article not found exception', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $randId = 1;
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -1639,10 +1700,10 @@ test('kb update article not found exception', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $this->expectException(\FOSSBilling\Exception::class);
-    $this->service->kbUpdateArticle($randId, 1, 'Title', 'article-slug', 'active', 'content', 1);
+    $service->kbUpdateArticle($randId, 1, 'Title', 'article-slug', 'active', 'content', 1);
 });
 
 dataset('kbCategoryGetSearchQueryProvider', function () {
@@ -1671,10 +1732,11 @@ dataset('kbCategoryGetSearchQueryProvider', function () {
 });
 
 test('kb category get search query', function (array $data, string $query, array $bindings): void {
+    $service = new \Box\Mod\Support\Service();
     $di = container();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbCategoryGetSearchQuery($data);
+    $result = $service->kbCategoryGetSearchQuery($data);
 
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
@@ -1687,6 +1749,7 @@ test('kb category get search query', function (array $data, string $query, array
 })->with('kbCategoryGetSearchQueryProvider');
 
 test('kb category find all', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAll')
         ->atLeast()->once()
@@ -1694,13 +1757,14 @@ test('kb category find all', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbCategoryFindAll();
+    $result = $service->kbCategoryFindAll();
     expect($result)->toBeArray();
 });
 
 test('kb category get pairs', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAssoc')
         ->atLeast()->once()
@@ -1708,13 +1772,14 @@ test('kb category get pairs', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbCategoryGetPairs();
+    $result = $service->kbCategoryGetPairs();
     expect($result)->toBeArray();
 });
 
 test('kb category rm', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()->once()
@@ -1726,17 +1791,18 @@ test('kb category rm', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $model = new \Model_SupportKbArticleCategory();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->id = 1;
 
-    $result = $this->service->kbCategoryRm($model);
+    $result = $service->kbCategoryRm($model);
     expect($result)->toBeTrue();
 });
 
 test('kb category rm has articles exception', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()->once()
@@ -1745,17 +1811,18 @@ test('kb category rm has articles exception', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $model = new \Model_SupportKbArticleCategory();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->id = 1;
 
     $this->expectException(\FOSSBilling\Exception::class);
-    $this->service->kbCategoryRm($model);
+    $service->kbCategoryRm($model);
 });
 
 test('kb create category', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $randId = 1;
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
@@ -1783,14 +1850,15 @@ test('kb create category', function (): void {
     $di['tools'] = $toolsMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbCreateCategory('Title', 'Description');
+    $result = $service->kbCreateCategory('Title', 'Description');
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 });
 
 test('kb update category', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $randId = 1;
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
@@ -1800,17 +1868,18 @@ test('kb update category', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $model = new \Model_SupportKbArticleCategory();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->id = 1;
 
-    $result = $this->service->kbUpdateCategory($model, 'New Title', 'new-title', 'Description');
+    $result = $service->kbUpdateCategory($model, 'New Title', 'new-title', 'Description');
     expect($result)->toBeTrue();
 });
 
 test('kb find category by id', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $model = new \Model_SupportKbArticleCategory();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1821,14 +1890,15 @@ test('kb find category by id', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbFindCategoryById(5);
+    $result = $service->kbFindCategoryById(5);
     expect($result)->toBeInstanceOf(\Model_SupportKbArticleCategory::class);
     expect($result)->toEqual($model);
 });
 
 test('kb find category by slug', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $model = new \Model_SupportKbArticleCategory();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1839,9 +1909,9 @@ test('kb find category by slug', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->kbFindCategoryBySlug('slug');
+    $result = $service->kbFindCategoryBySlug('slug');
     expect($result)->toBeInstanceOf(\Model_SupportKbArticleCategory::class);
     expect($result)->toEqual($model);
 });
@@ -1851,11 +1921,13 @@ test('kb find category by slug', function (): void {
  */
 
 test('public get statuses', function (): void {
-    $result = $this->service->publicGetStatuses();
+    $service = new \Box\Mod\Support\Service();
+    $result = $service->publicGetStatuses();
     expect($result)->toBeArray();
 });
 
 test('public find one by hash', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
@@ -1863,13 +1935,14 @@ test('public find one by hash', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->publicFindOneByHash(sha1(uniqid()));
+    $result = $service->publicFindOneByHash(sha1(uniqid()));
     expect($result)->toBeInstanceOf(\Model_SupportPTicket::class);
 });
 
 test('public find one by hash not found exception', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
@@ -1877,10 +1950,10 @@ test('public find one by hash not found exception', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $this->expectException(\FOSSBilling\Exception::class);
-    $this->service->publicFindOneByHash(sha1(uniqid()));
+    $service->publicFindOneByHash(sha1(uniqid()));
 });
 
 dataset('publicGetSearchQueryProvider', function () {
@@ -1911,15 +1984,17 @@ dataset('publicGetSearchQueryProvider', function () {
 });
 
 test('public get search query', function (array $data): void {
+    $service = new \Box\Mod\Support\Service();
     $di = container();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    [$query, $bindings] = $this->service->publicGetSearchQuery($data);
+    [$query, $bindings] = $service->publicGetSearchQuery($data);
     expect($query)->toBeString();
     expect($bindings)->toBeArray();
 })->with('publicGetSearchQueryProvider');
 
 test('public counter', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $arr = [
         \Model_SupportPTicket::OPENED => 1,
         \Model_SupportPTicket::ONHOLD => 1,
@@ -1933,15 +2008,16 @@ test('public counter', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->publicCounter();
+    $result = $service->publicCounter();
     expect($result)->toBeArray();
     expect($result)->toHaveKey('total');
     expect($result['total'])->toEqual(array_sum($arr));
 });
 
 test('public get latest', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $ticket = new \Model_SupportPTicket();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('find')
@@ -1950,14 +2026,15 @@ test('public get latest', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->publicGetLatest();
+    $result = $service->publicGetLatest();
     expect($result)->toBeArray();
     expect($result[0])->toBeInstanceOf(\Model_SupportPTicket::class);
 });
 
 test('public count by status', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()->once()
@@ -1965,13 +2042,14 @@ test('public count by status', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->publicCountByStatus('open');
+    $result = $service->publicCountByStatus('open');
     expect($result)->toBeInt();
 });
 
 test('public get expired', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $ticket = new \Model_SupportPTicket();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('find')
@@ -1980,9 +2058,9 @@ test('public get expired', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->publicGetExpired();
+    $result = $service->publicGetExpired();
     expect($result)->toBeArray();
     expect($result[0])->toBeInstanceOf(\Model_SupportPTicket::class);
 });
@@ -1995,6 +2073,7 @@ dataset('publicCloseTicketProvider', function () {
 });
 
 test('public close ticket', function (\Model_Admin|\Model_Guest $identity): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
@@ -2008,16 +2087,17 @@ test('public close ticket', function (\Model_Admin|\Model_Guest $identity): void
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['events_manager'] = $eventMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportPTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->publicCloseTicket($ticket, $identity);
+    $result = $service->publicCloseTicket($ticket, $identity);
     expect($result)->toBeTrue();
 })->with('publicCloseTicketProvider');
 
 test('public auto close', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
@@ -2026,16 +2106,17 @@ test('public auto close', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportPTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->publicAutoClose($ticket);
+    $result = $service->publicAutoClose($ticket);
     expect($result)->toBeTrue();
 });
 
 test('public rm', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('trash')
         ->atLeast()->once()
@@ -2047,12 +2128,12 @@ test('public rm', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportPTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->publicRm($ticket);
+    $result = $service->publicRm($ticket);
     expect($result)->toBeTrue();
 });
 
@@ -2070,6 +2151,7 @@ dataset('publicToApiArrayProvider', function () {
 });
 
 test('public to api array', function (?\Model_SupportPTicketMessage $findOne, string $publicMessageGetAuthorDetailsCalled): void {
+    $service = new \Box\Mod\Support\Service();
     $ticketMessages = [new \Model_SupportPTicketMessage(), new \Model_SupportPTicketMessage()];
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -2105,6 +2187,7 @@ test('public to api array', function (?\Model_SupportPTicketMessage $findOne, st
 })->with('publicToApiArrayProvider');
 
 test('public message get author details admin', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $admin = new \Model_Admin();
     $admin->loadBean(new \Tests\Helpers\DummyBean());
     $admin->id = 1;
@@ -2116,19 +2199,20 @@ test('public message get author details admin', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticketMsg = new \Model_SupportPTicketMessage();
     $ticketMsg->loadBean(new \Tests\Helpers\DummyBean());
     $ticketMsg->admin_id = 1;
 
-    $result = $this->service->publicMessageGetAuthorDetails($ticketMsg);
+    $result = $service->publicMessageGetAuthorDetails($ticketMsg);
     expect($result)->toBeArray();
     expect($result)->toHaveKey('name');
     expect($result)->toHaveKey('email');
 });
 
 test('public message get author details not admin', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $ticket = new \Model_SupportPTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
     $ticket->author_name = 'Name';
@@ -2141,19 +2225,20 @@ test('public message get author details not admin', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticketMsg = new \Model_SupportPTicketMessage();
     $ticketMsg->loadBean(new \Tests\Helpers\DummyBean());
     $ticketMsg->admin_id = null;
 
-    $result = $this->service->publicMessageGetAuthorDetails($ticketMsg);
+    $result = $service->publicMessageGetAuthorDetails($ticketMsg);
     expect($result)->toBeArray();
     expect($result)->toHaveKey('name');
     expect($result)->toHaveKey('email');
 });
 
 test('public message to api array', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('toArray')
         ->atLeast()->once()
@@ -2178,6 +2263,7 @@ test('public message to api array', function (): void {
 });
 
 test('public ticket create', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $message = new \Model_SupportTicketMessage();
     $message->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -2209,7 +2295,7 @@ test('public ticket create', function (): void {
     $di['events_manager'] = $eventMock;
     $di['tools'] = $toolsMock;
     $di['request'] = $requestMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $admin = new \Model_Admin();
     $admin->loadBean(new \Tests\Helpers\DummyBean());
@@ -2223,12 +2309,13 @@ test('public ticket create', function (): void {
         'subject' => 'Subject',
     ];
 
-    $result = $this->service->publicTicketCreate($data, $admin);
+    $result = $service->publicTicketCreate($data, $admin);
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 });
 
 test('public ticket update', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
@@ -2237,7 +2324,7 @@ test('public ticket update', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportPTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
@@ -2249,11 +2336,12 @@ test('public ticket update', function (): void {
         'priority' => 1,
     ];
 
-    $result = $this->service->publicTicketUpdate($ticket, $data);
+    $result = $service->publicTicketUpdate($ticket, $data);
     expect($result)->toBeTrue();
 });
 
 test('public ticket reply', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $message = new \Model_SupportTicketMessage();
     $message->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -2280,7 +2368,7 @@ test('public ticket reply', function (): void {
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['events_manager'] = $eventMock;
     $di['request'] = $requestMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportPTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
@@ -2288,12 +2376,13 @@ test('public ticket reply', function (): void {
     $admin = new \Model_Admin();
     $admin->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->publicTicketReply($ticket, $admin, 'Content');
+    $result = $service->publicTicketReply($ticket, $admin, 'Content');
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 });
 
 test('public ticket reply for guest', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $message = new \Model_SupportTicketMessage();
     $message->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -2318,13 +2407,13 @@ test('public ticket reply for guest', function (): void {
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['request'] = $requestMock;
     $di['events_manager'] = $eventMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportPTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
     $ticket->hash = 'test-hash-123';
 
-    $result = $this->service->publicTicketReplyForGuest($ticket, 'Content');
+    $result = $service->publicTicketReplyForGuest($ticket, 'Content');
     expect($result)->toBeString();
     expect($result)->toEqual('test-hash-123');
 });
@@ -2334,6 +2423,7 @@ test('public ticket reply for guest', function (): void {
  */
 
 test('ticket update', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
@@ -2342,7 +2432,7 @@ test('ticket update', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
@@ -2354,11 +2444,12 @@ test('ticket update', function (): void {
         'priority' => 1,
     ];
 
-    $result = $this->service->ticketUpdate($ticket, $data);
+    $result = $service->ticketUpdate($ticket, $data);
     expect($result)->toBeTrue();
 });
 
 test('ticket message update', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
@@ -2367,12 +2458,12 @@ test('ticket message update', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $message = new \Model_SupportTicketMessage();
     $message->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->ticketMessageUpdate($message, 'Content');
+    $result = $service->ticketMessageUpdate($message, 'Content');
     expect($result)->toBeTrue();
 });
 
@@ -2392,6 +2483,7 @@ dataset('ticketReplyProvider', function () {
 });
 
 test('ticket reply', function (\Model_Admin|\Model_Client $identity): void {
+    $service = new \Box\Mod\Support\Service();
     $message = new \Model_SupportTicketMessage();
     $message->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -2418,17 +2510,18 @@ test('ticket reply', function (\Model_Admin|\Model_Client $identity): void {
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['request'] = $requestMock;
     $di['events_manager'] = $eventMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->ticketReply($ticket, $identity, 'Content');
+    $result = $service->ticketReply($ticket, $identity, 'Content');
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 })->with('ticketReplyProvider');
 
 test('ticket create for admin', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $message = new \Model_SupportTicketMessage();
     $message->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -2455,7 +2548,7 @@ test('ticket create for admin', function (): void {
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['request'] = $requestMock;
     $di['events_manager'] = $eventMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $helpdesk = new \Model_SupportHelpdesk();
     $helpdesk->loadBean(new \Tests\Helpers\DummyBean());
@@ -2473,12 +2566,13 @@ test('ticket create for admin', function (): void {
         'content' => 'Content',
     ];
 
-    $result = $this->service->ticketCreateForAdmin($client, $helpdesk, $data, $admin);
+    $result = $service->ticketCreateForAdmin($client, $helpdesk, $data, $admin);
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 });
 
 test('ticket create for client', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -2553,6 +2647,7 @@ test('ticket create for client', function (): void {
 });
 
 test('ticket create for client task already exists exception', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $serviceMock = Mockery::mock(\Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('checkIfTaskAlreadyExists')
         ->atLeast()->once()
@@ -2580,6 +2675,7 @@ test('ticket create for client task already exists exception', function (): void
 });
 
 test('ticket task complete', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $randId = 1;
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
@@ -2589,12 +2685,12 @@ test('ticket task complete', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $model = new \Model_SupportTicket();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->ticketTaskComplete($model);
+    $result = $service->ticketTaskComplete($model);
     expect($result)->toBeTrue();
 });
 
@@ -2603,6 +2699,7 @@ test('ticket task complete', function (): void {
  */
 
 test('message get ticket messages', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
@@ -2610,17 +2707,18 @@ test('message get ticket messages', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
     $ticket->id = 1;
 
-    $result = $this->service->messageGetTicketMessages($ticket);
+    $result = $service->messageGetTicketMessages($ticket);
     expect($result)->toBeArray();
 });
 
 test('message get replies count', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()->once()
@@ -2628,17 +2726,18 @@ test('message get replies count', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
     $ticket->id = 1;
 
-    $result = $this->service->messageGetRepliesCount($ticket);
+    $result = $service->messageGetRepliesCount($ticket);
     expect($result)->toBeInt();
 });
 
 test('message get author details admin', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $admin = new \Model_Admin();
     $admin->loadBean(new \Tests\Helpers\DummyBean());
     $admin->id = 1;
@@ -2650,19 +2749,20 @@ test('message get author details admin', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticketMsg = new \Model_SupportTicketMessage();
     $ticketMsg->loadBean(new \Tests\Helpers\DummyBean());
     $ticketMsg->admin_id = 1;
 
-    $result = $this->service->messageGetAuthorDetails($ticketMsg);
+    $result = $service->messageGetAuthorDetails($ticketMsg);
     expect($result)->toBeArray();
     expect($result)->toHaveKey('name');
     expect($result)->toHaveKey('email');
 });
 
 test('message get author details client', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $client = new \Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
     $client->id = 1;
@@ -2674,19 +2774,20 @@ test('message get author details client', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticketMsg = new \Model_SupportTicketMessage();
     $ticketMsg->loadBean(new \Tests\Helpers\DummyBean());
     $ticketMsg->client_id = 1;
 
-    $result = $this->service->messageGetAuthorDetails($ticketMsg);
+    $result = $service->messageGetAuthorDetails($ticketMsg);
     expect($result)->toBeArray();
     expect($result)->toHaveKey('name');
     expect($result)->toHaveKey('email');
 });
 
 test('message to api array', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('toArray')
         ->atLeast()->once()
@@ -2726,6 +2827,7 @@ dataset('messageCreateForTicketProvider', function () {
 });
 
 test('message create for ticket', function (\Model_Admin|\Model_Client $identity): void {
+    $service = new \Box\Mod\Support\Service();
     $randId = 1;
     $supportTicketMessage = new \Model_SupportTicketMessage();
     $supportTicketMessage->loadBean(new \Tests\Helpers\DummyBean());
@@ -2747,12 +2849,12 @@ test('message create for ticket', function (\Model_Admin|\Model_Client $identity
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['request'] = $requestMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->messageCreateForTicket($ticket, $identity, 'Content');
+    $result = $service->messageCreateForTicket($ticket, $identity, 'Content');
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 })->with('messageCreateForTicketProvider');
@@ -2762,6 +2864,7 @@ test('message create for ticket', function (\Model_Admin|\Model_Client $identity
  */
 
 test('note get author details', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $admin = new \Model_Admin();
     $admin->loadBean(new \Tests\Helpers\DummyBean());
     $admin->name = 'AdminName';
@@ -2773,16 +2876,17 @@ test('note get author details', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $note = new \Model_SupportTicketNote();
     $note->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->noteGetAuthorDetails($note);
+    $result = $service->noteGetAuthorDetails($note);
     expect($result)->toBeArray();
 });
 
 test('note rm', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('trash')
         ->atLeast()->once()
@@ -2791,16 +2895,17 @@ test('note rm', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $note = new \Model_SupportTicketNote();
     $note->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->noteRm($note);
+    $result = $service->noteRm($note);
     expect($result)->toBeTrue();
 });
 
 test('note to api array', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('toArray')
         ->atLeast()->once()
@@ -2824,6 +2929,7 @@ test('note to api array', function (): void {
 });
 
 test('note create', function (): void {
+    $service = new \Box\Mod\Support\Service();
     $randId = 1;
     $supportTicketNote = new \Model_SupportTicketNote();
     $supportTicketNote->loadBean(new \Tests\Helpers\DummyBean());
@@ -2839,7 +2945,7 @@ test('note create', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $admin = new \Model_Admin();
     $admin->loadBean(new \Tests\Helpers\DummyBean());
@@ -2847,7 +2953,7 @@ test('note create', function (): void {
     $ticket = new \Model_SupportTicket();
     $ticket->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->noteCreate($ticket, $admin, 'Note');
+    $result = $service->noteCreate($ticket, $admin, 'Note');
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 });
@@ -2875,6 +2981,7 @@ dataset('canClientSubmitNewTicketProvider', function () {
 });
 
 test('can client submit new ticket', function (?\Model_SupportTicket $ticket, int $hours, bool $expected): void {
+    $service = new \Box\Mod\Support\Service();
     if (!$expected) {
         $this->expectException(\FOSSBilling\Exception::class);
     }
@@ -2886,7 +2993,7 @@ test('can client submit new ticket', function (?\Model_SupportTicket $ticket, in
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
     
     $client = new \Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
@@ -2894,7 +3001,7 @@ test('can client submit new ticket', function (?\Model_SupportTicket $ticket, in
 
     $config = ['wait_hours' => $hours];
 
-    $result = $this->service->canClientSubmitNewTicket($client, $config);
+    $result = $service->canClientSubmitNewTicket($client, $config);
     
     if ($expected) {
         expect($result)->toBeTrue();

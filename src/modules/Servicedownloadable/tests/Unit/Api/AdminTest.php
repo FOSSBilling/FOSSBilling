@@ -13,17 +13,19 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 beforeEach(function () {
-    $this->api = new \Box\Mod\Servicedownloadable\Api\Admin();
+    $api = new \Box\Mod\Servicedownloadable\Api\Admin();
 });
 
-test('getDi returns the dependency injection container', function () {
+test('getDi returns the dependency injection container', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('update throws exception when order is not activated', function () {
+test('update throws exception when order is not activated', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Admin();
     $data['order_id'] = 1;
     $model = new \Model_ClientOrder();
 
@@ -42,13 +44,14 @@ test('update throws exception when order is not activated', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
     $di['validator'] = $validatorMock;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    expect(fn () => $this->api->update($data))
+    expect(fn () => $api->update($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Order is not activated');
 });
 
-test('update updates downloadable product', function () {
+test('update updates downloadable product', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Admin();
     $data['order_id'] = 1;
     $model = new \Model_ClientOrder();
 
@@ -75,14 +78,15 @@ test('update updates downloadable product', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $result = $this->api->update($data);
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $result = $api->update($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('configSave saves product configuration', function () {
+test('configSave saves product configuration', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Admin();
     $data = [
         'id' => 1,
         'update_orders' => true,
@@ -109,15 +113,16 @@ test('configSave saves product configuration', function () {
     $di = new \Pimple\Container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->config_save($data);
+    $result = $api->config_save($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('configSave throws exception when product not found', function () {
+test('configSave throws exception when product not found', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Admin();
     $data = [
         'id' => 999,
         'update_orders' => true,
@@ -133,13 +138,14 @@ test('configSave throws exception when product not found', function () {
     $di = new \Pimple\Container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    expect(fn () => $this->api->config_save($data))
+    expect(fn () => $api->config_save($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Product not found');
 });
 
-test('sendFile throws exception when product not found', function () {
+test('sendFile throws exception when product not found', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Admin();
     $data = ['id' => 999];
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -152,13 +158,14 @@ test('sendFile throws exception when product not found', function () {
     $di = new \Pimple\Container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    expect(fn () => $this->api->send_file($data))
+    expect(fn () => $api->send_file($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Product not found');
 });
 
-test('sendFile throws exception when no file configured', function () {
+test('sendFile throws exception when no file configured', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Admin();
     $data = ['id' => 1];
 
     $productModel = new \Model_Product();
@@ -182,14 +189,15 @@ test('sendFile throws exception when no file configured', function () {
     $di = new \Pimple\Container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    expect(fn () => $this->api->send_file($data))
+    expect(fn () => $api->send_file($data))
         ->toThrow(\FOSSBilling\Exception::class, 'No file associated with this product.');
 });
 
-test('sendFile throws exception when file cannot be downloaded', function () {
+test('sendFile throws exception when file cannot be downloaded', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Admin();
     $data = ['id' => 1];
 
     $productModel = new \Model_Product();
@@ -213,14 +221,15 @@ test('sendFile throws exception when file cannot be downloaded', function () {
     $di = new \Pimple\Container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    expect(fn () => $this->api->send_file($data))
+    expect(fn () => $api->send_file($data))
         ->toThrow(\FOSSBilling\Exception::class, 'File cannot be downloaded at the moment. Please contact support.');
 });
 
-test('sendFile sends product file', function () {
+test('sendFile sends product file', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Admin();
     $data = ['id' => 1];
 
     $productModel = new \Model_Product();
@@ -244,10 +253,10 @@ test('sendFile sends product file', function () {
     $di = new \Pimple\Container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->send_file($data);
+    $result = $api->send_file($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });

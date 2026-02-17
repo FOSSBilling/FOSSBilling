@@ -19,7 +19,8 @@ beforeEach(function () {
     $this->clientApi = new Client();
 });
 
-test('updates nameservers', function () {
+test('updates nameservers', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Client();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -49,7 +50,8 @@ test('updates nameservers', function () {
     expect($result)->toBeTrue();
 });
 
-test('updates contacts', function () {
+test('updates contacts', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Client();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -71,7 +73,8 @@ test('updates contacts', function () {
     expect($result)->toBeTrue();
 });
 
-test('enables privacy protection', function () {
+test('enables privacy protection', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Client();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -93,7 +96,8 @@ test('enables privacy protection', function () {
     expect($result)->toBeTrue();
 });
 
-test('disables privacy protection', function () {
+test('disables privacy protection', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Client();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -115,7 +119,8 @@ test('disables privacy protection', function () {
     expect($result)->toBeTrue();
 });
 
-test('gets transfer code', function () {
+test('gets transfer code', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Client();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -137,7 +142,8 @@ test('gets transfer code', function () {
     expect($result)->toBeTrue();
 });
 
-test('locks domain', function () {
+test('locks domain', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Client();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -159,7 +165,8 @@ test('locks domain', function () {
     expect($result)->toBeTrue();
 });
 
-test('unlocks domain', function () {
+test('unlocks domain', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Client();
     $model = new \Model_ServiceDomain();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -181,7 +188,8 @@ test('unlocks domain', function () {
     expect($result)->toBeTrue();
 });
 
-test('gets service', function () {
+test('gets service', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('lock')
         ->atLeast()->once()
@@ -211,7 +219,8 @@ test('gets service', function () {
     expect($result)->toBeTrue();
 });
 
-test('throws exception when getting service without order_id', function () {
+test('throws exception when getting service without order_id', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('lock')
         ->never();
@@ -236,7 +245,8 @@ test('throws exception when getting service without order_id', function () {
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('throws exception when getting service order not found', function () {
+test('throws exception when getting service order not found', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('lock')
         ->never();
@@ -264,7 +274,8 @@ test('throws exception when getting service order not found', function () {
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('throws exception when getting service order not activated', function () {
+test('throws exception when getting service order not activated', function (): void {
+    $api = new \Box\Mod\Servicedomain\Api\Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('lock')
         ->never();

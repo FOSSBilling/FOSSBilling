@@ -15,17 +15,19 @@ use Box\Mod\Order\Api\Admin;
 use Box\Mod\Order\Service;
 
 beforeEach(function () {
-    $this->api = new Admin();
+    $api = new Admin();
 });
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets an order', function () {
+test('gets an order', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -46,7 +48,8 @@ test('gets an order', function () {
     expect($result)->toBeArray();
 });
 
-test('gets order list', function () {
+test('gets order list', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSearchQuery')
         ->atLeast()->once()
@@ -69,14 +72,15 @@ test('gets order list', function () {
     $di['pager'] = $paginatorMock;
     $di['mod'] = $di->protect(fn () => $modMock);
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->get_list([]);
+    $result = $api->get_list([]);
     expect($result)->toBeArray();
 });
 
-test('creates an order', function () {
+test('creates an order', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('createOrder')
         ->atLeast()->once()
@@ -89,18 +93,19 @@ test('creates an order', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
     $data = [
         'client_id' => 1,
         'product_id' => 1,
     ];
-    $result = $this->api->create($data);
+    $result = $api->create($data);
     expect($result)->toBeInt();
 });
 
-test('updates an order', function () {
+test('updates an order', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -124,7 +129,8 @@ test('updates an order', function () {
     expect($result)->toBeTrue();
 });
 
-test('activates an order', function () {
+test('activates an order', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -148,7 +154,8 @@ test('activates an order', function () {
     expect($result)->toBeTrue();
 });
 
-test('renews an order', function () {
+test('renews an order', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -168,7 +175,8 @@ test('renews an order', function () {
     expect($result)->toBeTrue();
 });
 
-test('renews pending setup order by activating it', function () {
+test('renews pending setup order by activating it', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
@@ -185,7 +193,8 @@ test('renews pending setup order by activating it', function () {
     expect($result)->toBeTrue();
 });
 
-test('suspends an order', function () {
+test('suspends an order', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -207,7 +216,8 @@ test('suspends an order', function () {
     expect($result)->toBeTrue();
 });
 
-test('unsuspends an order', function () {
+test('unsuspends an order', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_SUSPENDED;
@@ -228,7 +238,8 @@ test('unsuspends an order', function () {
     expect($result)->toBeTrue();
 });
 
-test('throws exception when unsuspending non-suspended order', function () {
+test('throws exception when unsuspending non-suspended order', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_ACTIVE;
@@ -249,7 +260,8 @@ test('throws exception when unsuspending non-suspended order', function () {
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('cancels an order', function () {
+test('cancels an order', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -271,7 +283,8 @@ test('cancels an order', function () {
     expect($result)->toBeTrue();
 });
 
-test('uncancels an order', function () {
+test('uncancels an order', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_CANCELED;
@@ -292,7 +305,8 @@ test('uncancels an order', function () {
     expect($result)->toBeTrue();
 });
 
-test('throws exception when uncanceling non-canceled order', function () {
+test('throws exception when uncanceling non-canceled order', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_ACTIVE;
@@ -313,7 +327,8 @@ test('throws exception when uncanceling non-canceled order', function () {
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('deletes an order', function () {
+test('deletes an order', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -333,7 +348,8 @@ test('deletes an order', function () {
     expect($result)->toBeTrue();
 });
 
-test('deletes an order with addons', function () {
+test('deletes an order with addons', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -357,31 +373,34 @@ test('deletes an order with addons', function () {
     expect($result)->toBeTrue();
 });
 
-test('batch suspends expired orders', function () {
+test('batch suspends expired orders', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('batchSuspendExpired')
         ->atLeast()->once()
         ->andReturn(true);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->batch_suspend_expired([]);
+    $result = $api->batch_suspend_expired([]);
     expect($result)->toBeTrue();
 });
 
-test('batch cancels suspended orders', function () {
+test('batch cancels suspended orders', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('batchCancelSuspended')
         ->atLeast()->once()
         ->andReturn(true);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->batch_cancel_suspended([]);
+    $result = $api->batch_cancel_suspended([]);
     expect($result)->toBeTrue();
 });
 
-test('updates order config', function () {
+test('updates order config', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -402,7 +421,8 @@ test('updates order config', function () {
     expect($result)->toBeTrue();
 });
 
-test('throws exception when updating config without config param', function () {
+test('throws exception when updating config without config param', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -422,7 +442,8 @@ test('throws exception when updating config without config param', function () {
         ->toThrow(\FOSSBilling\Exception::class);
 });
 
-test('gets order service data', function () {
+test('gets order service data', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -447,7 +468,8 @@ test('gets order service data', function () {
     expect($result)->toBeArray();
 });
 
-test('gets status history list', function () {
+test('gets status history list', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $order = new Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -479,7 +501,8 @@ test('gets status history list', function () {
     expect($result)->toBeArray();
 });
 
-test('adds status history', function () {
+test('adds status history', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('orderStatusAdd')
         ->atLeast()->once()
@@ -502,7 +525,8 @@ test('adds status history', function () {
     expect($result)->toBeTrue();
 });
 
-test('deletes status history', function () {
+test('deletes status history', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('orderStatusRm')
         ->atLeast()->once()
@@ -512,37 +536,41 @@ test('deletes status history', function () {
     $order->loadBean(new \Tests\Helpers\DummyBean());
 
     $di = container();
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
     $data = ['id' => 1];
-    $result = $this->api->status_history_delete($data);
+    $result = $api->status_history_delete($data);
     expect($result)->toBeTrue();
 });
 
-test('gets order statuses', function () {
+test('gets order statuses', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('counter')
         ->atLeast()->once()
         ->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->get_statuses();
+    $result = $api->get_statuses();
     expect($result)->toBeArray();
 });
 
-test('gets invoice options', function () {
-    $result = $this->api->get_invoice_options([]);
+test('gets invoice options', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
+    $result = $api->get_invoice_options([]);
     expect($result)->toBeArray();
 });
 
-test('gets status pairs', function () {
-    $result = $this->api->get_status_pairs([]);
+test('gets status pairs', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
+    $result = $api->get_status_pairs([]);
     expect($result)->toBeArray();
 });
 
-test('gets order addons', function () {
+test('gets order addons', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getOrderAddonsList')
         ->atLeast()->once()
@@ -567,7 +595,8 @@ test('gets order addons', function () {
     expect($result[0])->toBeArray();
 });
 
-test('gets order with validation', function () {
+test('gets order with validation', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
 
@@ -587,14 +616,15 @@ test('gets order with validation', function () {
     $di = container();
     $di['validator'] = $validatorMock;
     $di['db'] = $dbMock;
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
     $data = ['id' => 1];
-    $this->api->get($data);
+    $api->get($data);
 });
 
-test('batch deletes orders', function () {
+test('batch deletes orders', function (): void {
+    $api = new \Box\Mod\Order\Api\Admin();
     $activityMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $activityMock->shouldReceive('delete')
         ->atLeast()->once()

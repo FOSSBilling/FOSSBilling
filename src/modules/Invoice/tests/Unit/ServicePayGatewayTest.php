@@ -14,35 +14,38 @@ use function Tests\Helpers\container;
 use Box\Mod\Invoice\ServicePayGateway;
 
 beforeEach(function () {
-    $this->service = new ServicePayGateway();
+    $service = new ServicePayGateway();
 });
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets search query', function () {
+test('gets search query', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $di = container();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
     $data = [];
-    $result = $this->service->getSearchQuery($data);
+    $result = $service->getSearchQuery($data);
     expect($result)->toBeArray();
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray()->toBe([]);
 });
 
-test('gets search query with additional params', function () {
+test('gets search query with additional params', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $di = container();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
     $data = ['search' => 'keyword'];
     $expectedParams = [':search' => "%$data[search]%"];
 
-    $result = $this->service->getSearchQuery($data);
+    $result = $service->getSearchQuery($data);
     expect($result)->toBeArray();
     expect($result[0])->toBeString();
     expect(strpos($result[0], 'AND name LIKE :search') > 0)->toBeTrue();
@@ -50,7 +53,8 @@ test('gets search query with additional params', function () {
     expect($result[1])->toBe($expectedParams);
 });
 
-test('gets pairs', function () {
+test('gets pairs', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $expected = [
         1 => 'Custom',
     ];
@@ -70,14 +74,15 @@ test('gets pairs', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getPairs();
+    $result = $service->getPairs();
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
 
-test('gets available gateways', function () {
+test('gets available gateways', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAll')
         ->atLeast()->once()
@@ -85,13 +90,14 @@ test('gets available gateways', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getAvailable();
+    $result = $service->getAvailable();
     expect($result)->toBeArray();
 });
 
-test('installs a pay gateway', function () {
+test('installs a pay gateway', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $code = 'PP';
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -118,7 +124,8 @@ test('installs a pay gateway', function () {
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('throws exception when installing unavailable gateway', function () {
+test('throws exception when installing unavailable gateway', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $code = 'PP';
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -130,7 +137,8 @@ test('throws exception when installing unavailable gateway', function () {
         ->toThrow(\FOSSBilling\Exception::class, 'Payment gateway is not available for installation.');
 });
 
-test('converts to api array', function () {
+test('converts to api array', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -168,7 +176,8 @@ test('converts to api array', function () {
     expect($result)->toBe($expected);
 });
 
-test('copies a gateway', function () {
+test('copies a gateway', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
@@ -185,13 +194,14 @@ test('copies a gateway', function () {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->copy($payGatewayModel);
+    $result = $service->copy($payGatewayModel);
     expect($result)->toBeInt()->toBe($expected);
 });
 
-test('updates a gateway', function () {
+test('updates a gateway', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
@@ -202,7 +212,7 @@ test('updates a gateway', function () {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'title' => '',
@@ -213,11 +223,12 @@ test('updates a gateway', function () {
         'allow_recurrent' => '',
         'test_mode' => '',
     ];
-    $result = $this->service->update($payGatewayModel, $data);
+    $result = $service->update($payGatewayModel, $data);
     expect($result)->toBeTrue();
 });
 
-test('deletes a gateway', function () {
+test('deletes a gateway', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -229,13 +240,14 @@ test('deletes a gateway', function () {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->delete($payGatewayModel);
+    $result = $service->delete($payGatewayModel);
     expect($result)->toBeTrue();
 });
 
-test('gets active gateways', function () {
+test('gets active gateways', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -247,25 +259,27 @@ test('gets active gateways', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = ['format' => 'pairs'];
-    $result = $this->service->getActive($data);
+    $result = $service->getActive($data);
     expect($result)->toBeArray();
 });
 
-test('checks if can perform recurrent payment', function () {
+test('checks if can perform recurrent payment', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
 
     $expected = true;
     $payGatewayModel->allow_recurrent = $expected;
 
-    $result = $this->service->canPerformRecurrentPayment($payGatewayModel);
+    $result = $service->canPerformRecurrentPayment($payGatewayModel);
     expect($result)->toBeBool()->toBe($expected);
 });
 
-test('gets payment adapter', function () {
+test('gets payment adapter', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
     $invoiceModel = new \Model_Invoice();
@@ -298,7 +312,8 @@ test('gets payment adapter', function () {
     expect($result)->toBeInstanceOf($expected);
 });
 
-test('throws exception when payment gateway is not found', function () {
+test('throws exception when payment gateway is not found', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
     $invoiceModel = new \Model_Invoice();
@@ -327,7 +342,8 @@ test('throws exception when payment gateway is not found', function () {
         ->toThrow(\FOSSBilling\Exception::class, 'Payment gateway  was not found.');
 });
 
-test('gets adapter config', function () {
+test('gets adapter config', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
     $payGatewayModel->gateway = 'Custom';
@@ -347,7 +363,8 @@ test('gets adapter config', function () {
     expect($result)->toBeArray();
 });
 
-test('throws exception when adapter class does not exist', function () {
+test('throws exception when adapter class does not exist', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
     $payGatewayModel->gateway = 'Custom';
@@ -367,7 +384,8 @@ test('throws exception when adapter class does not exist', function () {
         ->toThrow(\FOSSBilling\Exception::class, sprintf('Payment gateway class %s was not found', $expected));
 });
 
-test('throws exception when adapter does not exist', function () {
+test('throws exception when adapter does not exist', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
     $payGatewayModel->gateway = 'Unknown';
@@ -385,27 +403,30 @@ test('throws exception when adapter does not exist', function () {
         ->toThrow(\FOSSBilling\Exception::class, sprintf('Payment gateway %s was not found', $payGatewayModel->gateway));
 });
 
-test('gets adapter class name', function () {
+test('gets adapter class name', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
     $payGatewayModel->gateway = 'Custom';
 
     $expected = 'Payment_Adapter_Custom';
 
-    $result = $this->service->getAdapterClassName($payGatewayModel);
+    $result = $service->getAdapterClassName($payGatewayModel);
     expect($result)->toBeString()->toBe($expected);
 });
 
-test('gets accepted currencies', function () {
+test('gets accepted currencies', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
     $payGatewayModel->accepted_currencies = '{}';
 
-    $result = $this->service->getAcceptedCurrencies($payGatewayModel);
+    $result = $service->getAcceptedCurrencies($payGatewayModel);
     expect($result)->toBeArray();
 });
 
-test('gets form elements', function () {
+test('gets form elements', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -419,7 +440,8 @@ test('gets form elements', function () {
     expect($result)->toBeArray();
 });
 
-test('returns empty array when form config is empty', function () {
+test('returns empty array when form config is empty', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -433,7 +455,8 @@ test('returns empty array when form config is empty', function () {
     expect($result)->toBeArray()->toBe([]);
 });
 
-test('gets description', function () {
+test('gets description', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -447,7 +470,8 @@ test('gets description', function () {
     expect($result)->toBeString();
 });
 
-test('returns null when description is empty', function () {
+test('returns null when description is empty', function (): void {
+    $service = new \Box\Mod\Invoice\ServicePayGateway();
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
 
