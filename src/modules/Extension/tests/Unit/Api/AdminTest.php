@@ -13,17 +13,19 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 beforeEach(function () {
-    $this->api = new \Box\Mod\Extension\Api\Admin();
+    $api = new \Box\Mod\Extension\Api\Admin();
 });
 
-test('getDi returns the dependency injection container', function () {
+test('getDi returns the dependency injection container', function (): void {
+    $api = new \Box\Mod\Extension\Api\Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('activate activates an extension', function () {
+test('activate activates an extension', function (): void {
+    $api = new \Box\Mod\Extension\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Extension\Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('activateExistingExtension')
@@ -31,13 +33,14 @@ test('activate activates an extension', function () {
         ->once()
         ->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->activate([]);
+    $result = $api->activate([]);
     expect($result)->toBeArray();
 });
 
-test('configGet gets extension config', function () {
+test('configGet gets extension config', function (): void {
+    $api = new \Box\Mod\Extension\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Extension\Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getConfig')
@@ -45,14 +48,15 @@ test('configGet gets extension config', function () {
         ->once()
         ->andReturn(['key' => 'value']);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->config_get([]);
+    $result = $api->config_get([]);
     expect($result)->toBeArray();
     expect($result)->toBe(['key' => 'value']);
 });
 
-test('configSave saves extension config', function () {
+test('configSave saves extension config', function (): void {
+    $api = new \Box\Mod\Extension\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Extension\Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('setConfig')
@@ -60,13 +64,14 @@ test('configSave saves extension config', function () {
         ->once()
         ->andReturn(true);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->config_save([]);
+    $result = $api->config_save([]);
     expect($result)->toBeTrue();
 });
 
-test('getList returns extensions list', function () {
+test('getList returns extensions list', function (): void {
+    $api = new \Box\Mod\Extension\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Extension\Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getExtensionsList')
@@ -74,13 +79,14 @@ test('getList returns extensions list', function () {
         ->once()
         ->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->get_list([]);
+    $result = $api->get_list([]);
     expect($result)->toBeArray();
 });
 
-test('getNavigation returns admin navigation', function () {
+test('getNavigation returns admin navigation', function (): void {
+    $api = new \Box\Mod\Extension\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Extension\Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getAdminNavigation')
@@ -88,8 +94,8 @@ test('getNavigation returns admin navigation', function () {
         ->once()
         ->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->get_navigation([]);
+    $result = $api->get_navigation([]);
     expect($result)->toBeArray();
 });

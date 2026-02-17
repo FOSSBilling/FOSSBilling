@@ -15,17 +15,19 @@ use Box\Mod\Servicedownloadable\Service;
 use Box\Mod\Order\Service as OrderService;
 
 beforeEach(function () {
-    $this->service = new Service();
+    $service = new Service();
 });
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $service = new \Box\Mod\Servicedownloadable\Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('attaches order config', function () {
+test('attaches order config', function (): void {
+    $service = new \Box\Mod\Servicedownloadable\Service();
     $productModel = new \Model_Product();
     $productModel->loadBean(new \Tests\Helpers\DummyBean());
     $productModel->config = '{"filename" : "temp/asdcxTest.txt"}';
@@ -40,13 +42,14 @@ test('attaches order config', function () {
 
     $di = container();
     $di['validator'] = $validatorMock;
-    $this->service->setDi($di);
-    $result = $this->service->attachOrderConfig($productModel, $data);
+    $service->setDi($di);
+    $result = $service->attachOrderConfig($productModel, $data);
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
 
-test('creates action', function () {
+test('creates action', function (): void {
+    $service = new \Box\Mod\Servicedownloadable\Service();
     $clientOrderModel = new \Model_ClientOrder();
     $clientOrderModel->loadBean(new \Tests\Helpers\DummyBean());
     $clientOrderModel->config = '{"filename" : "temp/asdcxTest.txt"}';
@@ -71,12 +74,13 @@ test('creates action', function () {
     $di['db'] = $dbMock;
     $di['validator'] = $validatorMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->action_create($clientOrderModel);
+    $service->setDi($di);
+    $result = $service->action_create($clientOrderModel);
     expect($result)->toBeInstanceOf(\Model_ServiceDownloadable::class);
 });
 
-test('deletes action', function () {
+test('deletes action', function (): void {
+    $service = new \Box\Mod\Servicedownloadable\Service();
     $clientOrderModel = new \Model_ClientOrder();
 
     $orderServiceMock = Mockery::mock(OrderService::class);
@@ -92,11 +96,12 @@ test('deletes action', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->service->setDi($di);
-    $this->service->action_delete($clientOrderModel);
+    $service->setDi($di);
+    $service->action_delete($clientOrderModel);
 });
 
-test('saves product config', function () {
+test('saves product config', function (): void {
+    $service = new \Box\Mod\Servicedownloadable\Service();
     $data = [
         'update_orders' => true,
     ];
@@ -114,8 +119,8 @@ test('saves product config', function () {
     $di = new \Pimple\Container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->saveProductConfig($productModel, $data);
+    $service->setDi($di);
+    $result = $service->saveProductConfig($productModel, $data);
 
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
@@ -127,7 +132,8 @@ test('saves product config', function () {
     expect($productModel->updated_at)->not->toBeNull();
 });
 
-test('saves product config with existing config', function () {
+test('saves product config with existing config', function (): void {
+    $service = new \Box\Mod\Servicedownloadable\Service();
     $data = [
         'update_orders' => false,
     ];
@@ -145,8 +151,8 @@ test('saves product config with existing config', function () {
     $di = new \Pimple\Container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->saveProductConfig($productModel, $data);
+    $service->setDi($di);
+    $result = $service->saveProductConfig($productModel, $data);
 
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
@@ -158,7 +164,8 @@ test('saves product config with existing config', function () {
     expect($productModel->updated_at)->not->toBeNull();
 });
 
-test('saves product config with no existing config', function () {
+test('saves product config with no existing config', function (): void {
+    $service = new \Box\Mod\Servicedownloadable\Service();
     $data = [
         'update_orders' => true,
     ];
@@ -176,8 +183,8 @@ test('saves product config with no existing config', function () {
     $di = new \Pimple\Container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->saveProductConfig($productModel, $data);
+    $service->setDi($di);
+    $result = $service->saveProductConfig($productModel, $data);
 
     expect($result)->toBeBool();
     expect($result)->toBeTrue();

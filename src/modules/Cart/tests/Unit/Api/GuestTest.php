@@ -17,6 +17,7 @@ beforeEach(function (): void {
 });
 
 test('get cart', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
         ->andReturn(new \Model_Cart());
@@ -31,6 +32,7 @@ test('get cart', function (): void {
 });
 
 test('reset cart', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
         ->andReturn(new \Model_Cart());
@@ -45,6 +47,7 @@ test('reset cart', function (): void {
 });
 
 test('set currency', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
         ->andReturn(new \Model_Cart());
@@ -78,6 +81,7 @@ test('set currency', function (): void {
 });
 
 test('set currency throws not found exception when currency does not exist', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')
         ->andReturn(new \Model_Cart());
@@ -110,6 +114,7 @@ test('set currency throws not found exception when currency does not exist', fun
 });
 
 test('get currency', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -150,6 +155,7 @@ test('get currency', function (): void {
 });
 
 test('get currency not found returns default', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -193,6 +199,7 @@ test('get currency not found returns default', function (): void {
 });
 
 test('apply promo', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -223,6 +230,7 @@ test('apply promo', function (): void {
 });
 
 test('apply promo not found exception', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -254,6 +262,7 @@ test('apply promo not found exception', function (): void {
 });
 
 test('apply promo can not be applied', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -285,6 +294,7 @@ test('apply promo can not be applied', function (): void {
 });
 
 test('apply promo can not be applied for user', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -314,6 +324,7 @@ test('apply promo can not be applied for user', function (): void {
 });
 
 test('remove promo', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -332,6 +343,7 @@ test('remove promo', function (): void {
 });
 
 test('remove item', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -357,6 +369,7 @@ test('remove item', function (): void {
 });
 
 test('add item', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -391,6 +404,7 @@ test('add item', function (): void {
 });
 
 test('add item single resets cart', function (): void {
+    $api = new \Box\Mod\Cart\Api\Guest();
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
     $cart->currency_id = 1;

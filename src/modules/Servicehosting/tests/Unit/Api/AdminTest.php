@@ -14,17 +14,19 @@ use function Tests\Helpers\container;
 use Box\Mod\Servicehosting\Api\Admin;
 
 beforeEach(function (): void {
-    $this->api = new Admin();
+    $api = new Admin();
 });
 
 test('testGetDi', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
 test('testChangePlan', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $data = [
         'plan_id' => 1,
     ];
@@ -61,17 +63,19 @@ test('testChangePlan', function (): void {
 });
 
 test('testChangePlanMissingPlanId', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $data = [];
 
     $di = container();
-    $this->api->setDi($di);
+    $api->setDi($di);
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage('plan_id is missing');
-    $this->api->change_plan($data);
+    $api->change_plan($data);
 });
 
 test('testChangeUsername', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
     $apiMock = Mockery::mock(Admin::class)->makePartial();
 
@@ -94,6 +98,7 @@ test('testChangeUsername', function (): void {
 });
 
 test('testChangeIp', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
     $apiMock = Mockery::mock(Admin::class)->makePartial();
 
@@ -116,6 +121,7 @@ test('testChangeIp', function (): void {
 });
 
 test('testChangeDomain', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
     $apiMock = Mockery::mock(Admin::class)->makePartial();
 
@@ -138,6 +144,7 @@ test('testChangeDomain', function (): void {
 });
 
 test('testChangePassword', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
     $apiMock = Mockery::mock(Admin::class)->makePartial();
 
@@ -160,6 +167,7 @@ test('testChangePassword', function (): void {
 });
 
 test('testSync', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
     $apiMock = Mockery::mock(Admin::class)->makePartial();
 
@@ -182,6 +190,7 @@ test('testSync', function (): void {
 });
 
 test('testUpdate', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
     $apiMock = Mockery::mock(Admin::class)->makePartial();
 
@@ -204,32 +213,35 @@ test('testUpdate', function (): void {
 });
 
 test('testManagerGetPairs', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getServerManagers')
     ->atLeast()->once()
     ->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->manager_get_pairs([]);
+    $result = $api->manager_get_pairs([]);
     expect($result)->toBeArray();
 });
 
 test('testServerGetPairs', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getServerPairs')
     ->atLeast()->once()
     ->andReturn([]);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->server_get_pairs([]);
+    $result = $api->server_get_pairs([]);
     expect($result)->toBeArray();
 });
 
 test('testAccountGetList', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getAccountsSearchQuery')
@@ -249,14 +261,15 @@ test('testAccountGetList', function (): void {
     $di['pager'] = $pagerMock;
     $di['db'] = $dbStub;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->account_get_list([]);
+    $result = $api->account_get_list([]);
     expect($result)->toBeArray();
 });
 
 test('testServerGetList', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getServersSearchQuery')
@@ -274,14 +287,15 @@ test('testServerGetList', function (): void {
     $dbStub = Mockery::mock('Box_Database');
     $di['db'] = $dbStub;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->server_get_list([]);
+    $result = $api->server_get_list([]);
     expect($result)->toBeArray();
 });
 
 test('testServerCreate', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $data = [
         'name' => 'test',
         'ip' => '1.1.1.1',
@@ -297,16 +311,17 @@ test('testServerCreate', function (): void {
     ->andReturn($newServerId);
 
     $di = container();
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->server_create($data);
+    $result = $api->server_create($data);
     expect($result)->toBeInt();
     expect($result)->toBe($newServerId);
 });
 
 test('testServerGet', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(\Box\Mod\Servicehosting\Service::class);
@@ -323,14 +338,15 @@ test('testServerGet', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->server_get($data);
+    $result = $api->server_get($data);
     expect($result)->toBeArray();
 });
 
 test('testServerDelete', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     // Test case 1: Server can be deleted
     $data['id'] = 1;
 
@@ -352,10 +368,10 @@ test('testServerDelete', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->server_delete($data);
+    $result = $api->server_delete($data);
     expect($result)->toBeTrue();
 
     // Test case 2: Server is used by service_hostings and cannot be deleted
@@ -375,16 +391,17 @@ test('testServerDelete', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
     // Now, we expect an exception to be thrown because the server is used by service_hostings
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionCode(704);
 
-    $this->api->server_delete($data);
+    $api->server_delete($data);
 });
 
 test('testServerUpdate', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(\Box\Mod\Servicehosting\Service::class);
@@ -401,15 +418,16 @@ test('testServerUpdate', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->server_update($data);
+    $result = $api->server_update($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
 test('testServerTestConnection', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(\Box\Mod\Servicehosting\Service::class);
@@ -426,27 +444,29 @@ test('testServerTestConnection', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->server_test_connection($data);
+    $result = $api->server_test_connection($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
 test('testHpGetPairs', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getHpPairs')
     ->atLeast()->once()
     ->andReturn([]);
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->hp_get_pairs([]);
+    $api->setService($serviceMock);
+    $result = $api->hp_get_pairs([]);
     expect($result)->toBeArray();
 });
 
 test('testHpGetList', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $serviceMock = Mockery::mock(\Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getHpSearchQuery')
@@ -462,14 +482,15 @@ test('testHpGetList', function (): void {
     $di = container();
     $di['pager'] = $pagerMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->hp_get_list([]);
+    $result = $api->hp_get_list([]);
     expect($result)->toBeArray();
 });
 
 test('testHpDelete', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -494,12 +515,12 @@ test('testHpDelete', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
     // Add a try-catch block to handle the exception thrown in the hp_delete function
     try {
-        $result = $this->api->hp_delete($data);
+        $result = $api->hp_delete($data);
 
         // If the function doesn't throw an exception, then the test should assert the result
         expect($result)->toBeBool();
@@ -511,6 +532,7 @@ test('testHpDelete', function (): void {
 });
 
 test('testHpGet', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -531,14 +553,15 @@ test('testHpGet', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->hp_get($data);
+    $result = $api->hp_get($data);
     expect($result)->toBeArray();
 });
 
 test('testHpUpdate', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $data = [
         'id' => 1,
     ];
@@ -559,15 +582,16 @@ test('testHpUpdate', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->hp_update($data);
+    $result = $api->hp_update($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
 test('testHpCreate', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $data = [
         'name' => 'test',
     ];
@@ -581,16 +605,17 @@ test('testHpCreate', function (): void {
     ->andReturn($newHpId);
 
     $di = container();
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->hp_create($data);
+    $result = $api->hp_create($data);
     expect($result)->toBeInt();
     expect($result)->toBe($newHpId);
 });
 
 test('testGetService', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $data = [
         'order_id' => 1,
     ];
@@ -613,15 +638,16 @@ test('testGetService', function (): void {
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    $result = $this->api->_getService($data);
+    $result = $api->_getService($data);
     expect($result)->toBeArray();
     expect($result[0])->toBeInstanceOf('\Model_ClientOrder');
     expect($result[1])->toBeInstanceOf('\Model_ServiceHosting');
 });
 
 test('testGetServiceOrderNotActivated', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Admin();
     $data = [
         'order_id' => 1,
     ];
@@ -643,9 +669,9 @@ test('testGetServiceOrderNotActivated', function (): void {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
     $di['db'] = $dbMock;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Order is not activated');
-    $this->api->_getService($data);
+    $api->_getService($data);
 });

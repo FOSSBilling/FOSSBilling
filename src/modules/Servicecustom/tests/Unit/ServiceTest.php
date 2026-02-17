@@ -16,21 +16,23 @@ use Box\Mod\Formbuilder\Service as FormbuilderService;
 use Box\Mod\Order\Service as OrderService;
 
 beforeEach(function () {
-    $this->service = new Service();
+    $service = new Service();
 });
 
 afterEach(function () {
     Mockery::close();
 });
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('validates custom form', function () {
+test('validates custom form', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $form = [
         'fields' => [
             0 => [
@@ -51,7 +53,7 @@ test('validates custom form', function () {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $formbuilderService);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $product = [
         'form_id' => 1,
@@ -60,11 +62,12 @@ test('validates custom form', function () {
         'label' => 'label',
         'field_name' => 'FieldName',
     ];
-    $result = $this->service->validateCustomForm($data, $product);
+    $result = $service->validateCustomForm($data, $product);
     expect($result)->toBeNull();
 });
 
-test('throws exception when validating custom form with missing field name', function () {
+test('throws exception when validating custom form with missing field name', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $form = [
         'fields' => [
             0 => [
@@ -85,18 +88,19 @@ test('throws exception when validating custom form with missing field name', fun
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $formbuilderService);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $product = [
         'form_id' => 1,
     ];
     $data = [];
 
-    expect(fn () => $this->service->validateCustomForm($data, $product))
+    expect(fn () => $service->validateCustomForm($data, $product))
         ->toThrow(\Exception::class);
 });
 
-test('throws exception when validating custom form with readonly field change', function () {
+test('throws exception when validating custom form with readonly field change', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $form = [
         'fields' => [
             0 => [
@@ -117,7 +121,7 @@ test('throws exception when validating custom form with readonly field change', 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $formbuilderService);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $product = [
         'form_id' => 1,
@@ -126,11 +130,12 @@ test('throws exception when validating custom form with readonly field change', 
         'field_name' => 'field_name',
     ];
 
-    expect(fn () => $this->service->validateCustomForm($data, $product))
+    expect(fn () => $service->validateCustomForm($data, $product))
         ->toThrow(\Exception::class);
 });
 
-test('creates action', function () {
+test('creates action', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->product_id = 1;
@@ -157,13 +162,14 @@ test('creates action', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->action_create($order);
+    $result = $service->action_create($order);
     expect($result)->toBeInstanceOf(\Model_ServiceCustom::class);
 });
 
-test('activates action', function () {
+test('activates action', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->client_id = 1;
@@ -180,13 +186,14 @@ test('activates action', function () {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->action_activate($order);
+    $result = $service->action_activate($order);
     expect($result)->toBeTrue();
 });
 
-test('throws exception when activating without order service', function () {
+test('throws exception when activating without order service', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->client_id = 1;
@@ -199,13 +206,14 @@ test('throws exception when activating without order service', function () {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    expect(fn () => $this->service->action_activate($order))
+    expect(fn () => $service->action_activate($order))
         ->toThrow(\Exception::class);
 });
 
-test('renews action', function () {
+test('renews action', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->client_id = 1;
@@ -228,13 +236,14 @@ test('renews action', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->action_renew($order);
+    $result = $service->action_renew($order);
     expect($result)->toBeTrue();
 });
 
-test('throws exception when renewing without active service', function () {
+test('throws exception when renewing without active service', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->id = 1;
@@ -248,13 +257,14 @@ test('throws exception when renewing without active service', function () {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    expect(fn () => $this->service->action_renew($order))
+    expect(fn () => $service->action_renew($order))
         ->toThrow(\Exception::class);
 });
 
-test('suspends action', function () {
+test('suspends action', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->client_id = 1;
@@ -277,13 +287,14 @@ test('suspends action', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->action_suspend($order);
+    $result = $service->action_suspend($order);
     expect($result)->toBeTrue();
 });
 
-test('unsuspends action', function () {
+test('unsuspends action', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->client_id = 1;
@@ -306,13 +317,14 @@ test('unsuspends action', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->action_unsuspend($order);
+    $result = $service->action_unsuspend($order);
     expect($result)->toBeTrue();
 });
 
-test('cancels action', function () {
+test('cancels action', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->client_id = 1;
@@ -335,13 +347,14 @@ test('cancels action', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->action_cancel($order);
+    $result = $service->action_cancel($order);
     expect($result)->toBeTrue();
 });
 
-test('uncancels action', function () {
+test('uncancels action', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->client_id = 1;
@@ -364,13 +377,14 @@ test('uncancels action', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->action_uncancel($order);
+    $result = $service->action_uncancel($order);
     expect($result)->toBeTrue();
 });
 
-test('deletes action', function () {
+test('deletes action', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $order = new \Model_ClientOrder();
     $order->loadBean(new \Tests\Helpers\DummyBean());
     $order->client_id = 1;
@@ -393,32 +407,34 @@ test('deletes action', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->action_delete($order);
+    $result = $service->action_delete($order);
     expect($result)->toBeTrue();
 });
 
-test('gets config', function () {
+test('gets config', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $decoded = [
         'J' => 5,
         0 => 'N',
     ];
 
     $di = container();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $model = new \Model_ServiceCustom();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->config = json_encode($decoded);
 
-    $result = $this->service->getConfig($model);
+    $result = $service->getConfig($model);
     expect($result)->toBe($decoded);
 });
 
-test('converts to api array', function () {
+test('converts to api array', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $di = container();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $model = new \Model_ServiceCustom();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -429,7 +445,7 @@ test('converts to api array', function () {
     $model->updated_at = date('Y-m-d H:i:s');
     $model->created_at = date('Y-m-d H:i:s');
 
-    $result = $this->service->toApiArray($model);
+    $result = $service->toApiArray($model);
 
     expect($result)->toBeArray();
     expect($result['client_id'])->toBe($model->client_id);
@@ -439,12 +455,14 @@ test('converts to api array', function () {
     expect($result['created_at'])->toBe($model->created_at);
 });
 
-test('throws exception for forbidden custom call method', function () {
-    expect(fn () => $this->service->customCall(new \Model_ServiceCustom(), 'delete'))
+test('throws exception for forbidden custom call method', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
+    expect(fn () => $service->customCall(new \Model_ServiceCustom(), 'delete'))
         ->toThrow(\Exception::class);
 });
 
-test('gets service custom by order id', function () {
+test('gets service custom by order id', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
@@ -458,13 +476,14 @@ test('gets service custom by order id', function () {
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getServiceCustomByOrderId(1);
+    $result = $service->getServiceCustomByOrderId(1);
     expect($result)->toBeInstanceOf(\Model_ServiceCustom::class);
 });
 
-test('throws exception when getting service custom by order id without order service', function () {
+test('throws exception when getting service custom by order id without order service', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
@@ -478,13 +497,14 @@ test('throws exception when getting service custom by order id without order ser
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    expect(fn () => $this->service->getServiceCustomByOrderId(1))
+    expect(fn () => $service->getServiceCustomByOrderId(1))
         ->toThrow(\Exception::class);
 });
 
-test('updates config', function () {
+test('updates config', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $model = new \Model_ServiceCustom();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->id = 1;
@@ -509,7 +529,8 @@ test('updates config', function () {
     expect($result)->toBeNull();
 });
 
-test('throws exception when updating config with non-array', function () {
+test('throws exception when updating config with non-array', function (): void {
+    $service = new \Box\Mod\Servicecustom\Service();
     $model = new \Model_ServiceCustom();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->id = 1;

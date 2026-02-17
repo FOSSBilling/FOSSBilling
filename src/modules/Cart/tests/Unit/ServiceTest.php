@@ -12,11 +12,8 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-beforeEach(function (): void {
-    $this->service = new \Box\Mod\Cart\Service();
-});
-
 test('dependency injection', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $service = new \Box\Mod\Cart\Service();
 
     $di = container();
@@ -31,6 +28,7 @@ test('dependency injection', function (): void {
 
 test('get search query', function (): void {
     $service = new \Box\Mod\Cart\Service();
+    $service = new \Box\Mod\Cart\Service();
     $result = $service->getSearchQuery([]);
 
     expect($result[0])->toBeString();
@@ -39,6 +37,7 @@ test('get search query', function (): void {
 });
 
 test('get session cart exists', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $service = new \Box\Mod\Cart\Service();
 
     $sessionId = 'rrcpqo7tkjh14d2vmf0car64k7';
@@ -84,6 +83,7 @@ dataset('getSessionCartDoesNotExistProvider', function (): array {
 });
 
 test('get session cart does not exist', function (?int $sessionGetWillReturn, string $getCurrencyByClientIdExpects, string $getDefaultExpects): void {
+    $service = new \Box\Mod\Cart\Service();
     $service = new \Box\Mod\Cart\Service();
 
     $currencyModel = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
@@ -150,28 +150,31 @@ test('get session cart does not exist', function (?int $sessionGetWillReturn, st
 })->with('getSessionCartDoesNotExistProvider');
 
 test('is stock available returns false when insufficient', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $product = new \Model_Product();
     $product->loadBean(new \Tests\Helpers\DummyBean());
     $product->stock_control = true;
     $product->quantity_in_stock = 5;
 
-    $result = $this->service->isStockAvailable($product, 6);
+    $result = $service->isStockAvailable($product, 6);
 
     expect($result)->toBeFalse();
 });
 
 test('is stock available returns true when no stock control', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $product = new \Model_Product();
     $product->loadBean(new \Tests\Helpers\DummyBean());
     $product->stock_control = false;
     $product->quantity_in_stock = 5;
 
-    $result = $this->service->isStockAvailable($product, 6);
+    $result = $service->isStockAvailable($product, 6);
 
     expect($result)->toBeTrue();
 });
 
 test('is recurrent pricing', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $productTable = Mockery::mock(\Model_ProductTable::class);
     $productTable->shouldReceive('getPricingArray')
         ->atLeast()->once()
@@ -182,12 +185,13 @@ test('is recurrent pricing', function (): void {
         ->atLeast()->once()
         ->andReturn($productTable);
 
-    $result = $this->service->isRecurrentPricing($productModelMock);
+    $result = $service->isRecurrentPricing($productModelMock);
 
     expect($result)->toBeTrue();
 });
 
 test('is period enabled for product', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $enabled = false;
     $pricingArray = [
         'type' => \Model_ProductPayment::RECURRENT,
@@ -207,13 +211,14 @@ test('is period enabled for product', function (): void {
         ->atLeast()->once()
         ->andReturn($productTable);
 
-    $result = $this->service->isPeriodEnabledForProduct($productModelMock, 'monthly');
+    $result = $service->isPeriodEnabledForProduct($productModelMock, 'monthly');
 
     expect($result)->toBeBool();
     expect($result)->toEqual($enabled);
 });
 
 test('is period enabled for product not recurrent', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $enabled = false;
     $pricingArray = [
         'type' => \Model_ProductPayment::FREE,
@@ -233,13 +238,14 @@ test('is period enabled for product not recurrent', function (): void {
         ->atLeast()->once()
         ->andReturn($productTable);
 
-    $result = $this->service->isPeriodEnabledForProduct($productModelMock, 'monthly');
+    $result = $service->isPeriodEnabledForProduct($productModelMock, 'monthly');
 
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
 test('remove product', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $cartProduct = new \Model_CartProduct();
     $cartProduct->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -256,16 +262,17 @@ test('remove product', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
-    $result = $this->service->removeProduct($cart, 1);
+    $result = $service->removeProduct($cart, 1);
 
     expect($result)->toBeTrue();
 });
 
 test('remove product cart product not found', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $dbMock = Mockery::mock(\Box_Database::class);
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
@@ -274,15 +281,16 @@ test('remove product cart product not found', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
     $this->expectException(\FOSSBilling\Exception::class);
-    $this->service->removeProduct($cart, 1);
+    $service->removeProduct($cart, 1);
 });
 
 test('change cart currency', function (): void {
+    $service = new \Box\Mod\Cart\Service();
 
     $dbMock = Mockery::mock(\Box_Database::class);
     $dbMock->shouldReceive('store')
@@ -299,14 +307,15 @@ test('change cart currency', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->changeCartCurrency($cart, $currency);
+    $result = $service->changeCartCurrency($cart, $currency);
 
     expect($result)->toBeTrue();
 });
 
 test('reset cart', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $dbMock = Mockery::mock(\Box_Database::class);
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
@@ -323,14 +332,15 @@ test('reset cart', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->resetCart($cart);
+    $result = $service->resetCart($cart);
 
     expect($result)->toBeTrue();
 });
 
 test('remove promo', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $dbMock = Mockery::mock(\Box_Database::class);
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
@@ -342,14 +352,15 @@ test('remove promo', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->removePromo($cart);
+    $result = $service->removePromo($cart);
 
     expect($result)->toBeTrue();
 });
 
 test('apply promo', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $dbMock = Mockery::mock(\Box_Database::class);
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
@@ -369,14 +380,15 @@ test('apply promo', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->applyPromo($cart, $promo);
+    $result = $service->applyPromo($cart, $promo);
 
     expect($result)->toBeTrue();
 });
 
 test('apply promo already applied', function (): void {
+    $service = new \Box\Mod\Cart\Service();
 
     $dbMock = Mockery::mock(\Box_Database::class);
     $dbMock->shouldReceive('store')->never();
@@ -405,6 +417,7 @@ test('apply promo already applied', function (): void {
 });
 
 test('apply promo empty cart exception', function (): void {
+    $service = new \Box\Mod\Cart\Service();
 
     $dbMock = Mockery::mock(\Box_Database::class);
     $dbMock->shouldReceive('store')->never();
@@ -434,6 +447,7 @@ test('apply promo empty cart exception', function (): void {
 });
 
 test('rm', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $dbMock = Mockery::mock(\Box_Database::class);
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
@@ -447,14 +461,15 @@ test('rm', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->rm($cart);
+    $result = $service->rm($cart);
 
     expect($result)->toBeTrue();
 });
 
 test('is client able to use promo', function (): void {
+    $service = new \Box\Mod\Cart\Service();
 
     $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)
         ->makePartial()
@@ -483,6 +498,7 @@ test('is client able to use promo', function (): void {
 });
 
 test('client had used promo', function (): void {
+    $service = new \Box\Mod\Cart\Service();
 
     $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('promoCanBeApplied')
@@ -512,6 +528,7 @@ test('client had used promo', function (): void {
 });
 
 test('is client able to use promo once per client', function (): void {
+    $service = new \Box\Mod\Cart\Service();
 
     $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)
         ->makePartial()
@@ -537,6 +554,7 @@ test('is client able to use promo once per client', function (): void {
 });
 
 test('is client able to use promo can not be applied', function (): void {
+    $service = new \Box\Mod\Cart\Service();
 
     $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)
         ->makePartial()
@@ -605,19 +623,21 @@ dataset('promoCanBeAppliedProvider', function (): array {
 });
 
 test('promo can be applied', function (\Model_Promo $promo, bool $expectedResult): void {
+    $service = new \Box\Mod\Cart\Service();
     $dbMock = Mockery::mock(\Box_Database::class);
     $dbMock->shouldReceive('store')->never();
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->promoCanBeApplied($promo);
+    $result = $service->promoCanBeApplied($promo);
 
     expect($result)->toEqual($expectedResult);
 })->with('promoCanBeAppliedProvider');
 
 test('get cart products', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $dbMock = Mockery::mock(\Box_Database::class);
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
@@ -625,18 +645,19 @@ test('get cart products', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->getCartProducts($cart);
+    $result = $service->getCartProducts($cart);
 
     expect($result)->toBeArray();
     expect($result[0])->toBeInstanceOf('Model_CartProduct');
 });
 
 test('checkout cart', function (): void {
+    $service = new \Box\Mod\Cart\Service();
 
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
@@ -695,6 +716,7 @@ test('checkout cart', function (): void {
 });
 
 test('checkout cart client is not able to use promo exception', function (): void {
+    $service = new \Box\Mod\Cart\Service();
 
     $cart = new \Model_Cart();
     $cart->loadBean(new \Tests\Helpers\DummyBean());
@@ -727,6 +749,7 @@ test('checkout cart client is not able to use promo exception', function (): voi
 });
 
 test('use promo', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $promo = new \Model_Promo();
     $promo->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -737,14 +760,15 @@ test('use promo', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->usePromo($promo);
+    $result = $service->usePromo($promo);
 
     expect($result)->toBeNull();
 });
 
 test('find active promo by code', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $promo = new \Model_Promo();
     $promo->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -755,14 +779,15 @@ test('find active promo by code', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->findActivePromoByCode('CODE');
+    $result = $service->findActivePromoByCode('CODE');
 
     expect($result)->toBeInstanceOf('Model_Promo');
 });
 
 test('add item throws exception when out of stock', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $cartModel = new \Model_Cart();
     $cartModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -799,6 +824,7 @@ test('add item throws exception when out of stock', function (): void {
 });
 
 test('add item for hosting type product', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $cartModel = new \Model_Cart();
     $cartModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -851,6 +877,7 @@ test('add item for hosting type product', function (): void {
 });
 
 test('add item for license type product', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $cartModel = new \Model_Cart();
     $cartModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -901,6 +928,7 @@ test('add item for license type product', function (): void {
 });
 
 test('add item for custom type product', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $cartModel = new \Model_Cart();
     $cartModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -953,6 +981,7 @@ test('add item for custom type product', function (): void {
 });
 
 test('add item throws exception when recurring payment period param missing', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $cartModel = new \Model_Cart();
     $cartModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -991,6 +1020,7 @@ test('add item throws exception when recurring payment period param missing', fu
 });
 
 test('add item throws exception when recurring payment period is not enabled', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $cartModel = new \Model_Cart();
     $cartModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1031,6 +1061,7 @@ test('add item throws exception when recurring payment period is not enabled', f
 });
 
 test('to api array', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $cartModel = new \Model_Cart();
     $cartModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1087,6 +1118,7 @@ test('to api array', function (): void {
 });
 
 test('get product discount with promo', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $cartProductModel = new \Model_CartProduct();
     $cartProductModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1128,6 +1160,7 @@ test('get product discount with promo', function (): void {
 });
 
 test('get product discount with no promo', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $cartProductModel = new \Model_CartProduct();
     $cartProductModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1160,6 +1193,7 @@ test('get product discount with no promo', function (): void {
 });
 
 test('get product discount with product qty set and free setup', function (): void {
+    $service = new \Box\Mod\Cart\Service();
     $cartProductModel = new \Model_CartProduct();
     $cartProductModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -1252,11 +1286,12 @@ dataset('isPromoAvailableForClientGroupProvider', function () {
 });
 
 test('is promo available for client group', function (\Model_Promo $promo, ?\Model_Client $client, bool $expectedResult): void {
+    $service = new \Box\Mod\Cart\Service();
     $di = container();
     $di['loggedin_client'] = $client;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->isPromoAvailableForClientGroup($promo);
+    $result = $service->isPromoAvailableForClientGroup($promo);
 
     expect($result)->toEqual($expectedResult);
 })->with('isPromoAvailableForClientGroupProvider');

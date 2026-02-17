@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 beforeEach(function () {
-    $this->api = new \Box\Mod\Spamchecker\Api\Guest();
+    $api = new \Box\Mod\Spamchecker\Api\Guest();
 });
 
 dataset('recaptcha config', function () {
@@ -106,19 +106,21 @@ dataset('recaptcha config', function () {
     ];
 });
 
-test('dependency injection', function () {
+test('dependency injection', function (): void {
+    $api = new \Box\Mod\Spamchecker\Api\Guest();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toEqual($di);
 });
 
 test('recaptcha', function (array $config, array $expected) {
+    $api = new \Box\Mod\Spamchecker\Api\Guest();
     $di = container();
     $di['mod_config'] = $di->protect(fn (): array => $config);
 
-    $this->api->setDi($di);
-    $result = $this->api->recaptcha([]);
+    $api->setDi($di);
+    $result = $api->recaptcha([]);
 
     expect($result)->toEqual($expected);
 })->with('recaptcha config');

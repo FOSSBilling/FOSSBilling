@@ -15,22 +15,25 @@ use Box\Mod\Theme\Model;
 use Box\Mod\Theme\Service;
 
 beforeEach(function (): void {
-    $this->service = new Service();
+    $service = new Service();
 });
 
 test('getDi returns the dependency injection container', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
 test('getTheme returns a Theme model instance', function (): void {
-    $result = $this->service->getTheme('huraga');
+    $service = new \Box\Mod\Theme\Service();
+    $result = $service->getTheme('huraga');
     expect($result)->toBeInstanceOf(Model\Theme::class);
 });
 
 test('getCurrentThemePreset sets current theme preset when empty', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('setCurrentThemePreset')
         ->atLeast()
@@ -63,6 +66,7 @@ test('getCurrentThemePreset sets current theme preset when empty', function (): 
 });
 
 test('setCurrentThemePreset updates theme preset', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('exec')
         ->atLeast()
@@ -79,13 +83,14 @@ test('setCurrentThemePreset updates theme preset', function (): void {
     $di['theme'] = $di->protect(fn (): \Mockery\MockInterface => $themeMock);
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->setCurrentThemePreset($themeMock, 'dark_blue');
+    $service->setDi($di);
+    $result = $service->setCurrentThemePreset($themeMock, 'dark_blue');
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
 test('deletePreset removes a theme preset', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('exec')
         ->atLeast()
@@ -102,13 +107,14 @@ test('deletePreset removes a theme preset', function (): void {
     $di['theme'] = $di->protect(fn (): \Mockery\MockInterface => $themeMock);
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->deletePreset($themeMock, 'dark_blue');
+    $service->setDi($di);
+    $result = $service->deletePreset($themeMock, 'dark_blue');
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
 test('getThemePresets returns available presets', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('updateSettings')
         ->atLeast()
@@ -151,6 +157,7 @@ test('getThemePresets returns available presets', function (): void {
 });
 
 test('getThemePresets returns default when theme has no settings data file', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAssoc')
         ->atLeast()
@@ -171,9 +178,9 @@ test('getThemePresets returns default when theme has no settings data file', fun
 
     $di['theme'] = $di->protect(fn (): \Mockery\MockInterface => $themeMock);
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getThemePresets($themeMock);
+    $result = $service->getThemePresets($themeMock);
     expect($result)->toBeArray();
 
     $expected = [
@@ -183,6 +190,7 @@ test('getThemePresets returns default when theme has no settings data file', fun
 });
 
 test('getThemeSettings returns theme settings', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $extensionMetaModel = new \Model_ExtensionMeta();
     $extensionMetaModel->loadBean(new \Tests\Helpers\DummyBean());
     $extensionMetaModel->meta_value = '{}';
@@ -203,12 +211,13 @@ test('getThemeSettings returns theme settings', function (): void {
 
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getThemeSettings($themeMock, 'default');
+    $service->setDi($di);
+    $result = $service->getThemeSettings($themeMock, 'default');
     expect($result)->toBeArray();
 });
 
 test('getThemeSettings with empty presets returns empty array', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getCurrentThemePreset')
         ->atLeast()
@@ -242,6 +251,7 @@ test('getThemeSettings with empty presets returns empty array', function (): voi
 });
 
 test('updateSettings updates theme settings', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $extensionMetaModel = new \Model_ExtensionMeta();
     $extensionMetaModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -268,14 +278,15 @@ test('updateSettings updates theme settings', function (): void {
 
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
     $params = [];
-    $result = $this->service->updateSettings($themeMock, 'default', $params);
+    $result = $service->updateSettings($themeMock, 'default', $params);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
 test('regenerateThemeSettingsDataFile regenerates settings file', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $tmpDir = sys_get_temp_dir() . '/fb_test_' . uniqid();
     mkdir($tmpDir, 0o755, true);
     $testFile = $tmpDir . '/test_settings.json';
@@ -328,6 +339,7 @@ test('regenerateThemeSettingsDataFile regenerates settings file', function (): v
 });
 
 test('regenerateThemeCssAndJsFiles handles empty files', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $themeMock = Mockery::mock(Model\Theme::class);
 
     $tmpDir = sys_get_temp_dir() . '/fb_test_assets_' . uniqid();
@@ -339,9 +351,9 @@ test('regenerateThemeCssAndJsFiles handles empty files', function (): void {
         ->andReturn($tmpDir . '/');
 
     $di = container();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->regenerateThemeCssAndJsFiles($themeMock, 'default', new \Model_Admin());
+    $result = $service->regenerateThemeCssAndJsFiles($themeMock, 'default', new \Model_Admin());
 
     // Clean up temp directory
     if (is_dir($tmpDir)) {
@@ -353,6 +365,7 @@ test('regenerateThemeCssAndJsFiles handles empty files', function (): void {
 });
 
 test('getCurrentAdminAreaTheme returns theme configuration', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()
@@ -362,13 +375,14 @@ test('getCurrentAdminAreaTheme returns theme configuration', function (): void {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getCurrentAdminAreaTheme();
+    $result = $service->getCurrentAdminAreaTheme();
     expect($result)->toBeArray();
 });
 
 test('getCurrentClientAreaTheme returns Theme model', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $themeMock = Mockery::mock(Model\Theme::class);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -387,6 +401,7 @@ test('getCurrentClientAreaTheme returns Theme model', function (): void {
 });
 
 test('getCurrentClientAreaThemeCode returns theme code', function (): void {
+    $service = new \Box\Mod\Theme\Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()
@@ -395,9 +410,9 @@ test('getCurrentClientAreaThemeCode returns theme code', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getCurrentClientAreaThemeCode();
+    $result = $service->getCurrentClientAreaThemeCode();
     expect($result)->toBeString();
     expect($result)->toBe('huraga');
 });

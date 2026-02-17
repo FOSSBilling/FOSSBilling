@@ -14,10 +14,11 @@ use Box\Mod\Servicecustom\Api\Admin;
 use Box\Mod\Servicecustom\Service;
 
 beforeEach(function () {
-    $this->api = new Admin();
+    $api = new Admin();
 });
 
-test('updates configuration', function () {
+test('updates configuration', function (): void {
+    $api = new \Box\Mod\Servicecustom\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateConfig')
         ->atLeast()->once();
@@ -29,11 +30,12 @@ test('updates configuration', function () {
         ],
     ];
 
-    $this->api->setService($serviceMock);
-    $this->api->update($data);
+    $api->setService($serviceMock);
+    $api->update($data);
 });
 
-test('throws exception when updating without order_id', function () {
+test('throws exception when updating without order_id', function (): void {
+    $api = new \Box\Mod\Servicecustom\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateConfig')
         ->never();
@@ -44,13 +46,14 @@ test('throws exception when updating without order_id', function () {
         ],
     ];
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    expect(fn () => $this->api->update($data))
+    expect(fn () => $api->update($data))
         ->toThrow(\Exception::class);
 });
 
-test('returns true when updating without config', function () {
+test('returns true when updating without config', function (): void {
+    $api = new \Box\Mod\Servicecustom\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateConfig')
         ->never();
@@ -59,13 +62,14 @@ test('returns true when updating without config', function () {
         'order_id' => 1,
     ];
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->update($data);
+    $api->setService($serviceMock);
+    $result = $api->update($data);
 
     expect($result)->toBeTrue();
 });
 
-test('returns true when config is not an array', function () {
+test('returns true when config is not an array', function (): void {
+    $api = new \Box\Mod\Servicecustom\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateConfig')
         ->never();
@@ -75,13 +79,14 @@ test('returns true when config is not an array', function () {
         'config' => 'NotArray',
     ];
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->update($data);
+    $api->setService($serviceMock);
+    $result = $api->update($data);
 
     expect($result)->toBeTrue();
 });
 
-test('calls magic method', function () {
+test('calls magic method', function (): void {
+    $api = new \Box\Mod\Servicecustom\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->atLeast()->once()
@@ -96,11 +101,12 @@ test('calls magic method', function () {
         ],
     ];
 
-    $this->api->setService($serviceMock);
-    $this->api->__call('delete', $arguments);
+    $api->setService($serviceMock);
+    $api->__call('delete', $arguments);
 });
 
-test('throws exception when calling magic method without arguments', function () {
+test('throws exception when calling magic method without arguments', function (): void {
+    $api = new \Box\Mod\Servicecustom\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->never();
@@ -109,13 +115,14 @@ test('throws exception when calling magic method without arguments', function ()
 
     $arguments = [];
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    expect(fn () => $this->api->__call('delete', $arguments))
+    expect(fn () => $api->__call('delete', $arguments))
         ->toThrow(\Exception::class);
 });
 
-test('throws exception when calling magic method without order_id', function () {
+test('throws exception when calling magic method without order_id', function (): void {
+    $api = new \Box\Mod\Servicecustom\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->never();
@@ -126,8 +133,8 @@ test('throws exception when calling magic method without order_id', function () 
         0 => [],
     ];
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    expect(fn () => $this->api->__call('delete', $arguments))
+    expect(fn () => $api->__call('delete', $arguments))
         ->toThrow(\Exception::class);
 });

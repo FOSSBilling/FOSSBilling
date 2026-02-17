@@ -16,7 +16,8 @@ beforeEach(function () {
     $this->clientApi = new \Box\Mod\Support\Api\Client();
 });
 
-test('ticket get list', function () {
+test('ticket get list', function (): void {
+    $api = new \Box\Mod\Support\Api\Client();
         $simpleResultArr = [
             'list' => [
                 ['id' => 1],

@@ -14,17 +14,19 @@ use function Tests\Helpers\container;
 use Box\Mod\Invoice\ServiceTransaction;
 
 beforeEach(function () {
-    $this->service = new ServiceTransaction();
+    $service = new ServiceTransaction();
 });
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTransaction();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('updates a transaction', function () {
+test('updates a transaction', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTransaction();
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
@@ -41,7 +43,7 @@ test('updates a transaction', function () {
     $di['events_manager'] = $eventsMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'invoice_id' => 1,
@@ -55,11 +57,12 @@ test('updates a transaction', function () {
         'status' => '',
         'validate_ipn' => '',
     ];
-    $result = $this->service->update($transactionModel, $data);
+    $result = $service->update($transactionModel, $data);
     expect($result)->toBeTrue();
 });
 
-test('throws exception when creating transaction with missing invoice id', function () {
+test('throws exception when creating transaction with missing invoice id', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTransaction();
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
@@ -67,17 +70,18 @@ test('throws exception when creating transaction with missing invoice id', funct
     $di = container();
     $di['events_manager'] = $eventsMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'skip_validation' => false,
     ];
 
-    expect(fn () => $this->service->create($data))
+    expect(fn () => $service->create($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Transaction invoice ID is missing');
 });
 
-test('throws exception when creating transaction with missing gateway id', function () {
+test('throws exception when creating transaction with missing gateway id', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTransaction();
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
@@ -85,18 +89,19 @@ test('throws exception when creating transaction with missing gateway id', funct
     $di = container();
     $di['events_manager'] = $eventsMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $data = [
         'skip_validation' => false,
         'invoice_id' => 2,
     ];
 
-    expect(fn () => $this->service->create($data))
+    expect(fn () => $service->create($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Payment gateway ID is missing');
 });
 
-test('deletes a transaction', function () {
+test('deletes a transaction', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTransaction();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('trash')
         ->atLeast()->once();
@@ -104,16 +109,17 @@ test('deletes a transaction', function () {
     $di = container();
     $di['logger'] = new \Tests\Helpers\TestLogger();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $transactionModel = new \Model_Transaction();
     $transactionModel->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->delete($transactionModel);
+    $result = $service->delete($transactionModel);
     expect($result)->toBeTrue();
 });
 
-test('converts to api array', function () {
+test('converts to api array', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTransaction();
     $dbMock = Mockery::mock('\Box_Database');
     $payGatewayModel = new \Model_PayGateway();
     $payGatewayModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -123,7 +129,7 @@ test('converts to api array', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $expected = [
         'id' => null,
@@ -149,16 +155,17 @@ test('converts to api array', function () {
     $transactionModel->loadBean(new \Tests\Helpers\DummyBean());
     $transactionModel->gateway_id = 1;
 
-    $result = $this->service->toApiArray($transactionModel, false);
+    $result = $service->toApiArray($transactionModel, false);
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
 
 test('gets search query with various parameters', function (array $data, array $expectedParams, string $expectedStringPart) {
+    $service = new \Box\Mod\Invoice\ServiceTransaction();
     $di = container();
 
-    $this->service->setDi($di);
-    $result = $this->service->getSearchQuery($data);
+    $service->setDi($di);
+    $result = $service->getSearchQuery($data);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
 
@@ -203,7 +210,8 @@ test('gets search query with various parameters', function (array $data, array $
     ],
 ]);
 
-test('counts transactions', function () {
+test('counts transactions', function (): void {
+    $service = new \Box\Mod\Invoice\ServiceTransaction();
     $queryResult = [['status' => \Model_Transaction::STATUS_RECEIVED, 'counter' => 1]];
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAll')
@@ -212,8 +220,8 @@ test('counts transactions', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->counter();
+    $result = $service->counter();
     expect($result)->toBeArray();
 });

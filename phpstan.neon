@@ -2,7 +2,7 @@ includes:
 	- phpstan-baseline.neon
 
 parameters:
-	level: 3
+	level: 5
 	paths:
 		- src
 	bootstrapFiles:
@@ -17,9 +17,23 @@ parameters:
 		- src/library/Server/Manager/Custom.php
 		- src/library/Server/Manager/Whm.php
 		- src/data/cache (?)
+		- '*/tests/*'
 	universalObjectCratesClasses:
 		- RedBeanPHP\SimpleModel
 		- RedBeanPHP\OODBBean
 	ignoreErrors:
 		- message: '#^Result of function header \(void\) is used\.$#'
 		  path: src/modules/Custompages/Controller/Client.php
+
+		# Pimple container access for authentication side effects
+		# These functions throw exceptions or redirect, so return values are intentionally unused
+		- identifier: expr.resultUnused
+		  path: '*/modules/*/Controller/*.php'
+
+		# Method called for side effects (throws on failure)
+		- identifier: method.resultUnused
+		  path: src/modules/Api/Controller/Client.php
+
+		# loggedin_client throws Exception, but PHPStan doesn't understand Pimple container behavior
+		- identifier: catch.neverThrown
+		  path: src/modules/Cart/Service.php

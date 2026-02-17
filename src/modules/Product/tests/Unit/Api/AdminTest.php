@@ -15,17 +15,19 @@ use Box\Mod\Product\Api\Admin;
 use Box\Mod\Product\Service;
 
 beforeEach(function () {
-    $this->api = new Admin();
+    $api = new Admin();
 });
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('gets product list', function () {
+test('gets product list', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getProductSearchQuery')
         ->atLeast()->once()
@@ -42,24 +44,26 @@ test('gets product list', function () {
     $di = container();
     $di['pager'] = $pagerMock;
 
-    $this->api->setService($serviceMock);
-    $this->api->setDi($di);
-    $result = $this->api->get_list([]);
+    $api->setService($serviceMock);
+    $api->setDi($di);
+    $result = $api->get_list([]);
     expect($result)->toBeArray();
 });
 
-test('gets product pairs', function () {
+test('gets product pairs', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getPairs')
         ->atLeast()->once()
         ->andReturn([]);
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->get_pairs([]);
+    $api->setService($serviceMock);
+    $result = $api->get_pairs([]);
     expect($result)->toBeArray();
 });
 
-test('gets a product', function () {
+test('gets a product', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['id' => 1];
 
     $model = new \Model_Product();
@@ -78,24 +82,26 @@ test('gets a product', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $result = $this->api->get($data);
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $result = $api->get($data);
     expect($result)->toBeArray();
 });
 
-test('gets product types', function () {
+test('gets product types', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getTypes')
         ->atLeast()->once()
         ->andReturn([]);
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->get_types();
+    $api->setService($serviceMock);
+    $result = $api->get_types();
     expect($result)->toBeArray();
 });
 
-test('throws exception when preparing domain product already created', function () {
+test('throws exception when preparing domain product already created', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = [
         'title' => 'testTitle',
         'type' => 'domain',
@@ -107,14 +113,15 @@ test('throws exception when preparing domain product already created', function 
         ->andReturn(new \Model_ProductDomain());
 
     $di = container();
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    expect(fn () => $this->api->prepare($data))
+    expect(fn () => $api->prepare($data))
         ->toThrow(\FOSSBilling\Exception::class, 'You have already created domain product');
 });
 
-test('throws exception when preparing unrecognized product type', function () {
+test('throws exception when preparing unrecognized product type', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = [
         'title' => 'testTitle',
         'type' => 'customForTestException',
@@ -131,14 +138,15 @@ test('throws exception when preparing unrecognized product type', function () {
         ->andReturn($typeArray);
 
     $di = container();
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    expect(fn () => $this->api->prepare($data))
+    expect(fn () => $api->prepare($data))
         ->toThrow(\FOSSBilling\Exception::class, "Product type {$data['type']} is not registered.");
 });
 
-test('prepares a product', function () {
+test('prepares a product', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = [
         'title' => 'testTitle',
         'type' => 'license',
@@ -161,15 +169,16 @@ test('prepares a product', function () {
         ->andReturn($newProductId);
 
     $di = container();
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->prepare($data);
+    $result = $api->prepare($data);
     expect($result)->toBeInt();
     expect($result)->toBe($newProductId);
 });
 
-test('updates a product', function () {
+test('updates a product', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['id' => 1];
     $model = new \Model_Product();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -187,22 +196,24 @@ test('updates a product', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->update($data);
+    $result = $api->update($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('throws exception when updating priority without priority param', function () {
+test('throws exception when updating priority without priority param', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = [];
 
-    expect(fn () => $this->api->update_priority($data))
+    expect(fn () => $api->update_priority($data))
         ->toThrow(\FOSSBilling\Exception::class, 'priority params is missing');
 });
 
-test('updates priority', function () {
+test('updates priority', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['priority' => []];
 
     $serviceMock = Mockery::mock(Service::class);
@@ -210,14 +221,15 @@ test('updates priority', function () {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $this->api->setService($serviceMock);
+    $api->setService($serviceMock);
 
-    $result = $this->api->update_priority($data);
+    $result = $api->update_priority($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('updates product config', function () {
+test('updates product config', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['id' => 1];
     $model = new \Model_Product();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -235,26 +247,28 @@ test('updates product config', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->update_config($data);
+    $result = $api->update_config($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('gets addon pairs', function () {
+test('gets addon pairs', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getAddons')
         ->atLeast()->once()
         ->andReturn([]);
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->addon_get_pairs([]);
+    $api->setService($serviceMock);
+    $result = $api->addon_get_pairs([]);
     expect($result)->toBeArray();
 });
 
-test('creates an addon', function () {
+test('creates an addon', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['title' => 'Title4test'];
     $newAddonId = 1;
 
@@ -264,15 +278,16 @@ test('creates an addon', function () {
         ->andReturn($newAddonId);
 
     $di = container();
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->addon_create($data);
+    $result = $api->addon_create($data);
     expect($result)->toBeInt();
     expect($result)->toBe($newAddonId);
 });
 
-test('gets an addon', function () {
+test('gets an addon', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['id' => 1];
 
     $model = new \Model_Product();
@@ -292,14 +307,15 @@ test('gets an addon', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->addon_get($data);
+    $result = $api->addon_get($data);
     expect($result)->toBeArray();
 });
 
-test('updates an addon', function () {
+test('updates an addon', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['id' => 1];
 
     $apiMock = Mockery::mock(Admin::class)->makePartial();
@@ -326,7 +342,8 @@ test('updates an addon', function () {
     expect($result)->toBeArray();
 });
 
-test('deletes an addon', function () {
+test('deletes an addon', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $apiMock = Mockery::mock(Admin::class)->makePartial();
     $apiMock->shouldReceive('delete')
         ->atLeast()->once()
@@ -337,7 +354,8 @@ test('deletes an addon', function () {
     expect($result)->toBeTrue();
 });
 
-test('deletes a product', function () {
+test('deletes a product', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['id' => 1];
 
     $model = new \Model_Product();
@@ -356,26 +374,28 @@ test('deletes a product', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setService($serviceMock);
-    $this->api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setDi($di);
 
-    $result = $this->api->delete($data);
+    $result = $api->delete($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('gets category pairs', function () {
+test('gets category pairs', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getProductCategoryPairs')
         ->atLeast()->once()
         ->andReturn([]);
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->category_get_pairs([]);
+    $api->setService($serviceMock);
+    $result = $api->category_get_pairs([]);
     expect($result)->toBeArray();
 });
 
-test('updates a category', function () {
+test('updates a category', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['id' => 1];
 
     $model = new \Model_ProductCategory();
@@ -394,15 +414,16 @@ test('updates a category', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setService($serviceMock);
-    $this->api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setDi($di);
 
-    $result = $this->api->category_update($data);
+    $result = $api->category_update($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('gets a category', function () {
+test('gets a category', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['id' => 1];
 
     $model = new \Model_ProductCategory();
@@ -421,14 +442,15 @@ test('gets a category', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setService($serviceMock);
-    $this->api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setDi($di);
 
-    $result = $this->api->category_get($data);
+    $result = $api->category_get($data);
     expect($result)->toBeArray();
 });
 
-test('creates a category', function () {
+test('creates a category', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['title' => 'test Title'];
     $newCategoryId = 1;
 
@@ -438,15 +460,16 @@ test('creates a category', function () {
         ->andReturn($newCategoryId);
 
     $di = container();
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->category_create($data);
+    $result = $api->category_create($data);
     expect($result)->toBeInt();
     expect($result)->toBe($newCategoryId);
 });
 
-test('deletes a category', function () {
+test('deletes a category', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['id' => 1];
 
     $model = new \Model_ProductCategory();
@@ -465,15 +488,16 @@ test('deletes a category', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setService($serviceMock);
-    $this->api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setDi($di);
 
-    $result = $this->api->category_delete($data);
+    $result = $api->category_delete($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('gets promo list', function () {
+test('gets promo list', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getPromoSearchQuery')
         ->atLeast()->once()
@@ -490,13 +514,14 @@ test('gets promo list', function () {
     $di = container();
     $di['pager'] = $pagerMock;
 
-    $this->api->setService($serviceMock);
-    $this->api->setDi($di);
-    $result = $this->api->promo_get_list([]);
+    $api->setService($serviceMock);
+    $api->setDi($di);
+    $result = $api->promo_get_list([]);
     expect($result)->toBeArray();
 });
 
-test('creates a promo', function () {
+test('creates a promo', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = [
         'code' => 'test',
         'type' => 'addon',
@@ -512,15 +537,16 @@ test('creates a promo', function () {
         ->andReturn($newPromoId);
 
     $di = container();
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    $result = $this->api->promo_create($data);
+    $result = $api->promo_create($data);
     expect($result)->toBeInt();
     expect($result)->toBe($newPromoId);
 });
 
-test('throws exception when getting promo without id', function () {
+test('throws exception when getting promo without id', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = [];
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -530,13 +556,14 @@ test('throws exception when getting promo without id', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->api->setDi($di);
+    $api->setDi($di);
 
-    expect(fn () => $this->api->promo_get($data))
+    expect(fn () => $api->promo_get($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Promo ID was not passed');
 });
 
-test('gets a promo', function () {
+test('gets a promo', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['id' => 1];
 
     $model = new \Model_Promo();
@@ -555,14 +582,15 @@ test('gets a promo', function () {
         ->atLeast()->once()
         ->andReturn([]);
 
-    $this->api->setService($serviceMock);
-    $this->api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setDi($di);
 
-    $result = $this->api->promo_get($data);
+    $result = $api->promo_get($data);
     expect($result)->toBeArray();
 });
 
-test('updates a promo', function () {
+test('updates a promo', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['id' => 1];
 
     $model = new \Model_Promo();
@@ -581,14 +609,15 @@ test('updates a promo', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $result = $this->api->promo_update($data);
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $result = $api->promo_update($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('deletes a promo', function () {
+test('deletes a promo', function (): void {
+    $api = new \Box\Mod\Product\Api\Admin();
     $data = ['id' => 1];
     $model = new \Model_Promo();
     $model->loadBean(new \Tests\Helpers\DummyBean());
@@ -606,9 +635,9 @@ test('deletes a promo', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
-    $this->api->setService($serviceMock);
-    $result = $this->api->promo_delete($data);
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $result = $api->promo_delete($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });

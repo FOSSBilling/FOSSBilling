@@ -23,17 +23,19 @@ dataset('validateOrderDataProvider', function () {
 });
 
 beforeEach(function (): void {
-    $this->service = new Service();
+    $service = new Service();
 });
 
 test('testGetDi', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toBe($di);
 });
 
 test('testValidateOrderData', function (string $field, string $exceptionMessage, int $excCode) {
+    $service = new \Box\Mod\Servicehosting\Service();
     $data = [
         'server_id' => 1,
         'hosting_plan_id' => 2,
@@ -45,10 +47,11 @@ test('testValidateOrderData', function (string $field, string $exceptionMessage,
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage($exceptionMessage);
-    $this->service->validateOrderData($data);
+    $service->validateOrderData($data);
 })->with('validateOrderDataProvider');
 
 test('testActionCreate', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
     $confArr = [
@@ -89,11 +92,12 @@ test('testActionCreate', function (): void {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->service->setDi($di);
-    $this->service->action_create($orderModel);
+    $service->setDi($di);
+    $service->action_create($orderModel);
 });
 
 test('testActionRenew', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -113,12 +117,13 @@ test('testActionRenew', function (): void {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->service->setDi($di);
-    $result = $this->service->action_renew($orderModel);
+    $service->setDi($di);
+    $result = $service->action_renew($orderModel);
     expect($result)->toBeTrue();
 });
 
 test('testActionRenewOrderWithoutActiveService', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
     $orderModel->id = 1;
@@ -129,13 +134,14 @@ test('testActionRenewOrderWithoutActiveService', function (): void {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
-    $this->service->action_renew($orderModel);
+    $service->action_renew($orderModel);
 });
 
 test('testActionSuspend', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -170,6 +176,7 @@ test('testActionSuspend', function (): void {
 });
 
 test('testActionSuspendOrderWithoutActiveService', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
     $orderModel->id = 1;
@@ -180,13 +187,14 @@ test('testActionSuspendOrderWithoutActiveService', function (): void {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
-    $this->service->action_suspend($orderModel);
+    $service->action_suspend($orderModel);
 });
 
 test('testActionUnsuspend', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -221,6 +229,7 @@ test('testActionUnsuspend', function (): void {
 });
 
 test('testActionUnsuspendOrderWithoutActiveService', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
     $orderModel->id = 1;
@@ -231,13 +240,14 @@ test('testActionUnsuspendOrderWithoutActiveService', function (): void {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
-    $this->service->action_unsuspend($orderModel);
+    $service->action_unsuspend($orderModel);
 });
 
 test('testActionCancel', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -272,6 +282,7 @@ test('testActionCancel', function (): void {
 });
 
 test('testActionCancelOrderWithoutActiveService', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
     $orderModel->id = 1;
@@ -282,13 +293,14 @@ test('testActionCancelOrderWithoutActiveService', function (): void {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
-    $this->service->action_cancel($orderModel);
+    $service->action_cancel($orderModel);
 });
 
 test('testActionDelete', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
     $orderModel->status = 'active';
@@ -317,6 +329,7 @@ test('testActionDelete', function (): void {
 });
 
 test('testChangeAccountPlan', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -352,6 +365,7 @@ test('testChangeAccountPlan', function (): void {
 });
 
 test('testChangeAccountUsername', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $data = [
         'username' => 'u123456',
     ];
@@ -387,6 +401,7 @@ test('testChangeAccountUsername', function (): void {
 });
 
 test('testChangeAccountUsernameMissingUsername', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -396,10 +411,11 @@ test('testChangeAccountUsernameMissingUsername', function (): void {
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Account username is missing or is invalid');
-    $this->service->changeAccountUsername($orderModel, $model, $data);
+    $service->changeAccountUsername($orderModel, $model, $data);
 });
 
 test('testChangeAccountIp', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $data = [
         'ip' => '1.1.1.1',
     ];
@@ -435,6 +451,7 @@ test('testChangeAccountIp', function (): void {
 });
 
 test('testChangeAccountIpMissingIp', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $data = [];
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -444,10 +461,11 @@ test('testChangeAccountIpMissingIp', function (): void {
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Account IP address is missing or is invalid');
-    $this->service->changeAccountIp($orderModel, $model, $data);
+    $service->changeAccountIp($orderModel, $model, $data);
 });
 
 test('testChangeAccountDomain', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $data = [
         'tld' => 'com',
         'sld' => 'testingSld',
@@ -484,6 +502,7 @@ test('testChangeAccountDomain', function (): void {
 });
 
 test('testChangeAccountDomainMissingParams', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $data = [];
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -493,10 +512,11 @@ test('testChangeAccountDomainMissingParams', function (): void {
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Domain SLD or TLD is missing');
-    $this->service->changeAccountDomain($orderModel, $model, $data);
+    $service->changeAccountDomain($orderModel, $model, $data);
 });
 
 test('testChangeAccountPassword', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $data = [
         'password' => 'topsecret',
         'password_confirm' => 'topsecret',
@@ -533,6 +553,7 @@ test('testChangeAccountPassword', function (): void {
 });
 
 test('testChangeAccountPasswordMissingParams', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $data = [];
     $orderModel = new \Model_ClientOrder();
     $orderModel->loadBean(new \Tests\Helpers\DummyBean());
@@ -542,10 +563,11 @@ test('testChangeAccountPasswordMissingParams', function (): void {
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Account password is missing or is invalid');
-    $this->service->changeAccountPassword($orderModel, $model, $data);
+    $service->changeAccountPassword($orderModel, $model, $data);
 });
 
 test('testSync', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $data = [
         'password' => 'topsecret',
         'password_confirm' => 'topsecret',
@@ -593,6 +615,7 @@ test('testSync', function (): void {
 });
 
 test('testToApiArray', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $model = new \Model_ServiceHosting();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -617,13 +640,14 @@ test('testToApiArray', function (): void {
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
     $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustomStub);
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->toApiArray($model, false, new \Model_Admin());
+    $result = $service->toApiArray($model, false, new \Model_Admin());
     expect($result)->toBeArray();
 });
 
 test('testUpdate', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $data = [
         'username' => 'testUser',
         'ip' => '1.1.1.1',
@@ -637,30 +661,33 @@ test('testUpdate', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->update($model, $data);
+    $result = $service->update($model, $data);
     expect($result)->toBeTrue();
 });
 
 test('testGetServerManagers', function (): void {
-    $result = $this->service->getServerManagers();
+    $service = new \Box\Mod\Servicehosting\Service();
+    $result = $service->getServerManagers();
     expect($result)->toBeArray();
 });
 
 test('testGetServerManagerConfig', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $manager = 'Custom';
 
     $expected = [
         'label' => 'Custom Server Manager',
     ];
 
-    $result = $this->service->getServerManagerConfig($manager);
+    $result = $service->getServerManagerConfig($manager);
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
 
 test('testGetServerPairs', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $expected = [
         '1' => 'name',
         '2' => 'ding',
@@ -684,21 +711,23 @@ test('testGetServerPairs', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getServerPairs();
+    $result = $service->getServerPairs();
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
 
 test('testGetServerSearchQuery', function (): void {
-    $result = $this->service->getServersSearchQuery([]);
+    $service = new \Box\Mod\Servicehosting\Service();
+    $result = $service->getServersSearchQuery([]);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
     expect($result[1])->toBe([]);
 });
 
 test('testCreateServer', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $dbMock = Mockery::mock('\Box_Database');
 
     $hostingServerModel = new \Model_ServiceHostingServer();
@@ -718,18 +747,19 @@ test('testCreateServer', function (): void {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $name = 'newSuperFastServer';
     $ip = '1.1.1.1';
     $manager = 'Custom';
     $data = [];
-    $result = $this->service->createServer($name, $ip, $manager, $data);
+    $result = $service->createServer($name, $ip, $manager, $data);
     expect($result)->toBeInt();
     expect($result)->toBe($newId);
 });
 
 test('testDeleteServer', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $hostingServerModel = new \Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -739,13 +769,14 @@ test('testDeleteServer', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->deleteServer($hostingServerModel);
+    $result = $service->deleteServer($hostingServerModel);
     expect($result)->toBeTrue();
 });
 
 test('testUpdateServer', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $data = [
         'name' => 'newName',
         'ip' => '1.1.1.1',
@@ -774,13 +805,14 @@ test('testUpdateServer', function (): void {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->updateServer($hostingServerModel, $data);
+    $result = $service->updateServer($hostingServerModel, $data);
     expect($result)->toBeTrue();
 });
 
 test('testGetServerManager', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $hostingServerModel = new \Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new \Tests\Helpers\DummyBean());
     $hostingServerModel->manager = 'Custom';
@@ -789,37 +821,40 @@ test('testGetServerManager', function (): void {
 
     $di = container();
     $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustomStub);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getServerManager($hostingServerModel);
+    $result = $service->getServerManager($hostingServerModel);
     expect($result)->toBeInstanceOf('\Server_Manager_Custom');
 });
 
 test('testGetServerManagerManagerNotDefined', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $hostingServerModel = new \Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new \Tests\Helpers\DummyBean());
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionCode(654);
     $this->expectExceptionMessage('Invalid server manager. Server was not configured properly');
-    $this->service->getServerManager($hostingServerModel);
+    $service->getServerManager($hostingServerModel);
 });
 
 test('testGetServerManagerServerManagerInvalid', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $hostingServerModel = new \Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new \Tests\Helpers\DummyBean());
     $hostingServerModel->manager = 'Custom';
 
     $di = container();
     $di['server_manager'] = $di->protect(fn ($manager, $config): null => null);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage("Server manager {$hostingServerModel->manager} is invalid.");
-    $this->service->getServerManager($hostingServerModel);
+    $service->getServerManager($hostingServerModel);
 });
 
 test('testTestConnection', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
     $serverManagerMock
     ->shouldReceive('testConnection')
@@ -840,6 +875,7 @@ test('testTestConnection', function (): void {
 });
 
 test('testGetHpPairs', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $expected = [
         '1' => 'free',
         '2' => 'paid',
@@ -863,21 +899,23 @@ test('testGetHpPairs', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getHpPairs();
+    $result = $service->getHpPairs();
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
 
 test('testGetHpSearchQuery', function (): void {
-    $result = $this->service->getServersSearchQuery([]);
+    $service = new \Box\Mod\Servicehosting\Service();
+    $result = $service->getServersSearchQuery([]);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
     expect($result[1])->toBe([]);
 });
 
 test('testDeleteHp', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $model = new \Model_ServiceHostingHp();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
@@ -888,21 +926,23 @@ test('testDeleteHp', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->deleteHp($model);
+    $result = $service->deleteHp($model);
     expect($result)->toBeTrue();
 });
 
 test('testToHostingHpApiArray', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $model = new \Model_ServiceHostingHp();
     $model->loadBean(new \Tests\Helpers\DummyBean());
 
-    $result = $this->service->toHostingHpApiArray($model);
+    $result = $service->toHostingHpApiArray($model);
     expect($result)->toBeArray();
 });
 
 test('testUpdateHp', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $data = [
         'name' => 'firstPlan',
         'bandwidth' => '100000',
@@ -925,13 +965,14 @@ test('testUpdateHp', function (): void {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->updateHp($model, $data);
+    $result = $service->updateHp($model, $data);
     expect($result)->toBeTrue();
 });
 
 test('testCreateHp', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $model = new \Model_ServiceHostingHp();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $newId = 1;
@@ -946,26 +987,28 @@ test('testCreateHp', function (): void {
     $di['db'] = $dbMock;
     $di['logger'] = new \Tests\Helpers\TestLogger();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->createHp('Free Plan', []);
+    $result = $service->createHp('Free Plan', []);
     expect($result)->toBeInt();
     expect($result)->toBe($newId);
 });
 
 test('testGetServerPackage', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $model = new \Model_ServiceHostingHp();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->config = '{}';
 
     $di = container();
 
-    $this->service->setDi($di);
-    $result = $this->service->getServerPackage($model);
+    $service->setDi($di);
+    $result = $service->getServerPackage($model);
     expect($result)->toBeInstanceOf('\Server_Package');
 });
 
 test('testGetServerManagerWithLog', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $hostingServerModel = new \Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new \Tests\Helpers\DummyBean());
     $hostingServerModel->manager = 'Custom';
@@ -996,6 +1039,7 @@ test('testGetServerManagerWithLog', function (): void {
 });
 
 test('testGetManagerUrls', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $hostingServerModel = new \Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new \Tests\Helpers\DummyBean());
     $hostingServerModel->manager = 'Custom';
@@ -1023,6 +1067,7 @@ test('testGetManagerUrls', function (): void {
 });
 
 test('testGetManagerUrlsException', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $hostingServerModel = new \Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new \Tests\Helpers\DummyBean());
     $hostingServerModel->manager = 'Custom';
@@ -1039,6 +1084,7 @@ test('testGetManagerUrlsException', function (): void {
 });
 
 test('testGetFreeTldsFreeTldsAreNotSet', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $di = container();
 
     $tldArray = ['tld' => '.com'];
@@ -1059,25 +1105,26 @@ test('testGetFreeTldsFreeTldsAreNotSet', function (): void {
     ->andReturn([$tldModel]);
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
     $model = new \Model_Product();
     $model->loadBean(new \Tests\Helpers\DummyBean());
-    $result = $this->service->getFreeTlds($model);
+    $result = $service->getFreeTlds($model);
     expect($result)->toBeArray();
 });
 
 test('testGetFreeTlds', function (): void {
+    $service = new \Box\Mod\Servicehosting\Service();
     $config = [
         'free_tlds' => ['.com'],
     ];
     $di = container();
 
-    $this->service->setDi($di);
+    $service->setDi($di);
     $model = new \Model_Product();
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->config = json_encode($config);
 
-    $result = $this->service->getFreeTlds($model);
+    $result = $service->getFreeTlds($model);
     expect($result)->toBeArray();
     expect($result)->not->toBeEmpty();
 });

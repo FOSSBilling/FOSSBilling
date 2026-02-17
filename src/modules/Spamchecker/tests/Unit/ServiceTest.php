@@ -14,17 +14,19 @@ use function Tests\Helpers\container;
 use Symfony\Component\HttpFoundation\Request;
 
 beforeEach(function () {
-    $this->service = new \Box\Mod\Spamchecker\Service();
+    $service = new \Box\Mod\Spamchecker\Service();
 });
 
-test('dependency injection', function () {
+test('dependency injection', function (): void {
+    $service = new \Box\Mod\Spamchecker\Service();
     $di = container();
-    $this->service->setDi($di);
-    $getDi = $this->service->getDi();
+    $service->setDi($di);
+    $getDi = $service->getDi();
     expect($getDi)->toEqual($di);
 });
 
-test('on before client sign up', function () {
+test('on before client sign up', function (): void {
+    $service = new \Box\Mod\Spamchecker\Service();
     $spamCheckerService = Mockery::mock(\Box\Mod\Spamchecker\Service::class);
     $spamCheckerService->shouldReceive('isBlockedIp')
         ->atLeast()->once();
@@ -40,10 +42,11 @@ test('on before client sign up', function () {
         ->atLeast()->once()
         ->andReturn($di);
 
-    $this->service->onBeforeClientSignUp($boxEventMock);
+    $service->onBeforeClientSignUp($boxEventMock);
 });
 
-test('on before guest public ticket open', function () {
+test('on before guest public ticket open', function (): void {
+    $service = new \Box\Mod\Spamchecker\Service();
     $spamCheckerService = Mockery::mock(\Box\Mod\Spamchecker\Service::class);
     $spamCheckerService->shouldReceive('isBlockedIp')
         ->atLeast()->once();
@@ -59,10 +62,11 @@ test('on before guest public ticket open', function () {
         ->atLeast()->once()
         ->andReturn($di);
 
-    $this->service->onBeforeGuestPublicTicketOpen($boxEventMock);
+    $service->onBeforeGuestPublicTicketOpen($boxEventMock);
 });
 
-test('is blocked ip ip not blocked', function () {
+test('is blocked ip ip not blocked', function (): void {
+    $service = new \Box\Mod\Spamchecker\Service();
     $clientIp = '214.1.4.99';
     $modConfig = [
         'block_ips' => true,
@@ -82,10 +86,11 @@ test('is blocked ip ip not blocked', function () {
         ->atLeast()->once()
         ->andReturn($di);
 
-    $this->service->isBlockedIp($boxEventMock);
+    $service->isBlockedIp($boxEventMock);
 });
 
-test('is blocked ip block ips not enabled', function () {
+test('is blocked ip block ips not enabled', function (): void {
+    $service = new \Box\Mod\Spamchecker\Service();
     $modConfig = [
         'block_ips' => false,
     ];
@@ -102,7 +107,7 @@ test('is blocked ip block ips not enabled', function () {
         ->atLeast()->once()
         ->andReturn($di);
 
-    $this->service->isBlockedIp($boxEventMock);
+    $service->isBlockedIp($boxEventMock);
 });
 
 dataset('spam responses', function () {

@@ -15,18 +15,20 @@ use Box\Mod\System\Service;
 use Twig\Environment;
 
 beforeEach(function (): void {
-    $this->service = new Service();
+    $service = new Service();
 });
 
 test('getParamValue throws exception when key parameter is missing', function (): void {
+    $service = new \Box\Mod\System\Service();
     $param = [];
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Parameter key is missing');
 
-    $this->service->getParamValue($param);
+    $service->getParamValue($param);
 });
 
 test('getCompany returns company information', function (): void {
+    $service = new \Box\Mod\System\Service();
     $expected = [
         'www' => SYSTEM_URL,
         'name' => 'Inc. Test',
@@ -68,19 +70,21 @@ test('getCompany returns company information', function (): void {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getCompany();
+    $result = $service->getCompany();
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
 
 test('getLanguages returns available languages', function (): void {
-    $result = $this->service->getLanguages(true);
+    $service = new \Box\Mod\System\Service();
+    $result = $service->getLanguages(true);
     expect($result)->toBeArray();
 });
 
 test('getParams returns system parameters', function (): void {
+    $service = new \Box\Mod\System\Service();
     $expected = [
         'company_name' => 'Inc. Test',
         'company_email' => 'work@example.eu',
@@ -102,14 +106,15 @@ test('getParams returns system parameters', function (): void {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->getParams([]);
+    $result = $service->getParams([]);
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
 
 test('updateParams updates system parameters', function (): void {
+    $service = new \Box\Mod\System\Service();
     $data = [
         'company_name' => 'newValue',
     ];
@@ -134,6 +139,7 @@ test('updateParams updates system parameters', function (): void {
 });
 
 test('getMessages returns system messages', function (): void {
+    $service = new \Box\Mod\System\Service();
     $latestVersion = '1.0.0';
     $type = 'info';
 
@@ -173,6 +179,7 @@ test('getMessages returns system messages', function (): void {
 });
 
 test('templateExists returns false when paths are empty', function (): void {
+    $service = new \Box\Mod\System\Service();
     $getThemeResults = ['paths' => []];
     $themeServiceMock = Mockery::mock(\Box\Mod\Theme\Service::class)->makePartial();
     $themeServiceMock->shouldReceive("getThemeConfig")->atLeast()->once()
@@ -180,14 +187,15 @@ test('templateExists returns false when paths are empty', function (): void {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $themeServiceMock);
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $result = $this->service->templateExists('defaultFile.cp');
+    $result = $service->templateExists('defaultFile.cp');
     expect($result)->toBeBool();
     expect($result)->toBeFalse();
 });
 
 test('renderString throws exception on template error', function (): void {
+    $service = new \Box\Mod\System\Service();
     $vars = [
         '_client_id' => 1,
     ];
@@ -205,13 +213,14 @@ test('renderString throws exception on template error', function (): void {
     $di['db'] = $dbMock;
     $di['twig'] = $twigMock;
     $di['api_client'] = new \Model_Client();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
     $this->expectException(\Error::class);
-    $this->service->renderString('test', false, $vars);
+    $service->renderString('test', false, $vars);
 });
 
 test('renderString renders template string', function (): void {
+    $service = new \Box\Mod\System\Service();
     $vars = [
         '_client_id' => 1,
     ];
@@ -230,13 +239,14 @@ test('renderString renders template string', function (): void {
     $di['db'] = $dbMock;
     $di['twig'] = $twigMock;
     $di['api_client'] = new \Model_Client();
-    $this->service->setDi($di);
+    $service->setDi($di);
 
-    $string = $this->service->renderString('test', true, $vars);
+    $string = $service->renderString('test', true, $vars);
     expect($string)->toBe('test');
 });
 
 test('clearCache clears cache directory', function (): void {
+    $service = new \Box\Mod\System\Service();
     // Use a temporary directory for testing instead of PATH_CACHE
     $cacheDir = sys_get_temp_dir() . '/fossbilling_test_cache_' . uniqid();
 
@@ -249,7 +259,7 @@ test('clearCache clears cache directory', function (): void {
     file_put_contents($gitkeepFile, '');
 
     // Call clearCache with the temp directory
-    $result = $this->service->clearCache($cacheDir);
+    $result = $service->clearCache($cacheDir);
 
     // Restore .gitkeep file after clearCache removes it
     file_put_contents($gitkeepFile, '');
@@ -268,15 +278,17 @@ test('clearCache clears cache directory', function (): void {
 });
 
 test('getPeriod returns period description', function (): void {
+    $service = new \Box\Mod\System\Service();
     $code = '1W';
     $expected = 'Every week';
-    $result = $this->service->getPeriod($code);
+    $result = $service->getPeriod($code);
 
     expect($result)->toBeString();
     expect($result)->toBe($expected);
 });
 
 test('getCountries returns list of countries', function (): void {
+    $service = new \Box\Mod\System\Service();
     $modMock = Mockery::mock('\\' . \FOSSBilling\Module::class);
     $modMock->shouldReceive("getConfig")->atLeast()->once()
         ->andReturn(['countries' => 'US']);
@@ -284,12 +296,13 @@ test('getCountries returns list of countries', function (): void {
     $di = container();
     $di['mod'] = $di->protect(fn (): \Mockery\MockInterface => $modMock);
 
-    $this->service->setDi($di);
-    $result = $this->service->getCountries();
+    $service->setDi($di);
+    $result = $service->getCountries();
     expect($result)->toBeArray();
 });
 
 test('getEuCountries returns EU countries list', function (): void {
+    $service = new \Box\Mod\System\Service();
     $modMock = Mockery::mock('\\' . \FOSSBilling\Module::class);
     $modMock->shouldReceive("getConfig")->atLeast()->once()
         ->andReturn(['countries' => 'US']);
@@ -297,29 +310,33 @@ test('getEuCountries returns EU countries list', function (): void {
     $di = container();
     $di['mod'] = $di->protect(fn (): \Mockery\MockInterface => $modMock);
 
-    $this->service->setDi($di);
-    $result = $this->service->getEuCountries();
+    $service->setDi($di);
+    $result = $service->getEuCountries();
     expect($result)->toBeArray();
 });
 
 test('getStates returns list of states', function (): void {
-    $result = $this->service->getStates();
+    $service = new \Box\Mod\System\Service();
+    $result = $service->getStates();
     expect($result)->toBeArray();
 });
 
 test('getPhoneCodes returns phone codes', function (): void {
+    $service = new \Box\Mod\System\Service();
     $data = [];
-    $result = $this->service->getPhoneCodes($data);
+    $result = $service->getPhoneCodes($data);
     expect($result)->toBeArray();
 });
 
 test('getVersion returns FOSSBilling version', function (): void {
-    $result = $this->service->getVersion();
+    $service = new \Box\Mod\System\Service();
+    $result = $service->getVersion();
     expect($result)->toBeString();
     expect($result)->toBe(\FOSSBilling\Version::VERSION);
 });
 
 test('getPendingMessages returns pending messages from session', function (): void {
+    $service = new \Box\Mod\System\Service();
     $di = container();
 
     $sessionMock = Mockery::mock(\FOSSBilling\Session::class);
@@ -329,12 +346,13 @@ test('getPendingMessages returns pending messages from session', function (): vo
 
     $di['session'] = $sessionMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getPendingMessages();
+    $service->setDi($di);
+    $result = $service->getPendingMessages();
     expect($result)->toBeArray();
 });
 
 test('getPendingMessages returns empty array when session returns non-array', function (): void {
+    $service = new \Box\Mod\System\Service();
     $di = container();
 
     $sessionMock = Mockery::mock(\FOSSBilling\Session::class);
@@ -344,12 +362,13 @@ test('getPendingMessages returns empty array when session returns non-array', fu
 
     $di['session'] = $sessionMock;
 
-    $this->service->setDi($di);
-    $result = $this->service->getPendingMessages();
+    $service->setDi($di);
+    $result = $service->getPendingMessages();
     expect($result)->toBeArray();
 });
 
 test('setPendingMessage adds message to pending messages', function (): void {
+    $service = new \Box\Mod\System\Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive("getPendingMessages")->atLeast()->once()
         ->andReturn([]);
@@ -370,13 +389,14 @@ test('setPendingMessage adds message to pending messages', function (): void {
 });
 
 test('clearPendingMessages clears pending messages', function (): void {
+    $service = new \Box\Mod\System\Service();
     $di = container();
 
     $sessionMock = Mockery::mock(\FOSSBilling\Session::class);
     $sessionMock->shouldReceive("delete")->atLeast()->once()
         ->with('pending_messages');
     $di['session'] = $sessionMock;
-    $this->service->setDi($di);
-    $result = $this->service->clearPendingMessages();
+    $service->setDi($di);
+    $result = $service->clearPendingMessages();
     expect($result)->toBeTrue();
 });

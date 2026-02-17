@@ -13,24 +13,27 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 beforeEach(function () {
-    $this->api = new \Box\Mod\Servicedownloadable\Api\Client();
+    $api = new \Box\Mod\Servicedownloadable\Api\Client();
 });
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Client();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
-test('throws exception when sending file with missing order id', function () {
+test('throws exception when sending file with missing order id', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Client();
     $data = [];
 
-    expect(fn () => $this->api->send_file($data))
+    expect(fn () => $api->send_file($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Order ID is required');
 });
 
-test('throws exception when sending file with order not found', function () {
+test('throws exception when sending file with order not found', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Client();
     $data = [
         'order_id' => 1,
     ];
@@ -44,14 +47,15 @@ test('throws exception when sending file with order not found', function () {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setIdentity($modelClient);
-    $this->api->setDi($di);
+    $api->setIdentity($modelClient);
+    $api->setDi($di);
 
-    expect(fn () => $this->api->send_file($data))
+    expect(fn () => $api->send_file($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Order not found');
 });
 
-test('throws exception when sending file with order not activated', function () {
+test('throws exception when sending file with order not activated', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Client();
     $data = [
         'order_id' => 1,
     ];
@@ -72,14 +76,15 @@ test('throws exception when sending file with order not activated', function () 
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->api->setDi($di);
-    $this->api->setIdentity($modelClient);
+    $api->setDi($di);
+    $api->setIdentity($modelClient);
 
-    expect(fn () => $this->api->send_file($data))
+    expect(fn () => $api->send_file($data))
         ->toThrow(\FOSSBilling\Exception::class, 'Order is not activated');
 });
 
-test('sends file', function () {
+test('sends file', function (): void {
+    $api = new \Box\Mod\Servicedownloadable\Api\Client();
     $data = [
         'order_id' => 1,
     ];
@@ -113,11 +118,11 @@ test('sends file', function () {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
 
-    $this->api->setDi($di);
-    $this->api->setIdentity($modelClient);
-    $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setIdentity($modelClient);
+    $api->setService($serviceMock);
 
-    $result = $this->api->send_file($data);
+    $result = $api->send_file($data);
     expect($result)->toBeBool()
         ->and($result)->toBeTrue();
 });

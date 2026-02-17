@@ -16,7 +16,8 @@ beforeEach(function () {
     $this->adminApi = new \Box\Mod\Cart\Api\Admin();
 });
 
-test('getList returns array', function () {
+test('getList returns array', function (): void {
+    $api = new \Box\Mod\Cart\Api\Admin();
     $simpleResultArr = [
         'list' => [
             ['id' => 1],
@@ -59,7 +60,8 @@ test('getList returns array', function () {
     expect($result)->toBeArray();
 });
 
-test('get returns array', function () {
+test('get returns array', function (): void {
+    $api = new \Box\Mod\Cart\Api\Admin();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')
@@ -84,7 +86,8 @@ test('get returns array', function () {
     expect($result)->toBeArray();
 });
 
-test('batchExpire returns true', function () {
+test('batchExpire returns true', function (): void {
+    $api = new \Box\Mod\Cart\Api\Admin();
 
     $logStub = $this->createStub('\Box_Log');
 

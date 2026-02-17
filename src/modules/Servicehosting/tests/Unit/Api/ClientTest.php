@@ -14,17 +14,19 @@ use function Tests\Helpers\container;
 use Box\Mod\Servicehosting\Api\Client;
 
 beforeEach(function (): void {
-    $this->api = new Client();
+    $api = new Client();
 });
 
 test('testGetDi', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Client();
     $di = container();
-    $this->api->setDi($di);
-    $getDi = $this->api->getDi();
+    $api->setDi($di);
+    $getDi = $api->getDi();
     expect($getDi)->toBe($di);
 });
 
 test('testChangeUsername', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Client();
     $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
     $apiMock = Mockery::mock(Client::class)->makePartial();
 
@@ -47,6 +49,7 @@ test('testChangeUsername', function (): void {
 });
 
 test('testChangeDomain', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Client();
     $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
     $apiMock = Mockery::mock(Client::class)->makePartial();
 
@@ -69,6 +72,7 @@ test('testChangeDomain', function (): void {
 });
 
 test('testChangePassword', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Client();
     $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];
     $apiMock = Mockery::mock(Client::class)->makePartial();
 
@@ -91,18 +95,20 @@ test('testChangePassword', function (): void {
 });
 
 test('testHpGetPairs', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Client();
     $serviceMock = Mockery::mock(\Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getHpPairs')
     ->atLeast()->once()
     ->andReturn([]);
 
-    $this->api->setService($serviceMock);
-    $result = $this->api->hp_get_pairs([]);
+    $api->setService($serviceMock);
+    $result = $api->hp_get_pairs([]);
     expect($result)->toBeArray();
 });
 
 test('testGetService', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Client();
     $data = [
         'order_id' => 1,
     ];
@@ -125,19 +131,20 @@ test('testGetService', function (): void {
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
     $clientModel->id = 1;
-    $this->api->setIdentity($clientModel);
-    $result = $this->api->_getService($data);
+    $api->setIdentity($clientModel);
+    $result = $api->_getService($data);
     expect($result)->toBeArray();
     expect($result[0])->toBeInstanceOf('\Model_ClientOrder');
     expect($result[1])->toBeInstanceOf('\Model_ServiceHosting');
 });
 
 test('testGetServiceOrderNotActivated', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Client();
     $data = [
         'order_id' => 1,
     ];
@@ -160,19 +167,20 @@ test('testGetServiceOrderNotActivated', function (): void {
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
     $clientModel->id = 1;
-    $this->api->setIdentity($clientModel);
+    $api->setIdentity($clientModel);
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Order is not activated');
-    $this->api->_getService($data);
+    $api->_getService($data);
 });
 
 test('testGetServiceOrderNotFound', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Client();
     $data = [
         'order_id' => 1,
     ];
@@ -187,22 +195,23 @@ test('testGetServiceOrderNotFound', function (): void {
     $di = container();
     $di['db'] = $dbMock;
 
-    $this->api->setDi($di);
+    $api->setDi($di);
 
     $clientModel = new \Model_Client();
     $clientModel->loadBean(new \Tests\Helpers\DummyBean());
     $clientModel->id = 1;
-    $this->api->setIdentity($clientModel);
+    $api->setIdentity($clientModel);
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Order not found');
-    $this->api->_getService($data);
+    $api->_getService($data);
 });
 
 test('testGetServiceMissingOrderId', function (): void {
+    $api = new \Box\Mod\Servicehosting\Api\Client();
     $data = [];
 
     $this->expectException(\FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Order ID is required');
-    $this->api->_getService($data);
+    $api->_getService($data);
 });

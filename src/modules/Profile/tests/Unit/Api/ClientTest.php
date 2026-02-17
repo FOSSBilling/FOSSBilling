@@ -14,10 +14,11 @@ use Box\Mod\Profile\Api\Client;
 use Box\Mod\Profile\Service;
 
 beforeEach(function () {
-    $this->api = new Client();
+    $api = new Client();
 });
 
-test('gets client profile', function () {
+test('gets client profile', function (): void {
+    $api = new \Box\Mod\Profile\Api\Client();
     $clientService = Mockery::mock(\Box\Mod\Client\Service::class);
     $clientService->shouldReceive('toApiArray')
         ->atLeast()->once()
@@ -25,51 +26,55 @@ test('gets client profile', function () {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $clientService);
-    $this->api->setDi($di);
-    $this->api->setIdentity(new \Model_Client());
+    $api->setDi($di);
+    $api->setIdentity(new \Model_Client());
 
-    $result = $this->api->get();
+    $result = $api->get();
     expect($result)->toBeArray();
 });
 
-test('updates client profile', function () {
+test('updates client profile', function (): void {
+    $api = new \Box\Mod\Profile\Api\Client();
     $service = Mockery::mock(Service::class);
     $service->shouldReceive('updateClient')
         ->atLeast()->once()
         ->andReturn(true);
 
-    $this->api->setService($service);
-    $this->api->setIdentity(new \Model_Client());
+    $api->setService($service);
+    $api->setIdentity(new \Model_Client());
 
-    $result = $this->api->update([]);
+    $result = $api->update([]);
     expect($result)->toBeTrue();
 });
 
-test('gets api key', function () {
+test('gets api key', function (): void {
+    $api = new \Box\Mod\Profile\Api\Client();
     $client = new \Model_Client();
     $client->loadBean(new \Tests\Helpers\DummyBean());
     $client->api_token = '16047a3e69f5245756d73b419348f0c7';
-    $this->api->setIdentity($client);
+    $api->setIdentity($client);
 
-    $result = $this->api->api_key_get([]);
+    $result = $api->api_key_get([]);
     expect($result)->toBe($client->api_token);
 });
 
-test('resets api key', function () {
+test('resets api key', function (): void {
+    $api = new \Box\Mod\Profile\Api\Client();
     $apiKey = '16047a3e69f5245756d73b419348f0c7';
     $service = Mockery::mock(Service::class);
     $service->shouldReceive('resetApiKey')
         ->atLeast()->once()
         ->andReturn($apiKey);
 
-    $this->api->setService($service);
-    $this->api->setIdentity(new \Model_Client());
+    $api->setService($service);
+    $api->setIdentity(new \Model_Client());
 
-    $result = $this->api->api_key_reset([]);
+    $result = $api->api_key_reset([]);
     expect($result)->toBe($apiKey);
 });
 
-test('changes client password', function () {
+test('changes client password', function (): void {
+    $api = new \Box\Mod\Profile\Api\Client();
     $service = Mockery::mock(Service::class);
     $service->shouldReceive('changeClientPassword')
         ->atLeast()->once()
@@ -90,20 +95,21 @@ test('changes client password', function () {
     $model->loadBean(new \Tests\Helpers\DummyBean());
     $model->pass = $di['password']->hashIt('oldpw');
 
-    $this->api->setDi($di);
-    $this->api->setService($service);
-    $this->api->setIdentity($model);
+    $api->setDi($di);
+    $api->setService($service);
+    $api->setIdentity($model);
 
     $data = [
         'current_password' => 'oldpw',
         'new_password' => '16047a3e69f5245756d73b419348f0c7',
         'confirm_password' => '16047a3e69f5245756d73b419348f0c7',
     ];
-    $result = $this->api->change_password($data);
+    $result = $api->change_password($data);
     expect($result)->toBeTrue();
 });
 
-test('throws exception when passwords do not match', function () {
+test('throws exception when passwords do not match', function (): void {
+    $api = new \Box\Mod\Profile\Api\Client();
     $service = Mockery::mock(Service::class);
     $service->shouldReceive('changeClientPassword')
         ->never()
@@ -111,9 +117,9 @@ test('throws exception when passwords do not match', function () {
 
     $di = container();
 
-    $this->api->setDi($di);
-    $this->api->setService($service);
-    $this->api->setIdentity(new \Model_Client());
+    $api->setDi($di);
+    $api->setService($service);
+    $api->setIdentity(new \Model_Client());
 
     $data = [
         'current_password' => '1234',
@@ -121,17 +127,18 @@ test('throws exception when passwords do not match', function () {
         'confirm_password' => '7c0f843914b37d6575425f96e3a74061',
     ];
 
-    expect(fn () => $this->api->change_password($data))
+    expect(fn () => $api->change_password($data))
         ->toThrow(\Exception::class);
 });
 
-test('logs out client', function () {
+test('logs out client', function (): void {
+    $api = new \Box\Mod\Profile\Api\Client();
     $service = Mockery::mock(Service::class);
     $service->shouldReceive('logoutClient')
         ->atLeast()->once()
         ->andReturn(true);
-    $this->api->setService($service);
+    $api->setService($service);
 
-    $result = $this->api->logout();
+    $result = $api->logout();
     expect($result)->toBeTrue();
 });
