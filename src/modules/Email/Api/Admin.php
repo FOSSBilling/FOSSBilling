@@ -308,11 +308,11 @@ class Admin extends \Api_Abstract
 
         $email = [
             'code' => 'mod_email_test',
-            'to' => $currentUser?->email ?? '',
-            'to_name' => $currentUser?->name ?? '',
+            'to' => $currentUser->email ?? '',
+            'to_name' => $currentUser->name ?? '',
             'send_now' => true,
             'throw_exceptions' => true,
-            'staff_member_name' => $currentUser?->name ?? '',
+            'staff_member_name' => $currentUser->name ?? '',
         ];
 
         return $this->getService()->sendTemplate($email);

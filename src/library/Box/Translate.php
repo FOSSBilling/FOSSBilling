@@ -8,6 +8,50 @@
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
+if (!function_exists('__trans')) {
+    /**
+     * Translate a message with optional value substitution.
+     *
+     * @param string     $msgid  The message to translate
+     * @param array|null $values Optional values to substitute in the translated message
+     *
+     * @return string The translated message
+     */
+    function __trans(string $msgid, ?array $values = null): string
+    {
+        $translated = _gettext($msgid);
+
+        if (is_array($values)) {
+            $translated = strtr($translated, $values);
+        }
+
+        return $translated;
+    }
+}
+
+if (!function_exists('__pluralTrans')) {
+    /**
+     * Translate a plural message with optional value substitution.
+     *
+     * @param string     $msgid       The singular message to translate
+     * @param string     $msgidPlural The plural message to translate
+     * @param int        $number      The number to determine which form to use
+     * @param array|null $values      Optional values to substitute in the translated message
+     *
+     * @return string The translated message
+     */
+    function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null): string
+    {
+        $translated = _ngettext($msgid, $msgidPlural, $number);
+
+        if (is_array($values)) {
+            $translated = strtr($translated, $values);
+        }
+
+        return $translated;
+    }
+}
+
 class Box_Translate
 {
     protected $domain = 'messages';
@@ -57,32 +101,6 @@ class Box_Translate
         _bindtextdomain($this->domain, PATH_LANGS);
         _bind_textdomain_codeset($this->domain, $codeset);
         _textdomain($this->domain);
-
-        if (!function_exists('__trans')) {
-            function __trans(string $msgid, ?array $values = null): string
-            {
-                $translated = _gettext($msgid);
-
-                if (is_array($values)) {
-                    $translated = strtr($translated, $values);
-                }
-
-                return $translated;
-            }
-        }
-
-        if (!function_exists('__pluralTrans')) {
-            function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null): string
-            {
-                $translated = _ngettext($msgid, $msgidPlural, $number);
-
-                if (is_array($values)) {
-                    $translated = strtr($translated, $values);
-                }
-
-                return $translated;
-            }
-        }
     }
 
     /**

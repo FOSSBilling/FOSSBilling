@@ -113,7 +113,7 @@ $di['pdo'] = function () {
  * @return \Box_Database The new Box_Database object that was just created.
  */
 $di['db'] = function () use ($di) {
-    RedBeanPHP\R::setup($di['pdo']);
+    RedBeanPHP\R::setup($di['pdo']());
     RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
 
     $helper = new Box_BeanHelper();
@@ -352,7 +352,7 @@ $di['is_client_logged'] = function () use ($di) {
             throw new Exception('Client is not logged in');
         }
         // Redirect to login page if browser request
-        $di['set_return_uri'];
+        $di['set_return_uri']();
         $login_url = $di['url']->link('login');
         header("Location: $login_url");
     }
@@ -391,7 +391,7 @@ $di['is_admin_logged'] = function () use ($di) {
             throw new Exception('Admin is not logged in');
         }
 
-        $di['set_return_uri'];
+        $di['set_return_uri']();
 
         header("Location: {$di['url']->adminLink('staff/login')}");
         exit;
@@ -408,7 +408,7 @@ $di['is_admin_logged'] = function () use ($di) {
  * @return \Model_Client The existing logged-in client model object.
  */
 $di['loggedin_client'] = function () use ($di) {
-    $di['is_client_logged'];
+    $di['is_client_logged']();
     $client_id = $di['session']->get('client_id');
 
     try {
@@ -445,7 +445,7 @@ $di['loggedin_admin'] = function () use ($di) {
         return $di['mod_service']('staff')->getCronAdmin();
     }
 
-    $di['is_admin_logged'];
+    $di['is_admin_logged']();
     $admin = $di['session']->get('admin');
 
     try {
@@ -689,7 +689,7 @@ $di['table'] = $di->protect(function ($name) use ($di) {
  * @return \Box\Mod\Servicelicense\Server
  */
 $di['license_server'] = function () use ($di) {
-    $server = new Box\Mod\Servicelicense\Server($di['logger']);
+    $server = new Box\Mod\Servicelicense\Server();
     $server->setDi($di);
 
     return $server;

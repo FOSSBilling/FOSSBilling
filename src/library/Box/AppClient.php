@@ -64,6 +64,7 @@ class Box_AppClient extends Box_App
         try {
             return $this->render($tpl, ['post' => $_POST], $ext);
         } catch (Exception $e) {
+            // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
                 error_log($e->getMessage());
             }

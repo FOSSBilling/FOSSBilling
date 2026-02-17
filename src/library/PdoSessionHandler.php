@@ -47,9 +47,6 @@ class PdoSessionHandler implements SessionHandlerInterface
             'db_table' => 'session',
         ];
 
-        if (!array_key_exists('db_table', $dbOptions)) {
-            throw new InvalidArgumentException('You must provide the "db_table" option for a PdoSessionStorage.');
-        }
         if ($pdo->getAttribute(PDO::ATTR_ERRMODE) !== PDO::ERRMODE_EXCEPTION) {
             throw new InvalidArgumentException(sprintf('"%s" requires PDO error mode attribute be set to throw Exceptions (i.e. $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION))', self::class));
         }
@@ -106,8 +103,6 @@ class PdoSessionHandler implements SessionHandlerInterface
         } catch (PDOException $e) {
             throw new RuntimeException("PDOException was thrown when trying to manipulate session data: {$e->getMessage()}.", 0, $e);
         }
-
-        return false;
     }
 
     public function read($id): string|false

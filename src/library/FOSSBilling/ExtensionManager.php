@@ -170,10 +170,6 @@ class ExtensionManager implements InjectionAwareInterface
 
             $json = $response->toArray();
 
-            if (is_null($json)) {
-                throw new Exception('Unable to connect to the FOSSBilling extension directory.', null, 1545);
-            }
-
             if (isset($json['error']) && is_array($json['error'])) {
                 throw new Exception($json['error']['message'], null, 746);
             }

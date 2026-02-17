@@ -137,16 +137,13 @@ class Server_Manager_Plesk extends Server_Manager
             }
         }
 
-        $id = $this->createClient($account);
-        $client = $account->getClient();
+        $result = $this->createClient($account);
 
-        if (!$id) {
+        if (!$result) {
             $placeholders = [':action:' => __trans('create account'), ':type"' => 'Plesk'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
-
-        $client->setId((string) $id);
 
         $this->setSubscription($account);
 
@@ -236,20 +233,20 @@ class Server_Manager_Plesk extends Server_Manager
      */
     public function changeAccountPackage(Server_Account $account, Server_Package $package): bool
     {
-        $domainId = null;
-        $id = $this->modifyClient($account);
-        $client = $account->getClient();
-        if (!$id) {
+        $result = $this->modifyClient($account);
+        if (!$result) {
             throw new Server_Exception('Can\'t modify client');
         }
-        $client->setId($id);
 
         $account->setPackage($package);
         $this->updateSubscription($account);
 
-        if ($account->getReseller()) {
-            $this->addNs($account, $domainId);
-        }
+        // TODO: Implement NS record management for resellers
+        // This requires fetching the domain ID from Plesk API first
+        // if ($account->getReseller()) {
+        //     $domainId = $this->getDomainId($account);
+        //     $this->addNs($account, $domainId);
+        // }
 
         return true;
     }
@@ -391,6 +388,8 @@ class Server_Manager_Plesk extends Server_Manager
      *
      * @param Server_Account $account the account for which the IP should be set
      * @param string         $newIp   the new IP address
+     *
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
      */
     private function setIp(Server_Account $account, string $newIp): void
     {
@@ -646,6 +645,8 @@ class Server_Manager_Plesk extends Server_Manager
      * @param string         $domainId the ID of the domain for which the NS record should be added
      *
      * @return bool always returns true
+     *
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
      */
     private function addNs(Server_Account $account, string $domainId): bool
     {
@@ -662,6 +663,8 @@ class Server_Manager_Plesk extends Server_Manager
      * @param string         $domainId the ID of the domain for which the NS records should be retrieved
      *
      * @return array the array of NS record IDs
+     *
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
      */
     private function getNs(Server_Account $account, string $domainId): array
     {
@@ -688,6 +691,8 @@ class Server_Manager_Plesk extends Server_Manager
      * @return bool returns true after the DNS records have been removed
      *
      * @throws Exception
+     *
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
      */
     private function removeDns(array $ns): bool
     {
@@ -717,6 +722,8 @@ class Server_Manager_Plesk extends Server_Manager
      * @param Server_Account $account the account for which the IP type should be changed
      *
      * @return bool returns true if the IP type was successfully changed to 'shared', false otherwise
+     *
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
      */
     private function changeIpType(Server_Account $account): bool
     {

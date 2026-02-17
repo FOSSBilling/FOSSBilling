@@ -13,7 +13,7 @@ class Box_UrlHelper
     public array $params = [];
     public bool $match = false;
 
-    public function __construct(private readonly string $method, string $url, private ?array $conditions, string $requestUri)
+    public function __construct(string $method, string $url, private ?array $conditions, string $requestUri)
     {
         $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 

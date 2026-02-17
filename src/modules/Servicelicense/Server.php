@@ -33,24 +33,6 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    /** @phpstan-ignore property.onlyWritten */
-    public function __construct(private readonly \Box_Log $_log)
-    {
-    }
-
-    /**
-     * @param string $key
-     * @phpstan-ignore method.unused
-     */
-    private function getServer($key = null, $default = null)
-    {
-        if ($key === null) {
-            return $_SERVER;
-        }
-
-        return $_SERVER[$key] ?? $default;
-    }
-
     public function process($data): array
     {
         $data = is_array($data) ? $data : (json_decode($data ?? '', true) ?: []);

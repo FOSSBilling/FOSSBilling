@@ -62,23 +62,22 @@ class Monolog
     }
 
     /**
-     * Convert numeric FOSSBilling priority to Monolog priority.
+     * Convert numeric FOSSBilling priority to Monolog Level.
      */
-    public function parsePriority(int $priority): int
+    public function parsePriority(int $priority): Level
     {
-        // Map numeric priority to Monolog priority
-        $map = [
-            \Box_Log::EMERG => Level::Emergency->value,
-            \Box_Log::ALERT => Level::Alert->value,
-            \Box_Log::CRIT => Level::Critical->value,
-            \Box_Log::ERR => Level::Error->value,
-            \Box_Log::WARN => Level::Warning->value,
-            \Box_Log::NOTICE => Level::Notice->value,
-            \Box_Log::INFO => Level::Info->value,
-            \Box_Log::DEBUG => Level::Debug->value,
-        ];
-
-        return $map[$priority] ?? Level::Debug->value;
+        // Map numeric priority to Monolog Level
+        return match ($priority) {
+            \Box_Log::EMERG => Level::Emergency,
+            \Box_Log::ALERT => Level::Alert,
+            \Box_Log::CRIT => Level::Critical,
+            \Box_Log::ERR => Level::Error,
+            \Box_Log::WARN => Level::Warning,
+            \Box_Log::NOTICE => Level::Notice,
+            \Box_Log::INFO => Level::Info,
+            \Box_Log::DEBUG => Level::Debug,
+            default => Level::Debug,
+        };
     }
 
     public function write(array $event, string $channel = 'application'): void
