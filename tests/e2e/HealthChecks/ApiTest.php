@@ -29,7 +29,7 @@ $testUrls = [
     'password-reset' => 200,
 ];
 
-test('urls return ok status', function () use ($testUrls) {
+test('urls return ok status', function () use ($testUrls): void {
     $baseUrl = getenv('APP_URL') ?: 'http://localhost';
     $baseUrl = rtrim($baseUrl, '/');
 
@@ -44,13 +44,13 @@ test('urls return ok status', function () use ($testUrls) {
     }
 });
 
-test('api is functional', function () {
+test('api is functional', function (): void {
     $result = Tests\Helpers\ApiClient::request('guest/system/company');
     assertApiSuccess($result);
     expect($result->getResult())->toBeArray();
 });
 
-test('system is up to date', function () {
+test('system is up to date', function (): void {
     $result = Tests\Helpers\ApiClient::request('admin/system/is_behind_on_patches');
     assertApiSuccess($result);
     expect($result->getResult())->toBeFalse();

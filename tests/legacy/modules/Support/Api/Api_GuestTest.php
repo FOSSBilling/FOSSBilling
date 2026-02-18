@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class Api_GuestTest extends \BBTestCase
 {
-    protected ?\Box\Mod\Support\Api\Guest $guestApi;
+    protected ?\Box\Mod\Support\Api\Guest $guestApi = null;
 
     public function setUp(): void
     {

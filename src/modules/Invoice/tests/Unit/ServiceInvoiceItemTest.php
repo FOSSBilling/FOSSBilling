@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,14 +10,15 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
-use Box\Mod\Invoice\ServiceInvoiceItem;
-use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Invoice\Service as InvoiceService;
+use Box\Mod\Invoice\ServiceInvoiceItem;
+use Box\Mod\Order\Service as OrderService;
+
+use function Tests\Helpers\container;
 
 test('gets dependency injection container', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
+    $service = new ServiceInvoiceItem();
     $di = container();
     $service->setDi($di);
     $getDi = $service->getDi();
@@ -25,9 +26,9 @@ test('gets dependency injection container', function (): void {
 });
 
 test('marks item as paid', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new ServiceInvoiceItem();
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
 
     $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('creditInvoiceItem')
@@ -36,8 +37,8 @@ test('marks item as paid', function (): void {
         ->atLeast()->once()
         ->andReturn(1);
 
-    $clientOrder = new \Model_ClientOrder();
-    $clientOrder->loadBean(new \Tests\Helpers\DummyBean());
+    $clientOrder = new Model_ClientOrder();
+    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('unsetUnpaidInvoice')
@@ -59,20 +60,20 @@ test('marks item as paid', function (): void {
 });
 
 test('returns true when executing task on already executed item', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
-    $invoiceItemModel->status = \Model_InvoiceItem::STATUS_EXECUTED;
+    $service = new ServiceInvoiceItem();
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItemModel->status = Model_InvoiceItem::STATUS_EXECUTED;
 
     $result = $service->executeTask($invoiceItemModel);
     expect($result)->toBeTrue();
 });
 
 test('throws exception when executing task for order type with client order not found', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
-    $invoiceItemModel->type = \Model_InvoiceItem::TYPE_ORDER;
+    $service = new ServiceInvoiceItem();
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItemModel->type = Model_InvoiceItem::TYPE_ORDER;
     $orderId = 22;
 
     $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -90,14 +91,14 @@ test('throws exception when executing task for order type with client order not 
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->executeTask($invoiceItemModel))
-        ->toThrow(\FOSSBilling\Exception::class, sprintf('Could not activate proforma item. Order %d not found', $orderId));
+        ->toThrow(FOSSBilling\Exception::class, sprintf('Could not activate proforma item. Order %d not found', $orderId));
 });
 
 test('executes task for hook call type', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
-    $invoiceItemModel->type = \Model_InvoiceItem::TYPE_HOOK_CALL;
+    $service = new ServiceInvoiceItem();
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItemModel->type = Model_InvoiceItem::TYPE_HOOK_CALL;
     $invoiceItemModel->rel_id = '{}';
 
     $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -116,16 +117,16 @@ test('executes task for hook call type', function (): void {
 });
 
 test('executes task for deposit type', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
-    $invoiceItemModel->type = \Model_InvoiceItem::TYPE_DEPOSIT;
+    $service = new ServiceInvoiceItem();
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItemModel->type = Model_InvoiceItem::TYPE_DEPOSIT;
 
-    $invoiceModel = new \Model_Invoice();
-    $invoiceModel->loadBean(new \Tests\Helpers\DummyBean());
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientModel = new \Model_Client();
-    $clientModel->loadBean(new \Tests\Helpers\DummyBean());
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
     $di = container();
     $dbMock = Mockery::mock('\Box_Database');
@@ -147,10 +148,10 @@ test('executes task for deposit type', function (): void {
 });
 
 test('executes task for custom type', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
-    $invoiceItemModel->type = \Model_InvoiceItem::TYPE_CUSTOM;
+    $service = new ServiceInvoiceItem();
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItemModel->type = Model_InvoiceItem::TYPE_CUSTOM;
 
     $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('markAsExecuted')
@@ -160,12 +161,12 @@ test('executes task for custom type', function (): void {
 });
 
 test('adds new item', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
+    $service = new ServiceInvoiceItem();
     $data = [
         'title' => 'Guacamole',
     ];
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
     $newId = 1;
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -183,18 +184,18 @@ test('adds new item', function (): void {
 
     $service->setDi($di);
 
-    $invoiceModel = new \Model_Invoice();
-    $invoiceModel->loadBean(new \Tests\Helpers\DummyBean());
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $result = $service->addNew($invoiceModel, $data);
     expect($result)->toBeInt()->toBe($newId);
 });
 
 test('gets total', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
+    $service = new ServiceInvoiceItem();
     $price = 5;
     $quantity = 3;
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceItemModel->price = $price;
     $invoiceItemModel->quantity = $quantity;
 
@@ -206,11 +207,11 @@ test('gets total', function (): void {
 });
 
 test('gets tax', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
+    $service = new ServiceInvoiceItem();
     $rate = 0.21;
     $price = 12;
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceItemModel->invoice_id = 2;
     $invoiceItemModel->taxed = true;
     $invoiceItemModel->price = $price;
@@ -231,9 +232,9 @@ test('gets tax', function (): void {
 });
 
 test('updates an item', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new ServiceInvoiceItem();
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
 
     $data = [
         'title' => 'New Engine',
@@ -254,9 +255,9 @@ test('updates an item', function (): void {
 });
 
 test('removes an item', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new ServiceInvoiceItem();
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('trash')
@@ -264,7 +265,7 @@ test('removes an item', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
     $result = $service->remove($invoiceItemModel);
@@ -272,9 +273,9 @@ test('removes an item', function (): void {
 });
 
 test('generates for add funds', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
-    $invoiceModel = new \Model_Invoice();
-    $invoiceModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new ServiceInvoiceItem();
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $amount = 11;
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -292,20 +293,20 @@ test('generates for add funds', function (): void {
 });
 
 test('credits invoice item', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
+    $service = new ServiceInvoiceItem();
     $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getTotalWithTax')
         ->atLeast()->once()
         ->andReturn(11.2);
 
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
-    $invoiceModel = new \Model_Invoice();
-    $invoiceModel->loadBean(new \Tests\Helpers\DummyBean());
-    $clientModel = new \Model_Client();
-    $clientModel->loadBean(new \Tests\Helpers\DummyBean());
-    $clientBalanceModel = new \Model_Client();
-    $clientBalanceModel->loadBean(new \Tests\Helpers\DummyBean());
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientBalanceModel = new Model_Client();
+    $clientBalanceModel->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $callCount = 0;
@@ -333,12 +334,12 @@ test('credits invoice item', function (): void {
 });
 
 test('gets total with tax', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
+    $service = new ServiceInvoiceItem();
     $total = 5.0;
     $tax = 0.5;
     $quantity = 3;
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceItemModel->quantity = $quantity;
 
     $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -356,28 +357,28 @@ test('gets total with tax', function (): void {
 });
 
 test('gets order id', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
+    $service = new ServiceInvoiceItem();
     $orderId = 2;
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceItemModel->rel_id = $orderId;
-    $invoiceItemModel->type = \Model_InvoiceItem::TYPE_ORDER;
+    $invoiceItemModel->type = Model_InvoiceItem::TYPE_ORDER;
 
     $result = $service->getOrderId($invoiceItemModel);
     expect($result)->toBeInt()->toBe($orderId);
 });
 
 test('returns zero when invoice item type is not order', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
-    $invoiceItemModel = new \Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new ServiceInvoiceItem();
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
 
     $result = $service->getOrderId($invoiceItemModel);
     expect($result)->toBeInt()->toBe(0);
 });
 
 test('gets all not execute paid items', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceInvoiceItem();
+    $service = new ServiceInvoiceItem();
     $di = container();
 
     $dbMock = Mockery::mock('\Box_Database');

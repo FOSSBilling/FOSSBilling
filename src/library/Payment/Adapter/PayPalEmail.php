@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return false;
     }
 
-    public function getInvoiceTitle(array $invoice)
+    public function getInvoiceTitle(array $invoice): string
     {
         $p = [
             ':id' => sprintf('%05s', $invoice['nr']),

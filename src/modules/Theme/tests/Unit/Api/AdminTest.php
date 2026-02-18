@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,11 +10,12 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
 use Box\Mod\Theme\Api\Admin;
 
+use function Tests\Helpers\container;
+
 test('testGetDi', function (): void {
-    $api = new \Box\Mod\Theme\Api\Admin();
+    $api = new Admin();
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -22,8 +23,8 @@ test('testGetDi', function (): void {
 });
 
 test('testGetList', function (): void {
-    $api = new \Box\Mod\Theme\Api\Admin();
-    $systemServiceMock = Mockery::mock(\Box\Mod\Theme\Service::class);
+    $api = new Admin();
+    $systemServiceMock = Mockery::mock(Box\Mod\Theme\Service::class);
     $systemServiceMock->shouldReceive('getThemes')
         ->atLeast()
         ->once()
@@ -36,12 +37,12 @@ test('testGetList', function (): void {
 });
 
 test('testGet', function (): void {
-    $api = new \Box\Mod\Theme\Api\Admin();
+    $api = new Admin();
     $data = [
         'code' => 'themeCode',
     ];
 
-    $systemServiceMock = Mockery::mock(\Box\Mod\Theme\Service::class);
+    $systemServiceMock = Mockery::mock(Box\Mod\Theme\Service::class);
     $systemServiceMock->shouldReceive('loadTheme')
         ->atLeast()
         ->once()
@@ -56,29 +57,29 @@ test('testGet', function (): void {
 });
 
 test('testSelectNotAdminTheme', function (): void {
-    $api = new \Box\Mod\Theme\Api\Admin();
+    $api = new Admin();
     $data = [
         'code' => 'pjw',
     ];
 
-    $themeMock = Mockery::mock(\Box\Mod\Theme\Model\Theme::class);
+    $themeMock = Mockery::mock(Box\Mod\Theme\Model\Theme::class);
     $themeMock->shouldReceive('isAdminAreaTheme')
         ->atLeast()
         ->once()
         ->andReturn(false);
 
-    $serviceMock = Mockery::mock(\Box\Mod\Theme\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\Theme\Service::class);
     $serviceMock->shouldReceive('getTheme')
         ->atLeast()
         ->once()
         ->andReturn($themeMock);
 
-    $systemServiceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('setParamValue')
         ->with('theme', Mockery::any());
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $systemServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -87,29 +88,29 @@ test('testSelectNotAdminTheme', function (): void {
 });
 
 test('testSelectAdminTheme', function (): void {
-    $api = new \Box\Mod\Theme\Api\Admin();
+    $api = new Admin();
     $data = [
         'code' => 'pjw',
     ];
 
-    $themeMock = Mockery::mock(\Box\Mod\Theme\Model\Theme::class);
+    $themeMock = Mockery::mock(Box\Mod\Theme\Model\Theme::class);
     $themeMock->shouldReceive('isAdminAreaTheme')
         ->atLeast()
         ->once()
         ->andReturn(true);
 
-    $serviceMock = Mockery::mock(\Box\Mod\Theme\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\Theme\Service::class);
     $serviceMock->shouldReceive('getTheme')
         ->atLeast()
         ->once()
         ->andReturn($themeMock);
 
-    $systemServiceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('setParamValue')
         ->with('admin_theme', Mockery::any());
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $systemServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -118,15 +119,15 @@ test('testSelectAdminTheme', function (): void {
 });
 
 test('testPresetDelete', function (): void {
-    $api = new \Box\Mod\Theme\Api\Admin();
+    $api = new Admin();
     $data = [
         'code' => 'themeCode',
         'preset' => 'themePreset',
     ];
 
-    $themeMock = Mockery::mock(\Box\Mod\Theme\Model\Theme::class);
+    $themeMock = Mockery::mock(Box\Mod\Theme\Model\Theme::class);
 
-    $serviceMock = Mockery::mock(\Box\Mod\Theme\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\Theme\Service::class);
     $serviceMock->shouldReceive('getTheme')
         ->atLeast()
         ->once()
@@ -145,15 +146,15 @@ test('testPresetDelete', function (): void {
 });
 
 test('testPresetSelect', function (): void {
-    $api = new \Box\Mod\Theme\Api\Admin();
+    $api = new Admin();
     $data = [
         'code' => 'themeCode',
         'preset' => 'themePreset',
     ];
 
-    $themeMock = Mockery::mock(\Box\Mod\Theme\Model\Theme::class);
+    $themeMock = Mockery::mock(Box\Mod\Theme\Model\Theme::class);
 
-    $serviceMock = Mockery::mock(\Box\Mod\Theme\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\Theme\Service::class);
     $serviceMock->shouldReceive('getTheme')
         ->atLeast()
         ->once()

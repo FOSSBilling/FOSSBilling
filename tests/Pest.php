@@ -88,7 +88,7 @@ ini_set('error_log', '/dev/null');
 
 // Configure Unit tests base with Mockery integration
 uses(MockeryPHPUnitIntegration::class)
-    ->beforeEach(function () {
+    ->beforeEach(function (): void {
         // Unit test setup
     })
     ->in('Unit');
@@ -101,7 +101,7 @@ $testApiKey = getenv('TEST_API_KEY');
 
 if ($appUrl && $testApiKey) {
     uses()
-        ->beforeEach(function () use ($appUrl, $testApiKey) {
+        ->beforeEach(function () use ($appUrl, $testApiKey): void {
             Tests\Helpers\ApiClient::setBaseUrl($appUrl);
             Tests\Helpers\ApiClient::setApiKey($testApiKey);
         })
@@ -119,25 +119,25 @@ if ($appUrl && $testApiKey) {
 |
 */
 
-expect()->extend('toBeDomain', function () {
+expect()->extend('toBeDomain', function (): void {
     $this->not->toBeEmpty();
     expect($this->value)->toBeString();
     expect(filter_var($this->value, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME))->not->toBeFalse();
 });
 
-expect()->extend('toBeEmail', function () {
+expect()->extend('toBeEmail', function (): void {
     $this->not->toBeEmpty();
     expect($this->value)->toBeString();
     expect(filter_var($this->value, FILTER_VALIDATE_EMAIL))->not->toBeFalse();
 });
 
-expect()->extend('toBeUrl', function () {
+expect()->extend('toBeUrl', function (): void {
     $this->not->toBeEmpty();
     expect($this->value)->toBeString();
     expect(filter_var($this->value, FILTER_VALIDATE_URL))->not->toBeFalse();
 });
 
-expect()->extend('toBeUuid', function () {
+expect()->extend('toBeUuid', function (): void {
     $this->not->toBeEmpty();
     expect($this->value)->toBeString();
     expect(preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $this->value))->toBe(1);

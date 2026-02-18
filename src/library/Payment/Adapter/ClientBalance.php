@@ -52,7 +52,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         return true;
     }
 
-    public function getHtml($api_admin, $invoice_id, $subscription)
+    public function getHtml($api_admin, $invoice_id, $subscription): string
     {
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
 

@@ -20,11 +20,9 @@ use Symfony\Component\Finder\Finder;
 class ServicePayGateway implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    private readonly Filesystem $filesystem;
 
-    public function __construct(?Filesystem $filesystem = null)
+    public function __construct(private readonly ?Filesystem $filesystem = new Filesystem())
     {
-        $this->filesystem = $filesystem ?? new Filesystem();
     }
 
     public function setDi(\Pimple\Container $di): void

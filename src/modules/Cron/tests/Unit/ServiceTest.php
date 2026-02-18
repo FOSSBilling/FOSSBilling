@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,8 +10,9 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
 use Box\Mod\Cron\Service;
+
+use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
     $di = container();
@@ -22,12 +23,12 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('getCronInfo returns cron information array', function (): void {
-    $systemServiceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('getParamValue')
         ->atLeast()->once();
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $systemServiceMock);
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $systemServiceMock);
     $service = new Service();
     $service->setDi($di);
 
@@ -36,13 +37,13 @@ test('getCronInfo returns cron information array', function (): void {
 });
 
 test('getLastExecutionTime returns string timestamp', function (): void {
-    $systemServiceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('getParamValue')
         ->atLeast()->once()
         ->andReturn('2012-12-12 12:12:12');
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $systemServiceMock);
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $systemServiceMock);
     $service = new Service();
     $service->setDi($di);
 

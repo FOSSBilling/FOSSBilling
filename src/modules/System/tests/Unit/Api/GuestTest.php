@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('getDi returns set dependency injection container', function (): void {
-    $api = new \Box\Mod\System\Api\Guest();
+    $api = new Box\Mod\System\Api\Guest();
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -21,7 +21,7 @@ test('getDi returns set dependency injection container', function (): void {
 });
 
 test('version returns string when admin is logged in', function (): void {
-    $api = new \Box\Mod\System\Api\Guest();
+    $api = new Box\Mod\System\Api\Guest();
     $authorizationMock = Mockery::mock('\Box_Authorization');
     $authorizationMock
     ->shouldReceive('isAdminLoggedIn')
@@ -31,11 +31,11 @@ test('version returns string when admin is logged in', function (): void {
     $di = container();
     $di['auth'] = $authorizationMock;
 
-    $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
     $serviceMock
     ->shouldReceive('getVersion')
     ->atLeast()->once()
-    ->andReturn(\FOSSBilling\Version::VERSION);
+    ->andReturn(FOSSBilling\Version::VERSION);
     $serviceMock
     ->shouldReceive('getParamValue')
     ->atLeast()->once()
@@ -50,7 +50,7 @@ test('version returns string when admin is logged in', function (): void {
 });
 
 test('version returns string when public display is enabled', function (): void {
-    $api = new \Box\Mod\System\Api\Guest();
+    $api = new Box\Mod\System\Api\Guest();
     $authorizationMock = Mockery::mock('\Box_Authorization');
     $authorizationMock
     ->shouldReceive('isAdminLoggedIn')
@@ -59,11 +59,11 @@ test('version returns string when public display is enabled', function (): void 
 
     $di = container();
     $di['auth'] = $authorizationMock;
-    $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
     $serviceMock
     ->shouldReceive('getVersion')
     ->atLeast()->once()
-    ->andReturn(\FOSSBilling\Version::VERSION);
+    ->andReturn(FOSSBilling\Version::VERSION);
 
     $serviceMock
     ->shouldReceive('getParamValue')
@@ -79,7 +79,7 @@ test('version returns string when public display is enabled', function (): void 
 });
 
 test('version returns empty string when public display is disabled', function (): void {
-    $api = new \Box\Mod\System\Api\Guest();
+    $api = new Box\Mod\System\Api\Guest();
     $authorizationMock = Mockery::mock('\Box_Authorization');
     $authorizationMock
     ->shouldReceive('isAdminLoggedIn')
@@ -89,7 +89,7 @@ test('version returns empty string when public display is disabled', function ()
     $di = container();
     $di['auth'] = $authorizationMock;
 
-    $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
     $serviceMock
     ->shouldReceive('getParamValue')
     ->atLeast()->once()
@@ -104,7 +104,7 @@ test('version returns empty string when public display is disabled', function ()
 });
 
 test('company returns company data when public display is enabled', function (): void {
-    $api = new \Box\Mod\System\Api\Guest();
+    $api = new Box\Mod\System\Api\Guest();
     $companyData = ['companyName' => 'TestCo'];
 
     $authMock = Mockery::mock('\Box_Authorization');
@@ -115,7 +115,7 @@ test('company returns company data when public display is enabled', function ():
         ->atLeast()->once()
         ->andReturn(false);
 
-    $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
     $serviceMock
     ->shouldReceive('getCompany')
     ->atLeast()->once()
@@ -136,7 +136,7 @@ test('company returns company data when public display is enabled', function ():
 });
 
 test('company filters sensitive data when public display is disabled', function (): void {
-    $api = new \Box\Mod\System\Api\Guest();
+    $api = new Box\Mod\System\Api\Guest();
     $companyData = [
         'companyName' => 'TestCo',
         'vat_number' => 'Test VAT',
@@ -157,7 +157,7 @@ test('company filters sensitive data when public display is disabled', function 
         ->atLeast()->once()
         ->andReturn(false);
 
-    $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
     $serviceMock
     ->shouldReceive('getCompany')
     ->atLeast()->once()
@@ -186,10 +186,10 @@ test('company filters sensitive data when public display is disabled', function 
 });
 
 test('period_title returns period title string', function (): void {
-    $api = new \Box\Mod\System\Api\Guest();
+    $api = new Box\Mod\System\Api\Guest();
     $data = ['code' => 'periodCode'];
 
-    $servuceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $servuceMock = Mockery::mock(Box\Mod\System\Service::class);
     $servuceMock
     ->shouldReceive('getPeriod')
     ->atLeast()->once()
@@ -204,7 +204,7 @@ test('period_title returns period title string', function (): void {
 });
 
 test('period_title returns dash when code is missing', function (): void {
-    $api = new \Box\Mod\System\Api\Guest();
+    $api = new Box\Mod\System\Api\Guest();
     $data = [];
     $expected = '-';
     $di = container();
@@ -215,8 +215,8 @@ test('period_title returns dash when code is missing', function (): void {
 });
 
 test('get_pending_messages returns and clears pending messages', function (): void {
-    $api = new \Box\Mod\System\Api\Guest();
-    $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $api = new Box\Mod\System\Api\Guest();
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
     $messageArr = ['Important message to user'];
     $serviceMock
     ->shouldReceive('getPendingMessages')

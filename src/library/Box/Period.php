@@ -116,7 +116,7 @@ class Box_Period
         return $this->qty . $this->unit;
     }
 
-    public function getTitle()
+    public function getTitle(): string
     {
         $qty = $this->qty;
         $placeholders = [':number' => $qty];

@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -13,11 +13,11 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('get cart', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
-        ->andReturn(new \Model_Cart());
+        ->andReturn(new Model_Cart());
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
@@ -29,11 +29,11 @@ test('get cart', function (): void {
 });
 
 test('reset cart', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
-        ->andReturn(new \Model_Cart());
+        ->andReturn(new Model_Cart());
     $serviceMock->shouldReceive('resetCart')->atLeast()->once()
         ->andReturn(true);
 
@@ -45,28 +45,28 @@ test('reset cart', function (): void {
 });
 
 test('set currency', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
-        ->andReturn(new \Model_Cart());
+        ->andReturn(new Model_Cart());
     $serviceMock->shouldReceive('changeCartCurrency')->atLeast()->once()
         ->andReturn(true);
 
-    $currencyStub = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
+    $currencyStub = $this->createStub('\\' . Box\Mod\Currency\Entity\Currency::class);
 
-    $currencyRepositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $currencyRepositoryMock
     ->shouldReceive('findOneByCode')
     ->atLeast()->once()
     ->andReturn($currencyStub);
 
-    $currencyServiceMock = Mockery::mock('\\' . \Box\Mod\Currency\Service::class)->makePartial();
+    $currencyServiceMock = Mockery::mock('\\' . Box\Mod\Currency\Service::class)->makePartial();
     $currencyServiceMock->shouldReceive('getCurrencyRepository')->atLeast()->once()
         ->andReturn($currencyRepositoryMock);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $currencyServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $currencyServiceMock);
     $guestApi->setDi($di);
 
     $guestApi->setService($serviceMock);
@@ -80,26 +80,26 @@ test('set currency', function (): void {
 });
 
 test('set currency throws not found exception when currency does not exist', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')
-        ->andReturn(new \Model_Cart());
+        ->andReturn(new Model_Cart());
     $serviceMock->shouldReceive('changeCartCurrency')
         ->andReturn(true);
 
-    $currencyRepositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $currencyRepositoryMock
     ->shouldReceive('findOneByCode')
     ->atLeast()->once()
     ->andReturn(null);
 
-    $currencyServiceMock = Mockery::mock('\\' . \Box\Mod\Currency\Service::class)->makePartial();
+    $currencyServiceMock = Mockery::mock('\\' . Box\Mod\Currency\Service::class)->makePartial();
     $currencyServiceMock->shouldReceive('getCurrencyRepository')->atLeast()->once()
         ->andReturn($currencyRepositoryMock);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $currencyServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $currencyServiceMock);
     $guestApi->setDi($di);
 
     $guestApi->setService($serviceMock);
@@ -108,41 +108,41 @@ test('set currency throws not found exception when currency does not exist', fun
         'currency' => 'EUR',
     ];
 
-    $this->expectException(\FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Currency not found');
     $guestApi->set_currency($data);
 });
 
 test('get currency', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $cart = new \Model_Cart();
-    $cart->loadBean(new \Tests\Helpers\DummyBean());
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
 
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
         ->andReturn($cart);
 
-    $currencyMock = Mockery::mock('\\' . \Box\Mod\Currency\Entity\Currency::class);
+    $currencyMock = Mockery::mock('\\' . Box\Mod\Currency\Entity\Currency::class);
     $currencyMock
     ->shouldReceive('toApiArray')
     ->atLeast()->once()
     ->andReturn([]);
 
-    $currencyRepositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $currencyRepositoryMock
     ->shouldReceive('find')
     ->atLeast()->once()
     ->andReturn($currencyMock);
-    $currencyRepositoryMock->shouldReceive("findDefault")->never();
+    $currencyRepositoryMock->shouldReceive('findDefault')->never();
 
-    $currencyServiceMock = Mockery::mock('\\' . \Box\Mod\Currency\Service::class)->makePartial();
+    $currencyServiceMock = Mockery::mock('\\' . Box\Mod\Currency\Service::class)->makePartial();
     $currencyServiceMock->shouldReceive('getCurrencyRepository')->atLeast()->once()
         ->andReturn($currencyRepositoryMock);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $currencyServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $currencyServiceMock);
     $guestApi->setDi($di);
 
     $guestApi->setService($serviceMock);
@@ -156,23 +156,23 @@ test('get currency', function (): void {
 });
 
 test('get currency not found returns default', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $cart = new \Model_Cart();
-    $cart->loadBean(new \Tests\Helpers\DummyBean());
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
 
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
         ->andReturn($cart);
 
-    $currencyMock = Mockery::mock('\\' . \Box\Mod\Currency\Entity\Currency::class);
+    $currencyMock = Mockery::mock('\\' . Box\Mod\Currency\Entity\Currency::class);
     $currencyMock
     ->shouldReceive('toApiArray')
     ->atLeast()->once()
     ->andReturn([]);
 
-    $currencyRepositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $currencyRepositoryMock
     ->shouldReceive('find')
     ->atLeast()->once()
@@ -182,12 +182,12 @@ test('get currency not found returns default', function (): void {
     ->atLeast()->once()
     ->andReturn($currencyMock);
 
-    $currencyServiceMock = Mockery::mock('\\' . \Box\Mod\Currency\Service::class)->makePartial();
+    $currencyServiceMock = Mockery::mock('\\' . Box\Mod\Currency\Service::class)->makePartial();
     $currencyServiceMock->shouldReceive('getCurrencyRepository')->atLeast()->once()
         ->andReturn($currencyRepositoryMock);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $currencyServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $currencyServiceMock);
     $guestApi->setDi($di);
 
     $guestApi->setService($serviceMock);
@@ -201,19 +201,19 @@ test('get currency not found returns default', function (): void {
 });
 
 test('apply promo', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $cart = new \Model_Cart();
-    $cart->loadBean(new \Tests\Helpers\DummyBean());
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
 
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
         ->andReturn($cart);
     $serviceMock->shouldReceive('applyPromo')->atLeast()->once()
         ->andReturn(true);
     $serviceMock->shouldReceive('findActivePromoByCode')->atLeast()->once()
-        ->andReturn(new \Model_Promo());
+        ->andReturn(new Model_Promo());
     $serviceMock->shouldReceive('promoCanBeApplied')->atLeast()->once()
         ->andReturn(true);
     $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->atLeast()->once()
@@ -233,13 +233,13 @@ test('apply promo', function (): void {
 });
 
 test('apply promo not found exception', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $cart = new \Model_Cart();
-    $cart->loadBean(new \Tests\Helpers\DummyBean());
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
 
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')
         ->andReturn($cart);
     $serviceMock->shouldReceive('applyPromo')
@@ -260,25 +260,25 @@ test('apply promo not found exception', function (): void {
         'promocode' => 'CODE',
     ];
 
-    $this->expectException(\FOSSBilling\InformationException::class);
+    $this->expectException(FOSSBilling\InformationException::class);
     $this->expectExceptionMessage('The promo code has expired or does not exist');
     $guestApi->apply_promo($data);
 });
 
 test('apply promo can not be applied', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $cart = new \Model_Cart();
-    $cart->loadBean(new \Tests\Helpers\DummyBean());
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
 
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')
         ->andReturn($cart);
     $serviceMock->shouldReceive('applyPromo')
         ->andReturn(true);
     $serviceMock->shouldReceive('findActivePromoByCode')->atLeast()->once()
-        ->andReturn(new \Model_Promo());
+        ->andReturn(new Model_Promo());
     $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->atLeast()->once()
         ->andReturn(true);
     $serviceMock->shouldReceive('promoCanBeApplied')->atLeast()->once()
@@ -293,25 +293,25 @@ test('apply promo can not be applied', function (): void {
         'promocode' => 'CODE',
     ];
 
-    $this->expectException(\FOSSBilling\InformationException::class);
+    $this->expectException(FOSSBilling\InformationException::class);
     $this->expectExceptionMessage('The promo code has expired or does not exist');
     $guestApi->apply_promo($data);
 });
 
 test('apply promo can not be applied for user', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $cart = new \Model_Cart();
-    $cart->loadBean(new \Tests\Helpers\DummyBean());
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
 
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')
         ->andReturn($cart);
     $serviceMock->shouldReceive('applyPromo')
         ->andReturn(true);
     $serviceMock->shouldReceive('findActivePromoByCode')->atLeast()->once()
-        ->andReturn(new \Model_Promo());
+        ->andReturn(new Model_Promo());
     $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->atLeast()->once()
         ->andReturn(false);
 
@@ -324,19 +324,19 @@ test('apply promo can not be applied for user', function (): void {
         'promocode' => 'CODE',
     ];
 
-    $this->expectException(\FOSSBilling\InformationException::class);
+    $this->expectException(FOSSBilling\InformationException::class);
     $this->expectExceptionMessage('Promo code cannot be applied to your account');
     $guestApi->apply_promo($data);
 });
 
 test('remove promo', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $cart = new \Model_Cart();
-    $cart->loadBean(new \Tests\Helpers\DummyBean());
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
 
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
         ->andReturn($cart);
     $serviceMock->shouldReceive('removePromo')->atLeast()->once()
@@ -350,13 +350,13 @@ test('remove promo', function (): void {
 });
 
 test('remove item', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $cart = new \Model_Cart();
-    $cart->loadBean(new \Tests\Helpers\DummyBean());
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
 
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
         ->andReturn($cart);
     $serviceMock->shouldReceive('removeProduct')->atLeast()->once()
@@ -377,13 +377,13 @@ test('remove item', function (): void {
 });
 
 test('add item', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $cart = new \Model_Cart();
-    $cart->loadBean(new \Tests\Helpers\DummyBean());
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
 
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
         ->andReturn($cart);
     $serviceMock->shouldReceive('addItem')->atLeast()->once()
@@ -393,7 +393,7 @@ test('add item', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new \Model_Product());
+    ->andReturn(new Model_Product());
 
     $di = container();
     $di['db'] = $dbMock;
@@ -413,19 +413,19 @@ test('add item', function (): void {
 });
 
 test('add item single resets cart', function (): void {
-    $guestApi = new \Box\Mod\Cart\Api\Guest();
-    $api = new \Box\Mod\Cart\Api\Guest();
-    $cart = new \Model_Cart();
-    $cart->loadBean(new \Tests\Helpers\DummyBean());
+    $guestApi = new Box\Mod\Cart\Api\Guest();
+    $api = new Box\Mod\Cart\Api\Guest();
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
 
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
         ->andReturn($cart);
     $serviceMock->shouldReceive('addItem')->atLeast()->once()
         ->andReturn(true);
 
-    $apiMock = Mockery::mock(\Box\Mod\Cart\Api\Guest::class)->makePartial();
+    $apiMock = Mockery::mock(Box\Mod\Cart\Api\Guest::class)->makePartial();
     $apiMock->shouldReceive('reset')->atLeast()->once()
         ->andReturn(true);
 
@@ -433,7 +433,7 @@ test('add item single resets cart', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new \Model_Product());
+    ->andReturn(new Model_Product());
 
     $di = container();
     $di['db'] = $dbMock;

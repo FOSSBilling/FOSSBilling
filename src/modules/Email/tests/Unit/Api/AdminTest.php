@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2025 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -12,9 +12,9 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-test('email get list', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
-    $emailService = new \Box\Mod\Email\Service();
+test('email get list', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+    $emailService = new Box\Mod\Email\Service();
 
     $willReturn = [
         'list' => [
@@ -22,7 +22,7 @@ test('email get list', function () {
         ],
     ];
 
-    $pager = Mockery::mock(\FOSSBilling\Pagination::class)->makePartial();
+    $pager = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pager
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
@@ -44,8 +44,8 @@ test('email get list', function () {
     expect($result['list'])->toBeArray();
 });
 
-test('email get', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
+test('email get', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
 
     $data = [
         'id' => 1,
@@ -60,8 +60,8 @@ test('email get', function () {
     $created = date('Y-m-d H:i:s', time() - 86400);
     $updated = date('Y-m-d H:i:s');
 
-    $model = new \Model_ActivityClientEmail();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_ActivityClientEmail();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $model->id = $id;
     $model->client_id = $client_id;
     $model->sender = $sender;
@@ -84,7 +84,7 @@ test('email get', function () {
         'updated_at' => $updated,
     ];
 
-    $service = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+    $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service
     ->shouldReceive('getEmailById')
     ->atLeast()->once()
@@ -104,8 +104,8 @@ test('email get', function () {
     expect($expected)->toEqual($result);
 });
 
-test('send', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
+test('send', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
 
     $data = [
         'to' => 'to@example.com',
@@ -116,11 +116,11 @@ test('send', function () {
         'content' => 'Content',
     ];
 
-    $model = new \Model_ActivityClientEmail();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_ActivityClientEmail();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $model->id = 1;
 
-    $emailService = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('sendMail')
     ->atLeast()->once()
@@ -136,15 +136,15 @@ test('send', function () {
     expect($result)->toBeTrue();
 });
 
-test('resend', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
+test('resend', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
 
     $data = [
         'id' => 1,
     ];
 
-    $model = new \Model_ActivityClientEmail();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_ActivityClientEmail();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $model->id = 1;
 
     $db = Mockery::mock('Box_Database');
@@ -157,7 +157,7 @@ test('resend', function () {
     $di['db'] = $db;
     $adminApi->setDi($di);
 
-    $emailService = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('resend')
     ->atLeast()->once()
@@ -170,8 +170,8 @@ test('resend', function () {
     expect($result)->toBeTrue();
 });
 
-test('resend exception email not found', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
+test('resend exception email not found', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
 
     $data = [
         'id' => 1,
@@ -187,13 +187,13 @@ test('resend exception email not found', function () {
     $di['db'] = $db;
     $adminApi->setDi($di);
 
-    $this->expectException(\FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Email not found');
     $adminApi->email_resend($data);
 });
 
-test('delete exception email not found', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
+test('delete exception email not found', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
 
     $data = [
         'id' => 1,
@@ -209,21 +209,21 @@ test('delete exception email not found', function () {
     $di['db'] = $db;
     $adminApi->setDi($di);
 
-    $this->expectException(\FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Email not found');
     $adminApi->email_delete($data);
 });
 
-test('email delete', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
-    $emailService = new \Box\Mod\Email\Service();
+test('email delete', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+    $emailService = new Box\Mod\Email\Service();
 
     $data = [
         'id' => 1,
     ];
 
-    $model = new \Model_ActivityClientEmail();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_ActivityClientEmail();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $model->id = 1;
 
     $db = Mockery::mock('Box_Database');
@@ -250,9 +250,9 @@ test('email delete', function () {
     expect($result)->toBeTrue();
 });
 
-test('template get list', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
-    $emailService = new \Box\Mod\Email\Service();
+test('template get list', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+    $emailService = new Box\Mod\Email\Service();
 
     $willReturn = [
         'list' => [
@@ -262,7 +262,7 @@ test('template get list', function () {
         ],
     ];
 
-    $pager = Mockery::mock(\FOSSBilling\Pagination::class)->makePartial();
+    $pager = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pager
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
@@ -284,15 +284,15 @@ test('template get list', function () {
     expect($result['list'])->toBeArray();
 });
 
-test('template get', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
+test('template get', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
 
     $data = [
         'id' => 1,
     ];
 
-    $model = new \Model_EmailTemplate();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_EmailTemplate();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $db = Mockery::mock('\Box_Database');
     $db
@@ -304,7 +304,7 @@ test('template get', function () {
     $di['db'] = $db;
     $adminApi->setDi($di);
 
-    $emailService = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('templateToApiArray')
     ->atLeast()->once()
@@ -315,15 +315,15 @@ test('template get', function () {
     expect($result)->toBeArray();
 });
 
-test('template delete', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
+test('template delete', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
 
     $data = [
         'id' => 1,
     ];
 
-    $model = new \Model_EmailTemplate();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_EmailTemplate();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $model->id = 1;
 
     $db = Mockery::mock('Box_Database');
@@ -347,8 +347,8 @@ test('template delete', function () {
     expect($result)->toBeTrue();
 });
 
-test('template delete template not found', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
+test('template delete template not found', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
 
     $data = [
         'id' => 1,
@@ -364,18 +364,18 @@ test('template delete template not found', function () {
     $di['db'] = $db;
     $adminApi->setDi($di);
 
-    $this->expectException(\FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Email template not found');
     $adminApi->template_delete($data);
 });
 
-test('template create', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
+test('template create', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
 
     $modelId = 1;
 
-    $templateModel = new \Model_EmailTemplate();
-    $templateModel->loadBean(new \Tests\Helpers\DummyBean());
+    $templateModel = new Model_EmailTemplate();
+    $templateModel->loadBean(new Tests\Helpers\DummyBean());
     $templateModel->id = $modelId;
 
     $data = [
@@ -384,7 +384,7 @@ test('template create', function () {
         'content' => 'Content',
     ];
 
-    $emailService = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('templateCreate')
     ->atLeast()->once()
@@ -398,17 +398,17 @@ test('template create', function () {
     expect($modelId)->toEqual($result);
 });
 
-test('template send to not set exception', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
+test('template send to not set exception', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
 
     $di = container();
     $adminApi->setDi($di);
-    $this->expectException(\FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Exception::class);
     $adminApi->template_send(['code' => 'code']);
 });
 
-test('template update', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
+test('template update', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
 
     $id = 1;
     $data = [
@@ -420,8 +420,8 @@ test('template update', function () {
         'content' => 'Content',
     ];
 
-    $emailTemplateModel = new \Model_EmailTemplate();
-    $emailTemplateModel->loadBean(new \Tests\Helpers\DummyBean());
+    $emailTemplateModel = new Model_EmailTemplate();
+    $emailTemplateModel->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')
@@ -430,7 +430,7 @@ test('template update', function () {
 
     $di = container();
     $di['db'] = $dbMock;
-    $emailService = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('updateTemplate')
     ->atLeast()->once()
@@ -443,15 +443,15 @@ test('template update', function () {
     expect($result)->toBeTrue();
 });
 
-test('template reset', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
+test('template reset', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
 
     $id = 1;
     $data = [
         'code' => 'CODE',
     ];
 
-    $emailService = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('resetTemplateByCode')
     ->atLeast()->once()
@@ -465,9 +465,9 @@ test('template reset', function () {
     expect($id)->toEqual($result);
 });
 
-test('batch template generate', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
-    $emailService = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+test('batch template generate', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('templateBatchGenerate')
     ->atLeast()->once()
@@ -479,9 +479,9 @@ test('batch template generate', function () {
     expect($result)->toBeTrue();
 });
 
-test('batch template disable', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
-    $emailService = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+test('batch template disable', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('templateBatchDisable')
     ->atLeast()->once()
@@ -493,9 +493,9 @@ test('batch template disable', function () {
     expect($result)->toBeTrue();
 });
 
-test('batch template enable', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
-    $emailService = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+test('batch template enable', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('templateBatchEnable')
     ->atLeast()->once()
@@ -507,9 +507,9 @@ test('batch template enable', function () {
     expect($result)->toBeTrue();
 });
 
-test('send test', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
-    $emailService = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+test('send test', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('sendTemplate')
     ->atLeast()->once()
@@ -521,20 +521,20 @@ test('send test', function () {
     expect($result)->toBeTrue();
 });
 
-test('batch sendmail', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
-    $emailService = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+test('batch sendmail', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService->shouldReceive('batchSend')->atLeast()->once();
 
     $isExtensionActiveReturn = false;
-    $extension = Mockery::mock(\Box\Mod\Extension\Service::class);
+    $extension = Mockery::mock(Box\Mod\Extension\Service::class);
     $extension
     ->shouldReceive('isExtensionActive')
     ->atLeast()->once()
     ->andReturn($isExtensionActiveReturn);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $extension);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $extension);
 
     $adminApi->setService($emailService);
     $adminApi->setDi($di);
@@ -543,9 +543,9 @@ test('batch sendmail', function () {
     expect($result)->toBeNull();
 });
 
-test('template send', function () {
-    $adminApi = new \Box\Mod\Email\Api\Admin();
-    $emailService = Mockery::mock(\Box\Mod\Email\Service::class)->makePartial();
+test('template send', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('sendTemplate')
     ->atLeast()->once()
@@ -568,20 +568,20 @@ test('template send', function () {
     expect($result)->toBeTrue();
 });
 
-test('template render', function () {
-    $adminApi = Mockery::mock(\Box\Mod\Email\Api\Admin::class)->makePartial();
+test('template render', function (): void {
+    $adminApi = Mockery::mock(Box\Mod\Email\Api\Admin::class)->makePartial();
     $adminApi
     ->shouldReceive('template_get')
     ->atLeast()->once()
     ->andReturn(['vars' => [], 'content' => 'content']);
 
-    $loader = new \Twig\Loader\ArrayLoader();
-    $twigStub = $this->createStub(\Twig\Environment::class);
+    $loader = new Twig\Loader\ArrayLoader();
+    $twigStub = $this->createStub(Twig\Environment::class);
 
     $di = container();
     $di['twig'] = $twigStub;
 
-    $systemService = Mockery::mock(\Box\Mod\System\Service::class)->makePartial();
+    $systemService = Mockery::mock(Box\Mod\System\Service::class)->makePartial();
     $systemService
     ->shouldReceive('renderString')
     ->atLeast()->once()
@@ -595,8 +595,8 @@ test('template render', function () {
     expect('rendered')->toEqual($result);
 });
 
-test('batch delete', function () {
-    $activityMock = Mockery::mock(\Box\Mod\Email\Api\Admin::class)->makePartial();
+test('batch delete', function (): void {
+    $activityMock = Mockery::mock(Box\Mod\Email\Api\Admin::class)->makePartial();
     $activityMock->shouldReceive('email_delete')->atLeast()->once()->andReturn(true);
 
     $di = container();

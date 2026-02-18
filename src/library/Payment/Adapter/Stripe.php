@@ -101,7 +101,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $invoiceService->getTotalWithTax($invoice) * 100;
     }
 
-    public function getInvoiceTitle(Model_Invoice $invoice)
+    public function getInvoiceTitle(Model_Invoice $invoice): string
     {
         $invoiceItems = $this->di['db']->getAll('SELECT title from invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => $invoice->id]);
 

@@ -2,19 +2,18 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
-    $api = new \Box\Mod\Hook\Api\Admin();
+    $api = new Box\Mod\Hook\Api\Admin();
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -22,16 +21,16 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('getList returns array', function (): void {
-    $api = new \Box\Mod\Hook\Api\Admin();
-    $serviceMock = Mockery::mock(\Box\Mod\Hook\Service::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    $api = new Box\Mod\Hook\Api\Admin();
+    $serviceMock = Mockery::mock(Box\Mod\Hook\Service::class);
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $serviceMock->shouldReceive('getSearchQuery');
     $expectation1->atLeast()->once();
     $expectation1->andReturn(['SqlString', []]);
 
-    $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class)->makePartial();
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $paginatorMock->shouldAllowMockingProtectedMethods();
-    /** @var \Mockery\Expectation $expectation2 */
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $paginatorMock->shouldReceive('getPaginatedResultSet');
     $expectation2->atLeast()->once();
     $expectation2->andReturn([]);
@@ -46,17 +45,17 @@ test('getList returns array', function (): void {
 });
 
 test('call fires event', function (): void {
-    $api = new \Box\Mod\Hook\Api\Admin();
+    $api = new Box\Mod\Hook\Api\Admin();
     $data['event'] = 'testEvent';
 
     $eventManager = Mockery::mock('\Box_EventManager');
-    /** @var \Mockery\Expectation $expectation */
+    /** @var Mockery\Expectation $expectation */
     $expectation = $eventManager->shouldReceive('fire');
     $expectation->atLeast()->once();
     $expectation->andReturn(1);
 
     $di = container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $eventManager;
 
     $api->setDi($di);
@@ -65,7 +64,7 @@ test('call fires event', function (): void {
 });
 
 test('call returns false when event param is missing', function (): void {
-    $api = new \Box\Mod\Hook\Api\Admin();
+    $api = new Box\Mod\Hook\Api\Admin();
     $data['event'] = null;
 
     $result = $api->call($data);
@@ -74,9 +73,9 @@ test('call returns false when event param is missing', function (): void {
 });
 
 test('batchConnect returns result', function (): void {
-    $api = new \Box\Mod\Hook\Api\Admin();
-    $serviceMock = Mockery::mock(\Box\Mod\Hook\Service::class);
-    /** @var \Mockery\Expectation $expectation */
+    $api = new Box\Mod\Hook\Api\Admin();
+    $serviceMock = Mockery::mock(Box\Mod\Hook\Service::class);
+    /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('batchConnect');
     $expectation->atLeast()->once();
     $expectation->andReturn(true);

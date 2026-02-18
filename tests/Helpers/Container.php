@@ -55,8 +55,6 @@ function accessPrivate(object $instance, string $property, mixed $value = null):
         return null;
     }
 
-    $prop->setAccessible(true);
-
     // If value is provided, set the property
     if (func_num_args() > 2) {
         $prop->setValue($instance, $value);
@@ -75,6 +73,5 @@ function injectMockFilesystem(object $service, \Mockery\MockInterface $filesyste
 {
     $refl = new \ReflectionClass($service);
     $prop = $refl->getProperty('filesystem');
-    $prop->setAccessible(true);
     $prop->setValue($service, $filesystemMock);
 }

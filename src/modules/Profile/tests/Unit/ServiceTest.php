@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2025 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,9 +10,10 @@
 
 declare(strict_types=1);
 use Box\Mod\Profile\Service;
+
 use function Tests\Helpers\container;
 
-test('gets dependency injection container', function () {
+test('gets dependency injection container', function (): void {
     $service = new Service();
     $di = container();
     $service->setDi($di);
@@ -20,16 +21,16 @@ test('gets dependency injection container', function () {
     expect($getDi)->toBe($di);
 });
 
-test('gets admin identity array', function () {
-    $model = new \Model_Admin();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+test('gets admin identity array', function (): void {
+    $model = new Model_Admin();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $service = new Service();
     $result = $service->getAdminIdentityArray($model);
     expect($result)->toBeArray();
 });
 
-test('updates admin', function () {
+test('updates admin', function (): void {
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
@@ -41,12 +42,12 @@ test('updates admin', function () {
         ->andReturn(true);
 
     $di = container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
     $di['db'] = $dbMock;
 
-    $model = new \Model_Admin();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Admin();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $data = [
         'signature' => 'new signature',
@@ -60,7 +61,7 @@ test('updates admin', function () {
     expect($result)->toBeTrue();
 });
 
-test('generates new api key', function () {
+test('generates new api key', function (): void {
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
@@ -72,13 +73,13 @@ test('generates new api key', function () {
         ->andReturn(true);
 
     $di = container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
     $di['db'] = $dbMock;
-    $di['tools'] = new \FOSSBilling\Tools();
+    $di['tools'] = new FOSSBilling\Tools();
 
-    $model = new \Model_Admin();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Admin();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $service = new Service();
     $service->setDi($di);
@@ -87,7 +88,7 @@ test('generates new api key', function () {
     expect($result)->toBeTrue();
 });
 
-test('changes admin password', function () {
+test('changes admin password', function (): void {
     $password = 'new_pass';
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')
@@ -99,18 +100,18 @@ test('changes admin password', function () {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $passwordMock = Mockery::mock(\FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->with($password);
 
     $di = container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
     $di['db'] = $dbMock;
     $di['password'] = $passwordMock;
 
-    $model = new \Model_Admin();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Admin();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $service = new Service();
     $service->setDi($di);
@@ -119,7 +120,7 @@ test('changes admin password', function () {
     expect($result)->toBeTrue();
 });
 
-test('updates client', function () {
+test('updates client', function (): void {
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
@@ -130,30 +131,30 @@ test('updates client', function () {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $modMock = Mockery::mock(\FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn([
             'disable_change_email' => 0,
         ]);
 
-    $toolsMock = Mockery::mock(\FOSSBilling\Tools::class);
+    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('validateAndSanitizeEmail');
 
-    $clientServiceMock = Mockery::mock(\Box\Mod\Client\Service::class);
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $clientServiceMock->shouldReceive('emailAlreadyRegistered')
         ->andReturn(false);
 
     $di = container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $clientServiceMock);
-    $di['mod'] = $di->protect(fn (): \Mockery\MockInterface => $modMock);
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
     $di['tools'] = $toolsMock;
 
-    $model = new \Model_Client();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Client();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $data = [
         'email' => 'email@example.com',
@@ -195,7 +196,7 @@ test('updates client', function () {
     expect($result)->toBeTrue();
 });
 
-test('throws exception when email change is not allowed', function () {
+test('throws exception when email change is not allowed', function (): void {
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
@@ -206,38 +207,38 @@ test('throws exception when email change is not allowed', function () {
         ->never()
         ->andReturn(true);
 
-    $modMock = Mockery::mock(\FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn([
             'disable_change_email' => 1,
         ]);
 
-    $clientServiceMock = Mockery::mock(\Box\Mod\Client\Service::class);
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $clientServiceMock->shouldReceive('emailAlreadyRegistered')
         ->never()
         ->andReturn(false);
 
     $di = container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $clientServiceMock);
-    $di['mod'] = $di->protect(fn (): \Mockery\MockInterface => $modMock);
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
 
-    $model = new \Model_Client();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Client();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $data = ['email' => 'email@example.com'];
 
     $service = new Service();
     $service->setDi($di);
 
-    expect(fn () => $service->updateClient($model, $data))
-        ->toThrow(\FOSSBilling\Exception::class);
+    expect(fn (): bool => $service->updateClient($model, $data))
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
-test('throws exception when email already registered', function () {
+test('throws exception when email already registered', function (): void {
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
@@ -248,63 +249,63 @@ test('throws exception when email already registered', function () {
         ->never()
         ->andReturn(true);
 
-    $modMock = Mockery::mock(\FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn([
             'disable_change_email' => 0,
         ]);
 
-    $toolsMock = Mockery::mock(\FOSSBilling\Tools::class);
+    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('validateAndSanitizeEmail');
 
-    $clientServiceMock = Mockery::mock(\Box\Mod\Client\Service::class);
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $clientServiceMock->shouldReceive('emailAlreadyRegistered')
         ->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $clientServiceMock);
-    $di['mod'] = $di->protect(fn (): \Mockery\MockInterface => $modMock);
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
     $di['tools'] = $toolsMock;
 
-    $model = new \Model_Client();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Client();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $data = ['email' => 'email@example.com'];
 
     $service = new Service();
     $service->setDi($di);
 
-    expect(fn () => $service->updateClient($model, $data))
-        ->toThrow(\FOSSBilling\Exception::class);
+    expect(fn (): bool => $service->updateClient($model, $data))
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
-test('resets api key', function () {
+test('resets api key', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['db'] = $dbMock;
-    $di['tools'] = new \FOSSBilling\Tools();
+    $di['tools'] = new FOSSBilling\Tools();
 
-    $model = new \Model_Client();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Client();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $service = new Service();
     $service->setDi($di);
     $result = $service->resetApiKey($model);
     expect($result)->toBeString();
-    expect(strlen($result))->toBe(32);
+    expect(strlen((string) $result))->toBe(32);
 });
 
-test('changes client password', function () {
+test('changes client password', function (): void {
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
@@ -317,18 +318,18 @@ test('changes client password', function () {
 
     $password = 'new password';
 
-    $passwordMock = Mockery::mock(\FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->with($password);
 
     $di = container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
     $di['db'] = $dbMock;
     $di['password'] = $passwordMock;
 
-    $model = new \Model_Client();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Client();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $service = new Service();
     $service->setDi($di);
@@ -336,17 +337,17 @@ test('changes client password', function () {
     expect($result)->toBeTrue();
 });
 
-test('logs out client', function () {
-    $sessionMock = Mockery::mock(\FOSSBilling\Session::class);
+test('logs out client', function (): void {
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
     $sessionMock->shouldReceive('destroy')
         ->atLeast()->once();
 
     $di = container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['session'] = $sessionMock;
 
-    $model = new \Model_Client();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Client();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $service = new Service();
     $service->setDi($di);

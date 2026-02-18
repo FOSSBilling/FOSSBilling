@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('dependency injection', function (): void {
-    $api = new \Box\Mod\System\Api\Admin();
+    $api = new Box\Mod\System\Api\Admin();
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -21,10 +21,10 @@ test('dependency injection', function (): void {
 });
 
 test('get params', function (): void {
-    $api = new \Box\Mod\System\Api\Admin();
+    $api = new Box\Mod\System\Api\Admin();
     $data = [];
 
-    $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
     $serviceMock
     ->shouldReceive('getParams')
     ->atLeast()->once()
@@ -37,10 +37,10 @@ test('get params', function (): void {
 });
 
 test('update params', function (): void {
-    $api = new \Box\Mod\System\Api\Admin();
+    $api = new Box\Mod\System\Api\Admin();
     $data = [];
 
-    $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
     $serviceMock
     ->shouldReceive('updateParams')
     ->atLeast()->once()
@@ -54,14 +54,14 @@ test('update params', function (): void {
 });
 
 test('messages', function (): void {
-    $api = new \Box\Mod\System\Api\Admin();
+    $api = new Box\Mod\System\Api\Admin();
     $data = [];
 
     $di = container();
 
     $api->setDi($di);
 
-    $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
     $serviceMock
     ->shouldReceive('getMessages')
     ->atLeast()->once()
@@ -74,12 +74,12 @@ test('messages', function (): void {
 });
 
 test('template exists', function (): void {
-    $api = new \Box\Mod\System\Api\Admin();
+    $api = new Box\Mod\System\Api\Admin();
     $data = [
         'file' => 'testing.txt',
     ];
 
-    $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
     $serviceMock
     ->shouldReceive('templateExists')
     ->atLeast()->once()
@@ -93,12 +93,12 @@ test('template exists', function (): void {
 });
 
 test('string render', function (): void {
-    $api = new \Box\Mod\System\Api\Admin();
+    $api = new Box\Mod\System\Api\Admin();
     $data = [
         '_tpl' => 'default',
     ];
 
-    $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
     $serviceMock
     ->shouldReceive('renderString')
     ->atLeast()->once()
@@ -113,10 +113,10 @@ test('string render', function (): void {
 });
 
 test('env', function (): void {
-    $api = new \Box\Mod\System\Api\Admin();
+    $api = new Box\Mod\System\Api\Admin();
     $data = [];
 
-    $serviceMock = Mockery::mock(\Box\Mod\System\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
     $serviceMock
     ->shouldReceive('getEnv')
     ->atLeast()->once()
@@ -132,18 +132,18 @@ test('env', function (): void {
 });
 
 test('is allowed', function (): void {
-    $api = new \Box\Mod\System\Api\Admin();
+    $api = new Box\Mod\System\Api\Admin();
     $data = [
         'mod' => 'extension',
     ];
 
-    $staffServiceMock = Mockery::mock(\Box\Mod\Staff\Service::class);
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffServiceMock
     ->shouldReceive('hasPermission')
     ->atLeast()->once()
     ->andReturn(true);
 
-    $validatorStub = $this->createStub(\FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {

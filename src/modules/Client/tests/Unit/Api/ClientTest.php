@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
-    $api = new \Box\Mod\Client\Api\Client();
+    $api = new Box\Mod\Client\Api\Client();
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -21,13 +21,13 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('balanceGetList returns array', function (): void {
-    $api = new \Box\Mod\Client\Api\Client();
+    $api = new Box\Mod\Client\Api\Client();
     $data = [];
 
-    $model = new \Model_Client();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Client();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $serviceMock = Mockery::mock(\Box\Mod\Client\ServiceBalance::class);
+    $serviceMock = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     $serviceMock
     ->shouldReceive('getSearchQuery')
     ->atLeast()->once()
@@ -43,14 +43,14 @@ test('balanceGetList returns array', function (): void {
         ],
     ];
 
-    $pagerMock = Mockery::mock(\FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
     ->andReturn($simpleResultArr);
 
-    $model = new \Model_ClientBalance();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_ClientBalance();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')
@@ -58,7 +58,7 @@ test('balanceGetList returns array', function (): void {
     ->andReturn($model);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn ($name): \Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $serviceMock);
     $di['pager'] = $pagerMock;
     $di['db'] = $dbMock;
 
@@ -72,19 +72,19 @@ test('balanceGetList returns array', function (): void {
 });
 
 test('balanceGetTotal returns float', function (): void {
-    $api = new \Box\Mod\Client\Api\Client();
+    $api = new Box\Mod\Client\Api\Client();
     $balanceAmount = 0.00;
-    $model = new \Model_Client();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Client();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $serviceMock = Mockery::mock(\Box\Mod\Client\ServiceBalance::class);
+    $serviceMock = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     $serviceMock
     ->shouldReceive('getClientBalance')
     ->atLeast()->once()
     ->andReturn($balanceAmount);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn ($name, $sub): \Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(fn ($name, $sub): Mockery\MockInterface => $serviceMock);
 
     $api->setDi($di);
     $api->setIdentity($model);
@@ -96,17 +96,17 @@ test('balanceGetTotal returns float', function (): void {
 });
 
 test('isTaxable returns boolean', function (): void {
-    $api = new \Box\Mod\Client\Api\Client();
+    $api = new Box\Mod\Client\Api\Client();
     $clientIsTaxable = true;
 
-    $serviceMock = Mockery::mock(\Box\Mod\Client\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock
     ->shouldReceive('isClientTaxable')
     ->atLeast()->once()
     ->andReturn($clientIsTaxable);
 
-    $client = new \Model_Client();
-    $client->loadBean(new \Tests\Helpers\DummyBean());
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
 
     $api->setService($serviceMock);
     $api->setIdentity($client);

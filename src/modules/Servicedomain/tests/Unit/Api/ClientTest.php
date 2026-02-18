@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,16 +10,17 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
+use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicedomain\Api\Client;
 use Box\Mod\Servicedomain\Service;
-use Box\Mod\Order\Service as OrderService;
+
+use function Tests\Helpers\container;
 
 test('updates nameservers', function (): void {
-    $clientApi = new \Box\Mod\Servicedomain\Api\Client();
-    $api = new \Box\Mod\Servicedomain\Api\Client();
-    $model = new \Model_ServiceDomain();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $clientApi = new Client();
+    $api = new Client();
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $clientApiMock->shouldReceive('_getService')
@@ -48,10 +49,10 @@ test('updates nameservers', function (): void {
 });
 
 test('updates contacts', function (): void {
-    $clientApi = new \Box\Mod\Servicedomain\Api\Client();
-    $api = new \Box\Mod\Servicedomain\Api\Client();
-    $model = new \Model_ServiceDomain();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $clientApi = new Client();
+    $api = new Client();
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $clientApiMock->shouldReceive('_getService')
@@ -72,10 +73,10 @@ test('updates contacts', function (): void {
 });
 
 test('enables privacy protection', function (): void {
-    $clientApi = new \Box\Mod\Servicedomain\Api\Client();
-    $api = new \Box\Mod\Servicedomain\Api\Client();
-    $model = new \Model_ServiceDomain();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $clientApi = new Client();
+    $api = new Client();
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $clientApiMock->shouldReceive('_getService')
@@ -96,10 +97,10 @@ test('enables privacy protection', function (): void {
 });
 
 test('disables privacy protection', function (): void {
-    $clientApi = new \Box\Mod\Servicedomain\Api\Client();
-    $api = new \Box\Mod\Servicedomain\Api\Client();
-    $model = new \Model_ServiceDomain();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $clientApi = new Client();
+    $api = new Client();
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $clientApiMock->shouldReceive('_getService')
@@ -120,10 +121,10 @@ test('disables privacy protection', function (): void {
 });
 
 test('gets transfer code', function (): void {
-    $clientApi = new \Box\Mod\Servicedomain\Api\Client();
-    $api = new \Box\Mod\Servicedomain\Api\Client();
-    $model = new \Model_ServiceDomain();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $clientApi = new Client();
+    $api = new Client();
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $clientApiMock->shouldReceive('_getService')
@@ -144,10 +145,10 @@ test('gets transfer code', function (): void {
 });
 
 test('locks domain', function (): void {
-    $clientApi = new \Box\Mod\Servicedomain\Api\Client();
-    $api = new \Box\Mod\Servicedomain\Api\Client();
-    $model = new \Model_ServiceDomain();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $clientApi = new Client();
+    $api = new Client();
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $clientApiMock->shouldReceive('_getService')
@@ -168,10 +169,10 @@ test('locks domain', function (): void {
 });
 
 test('unlocks domain', function (): void {
-    $clientApi = new \Box\Mod\Servicedomain\Api\Client();
-    $api = new \Box\Mod\Servicedomain\Api\Client();
-    $model = new \Model_ServiceDomain();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $clientApi = new Client();
+    $api = new Client();
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $clientApiMock->shouldReceive('_getService')
@@ -192,8 +193,8 @@ test('unlocks domain', function (): void {
 });
 
 test('gets service', function (): void {
-    $clientApi = new \Box\Mod\Servicedomain\Api\Client();
-    $api = new \Box\Mod\Servicedomain\Api\Client();
+    $clientApi = new Client();
+    $api = new Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('lock')
         ->atLeast()->once()
@@ -204,16 +205,16 @@ test('gets service', function (): void {
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
-        ->andReturn(new \Model_ClientOrder());
+        ->andReturn(new Model_ClientOrder());
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
-        ->andReturn(new \Model_ServiceDomain());
+        ->andReturn(new Model_ServiceDomain());
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new \Model_Client());
+    $clientApi->setIdentity(new Model_Client());
 
     $data = [
         'order_id' => 1,
@@ -224,8 +225,8 @@ test('gets service', function (): void {
 });
 
 test('throws exception when getting service without order_id', function (): void {
-    $clientApi = new \Box\Mod\Servicedomain\Api\Client();
-    $api = new \Box\Mod\Servicedomain\Api\Client();
+    $clientApi = new Client();
+    $api = new Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('lock')
         ->never();
@@ -239,20 +240,20 @@ test('throws exception when getting service without order_id', function (): void
         ->never();
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new \Model_Client());
+    $clientApi->setIdentity(new Model_Client());
 
     $data = [];
 
     expect(fn () => $clientApi->lock($data))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('throws exception when getting service order not found', function (): void {
-    $clientApi = new \Box\Mod\Servicedomain\Api\Client();
-    $api = new \Box\Mod\Servicedomain\Api\Client();
+    $clientApi = new Client();
+    $api = new Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('lock')
         ->never();
@@ -267,22 +268,22 @@ test('throws exception when getting service order not found', function (): void 
         ->never();
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new \Model_Client());
+    $clientApi->setIdentity(new Model_Client());
 
     $data = [
         'order_id' => 1,
     ];
 
     expect(fn () => $clientApi->lock($data))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('throws exception when getting service order not activated', function (): void {
-    $clientApi = new \Box\Mod\Servicedomain\Api\Client();
-    $api = new \Box\Mod\Servicedomain\Api\Client();
+    $clientApi = new Client();
+    $api = new Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('lock')
         ->never();
@@ -292,21 +293,21 @@ test('throws exception when getting service order not activated', function (): v
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
-        ->andReturn(new \Model_ClientOrder());
+        ->andReturn(new Model_ClientOrder());
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
         ->andReturn(null);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new \Model_Client());
+    $clientApi->setIdentity(new Model_Client());
 
     $data = [
         'order_id' => 1,
     ];
 
     expect(fn () => $clientApi->lock($data))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
