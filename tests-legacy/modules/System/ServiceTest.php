@@ -180,7 +180,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeServiceMock);
         $this->service->setDi($di);
 
-        $result = $this->service->templateExists('defaultFile.cp');
+        $result = $this->service->templateExists('defaultFile.html.twig');
         $this->assertIsBool($result);
         $this->assertFalse($result);
     }
