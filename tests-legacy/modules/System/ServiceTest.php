@@ -224,10 +224,6 @@ final class ServiceTest extends \BBTestCase
 
         $twigMock->expects($this->atLeastOnce())
             ->method('addGlobal');
-        // $twigMock->method('createTemplate')
-        //     ->willReturn(new \FakeTemplateWrapper('test'));
-        // $twigMock->method('load')
-        //     ->willReturn(new \FakeTemplateWrapper('test'));
         $twigMock->method('render')
             ->willReturn('');
 
