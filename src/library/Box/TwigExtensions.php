@@ -156,13 +156,13 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     /**
      * Part of the Widgets module. Renders the widgets of a specified slot.
      *
-     * @param \Twig\Environment $env     the Twig environment (injected automatically)
-     * @param string            $slot    name of the slot
-     * @param array             $context optional slot context, such as order or client details
+     * @param Twig\Environment $env     the Twig environment (injected automatically)
+     * @param string           $slot    name of the slot
+     * @param array            $context optional slot context, such as order or client details
      *
      * @return string slot content
      */
-    public function twig_render_widgets(\Twig\Environment $env, string $slot, array $context = []): string
+    public function twig_render_widgets(Twig\Environment $env, string $slot, array $context = []): string
     {
         $widgets = $this->di['mod_service']('Widgets')->getSlotWidgets($slot);
 
@@ -176,7 +176,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             try {
                 $templateName = 'widgets/' . $widget['template'] . '.html.twig';
                 $output .= $env->render($templateName, $context);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Render error widget on failure
                 $output .= $env->render('widgets/mod_widgets_error.html.twig', array_merge($context, [
                     'widget' => [
@@ -184,7 +184,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
                         'mod_name' => $widget['module'],
                         'template' => $widget['template'],
                     ],
-                    'error' => \FOSSBilling\Environment::isDevelopment() ? $e->getMessage() : null,
+                    'error' => FOSSBilling\Environment::isDevelopment() ? $e->getMessage() : null,
                 ]));
             }
         }
@@ -408,8 +408,9 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function twig_hash($value, $algo = 'xxh128'): string
     {
         if (!in_array($algo, hash_algos(), true)) {
-            throw new \InvalidArgumentException(sprintf('Hash algorithm "%s" is not supported.', $algo));
+            throw new InvalidArgumentException(sprintf('Hash algorithm "%s" is not supported.', $algo));
         }
+
         return hash($algo, (string) $value);
     }
 

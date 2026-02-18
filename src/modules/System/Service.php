@@ -154,8 +154,6 @@ class Service
     }
 
     /**
-     * @param mixed $params
-     *
      * @return mixed[]
      */
     private function _getMultipleParams($params): array

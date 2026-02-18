@@ -429,7 +429,11 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $client = $this->di['loggedin_client'];
+        try {
+            $client = $this->di['loggedin_client'];
+        } catch (\Exception) {
+            $client = null;
+        }
 
         if (is_null($client)) {
             return false;

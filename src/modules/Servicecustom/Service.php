@@ -85,7 +85,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\Exception('Could not activate order. Service was not created', null, 7456);
         }
 
-        /** @var \Model_ServiceCustom $model */
+        /* @var \Model_ServiceCustom $model */
         $this->callOnAdapter($model, 'activate');
 
         return true;

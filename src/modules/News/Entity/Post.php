@@ -27,7 +27,6 @@ class Post implements ApiArrayInterface, TimestampInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
-
     private ?int $id = null;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]

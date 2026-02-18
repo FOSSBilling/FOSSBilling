@@ -32,9 +32,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function get_manage(\Box_App $app, $code): string
     {
-        if (!$this->di['is_admin_logged']) {
-            throw new \FOSSBilling\Exception('Admin not logged in');
-        }
+        $this->di['is_admin_logged'];
         $guest_api = $this->di['api_guest'];
         $currency = $guest_api->currency_get(['code' => $code]);
 
