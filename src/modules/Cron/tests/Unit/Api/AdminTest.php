@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,8 +10,9 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
 use Box\Mod\Cron\Api\Admin;
+
+use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
     $di = container();
@@ -22,7 +23,7 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('info returns cron information array', function (): void {
-    $serviceMock = Mockery::mock(\Box\Mod\Cron\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\Cron\Service::class);
     $serviceMock->shouldReceive('getCronInfo')->atLeast()->once()->andReturn([]);
 
     $api_admin = new Admin();

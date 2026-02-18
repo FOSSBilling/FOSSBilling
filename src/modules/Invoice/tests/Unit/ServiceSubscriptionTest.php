@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,13 +10,14 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
-use Box\Mod\Invoice\ServiceSubscription;
 use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Invoice\ServicePayGateway;
+use Box\Mod\Invoice\ServiceSubscription;
+
+use function Tests\Helpers\container;
 
 test('gets dependency injection container', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceSubscription();
+    $service = new ServiceSubscription();
     $di = container();
     $service->setDi($di);
     $getDi = $service->getDi();
@@ -24,9 +25,9 @@ test('gets dependency injection container', function (): void {
 });
 
 test('creates a subscription', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceSubscription();
-    $subscriptionModel = new \Model_Subscription();
-    $subscriptionModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new ServiceSubscription();
+    $subscriptionModel = new Model_Subscription();
+    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
     $newId = 10;
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -43,7 +44,7 @@ test('creates a subscription', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $eventsMock;
 
     $service->setDi($di);
@@ -53,14 +54,14 @@ test('creates a subscription', function (): void {
         'gateway_id' => 2,
     ];
 
-    $result = $service->create(new \Model_Client(), new \Model_PayGateway(), $data);
+    $result = $service->create(new Model_Client(), new Model_PayGateway(), $data);
     expect($result)->toBeInt()->toBe($newId);
 });
 
 test('updates a subscription', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceSubscription();
-    $subscriptionModel = new \Model_Subscription();
-    $subscriptionModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new ServiceSubscription();
+    $subscriptionModel = new Model_Subscription();
+    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
     $data = [
         'status' => '',
         'sid' => '',
@@ -75,7 +76,7 @@ test('updates a subscription', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
 
@@ -84,15 +85,15 @@ test('updates a subscription', function (): void {
 });
 
 test('converts to api array', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceSubscription();
-    $subscriptionModel = new \Model_Subscription();
-    $subscriptionModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new ServiceSubscription();
+    $subscriptionModel = new Model_Subscription();
+    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientModel = new \Model_Client();
-    $clientModel->loadBean(new \Tests\Helpers\DummyBean());
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $gatewayModel = new \Model_PayGateway();
-    $gatewayModel->loadBean(new \Tests\Helpers\DummyBean());
+    $gatewayModel = new Model_PayGateway();
+    $gatewayModel->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $callCount = 0;
@@ -147,9 +148,9 @@ test('converts to api array', function (): void {
 });
 
 test('deletes a subscription', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceSubscription();
-    $subscriptionModel = new \Model_Subscription();
-    $subscriptionModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new ServiceSubscription();
+    $subscriptionModel = new Model_Subscription();
+    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('trash')
@@ -161,7 +162,7 @@ test('deletes a subscription', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $eventsMock;
     $service->setDi($di);
 
@@ -170,7 +171,7 @@ test('deletes a subscription', function (): void {
 });
 
 test('gets search query with various parameters', function (array $data, string $expectedSqlPart, array $expectedParams) {
-    $service = new \Box\Mod\Invoice\ServiceSubscription();
+    $service = new ServiceSubscription();
     $di = container();
 
     $service->setDi($di);
@@ -216,7 +217,7 @@ test('gets search query with various parameters', function (array $data, string 
 ]);
 
 test('returns false when invoice is not subscribable', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceSubscription();
+    $service = new ServiceSubscription();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()->once()
@@ -232,7 +233,7 @@ test('returns false when invoice is not subscribable', function (): void {
 });
 
 test('checks if invoice is subscribable', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceSubscription();
+    $service = new ServiceSubscription();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()->once()
@@ -255,7 +256,7 @@ test('checks if invoice is subscribable', function (): void {
 });
 
 test('gets subscription period', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceSubscription();
+    $service = new ServiceSubscription();
     $serviceMock = Mockery::mock(ServiceSubscription::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('isSubscribable')
         ->atLeast()->once()
@@ -271,17 +272,17 @@ test('gets subscription period', function (): void {
     $di['db'] = $dbMock;
     $serviceMock->setDi($di);
 
-    $invoiceModel = new \Model_Invoice();
-    $invoiceModel->loadBean(new \Tests\Helpers\DummyBean());
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
 
     $result = $serviceMock->getSubscriptionPeriod($invoiceModel);
     expect($result)->toBeString()->toBe($period);
 });
 
 test('unsubscribes', function (): void {
-    $service = new \Box\Mod\Invoice\ServiceSubscription();
-    $subscriptionModel = new \Model_Subscription();
-    $subscriptionModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new ServiceSubscription();
+    $subscriptionModel = new Model_Subscription();
+    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
         ->atLeast()->once();

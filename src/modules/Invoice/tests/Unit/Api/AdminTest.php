@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,7 +10,6 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
 use Box\Mod\Invoice\Api\Admin;
 use Box\Mod\Invoice\Service;
 use Box\Mod\Invoice\ServicePayGateway;
@@ -18,8 +17,10 @@ use Box\Mod\Invoice\ServiceSubscription;
 use Box\Mod\Invoice\ServiceTax;
 use Box\Mod\Invoice\ServiceTransaction;
 
+use function Tests\Helpers\container;
+
 test('gets dependency injection container', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -27,13 +28,13 @@ test('gets dependency injection container', function (): void {
 });
 
 test('gets invoice list', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSearchQuery')
         ->atLeast()->once()
         ->andReturn(['SqlString', []]);
 
-    $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
         ->andReturn(25);
@@ -51,15 +52,15 @@ test('gets invoice list', function (): void {
 });
 
 test('gets an invoice', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
         ->andReturn([]);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Invoice();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Invoice();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -69,7 +70,7 @@ test('gets an invoice', function (): void {
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $api->setIdentity(new \Model_Admin());
+    $api->setIdentity(new Model_Admin());
 
     $data['id'] = 1;
     $result = $api->get($data);
@@ -77,7 +78,7 @@ test('gets an invoice', function (): void {
 });
 
 test('marks invoice as paid', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
         'execute' => true,
@@ -93,12 +94,12 @@ test('marks invoice as paid', function (): void {
         ->atLeast()->once()
         ->andReturn(['code' => 'PayPal', 'enabled' => 1]);
 
-    $invoiceModel = new \Model_Invoice();
-    $invoiceModel->loadBean(new \Tests\Helpers\DummyBean());
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceModel->gateway_id = '1';
 
-    $gatewayModel = new \Model_PayGateway();
-    $gatewayModel->loadBean(new \Tests\Helpers\DummyBean());
+    $gatewayModel = new Model_PayGateway();
+    $gatewayModel->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -107,6 +108,7 @@ test('marks invoice as paid', function (): void {
             if ($type === 'PayGateway') {
                 return $gatewayModel;
             }
+
             return $invoiceModel;
         });
 
@@ -116,6 +118,7 @@ test('marks invoice as paid', function (): void {
         if ($name === 'Invoice' && $sub === 'PayGateway') {
             return $gatewayServiceMock;
         }
+
         return $serviceMock;
     });
     $api->setDi($di);
@@ -126,14 +129,14 @@ test('marks invoice as paid', function (): void {
 });
 
 test('prepares an invoice', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'client_id' => 1,
     ];
     $newInvoiceId = 1;
 
-    $invoiceModel = new \Model_Invoice();
-    $invoiceModel->loadBean(new \Tests\Helpers\DummyBean());
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceModel->id = $newInvoiceId;
 
     $serviceMock = Mockery::mock(Service::class);
@@ -142,8 +145,8 @@ test('prepares an invoice', function (): void {
         ->andReturn($invoiceModel);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Client();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Client();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -159,7 +162,7 @@ test('prepares an invoice', function (): void {
 });
 
 test('approves an invoice', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -170,8 +173,8 @@ test('approves an invoice', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Invoice();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Invoice();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -187,7 +190,7 @@ test('approves an invoice', function (): void {
 });
 
 test('refunds an invoice', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -198,8 +201,8 @@ test('refunds an invoice', function (): void {
         ->andReturn($newNegativeInvoiceId);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Invoice();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Invoice();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -215,7 +218,7 @@ test('refunds an invoice', function (): void {
 });
 
 test('updates an invoice', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -226,8 +229,8 @@ test('updates an invoice', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Invoice();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Invoice();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -243,19 +246,19 @@ test('updates an invoice', function (): void {
 });
 
 test('deletes an invoice item', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
 
-    $invoiceItemService = Mockery::mock(\Box\Mod\Invoice\ServiceInvoiceItem::class);
+    $invoiceItemService = Mockery::mock(Box\Mod\Invoice\ServiceInvoiceItem::class);
     $invoiceItemService->shouldReceive('remove')
         ->atLeast()->once()
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_InvoiceItem();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_InvoiceItem();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -271,7 +274,7 @@ test('deletes an invoice item', function (): void {
 });
 
 test('deletes an invoice', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -282,8 +285,8 @@ test('deletes an invoice', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Invoice();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Invoice();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -299,7 +302,7 @@ test('deletes an invoice', function (): void {
 });
 
 test('creates renewal invoice', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -310,8 +313,8 @@ test('creates renewal invoice', function (): void {
         ->andReturn($newInvoiceId);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_ClientOrder();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_ClientOrder();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $model->price = 10;
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
@@ -328,14 +331,14 @@ test('creates renewal invoice', function (): void {
 });
 
 test('throws exception when creating renewal invoice for free order', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_ClientOrder();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_ClientOrder();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $model->id = 1;
     $model->price = 0;
     $dbMock->shouldReceive('getExistingModelById')
@@ -348,11 +351,11 @@ test('throws exception when creating renewal invoice for free order', function (
     $api->setDi($di);
 
     expect(fn () => $api->renewal_invoice($data))
-        ->toThrow(\FOSSBilling\Exception::class, sprintf('Order %d is free. No need to generate invoice.', $model->id));
+        ->toThrow(FOSSBilling\Exception::class, sprintf('Order %d is free. No need to generate invoice.', $model->id));
 });
 
 test('processes batch pay with credits', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('doBatchPayWithCredits')
         ->atLeast()->once()
@@ -365,7 +368,7 @@ test('processes batch pay with credits', function (): void {
 });
 
 test('pays invoice with credits', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -376,8 +379,8 @@ test('pays invoice with credits', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Invoice();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Invoice();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -393,7 +396,7 @@ test('pays invoice with credits', function (): void {
 });
 
 test('generates batch invoices', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('generateInvoicesForExpiringOrders')
         ->atLeast()->once()
@@ -406,7 +409,7 @@ test('generates batch invoices', function (): void {
 });
 
 test('activates paid invoices in batch', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('doBatchPaidInvoiceActivation')
         ->atLeast()->once()
@@ -419,7 +422,7 @@ test('activates paid invoices in batch', function (): void {
 });
 
 test('sends reminders in batch', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('doBatchRemindersSend')
         ->atLeast()->once()
@@ -432,7 +435,7 @@ test('sends reminders in batch', function (): void {
 });
 
 test('invokes due event in batch', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('doBatchInvokeDueEvent')
         ->atLeast()->once()
@@ -445,7 +448,7 @@ test('invokes due event in batch', function (): void {
 });
 
 test('sends reminder for an invoice', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -456,8 +459,8 @@ test('sends reminder for an invoice', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Invoice();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Invoice();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -473,7 +476,7 @@ test('sends reminder for an invoice', function (): void {
 });
 
 test('gets invoice statuses', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('counter')
         ->atLeast()->once()
@@ -486,7 +489,7 @@ test('gets invoice statuses', function (): void {
 });
 
 test('processes all transactions', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('processReceivedATransactions')
         ->atLeast()->once()
@@ -501,7 +504,7 @@ test('processes all transactions', function (): void {
 });
 
 test('processes a transaction', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -512,8 +515,8 @@ test('processes a transaction', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Transaction();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Transaction();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -525,7 +528,7 @@ test('processes a transaction', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['events_manager'] = $eventsMock;
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
 
     $api->setDi($di);
@@ -535,7 +538,7 @@ test('processes a transaction', function (): void {
 });
 
 test('updates a transaction', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -546,8 +549,8 @@ test('updates a transaction', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Transaction();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Transaction();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -563,7 +566,7 @@ test('updates a transaction', function (): void {
 });
 
 test('creates a transaction', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $newTransactionId = 1;
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('create')
@@ -579,7 +582,7 @@ test('creates a transaction', function (): void {
 });
 
 test('deletes a transaction', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -590,8 +593,8 @@ test('deletes a transaction', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Transaction();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Transaction();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -607,7 +610,7 @@ test('deletes a transaction', function (): void {
 });
 
 test('gets a transaction', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -618,8 +621,8 @@ test('gets a transaction', function (): void {
         ->andReturn([]);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Transaction();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Transaction();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -635,13 +638,13 @@ test('gets a transaction', function (): void {
 });
 
 test('gets transaction list', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
         ->andReturn(['SqlString', []]);
 
-    $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
         ->andReturn(25);
@@ -659,7 +662,7 @@ test('gets transaction list', function (): void {
 });
 
 test('gets transaction statuses', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('counter')
         ->atLeast()->once()
@@ -675,7 +678,7 @@ test('gets transaction statuses', function (): void {
 });
 
 test('gets transaction status pairs', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('getStatusPairs')
         ->atLeast()->once()
@@ -691,7 +694,7 @@ test('gets transaction status pairs', function (): void {
 });
 
 test('gets transaction statuses list', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('getStatuses')
         ->atLeast()->once()
@@ -707,7 +710,7 @@ test('gets transaction statuses list', function (): void {
 });
 
 test('gets transaction gateway statuses', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('getGatewayStatuses')
         ->atLeast()->once()
@@ -723,7 +726,7 @@ test('gets transaction gateway statuses', function (): void {
 });
 
 test('gets transaction types', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('getTypes')
         ->atLeast()->once()
@@ -739,13 +742,13 @@ test('gets transaction types', function (): void {
 });
 
 test('gets gateway list', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $gatewayService = Mockery::mock(ServicePayGateway::class);
     $gatewayService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
         ->andReturn(['SqlString', []]);
 
-    $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
         ->andReturn(25);
@@ -763,7 +766,7 @@ test('gets gateway list', function (): void {
 });
 
 test('gets gateway pairs', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $gatewayService = Mockery::mock(ServicePayGateway::class);
     $gatewayService->shouldReceive('getPairs')
         ->atLeast()->once()
@@ -778,7 +781,7 @@ test('gets gateway pairs', function (): void {
 });
 
 test('gets available gateways', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $gatewayService = Mockery::mock(ServicePayGateway::class);
     $gatewayService->shouldReceive('getAvailable')
         ->atLeast()->once()
@@ -793,7 +796,7 @@ test('gets available gateways', function (): void {
 });
 
 test('installs a gateway', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'code' => 'PP',
     ];
@@ -812,7 +815,7 @@ test('installs a gateway', function (): void {
 });
 
 test('gets a gateway', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -823,8 +826,8 @@ test('gets a gateway', function (): void {
         ->andReturn([]);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_PayGateway();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_PayGateway();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -840,7 +843,7 @@ test('gets a gateway', function (): void {
 });
 
 test('copies a gateway', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -851,8 +854,8 @@ test('copies a gateway', function (): void {
         ->andReturn($newGatewayId);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_PayGateway();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_PayGateway();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -868,7 +871,7 @@ test('copies a gateway', function (): void {
 });
 
 test('updates a gateway', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -879,8 +882,8 @@ test('updates a gateway', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_PayGateway();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_PayGateway();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -896,7 +899,7 @@ test('updates a gateway', function (): void {
 });
 
 test('deletes a gateway', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -907,8 +910,8 @@ test('deletes a gateway', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_PayGateway();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_PayGateway();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -924,13 +927,13 @@ test('deletes a gateway', function (): void {
 });
 
 test('gets subscription list', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
     $subscriptionService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
         ->andReturn(['SqlString', []]);
 
-    $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
         ->andReturn(25);
@@ -948,7 +951,7 @@ test('gets subscription list', function (): void {
 });
 
 test('creates a subscription', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'client_id' => 1,
         'gateway_id' => 1,
@@ -961,10 +964,10 @@ test('creates a subscription', function (): void {
         ->andReturn($newSubscriptionId);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_PayGateway();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
-    $client = new \Model_Client();
-    $client->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_PayGateway();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
     $client->currency = 'EU';
 
     $dbMock->shouldReceive('getExistingModelById')
@@ -982,7 +985,7 @@ test('creates a subscription', function (): void {
 });
 
 test('throws exception when creating subscription with currency mismatch', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'client_id' => 1,
         'gateway_id' => 1,
@@ -990,10 +993,10 @@ test('throws exception when creating subscription with currency mismatch', funct
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_PayGateway();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
-    $client = new \Model_Client();
-    $client->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_PayGateway();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
@@ -1005,11 +1008,11 @@ test('throws exception when creating subscription with currency mismatch', funct
     $api->setDi($di);
 
     expect(fn () => $api->subscription_create($data))
-        ->toThrow(\FOSSBilling\Exception::class, 'Client currency must match subscription currency. Check if clients currency is defined.');
+        ->toThrow(FOSSBilling\Exception::class, 'Client currency must match subscription currency. Check if clients currency is defined.');
 });
 
 test('updates a subscription', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -1020,8 +1023,8 @@ test('updates a subscription', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Subscription();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Subscription();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -1037,7 +1040,7 @@ test('updates a subscription', function (): void {
 });
 
 test('gets a subscription', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -1048,8 +1051,8 @@ test('gets a subscription', function (): void {
         ->andReturn([]);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Subscription();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Subscription();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
         ->andReturn($model);
@@ -1065,7 +1068,7 @@ test('gets a subscription', function (): void {
 });
 
 test('deletes a subscription', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -1076,8 +1079,8 @@ test('deletes a subscription', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Subscription();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Subscription();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -1093,7 +1096,7 @@ test('deletes a subscription', function (): void {
 });
 
 test('deletes a tax', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -1104,8 +1107,8 @@ test('deletes a tax', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Tax();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Tax();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -1121,7 +1124,7 @@ test('deletes a tax', function (): void {
 });
 
 test('creates a tax', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $data = [
         'id' => 1,
     ];
@@ -1141,13 +1144,13 @@ test('creates a tax', function (): void {
 });
 
 test('gets tax list', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $taxService = Mockery::mock(ServiceTax::class);
     $taxService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
         ->andReturn(['SqlString', []]);
 
-    $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
         ->andReturn(25);
@@ -1166,7 +1169,7 @@ test('gets tax list', function (): void {
 });
 
 test('deletes invoices in batch', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $activityMock = Mockery::mock(Admin::class)->makePartial();
     $activityMock->shouldReceive('delete')->atLeast()->once()->andReturn(true);
 
@@ -1178,7 +1181,7 @@ test('deletes invoices in batch', function (): void {
 });
 
 test('deletes subscriptions in batch', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $activityMock = Mockery::mock(Admin::class)->makePartial();
     $activityMock->shouldReceive('subscription_delete')->atLeast()->once()->andReturn(true);
 
@@ -1190,7 +1193,7 @@ test('deletes subscriptions in batch', function (): void {
 });
 
 test('deletes transactions in batch', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $activityMock = Mockery::mock(Admin::class)->makePartial();
     $activityMock->shouldReceive('transaction_delete')->atLeast()->once()->andReturn(true);
 
@@ -1202,7 +1205,7 @@ test('deletes transactions in batch', function (): void {
 });
 
 test('deletes taxes in batch', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $activityMock = Mockery::mock(Admin::class)->makePartial();
     $activityMock->shouldReceive('tax_delete')->atLeast()->once()->andReturn(true);
 
@@ -1214,15 +1217,15 @@ test('deletes taxes in batch', function (): void {
 });
 
 test('gets a tax', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $taxService = Mockery::mock(ServiceTax::class);
     $taxService->shouldReceive('toApiArray')
         ->atLeast()->once()
         ->andReturn([]);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Tax();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Tax();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -1233,7 +1236,7 @@ test('gets a tax', function (): void {
 
     $api->setDi($di);
     $api->setService($taxService);
-    $api->setIdentity(new \Model_Admin());
+    $api->setIdentity(new Model_Admin());
 
     $data['id'] = 1;
     $result = $api->tax_get($data);
@@ -1241,15 +1244,15 @@ test('gets a tax', function (): void {
 });
 
 test('updates a tax', function (): void {
-    $api = new \Box\Mod\Invoice\Api\Admin();
+    $api = new Admin();
     $taxService = Mockery::mock(ServiceTax::class);
     $taxService->shouldReceive('update')
         ->atLeast()->once()
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new \Model_Tax();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Tax();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -1260,7 +1263,7 @@ test('updates a tax', function (): void {
 
     $api->setDi($di);
     $api->setService($taxService);
-    $api->setIdentity(new \Model_Admin());
+    $api->setIdentity(new Model_Admin());
 
     $data['id'] = 1;
     $result = $api->tax_update($data);

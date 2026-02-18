@@ -19,6 +19,7 @@ use Symfony\Component\Finder\Finder;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+
     public function __construct(private readonly Filesystem $filesystem = new Filesystem())
     {
     }

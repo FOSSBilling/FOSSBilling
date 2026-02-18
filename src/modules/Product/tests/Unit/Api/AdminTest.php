@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,12 +10,13 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
 use Box\Mod\Product\Api\Admin;
 use Box\Mod\Product\Service;
 
+use function Tests\Helpers\container;
+
 test('gets dependency injection container', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -23,13 +24,13 @@ test('gets dependency injection container', function (): void {
 });
 
 test('gets product list', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getProductSearchQuery')
         ->atLeast()->once()
         ->andReturn(['sqlString', []]);
 
-    $pagerMock = Mockery::mock(\FOSSBilling\Pagination::class);
+    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class);
     $pagerMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
         ->andReturn(50);
@@ -47,7 +48,7 @@ test('gets product list', function (): void {
 });
 
 test('gets product pairs', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getPairs')
         ->atLeast()->once()
@@ -59,11 +60,11 @@ test('gets product pairs', function (): void {
 });
 
 test('gets a product', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['id' => 1];
 
-    $model = new \Model_Product();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Product();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -85,7 +86,7 @@ test('gets a product', function (): void {
 });
 
 test('gets product types', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getTypes')
         ->atLeast()->once()
@@ -97,7 +98,7 @@ test('gets product types', function (): void {
 });
 
 test('throws exception when preparing domain product already created', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = [
         'title' => 'testTitle',
         'type' => 'domain',
@@ -106,18 +107,18 @@ test('throws exception when preparing domain product already created', function 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getMainDomainProduct')
         ->atLeast()->once()
-        ->andReturn(new \Model_ProductDomain());
+        ->andReturn(new Model_ProductDomain());
 
     $di = container();
     $api->setDi($di);
     $api->setService($serviceMock);
 
     expect(fn () => $api->prepare($data))
-        ->toThrow(\FOSSBilling\Exception::class, 'You have already created domain product');
+        ->toThrow(FOSSBilling\Exception::class, 'You have already created domain product');
 });
 
 test('throws exception when preparing unrecognized product type', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = [
         'title' => 'testTitle',
         'type' => 'customForTestException',
@@ -138,11 +139,11 @@ test('throws exception when preparing unrecognized product type', function (): v
     $api->setService($serviceMock);
 
     expect(fn () => $api->prepare($data))
-        ->toThrow(\FOSSBilling\Exception::class, "Product type {$data['type']} is not registered.");
+        ->toThrow(FOSSBilling\Exception::class, "Product type {$data['type']} is not registered.");
 });
 
 test('prepares a product', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = [
         'title' => 'testTitle',
         'type' => 'license',
@@ -174,10 +175,10 @@ test('prepares a product', function (): void {
 });
 
 test('updates a product', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['id' => 1];
-    $model = new \Model_Product();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Product();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -201,15 +202,15 @@ test('updates a product', function (): void {
 });
 
 test('throws exception when updating priority without priority param', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = [];
 
     expect(fn () => $api->update_priority($data))
-        ->toThrow(\FOSSBilling\Exception::class, 'priority params is missing');
+        ->toThrow(FOSSBilling\Exception::class, 'priority params is missing');
 });
 
 test('updates priority', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['priority' => []];
 
     $serviceMock = Mockery::mock(Service::class);
@@ -225,10 +226,10 @@ test('updates priority', function (): void {
 });
 
 test('updates product config', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['id' => 1];
-    $model = new \Model_Product();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Product();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -252,7 +253,7 @@ test('updates product config', function (): void {
 });
 
 test('gets addon pairs', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getAddons')
         ->atLeast()->once()
@@ -264,7 +265,7 @@ test('gets addon pairs', function (): void {
 });
 
 test('creates an addon', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['title' => 'Title4test'];
     $newAddonId = 1;
 
@@ -283,11 +284,11 @@ test('creates an addon', function (): void {
 });
 
 test('gets an addon', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['id' => 1];
 
-    $model = new \Model_Product();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Product();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $model->is_addon = true;
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -311,7 +312,7 @@ test('gets an addon', function (): void {
 });
 
 test('updates an addon', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['id' => 1];
 
     $apiMock = Mockery::mock(Admin::class)->makePartial();
@@ -319,8 +320,8 @@ test('updates an addon', function (): void {
         ->atLeast()->once()
         ->andReturn([]);
 
-    $model = new \Model_Product();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Product();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $model->is_addon = true;
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -330,7 +331,7 @@ test('updates an addon', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
     $apiMock->setDi($di);
 
@@ -339,7 +340,7 @@ test('updates an addon', function (): void {
 });
 
 test('deletes an addon', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $apiMock = Mockery::mock(Admin::class)->makePartial();
     $apiMock->shouldReceive('delete')
         ->atLeast()->once()
@@ -351,11 +352,11 @@ test('deletes an addon', function (): void {
 });
 
 test('deletes a product', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['id' => 1];
 
-    $model = new \Model_Product();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Product();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -379,7 +380,7 @@ test('deletes a product', function (): void {
 });
 
 test('gets category pairs', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getProductCategoryPairs')
         ->atLeast()->once()
@@ -391,11 +392,11 @@ test('gets category pairs', function (): void {
 });
 
 test('updates a category', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['id' => 1];
 
-    $model = new \Model_ProductCategory();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_ProductCategory();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -419,11 +420,11 @@ test('updates a category', function (): void {
 });
 
 test('gets a category', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['id' => 1];
 
-    $model = new \Model_ProductCategory();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_ProductCategory();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -446,7 +447,7 @@ test('gets a category', function (): void {
 });
 
 test('creates a category', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['title' => 'test Title'];
     $newCategoryId = 1;
 
@@ -465,11 +466,11 @@ test('creates a category', function (): void {
 });
 
 test('deletes a category', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['id' => 1];
 
-    $model = new \Model_ProductCategory();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_ProductCategory();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -493,13 +494,13 @@ test('deletes a category', function (): void {
 });
 
 test('gets promo list', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getPromoSearchQuery')
         ->atLeast()->once()
         ->andReturn(['sqlString', []]);
 
-    $pagerMock = Mockery::mock(\FOSSBilling\Pagination::class);
+    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class);
     $pagerMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
         ->andReturn(50);
@@ -517,7 +518,7 @@ test('gets promo list', function (): void {
 });
 
 test('creates a promo', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = [
         'code' => 'test',
         'type' => 'addon',
@@ -542,28 +543,28 @@ test('creates a promo', function (): void {
 });
 
 test('throws exception when getting promo without id', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = [];
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
-        ->andThrow(new \FOSSBilling\InformationException('Promo ID was not passed'));
+        ->andThrow(new FOSSBilling\InformationException('Promo ID was not passed'));
 
     $di = container();
     $di['db'] = $dbMock;
     $api->setDi($di);
 
     expect(fn () => $api->promo_get($data))
-        ->toThrow(\FOSSBilling\Exception::class, 'Promo ID was not passed');
+        ->toThrow(FOSSBilling\Exception::class, 'Promo ID was not passed');
 });
 
 test('gets a promo', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['id' => 1];
 
-    $model = new \Model_Promo();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Promo();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -586,11 +587,11 @@ test('gets a promo', function (): void {
 });
 
 test('updates a promo', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['id' => 1];
 
-    $model = new \Model_Promo();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Promo();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -613,10 +614,10 @@ test('updates a promo', function (): void {
 });
 
 test('deletes a promo', function (): void {
-    $api = new \Box\Mod\Product\Api\Admin();
+    $api = new Admin();
     $data = ['id' => 1];
-    $model = new \Model_Promo();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Promo();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')

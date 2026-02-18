@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -169,27 +169,27 @@ $availableCurrencies = [
 ];
 
 test('get list', function () {
-    $adminApi = new \Box\Mod\Currency\Api\Admin();
+    $adminApi = new Box\Mod\Currency\Api\Admin();
 
     $willReturn = [
         'list' => ['id' => 1],
     ];
 
-    $qbStub = $this->createStub(\Doctrine\ORM\QueryBuilder::class);
+    $qbStub = $this->createStub(Doctrine\ORM\QueryBuilder::class);
 
-    $repositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock
     ->shouldReceive('getSearchQueryBuilder')
     ->atLeast()->once()
     ->andReturn($qbStub);
 
-    $serviceMock = Mockery::mock('\\' . \Box\Mod\Currency\Service::class);
+    $serviceMock = Mockery::mock('\\' . Box\Mod\Currency\Service::class);
     $serviceMock
     ->shouldReceive('getCurrencyRepository')
     ->atLeast()->once()
     ->andReturn($repositoryMock);
 
-    $pager = Mockery::mock('\\' . \FOSSBilling\Pagination::class)->makePartial();
+    $pager = Mockery::mock('\\' . FOSSBilling\Pagination::class)->makePartial();
     $pager
     ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
@@ -208,9 +208,9 @@ test('get list', function () {
 });
 
 test('get pairs', function () use ($availableCurrencies) {
-    $adminApi = new \Box\Mod\Currency\Api\Admin();
+    $adminApi = new Box\Mod\Currency\Api\Admin();
 
-    $service = Mockery::mock(\Box\Mod\Currency\Service::class);
+    $service = Mockery::mock(Box\Mod\Currency\Service::class);
     $service
     ->shouldReceive('getAvailableCurrencies')
     ->atLeast()->once()
@@ -223,28 +223,28 @@ test('get pairs', function () use ($availableCurrencies) {
 });
 
 test('get', function () {
-    $adminApi = new \Box\Mod\Currency\Api\Admin();
+    $adminApi = new Box\Mod\Currency\Api\Admin();
 
-    $model = Mockery::mock('\\' . \Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock('\\' . Box\Mod\Currency\Entity\Currency::class);
     $model
     ->shouldReceive('toApiArray')
     ->atLeast()->once()
     ->andReturn([
-            'code' => 'EUR',
-            'title' => 'Euro',
-            'conversion_rate' => 1.0,
-            'format' => '€{{price}}',
-            'price_format' => '€{{price}}',
-        ]);
+        'code' => 'EUR',
+        'title' => 'Euro',
+        'conversion_rate' => 1.0,
+        'format' => '€{{price}}',
+        'price_format' => '€{{price}}',
+    ]);
 
-    $repositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock
     ->shouldReceive('findOneByCode')
     ->atLeast()->once()
         ->with('EUR')
     ->andReturn($model);
 
-    $service = Mockery::mock('\\' . \Box\Mod\Currency\Service::class);
+    $service = Mockery::mock('\\' . Box\Mod\Currency\Service::class);
     $service
     ->shouldReceive('getCurrencyRepository')
     ->atLeast()->once()
@@ -262,7 +262,7 @@ test('get', function () {
 });
 
 test('get default', function () {
-    $adminApi = new \Box\Mod\Currency\Api\Admin();
+    $adminApi = new Box\Mod\Currency\Api\Admin();
 
     $returnArr = [
         'code' => 'EUR',
@@ -273,19 +273,19 @@ test('get default', function () {
         'default' => true,
     ];
 
-    $model = Mockery::mock('\\' . \Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock('\\' . Box\Mod\Currency\Entity\Currency::class);
     $model
     ->shouldReceive('toApiArray')
     ->atLeast()->once()
     ->andReturn($returnArr);
 
-    $repositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock
     ->shouldReceive('findDefault')
     ->atLeast()->once()
     ->andReturn($model);
 
-    $service = Mockery::mock('\\' . \Box\Mod\Currency\Service::class);
+    $service = Mockery::mock('\\' . Box\Mod\Currency\Service::class);
     $service
     ->shouldReceive('getCurrencyRepository')
     ->atLeast()->once()
@@ -327,12 +327,12 @@ dataset('createException', [
 ]);
 
 test('create exception', function ($data, $findOneByCodeCalled, $findOneByCodeReturn, $getAvailableCurrenciesCalled) use ($availableCurrencies) {
-    $adminApi = new \Box\Mod\Currency\Api\Admin();
+    $adminApi = new Box\Mod\Currency\Api\Admin();
 
-    $repositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
 
     if ($findOneByCodeReturn === 'currency_exists') {
-        $findOneByCodeReturn = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
+        $findOneByCodeReturn = $this->createStub('\\' . Box\Mod\Currency\Entity\Currency::class);
     }
 
     if ($findOneByCodeCalled === 'atLeastOnce') {
@@ -342,7 +342,7 @@ test('create exception', function ($data, $findOneByCodeCalled, $findOneByCodeRe
             ->andReturn($findOneByCodeReturn);
     }
 
-    $service = Mockery::mock('\\' . \Box\Mod\Currency\Service::class);
+    $service = Mockery::mock('\\' . Box\Mod\Currency\Service::class);
     $service
     ->shouldReceive('getCurrencyRepository')
     ->atLeast()->once()
@@ -358,25 +358,25 @@ test('create exception', function ($data, $findOneByCodeCalled, $findOneByCodeRe
     $di = container();
     $adminApi->setService($service);
     $adminApi->setDi($di);
-    $this->expectException(\FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Exception::class);
     $adminApi->create($data);
 })->with('createException');
 
 test('create', function () use ($availableCurrencies) {
-    $adminApi = new \Box\Mod\Currency\Api\Admin();
+    $adminApi = new Box\Mod\Currency\Api\Admin();
 
     $data = [
         'code' => 'EUR',
         'format' => '€{{price}}',
     ];
 
-    $repositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock
     ->shouldReceive('findOneByCode')
     ->atLeast()->once()
     ->andReturn(null);
 
-    $service = Mockery::mock('\\' . \Box\Mod\Currency\Service::class);
+    $service = Mockery::mock('\\' . Box\Mod\Currency\Service::class);
     $service
     ->shouldReceive('getCurrencyRepository')
     ->atLeast()->once()
@@ -402,7 +402,7 @@ test('create', function () use ($availableCurrencies) {
 });
 
 test('update', function () {
-    $adminApi = new \Box\Mod\Currency\Api\Admin();
+    $adminApi = new Box\Mod\Currency\Api\Admin();
 
     $data = [
         'code' => 'EUR',
@@ -412,7 +412,7 @@ test('update', function () {
         'conversion_rate' => 0.6,
     ];
 
-    $service = Mockery::mock(\Box\Mod\Currency\Service::class);
+    $service = Mockery::mock(Box\Mod\Currency\Service::class);
     $service
     ->shouldReceive('updateCurrency')
     ->atLeast()->once()
@@ -429,40 +429,40 @@ test('update', function () {
 });
 
 test('delete exception', function () {
-    $adminApi = new \Box\Mod\Currency\Api\Admin();
+    $adminApi = new Box\Mod\Currency\Api\Admin();
 
-    $service = Mockery::mock(\Box\Mod\Currency\Service::class);
-    $service->shouldReceive("deleteCurrencyByCode")->never();
+    $service = Mockery::mock(Box\Mod\Currency\Service::class);
+    $service->shouldReceive('deleteCurrencyByCode')->never();
 
-    $apiHandler = new \Api_Handler(new \Model_Admin());
-    $reflection = new \ReflectionClass($apiHandler);
+    $apiHandler = new Api_Handler(new Model_Admin());
+    $reflection = new ReflectionClass($apiHandler);
     $method = $reflection->getMethod('validateRequiredParams');
-    $this->expectException(\FOSSBilling\InformationException::class);
+    $this->expectException(FOSSBilling\InformationException::class);
     $method->invokeArgs($apiHandler, [$adminApi, 'delete', []]);
 
     $di = container();
-    $di['validator'] = new \FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validate();
     $adminApi->setDi($di);
     $adminApi->setService($service);
     $adminApi->delete([]);
 });
 
 test('delete', function () {
-    $adminApi = new \Box\Mod\Currency\Api\Admin();
+    $adminApi = new Box\Mod\Currency\Api\Admin();
 
     $data = [
         'code' => 'EUR',
         'format' => '€{{price}}',
     ];
 
-    $service = Mockery::mock(\Box\Mod\Currency\Service::class)->makePartial();
+    $service = Mockery::mock(Box\Mod\Currency\Service::class)->makePartial();
     $service
     ->shouldReceive('deleteCurrencyByCode')
     ->atLeast()->once()
     ->andReturn(true);
 
     $di = container();
-    $di['validator'] = new \FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validate();
     $adminApi->setDi($di);
     $adminApi->setService($service);
 
@@ -483,15 +483,15 @@ dataset('setDefaultException', [
 ]);
 
 test('set default exception', function ($data, $findOneByCodeCalled, $findOneByCodeReturn) {
-    $adminApi = new \Box\Mod\Currency\Api\Admin();
+    $adminApi = new Box\Mod\Currency\Api\Admin();
 
-    $repositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock
     ->shouldReceive('findOneByCode')
     ->atLeast()->once()
     ->andReturn(null);
 
-    $service = Mockery::mock('\\' . \Box\Mod\Currency\Service::class);
+    $service = Mockery::mock('\\' . Box\Mod\Currency\Service::class);
     $service
     ->shouldReceive('getCurrencyRepository')
     ->atLeast()->once()
@@ -501,27 +501,27 @@ test('set default exception', function ($data, $findOneByCodeCalled, $findOneByC
     $adminApi->setDi($di);
 
     $adminApi->setService($service);
-    $this->expectException(\FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Exception::class);
     $adminApi->set_default($data);
 })->with('setDefaultException');
 
 test('set default', function () {
-    $adminApi = new \Box\Mod\Currency\Api\Admin();
+    $adminApi = new Box\Mod\Currency\Api\Admin();
 
-    $model = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
+    $model = $this->createStub('\\' . Box\Mod\Currency\Entity\Currency::class);
 
     $data = [
         'code' => 'EUR',
         'format' => '€{{price}}',
     ];
 
-    $repositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock
     ->shouldReceive('findOneByCode')
     ->atLeast()->once()
     ->andReturn($model);
 
-    $service = Mockery::mock('\\' . \Box\Mod\Currency\Service::class);
+    $service = Mockery::mock('\\' . Box\Mod\Currency\Service::class);
     $service
     ->shouldReceive('getCurrencyRepository')
     ->atLeast()->once()

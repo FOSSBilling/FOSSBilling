@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('gets dependency injection container', function (): void {
-    $service = new \Box\Mod\Stats\Service();
+    $service = new Box\Mod\Stats\Service();
     $di = container();
     $service->setDi($di);
     $getDi = $service->getDi();
@@ -21,15 +21,15 @@ test('gets dependency injection container', function (): void {
 });
 
 test('gets order statuses', function (): void {
-    $service = new \Box\Mod\Stats\Service();
-    $orderServiceMock = Mockery::mock(\Box\Mod\Order\Service::class);
-    /** @var \Mockery\Expectation $expectation */
+    $service = new Box\Mod\Stats\Service();
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    /** @var Mockery\Expectation $expectation */
     $expectation = $orderServiceMock->shouldReceive('counter');
     $expectation->atLeast()->once();
     $expectation->andReturn([]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
 
@@ -38,17 +38,17 @@ test('gets order statuses', function (): void {
 });
 
 test('gets product summary', function (): void {
-    $service = new \Box\Mod\Stats\Service();
+    $service = new Box\Mod\Stats\Service();
     $data = [];
 
-    $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $resultMock->shouldReceive('fetchAllAssociative');
     $expectation1->atLeast()->once();
     $expectation1->andReturn([]);
 
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    /** @var \Mockery\Expectation $expectation2 */
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($resultMock);
@@ -62,15 +62,15 @@ test('gets product summary', function (): void {
 });
 
 test('gets summary', function (): void {
-    $service = new \Box\Mod\Stats\Service();
-    $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    $service = new Box\Mod\Stats\Service();
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $resultMock->shouldReceive('fetchOne');
     $expectation1->atLeast()->once();
     $expectation1->andReturn(null);
 
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    /** @var \Mockery\Expectation $expectation2 */
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($resultMock);
@@ -111,15 +111,15 @@ test('gets summary', function (): void {
 });
 
 test('gets summary income', function (): void {
-    $service = new \Box\Mod\Stats\Service();
-    $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    $service = new Box\Mod\Stats\Service();
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $resultMock->shouldReceive('fetchOne');
     $expectation1->atLeast()->once();
     $expectation1->andReturn(null);
 
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    /** @var \Mockery\Expectation $expectation2 */
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($resultMock);
@@ -142,16 +142,16 @@ test('gets summary income', function (): void {
 });
 
 test('gets product sales', function (): void {
-    $service = new \Box\Mod\Stats\Service();
+    $service = new Box\Mod\Stats\Service();
     $res = ['testProduct' => 1];
-    $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $resultMock->shouldReceive('fetchAllKeyValue');
     $expectation1->atLeast()->once();
     $expectation1->andReturn($res);
 
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    /** @var \Mockery\Expectation $expectation2 */
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($resultMock);
@@ -169,21 +169,21 @@ test('gets product sales', function (): void {
 });
 
 test('gets income and refund stats', function (): void {
-    $service = new \Box\Mod\Stats\Service();
+    $service = new Box\Mod\Stats\Service();
     $res = [
         [
             'refund' => 0,
             'income' => 0,
         ],
     ];
-    $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $resultMock->shouldReceive('fetchAllAssociative');
     $expectation1->atLeast()->once();
     $expectation1->andReturn($res);
 
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    /** @var \Mockery\Expectation $expectation2 */
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($resultMock);
@@ -198,15 +198,15 @@ test('gets income and refund stats', function (): void {
 });
 
 test('gets refunds', function (): void {
-    $service = new \Box\Mod\Stats\Service();
-    $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    $service = new Box\Mod\Stats\Service();
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $resultMock->shouldReceive('fetchAllKeyValue');
     $expectation1->atLeast()->once();
     $expectation1->andReturn([]);
 
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    /** @var \Mockery\Expectation $expectation2 */
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($resultMock);
@@ -225,15 +225,15 @@ test('gets refunds', function (): void {
 });
 
 test('gets income', function (): void {
-    $service = new \Box\Mod\Stats\Service();
-    $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    $service = new Box\Mod\Stats\Service();
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $resultMock->shouldReceive('fetchAllKeyValue');
     $expectation1->atLeast()->once();
     $expectation1->andReturn([]);
 
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    /** @var \Mockery\Expectation $expectation2 */
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($resultMock);
@@ -252,15 +252,15 @@ test('gets income', function (): void {
 });
 
 test('gets client countries', function (): void {
-    $service = new \Box\Mod\Stats\Service();
-    $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    $service = new Box\Mod\Stats\Service();
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $resultMock->shouldReceive('fetchAllKeyValue');
     $expectation1->atLeast()->once();
     $expectation1->andReturn([]);
 
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    /** @var \Mockery\Expectation $expectation2 */
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($resultMock);
@@ -275,15 +275,15 @@ test('gets client countries', function (): void {
 });
 
 test('gets sales by country', function (): void {
-    $service = new \Box\Mod\Stats\Service();
-    $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    $service = new Box\Mod\Stats\Service();
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $resultMock->shouldReceive('fetchAllKeyValue');
     $expectation1->atLeast()->once();
     $expectation1->andReturn([]);
 
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    /** @var \Mockery\Expectation $expectation2 */
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($resultMock);
@@ -298,15 +298,15 @@ test('gets sales by country', function (): void {
 });
 
 test('gets table stats', function (): void {
-    $service = new \Box\Mod\Stats\Service();
-    $resultMock = Mockery::mock(\Doctrine\DBAL\Result::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    $service = new Box\Mod\Stats\Service();
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $resultMock->shouldReceive('fetchAllKeyValue');
     $expectation1->atLeast()->once();
     $expectation1->andReturn([]);
 
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
-    /** @var \Mockery\Expectation $expectation2 */
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($resultMock);

@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,11 +10,12 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
 use Symfony\Component\HttpFoundation\Request;
 
+use function Tests\Helpers\container;
+
 test('dependency injection', function (): void {
-    $service = new \Box\Mod\Spamchecker\Service();
+    $service = new Box\Mod\Spamchecker\Service();
     $di = container();
     $service->setDi($di);
     $getDi = $service->getDi();
@@ -22,8 +23,8 @@ test('dependency injection', function (): void {
 });
 
 test('on before client sign up', function (): void {
-    $service = new \Box\Mod\Spamchecker\Service();
-    $spamCheckerService = Mockery::mock(\Box\Mod\Spamchecker\Service::class);
+    $service = new Box\Mod\Spamchecker\Service();
+    $spamCheckerService = Mockery::mock(Box\Mod\Spamchecker\Service::class);
     $spamCheckerService->shouldReceive('isBlockedIp')
         ->atLeast()->once();
     $spamCheckerService->shouldReceive('isSpam')
@@ -32,7 +33,7 @@ test('on before client sign up', function (): void {
         ->atLeast()->once();
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $spamCheckerService);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $spamCheckerService);
     $boxEventMock = Mockery::mock('\Box_Event');
     $boxEventMock->shouldReceive('getDi')
         ->atLeast()->once()
@@ -42,8 +43,8 @@ test('on before client sign up', function (): void {
 });
 
 test('on before guest public ticket open', function (): void {
-    $service = new \Box\Mod\Spamchecker\Service();
-    $spamCheckerService = Mockery::mock(\Box\Mod\Spamchecker\Service::class);
+    $service = new Box\Mod\Spamchecker\Service();
+    $spamCheckerService = Mockery::mock(Box\Mod\Spamchecker\Service::class);
     $spamCheckerService->shouldReceive('isBlockedIp')
         ->atLeast()->once();
     $spamCheckerService->shouldReceive('isSpam')
@@ -52,7 +53,7 @@ test('on before guest public ticket open', function (): void {
         ->atLeast()->once();
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $spamCheckerService);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $spamCheckerService);
     $boxEventMock = Mockery::mock('\Box_Event');
     $boxEventMock->shouldReceive('getDi')
         ->atLeast()->once()
@@ -62,7 +63,7 @@ test('on before guest public ticket open', function (): void {
 });
 
 test('is blocked ip ip not blocked', function (): void {
-    $service = new \Box\Mod\Spamchecker\Service();
+    $service = new Box\Mod\Spamchecker\Service();
     $clientIp = '214.1.4.99';
     $modConfig = [
         'block_ips' => true,
@@ -86,7 +87,7 @@ test('is blocked ip ip not blocked', function (): void {
 });
 
 test('is blocked ip block ips not enabled', function (): void {
-    $service = new \Box\Mod\Spamchecker\Service();
+    $service = new Box\Mod\Spamchecker\Service();
     $modConfig = [
         'block_ips' => false,
     ];

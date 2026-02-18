@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,12 +10,13 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
 use Box\Mod\Order\Api\Client;
 use Box\Mod\Order\Service;
 
+use function Tests\Helpers\container;
+
 test('gets dependency injection container', function (): void {
-    $api = new \Box\Mod\Order\Api\Client();
+    $api = new Client();
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -23,7 +24,7 @@ test('gets dependency injection container', function (): void {
 });
 
 test('gets order list', function (): void {
-    $api = new \Box\Mod\Order\Api\Client();
+    $api = new Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSearchQuery')
         ->atLeast()->once()
@@ -37,7 +38,7 @@ test('gets order list', function (): void {
             0 => ['id' => 1],
         ],
     ];
-    $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
         ->andReturn(25);
@@ -46,7 +47,7 @@ test('gets order list', function (): void {
         ->andReturn($resultSet);
 
     $clientOrderMock = new Model_ClientOrder();
-    $clientOrderMock->loadBean(new \Tests\Helpers\DummyBean());
+    $clientOrderMock->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -60,7 +61,7 @@ test('gets order list', function (): void {
     $api->setDi($di);
 
     $client = new Model_Client();
-    $client->loadBean(new \Tests\Helpers\DummyBean());
+    $client->loadBean(new Tests\Helpers\DummyBean());
     $client->id = 1;
 
     $api->setIdentity($client);
@@ -71,13 +72,13 @@ test('gets order list', function (): void {
 });
 
 test('gets expiring order list', function (): void {
-    $api = new \Box\Mod\Order\Api\Client();
+    $api = new Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSoonExpiringActiveOrdersQuery')
         ->atLeast()->once()
         ->andReturn(['query', []]);
 
-    $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
         ->andReturn(25);
@@ -91,7 +92,7 @@ test('gets expiring order list', function (): void {
     $api->setDi($di);
 
     $client = new Model_Client();
-    $client->loadBean(new \Tests\Helpers\DummyBean());
+    $client->loadBean(new Tests\Helpers\DummyBean());
     $client->id = 1;
 
     $api->setIdentity($client);
@@ -103,9 +104,9 @@ test('gets expiring order list', function (): void {
 });
 
 test('gets an order', function (): void {
-    $api = new \Box\Mod\Order\Api\Client();
+    $api = new Client();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -125,7 +126,7 @@ test('gets an order', function (): void {
 });
 
 test('gets order addons', function (): void {
-    $api = new \Box\Mod\Order\Api\Client();
+    $api = new Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getOrderAddonsList')
         ->atLeast()->once()
@@ -135,7 +136,7 @@ test('gets order addons', function (): void {
         ->andReturn([]);
 
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -151,9 +152,9 @@ test('gets order addons', function (): void {
 });
 
 test('gets order service data', function (): void {
-    $api = new \Box\Mod\Order\Api\Client();
+    $api = new Client();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -166,7 +167,7 @@ test('gets order service data', function (): void {
         ->andReturn([]);
 
     $client = new Model_Client();
-    $client->loadBean(new \Tests\Helpers\DummyBean());
+    $client->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock->setService($serviceMock);
     $apiMock->setIdentity($client);
@@ -177,22 +178,22 @@ test('gets order service data', function (): void {
 });
 
 test('gets upgradable products', function (): void {
-    $api = new \Box\Mod\Order\Api\Client();
+    $api = new Client();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
         ->atLeast()->once()
         ->andReturn($order);
 
-    $productServiceMock = Mockery::mock(\Box\Mod\Product\Service::class);
+    $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
     $productServiceMock->shouldReceive('getUpgradablePairs')
         ->atLeast()->once()
         ->andReturn([]);
 
     $product = new Model_Product();
-    $product->loadBean(new \RedBeanPHP\OODBBean());
+    $product->loadBean(new RedBeanPHP\OODBBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -209,9 +210,9 @@ test('gets upgradable products', function (): void {
 });
 
 test('deletes a pending order', function (): void {
-    $api = new \Box\Mod\Order\Api\Client();
+    $api = new Client();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
     $apiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -232,9 +233,9 @@ test('deletes a pending order', function (): void {
 });
 
 test('throws exception when deleting non-pending order', function (): void {
-    $api = new \Box\Mod\Order\Api\Client();
+    $api = new Client();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -251,16 +252,16 @@ test('throws exception when deleting non-pending order', function (): void {
     $data = ['id' => 1];
 
     expect(fn () => $apiMock->delete($data))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('gets order for client', function (): void {
-    $api = new \Box\Mod\Order\Api\Client();
-    $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
+    $api = new Client();
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
 
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('findForClientById')
@@ -271,7 +272,7 @@ test('gets order for client', function (): void {
         ->andReturn([]);
 
     $client = new Model_Client();
-    $client->loadBean(new \Tests\Helpers\DummyBean());
+    $client->loadBean(new Tests\Helpers\DummyBean());
 
     $di = container();
     $di['validator'] = $validatorMock;
@@ -285,8 +286,8 @@ test('gets order for client', function (): void {
 });
 
 test('throws exception when order not found for client', function (): void {
-    $api = new \Box\Mod\Order\Api\Client();
-    $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
+    $api = new Client();
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
 
     $serviceMock = Mockery::mock(Service::class);
@@ -298,7 +299,7 @@ test('throws exception when order not found for client', function (): void {
         ->andReturn([]);
 
     $client = new Model_Client();
-    $client->loadBean(new \Tests\Helpers\DummyBean());
+    $client->loadBean(new Tests\Helpers\DummyBean());
 
     $di = container();
     $di['validator'] = $validatorMock;
@@ -310,5 +311,5 @@ test('throws exception when order not found for client', function (): void {
     $data = ['id' => 1];
 
     expect(fn () => $api->get($data))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });

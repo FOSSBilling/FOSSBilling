@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -28,7 +28,7 @@ dataset('searchFilters', function () {
 });
 
 test('dependency injection', function (): void {
-    $service = new \Box\Mod\Activity\Service();
+    $service = new Box\Mod\Activity\Service();
 
     $di = container();
     $dbMock = Mockery::mock('Box_Database');
@@ -41,7 +41,7 @@ test('dependency injection', function (): void {
 
 test('get search query', function (array $filterKey, string $search, bool $expected): void {
     $di = container();
-    $service = new \Box\Mod\Activity\Service();
+    $service = new Box\Mod\Activity\Service();
     $service->setDi($di);
     $result = $service->getSearchQuery($filterKey);
     expect($result[0])->toBeString();
@@ -50,7 +50,7 @@ test('get search query', function (array $filterKey, string $search, bool $expec
 })->with('searchFilters');
 
 test('log email', function (): void {
-    $service = new \Box\Mod\Activity\Service();
+    $service = new Box\Mod\Activity\Service();
     $data = [
         'client_id' => 1,
         'sender' => 'sender',
@@ -60,16 +60,16 @@ test('log email', function (): void {
         'content_text' => 'text',
     ];
 
-    $model = new \Model_ActivityClientEmail();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_ActivityClientEmail();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $di = container();
     $dbMock = Mockery::mock('Box_Database');
-    /** @var \Mockery\Expectation $expectation1 */
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $dbMock->shouldReceive('dispense');
     $expectation1->atLeast()->once();
     $expectation1->andReturn($model);
-    /** @var \Mockery\Expectation $expectation2 */
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbMock->shouldReceive('store');
     $expectation2->atLeast()->once();
     $expectation2->andReturn([]);
@@ -82,16 +82,16 @@ test('log email', function (): void {
 });
 
 test('to api array', function (): void {
-    $service = new \Box\Mod\Activity\Service();
-    $clientHistoryModel = new \Model_ActivityClientHistory();
-    $clientHistoryModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new Box\Mod\Activity\Service();
+    $clientHistoryModel = new Model_ActivityClientHistory();
+    $clientHistoryModel->loadBean(new Tests\Helpers\DummyBean());
     $clientHistoryModel->client_id = 1;
 
-    $clientModel = new \Model_Client();
-    $clientModel->loadBean(new \Tests\Helpers\DummyBean());
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    /** @var \Mockery\Expectation $expectation */
+    /** @var Mockery\Expectation $expectation */
     $expectation = $dbMock->shouldReceive('getExistingModelById');
     $expectation->atLeast()->once();
     $expectation->with('Client', $clientHistoryModel->client_id, 'Client not found');
@@ -116,21 +116,21 @@ test('to api array', function (): void {
 });
 
 test('remove by client', function (): void {
-    $service = new \Box\Mod\Activity\Service();
-    $clientModel = new \Model_Client();
-    $clientModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new Box\Mod\Activity\Service();
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
     $clientModel->id = 1;
 
-    $activitySystemModel = new \Model_ActivitySystem();
-    $activitySystemModel->loadBean(new \Tests\Helpers\DummyBean());
+    $activitySystemModel = new Model_ActivitySystem();
+    $activitySystemModel->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    /** @var \Mockery\Expectation $expectation1 */
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $dbMock->shouldReceive('find');
     $expectation1->atLeast()->once();
     $expectation1->with('ActivitySystem', 'client_id = ?', [$clientModel->id]);
     $expectation1->andReturn([$activitySystemModel]);
-    /** @var \Mockery\Expectation $expectation2 */
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbMock->shouldReceive('trash');
     $expectation2->atLeast()->once();
     $expectation2->with($activitySystemModel);

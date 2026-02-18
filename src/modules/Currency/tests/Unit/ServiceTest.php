@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -13,14 +13,14 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('di returns dependency injection container', function () {
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
 
     $di = container();
     $db = Mockery::mock('Box_Database');
 
-    $repositoryStub = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryStub = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryStub);
@@ -33,20 +33,20 @@ test('di returns dependency injection container', function () {
 });
 
 test('getBaseCurrencyRate returns rate for currency', function () {
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $rate = 0.6;
     $expected = 1 / $rate;
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('getRateByCode')
         ->atLeast()->once()
         ->andReturn($rate);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
     $service->setDi($di);
     $code = 'EUR';
@@ -55,47 +55,47 @@ test('getBaseCurrencyRate returns rate for currency', function () {
 });
 
 test('getBaseCurrencyRate throws exception when rate is zero', function () {
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('getRateByCode')
         ->atLeast()->once()
         ->andReturn(0.0);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
     $service->setDi($di);
     $code = 'EUR';
 
     expect(fn () => $service->getBaseCurrencyRate($code))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('getBaseCurrencyRate throws exception when currency not found', function () {
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('getRateByCode')
         ->atLeast()->once()
         ->andReturn(null);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
     $service->setDi($di);
     $code = 'XYZ';
 
     expect(fn () => $service->getBaseCurrencyRate($code))
-        ->toThrow(\FOSSBilling\Exception::class, 'Currency not found');
+        ->toThrow(FOSSBilling\Exception::class, 'Currency not found');
 });
 
 dataset('toBaseCurrencyProvider', function () {
@@ -107,28 +107,28 @@ dataset('toBaseCurrencyProvider', function () {
 });
 
 test('toBaseCurrency converts amount to base currency', function (string $defaultCode, string $foreignCode, int $amount, float $rate, int $expected) {
-    $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('getCode')
         ->atLeast()->once()
         ->andReturn($defaultCode);
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('findDefault')
         ->atLeast()->once()
         ->andReturn($model);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $serviceMock = Mockery::mock(\Box\Mod\Currency\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Currency\Service::class)->makePartial();
 
     $serviceMock->shouldReceive('getBaseCurrencyRate')
         ->byDefault()
         ->andReturn($rate);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
     $serviceMock->setDi($di);
 
@@ -145,15 +145,15 @@ dataset('getCurrencyByClientIdProvider', function () {
 });
 
 test('getCurrencyByClientId returns currency for client', function (?string $currency, string $expectsGetByCode, string $expectsGetDefault) {
-    $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $db = Mockery::mock('Box_Database');
     $db->shouldReceive('getCell')
         ->atLeast()->once()
         ->andReturn($currency);
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     if ($expectsGetDefault === 'atLeastOnce') {
         $repositoryMock->shouldReceive('findDefault')
             ->atLeast()->once()
@@ -169,7 +169,7 @@ test('getCurrencyByClientId returns currency for client', function (?string $cur
         $repositoryMock->shouldReceive('findOneByCode')->never();
     }
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
@@ -177,12 +177,12 @@ test('getCurrencyByClientId returns currency for client', function (?string $cur
     $di['db'] = $db;
     $di['em'] = $emMock;
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
     $result = $service->getCurrencyByClientId(1);
 
-    expect($result)->toBeInstanceOf(\Box\Mod\Currency\Entity\Currency::class);
+    expect($result)->toBeInstanceOf(Box\Mod\Currency\Entity\Currency::class);
 })->with('getCurrencyByClientIdProvider');
 
 dataset('getRateByCodeProvider', function () {
@@ -193,20 +193,20 @@ dataset('getRateByCodeProvider', function () {
 });
 
 test('getRateByCode returns rate for currency code', function (string $code, ?float $returns, ?float $expected) {
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('getRateByCode')
         ->atLeast()->once()
         ->andReturn($returns);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
     $result = $service->getCurrencyRepository()->getRateByCode($code);
@@ -222,7 +222,7 @@ dataset('setAsDefaultProvider', function () {
 
 test('setAsDefault sets currency as default', function (string $modelType, string $expects) {
     if ($modelType === 'default_currency') {
-        $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+        $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
         $model->shouldReceive('getCode')
             ->byDefault()
             ->andReturn('USD');
@@ -230,7 +230,7 @@ test('setAsDefault sets currency as default', function (string $modelType, strin
             ->byDefault()
             ->andReturn(false);
     } else {
-        $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+        $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
         $model->shouldReceive('getCode')
             ->byDefault()
             ->andReturn('USD');
@@ -239,7 +239,7 @@ test('setAsDefault sets currency as default', function (string $modelType, strin
             ->andReturn(true);
     }
 
-    $refetchedModel = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $refetchedModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $refetchedModel->shouldReceive('getCode')
         ->byDefault()
         ->andReturn('USD');
@@ -254,7 +254,7 @@ test('setAsDefault sets currency as default', function (string $modelType, strin
             ->with(true);
     }
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     if ($expects === 'atLeastOnce') {
         $repositoryMock->shouldReceive('clearDefaultFlags')
             ->atLeast()->once();
@@ -267,7 +267,7 @@ test('setAsDefault sets currency as default', function (string $modelType, strin
         $repositoryMock->shouldReceive('findOneByCode')->never();
     }
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
@@ -277,7 +277,7 @@ test('setAsDefault sets currency as default', function (string $modelType, strin
         $emMock->shouldReceive('flush')
             ->atLeast()->once();
         $emMock->shouldReceive('clear')
-            ->with(\Box\Mod\Currency\Entity\Currency::class)
+            ->with(Box\Mod\Currency\Entity\Currency::class)
             ->atLeast()->once();
     } else {
         $emMock->shouldReceive('persist')->never();
@@ -285,11 +285,11 @@ test('setAsDefault sets currency as default', function (string $modelType, strin
         $emMock->shouldReceive('clear')->never();
     }
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
     $result = $service->setAsDefault($model);
 
@@ -297,7 +297,7 @@ test('setAsDefault sets currency as default', function (string $modelType, strin
 })->with('setAsDefaultProvider');
 
 test('setAsDefault throws exception when currency code is empty', function () {
-    $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('isDefault')
         ->byDefault()
         ->andReturn(false);
@@ -305,21 +305,21 @@ test('setAsDefault throws exception when currency code is empty', function () {
         ->byDefault()
         ->andReturn('');
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
     expect(fn () => $service->setAsDefault($model))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('getPairs returns currency pairs', function () {
@@ -328,20 +328,20 @@ test('getPairs returns currency pairs', function () {
         'EUR' => 'Euro',
         'GBP' => 'Pound Sterling',
     ];
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('getPairs')
         ->atLeast()->once()
         ->andReturn($pairs);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
     $result = $service->getCurrencyRepository()->getPairs();
 
@@ -349,7 +349,7 @@ test('getPairs returns currency pairs', function () {
 });
 
 test('rm throws exception when deleting default currency', function () {
-    $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('getCode')
         ->byDefault()
         ->andReturn('EUR');
@@ -357,25 +357,25 @@ test('rm throws exception when deleting default currency', function () {
         ->byDefault()
         ->andReturn(true);
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
     expect(fn () => $service->rm($model))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('rm removes currency', function () {
-    $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('getCode')
         ->byDefault()
         ->andReturn('EUR');
@@ -383,9 +383,9 @@ test('rm removes currency', function () {
         ->byDefault()
         ->andReturn(false);
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
@@ -395,10 +395,10 @@ test('rm removes currency', function () {
     $emMock->shouldReceive('flush')
         ->atLeast()->once();
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
     $result = $service->rm($model);
 
@@ -406,7 +406,7 @@ test('rm removes currency', function () {
 });
 
 test('rm throws exception when currency code is empty', function () {
-    $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('isDefault')
         ->byDefault()
         ->andReturn(false);
@@ -414,25 +414,25 @@ test('rm throws exception when currency code is empty', function () {
         ->byDefault()
         ->andReturn('');
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
     expect(fn () => $service->rm($model))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('toApiArray returns API array for currency', function () {
-    $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
 
     $expected = [
         'code' => 'EUR',
@@ -455,14 +455,14 @@ test('createCurrency creates new currency', function () {
     $code = 'EUR';
     $format = '€{{price}}';
 
-    $systemService = Mockery::mock(\Box\Mod\System\Service::class)->makePartial();
+    $systemService = Mockery::mock(Box\Mod\System\Service::class)->makePartial();
     $systemService->shouldReceive('checkLimits')
         ->atLeast()->once()
         ->andReturn(null);
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
@@ -472,11 +472,11 @@ test('createCurrency creates new currency', function () {
         ->atLeast()->once();
 
     $di = container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['em'] = $emMock;
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $systemService);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
     $result = $service->createCurrency($code, $format, 'Euros', 0.6);
@@ -493,7 +493,7 @@ test('updateCurrency updates currency', function () {
     $price_format = '€{{Price}}';
     $conversion_rate = 0.6;
 
-    $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('getCode')
         ->atLeast()->once()
         ->andReturn('EUR');
@@ -510,12 +510,12 @@ test('updateCurrency updates currency', function () {
         ->atLeast()->once()
         ->with(0.6);
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($model);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
@@ -524,11 +524,11 @@ test('updateCurrency updates currency', function () {
     $emMock->shouldReceive('flush')
         ->atLeast()->once();
 
-    $di = new \Pimple\Container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di = new Pimple\Container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['em'] = $emMock;
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
     $result = $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate);
@@ -544,24 +544,24 @@ test('updateCurrency throws exception when currency not found', function () {
     $price_format = '€{{Price}}';
     $conversion_rate = 0.6;
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn(null);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
     expect(fn () => $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('updateCurrency throws exception when conversion rate is zero', function () {
@@ -571,7 +571,7 @@ test('updateCurrency throws exception when conversion rate is zero', function ()
     $price_format = '€{{Price}}';
     $conversion_rate = 0;
 
-    $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('setTitle')
         ->byDefault();
     $model->shouldReceive('setFormat')
@@ -581,28 +581,28 @@ test('updateCurrency throws exception when conversion rate is zero', function ()
     $model->shouldReceive('setConversionRate')
         ->byDefault();
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($model);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
     expect(fn () => $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('updateCurrencyRates updates rates for all currencies', function () {
-    $defaultModel = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $defaultModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $defaultModel->shouldReceive('getCode')
         ->byDefault()
         ->andReturn('EUR');
@@ -612,7 +612,7 @@ test('updateCurrencyRates updates rates for all currencies', function () {
     $defaultModel->shouldReceive('setConversionRate')
         ->byDefault();
 
-    $otherModel = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $otherModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $otherModel->shouldReceive('getCode')
         ->byDefault()
         ->andReturn('USD');
@@ -622,7 +622,7 @@ test('updateCurrencyRates updates rates for all currencies', function () {
     $otherModel->shouldReceive('setConversionRate')
         ->byDefault();
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('findDefault')
         ->atLeast()->once()
         ->andReturn($defaultModel);
@@ -630,22 +630,22 @@ test('updateCurrencyRates updates rates for all currencies', function () {
         ->atLeast()->once()
         ->andReturn([$defaultModel, $otherModel]);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
     $emMock->shouldReceive('flush')
         ->atLeast()->once();
 
-    $serviceMock = Mockery::mock(\Box\Mod\Currency\Service::class)
+    $serviceMock = Mockery::mock(Box\Mod\Currency\Service::class)
         ->makePartial()
         ->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getRate')
         ->atLeast()->once()
         ->andReturn(floatval(random_int(1, 50) / 10));
 
-    $di = new \Pimple\Container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di = new Pimple\Container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['em'] = $emMock;
     $serviceMock->setDi($di);
 
@@ -656,7 +656,7 @@ test('updateCurrencyRates updates rates for all currencies', function () {
 });
 
 test('updateCurrencyRates handles non-numeric rates', function () {
-    $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('getCode')
         ->byDefault()
         ->andReturn('EUR');
@@ -666,7 +666,7 @@ test('updateCurrencyRates handles non-numeric rates', function () {
     $model->shouldReceive('setConversionRate')
         ->byDefault();
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('findDefault')
         ->atLeast()->once()
         ->andReturn($model);
@@ -674,22 +674,22 @@ test('updateCurrencyRates handles non-numeric rates', function () {
         ->atLeast()->once()
         ->andReturn([$model]);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
     $emMock->shouldReceive('flush')
         ->atLeast()->once();
 
-    $serviceMock = Mockery::mock(\Box\Mod\Currency\Service::class)
+    $serviceMock = Mockery::mock(Box\Mod\Currency\Service::class)
         ->makePartial()
         ->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getRate')
         ->atLeast()->once()
         ->andReturn(0.0);
 
-    $di = new \Pimple\Container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di = new Pimple\Container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['em'] = $emMock;
     $serviceMock->setDi($di);
 
@@ -700,7 +700,7 @@ test('updateCurrencyRates handles non-numeric rates', function () {
 });
 
 test('deleteCurrencyByCode deletes currency by code', function () {
-    $model = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('getCode')
         ->byDefault()
         ->andReturn('EUR');
@@ -710,12 +710,12 @@ test('deleteCurrencyByCode deletes currency by code', function () {
 
     $code = 'EUR';
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($model);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
@@ -729,12 +729,12 @@ test('deleteCurrencyByCode deletes currency by code', function () {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $di = new \Pimple\Container();
-    $di['logger'] = new \Tests\Helpers\TestLogger();
+    $di = new Pimple\Container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['em'] = $emMock;
     $di['events_manager'] = $manager;
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
     $result = $service->deleteCurrencyByCode($code);
@@ -746,29 +746,29 @@ test('deleteCurrencyByCode deletes currency by code', function () {
 test('deleteCurrencyByCode throws exception when currency not found', function () {
     $code = 'EUR';
 
-    $repositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn(null);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManager::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['em'] = $emMock;
 
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
     expect(fn () => $service->deleteCurrencyByCode($code))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('validateCurrencyFormat throws exception when price tag is missing', function () {
-    $service = new \Box\Mod\Currency\Service();
+    $service = new Box\Mod\Currency\Service();
 
     expect(fn () => $service->validateCurrencyFormat('$$$'))
-        ->toThrow(\Exception::class);
+        ->toThrow(Exception::class);
 });

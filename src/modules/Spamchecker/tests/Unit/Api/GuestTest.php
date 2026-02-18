@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -103,7 +103,7 @@ dataset('recaptcha config', function () {
 });
 
 test('dependency injection', function (): void {
-    $api = new \Box\Mod\Spamchecker\Api\Guest();
+    $api = new Box\Mod\Spamchecker\Api\Guest();
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -111,7 +111,7 @@ test('dependency injection', function (): void {
 });
 
 test('recaptcha', function (array $config, array $expected) {
-    $api = new \Box\Mod\Spamchecker\Api\Guest();
+    $api = new Box\Mod\Spamchecker\Api\Guest();
     $di = container();
     $di['mod_config'] = $di->protect(fn (): array => $config);
 

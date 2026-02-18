@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,9 +10,10 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
 use Box\Mod\Product\Api\Guest;
 use Box\Mod\Product\Service;
+
+use function Tests\Helpers\container;
 
 test('gets dependency injection container', function (): void {
     $api = new Guest();
@@ -26,14 +27,14 @@ test('gets product with id', function (): void {
     $api = new Guest();
     $data = ['id' => 1];
 
-    $model = new \Model_Product();
+    $model = new Model_Product();
 
     $serviceMock = Mockery::mock(Service::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $serviceMock->shouldReceive('findOneActiveById');
     $expectation1->atLeast()->once();
     $expectation1->andReturn($model);
-    /** @var \Mockery\Expectation $expectation2 */
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $serviceMock->shouldReceive('toApiArray');
     $expectation2->atLeast()->once();
     $expectation2->andReturn([]);
@@ -49,14 +50,14 @@ test('gets product with slug', function (): void {
     $api = new Guest();
     $data = ['slug' => 'product/1'];
 
-    $model = new \Model_Product();
+    $model = new Model_Product();
 
     $serviceMock = Mockery::mock(Service::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $serviceMock->shouldReceive('findOneActiveBySlug');
     $expectation1->atLeast()->once();
     $expectation1->andReturn($model);
-    /** @var \Mockery\Expectation $expectation2 */
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $serviceMock->shouldReceive('toApiArray');
     $expectation2->atLeast()->once();
     $expectation2->andReturn([]);
@@ -73,7 +74,7 @@ test('throws exception when product not found', function (): void {
     $data = ['slug' => 'product/1'];
 
     $serviceMock = Mockery::mock(Service::class);
-    /** @var \Mockery\Expectation $expectation */
+    /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('findOneActiveBySlug');
     $expectation->atLeast()->once();
     $expectation->andReturn(null);
@@ -83,17 +84,17 @@ test('throws exception when product not found', function (): void {
     $api->setService($serviceMock);
 
     expect(fn () => $api->get($data))
-        ->toThrow(\FOSSBilling\Exception::class, 'Product not found');
+        ->toThrow(FOSSBilling\Exception::class, 'Product not found');
 });
 
 test('gets category list', function (): void {
     $api = new Guest();
     $serviceMock = Mockery::mock(Service::class);
-    /** @var \Mockery\Expectation $expectation1 */
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $serviceMock->shouldReceive('getProductCategorySearchQuery');
     $expectation1->atLeast()->once();
     $expectation1->andReturn(['sqlString', []]);
-    /** @var \Mockery\Expectation $expectation2 */
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $serviceMock->shouldReceive('toProductCategoryApiArray');
     $expectation2->atLeast()->once();
     $expectation2->andReturn([]);
@@ -103,20 +104,20 @@ test('gets category list', function (): void {
             0 => ['id' => 1],
         ],
     ];
-    $pagerMock = Mockery::mock(\FOSSBilling\Pagination::class);
-    /** @var \Mockery\Expectation $expectation3 */
+    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class);
+    /** @var Mockery\Expectation $expectation3 */
     $expectation3 = $pagerMock->shouldReceive('getDefaultPerPage');
     $expectation3->atLeast()->once();
     $expectation3->andReturn(50);
-    /** @var \Mockery\Expectation $expectation4 */
+    /** @var Mockery\Expectation $expectation4 */
     $expectation4 = $pagerMock->shouldReceive('getPaginatedResultSet');
     $expectation4->atLeast()->once();
     $expectation4->andReturn($pager);
 
-    $modelProductCategory = new \Model_ProductCategory();
-    $modelProductCategory->loadBean(new \Tests\Helpers\DummyBean());
+    $modelProductCategory = new Model_ProductCategory();
+    $modelProductCategory->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
-    /** @var \Mockery\Expectation $expectation5 */
+    /** @var Mockery\Expectation $expectation5 */
     $expectation5 = $dbMock->shouldReceive('getExistingModelById');
     $expectation5->atLeast()->once();
     $expectation5->andReturn($modelProductCategory);
@@ -134,7 +135,7 @@ test('gets category list', function (): void {
 test('gets category pairs', function (): void {
     $api = new Guest();
     $serviceMock = Mockery::mock(Service::class);
-    /** @var \Mockery\Expectation $expectation */
+    /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getProductCategoryPairs');
     $expectation->atLeast()->once();
     $expectation->andReturn([]);
@@ -147,7 +148,7 @@ test('gets category pairs', function (): void {
 test('gets slider with empty list', function (): void {
     $api = new Guest();
     $dbMock = Mockery::mock('\Box_Database');
-    /** @var \Mockery\Expectation $expectation */
+    /** @var Mockery\Expectation $expectation */
     $expectation = $dbMock->shouldReceive('find');
     $expectation->atLeast()->once();
     $expectation->andReturn([]);
@@ -164,10 +165,10 @@ test('gets slider with empty list', function (): void {
 
 test('gets slider', function (): void {
     $api = new Guest();
-    $productModel = new \Model_Product();
-    $productModel->loadBean(new \Tests\Helpers\DummyBean());
+    $productModel = new Model_Product();
+    $productModel->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
-    /** @var \Mockery\Expectation $expectation1 */
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $dbMock->shouldReceive('find');
     $expectation1->atLeast()->once();
     $expectation1->andReturn([$productModel]);
@@ -185,7 +186,7 @@ test('gets slider', function (): void {
         'config' => [],
     ];
     $serviceMock = Mockery::mock(Service::class);
-    /** @var \Mockery\Expectation $expectation2 */
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $serviceMock->shouldReceive('toApiArray');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($arr);
@@ -197,10 +198,10 @@ test('gets slider', function (): void {
 
 test('gets slider in json format', function (): void {
     $api = new Guest();
-    $productModel = new \Model_Product();
-    $productModel->loadBean(new \Tests\Helpers\DummyBean());
+    $productModel = new Model_Product();
+    $productModel->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
-    /** @var \Mockery\Expectation $expectation1 */
+    /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $dbMock->shouldReceive('find');
     $expectation1->atLeast()->once();
     $expectation1->andReturn([$productModel]);
@@ -218,7 +219,7 @@ test('gets slider in json format', function (): void {
         'config' => [],
     ];
     $serviceMock = Mockery::mock(Service::class);
-    /** @var \Mockery\Expectation $expectation2 */
+    /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $serviceMock->shouldReceive('toApiArray');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($arr);

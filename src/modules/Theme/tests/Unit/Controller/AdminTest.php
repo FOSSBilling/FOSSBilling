@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
-    $controller = new \Box\Mod\Theme\Controller\Admin();
+    $controller = new Box\Mod\Theme\Controller\Admin();
     $di = container();
     $controller->setDi($di);
     $result = $controller->getDi();
@@ -21,7 +21,7 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('register configures routes', function (): void {
-    $controller = new \Box\Mod\Theme\Controller\Admin();
+    $controller = new Box\Mod\Theme\Controller\Admin();
     $boxAppMock = Mockery::mock('\Box_App');
     $boxAppMock->shouldReceive('get')
         ->atLeast()
@@ -34,7 +34,7 @@ test('register configures routes', function (): void {
 });
 
 test('getTheme renders theme preset', function (): void {
-    $controller = new \Box\Mod\Theme\Controller\Admin();
+    $controller = new Box\Mod\Theme\Controller\Admin();
     $di = container();
 
     $boxAppMock = Mockery::mock('\Box_App');
@@ -44,7 +44,7 @@ test('getTheme renders theme preset', function (): void {
         ->andReturn('Rendering ...');
 
     // Create theme mock first
-    $themeMock = Mockery::mock(\Box\Mod\Theme\Model\Theme::class);
+    $themeMock = Mockery::mock(Box\Mod\Theme\Model\Theme::class);
     $themeMock->shouldReceive('getName')
         ->atLeast()
         ->once()
@@ -67,7 +67,7 @@ test('getTheme renders theme preset', function (): void {
         ->andReturn('/tmp/test');
 
     // Create service mock that uses theme mock
-    $themeServiceMock = Mockery::mock(\Box\Mod\Theme\Service::class);
+    $themeServiceMock = Mockery::mock(Box\Mod\Theme\Service::class);
     $themeServiceMock->shouldReceive('getTheme')
         ->atLeast()
         ->once()
@@ -86,7 +86,7 @@ test('getTheme renders theme preset', function (): void {
         ->andReturn([]);
 
     // Create a mod mock that returns the service via getService()
-    $modMock = Mockery::mock(\FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getService')
         ->atLeast()
         ->once()

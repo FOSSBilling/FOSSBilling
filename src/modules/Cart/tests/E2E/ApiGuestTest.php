@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -15,9 +15,9 @@ if (!getenv('APP_URL') || !getenv('TEST_API_KEY')) {
     return;
 }
 
-use function Tests\Helpers\assertApiSuccess;
-use function Tests\Helpers\assertApiResultIsInt;
 use function Tests\Helpers\assertApiResultIsArray;
+use function Tests\Helpers\assertApiResultIsInt;
+use function Tests\Helpers\assertApiSuccess;
 
 test('cart transfers on login', function () {
     $productId = cartCreateDummyProduct();
@@ -40,7 +40,7 @@ test('cart transfers on login', function () {
 
 function cartCreateDummyProduct(): int
 {
-    $result = \Tests\Helpers\ApiClient::request('admin/product/prepare', [
+    $result = Tests\Helpers\ApiClient::request('admin/product/prepare', [
         'title' => 'Dummy Product',
         'type' => 'custom',
         'product_category_id' => 1,
@@ -53,7 +53,7 @@ function cartCreateDummyProduct(): int
 
 function cartEnableProduct(int $productId): void
 {
-    $result = \Tests\Helpers\ApiClient::request('admin/product/update', [
+    $result = Tests\Helpers\ApiClient::request('admin/product/update', [
         'id' => $productId,
         'status' => 'enabled',
         'pricing' => ['type' => 'free'],
@@ -64,14 +64,14 @@ function cartEnableProduct(int $productId): void
 
 function cartAddProductToCart(int $productId): void
 {
-    $result = \Tests\Helpers\ApiClient::request('guest/cart/add_item', ['id' => $productId]);
+    $result = Tests\Helpers\ApiClient::request('guest/cart/add_item', ['id' => $productId]);
     assertApiSuccess($result);
     expect($result->getResult())->toBeTrue();
 }
 
 function cartGetCart(): array
 {
-    $result = \Tests\Helpers\ApiClient::request('guest/cart/get');
+    $result = Tests\Helpers\ApiClient::request('guest/cart/get');
     assertApiSuccess($result);
     assertApiResultIsArray($result);
 
@@ -81,7 +81,7 @@ function cartGetCart(): array
 function cartCreateClient(): int
 {
     $password = 'A1a' . bin2hex(random_bytes(6));
-    $result = \Tests\Helpers\ApiClient::request('guest/client/create', [
+    $result = Tests\Helpers\ApiClient::request('guest/client/create', [
         'email' => 'client_' . uniqid() . '@example.com',
         'first_name' => 'Test',
         'password' => $password,
@@ -95,7 +95,7 @@ function cartCreateClient(): int
 
 function cartLoginClient(int $clientId): void
 {
-    $result = \Tests\Helpers\ApiClient::request('guest/client/login', [
+    $result = Tests\Helpers\ApiClient::request('guest/client/login', [
         'email' => 'client_' . $clientId . '@example.com',
         'password' => 'A1a' . bin2hex(random_bytes(6)),
     ]);
@@ -104,7 +104,7 @@ function cartLoginClient(int $clientId): void
 
 function cartCleanupClient(int $clientId): void
 {
-    $result = \Tests\Helpers\ApiClient::request('admin/client/delete', ['id' => $clientId]);
+    $result = Tests\Helpers\ApiClient::request('admin/client/delete', ['id' => $clientId]);
     assertApiSuccess($result);
     expect($result->getResult())->toBeTrue();
 }

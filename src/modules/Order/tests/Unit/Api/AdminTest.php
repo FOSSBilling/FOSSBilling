@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,12 +10,13 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
 use Box\Mod\Order\Api\Admin;
 use Box\Mod\Order\Service;
 
+use function Tests\Helpers\container;
+
 test('gets dependency injection container', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -23,9 +24,9 @@ test('gets dependency injection container', function (): void {
 });
 
 test('gets an order', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -45,13 +46,13 @@ test('gets an order', function (): void {
 });
 
 test('gets order list', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSearchQuery')
         ->atLeast()->once()
         ->andReturn(['query', []]);
 
-    $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
         ->andReturn(25);
@@ -59,7 +60,7 @@ test('gets order list', function (): void {
         ->atLeast()->once()
         ->andReturn(['list' => []]);
 
-    $modMock = Mockery::mock(\FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn(['show_addons' => 0]);
@@ -76,7 +77,7 @@ test('gets order list', function (): void {
 });
 
 test('creates an order', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('createOrder')
         ->atLeast()->once()
@@ -101,9 +102,9 @@ test('creates an order', function (): void {
 });
 
 test('updates an order', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -126,9 +127,9 @@ test('updates an order', function (): void {
 });
 
 test('activates an order', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -151,9 +152,9 @@ test('activates an order', function (): void {
 });
 
 test('renews an order', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -172,9 +173,9 @@ test('renews an order', function (): void {
 });
 
 test('renews pending setup order by activating it', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -190,9 +191,9 @@ test('renews pending setup order by activating it', function (): void {
 });
 
 test('suspends an order', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -213,9 +214,9 @@ test('suspends an order', function (): void {
 });
 
 test('unsuspends an order', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_SUSPENDED;
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -235,9 +236,9 @@ test('unsuspends an order', function (): void {
 });
 
 test('throws exception when unsuspending non-suspended order', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -253,13 +254,13 @@ test('throws exception when unsuspending non-suspended order', function (): void
     $apiMock->setService($serviceMock);
 
     expect(fn () => $apiMock->unsuspend([]))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('cancels an order', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -280,9 +281,9 @@ test('cancels an order', function (): void {
 });
 
 test('uncancels an order', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_CANCELED;
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -302,9 +303,9 @@ test('uncancels an order', function (): void {
 });
 
 test('throws exception when uncanceling non-canceled order', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -320,13 +321,13 @@ test('throws exception when uncanceling non-canceled order', function (): void {
     $apiMock->setService($serviceMock);
 
     expect(fn () => $apiMock->uncancel([]))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('deletes an order', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -345,9 +346,9 @@ test('deletes an order', function (): void {
 });
 
 test('deletes an order with addons', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -370,7 +371,7 @@ test('deletes an order with addons', function (): void {
 });
 
 test('batch suspends expired orders', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('batchSuspendExpired')
         ->atLeast()->once()
@@ -383,7 +384,7 @@ test('batch suspends expired orders', function (): void {
 });
 
 test('batch cancels suspended orders', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('batchCancelSuspended')
         ->atLeast()->once()
@@ -396,9 +397,9 @@ test('batch cancels suspended orders', function (): void {
 });
 
 test('updates order config', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -418,9 +419,9 @@ test('updates order config', function (): void {
 });
 
 test('throws exception when updating config without config param', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -435,13 +436,13 @@ test('throws exception when updating config without config param', function (): 
     $apiMock->setService($serviceMock);
 
     expect(fn () => $apiMock->update_config([]))
-        ->toThrow(\FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('gets order service data', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -454,7 +455,7 @@ test('gets order service data', function (): void {
         ->andReturn([]);
 
     $admin = new Model_Admin();
-    $admin->loadBean(new \RedBeanPHP\OODBBean());
+    $admin->loadBean(new RedBeanPHP\OODBBean());
 
     $apiMock->setService($serviceMock);
     $apiMock->setIdentity($admin);
@@ -465,9 +466,9 @@ test('gets order service data', function (): void {
 });
 
 test('gets status history list', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -479,7 +480,7 @@ test('gets status history list', function (): void {
         ->atLeast()->once()
         ->andReturn(['query', []]);
 
-    $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
         ->atLeast()->once()
         ->andReturn(25);
@@ -498,14 +499,14 @@ test('gets status history list', function (): void {
 });
 
 test('adds status history', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('orderStatusAdd')
         ->atLeast()->once()
         ->andReturn(true);
 
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -522,14 +523,14 @@ test('adds status history', function (): void {
 });
 
 test('deletes status history', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('orderStatusRm')
         ->atLeast()->once()
         ->andReturn(true);
 
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $di = container();
     $api->setDi($di);
@@ -541,7 +542,7 @@ test('deletes status history', function (): void {
 });
 
 test('gets order statuses', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('counter')
         ->atLeast()->once()
@@ -554,19 +555,19 @@ test('gets order statuses', function (): void {
 });
 
 test('gets invoice options', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $result = $api->get_invoice_options([]);
     expect($result)->toBeArray();
 });
 
 test('gets status pairs', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $result = $api->get_status_pairs([]);
     expect($result)->toBeArray();
 });
 
 test('gets order addons', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getOrderAddonsList')
         ->atLeast()->once()
@@ -576,7 +577,7 @@ test('gets order addons', function (): void {
         ->andReturn([]);
 
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $apiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -592,8 +593,8 @@ test('gets order addons', function (): void {
 });
 
 test('gets order with validation', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
-    $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
+    $api = new Admin();
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
 
     $serviceMock = Mockery::mock(Service::class);
@@ -602,7 +603,7 @@ test('gets order with validation', function (): void {
         ->andReturn([]);
 
     $order = new Model_ClientOrder();
-    $order->loadBean(new \Tests\Helpers\DummyBean());
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -620,7 +621,7 @@ test('gets order with validation', function (): void {
 });
 
 test('batch deletes orders', function (): void {
-    $api = new \Box\Mod\Order\Api\Admin();
+    $api = new Admin();
     $activityMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $activityMock->shouldReceive('delete')
         ->atLeast()->once()

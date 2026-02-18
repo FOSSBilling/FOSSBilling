@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,12 +10,13 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
-use Box\Mod\Servicedownloadable\Service;
 use Box\Mod\Order\Service as OrderService;
+use Box\Mod\Servicedownloadable\Service;
+
+use function Tests\Helpers\container;
 
 test('gets dependency injection container', function (): void {
-    $service = new \Box\Mod\Servicedownloadable\Service();
+    $service = new Service();
     $di = container();
     $service->setDi($di);
     $getDi = $service->getDi();
@@ -23,16 +24,16 @@ test('gets dependency injection container', function (): void {
 });
 
 test('attaches order config', function (): void {
-    $service = new \Box\Mod\Servicedownloadable\Service();
-    $productModel = new \Model_Product();
-    $productModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new Service();
+    $productModel = new Model_Product();
+    $productModel->loadBean(new Tests\Helpers\DummyBean());
     $productModel->config = '{"filename" : "temp/asdcxTest.txt"}';
 
     $data = [];
 
     $expected = array_merge(json_decode($productModel->config ?? '', true), $data);
 
-    $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')
         ->zeroOrMoreTimes();
 
@@ -45,13 +46,13 @@ test('attaches order config', function (): void {
 });
 
 test('creates action', function (): void {
-    $service = new \Box\Mod\Servicedownloadable\Service();
-    $clientOrderModel = new \Model_ClientOrder();
-    $clientOrderModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new Service();
+    $clientOrderModel = new Model_ClientOrder();
+    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
     $clientOrderModel->config = '{"filename" : "temp/asdcxTest.txt"}';
 
-    $model = new \Model_ServiceDownloadable();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_ServiceDownloadable();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('dispense')
@@ -62,7 +63,7 @@ test('creates action', function (): void {
         ->atLeast()->once()
         ->andReturn(1);
 
-    $validatorMock = Mockery::mock(\FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')
         ->zeroOrMoreTimes();
 
@@ -72,17 +73,17 @@ test('creates action', function (): void {
 
     $service->setDi($di);
     $result = $service->action_create($clientOrderModel);
-    expect($result)->toBeInstanceOf(\Model_ServiceDownloadable::class);
+    expect($result)->toBeInstanceOf(Model_ServiceDownloadable::class);
 });
 
 test('deletes action', function (): void {
-    $service = new \Box\Mod\Servicedownloadable\Service();
-    $clientOrderModel = new \Model_ClientOrder();
+    $service = new Service();
+    $clientOrderModel = new Model_ClientOrder();
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
-        ->andReturn(new \Model_ServiceDownloadable());
+        ->andReturn(new Model_ServiceDownloadable());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('trash')
@@ -90,20 +91,20 @@ test('deletes action', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): \Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
     $service->action_delete($clientOrderModel);
 });
 
 test('saves product config', function (): void {
-    $service = new \Box\Mod\Servicedownloadable\Service();
+    $service = new Service();
     $data = [
         'update_orders' => true,
     ];
 
-    $productModel = new \Model_Product();
-    $productModel->loadBean(new \Tests\Helpers\DummyBean());
+    $productModel = new Model_Product();
+    $productModel->loadBean(new Tests\Helpers\DummyBean());
     $productModel->config = '{"filename": "test.txt"}';
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -112,7 +113,7 @@ test('saves product config', function (): void {
         ->with($productModel)
         ->andReturn(1);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['db'] = $dbMock;
 
     $service->setDi($di);
@@ -129,13 +130,13 @@ test('saves product config', function (): void {
 });
 
 test('saves product config with existing config', function (): void {
-    $service = new \Box\Mod\Servicedownloadable\Service();
+    $service = new Service();
     $data = [
         'update_orders' => false,
     ];
 
-    $productModel = new \Model_Product();
-    $productModel->loadBean(new \Tests\Helpers\DummyBean());
+    $productModel = new Model_Product();
+    $productModel->loadBean(new Tests\Helpers\DummyBean());
     $productModel->config = '{"filename": "existing.txt", "update_orders": true}';
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -144,7 +145,7 @@ test('saves product config with existing config', function (): void {
         ->with($productModel)
         ->andReturn(1);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['db'] = $dbMock;
 
     $service->setDi($di);
@@ -161,13 +162,13 @@ test('saves product config with existing config', function (): void {
 });
 
 test('saves product config with no existing config', function (): void {
-    $service = new \Box\Mod\Servicedownloadable\Service();
+    $service = new Service();
     $data = [
         'update_orders' => true,
     ];
 
-    $productModel = new \Model_Product();
-    $productModel->loadBean(new \Tests\Helpers\DummyBean());
+    $productModel = new Model_Product();
+    $productModel->loadBean(new Tests\Helpers\DummyBean());
     $productModel->config = null;
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -176,7 +177,7 @@ test('saves product config with no existing config', function (): void {
         ->with($productModel)
         ->andReturn(1);
 
-    $di = new \Pimple\Container();
+    $di = new Pimple\Container();
     $di['db'] = $dbMock;
 
     $service->setDi($di);

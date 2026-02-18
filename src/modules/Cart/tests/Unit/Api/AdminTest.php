@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -13,21 +13,21 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('getList returns array', function (): void {
-    $adminApi = new \Box\Mod\Cart\Api\Admin();
-    $api = new \Box\Mod\Cart\Api\Admin();
+    $adminApi = new Box\Mod\Cart\Api\Admin();
+    $api = new Box\Mod\Cart\Api\Admin();
     $simpleResultArr = [
         'list' => [
             ['id' => 1],
         ],
     ];
 
-    $paginatorMock = Mockery::mock(\FOSSBilling\Pagination::class)->makePartial();
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $paginatorMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
     ->andReturn($simpleResultArr);
 
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSearchQuery')->atLeast()->once()
         ->andReturn(['query', []]);
     $serviceMock
@@ -35,8 +35,8 @@ test('getList returns array', function (): void {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $model = new \Model_Cart();
-    $model->loadBean(new \Tests\Helpers\DummyBean());
+    $model = new Model_Cart();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')
@@ -58,15 +58,15 @@ test('getList returns array', function (): void {
 });
 
 test('get returns array', function (): void {
-    $adminApi = new \Box\Mod\Cart\Api\Admin();
-    $api = new \Box\Mod\Cart\Api\Admin();
+    $adminApi = new Box\Mod\Cart\Api\Admin();
+    $api = new Box\Mod\Cart\Api\Admin();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new \Model_Cart());
+    ->andReturn(new Model_Cart());
 
-    $serviceMock = Mockery::mock(\Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
@@ -85,8 +85,8 @@ test('get returns array', function (): void {
 });
 
 test('batchExpire returns true', function (): void {
-    $adminApi = new \Box\Mod\Cart\Api\Admin();
-    $api = new \Box\Mod\Cart\Api\Admin();
+    $adminApi = new Box\Mod\Cart\Api\Admin();
+    $api = new Box\Mod\Cart\Api\Admin();
 
     $logStub = $this->createStub('\Box_Log');
 

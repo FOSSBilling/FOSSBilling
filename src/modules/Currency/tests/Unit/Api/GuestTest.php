@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -13,20 +13,20 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('get pairs', function () {
-    $guestApi = new \Box\Mod\Currency\Api\Guest();
+    $guestApi = new Box\Mod\Currency\Api\Guest();
 
     $willReturn = [
         'EUR' => 'Euro',
         'USD' => 'US Dollar',
     ];
 
-    $repositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock
     ->shouldReceive('getPairs')
     ->atLeast()->once()
     ->andReturn($willReturn);
 
-    $service = Mockery::mock('\\' . \Box\Mod\Currency\Service::class);
+    $service = Mockery::mock('\\' . Box\Mod\Currency\Service::class);
     $service
     ->shouldReceive('getCurrencyRepository')
     ->atLeast()->once()
@@ -57,7 +57,7 @@ dataset('getProvider', [
 ]);
 
 test('get', function ($data, $modelFlag, $expectsGetByCode, $expectsGetDefault) {
-    $guestApi = new \Box\Mod\Currency\Api\Guest();
+    $guestApi = new Box\Mod\Currency\Api\Guest();
 
     $willReturn = [
         'code' => 'EUR',
@@ -69,7 +69,7 @@ test('get', function ($data, $modelFlag, $expectsGetByCode, $expectsGetDefault) 
     ];
 
     $model = ($modelFlag === 'has_model')
-        ? Mockery::mock('\\' . \Box\Mod\Currency\Entity\Currency::class)
+        ? Mockery::mock('\\' . Box\Mod\Currency\Entity\Currency::class)
         : null;
 
     if ($model !== null) {
@@ -79,7 +79,7 @@ test('get', function ($data, $modelFlag, $expectsGetByCode, $expectsGetDefault) 
     ->andReturn($willReturn);
     }
 
-    $repositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     if ($expectsGetByCode === 'atLeastOnce') {
         $repositoryMock
             ->shouldReceive('findOneByCode')
@@ -93,7 +93,7 @@ test('get', function ($data, $modelFlag, $expectsGetByCode, $expectsGetDefault) 
             ->andReturn($model);
     }
 
-    $service = Mockery::mock('\\' . \Box\Mod\Currency\Service::class);
+    $service = Mockery::mock('\\' . Box\Mod\Currency\Service::class);
     $service
     ->shouldReceive('getCurrencyRepository')
     ->atLeast()->once()
@@ -109,23 +109,23 @@ test('get', function ($data, $modelFlag, $expectsGetByCode, $expectsGetDefault) 
 })->with('getProvider');
 
 test('get exception', function () {
-    $guestApi = new \Box\Mod\Currency\Api\Guest();
+    $guestApi = new Box\Mod\Currency\Api\Guest();
 
-    $repositoryMock = Mockery::mock('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class);
-    $repositoryMock->shouldReceive("findOneByCode")->never();
+    $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock->shouldReceive('findOneByCode')->never();
     $repositoryMock
     ->shouldReceive('findDefault')
     ->atLeast()->once()
     ->andReturn(null);
 
-    $service = Mockery::mock('\\' . \Box\Mod\Currency\Service::class);
+    $service = Mockery::mock('\\' . Box\Mod\Currency\Service::class);
     $service
     ->shouldReceive('getCurrencyRepository')
     ->atLeast()->once()
     ->andReturn($repositoryMock);
 
     $guestApi->setService($service);
-    $this->expectException(\FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Exception::class);
     $result = $guestApi->get([]);
 });
 
@@ -152,13 +152,13 @@ test('format price format', function ($price_format, $expectedResult) {
         'price' => 100000,
         'without_currency' => false,
     ];
-    $guestApi = Mockery::mock(\Box\Mod\Currency\Api\Guest::class)->makePartial();
+    $guestApi = Mockery::mock(Box\Mod\Currency\Api\Guest::class)->makePartial();
     $guestApi
     ->shouldReceive('get')
     ->atLeast()->once()
     ->andReturn($willReturn);
 
-    $service = $this->createStub(\Box\Mod\Currency\Service::class);
+    $service = $this->createStub(Box\Mod\Currency\Service::class);
 
     $di = container();
 
@@ -204,13 +204,13 @@ test('format', function ($data, $expectedResult) {
         'default' => 1,
     ];
 
-    $guestApi = Mockery::mock(\Box\Mod\Currency\Api\Guest::class)->makePartial();
+    $guestApi = Mockery::mock(Box\Mod\Currency\Api\Guest::class)->makePartial();
     $guestApi
     ->shouldReceive('get')
     ->atLeast()->once()
     ->andReturn($willReturn);
 
-    $service = $this->createStub(\Box\Mod\Currency\Service::class);
+    $service = $this->createStub(Box\Mod\Currency\Service::class);
 
     $di = container();
 

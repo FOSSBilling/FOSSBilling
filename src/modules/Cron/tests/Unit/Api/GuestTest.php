@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -10,8 +10,9 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
 use Box\Mod\Cron\Api\Guest;
+
+use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
     $di = container();
@@ -22,7 +23,7 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('settings returns module configuration array', function (): void {
-    $modMock = Mockery::mock('\\' . \FOSSBilling\Module::class);
+    $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
 
     $api = new Guest();
@@ -33,7 +34,7 @@ test('settings returns module configuration array', function (): void {
 });
 
 test('isLate returns boolean indicating if cron is late', function (): void {
-    $serviceMock = Mockery::mock(\Box\Mod\Cron\Service::class);
+    $serviceMock = Mockery::mock(Box\Mod\Cron\Service::class);
     $serviceMock->shouldReceive('isLate')->atLeast()->once()->andReturn(true);
 
     $api = new Guest();

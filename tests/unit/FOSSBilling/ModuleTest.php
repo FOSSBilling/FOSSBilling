@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -11,11 +11,12 @@
 declare(strict_types=1);
 
 use FOSSBilling\Module;
+
 use function Tests\Helpers\container;
 
 test('empty config', function (): void {
     $dbMock = Mockery::mock('Box_Database');
-    /** @var \Mockery\Expectation $expectation */
+    /** @var Mockery\Expectation $expectation */
     $expectation = $dbMock->shouldReceive('findOne');
     $expectation->atLeast()->once();
     $expectation->andReturn(null);
@@ -42,7 +43,7 @@ test('core mod', function (): void {
 
 test('manifest', function (): void {
     $di = container();
-    $di['url'] = new \Box_Url();
+    $di['url'] = new Box_Url();
 
     $mod = new Module('Cookieconsent');
     $mod->setDi($di);
@@ -62,5 +63,5 @@ test('get service sub', function (): void {
     $mod->setDi($di);
 
     $subService = $mod->getService($subServiceName);
-    expect($subService)->toBeInstanceOf(\Box\Mod\Invoice\ServiceTransaction::class);
+    expect($subService)->toBeInstanceOf(Box\Mod\Invoice\ServiceTransaction::class);
 });

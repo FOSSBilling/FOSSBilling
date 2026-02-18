@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
-    $service = new \Box\Mod\Client\ServiceBalance();
+    $service = new Box\Mod\Client\ServiceBalance();
     $di = container();
     $service->setDi($di);
     $getDi = $service->getDi();
@@ -21,11 +21,11 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('deductFunds creates balance record', function (): void {
-    $service = new \Box\Mod\Client\ServiceBalance();
+    $service = new Box\Mod\Client\ServiceBalance();
     $di = container();
 
-    $clientBalance = new \Model_ClientBalance();
-    $clientBalance->loadBean(new \Tests\Helpers\DummyBean());
+    $clientBalance = new Model_ClientBalance();
+    $clientBalance->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('dispense')
@@ -39,8 +39,8 @@ test('deductFunds creates balance record', function (): void {
 
     $service->setDi($di);
 
-    $clientModel = new \Model_Client();
-    $clientModel->loadBean(new \Tests\Helpers\DummyBean());
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
     $description = 'Charged for product';
     $amount = 5.55;
@@ -51,7 +51,7 @@ test('deductFunds creates balance record', function (): void {
 
     $result = $service->deductFunds($clientModel, $amount, $description, $extra);
 
-    expect($result)->toBeInstanceOf(\Model_ClientBalance::class);
+    expect($result)->toBeInstanceOf(Model_ClientBalance::class);
     expect($result->amount)->toEqual(-$amount);
     expect($result->description)->toEqual($description);
     expect($result->rel_id)->toEqual($extra['rel_id']);
@@ -59,9 +59,9 @@ test('deductFunds creates balance record', function (): void {
 });
 
 test('deductFunds throws exception for invalid description', function (): void {
-    $service = new \Box\Mod\Client\ServiceBalance();
-    $clientModel = new \Model_Client();
-    $clientModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new Box\Mod\Client\ServiceBalance();
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
     $description = '    ';
     $amount = 5.55;
@@ -71,12 +71,12 @@ test('deductFunds throws exception for invalid description', function (): void {
     ];
 
     $service->deductFunds($clientModel, $amount, $description, $extra);
-})->throws(\FOSSBilling\Exception::class, 'Funds description is invalid');
+})->throws(FOSSBilling\Exception::class, 'Funds description is invalid');
 
 test('deductFunds throws exception for invalid amount', function (): void {
-    $service = new \Box\Mod\Client\ServiceBalance();
-    $clientModel = new \Model_Client();
-    $clientModel->loadBean(new \Tests\Helpers\DummyBean());
+    $service = new Box\Mod\Client\ServiceBalance();
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
     $description = 'Charged';
     $amount = '5.5adadzxc';
@@ -86,4 +86,4 @@ test('deductFunds throws exception for invalid amount', function (): void {
     ];
 
     $service->deductFunds($clientModel, $amount, $description, $extra);
-})->throws(\FOSSBilling\Exception::class, 'Funds amount is invalid');
+})->throws(FOSSBilling\Exception::class, 'Funds amount is invalid');

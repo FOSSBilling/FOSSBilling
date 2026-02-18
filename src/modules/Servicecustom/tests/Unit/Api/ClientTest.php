@@ -2,7 +2,7 @@
 
 /**
  * Copyright 2022-2026 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
@@ -14,11 +14,11 @@ use Box\Mod\Servicecustom\Api\Client;
 use Box\Mod\Servicecustom\Service;
 
 test('calls magic method', function (): void {
-    $api = new \Box\Mod\Servicecustom\Api\Client();
+    $api = new Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->atLeast()->once()
-        ->andReturn(new \Model_ServiceCustom());
+        ->andReturn(new Model_ServiceCustom());
     $serviceMock->shouldReceive('customCall')
         ->atLeast()->once()
         ->andReturn(null);
@@ -34,7 +34,7 @@ test('calls magic method', function (): void {
 });
 
 test('throws exception when calling magic method without arguments', function (): void {
-    $api = new \Box\Mod\Servicecustom\Api\Client();
+    $api = new Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->never();
@@ -46,11 +46,11 @@ test('throws exception when calling magic method without arguments', function ()
     $api->setService($serviceMock);
 
     expect(fn () => $api->__call('delete', $arguments))
-        ->toThrow(\Exception::class);
+        ->toThrow(Exception::class);
 });
 
 test('throws exception when calling magic method without order_id', function (): void {
-    $api = new \Box\Mod\Servicecustom\Api\Client();
+    $api = new Client();
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->never();
@@ -64,5 +64,5 @@ test('throws exception when calling magic method without order_id', function ():
     $api->setService($serviceMock);
 
     expect(fn () => $api->__call('delete', $arguments))
-        ->toThrow(\Exception::class);
+        ->toThrow(Exception::class);
 });
