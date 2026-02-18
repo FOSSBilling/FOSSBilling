@@ -55,12 +55,6 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
-    /**
-     * @param OODBBean $order
-     * @param OODBBean $model
-     *
-     * @return bool
-     */
     public function activate(OODBBean $order, OODBBean $model): bool
     {
         $config = json_decode($order->config ?? '', true);
@@ -71,12 +65,6 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @param OODBBean $order
-     * @param OODBBean $model
-     *
-     * @return bool
-     */
     public function suspend(OODBBean $order, OODBBean $model): bool
     {
         $model->updated_at = date('Y-m-d H:i:s');
@@ -85,12 +73,6 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @param OODBBean $order
-     * @param OODBBean $model
-     *
-     * @return bool
-     */
     public function unsuspend(OODBBean $order, OODBBean $model): bool
     {
         $model->updated_at = date('Y-m-d H:i:s');
@@ -99,32 +81,16 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @param OODBBean $order
-     * @param OODBBean $model
-     *
-     * @return bool
-     */
     public function cancel(OODBBean $order, OODBBean $model): bool
     {
         return $this->suspend($order, $model);
     }
 
-    /**
-     * @param OODBBean $order
-     * @param OODBBean $model
-     *
-     * @return bool
-     */
     public function uncancel(OODBBean $order, OODBBean $model): bool
     {
         return $this->unsuspend($order, $model);
     }
 
-    /**
-     * @param OODBBean|null $order
-     * @param OODBBean|null $model
-     */
     public function delete(?OODBBean $order, ?OODBBean $model): void
     {
         if (is_object($model)) {
@@ -132,11 +98,6 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    /**
-     * @param OODBBean $model
-     *
-     * @return array
-     */
     public function toApiArray(OODBBean $model): array
     {
         return [
@@ -381,11 +342,6 @@ class Service implements InjectionAwareInterface
         return $apiKey;
     }
 
-    /**
-     * @param OODBBean $model
-     *
-     * @return bool
-     */
     private function isActive(OODBBean $model): bool
     {
         $order = $this->di['db']->findOne('ClientOrder', 'service_id = :id AND service_type = "apikey"', [':id' => $model->id]);

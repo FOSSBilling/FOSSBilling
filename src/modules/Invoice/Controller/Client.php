@@ -41,9 +41,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_invoices(\Box_App $app): string
     {
-        if (!$this->di['is_client_logged']) {
-            throw new \FOSSBilling\Exception('Client not logged in');
-        }
+        $this->di['is_client_logged'];
 
         return $app->render('mod_invoice_index');
     }

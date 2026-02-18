@@ -36,9 +36,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_client_index(\Box_App $app): string
     {
-        if (!$this->di['is_client_logged']) {
-            throw new \FOSSBilling\Exception('Client not logged in');
-        }
+        $this->di['is_client_logged'];
 
         return $app->render('mod_client_index');
     }
@@ -61,9 +59,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_client_page(\Box_App $app, $page): string
     {
-        if (!$this->di['is_client_logged']) {
-            throw new \FOSSBilling\Exception('Client not logged in');
-        }
+        $this->di['is_client_logged'];
         $template = 'mod_client_' . $page;
 
         return $app->render($template);

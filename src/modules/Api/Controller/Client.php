@@ -167,14 +167,10 @@ class Client implements InjectionAwareInterface
     private function isRoleLoggedIn($role): bool
     {
         if ($role == 'client') {
-            if (!$this->di['is_client_logged']) {
-                throw new \FOSSBilling\Exception('Client not logged in');
-            }
+            $this->di['is_client_logged'];
         }
         if ($role == 'admin') {
-            if (!$this->di['is_admin_logged']) {
-                throw new \FOSSBilling\Exception('Admin not logged in');
-            }
+            $this->di['is_admin_logged'];
         }
 
         return true;
