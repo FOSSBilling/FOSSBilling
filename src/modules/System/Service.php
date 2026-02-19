@@ -162,7 +162,7 @@ class Service
             return [];
         }
         foreach ($params as $param) {
-            if (!preg_match('/^[a-z0-9_]+$/', $param)) {
+            if (!preg_match('/^[a-z0-9_]+$/', (string) $param)) {
                 throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_', ['param_' => $param]);
             }
         }

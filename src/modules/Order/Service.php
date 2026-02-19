@@ -463,7 +463,7 @@ class Service implements InjectionAwareInterface
 
     private function normalizeIds(array $ids): array
     {
-        return array_values(array_unique(array_map('intval', array_filter($ids, 'is_numeric'))));
+        return array_values(array_unique(array_map(intval(...), array_filter($ids, is_numeric(...)))));
     }
 
     private function orderRowsByIds(array $rows, array $ids): array
@@ -1455,7 +1455,7 @@ class Service implements InjectionAwareInterface
         return $srepo->toApiArray($service, true, $identity);
     }
 
-    public function getTotal(\Model_ClientOrder $model)
+    public function getTotal(\Model_ClientOrder $model): float
     {
         return $this->calculateTotal($model->price, $model->quantity);
     }

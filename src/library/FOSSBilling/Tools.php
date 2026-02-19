@@ -385,7 +385,7 @@ class Tools
         }
 
         // Use Symfony's HTML Sanitizer
-        $config = (new \Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig())
+        $config = new \Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig()
             ->allowSafeElements()
             ->allowElement('a', ['href', 'title'])
             ->allowElement('code')
