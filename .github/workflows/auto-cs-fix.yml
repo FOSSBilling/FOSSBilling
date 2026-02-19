@@ -15,12 +15,12 @@ jobs:
       - name: PHP Build
         uses: FOSSBilling/.workflows/.github/actions/php-build@74c38ad88ce24f4751e1467524124c7c2cae4e07
         with:
-          php-version: 8.2
+          php-version: 8.3
 
       - name: Setup PHP
         uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2
         with:
-          php-version: 8.2
+          php-version: 8.3
           extensions: intl, xml, dom, curl, iconv, json
     
       - name: Create Cache Directories
