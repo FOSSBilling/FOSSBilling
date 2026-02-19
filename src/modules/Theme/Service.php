@@ -427,7 +427,7 @@ class Service implements InjectionAwareInterface
     public function getCurrentRouteTheme(): string
     {
         // Runtime check for admin area - uses index.php defined constant
-        $isAdmin = defined('ADMIN_AREA') ? ADMIN_AREA : false;
+        $isAdmin = defined('ADMIN_AREA') && ADMIN_AREA;
         if ($isAdmin) {
             return $this->getCurrentAdminAreaTheme()['code'];
         }
@@ -438,7 +438,7 @@ class Service implements InjectionAwareInterface
     public function getDefaultMarkdownAttributes(): array
     {
         // Runtime check for admin area - uses index.php defined constant
-        $isAdmin = defined('ADMIN_AREA') ? ADMIN_AREA : false;
+        $isAdmin = defined('ADMIN_AREA') && ADMIN_AREA;
         if ($isAdmin) {
             $config = $this->getThemeConfig(false);
         } else {
