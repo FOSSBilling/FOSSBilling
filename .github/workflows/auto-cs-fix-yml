@@ -1,0 +1,63 @@
+name: Fix Code Quality & Styling
+
+on:
+  schedule:
+    - cron: "0 12 * * 2,4" # Runs once every Tuesday and Thursday
+  workflow_dispatch:
+
+jobs:
+  fix-cs:
+    name: Rector & PHP-CS-Fixer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: PHP Build
+        uses: FOSSBilling/.workflows/.github/actions/php-build@74c38ad88ce24f4751e1467524124c7c2cae4e07
+        with:
+          php-version: 8.2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2
+        with:
+          php-version: 8.2
+          extensions: intl, xml, dom, curl, iconv, json
+    
+      - name: Create Cache Directories
+        run: |
+          echo "MONTH=$(date '+%h')" >> ${GITHUB_ENV}
+          mkdir cache
+          mkdir cache/rector
+
+      - name: Restore Rector Cache
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
+        with:
+          path: ./cache/rector
+          key: ${{ env.MONTH }}-rector
+          restore-keys: ${{ env.MONTH }}-rector
+          
+      - name: Restore CS-Fixer Cache
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
+        with:
+          path: .php-cs-fixer.cache
+          key: ${{ env.MONTH }}-csfixer
+          restore-keys: ${{ env.MONTH }}-csfixer
+
+      - name: Run Rector
+        run: php src/vendor/bin/rector
+          
+      - name: Run PHP-CS-Fixer
+        run: php src/vendor/bin/php-cs-fixer fix
+        
+      - name: Create a Pull Request
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
+        with:
+          title: Apply PHP Code Styling & Quality Changes
+          commit-message: Apply PHP Code Styling & Quality Changes
+          branch: chore/cs-fix
+          body: Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices.
+          delete-branch: true
+          token: ${{ secrets.BOT_TOKEN }}
+          committer: FOSSBilling Bot <fossbilling-bot>
+          author: FOSSBilling Bot <fossbilling-bot>
+          labels: skip-changelog
