@@ -129,33 +129,25 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     public function modifyContact(Registrar_Domain $domain): bool
     {
-        $customer = $this->_getCustomerDetails($domain);
-        $cdetails = $this->_getDefaultContactDetails($domain, $customer['customerid']);
-        $contact_id = $cdetails['Contact']['registrant'];
-
         $c = $domain->getContactRegistrar();
-
-        $required_params = [
-            'contact-id' => $contact_id,
-            'name' => $c->getName(),
-            'company' => $c->getCompany(),
-            'email' => $c->getEmail(),
-            'address-line-1' => $c->getAddress1(),
-            'city' => $c->getCity(),
-            'zipcode' => $c->getZip(),
-            'phone-cc' => $c->getTelCc(),
-            'phone' => $c->getTel(),
-            'country' => $c->getCountry(),
+        $old_contact = $this -> getDomainDetails($domain);
+        /*
+        Check if the email address is the same as the one in the domain details
+        Current Fossbilling API uses the email adress of the registrant as "Username" for reseller club account
+        */
+        if($old_contact->getContactAdmin()->getEmail() != $c->getEmail()){
+            throw new Registrar_Exception('Unable to change email address');
+        }
+        $contact = $this -> getContactIdForDomain($domain);
+        $params = [
+            'order-id' => $this->_getDomainOrderId($domain),
+            'reg-contact-id' => $contact,
+            'admin-contact-id' => $contact,
+            'tech-contact-id' => $contact,
+            'billing-contact-id' => $contact,
         ];
 
-        $optional_params = [
-            'address-line-2' => $c->getAddress2(),
-            'address-line-3' => $c->getAddress3(),
-            'state' => $c->getState(),
-        ];
-
-        $params = [...$optional_params, ...$required_params];
-        $result = $this->_makeRequest('contacts/modify', $params, 'POST');
+        $result = $this->_makeRequest('domains/modify-contact', $params, 'POST');
 
         return $result['status'] == 'Success';
     }
@@ -974,8 +966,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             if ($result['recsonpage'] < 1) {
                 throw new Registrar_Exception('Contact not found');
             }
-            $existing_contact_id = $result['result'][0]['entity.entityid'];
-            $this->_makeRequest('contacts/delete', ['contact-id' => $existing_contact_id], 'POST');
         } catch (Registrar_Exception $e) {
             $this->getLog()->info($e->getMessage());
         }
