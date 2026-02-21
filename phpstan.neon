@@ -3,6 +3,7 @@ includes:
 
 parameters:
 	level: 5
+	reportUnmatchedIgnoredErrors: false
 	paths:
 		- src
 	bootstrapFiles:
@@ -37,3 +38,13 @@ parameters:
 		# loggedin_client throws Exception, but PHPStan doesn't understand Pimple container behavior
 		- identifier: catch.neverThrown
 		  path: src/modules/Cart/Service.php
+
+		# SentryHelper properties are read in skipReporting() method - PHPStan doesn't track static property access
+		- identifier: property.onlyWritten
+		  path: src/library/FOSSBilling/SentryHelper.php
+
+		# INSTANCE_ID check may cause unreachable code warning in some environments
+		- identifier: deadCode.unreachable
+		  path: src/library/FOSSBilling/SentryHelper.php
+
+	

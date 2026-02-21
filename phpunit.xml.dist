@@ -21,7 +21,7 @@
       <directory>src/modules/*/tests/Unit</directory>
     </testsuite>
     <testsuite name="E2E">
-      <directory>tests/E2E</directory>
+      <directory>tests/e2e</directory>
       <directory>src/modules/*/tests/E2E</directory>
     </testsuite>
   </testsuites>

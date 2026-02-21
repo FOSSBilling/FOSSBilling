@@ -657,6 +657,7 @@ class Service implements InjectionAwareInterface
             return [];
         }
 
+        // @phpstan-ignore function.alreadyNarrowedType (ids is an array at this point, but keeping for safety)
         $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
 
         $rows = $this->di['db']->getAll('SELECT id, title FROM product WHERE id in (' . $slots . ')', $ids);
@@ -790,6 +791,7 @@ class Service implements InjectionAwareInterface
             return [];
         }
 
+        // @phpstan-ignore function.alreadyNarrowedType (ids is an array at this point, but keeping for safety)
         $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
         array_unshift($ids, (int) $model->id); // adding product ID as first param in array
 

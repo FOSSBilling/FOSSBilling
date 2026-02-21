@@ -114,7 +114,6 @@ globalThis.FOSSBilling = {
     // Initialize backToTop
     FOSSBilling.backToTop = backToTop;
     FOSSBilling.backToTop();
-    });
 
     document.addEventListener("click", function(event) {
       const target = event.target;

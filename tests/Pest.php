@@ -91,7 +91,8 @@ uses(MockeryPHPUnitIntegration::class)
     ->beforeEach(function (): void {
         // Unit test setup
     })
-    ->in('Unit');
+->in('Unit');
+
 
 // Configure E2E tests - requires live instance with API access
 // Run with: ./vendor/bin/pest --testsuite=E2E
