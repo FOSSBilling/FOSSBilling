@@ -1419,12 +1419,14 @@ CREATE TABLE `transaction` (
   `error_code` int(11) DEFAULT NULL,
   `validate_ipn` tinyint(1) DEFAULT '1',
   `ipn` text,
+  `ipn_hash` varchar(64) DEFAULT NULL,
   `output` text,
   `note` text,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `invoice_id_idx` (`invoice_id`)
+  KEY `invoice_id_idx` (`invoice_id`),
+  KEY `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
