@@ -50,9 +50,7 @@ jobs:
           php-version: ${{ matrix.php }}
           phpstan-enable: 'true'
           phpstan-php-version: 8.4
-          phpstan-version: 'latest'
           phpunit-enable: 'true'
-          phpunit-version: 12
 
   preview-build:
     name: 'Create Preview Release'
