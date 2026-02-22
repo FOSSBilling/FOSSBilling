@@ -21,7 +21,7 @@ final class Api_GuestTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['ticketCreateForGuest'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('ticketCreateForGuest')
-            ->willReturn(bin2hex(random_bytes(random_int(100, 127))));
+            ->willReturn(bin2hex(random_bytes(random_int(15, 30))));
 
         $di = $this->getDi();
         $this->guestApi->setDi($di);
