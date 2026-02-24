@@ -177,7 +177,7 @@ class Service implements InjectionAwareInterface
         }
 
         // Sort by slot name for consistent display
-        usort($result, fn ($a, $b): int => strcmp((string) $a['slot'], (string) $b['slot']));
+        usort($result, fn ($a, $b): int => strcmp($a['slot'], $b['slot']));
 
         return $result;
     }
