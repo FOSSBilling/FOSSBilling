@@ -16,6 +16,7 @@ use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
 use FOSSBilling\i18n;
 use FOSSBilling\Twig\Enum\AppArea;
+use FOSSBilling\Twig\Extension\ApiExtension;
 use FOSSBilling\Twig\Extension\DebugBarExtension;
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;
 use FOSSBilling\Twig\Extension\LegacyExtension;
@@ -87,6 +88,7 @@ class TwigFactory
         $twig->addExtension(new IntlExtension($dateFormatter));
 
         // Register custom extensions.
+        $twig->addExtension(new AttributeExtension(ApiExtension::class));
         $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
         $twig->addExtension(new AttributeExtension(LegacyExtension::class));
 
@@ -168,8 +170,6 @@ class TwigFactory
      * Configure and register runtime loaders.
      *
      * @param Environment $twig twig environment
-     *
-     * @return void
      */
     private function configureRuntimeLoaders(Environment $twig): void
     {
@@ -185,6 +185,7 @@ class TwigFactory
             {
                 return match ($class) {
                     MarkdownRuntime::class => new MarkdownRuntime(new FOSSBillingMarkdown($this->di)),
+                    ApiExtension::class => new ApiExtension($this->di),
                     FOSSBillingExtension::class => new FOSSBillingExtension($this->di),
                     LegacyExtension::class => new LegacyExtension($this->di),
                     default => null,
@@ -199,8 +200,6 @@ class TwigFactory
      * Configure global Twig variables.
      *
      * @param Environment $twig twig environment
-     *
-     * @return void
      */
     private function configureGlobals(Environment $twig): void
     {

@@ -354,7 +354,7 @@ $di['is_admin_logged'] = function () use ($di) {
  */
 $di['loggedin_client'] = function () use ($di) {
     $di['is_client_logged'];
-    /** @var \FOSSBilling\Session $session */
+    /** @var FOSSBilling\Session $session */
     $session = $di['session'];
     $client_id = $session->get('client_id');
 
@@ -393,7 +393,7 @@ $di['loggedin_admin'] = function () use ($di) {
     }
 
     $di['is_admin_logged'];
-    /** @var \FOSSBilling\Session $session */
+    /** @var FOSSBilling\Session $session */
     $session = $di['session'];
     $admin = $session->get('admin');
 
@@ -429,7 +429,7 @@ $di['set_return_uri'] = function () use ($di): void {
         $url .= '?' . http_build_query($_GET);
     }
 
-    /** @var \FOSSBilling\Session $session */
+    /** @var FOSSBilling\Session $session */
     $session = $di['session'];
     $session->set('redirect_uri', $url);
 };

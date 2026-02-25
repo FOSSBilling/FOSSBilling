@@ -11,7 +11,10 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Twig\Extension;
 
+use FOSSBilling\Environment as AppEnvironment;
+use Symfony\Component\Filesystem\Path;
 use Twig\Attribute\AsTwigFilter;
+use Twig\Attribute\AsTwigFunction;
 use Twig\Environment;
 
 class FOSSBillingExtension
@@ -69,33 +72,69 @@ class FOSSBillingExtension
         return ltrim($path, '/\\');
     }
 
+    /**
+     * Part of the Widgets module. Renders the widgets of a specified slot.
+     *
+     * @param Environment $env     the Twig environment (injected automatically)
+     * @param string      $slot    name of the slot
+     * @param array       $context optional slot context, such as order or client details
+     *
+     * @return string slot content
+     */
+    #[AsTwigFunction('render_widgets', isSafe: ['html'], needsEnvironment: true)]
+    public function renderWidgets(Environment $env, string $slot, array $context = []): string
+    {
+        $widgets = $this->di['mod_service']('Widgets')->getSlotWidgets($slot);
+
+        if (empty($widgets)) {
+            return '';
+        }
+
+        $output = '';
+
+        foreach ($widgets as $widget) {
+            try {
+                $templateName = 'widgets/' . $widget['template'] . '.html.twig';
+                $output .= $env->render($templateName, $context);
+            } catch (\Throwable $e) {
+                $output .= $env->render('widgets/mod_widgets_error.html.twig', array_merge($context, [
+                    'widget' => [
+                        'slot' => $slot,
+                        'mod_name' => $widget['module'],
+                        'template' => $widget['template'],
+                    ],
+                    'error' => AppEnvironment::isDevelopment() ? $e->getMessage() : null,
+                ]));
+            }
+        }
+
+        return $output;
+    }
 
     /**
-     * Get API URL for a given path and query parameters.
-     * Automatically detects the role, where possible and no role is specified,
-     * based on Twig global. Otherwise, defaults to 'guest'.
+     * Get SVG sprite content for the current theme.
      *
-     * @param Environment $env    twig environment
-     * @param string      $action API action
-     * @param array|null  $query  URL query parameters
-     * @param string|null $role   user role (admin, client, guest)
+     * @param Environment $env twig environment
      *
-     * @return string the generated API URL
+     * @return string SVG sprite content or empty string if not found
      */
-    #[AsTwigFilter('api_url', isSafe: ['html'], needsEnvironment: true)]
-    public function apiUrl(Environment $env, string $action, ?array $query = null, ?string $role = null): string
+    #[AsTwigFunction('svg_sprite', isSafe: ['html'], needsEnvironment: true)]
+    public function svgSprite(Environment $env): string
     {
         $globals = $env->getGlobals();
+        $themeCode = $globals['theme']['code'] ?? null;
 
-        if (is_null($role) && isset($globals['app_area'])) {
-            $role = $globals['app_area'];
+        if ($themeCode === null) {
+            return '';
         }
 
-        if (!in_array($role, ['admin', 'client', 'guest'])) {
-            $role = 'guest';
+        $spritePath = Path::join(PATH_THEMES, $themeCode, 'assets/build/symbol/icons-sprite.svg');
+
+        if (!file_exists($spritePath)) {
+            return '';
         }
 
-        return $this->di['url']->link("api/{$role}/{$action}", $query, $role);
+        return file_get_contents($spritePath);
     }
 
     /**
@@ -158,6 +197,7 @@ class FOSSBillingExtension
         if (!in_array($algo, hash_algos(), true)) {
             throw new \InvalidArgumentException(sprintf('Hash algorithm "%s" is not supported.', $algo));
         }
+
         return hash($algo, (string) $value);
     }
 
