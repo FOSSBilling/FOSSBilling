@@ -90,10 +90,10 @@ class Admin extends \Api_Abstract
      */
     public function languages(array $data): array
     {
-        $data['disabled'] ??= false;
-        $data['details'] ??= true;
+        $disabled = (bool) ($data['disabled'] ?? false);
+        $details = (bool) ($data['details'] ?? true);
 
-        return \FOSSBilling\i18n::getLocales($data['details'], $data['disabled']);
+        return \FOSSBilling\i18n::getLocales($details, $disabled);
     }
 
     /**
