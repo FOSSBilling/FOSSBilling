@@ -220,6 +220,7 @@ class TwigFactory
             {
                 return match ($class) {
                     MarkdownRuntime::class => new MarkdownRuntime(new FOSSBillingMarkdown($this->di)),
+                    ApiExtension::class => new ApiExtension($this->di),
                     FOSSBillingExtension::class => new FOSSBillingExtension($this->di),
                     LegacyExtension::class => new LegacyExtension($this->di),
                     default => null,
