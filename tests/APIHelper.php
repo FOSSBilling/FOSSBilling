@@ -62,7 +62,7 @@ class Request
 
 class Response
 {
-    private array $decodedResponse = [];
+    private ?array $decodedResponse = null;
 
     public function __construct(private readonly int $code, private readonly string $rawResponse)
     {

@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Box\Mod\Extension\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
-use League\CommonMark\CommonMarkConverter;
 
 class Admin extends \Api_Abstract
 {
@@ -64,9 +63,7 @@ class Admin extends \Api_Abstract
     {
         $extensionInfo = $this->di['extension_manager']->getExtension($data['extension_id']);
 
-        $markdownConverter = new CommonMarkConverter();
-
-        return $markdownConverter->convert($extensionInfo['readme'])->getContent();
+        return $this->di['markdown']->convert($extensionInfo['readme']);
     }
 
     /**
@@ -90,10 +87,10 @@ class Admin extends \Api_Abstract
      */
     public function languages(array $data): array
     {
-        $disabled = (bool) ($data['disabled'] ?? false);
-        $details = (bool) ($data['details'] ?? true);
-
-        return \FOSSBilling\i18n::getLocales($details, $disabled);
+        return \FOSSBilling\i18n::getLocales(
+            (bool) ($data['details'] ?? true),
+            (bool) ($data['disabled'] ?? false)
+        );
     }
 
     /**

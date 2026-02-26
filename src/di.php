@@ -273,6 +273,13 @@ $di['twig'] = $di->factory(function () use ($di) {
 });
 
 /*
+ * Secure markdown converter with FOSSBilling security settings.
+ *
+ * @return FOSSBilling\Twig\Markdown\FOSSBillingMarkdown
+ */
+$di['markdown'] = fn (): FOSSBilling\Twig\Markdown\FOSSBillingMarkdown => new FOSSBilling\Twig\Markdown\FOSSBillingMarkdown($di);
+
+/*
  * Checks whether a client is logged in and throws an exception or redirects to the login page if not.
  *
  * @param void
