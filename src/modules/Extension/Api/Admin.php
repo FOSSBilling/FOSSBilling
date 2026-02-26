@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Box\Mod\Extension\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
-use League\CommonMark\CommonMarkConverter;
 
 class Admin extends \Api_Abstract
 {
