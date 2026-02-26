@@ -66,11 +66,10 @@ class Response
 
     public function __construct(private readonly int $code, private readonly string $rawResponse)
     {
-        $decoded = json_decode($this->rawResponse, true);
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
-            throw new \RuntimeException('Invalid JSON response: ' . json_last_error_msg() . '. Raw response: ' . $this->rawResponse);
+        $this->decodedResponse = json_decode($this->rawResponse, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \RuntimeException('Invalid JSON response: ' . json_last_error_msg());
         }
-        $this->decodedResponse = $decoded;
     }
 
     public function getHttpCode(): int

@@ -20,36 +20,21 @@ use Twig\Extra\Markdown\MarkdownInterface;
 
 class FOSSBillingMarkdown implements MarkdownInterface
 {
-    private \Pimple\Container $di;
-    private $converter;
+    private MarkdownConverter $converter;
 
-    /**
-     * FOSSBillingMarkdown constructor.
-     *
-     * @param \Pimple\Container $di dependency injection container
-     */
     public function __construct(\Pimple\Container $di)
     {
-        $this->di = $di;
-
-        // Default configuration with security-focused settings.
         $config = [
             'html_input' => 'escape',
             'allow_unsafe_links' => false,
             'max_nesting_level' => 50,
         ];
 
-        // Get default attributes from the theme service, if set.
-        $defaultAttributes = $this->di['mod_service']('theme')->getDefaultMarkdownAttributes() ?? [];
+        $defaultAttributes = $di['mod_service']('theme')->getDefaultMarkdownAttributes() ?? [];
         if (!empty($defaultAttributes)) {
-            foreach ($defaultAttributes as $class => $classAttributes) {
-                $reflectionClass = new \ReflectionClass($class);
-                $className = $reflectionClass->getName();
-                $config['default_attributes'][$className] = $classAttributes;
-            }
+            $config['default_attributes'] = $defaultAttributes;
         }
 
-        // Create environment and add extensions.
         $environment = new Environment($config);
         $environment->addExtension(new CommonMarkCoreExtension());
         $environment->addExtension(new GithubFlavoredMarkdownExtension());
@@ -60,13 +45,6 @@ class FOSSBillingMarkdown implements MarkdownInterface
         $this->converter = new MarkdownConverter($environment);
     }
 
-    /**
-     * Convert markdown to HTML.
-     *
-     * @param string $body the markdown content to convert
-     *
-     * @return string the converted HTML
-     */
     public function convert(string $body): string
     {
         return $this->converter->convert($body)->getContent();

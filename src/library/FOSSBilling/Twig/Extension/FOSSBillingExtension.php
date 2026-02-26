@@ -19,16 +19,8 @@ use Twig\Environment;
 
 class FOSSBillingExtension
 {
-    private ?\Pimple\Container $di = null;
-
-    /**
-     * FOSSBillingExtension constructor.
-     *
-     * @param ?\Pimple\Container $di dependency injection container
-     */
-    public function __construct(?\Pimple\Container $di)
+    public function __construct(private ?\Pimple\Container $di)
     {
-        $this->di = $di;
     }
 
     private function getLoadedAssets(): array
@@ -72,15 +64,6 @@ class FOSSBillingExtension
         return ltrim($path, '/\\');
     }
 
-    /**
-     * Part of the Widgets module. Renders the widgets of a specified slot.
-     *
-     * @param Environment $env     the Twig environment (injected automatically)
-     * @param string      $slot    name of the slot
-     * @param array       $context optional slot context, such as order or client details
-     *
-     * @return string slot content
-     */
     #[AsTwigFunction('render_widgets', isSafe: ['html'], needsEnvironment: true)]
     public function renderWidgets(Environment $env, string $slot, array $context = []): string
     {
@@ -111,13 +94,6 @@ class FOSSBillingExtension
         return $output;
     }
 
-    /**
-     * Get SVG sprite content for the current theme.
-     *
-     * @param Environment $env twig environment
-     *
-     * @return string SVG sprite content or empty string if not found
-     */
     #[AsTwigFunction('svg_sprite', isSafe: ['html'], needsEnvironment: true)]
     public function svgSprite(Environment $env): string
     {
@@ -137,14 +113,6 @@ class FOSSBillingExtension
         return file_get_contents($spritePath);
     }
 
-    /**
-     * Get the URL for an asset in the current theme.
-     *
-     * @param Environment $env   twig environment
-     * @param string      $asset asset path relative to the theme's assets directory
-     *
-     * @return string the generated asset URL
-     */
     #[AsTwigFilter('asset_url', isSafe: ['html'], needsEnvironment: true)]
     public function assetUrl(Environment $env, $asset): string
     {
@@ -153,13 +121,6 @@ class FOSSBillingExtension
         return SYSTEM_URL . 'themes/' . $globals['current_theme'] . '/assets/' . $asset;
     }
 
-    /**
-     * Get the number of days left until a given date.
-     *
-     * @param string $dateTime date and time in ISO 8601 format
-     *
-     * @return int the number of days left until the date
-     */
     #[AsTwigFilter('daysleft')]
     public function daysleft(string $dateTime): int
     {
@@ -168,29 +129,12 @@ class FOSSBillingExtension
         return intval($timeLeft / 86400);
     }
 
-    /**
-     * Get the file size in a human-readable format.
-     *
-     * @param int $size file size in bytes
-     *
-     * @return string the human-readable file size
-     */
     #[AsTwigFilter('file_size')]
     public function fileSize(int $size): string
     {
         return \FOSSBilling\Tools::humanReadableBytes($size);
     }
 
-    /**
-     * Hash a given value using the specified algorithm.
-     *
-     * @param mixed  $value the value to hash
-     * @param string $algo  the hashing algorithm to use (default: 'xxh128')
-     *
-     * @return string the hashed value
-     *
-     * @throws \InvalidArgumentException if the specified hashing algorithm is not supported
-     */
     #[AsTwigFilter('hash')]
     public function hash($value, $algo = 'xxh128'): string
     {
@@ -201,13 +145,6 @@ class FOSSBillingExtension
         return hash($algo, (string) $value);
     }
 
-    /**
-     * Generate a script tag for a given asset path, ensuring that the same asset is not included multiple times.
-     *
-     * @param string $path the path of the asset
-     *
-     * @return string the generated script tag or an empty string if the asset has already been included
-     */
     #[AsTwigFilter('script_tag', isSafe: ['html'])]
     public function scriptTag($path): string
     {
@@ -220,14 +157,6 @@ class FOSSBillingExtension
         return sprintf('<script src="%s?%s"></script>', $path, \FOSSBilling\Version::VERSION);
     }
 
-    /**
-     * Generate a stylesheet link tag for a given asset path, ensuring that the same asset is not included multiple times.
-     *
-     * @param string $path  the path of the asset
-     * @param string $media the media attribute for the link tag (default: 'screen')
-     *
-     * @return string the generated link tag or an empty string if the asset has already been included
-     */
     #[AsTwigFilter('stylesheet_tag', isSafe: ['html'])]
     public function stylesheetTag($path, $media = 'screen'): string
     {
@@ -240,13 +169,6 @@ class FOSSBillingExtension
         return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, \FOSSBilling\Version::VERSION, $media);
     }
 
-    /**
-     * Get the time ago in a human-readable format.
-     *
-     * @param string $dateTime date and time in ISO 8601 format
-     *
-     * @return string the time ago in a human-readable format
-     */
     #[AsTwigFilter('timeago')]
     public function timeago(string $dateTime): string
     {
@@ -278,28 +200,12 @@ class FOSSBillingExtension
         return '';
     }
 
-    /**
-     * Translate a given text using the translation function.
-     *
-     * @param string|null $text the text to translate
-     *
-     * @return string the translated text
-     */
     #[AsTwigFilter('trans')]
     public function trans(?string $text): string
     {
         return __trans($text);
     }
 
-    /**
-     * Truncate a string to a specified length and append a suffix.
-     *
-     * @param string $text   the text to truncate
-     * @param int    $length the maximum length of the truncated string
-     * @param string $suffix the suffix to append if the text is truncated
-     *
-     * @return string the truncated string
-     */
     #[AsTwigFilter('truncate')]
     public function truncate(string $text, int $length = 30, string $suffix = '...'): string
     {
@@ -310,19 +216,6 @@ class FOSSBillingExtension
         return $text;
     }
 
-    /**
-     * Generate URL for a given path and query parameters. Detects the app area
-     * (admin or client) automatically, unless specified otherwise in which
-     * case uses base URL.
-     *
-     * @param Environment $env           twig environment
-     * @param string      $path          URL path
-     * @param array|null  $query         URL query parameters
-     * @param bool        $detectAppArea Whether to detect the app area
-     *                                   (admin or client). Default true.
-     *
-     * @return string the generated URL
-     */
     #[AsTwigFilter('url', isSafe: ['html'], needsEnvironment: true)]
     public function url(Environment $env, string $path, ?array $query = null, bool $detectAppArea = true): string
     {

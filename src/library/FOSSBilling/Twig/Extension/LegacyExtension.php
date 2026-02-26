@@ -16,28 +16,10 @@ use Twig\Environment;
 
 class LegacyExtension
 {
-    private ?\Pimple\Container $di = null;
-
-    /**
-     * LegacyExtension constructor.
-     *
-     * @param ?\Pimple\Container $di dependency injection container
-     */
-    public function __construct(?\Pimple\Container $di)
+    public function __construct(private ?\Pimple\Container $di)
     {
-        $this->di = $di;
     }
 
-    /**
-     * Get the country name for a given IP address.
-     *
-     * @param string $ip IP address
-     *
-     * @return string the country name associated with the IP address
-     *
-     * @throws \Exception if the IP address is invalid or if the GeoIP service
-     *                    fails
-     */
     #[AsTwigFilter('ip_country_name')]
     public function ipCountryName(string $ip): string
     {
@@ -50,41 +32,18 @@ class LegacyExtension
         }
     }
 
-    /**
-     * Get the URL for a library asset.
-     *
-     * @param string $path the path to the library asset
-     *
-     * @return string the full URL to the library asset
-     */
     #[AsTwigFilter('library_url', isSafe: ['html'])]
     public function twig_library_url($path): string
     {
         return SYSTEM_URL . 'library/' . $path;
     }
 
-    /**
-     * Get module asset URL.
-     *
-     * @param string $asset  asset file name
-     * @param string $module module name
-     *
-     * @return string the full URL to the asset
-     */
     #[AsTwigFilter('mod_asset_url')]
     public function modAssetUrl(string $asset, string $module): string
     {
         return SYSTEM_URL . 'modules/' . ucfirst($module) . "/assets/{$asset}";
     }
 
-    /**
-     * Get period title.
-     *
-     * @param Environment $env    twig environment
-     * @param string|null $period period code
-     *
-     * @return string the period title
-     */
     #[AsTwigFilter('period_title', isSafe: ['html'], needsEnvironment: true)]
     public function periodTitle(Environment $env, ?string $period): string
     {

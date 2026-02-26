@@ -272,11 +272,6 @@ $di['twig'] = $di->factory(function () use ($di) {
     return $twigFactory->createBaseEnvironment();
 });
 
-/*
- * Secure markdown converter with FOSSBilling security settings.
- *
- * @return FOSSBilling\Twig\Markdown\FOSSBillingMarkdown
- */
 $di['markdown'] = fn (): FOSSBilling\Twig\Markdown\FOSSBillingMarkdown => new FOSSBilling\Twig\Markdown\FOSSBillingMarkdown($di);
 
 /*
