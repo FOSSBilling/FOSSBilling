@@ -307,9 +307,7 @@ async function watch() {
     markdownCssContext.watch()
   ]);
 
-  themeCssContext.watch().then(() => {
-    postprocessCssFile(join(cssDir, 'huraga.css'), isProduction);
-  });
+  await postprocessCssFile(join(cssDir, 'huraga.css'), isProduction);
 
   console.log('✓ Watching for changes ...\n');
   process.stdin.resume();
