@@ -10,7 +10,6 @@
     "@melloware/coloris": "^0.25.0",
     "@tabler/core": "^1.2.0",
     "apexcharts": "^5.0.0",
-    "clipboard": "^2.0.11",
     "flag-icons": "^7.2.3",
     "litepicker": "^2.0.12",
     "sortable-tablesort": "^4.1.7"

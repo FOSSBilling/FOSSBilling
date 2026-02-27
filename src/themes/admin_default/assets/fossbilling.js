@@ -1,7 +1,6 @@
 import './js/ui/modals';
 import { initAvatars } from './js/avatar.js';
 import { coloris, init } from '@melloware/coloris';
-import ClipboardJS from "clipboard";
 import * as tabler from '@tabler/core/js/tabler.js';
 import './js/tomselect'
 import './js/datepicker'
@@ -46,15 +45,57 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Copy To Clipboard
    */
-  const clipboard = new ClipboardJS('.clipboard-copy');
-  clipboard.on('success', function (e) {
-    let originalTitle = e.trigger.dataset.bsOriginalTitle;
-    let tooltip = bootstrap.Tooltip.getInstance(e.trigger);
-    e.trigger.dataset.bsOriginalTitle = 'Copied'
-    tooltip.show();
-    setTimeout(() => {
-      e.trigger.dataset.bsOriginalTitle = originalTitle
-      tooltip.hide();
-    }, 2000);
-  })
+  document.addEventListener('click', async function(event) {
+    const button = event.target.closest('.clipboard-copy');
+    if (!button) return;
+
+    const targetSelector = button.dataset.clipboardTarget;
+    const targetElement = document.querySelector(targetSelector);
+    if (!targetElement) return;
+
+    const text = targetElement.value || targetElement.textContent || targetElement.innerText;
+    let success = false;
+
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        success = true;
+      } catch (err) {
+        // Fall through to legacy fallback
+      }
+    }
+
+    if (!success) {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        success = true;
+      } catch (err) {
+        // Fall through to error
+      }
+    }
+
+    if (success) {
+      const tooltip = bootstrap.Tooltip.getInstance(button);
+      if (!tooltip) return;
+
+      const originalTitle = button.dataset.bsOriginalTitle;
+      button.dataset.bsOriginalTitle = 'Copied';
+      tooltip.show();
+      setTimeout(() => {
+        button.dataset.bsOriginalTitle = originalTitle;
+        tooltip.hide();
+      }, 2000);
+    } else {
+      if (typeof FOSSBilling !== 'undefined' && FOSSBilling.message) {
+        FOSSBilling.message('Failed to copy to clipboard', 'error');
+      }
+    }
+  });
 });
