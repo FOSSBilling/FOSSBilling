@@ -9,6 +9,25 @@ use PHPUnit\Framework\TestCase;
 
 final class GuestTest extends TestCase
 {
+    /**
+     * Indicates whether this test class modified the "disable_public_tickets" setting
+     * and therefore needs it to be reset in tearDown().
+     *
+     * @var bool
+     */
+    private bool $restoreDisablePublicTickets = false;
+
+    protected function tearDown(): void
+    {
+        if ($this->restoreDisablePublicTickets) {
+            // Ensure that public tickets configuration is reset after tests that modify it.
+            Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => false]);
+            $this->restoreDisablePublicTickets = false;
+        }
+
+        parent::tearDown();
+    }
+
     public function testTicketCreateForGuest(): void
     {
         $result = Request::makeRequest('guest/support/ticket_create', [
@@ -27,7 +46,10 @@ final class GuestTest extends TestCase
     public function testTicketCreateForGuestDisabled(): void
     {
         // Disable public tickets
-        Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
+        $configResult = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
+        $this->assertTrue($configResult->wasSuccessful(), $configResult->generatePHPUnitMessage());
+        // Mark that we need to restore this configuration in tearDown()
+        $this->restoreDisablePublicTickets = true;
 
         // Now ensure that guest ticket creation fails when public tickets are disabled
         $result = Request::makeRequest('guest/support/ticket_create', [
@@ -39,9 +61,6 @@ final class GuestTest extends TestCase
 
         $this->assertFalse($result->wasSuccessful());
         $this->assertEquals("We currently aren't accepting support tickets from unregistered users. Please use another contact method.", $result->getErrorMessage());
-
-        // Set it back
-        Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => false]);
     }
 
     public function testTicketCreateForGuestMissingName(): void
@@ -54,6 +73,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
+        $this->assertEquals('Name is required.', $result->getErrorMessage());
     }
 
     public function testTicketCreateForGuestMissingEmail(): void
@@ -66,6 +86,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
+        $this->assertEquals('Email is required.', $result->getErrorMessage());
     }
 
     public function testTicketCreateForGuestInvalidEmail(): void
@@ -78,6 +99,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
+        $this->assertEquals('Email is invalid.', $result->getErrorMessage());
     }
 
     public function testTicketCreateForGuestEmptySubject(): void
@@ -90,6 +112,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
+        $this->assertEquals('Subject is required.', $result->getErrorMessage());
     }
 
     public function testTicketCreateForGuestEmptyMessage(): void
@@ -102,5 +125,6 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
+        $this->assertEquals('Message is required.', $result->getErrorMessage());
     }
 }
