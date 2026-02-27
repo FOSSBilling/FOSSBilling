@@ -2,7 +2,7 @@ import './js/ui/modals';
 import { initAvatars } from './js/avatar.js';
 import { coloris, init } from '@melloware/coloris';
 import * as tabler from '@tabler/core/js/tabler.js';
-import './js/tomselect'
+import './js/tomselect';
 import './js/datepicker'
 import ApexCharts from 'apexcharts';
 import './js/ui/theme_settings';
@@ -25,8 +25,23 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.js-theme-toggler').forEach(element => {
     element.addEventListener('click', event => {
       event.preventDefault();
-      localStorage.setItem('theme', element.getAttribute('href').split('=')[1]);
-      document.documentElement.setAttribute("data-bs-theme", localStorage.getItem('theme'))
+      const href = element.getAttribute('href') || '';
+      let theme = null;
+
+      // Try to extract theme value safely from href
+      if (href.includes('=')) {
+        const parts = href.split('=');
+        if (parts.length > 1 && parts[1]) {
+          theme = parts[1];
+        }
+      }
+
+      if (!theme) {
+        return;
+      }
+
+      localStorage.setItem('theme', theme);
+      document.documentElement.setAttribute('data-bs-theme', theme);
     });
   });
 
@@ -34,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Enable Bootstrap Tooltip
    */
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  const tooltipTriggerList = Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   tooltipTriggerList.forEach(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl, {
       'trigger': 'hover'
@@ -50,6 +65,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!button) return;
 
     const targetSelector = button.dataset.clipboardTarget;
+    if (typeof targetSelector !== 'string') return;
+
+    // Only allow simple ID selectors such as "#element-id"
+    if (!/^#[A-Za-z0-9_\-.]+$/.test(targetSelector)) {
+      return;
+    }
+
     const targetElement = document.querySelector(targetSelector);
     if (!targetElement) return;
 
