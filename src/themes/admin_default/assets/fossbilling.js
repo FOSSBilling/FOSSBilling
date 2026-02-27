@@ -105,6 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.js-theme-toggler').forEach(element => {
     element.addEventListener('click', event => {
       event.preventDefault();
+      // Intentionally use getAttribute('href') to read the raw attribute value
+      // instead of element.href, since we only parse a simple theme token here.
       const href = element.getAttribute('href') || '';
       let theme = null;
 
