@@ -64,6 +64,7 @@ async function copyTextToClipboard(text) {
     textarea.style.opacity = '0';
     document.body.appendChild(textarea);
     textarea.select();
+    // Intentional: use deprecated execCommand as a legacy clipboard fallback for older browsers.
     return document.execCommand('copy');
   } catch (err) {
     return false;
