@@ -213,7 +213,7 @@ CREATE TABLE `client` (
   `role` varchar(30) NOT NULL DEFAULT 'client' COMMENT 'client',
   `auth_type` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
-  `pass` varchar(255) DEFAULT NULL,
+  `password_hash` varchar(255) DEFAULT NULL,
   `salt` varchar(255) DEFAULT NULL,
   `status` varchar(30) DEFAULT 'active' COMMENT 'active, suspended, canceled',
   `email_approved` tinyint(1) DEFAULT NULL,
