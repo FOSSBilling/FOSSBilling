@@ -3,7 +3,7 @@ import { initAvatars } from './js/avatar.js';
 import { coloris, init } from '@melloware/coloris';
 import * as tabler from '@tabler/core/js/tabler.js';
 import './js/tomselect';
-import './js/datepicker'
+import './js/datepicker';
 import ApexCharts from 'apexcharts';
 import './js/ui/theme_settings';
 import './js/fossbilling';
