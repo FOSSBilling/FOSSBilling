@@ -29,7 +29,7 @@ final class GuestTest extends TestCase
         // Disable public tickets
         Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
 
-        // Now ensure
+        // Now ensure that guest ticket creation fails when public tickets are disabled
         $result = Request::makeRequest('guest/support/ticket_create', [
             'name' => 'Name',
             'email' => 'email2@example.com',
