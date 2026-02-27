@@ -126,9 +126,9 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const tooltipTriggerList = Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl, {
+    new bootstrap.Tooltip(tooltipTriggerEl, {
       'trigger': 'hover'
-    })
+    });
   });
 
 
