@@ -66,24 +66,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!success) {
+      let textarea;
       try {
-        const textarea = document.createElement('textarea');
+        textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
         textarea.style.opacity = '0';
         document.body.appendChild(textarea);
         textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-        success = true;
+        success = document.execCommand('copy');
       } catch (err) {
         // Fall through to error
+      } finally {
+        if (textarea && textarea.parentNode) {
+          textarea.parentNode.removeChild(textarea);
+        }
       }
     }
 
     if (success) {
-      const tooltip = bootstrap.Tooltip.getInstance(button);
-      if (!tooltip) return;
+      let tooltip = bootstrap.Tooltip.getInstance(button);
+      if (!tooltip) {
+        tooltip = new bootstrap.Tooltip(button, {
+          trigger: 'manual'
+        });
+      }
 
       const originalTitle = button.dataset.bsOriginalTitle;
       button.dataset.bsOriginalTitle = 'Copied';
