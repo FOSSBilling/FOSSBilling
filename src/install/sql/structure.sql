@@ -64,7 +64,7 @@ CREATE TABLE `activity_client_history` (
   `created_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
