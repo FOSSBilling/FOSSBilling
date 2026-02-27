@@ -48,6 +48,15 @@ final class GuestTest extends TestCase
         // Disable public tickets
         $configResult = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
         $this->assertTrue($configResult->wasSuccessful(), $configResult->generatePHPUnitMessage());
+
+        // Verify that the configuration change to disable public tickets was actually applied.
+        $configGetResult = Request::makeRequest('admin/extension/config_get', ['ext' => 'mod_support']);
+        $this->assertTrue($configGetResult->wasSuccessful(), $configGetResult->generatePHPUnitMessage());
+        $configData = $configGetResult->getResult();
+        $this->assertIsArray($configData);
+        $this->assertArrayHasKey('disable_public_tickets', $configData);
+        $this->assertTrue((bool) $configData['disable_public_tickets']);
+
         // Mark that we need to restore this configuration in tearDown()
         $this->restoreDisablePublicTickets = true;
 
