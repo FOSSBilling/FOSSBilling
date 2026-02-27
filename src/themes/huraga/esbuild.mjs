@@ -45,7 +45,11 @@ async function removeDirContents(dir) {
       const entryPath = join(dir, entry.name);
       await rm(entryPath, { recursive: true, force: true });
     }
-  } catch {}
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      throw error;
+    }
+  }
 }
 
 async function copyAssets(srcDir, destDir, options = {}) {
