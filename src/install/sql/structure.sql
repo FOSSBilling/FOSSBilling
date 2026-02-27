@@ -145,7 +145,7 @@ CREATE TABLE `admin_password_reset` (
     `updated_at` datetime DEFAULT NULL,
     PRIMARY KEY (`id`),
     KEY `admin_id_idx` (`admin_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
