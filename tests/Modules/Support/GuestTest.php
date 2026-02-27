@@ -21,7 +21,15 @@ final class GuestTest extends TestCase
     {
         if ($this->restoreDisablePublicTickets) {
             // Ensure that public tickets configuration is reset after tests that modify it.
-            Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => false]);
+            $configResetResult = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => false]);
+            if (!$configResetResult->wasSuccessful()) {
+                // Fail the test explicitly if configuration restoration fails to avoid test pollution.
+                $this->fail(
+                    method_exists($configResetResult, 'generatePHPUnitMessage')
+                        ? $configResetResult->generatePHPUnitMessage()
+                        : 'Failed to restore disable_public_tickets configuration in tearDown().'
+                );
+            }
             $this->restoreDisablePublicTickets = false;
         }
 
