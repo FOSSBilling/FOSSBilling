@@ -25,7 +25,7 @@ coloris({
  */
 function getClipboardTargetText(button) {
   const targetSelector = button.dataset.clipboardTarget;
-  if (typeof targetSelector !== 'string') return null;
+  if (!targetSelector) return null;
 
   // Only allow simple ID selectors such as "#element-id"
   if (!/^#[A-Za-z0-9_-]+$/.test(targetSelector)) {
