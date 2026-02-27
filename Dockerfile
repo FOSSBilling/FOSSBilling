@@ -24,4 +24,4 @@ RUN echo '*/5 * * * * /usr/local/bin/php /var/www/html/cron.php' > /tmp/www-data
   && rm /tmp/www-data.cron
 
 # Start cron and then run Apache in the foreground when the container starts.
-CMD cron && apache2-foreground
+CMD ["sh", "-c", "cron && exec apache2-foreground"]
