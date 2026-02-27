@@ -73,7 +73,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
-        $this->assertEquals('Name is required.', $result->getErrorMessage());
+        $this->assertEquals('Please enter your name', $result->getErrorMessage());
     }
 
     public function testTicketCreateForGuestMissingEmail(): void
@@ -86,7 +86,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
-        $this->assertEquals('Email is required.', $result->getErrorMessage());
+        $this->assertEquals('Please enter your email address', $result->getErrorMessage());
     }
 
     public function testTicketCreateForGuestInvalidEmail(): void
@@ -99,7 +99,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
-        $this->assertEquals('Email is invalid.', $result->getErrorMessage());
+        $this->assertEquals('Email address is invalid', $result->getErrorMessage());
     }
 
     public function testTicketCreateForGuestEmptySubject(): void
@@ -112,7 +112,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
-        $this->assertEquals('Subject is required.', $result->getErrorMessage());
+        $this->assertEquals('Please enter the subject', $result->getErrorMessage());
     }
 
     public function testTicketCreateForGuestEmptyMessage(): void
@@ -125,6 +125,6 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
-        $this->assertEquals('Message is required.', $result->getErrorMessage());
+        $this->assertEquals('Please enter your message', $result->getErrorMessage());
     }
 }
