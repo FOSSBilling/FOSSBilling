@@ -234,7 +234,7 @@ CREATE TABLE `client` (
   `state` varchar(100) DEFAULT NULL,
   `postcode` varchar(100) DEFAULT NULL,
   `country` varchar(100) DEFAULT NULL,
-  `document_type` ENUM('passport') DEFAULT NULL,
+  `document_type` varchar(50) DEFAULT NULL,
   `document_nr` varchar(20) DEFAULT NULL,
   `notes` text,
   `currency` varchar(10) DEFAULT NULL,
