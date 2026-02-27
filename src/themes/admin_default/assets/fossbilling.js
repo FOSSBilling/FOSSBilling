@@ -35,7 +35,11 @@ function getClipboardTargetText(button) {
   const targetElement = document.querySelector(targetSelector);
   if (!targetElement) return null;
 
-  return targetElement.value || targetElement.textContent;
+  if ('value' in targetElement) {
+    return targetElement.value;
+  }
+
+  return targetElement.textContent;
 }
 
 /**
