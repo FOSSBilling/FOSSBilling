@@ -19,7 +19,6 @@
     "url": "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "workspaces": [
-    "frontend-build-utils",
     "src/themes/huraga",
     "src/themes/admin_default",
     "src/modules/Wysiwyg"

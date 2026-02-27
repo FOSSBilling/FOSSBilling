@@ -19,6 +19,7 @@
     "autoprefixer": "10.4.24",
     "esbuild": "0.27.3",
     "postcss": "8.5.6",
+    "purgecss": "8.0.0",
     "sass": "1.97.3",
     "svg-sprite": "2.0.4"
   }
