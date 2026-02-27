@@ -77,7 +77,11 @@ async function postprocessCssFile(cssPath, isProduction) {
   if (!isProduction) {
     try {
       prevMap = await readFile(mapPath, 'utf8');
-    } catch {}
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
+    }
   }
 
   const result = await postcss([autoprefixer]).process(css, {
