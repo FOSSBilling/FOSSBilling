@@ -186,7 +186,9 @@ async function build() {
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'info',
-      define: { 'process.env.NODE_ENV': isProduction ? '"production"' : '"development"' }
+      define: { 'process.env.NODE_ENV': isProduction ? '"production"' : '"development"' },
+      treeShaking: true,
+      legalComments: 'none'
     });
 
     await postprocessCssFile(join(cssDir, 'huraga.css'), isProduction);
