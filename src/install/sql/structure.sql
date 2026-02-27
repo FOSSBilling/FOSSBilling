@@ -99,7 +99,6 @@ CREATE TABLE `admin` (
   `admin_group_id` bigint(20) DEFAULT '1',
   `email` varchar(255) DEFAULT NULL,
   `pass` varchar(255) DEFAULT NULL,
-  `salt` varchar(255) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
   `signature` varchar(255) DEFAULT NULL,
   `protected` tinyint(1) DEFAULT '0',
