@@ -48,7 +48,7 @@
         <li><strong>Status:</strong> {{ticket.status|title}}</li>
     </ul>
 
-    <a href='{{ "support/ticket/#{ticket.id}"|url(detect_app_area: false) }}' target="_blank">Reply<a>
+    <a href='{{ "support/ticket/#{ticket.id}"|url(detect_app_area: false) }}' target="_blank">Reply</a>
 
     <p>You may <a href="{{ 'staff/login'|url(query: { 'email': c.email }, detect_app_area: false) }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(detect_app_area: false) }}" target="_blank">edit your profile.</a>
 
