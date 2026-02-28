@@ -191,25 +191,27 @@ final class ServiceTest extends \BBTestCase
             '_client_id' => 1,
         ];
 
-        $twigMock = $this->getMockBuilder(Environment::class)->disableOriginalConstructor()->getMock();
-        $twigMock->expects($this->atLeastOnce())
-            ->method('addGlobal');
-        $twigMock->method('createTemplate')
-            ->will($this->throwException(new \Error('Error')));
-
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn(new \Model_Client());
 
+        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
+        $sessionMock->method('get')->willReturn('test_csrf_token');
+
+        $guestModel = new \Model_Guest();
+        $apiGuest = new \Api_Handler($guestModel);
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['twig'] = $twigMock;
+        $di['session'] = $sessionMock;
+        $di['api_guest'] = $apiGuest;
         $di['api_client'] = new \Model_Client();
         $this->service->setDi($di);
 
-        $this->expectException(\Error::class);
-        $this->service->renderString('test', false, $vars);
+        // Use an invalid Twig template that will cause a syntax error
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->service->renderTplString('{% invalid syntax %}', false, $vars);
     }
 
     public function testRenderStringTemplate(): void
@@ -218,27 +220,25 @@ final class ServiceTest extends \BBTestCase
             '_client_id' => 1,
         ];
 
-        $twigMock = $this->getMockBuilder(Environment::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $twigMock->expects($this->atLeastOnce())
-            ->method('addGlobal');
-        $twigMock->method('render')
-            ->willReturn('');
-
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn(new \Model_Client());
 
+        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
+        $sessionMock->method('get')->willReturn('test_csrf_token');
+
+        $guestModel = new \Model_Guest();
+        $apiGuest = new \Api_Handler($guestModel);
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['twig'] = $twigMock;
+        $di['session'] = $sessionMock;
+        $di['api_guest'] = $apiGuest;
         $di['api_client'] = new \Model_Client();
         $this->service->setDi($di);
 
-        $string = $this->service->renderString('test', true, $vars);
+        $string = $this->service->renderTplString('test', true, $vars);
         $this->assertEquals($string, 'test');
     }
 

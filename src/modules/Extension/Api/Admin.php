@@ -62,8 +62,9 @@ class Admin extends \Api_Abstract
     public function get_extension_readme($data): string
     {
         $extensionInfo = $this->di['extension_manager']->getExtension($data['extension_id']);
+        $markdown = new \FOSSBilling\Twig\Markdown\FOSSBillingMarkdown($this->di);
 
-        return $this->di['markdown']->convert($extensionInfo['readme']);
+        return $markdown->convert($extensionInfo['readme']);
     }
 
     /**

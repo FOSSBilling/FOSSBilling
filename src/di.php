@@ -261,20 +261,6 @@ $di['cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('sf_cache', 24 
 $di['auth'] = fn (): Box_Authorization => new Box_Authorization($di);
 
 /*
- * Creates new base Twig environment configured for FOSSBilling.
- * Used as a fallback for contexts that don't need admin/client specific setup.
- *
- * @return \Twig\Environment The new Twig environment that was just created.
- **/
-$di['twig'] = $di->factory(function () use ($di) {
-    $twigFactory = new FOSSBilling\Twig\TwigFactory($di);
-
-    return $twigFactory->createBaseEnvironment();
-});
-
-$di['markdown'] = fn (): FOSSBilling\Twig\Markdown\FOSSBillingMarkdown => new FOSSBilling\Twig\Markdown\FOSSBillingMarkdown($di);
-
-/*
  * Checks whether a client is logged in and throws an exception or redirects to the login page if not.
  *
  * @param void

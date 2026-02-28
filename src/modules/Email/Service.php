@@ -162,7 +162,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if (isset($data['to_staff']) && $data['to_staff']) {
             $staffService = $this->di['mod_service']('staff');
             $staff = $staffService->getList(['status' => 'active', 'no_cron' => true]);
-            $vars['staff'] = $staff['list'][0];
+            $staffMember = $staff['list'][0];
+            // Remove sensitive fields from admin data
+            unset($staffMember['pass'], $staffMember['salt'], $staffMember['api_token']);
+            $vars['staff'] = $staffMember;
         }
 
         // add additional variables to template
@@ -176,7 +179,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         // send email to admins
         if (isset($data['to_admin']) && $data['to_admin'] > 0) {
             $oneStaff = $this->di['db']->findOne('Admin', 'id=?', [$data['to_admin']]);
-            $vars['c'] = $oneStaff;
+            // Convert to array with only safe fields
+            $vars['c'] = [
+                'id' => $oneStaff->id,
+                'email' => $oneStaff->email,
+                'name' => $oneStaff->name,
+                'signature' => $oneStaff->signature,
+            ];
         }
 
         $db = $this->di['db'];
@@ -336,8 +345,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     private function _parse(\Model_EmailTemplate $t, $vars): array
     {
         $systemService = $this->di['mod_service']('System');
-        $pc = $systemService->renderString($t->content, false, $vars);
-        $ps = $systemService->renderString($t->subject, false, $vars);
+        $pc = $systemService->renderEmailTplString($t->content, $vars);
+        $ps = $systemService->renderEmailTplString($t->subject, $vars);
 
         return [$ps, $pc];
     }
@@ -471,7 +480,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             // check subject syntax before saving
             // should throw exception if render fails
             $vars['_tpl'] = $subject;
-            $systemService->renderString($subject, false, $vars);
+            $systemService->renderEmailTplString($subject, $vars);
             $model->subject = $subject;
         }
 
@@ -479,7 +488,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             // check content syntax before saving
             // should throw exception if render fails
             $vars['_tpl'] = $content;
-            $systemService->renderString($content, false, $vars);
+            $systemService->renderEmailTplString($content, $vars);
 
             $model->content = $content;
         }

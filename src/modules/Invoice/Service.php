@@ -1345,7 +1345,8 @@ class Service implements InjectionAwareInterface
         ];
 
         $loader = new FilesystemLoader(Path::join(__DIR__, 'pdf_template'));
-        $twig = $this->di['twig'];
+        $twigFactory = new \FOSSBilling\Twig\TwigFactory($this->di);
+        $twig = $twigFactory->createBaseEnvironment();
         $twig->setLoader($loader);
         $html = $twig->render($this->getPdfTemplate(), $vars);
 

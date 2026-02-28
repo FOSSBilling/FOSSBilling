@@ -578,9 +578,9 @@ final class Api_AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['twig'] = $twig;
 
-        $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->onlyMethods(['renderString'])->getMock();
+        $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->onlyMethods(['renderEmailTplString'])->getMock();
         $systemService->expects($this->atLeastOnce())
-            ->method('renderString')
+            ->method('renderEmailTplString')
             ->willReturn('rendered');
 
         $di['mod_service'] = $di->protect(fn () => $systemService);

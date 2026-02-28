@@ -34,6 +34,7 @@ use Twig\Extra\Markdown\MarkdownExtension;
 use Twig\Extra\Markdown\MarkdownRuntime;
 use Twig\Loader\ArrayLoader;
 use Twig\Profiler\Profile;
+use Twig\Extension\SandboxExtension;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\RuntimeLoader\RuntimeLoaderInterface;
 
@@ -162,6 +163,83 @@ class TwigFactory
 
         // Configure Debugbar and profiling.
         $this->configureDebugging($twig, $debugBar);
+
+        return $twig;
+    }
+
+    /**
+     * Create sandboxed Twig environment for email template rendering.
+     * Used for database-stored templates (email templates, mass mailer).
+     */
+    public function createEmailEnvironment(): Environment
+    {
+        // Get internationalisation settings from config
+        $locale = i18n::getActiveLocale();
+        $timezone = Config::getProperty('i18n.timezone', 'UTC');
+        $dateFormat = strtoupper(Config::getProperty('i18n.date_format', 'MEDIUM'));
+        $timeFormat = strtoupper(Config::getProperty('i18n.time_format', 'SHORT'));
+        $dateTimePattern = Config::getProperty('i18n.datetime_pattern');
+
+        // Create Twig environment with ArrayLoader
+        $loader = new ArrayLoader();
+        $twig = new Environment($loader, $this->baseConfig);
+
+        // Configure core settings
+        $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
+        $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
+
+        // Add only essential extensions for email templates
+        $twig->addExtension(new StringLoaderExtension());
+        $twig->addExtension(new MarkdownExtension());
+
+        // Intl extension for date/currency formatting
+        $dateFormatter = new \IntlDateFormatter(
+            $locale,
+            constant("\IntlDateFormatter::$dateFormat"),
+            constant("\IntlDateFormatter::$timeFormat"),
+            $timezone,
+            null,
+            $dateTimePattern
+        );
+        $twig->addExtension(new IntlExtension($dateFormatter));
+
+        // FOSSBilling extensions for email-specific filters
+        $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
+        $twig->addExtension(new AttributeExtension(LegacyExtension::class));
+
+        // Minimal runtime loader for email environment only
+        $runtimeLoader = new class($this->di) implements RuntimeLoaderInterface {
+            private \Pimple\Container $di;
+
+            public function __construct(\Pimple\Container $di)
+            {
+                $this->di = $di;
+            }
+
+            public function load($class)
+            {
+                return match ($class) {
+                    MarkdownRuntime::class => new MarkdownRuntime(new FOSSBillingMarkdown($this->di)),
+                    FOSSBillingExtension::class => new FOSSBillingExtension($this->di),
+                    LegacyExtension::class => new LegacyExtension($this->di),
+                    default => null,
+                };
+            }
+        };
+        $twig->addRuntimeLoader($runtimeLoader);
+
+        // Add sandbox extension with policy, enabled globally
+        $policy = EmailPolicy::create();
+        $sandbox = new SandboxExtension($policy, true);
+        $twig->addExtension($sandbox);
+
+        // Add minimal globals needed for email templates
+        // Convert guest to array to prevent object method access in sandbox
+        $apiGuest = $this->di['api_guest'];
+        $twig->addGlobal('guest', [
+            'system_company' => $apiGuest->system_company(),
+        ]);
+        $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
 
         return $twig;
     }

@@ -99,7 +99,7 @@ class Admin extends \Api_Abstract
         $vars = $data;
         unset($vars['_tpl'], $vars['_try']);
 
-        return $this->getService()->renderString($tpl, $try_render, $vars);
+        return $this->getService()->renderTplString($tpl, $try_render, $vars);
     }
 
     /**

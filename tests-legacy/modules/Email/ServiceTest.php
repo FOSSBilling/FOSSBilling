@@ -451,7 +451,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn('value');
 
         $system->expects($this->atLeastOnce())
-            ->method('renderString')
+            ->method('renderEmailTplString')
             ->willReturn('value');
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
@@ -783,7 +783,7 @@ final class ServiceTest extends \BBTestCase
 
         $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->$templateRenderExpects())
-            ->method('renderString');
+            ->method('renderEmailTplString');
 
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 

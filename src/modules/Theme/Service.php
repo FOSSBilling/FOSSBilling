@@ -245,7 +245,7 @@ class Service implements InjectionAwareInterface
             $vars['settings'] = $settings;
             $vars['_tpl'] = $file->getContents();
             $systemService = $this->di['mod_service']('system');
-            $data = $systemService->renderString($vars['_tpl'], false, $vars);
+            $data = $systemService->renderTplString($vars['_tpl'], false, $vars);
 
             $this->filesystem->dumpFile($realFile, $data);
         }
