@@ -13,7 +13,7 @@
     "tom-select": "^2.3.1"
   },
   "devDependencies": {
-    "autoprefixer": "10.4.24",
+    "autoprefixer": "10.4.27",
     "esbuild": "0.27.3",
     "postcss": "8.5.6",
     "purgecss": "8.0.0",
