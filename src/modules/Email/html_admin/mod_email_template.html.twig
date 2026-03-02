@@ -193,18 +193,16 @@ Link to login form: <{{ 'login'|url }}>
 
 Company signature: {{ guest.system_company.signature }}
 
+FOSSBilling version: {{ FOSSBillingVersion }}
+
+Today's date: {{ now|date('Y-m-d') }}
+
 You can event use IF statements in email templates: {% if 1 == 2 %}This will never show{% else %}Of course 1 is not equal 2{% endif %}
 
 ***
 
-Accessing Admin API can get information about your FOSSBilling, for example how many clients you have:
-{% set stats =  admin.stats_get_summary %}
-**Total clients:** {{ stats.clients_total }}
-
 {# Comments in email templates. This text is not visible #}
 {# Uncomment the line below to see what is the output #}
-
-{#<pre>{% debug stats %}</pre>#}
 {% endapply %}{% endautoescape %}</textarea>
                         </div>
 
