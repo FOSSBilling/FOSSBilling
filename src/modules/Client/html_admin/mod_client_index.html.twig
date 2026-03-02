@@ -315,7 +315,7 @@
                                     </svg>
                                 </a>
                                 <a class="btn btn-icon"
-                                    {{ fb_api_link({href: 'client/group_delete'|url(query: {'id': id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                                    {{ fb_api_link({href: 'client/group_delete'|api_url(query: {'id': id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>

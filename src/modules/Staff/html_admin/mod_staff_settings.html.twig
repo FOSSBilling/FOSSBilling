@@ -81,7 +81,7 @@
                                     </td>
                                     <td>{{ member.email }}</td>
                                     <td>
-                                        <a href='{{ 'staff/group/#{member.group.id}'|url }}'>{{ member.group.name }}</a>
+                                        <a href='{{ "staff/group/#{member.group.id}"|url }}'>{{ member.group.name }}</a>
                                     </td>
                                     <td>
                                         {% if member.status == 'active' %}
