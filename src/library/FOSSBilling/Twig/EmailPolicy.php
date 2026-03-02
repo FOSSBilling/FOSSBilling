@@ -24,19 +24,21 @@ final class EmailPolicy
      */
     public static function create(): SecurityPolicy
     {
-        $tags = ['if', 'for', 'block'];
+        $tags = ['if', 'for', 'block', 'apply', 'set'];
 
         $filters = [
             // Twig Core - Security
             'escape', 'e', 'raw',
             // Twig Core - Utility
-            'default', 'title', 'length',
+            'default', 'title', 'length', 'date',
             // IntlExtension
             'format_currency', 'format_date',
             // FOSSBillingExtension
             'url', 'daysleft', 'trans',
             // LegacyExtension
             'period_title',
+            // MarkdownExtension
+            'markdown_to_html',
         ];
 
         $functions = [];

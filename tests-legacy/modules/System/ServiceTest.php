@@ -277,6 +277,44 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame('Every month', $result);
     }
 
+    public function testRenderEmailTemplateSupportsMarkdownAndDateInSandbox(): void
+    {
+        $apiGuest = new class() {
+            public function system_company(): array
+            {
+                return ['name' => 'FOSSBilling'];
+            }
+        };
+        $themeService = new class() {
+            public function getDefaultMarkdownAttributes(): array
+            {
+                return [];
+            }
+        };
+
+        $di = $this->getDi();
+        $di['api_guest'] = $apiGuest;
+        $di['mod_service'] = $di->protect(fn (string $service) => match ($service) {
+            'theme' => $themeService,
+            default => throw new \RuntimeException(sprintf('Unexpected mod_service request: %s', $service)),
+        });
+
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        $twig = $twigFactory->createEmailEnvironment();
+        $result = $twig->createTemplate('{% apply markdown_to_html %}**Bolded**{% endapply %} {{ "2026-03-02"|date("Y-m-d") }}')->render([]);
+
+        $this->assertStringContainsString('<strong>Bolded</strong>', $result);
+        $this->assertStringContainsString('2026-03-02', $result);
+    }
+
     public function testClearCache(): void
     {
         // Use a temporary directory for testing instead of PATH_CACHE
