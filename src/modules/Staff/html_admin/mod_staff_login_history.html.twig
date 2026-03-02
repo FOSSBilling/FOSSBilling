@@ -41,7 +41,7 @@
                 </a>
             </td>
             <td>{{ mf.ip_lookup_link(event.ip) }}</td>
-            <td>{{ event.ip|ip_country_name|default('Unknown') }}</td>
+            <td>{{ event.ip|ip_country_name|default('Unknown'|trans) }}</td>
             <td>{{ event.created_at|format_datetime }}</td>
         </tr>
         {% else %}

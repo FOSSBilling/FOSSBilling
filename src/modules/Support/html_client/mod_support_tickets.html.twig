@@ -55,7 +55,7 @@
                                 {% if ticket.status == 'closed' %}
                                     <a href='{{ "support/ticket/#{ticket.id}"|url }}' class="btn btn-sm btn-outline-secondary">{{ 'View'|trans }}</a>
                                 {% else %}
-                                    <a href='{{ "support/ticket/#{ticket.id}"|url }}/#reply-to' class="btn btn-sm btn-outline-info">{{ 'Reply'|trans }}</a>
+                                    <a href='{{ "support/ticket/#{ticket.id}"|url }}#reply-to' class="btn btn-sm btn-outline-info">{{ 'Reply'|trans }}</a>
                                 {% endif %}
                             </td>
                         </tr>
