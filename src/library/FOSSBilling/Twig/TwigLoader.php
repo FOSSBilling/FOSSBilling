@@ -59,14 +59,14 @@ class TwigLoader extends FilesystemLoader
     private function getModuleTemplatePaths(AppArea $appArea): array
     {
         $paths = [];
-        $htmlDir = "html_{$appArea->value}";
+        $areaDir = $appArea->value;
 
         $finder = new Finder();
-        $finder->directories()->in(PATH_MODS)->depth('== 1')->ignoreDotFiles(true)->name($htmlDir);
+        $finder->directories()->in(PATH_MODS)->depth('== 2')->ignoreDotFiles(true)->name($areaDir);
 
         foreach ($finder as $dir) {
             $moduleTemplatePath = $dir->getPathName();
-            if (is_dir($moduleTemplatePath)) {
+            if (is_dir($moduleTemplatePath) && basename(dirname($moduleTemplatePath)) === 'templates') {
                 $paths[] = $moduleTemplatePath;
             }
         }

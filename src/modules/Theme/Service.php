@@ -407,7 +407,7 @@ class Service implements InjectionAwareInterface
         }
         $list = array_unique($list);
         foreach ($list as $mod) {
-            $p = Path::join(PATH_MODS, ucfirst((string) $mod), $client ? 'html_client' : 'html_admin');
+            $p = Path::join(PATH_MODS, ucfirst((string) $mod), $client ? 'templates/client' : 'templates/admin');
             if ($this->filesystem->exists($p)) {
                 $paths[] = $p;
             }

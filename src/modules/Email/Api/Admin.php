@@ -330,7 +330,7 @@ class Admin extends \Api_Abstract
 
     /**
      * Send email template to email, client or staff members. If template with code does not exist,
-     * it will be created. Default email template file must exist at mod_example/html_email/mod_example_code.html.twig file.
+     * it will be created. Default email template file must exist at mod_example/templates/email/mod_example_code.html.twig file.
      *
      * @optional string $to_staff - True to send to all active staff members. Default false
      * @optional string $to_client - Set client ID to send email to client. Default null

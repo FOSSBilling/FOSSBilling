@@ -161,7 +161,7 @@ class Module implements InjectionAwareInterface
 
     public function hasSettingsPage(): bool
     {
-        $path = Path::join($this->getModulePath(), "html_admin/mod_{$this->module}_settings.html.twig");
+        $path = Path::join($this->getModulePath(), "templates/admin/mod_{$this->module}_settings.html.twig");
 
         return $this->filesystem->exists($path);
     }
