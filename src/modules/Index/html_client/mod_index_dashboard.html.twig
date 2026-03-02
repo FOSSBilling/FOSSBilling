@@ -158,7 +158,7 @@
                                                 <span class="text-secondary small" title="{{ order.updated_at|format_date }}">{{ order.updated_at|timeago }} {{ 'ago'|trans }}</span>
                                             </div>
                                             <div>
-                                                <span class="badge {% if order.status == 'active' %}text-bg-success{% elseif order.status == 'pending_setup' %}text-bg-warning{% elseif order.status == 'failed_setup' or order.status == 'suspended' or order.status == 'failed_renew' %}text-bg-danger{% elseif order.status == 'canceled' %}text-bg-secondary{% endif %}">{{ mf.status_name(order.status) }}</span>
+                                                {{ mf.status_badge(order.status, 'order') }}
                                             </div>
                                         </a>
                                     {% endfor %}
@@ -190,7 +190,7 @@
                                                 <span class="text-secondary small" title="{{ ticket.updated_at|format_date }}">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
                                             </div>
                                             <div>
-                                                <span class="badge {% if ticket.status == 'open' %}text-bg-success{% elseif ticket.status == 'on_hold' %}text-bg-warning{% elseif ticket.status == 'closed' %}text-bg-secondary{% endif %}">{{ mf.status_name(ticket.status) }}</span>
+                                                {{ mf.status_badge(ticket.status, 'ticket') }}
                                             </div>
                                         </a>
                                     {% endfor %}

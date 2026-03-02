@@ -39,7 +39,7 @@
                 <tr>
                     <td>{{ 'Status'|trans }}</td>
                     <td>
-                        <div class="badge {% if ticket.status=='open' %}badge-success{% elseif ticket.status == 'on_hold' %}badge-warning{% endif %}">{{ mf.status_name(ticket.status) }}</div>
+                        {{ mf.status_badge(ticket.status, 'ticket') }}
                     </td>
                 </tr>
 
@@ -64,7 +64,7 @@
                             {{ message.author.name }}
                         </span>
                         <br/>
-                        <div class="db-avatar img-thumbnail d-none d-md-block" data-avatar-seed="{{ message.author.email|hash('xxh128') }}" data-avatar-size="60" style="width: 60px; height: 60px;"></div>
+                        {{ mf.avatar(message.author.email, 60, 'db-avatar img-thumbnail d-none d-md-block') }}
                     </div>
                     <div class="col-10">
                         <header>#{{ i+1 }} | {{ message.created_at|format_date }}

@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% import "macro_functions.html.twig" as mf %}
 
 {% block meta_title %}{{ 'Profile details'|trans }}{% endblock %}
 {% block page_header %}{{ 'User profile settings'|trans }}{% endblock %}
@@ -40,7 +41,7 @@
                         <form method="post" action="client/profile/update" id="profile-update" {{ fb_api_form({message: 'Profile Updated'|trans}) }}>
                             <div class="row mb-4 d-flex justify-content-center">
                                 <div class="col-md-2">
-                                    <div class="db-avatar img-thumbnail" data-avatar-seed="{{ profile.email|hash('xxh128') }}" data-avatar-size="100" style="width: 100px; height: 100px;"></div>
+                                    {{ mf.avatar(profile.email, 100, 'db-avatar img-thumbnail') }}
                                 </div>
                                 <div class="col-md-10 d-flex align-items-center">
                                     {{ 'Avatar is generated locally based on your email address.'|trans }}

@@ -279,7 +279,7 @@
                             </td>
                             <td class="w-1">
                                 <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>
-                                    <span class="db-avatar avatar avatar-xs" data-avatar-seed="{{ invoice.buyer.email|hash('xxh128') }}" data-avatar-size="24"></span>
+                                    {{ mf.avatar(invoice.buyer.email, 24, 'db-avatar avatar avatar-xs') }}
                                 </a>
                             </td>
                             <td>
@@ -474,7 +474,7 @@
                             <tr>
                                 <td class="w-1">
                                     <a href='{{ "client/manage/#{event.client.id}"|url }}'>
-                                        <span class="db-avatar avatar avatar-xs" data-avatar-seed="{{ event.client.email|hash('xxh128') }}" data-avatar-size="24"></span>
+                                        {{ mf.avatar(event.client.email, 24, 'db-avatar avatar avatar-xs') }}
                                     </a>
                                 </td>
                                 <td>
@@ -501,7 +501,7 @@
                             <tr>
                                 <td class="w-1">
                                     <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
-                                        <span class="db-avatar avatar avatar-xs" data-avatar-seed="{{ event.staff.email|hash('xxh128') }}" data-avatar-size="24"></span>
+                                        {{ mf.avatar(event.staff.email, 24, 'db-avatar avatar avatar-xs') }}
                                     </a>
                                 </td>
                                 <td>

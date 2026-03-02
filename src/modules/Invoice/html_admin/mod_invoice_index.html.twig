@@ -224,7 +224,7 @@
                             </td>
                             <td>
                                 <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>
-                                    <span class="db-avatar avatar avatar-xs" data-avatar-seed="{{ invoice.buyer.email|hash('xxh128') }}" data-avatar-size="24"></span>
+                                    {{ mf.avatar(invoice.buyer.email, 24, 'db-avatar avatar avatar-xs') }}
                                 </a>
                             </td>
                             <td>

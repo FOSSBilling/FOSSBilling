@@ -220,7 +220,7 @@
                         <td>
                             <div class="d-flex py-1 align-items-center">
                                 <a href='{{ "client/manage/#{ticket.client_id}"|url }}'>
-                                    <span class="db-avatar avatar me-2" data-avatar-seed="{{ ticket.client.email|hash('xxh128') }}" data-avatar-size="40"></span>
+                                    {{ mf.avatar(ticket.client.email, 40, 'db-avatar avatar me-2') }}
                                 </a>
                                 <div class="flex-fill">
                                     <div class="font-weight-medium">

@@ -205,14 +205,14 @@
             <td>
                 {% if event.client %}
                 <a href='{{ "client/manage/#{event.client.id}"|url }}'>
-                    <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-avatar-seed="{{ event.client.email|hash('xxh128') }}" data-avatar-size="20"></span>
+                    {{ mf.avatar(event.client.email, 20, 'db-avatar avatar avatar-sm d-none d-md-inline-block') }}
                 </a>
                 {% elseif event.staff %}
                 <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
-                    <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-avatar-seed="{{ event.staff.email|hash('xxh128') }}" data-avatar-size="24"></span>
+                    {{ mf.avatar(event.staff.email, 24, 'db-avatar avatar avatar-sm d-none d-md-inline-block') }}
                 </a>
                 {% else %}
-                <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-avatar-seed="{{ 'guest@fossbilling.org'|hash('xxh128') }}" data-avatar-size="24"></span>
+                {{ mf.avatar('guest@fossbilling.org', 24, 'db-avatar avatar avatar-sm d-none d-md-inline-block') }}
                 {% endif %}
             </td>
             <td>

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% import "macro_functions.html.twig" as mf %}
 <html lang="en" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
@@ -114,7 +115,7 @@
                                 {% if client %}
                                     <div class="dropdown client-dropdown">
                                         <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            <div class="db-avatar rounded-circle" data-avatar-seed="{{ profile.email|hash('xxh128') }}" data-avatar-size="25" style="width: 25px; height: 25px; display: inline-block;"></div>
+                                            {{ mf.avatar(profile.email, 25, 'rounded-circle') }}
                                             <span class="ms-1">{% if profile.company %}{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }}){% else %}{{ profile.first_name }} {{ profile.last_name }}{% endif %}</span>
                                         </button>
                                         <ul class="dropdown-menu">

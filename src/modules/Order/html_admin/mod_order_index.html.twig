@@ -198,7 +198,7 @@
                                 <td><a href='{{ "order/manage/#{order.id}"|url }}'>#{{ order.id }}</a></td>
                                 <td>
                                     <a href='{{ "client/manage/#{order.client_id}"|url }}'>
-                                        <span class="db-avatar avatar avatar-xs" data-avatar-seed="{{ order.client.email|hash('xxh128') }}" data-avatar-size="24"></span>
+                                        {{ mf.avatar(order.client.email, 24, 'db-avatar avatar avatar-xs') }}
                                     </a>
                                 </td>
                                 <td>

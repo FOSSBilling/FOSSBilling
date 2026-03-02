@@ -41,7 +41,7 @@
                 <tr>
                     <td>
                         <a href='{{ "staff/manage/#{member.id}"|url }}'>
-                            <div class="db-avatar" data-avatar-seed="{{ member.email|hash('xxh128') }}" data-avatar-size="25" style="width: 25px; height: 25px;"></div>
+                            {{ mf.avatar(member.email, 25, 'db-avatar') }}
                         </a>
                     </td>
                     <td>{{ member.name }}</td>
@@ -49,7 +49,7 @@
                     <td>
                         <a href='{{ "staff/group/#{member.group.id}"|url }}'>{{ member.group.name }}</a>
                     </td>
-                    <td>{{ mf.status_name(member.status) }}</td>
+                    <td>{{ mf.status_badge(member.status, 'generic') }}</td>
                     <td style="width: 13%" class="actions">
                         <a class="btn btn14" href='{{ "staff/manage/#{member.id}"|url }}'>
                             <img src="assets/icons/edit.svg" alt="">

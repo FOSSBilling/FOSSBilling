@@ -109,11 +109,11 @@
                      <div class="nav-item dropdown">
                         <a class="nav-link d-flex lh-1 text-reset p-0"
                            href="{{ 'staff/profile'|url }}"
-                           data-bs-toggle="dropdown"
-                           aria-label="{{ 'Open user menu'|trans }}"
-                           aria-expanded="false">
-                           <span class="db-avatar avatar avatar-sm" data-avatar-seed="{{ profile.email|hash('xxh128') }}" data-avatar-size="32"></span>
-                           <div class="d-none d-xl-block ps-2">
+                            data-bs-toggle="dropdown"
+                            aria-label="{{ 'Open user menu'|trans }}"
+                            aria-expanded="false">
+                            {{ mf.avatar(profile.email, 32, 'db-avatar avatar avatar-sm') }}
+                            <div class="d-none d-xl-block ps-2">
                               <div>{{ profile.name }}</div>
                               <div class="mt-1 small text-muted">{{ profile.role }}</div>
                            </div>

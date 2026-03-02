@@ -60,7 +60,7 @@
                         <tr>
                             <td><label>{{ 'Order status'|trans }}</label></td>
                             <td>
-                                <span class="badge {% if order.status == 'active' %}text-bg-success{% elseif order.status == 'pending_setup' %}text-bg-warning{% elseif order.status == 'failed_setup' or order.status == 'suspended' or order.status == 'failed_renew' %}text-bg-danger{% elseif order.status == 'canceled' %}text-bg-secondary{% endif %}">{{ mf.status_name(order.status) }}</span>
+                                {{ mf.status_badge(order.status, 'order') }}
                             </td>
                         </tr>
 
@@ -152,7 +152,7 @@
                                     <td>{{ addon.period|period_title }}</td>
                                     <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
                                     <td>
-                                        <span class="badge {% if addon.status == 'active' %}text-bg-success{% elseif addon.status == 'pending_setup' %}text-bg-warning{% endif %}">{{ mf.status_name(addon.status) }}</span>
+                                        {{ mf.status_badge(addon.status, 'order') }}
                                     </td>
                                     <td class="actions">
                                         <a class="btn btn-outline-primary btn-sm" href='{{ "order/service/manage/#{addon.id}"|url }}'>{{ 'Manage'|trans }}</a>

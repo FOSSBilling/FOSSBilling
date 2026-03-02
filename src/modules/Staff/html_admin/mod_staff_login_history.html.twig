@@ -32,7 +32,7 @@
             <td>{{ event.id }}</td>
             <td>
                 <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
-                    <span class="db-avatar avatar avatar-xs d-none d-md-inline-block" data-avatar-seed="{{ event.staff.email|hash('xxh128') }}" data-avatar-size="24"></span>
+                    {{ mf.avatar(event.staff.email, 24, 'db-avatar avatar avatar-xs d-none d-md-inline-block') }}
                 </a>
             </td>
             <td>

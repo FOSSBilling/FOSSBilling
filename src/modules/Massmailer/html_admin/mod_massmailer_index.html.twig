@@ -51,7 +51,7 @@
                                 <tr>
                                     <td>{{ msg.subject }}</td>
                                     <td>{{ msg.from_name }} <br/>{{ msg.from_email }}</td>
-                                    <td>{{ mf.status_name(msg.status) }}</td>
+                                    <td>{{ mf.status_badge(msg.status, 'generic') }}</td>
                                     <td class="text-end">
                                         <a class="btn btn-icon" href="{{ 'massmailer/copy'|api_url(query: {'id' : msg.id }) }}"
                                            {{ fb_api_link({redirect: 'massmailer'|url}) }}>
