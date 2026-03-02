@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace FOSSBilling\Twig\Extension;
 
 use Twig\Attribute\AsTwigFilter;
-use Twig\Environment;
 
 class LegacyExtension
 {
@@ -44,12 +43,9 @@ class LegacyExtension
         return SYSTEM_URL . 'modules/' . ucfirst($module) . "/assets/{$asset}";
     }
 
-    #[AsTwigFilter('period_title', isSafe: ['html'], needsEnvironment: true)]
-    public function periodTitle(Environment $env, ?string $period): string
+    #[AsTwigFilter('period_title', isSafe: ['html'])]
+    public function periodTitle(?string $period): string
     {
-        $globals = $env->getGlobals();
-        $apiGuest = $globals['guest'];
-
-        return $apiGuest->system_period_title(['code' => $period]);
+        return $this->di['api_guest']->system_period_title(['code' => $period]);
     }
 }

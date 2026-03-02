@@ -119,6 +119,7 @@ class TwigFactory
 
         // Add admin-specific globals.
         $twig->addGlobal('theme', $theme);
+        $twig->addGlobal('current_theme', $theme['code']);
         $twig->addGlobal('app_area', AppArea::ADMIN->value);
 
         if ($this->di['auth']->isAdminLoggedIn()) {

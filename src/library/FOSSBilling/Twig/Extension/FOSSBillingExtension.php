@@ -117,8 +117,9 @@ class FOSSBillingExtension
     public function assetUrl(Environment $env, $asset): string
     {
         $globals = $env->getGlobals();
+        $themeCode = $globals['current_theme'] ?? ($globals['theme']['code'] ?? null);
 
-        return SYSTEM_URL . 'themes/' . $globals['current_theme'] . '/assets/' . $asset;
+        return SYSTEM_URL . 'themes/' . $themeCode . '/assets/' . $asset;
     }
 
     #[AsTwigFilter('daysleft')]

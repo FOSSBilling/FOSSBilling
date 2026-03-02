@@ -242,6 +242,41 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($string, 'test');
     }
 
+    public function testRenderEmailTemplateSupportsPeriodTitleInSandbox(): void
+    {
+        $apiGuest = new class() {
+            public function system_company(): array
+            {
+                return ['name' => 'FOSSBilling'];
+            }
+
+            public function system_period_title(array $data): string
+            {
+                return match ($data['code'] ?? null) {
+                    '1M' => 'Every month',
+                    default => 'Unknown period',
+                };
+            }
+        };
+
+        $di = $this->getDi();
+        $di['api_guest'] = $apiGuest;
+
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        $twig = $twigFactory->createEmailEnvironment();
+        $result = $twig->createTemplate('{{ "1M"|period_title }}')->render([]);
+
+        $this->assertSame('Every month', $result);
+    }
+
     public function testClearCache(): void
     {
         // Use a temporary directory for testing instead of PATH_CACHE
