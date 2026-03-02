@@ -60,16 +60,6 @@
                     </svg>
                 </a>
             </li>
-        {% endif %}
-
-            {% if paginator.currentpage != paginator.numpages %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage + 1 })) }}">
-                    <svg class="icon">
-                        <use xlink:href="#chevron-right" />
-                    </svg>
-                </a>
-            </li>
             {% endif %}
         </ul>
     </nav>
