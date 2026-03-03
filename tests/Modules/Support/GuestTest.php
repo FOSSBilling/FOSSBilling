@@ -12,8 +12,6 @@ final class GuestTest extends TestCase
     /**
      * Indicates whether this test class modified the "disable_public_tickets" setting
      * and therefore needs it to be reset in tearDown().
-     *
-     * @var bool
      */
     private bool $restoreDisablePublicTickets = false;
 
