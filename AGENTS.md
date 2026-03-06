@@ -11,6 +11,9 @@ FOSSBilling is a free and open-source billing and client management solution des
     * Prefer Symfony components wherever you can.
   * [Twig](https://twig.symfony.com/): Template engine for rendering views
     * API endpoints are injected as parameters to Twig. See the "Interacting with the FOSSBilling API" section.
+    * Twig environments are created via `TwigFactory` at `src/library/FOSSBilling/Twig/TwigFactory.php`.
+    * Three environment types: **admin**, **client**, and **email** (sandboxed for security).
+    * Email templates use a sandboxed environment (`EmailPolicy.php`) that restricts allowed tags/filters/functions.
   * [RedBeanPHP](https://redbeanphp.com/): ORM for database interactions in legacy modules.
   * [Doctrine DBAL/ORM](https://doctrine-project.org/): ORM and DBAL for modern modules.
     * FOSSBilling is in the process of migrating modules and core parts from RedBeanPHP to Doctrine one by one.
@@ -49,6 +52,7 @@ FOSSBilling follows a modular architecture with clear separation of concerns:
 * **Modules:** Located in `src/modules/` - Two types of modules exist:
   * **Service Modules:** Represent products that can be sold (e.g., hosting packages, downloadable products). These modules' names must start with "Service", such as "Servicehosting".
   * **Extension Modules:** Extend FOSSBilling with additional functionality
+  * Module templates are organized in `templates/admin/`, `templates/client/`, and `templates/email/` subdirectories.
 * **Themes:** Located in `src/themes/` for customizing the user interface
 * **Libraries:** Core libraries and third-party integrations in `src/library/`
 * **Configuration:** Environment-specific configurations and dependency injection setup
@@ -198,6 +202,10 @@ tests-legacy/                  # Legacy PHPUnit tests
   ```
 
 * Check the available Twig filters and functions in `src/library/FOSSBilling/Twig/Extension/FOSSBillingExtension.php` and `src/library/FOSSBilling/Twig/Extension/LegacyExtension.php`. Use these where applicable.
+  * `ApiExtension.php` provides `fb_api`, `fb_api_form`, `fb_api_link` helpers and `|api_url` filter.
+  * Twig extensions use PHP 8 attributes (`#[AsTwigFunction]`, `#[AsTwigFilter]`).
+* Global Twig variables include: `app_area` ('admin' or 'client'), `current_theme`, `guest`, `CSRFToken`, `request`, `FOSSBillingVersion`.
+* Email templates are rendered in a sandboxed Twig environment. Use `|markdown_to_html` filter for markdown content. The sandbox restricts available tags/filters - see `EmailPolicy.php` for allowed operations.
 
 ### Interacting with the FOSSBilling API
 
