@@ -111,6 +111,8 @@
         </form>
     </div>
 </div>
+{% endmacro table_search %}
+
 {% macro wysiwyg(selector) %}
     {% if guest.extension_is_on({"mod":"wysiwyg"}) %}
         {% include "mod_wysiwyg_js.html.twig" with {"class":selector|trim('.#')} %}
@@ -120,65 +122,65 @@
 {% endmacro %}
 
 {% macro avatar(email, size, classes, fallback) %}
-{% if email %}
-<span class="db-avatar {{ classes|default('avatar') }}" data-avatar-seed="{{ email|hash('xxh128') }}" data-avatar-size="{{ size|default(40) }}"></span>
-{% elseif fallback %}
-{{ fallback }}
-{% endif %}
+    {% if email %}
+        <span class="db-avatar {{ classes|default('avatar') }}" data-avatar-seed="{{ email|hash('xxh128') }}" data-avatar-size="{{ size|default(40) }}"></span>
+    {% elseif fallback %}
+        {{ fallback }}
+    {% endif %}
 {% endmacro %}
 
 {% macro status_badge(status, type) %}
-{% if type == 'order' %}
-    {% if status == 'active' %}{% set badge_class = 'text-bg-success' %}
-    {% elseif status == 'pending_setup' %}{% set badge_class = 'text-bg-warning' %}
-    {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' %}{% set badge_class = 'text-bg-danger' %}
-    {% elseif status == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
-    {% else %}{% set badge_class = 'text-bg-primary' %}
+    {% if type == 'order' %}
+        {% if status == 'active' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'pending_setup' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' %}{% set badge_class = 'text-bg-danger' %}
+        {% elseif status == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'ticket' %}
+        {% if status == 'open' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'on_hold' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status == 'closed' %}{% set badge_class = 'text-bg-secondary' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'invoice' %}
+        {% if status == 'paid' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'unpaid' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status == 'refunded' %}{% set badge_class = 'text-bg-info' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'client' %}
+        {% if status == 'active' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'suspended' %}{% set badge_class = 'text-bg-danger' %}
+        {% elseif status == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'subscription' %}
+        {% if status == 'active' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
+        {% elseif status == 'past_due' %}{% set badge_class = 'text-bg-danger' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'post' %}
+        {% if status == 'published' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'draft' %}{% set badge_class = 'text-bg-secondary' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'tx' %}
+        {% if status == 'success' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'failed' %}{% set badge_class = 'text-bg-danger' %}
+        {% elseif status == 'pending' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status == 'refunded' %}{% set badge_class = 'text-bg-info' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% else %}
+        {% if status == 'active' or status == 'open' or status == 'paid' or status == 'published' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'pending_setup' or status == 'on_hold' or status == 'unpaid' or status == 'pending' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' or status == 'canceled' or status == 'closed' or status == 'failed' %}{% set badge_class = 'text-bg-danger' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
     {% endif %}
-{% elseif type == 'ticket' %}
-    {% if status == 'open' %}{% set badge_class = 'text-bg-success' %}
-    {% elseif status == 'on_hold' %}{% set badge_class = 'text-bg-warning' %}
-    {% elseif status == 'closed' %}{% set badge_class = 'text-bg-secondary' %}
-    {% else %}{% set badge_class = 'text-bg-primary' %}
-    {% endif %}
-{% elseif type == 'invoice' %}
-    {% if status == 'paid' %}{% set badge_class = 'text-bg-success' %}
-    {% elseif status == 'unpaid' %}{% set badge_class = 'text-bg-warning' %}
-    {% elseif status == 'refunded' %}{% set badge_class = 'text-bg-info' %}
-    {% else %}{% set badge_class = 'text-bg-primary' %}
-    {% endif %}
-{% elseif type == 'client' %}
-    {% if status == 'active' %}{% set badge_class = 'text-bg-success' %}
-    {% elseif status == 'suspended' %}{% set badge_class = 'text-bg-danger' %}
-    {% elseif status == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
-    {% else %}{% set badge_class = 'text-bg-primary' %}
-    {% endif %}
-{% elseif type == 'subscription' %}
-    {% if status == 'active' %}{% set badge_class = 'text-bg-success' %}
-    {% elseif status == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
-    {% elseif status == 'past_due' %}{% set badge_class = 'text-bg-danger' %}
-    {% else %}{% set badge_class = 'text-bg-primary' %}
-    {% endif %}
-{% elseif type == 'post' %}
-    {% if status == 'published' %}{% set badge_class = 'text-bg-success' %}
-    {% elseif status == 'draft' %}{% set badge_class = 'text-bg-secondary' %}
-    {% else %}{% set badge_class = 'text-bg-primary' %}
-    {% endif %}
-{% elseif type == 'tx' %}
-    {% if status == 'success' %}{% set badge_class = 'text-bg-success' %}
-    {% elseif status == 'failed' %}{% set badge_class = 'text-bg-danger' %}
-    {% elseif status == 'pending' %}{% set badge_class = 'text-bg-warning' %}
-    {% elseif status == 'refunded' %}{% set badge_class = 'text-bg-info' %}
-    {% else %}{% set badge_class = 'text-bg-primary' %}
-    {% endif %}
-{% else %}
-    {% if status == 'active' or status == 'open' or status == 'paid' or status == 'published' %}{% set badge_class = 'text-bg-success' %}
-    {% elseif status == 'pending_setup' or status == 'on_hold' or status == 'unpaid' or status == 'pending' %}{% set badge_class = 'text-bg-warning' %}
-    {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' or status == 'canceled' or status == 'closed' or status == 'failed' %}{% set badge_class = 'text-bg-danger' %}
-    {% else %}{% set badge_class = 'text-bg-primary' %}
-    {% endif %}
-{% endif %}
-<span class="badge {{ badge_class }}">{{ _self.status_name(status) }}</span>
+    <span class="badge {{ badge_class }}">{{ _self.status_name(status) }}</span>
 {% endmacro %}
 
 {% macro empty_list(colspan, message) %}

@@ -396,14 +396,14 @@ class Service implements InjectionAwareInterface
         return $details;
     }
 
-    public function getClientBalance(\Model_Client $c)
+    public function getClientBalance(\Model_Client $c): float
     {
         $sql = 'SELECT SUM(amount) as client_total
                 FROM client_balance
                 WHERE client_id = ?
                 GROUP BY client_id';
 
-        return $this->di['db']->getCell($sql, [$c->id]);
+        return (float) $this->di['db']->getCell($sql, [$c->id]);
     }
 
     public function get($data)

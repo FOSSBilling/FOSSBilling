@@ -12,12 +12,15 @@ declare(strict_types=1);
 namespace FOSSBilling\Twig;
 
 use FOSSBilling\Twig\Enum\AppArea;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 use Twig\Loader\FilesystemLoader;
 
 class TwigLoader extends FilesystemLoader
 {
+    private readonly Filesystem $filesystem;
+
     /**
      * Create new TwigLoader with FOSSBilling-specific path configuration.
      *
@@ -28,14 +31,16 @@ class TwigLoader extends FilesystemLoader
     {
         parent::__construct();
 
+        $this->filesystem = new Filesystem();
+
         // Load path in priority order: custom theme files, default theme, module templates.
         $paths = [];
         $customPath = Path::join($themePath, 'html_custom');
-        if (is_dir($customPath)) {
+        if ($this->filesystem->exists($customPath)) {
             $paths[] = $customPath;
         }
         $defaultPath = Path::join($themePath, 'html');
-        if (is_dir($defaultPath)) {
+        if ($this->filesystem->exists($defaultPath)) {
             $paths[] = $defaultPath;
         }
         $paths = array_merge($paths, $this->getModuleTemplatePaths($appArea));
@@ -44,9 +49,36 @@ class TwigLoader extends FilesystemLoader
 
         // Add additional path to load symbols if they exist.
         $symbolPath = Path::join($themePath, 'build', 'symbol');
-        if (is_dir($symbolPath)) {
+        if ($this->filesystem->exists($symbolPath)) {
             $this->prependPath($symbolPath, 'symbol');
         }
+    }
+
+    /**
+     * Override findTemplate to handle module icon naming convention.
+     * Matches the original Box_TwigLoader behavior for icon.svg files.
+     */
+    protected function findTemplate(string $name, bool $throw = true)
+    {
+        // Normalize name (same as parent's private normalizeName)
+        $name = preg_replace('#/{2,}#', '/', str_replace('\\', '/', $name));
+
+        if (isset($this->cache[$name])) {
+            return $this->cache[$name];
+        }
+
+        // Handle module icons: mod_ModuleName_icon.svg -> PATH_MODS/ModuleName/icon.svg
+        // Also handles mod_ModuleName_filename.svg -> PATH_MODS/ModuleName/filename.svg
+        if (preg_match('/^mod_([A-Za-z0-9]+)_(.+\.svg)$/', $name, $matches)) {
+            $moduleName = $matches[1];
+            $iconFile = $matches[2];
+            $iconPath = Path::join(PATH_MODS, $moduleName, $iconFile);
+            if ($this->filesystem->exists($iconPath)) {
+                return $this->cache[$name] = $iconPath;
+            }
+        }
+
+        return parent::findTemplate($name, $throw);
     }
 
     /**
@@ -66,7 +98,8 @@ class TwigLoader extends FilesystemLoader
 
         foreach ($finder as $dir) {
             $moduleTemplatePath = $dir->getPathName();
-            if (is_dir($moduleTemplatePath) && basename(dirname($moduleTemplatePath)) === 'templates') {
+            $parentDir = Path::getDirectory($moduleTemplatePath);
+            if ($this->filesystem->exists($moduleTemplatePath) && basename($parentDir) === 'templates') {
                 $paths[] = $moduleTemplatePath;
             }
         }

@@ -9,6 +9,7 @@ FOSSBilling is a free and open-source billing and client management solution des
 * **Backend:** PHP 8.3+ with dependencies managed by Composer. Key libraries include:
   * [Symfony Components](https://symfony.com/): Console, cache, filesystem, HTTP client, and other core functionalities. See `composer.json` for a list of imported components.
     * Prefer Symfony components wherever you can.
+    * Use `Filesystem`, `Path`, and `Finder` for filesystem operations instead of native PHP functions (e.g., `$filesystem->exists()` instead of `file_exists()`, `Finder` instead of `glob()`).
   * [Twig](https://twig.symfony.com/): Template engine for rendering views
     * API endpoints are injected as parameters to Twig. See the "Interacting with the FOSSBilling API" section.
     * Twig environments are created via `TwigFactory` at `src/library/FOSSBilling/Twig/TwigFactory.php`.
@@ -25,13 +26,13 @@ FOSSBilling is a free and open-source billing and client management solution des
     * When refactoring API endpoints, check how the `$di['pager']` works in `src/library/FOSSBilling/Pagination.php`. `paginateDoctrineQuery()` is the replacement for `getPaginatedResultSet()`.
   * [Monolog](https://github.com/Seldaek/monolog): Logging framework. Used via `$di['logger']` (`/src/library/FOSSBilling/Monolog.php`).
   * [dompdf](https://github.com/dompdf/dompdf): PDF generation for invoices and documents
-  * [Pimple](https://github.com/silexphp/Pimple): Dependency injection container, see `/src/di.php`.
+  * [Pimple](https://github.com/silexphp/Pimple): Dependency injection container, see `src/di.php`.
 * **Frontend:** Modern JavaScript and CSS with npm package management. Key dependencies include:
   * [Tabler.io](https://tabler.io): CSS framework for responsive design, based on [Bootstrap 5](https://getbootstrap.com/)
   * [Tom Select](https://tom-select.js.org/): Enhanced select boxes with search and tagging
   * [Autosize](http://www.jacklmoore.com/autosize/): Automatic textarea resizing
   * [Flag Icons](https://flagicons.lipis.dev/): Country flag icon library
-  * jQuery has been fully removed from the codebase. Use vanilla JavaScript for all new code.
+  * Use vanilla JavaScript for all JS code.
 * **Build Tools:**
   * [esbuild](https://esbuild.github.io/): Fast JavaScript/CSS bundler and minifier
   * [Sass](https://sass-lang.com/): CSS preprocessing
@@ -117,11 +118,13 @@ npm run build-wysiwyg
 ```
 
 **Theme Structure:**
-- **admin_default**: Uses `esbuild.mjs` with SVG sprite generation, SCSS compilation, and multiple asset types
-- **huraga**: Uses simplified `esbuild.mjs` for basic JS/CSS bundling
-- **Wysiwyg**: Uses esbuild to build CKEditor from source
+
+* **admin_default**: Uses `esbuild.mjs` with SVG sprite generation, SCSS compilation, and multiple asset types
+* **huraga**: Uses simplified `esbuild.mjs` for basic JS/CSS bundling
+* **Wysiwyg**: Uses esbuild to build CKEditor from source
 
 **Development Mode:**
+
 ```bash
 # Watch mode for active development (rebuilds on file changes)
 cd src/themes/admin_default && npm run dev
@@ -193,7 +196,7 @@ tests-legacy/                  # Legacy PHPUnit tests
 
 ### Front-end Guidelines
 
-* Reuse svg files in the `admin_default` theme. Icons are compiled from the `src/themes/admin_default/assets/icons` directory and can be referenced from within the Twig template like so:
+* `admin_default` theme icons are compiled from the `src/themes/admin_default/assets/icons` directory and can be referenced from within the Twig template like so:
 
   ```html
   <svg class="icon">
@@ -216,15 +219,10 @@ tests-legacy/                  # Legacy PHPUnit tests
     * `{{ admin.support_ticket_get_list({ 'status': 'active' }) }}` => Reads into /api/admin/support/ticket_get_list?status=active
     * `{{ client.order_get({ 'id': 1 }) }}` => Reads into /api/client/order/get?id=1
     * `{{ guest.system_version }}` => Reads into /api/guest/system/version
-* If you need to interact with the API for means other than reading data, use the FOSSBilling API Wrapper.
-  * It is located in /src/library/Api/API.js
-  * It has easy methods for interacting with the API
-  * It automatically appends the CSRFToken parameter to the request data, you don't need to define it additionally.
-* If you are using an HTML form to put/update data, you should use the `api-form` convention.
-  * For details on how it works, examine the /src/themes/admin_default/assets/js/fossbilling.js file, especially the `apiForm` method.
-  * You can read other modules' templates/admin templates to see how it's used
-  * The `api-form` can handle most of the create/update tasks, so try using it before resorting to manual API calls.
-* You also should use `api-link` wherever you can when making simple API calls. Read other modules' templates/admin templates to see how it's used
+* If you need to interact with the API for means other than reading data, use the FOSSBilling API Wrapper in `src/library/Api/API.js`. It provides `API.admin`, `API.client`, and `API.guest` namespaces with `get`, `post`, `put`, `delete`, `patch` methods. CSRFToken is automatically appended.
+* For HTML forms that submit to the API, use the `fb_api_form()` Twig function. Example: `<form {{ fb_api_form({message: 'Saved'|trans}) }}>`
+* For links that trigger API calls, use the `fb_api_link()` Twig function. Example: `<a href="..." {{ fb_api_link({modal: {type: 'confirm'}}) }}>`
+* Use the `|api_url` filter to generate API URLs. Example: `{{ 'client/delete'|api_url({id: 1}) }}`
 
 ### Contributing Workflow
 

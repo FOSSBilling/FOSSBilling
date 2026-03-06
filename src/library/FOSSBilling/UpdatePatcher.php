@@ -14,6 +14,7 @@ namespace FOSSBilling;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Uid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
@@ -530,13 +531,14 @@ class UpdatePatcher implements InjectionAwareInterface
                 $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
 
                 if ($filesystem->exists($oldUploadsPath) && $filesystem->exists($newUploadsPath)) {
-                    foreach (glob($oldUploadsPath . '/*') as $oldFile) {
-                        if (is_file($oldFile)) {
-                            $filename = basename($oldFile);
-                            $newFilePath = Path::join($newUploadsPath, $filename);
-                            if (!$filesystem->exists($newFilePath)) {
-                                $filesystem->rename($oldFile, $newFilePath);
-                            }
+                    $finder = new Finder();
+                    $finder->files()->in($oldUploadsPath)->depth('== 0');
+
+                    foreach ($finder as $file) {
+                        $filename = $file->getBasename();
+                        $newFilePath = Path::join($newUploadsPath, $filename);
+                        if (!$filesystem->exists($newFilePath)) {
+                            $filesystem->rename($file->getPathname(), $newFilePath);
                         }
                     }
                 }

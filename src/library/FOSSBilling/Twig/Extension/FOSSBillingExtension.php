@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Twig\Extension;
 
 use FOSSBilling\Environment as AppEnvironment;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Twig\Attribute\AsTwigFilter;
 use Twig\Attribute\AsTwigFunction;
@@ -105,12 +106,13 @@ class FOSSBillingExtension
         }
 
         $spritePath = Path::join(PATH_THEMES, $themeCode, 'assets/build/symbol/icons-sprite.svg');
+        $filesystem = new Filesystem();
 
-        if (!file_exists($spritePath)) {
+        if (!$filesystem->exists($spritePath)) {
             return '';
         }
 
-        return file_get_contents($spritePath);
+        return $filesystem->readFile($spritePath);
     }
 
     #[AsTwigFilter('asset_url', isSafe: ['html'], needsEnvironment: true)]
