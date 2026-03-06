@@ -505,13 +505,13 @@ class Service
 
             return $template->render($vars);
         } catch (\Twig\Sandbox\SecurityError $e) {
-            throw new \FOSSBilling\InformationException(
-                'Email template contains disallowed Twig syntax: ' . $e->getMessage()
-            );
+            $this->di['logger']->setChannel('security')->warning('Email template sandbox violation', [
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new \FOSSBilling\InformationException('Email template contains disallowed Twig syntax: ' . $e->getMessage());
         } catch (\Twig\Error\SyntaxError $e) {
-            throw new \FOSSBilling\InformationException(
-                'Email template syntax error: ' . $e->getMessage()
-            );
+            throw new \FOSSBilling\InformationException('Email template syntax error: ' . $e->getMessage());
         }
     }
 

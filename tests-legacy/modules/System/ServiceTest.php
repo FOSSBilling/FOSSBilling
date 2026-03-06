@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Box\Mod\System;
 
 use PHPUnit\Framework\Attributes\Group;
-use Twig\Environment;
 
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
@@ -244,7 +243,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testRenderEmailTemplateSupportsPeriodTitleInSandbox(): void
     {
-        $apiGuest = new class() {
+        $apiGuest = new class {
             public function system_company(): array
             {
                 return ['name' => 'FOSSBilling'];
@@ -279,13 +278,13 @@ final class ServiceTest extends \BBTestCase
 
     public function testRenderEmailTemplateSupportsMarkdownAndDateInSandbox(): void
     {
-        $apiGuest = new class() {
+        $apiGuest = new class {
             public function system_company(): array
             {
                 return ['name' => 'FOSSBilling'];
             }
         };
-        $themeService = new class() {
+        $themeService = new class {
             public function getDefaultMarkdownAttributes(): array
             {
                 return [];
@@ -313,6 +312,137 @@ final class ServiceTest extends \BBTestCase
 
         $this->assertStringContainsString('<strong>Bolded</strong>', $result);
         $this->assertStringContainsString('2026-03-02', $result);
+    }
+
+    public function testRenderEmailTemplateBlocksSetTag(): void
+    {
+        $this->expectException(\Twig\Sandbox\SecurityNotAllowedTagError::class);
+        $this->expectExceptionMessage('Tag "set" is not allowed');
+
+        $this->renderEmailTemplateWithSandbox("{% set x = 'malicious' %}{{ x }}");
+    }
+
+    public function testRenderEmailTemplateBlocksFunctionCalls(): void
+    {
+        $this->expectException(\Twig\Sandbox\SecurityNotAllowedFunctionError::class);
+        $this->expectExceptionMessage('Function "max" is not allowed');
+
+        $this->renderEmailTemplateWithSandbox('{{ max(1, 2, 3) }}');
+    }
+
+    public function testRenderEmailTemplateBlocksMethodCalls(): void
+    {
+        $this->expectException(\Twig\Sandbox\SecurityNotAllowedMethodError::class);
+        $this->expectExceptionMessage('is not allowed');
+
+        $object = new class {
+            public function dangerousMethod(): string
+            {
+                return 'pwned';
+            }
+        };
+        $this->renderEmailTemplateWithSandbox('{{ obj.dangerousMethod() }}', ['obj' => $object]);
+    }
+
+    public function testRenderEmailTemplateGuestGlobalIsRestricted(): void
+    {
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'Test Company'];
+            }
+
+            public function system_params(): array
+            {
+                return ['secret' => 'value'];
+            }
+        };
+
+        $di = $this->getDi();
+        $di['api_guest'] = $apiGuest;
+
+        $result = $this->renderEmailTemplateWithSandbox('{{ guest.system_company.name }}', [], $di);
+        $this->assertSame('Test Company', $result);
+    }
+
+    public function testRenderEmailTemplateBlocksIncludeTag(): void
+    {
+        $this->expectException(\Twig\Sandbox\SecurityNotAllowedTagError::class);
+        $this->expectExceptionMessage('Tag "include" is not allowed');
+
+        $this->renderEmailTemplateWithSandbox("{% include 'some_file.html' %}");
+    }
+
+    public function testRenderEmailTemplateBlocksImportTag(): void
+    {
+        $this->expectException(\Twig\Sandbox\SecurityNotAllowedTagError::class);
+        $this->expectExceptionMessage('Tag "import" is not allowed');
+
+        $this->renderEmailTemplateWithSandbox("{% import 'macros.html' as macros %}");
+    }
+
+    public function testRenderEmailTemplateBlocksExtendsTag(): void
+    {
+        // Extends is blocked by the ArrayLoader not having the template,
+        // but the sandbox would also block it if it got that far
+        $this->expectException(\Twig\Error\LoaderError::class);
+
+        $this->renderEmailTemplateWithSandbox("{% extends 'base.html' %}");
+    }
+
+    public function testRenderEmailTemplateUrlFilterWithNamedArguments(): void
+    {
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'Test'];
+            }
+        };
+
+        $urlMock = $this->createMock(\Box_Url::class);
+        $urlMock->method('link')
+            ->willReturn('http://example.com/login?email=test%40example.com');
+
+        $di = $this->getDi();
+        $di['api_guest'] = $apiGuest;
+        $di['url'] = $urlMock;
+
+        $result = $this->renderEmailTemplateWithSandbox(
+            "{{ 'login'|url(query: { 'email': 'test@example.com' }, detect_app_area: false) }}",
+            [],
+            $di
+        );
+
+        $this->assertSame('http://example.com/login?email=test%40example.com', $result);
+    }
+
+    private function renderEmailTemplateWithSandbox(string $template, array $vars = [], ?\Pimple\Container $di = null): string
+    {
+        $di ??= $this->getDi();
+        if (!isset($di['api_guest'])) {
+            $di['api_guest'] = new class {
+                public function system_company(): array
+                {
+                    return ['name' => 'Test'];
+                }
+            };
+        }
+        if (!isset($di['logger'])) {
+            $di['logger'] = $this->createMock(\Box_Log::class);
+        }
+
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        $twig = $twigFactory->createEmailEnvironment();
+
+        return $twig->createTemplate($template)->render($vars);
     }
 
     public function testClearCache(): void

@@ -24,7 +24,7 @@ final class EmailPolicy
      */
     public static function create(): SecurityPolicy
     {
-        $tags = ['if', 'for', 'block', 'apply', 'set'];
+        $tags = ['if', 'for', 'block', 'apply'];
 
         $filters = [
             // Twig Core - Security

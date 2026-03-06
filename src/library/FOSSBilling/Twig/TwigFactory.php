@@ -28,13 +28,13 @@ use Twig\Extension\AttributeExtension;
 use Twig\Extension\CoreExtension;
 use Twig\Extension\DebugExtension;
 use Twig\Extension\ProfilerExtension;
+use Twig\Extension\SandboxExtension;
 use Twig\Extension\StringLoaderExtension;
 use Twig\Extra\Intl\IntlExtension;
 use Twig\Extra\Markdown\MarkdownExtension;
 use Twig\Extra\Markdown\MarkdownRuntime;
 use Twig\Loader\ArrayLoader;
 use Twig\Profiler\Profile;
-use Twig\Extension\SandboxExtension;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\RuntimeLoader\RuntimeLoaderInterface;
 
@@ -221,7 +221,6 @@ class TwigFactory
             {
                 return match ($class) {
                     MarkdownRuntime::class => new MarkdownRuntime(new FOSSBillingMarkdown($this->di)),
-                    ApiExtension::class => new ApiExtension($this->di),
                     FOSSBillingExtension::class => new FOSSBillingExtension($this->di),
                     LegacyExtension::class => new LegacyExtension($this->di),
                     default => null,
