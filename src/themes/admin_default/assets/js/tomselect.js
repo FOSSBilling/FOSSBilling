@@ -1,4 +1,5 @@
 import TomSelect from 'tom-select';
+import { getCSRFToken, getBaseURL } from './utils';
 globalThis.TomSelect = TomSelect;
 
 // Unified template function for TomSelect options
@@ -69,18 +70,13 @@ document.addEventListener('DOMContentLoaded', () => {
         searchField: ["label", "value"],
         load: (query, callback) => {
           try {
-            const restUrl = new URL(Tools.getBaseURL(autocompleteSelectorEl.dataset.resturl));
+            const restUrl = new URL(getBaseURL(autocompleteSelectorEl.dataset.resturl));
             restUrl.searchParams.append("search", query);
-
-            // Add CSRF token from cookie
-            const csrfTokenMatch = document.cookie.match(/csrf_token=([^;]+)/);
-            const csrfToken = csrfTokenMatch ? csrfTokenMatch[1] : null;
-
             restUrl.searchParams.append("per_page", 5);
 
             fetch(restUrl, {
               headers: {
-                'X-CSRF-Token': csrfToken || '',
+                'X-CSRF-Token': getCSRFToken() || '',
               }
             })
               .then((response) => {
@@ -151,12 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         finalUrl.searchParams.append('id', value);
 
-        const csrfTokenMatch = document.cookie.match(/csrf_token=([^;]+)/);
-        const csrfToken = csrfTokenMatch ? csrfTokenMatch[1] : null;
-
         fetch(finalUrl, {
           headers: {
-            'X-CSRF-Token': csrfToken || '',
+            'X-CSRF-Token': getCSRFToken() || '',
           }
         })
           .then((response) => {

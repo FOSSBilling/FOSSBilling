@@ -13,8 +13,8 @@
  * @returns {string|null} CSRF token or null if not found
  */
 export function getCSRFToken() {
-  const match = document.cookie.match(/csrf_token=([^;]+)/);
-  return match ? match[1] : null;
+  const match = document.cookie.match(/csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
 /**
