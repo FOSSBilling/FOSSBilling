@@ -326,15 +326,20 @@
     </div>
 {% endblock %}
 
- {% block js%}
+{% block js %}
 <script>
     function onAfterInvoicePrepared(id) {
         window.location = "{{ 'invoice/manage/'|alink }}/" + id;
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        const invoiceForm = document.getElementById('tab-new').querySelector('form');
         const productSelect = document.getElementById('product_id');
-        const form = document.querySelector('form[action*="/api/admin/invoice/prepare"]');
+        let tomSelectInstance = null;
+
+        if (productSelect && productSelect.tomselect) {
+            tomSelectInstance = productSelect.tomselect;
+        }
 
         if (productSelect) {
             productSelect.addEventListener('change', function() {
@@ -346,65 +351,130 @@
                 const productId = selectedOption.value;
                 const productTitle = selectedOption.text;
 
-                // Check if product items container exists
+                const productsList = document.getElementById('products-list');
+                if (productsList) {
+                    const existingProduct = productsList.querySelector(`[data-product-id="${productId}"]`);
+                    if (existingProduct) {
+                        FOSSBilling.message("{{ 'This product has already been added'|trans }}", 'warning');
+                        if (tomSelectInstance) {
+                            tomSelectInstance.clear();
+                        }
+                        return;
+                    }
+                }
+
                 let itemsContainer = document.getElementById('selected-product-items');
                 if (!itemsContainer) {
                     itemsContainer = document.createElement('div');
                     itemsContainer.id = 'selected-product-items';
                     itemsContainer.className = 'card-body border-top';
-                    itemsContainer.innerHTML = `
-                        <h6 class="mb-3">{{ 'Selected products to be added as invoice items'|trans }}</h6>
-                        <div id="products-list"></div>
-                    `;
-                    form.querySelector('.card-body').appendChild(itemsContainer);
+                    itemsContainer.innerHTML = '<h6 class="mb-3">{{ 'Selected products to be added as invoice items'|trans }}</h6><div id="products-list"></div>';
+                    invoiceForm.querySelector('.card-body').appendChild(itemsContainer);
                 }
 
-                // Add product to the list
-                const productsList = document.getElementById('products-list');
                 const productDiv = document.createElement('div');
                 productDiv.className = 'mb-3 row align-items-center';
                 productDiv.dataset.productId = productId;
-                productDiv.dataset.productTitle = productTitle;
-                productDiv.innerHTML = `
-                    <div class="col">
-                        <input type="text" name="products[${productId}][title]" value="${productTitle}" class="form-control" readonly>
-                    </div>
-                    <div class="col-3">
-                        <input type="number" name="products[${productId}][quantity]" value="1" min="1" class="form-control" placeholder="{{ 'Quantity'|trans }}">
-                    </div>
-                    <div class="col-3">
-                        <input type="number" name="products[${productId}][price]" step="0.01" class="form-control" placeholder="{{ 'Price'|trans }}">
-                    </div>
-                    <div class="col-1">
-                        <button type="button" class="btn btn-icon btn-danger" onclick="this.closest('.row').remove()">
-                            <svg class="icon">
-                                <use xlink:href="#delete" />
-                            </svg>
-                        </button>
-                    </div>
-                `;
-                productsList.appendChild(productDiv);
+
+                const titleCol = document.createElement('div');
+                titleCol.className = 'col';
+                const titleInput = document.createElement('input');
+                titleInput.type = 'text';
+                titleInput.name = `products[${productId}][title]`;
+                titleInput.value = productTitle;
+                titleInput.className = 'form-control';
+                titleInput.readOnly = true;
+                titleCol.appendChild(titleInput);
+
+                const qtyCol = document.createElement('div');
+                qtyCol.className = 'col-3';
+                const qtyInput = document.createElement('input');
+                qtyInput.type = 'number';
+                qtyInput.name = `products[${productId}][quantity]`;
+                qtyInput.value = '1';
+                qtyInput.min = '1';
+                qtyInput.className = 'form-control';
+                qtyInput.placeholder = "{{ 'Quantity'|trans }}";
+                qtyCol.appendChild(qtyInput);
+
+                const priceCol = document.createElement('div');
+                priceCol.className = 'col-3';
+                const priceInput = document.createElement('input');
+                priceInput.type = 'number';
+                priceInput.name = `products[${productId}][price]`;
+                priceInput.step = '0.01';
+                priceInput.className = 'form-control';
+                priceInput.placeholder = "{{ 'Price'|trans }}";
+                priceCol.appendChild(priceInput);
+
+                const deleteCol = document.createElement('div');
+                deleteCol.className = 'col-1';
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'btn btn-icon btn-danger';
+                deleteBtn.innerHTML = '<svg class="icon"><use xlink:href="#delete" /></svg>';
+                deleteBtn.addEventListener('click', function() {
+                    productDiv.remove();
+                });
+                deleteCol.appendChild(deleteBtn);
+
+                productDiv.appendChild(titleCol);
+                productDiv.appendChild(qtyCol);
+                productDiv.appendChild(priceCol);
+                productDiv.appendChild(deleteCol);
+
+                document.getElementById('products-list').appendChild(productDiv);
+
+                fetch(`{{ 'api/admin/product/get'|link }}?id=${productId}`, {
+                    headers: {
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.result && data.result.pricing) {
+                        const pricing = data.result.pricing;
+                        if (pricing.type === 'once' && pricing.once && pricing.once.price !== undefined) {
+                            priceInput.value = pricing.once.price;
+                        } else if (pricing.type === 'recurrent' && pricing.recurrent) {
+                            const periods = Object.keys(pricing.recurrent);
+                            if (periods.length > 0) {
+                                const firstPeriod = periods[0];
+                                if (pricing.recurrent[firstPeriod] && pricing.recurrent[firstPeriod].price !== undefined) {
+                                    priceInput.value = pricing.recurrent[firstPeriod].price;
+                                }
+                            }
+                        }
+                    }
+                })
+                .catch(() => {});
+
+                if (tomSelectInstance) {
+                    tomSelectInstance.clear();
+                }
             });
         }
 
-        // Convert selected products to invoice items format on form submit
-        if (form) {
-            form.addEventListener('submit', function(e) {
+        if (invoiceForm) {
+            invoiceForm.addEventListener('submit', function() {
                 const productItems = document.querySelectorAll('#selected-product-items .row[data-product-id]');
-                const items = [];
+                if (productItems.length === 0) {
+                    return;
+                }
 
+                const items = [];
                 productItems.forEach(itemDiv => {
                     const productId = itemDiv.dataset.productId;
-                    const titleInput = itemDiv.querySelector(`input[name*="[${productId}][title]"]`);
-                    const quantityInput = itemDiv.querySelector(`input[name*="[${productId}][quantity]"]`);
-                    const priceInput = itemDiv.querySelector(`input[name*="[${productId}][price]"]`);
+                    const titleInput = itemDiv.querySelector(`input[name="products[${productId}][title]"]`);
+                    const quantityInput = itemDiv.querySelector(`input[name="products[${productId}][quantity]"]`);
+                    const priceInput = itemDiv.querySelector(`input[name="products[${productId}][price]"]`);
 
                     if (titleInput && quantityInput && priceInput && quantityInput.value > 0 && priceInput.value > 0) {
                         items.push({
-                            'title' => titleInput.value,
-                            'price' => priceInput.value,
-                            'quantity' => parseInt(quantityInput.value),
-                            'taxed' => '0'
+                            'title': titleInput.value,
+                            'price': priceInput.value,
+                            'quantity': parseInt(quantityInput.value),
+                            'taxed': '0'
                         });
                     }
                 });
@@ -414,7 +484,7 @@
                     itemsInput.type = 'hidden';
                     itemsInput.name = 'items';
                     itemsInput.value = JSON.stringify(items);
-                    form.appendChild(itemsInput);
+                    invoiceForm.appendChild(itemsInput);
                 }
             });
         }
