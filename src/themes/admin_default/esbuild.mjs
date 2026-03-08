@@ -95,7 +95,7 @@ async function purgeCssFile(cssFilePath, themePath, enabled = false) {
       css: [{ raw: css, extension: 'css' }],
       safelist: {
         standard: [
-          /^fi-/, /^toast/, /^modal/, /^dropdown/, /^collapse/, /^alert/, /^spinner/,
+          /^fi-/, /^flag-country-/, /^clr-/, /^toast/, /^modal/, /^dropdown/, /^collapse/, /^alert/, /^spinner/,
           /^active$/, /^show$/, /^fade$/, /^nav-/, /^data-bs-/, /^btn-/, /^card-/,
           /^badge-/, /^form-/, /^text-/, /^bg-/, /^d-/, /^m-/, /^p-/, /^w-/, /^h-/,
           /^border-/, /^flex-/, /^justify-/, /^align-/, /^offcanvas-/, /^accordion-/, /^carousel-/,
