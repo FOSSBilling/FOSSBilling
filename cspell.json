@@ -44,13 +44,13 @@
         "triaging",
         "hostable",
         "cooldown",
-        "ONLYDIR"
+        "ONLYDIR",
+        "sandboxed"
     ],
 
     "ignoreWords": [
         "thead",
         "tbody",
-        "alink",
         "xlink",
         "stylesheet",
         "endfor",
@@ -72,7 +72,6 @@
         "punnycode",
         "timeago",
         "daysleft",
-        "ipcountryname",
         "bbmd",
         "lngh",
         "loggedin",
@@ -447,9 +446,9 @@
         "src/library/Server/Package.php",
         "src/modules/Currency/Service.php",
         "src/modules/Seo/Service.php",
-        "src/modules/Orderbutton/html_client/mod_orderbutton_js.html.twig",
+        "src/modules/Orderbutton/templates/client/mod_orderbutton_js.html.twig",
         "src/modules/Massmailer/Api/Admin.php",
-        "src/modules/System/html_admin/mod_system_settings.html.twig",
+        "src/modules/System/templates/admin/mod_system_settings.html.twig",
         "src/vendor",
         "src/themes/*/build",
         "src/themes/*/node_modules",

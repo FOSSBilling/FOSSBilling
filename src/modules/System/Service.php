@@ -425,9 +425,10 @@ class Service
         return false;
     }
 
-    public function renderString($tpl, $try_render, $vars)
+    public function renderTplString($tpl, $try_render, $vars)
     {
-        $twig = $this->di['twig'];
+        $twigFactory = new \FOSSBilling\Twig\TwigFactory($this->di);
+        $twig = $twigFactory->createBaseEnvironment();
         // add client api if _client_id is set
         if (isset($vars['_client_id'])) {
             $identity = $this->di['db']->load('Client', $vars['_client_id']);
@@ -466,7 +467,8 @@ class Service
     public function createTemplateFromString($tpl, $try_render, $vars)
     {
         try {
-            $twig = $this->di['twig'];
+            $twigFactory = new \FOSSBilling\Twig\TwigFactory($this->di);
+            $twig = $twigFactory->createBaseEnvironment();
             $template = $twig->createTemplate($tpl);
 
             return $template->render($vars);
@@ -479,6 +481,37 @@ class Service
 
             // Return the original template string instead
             return $tpl;
+        }
+    }
+
+    /**
+     * Render a template string using the sandboxed email Twig environment.
+     * Use this for database-stored templates (email templates, mass mailer).
+     *
+     * @param string $tpl  The template string to render
+     * @param array  $vars Variables to pass to the template
+     *
+     * @return string The rendered template
+     *
+     * @throws \FOSSBilling\InformationException If template violates sandbox policy or has syntax errors
+     */
+    public function renderEmailTplString(string $tpl, array $vars): string
+    {
+        $twigFactory = new \FOSSBilling\Twig\TwigFactory($this->di);
+        $twig = $twigFactory->createEmailEnvironment();
+
+        try {
+            $template = $twig->createTemplate($tpl);
+
+            return $template->render($vars);
+        } catch (\Twig\Sandbox\SecurityError $e) {
+            $this->di['logger']->setChannel('security')->warning('Email template sandbox violation', [
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new \FOSSBilling\InformationException('Email template contains disallowed Twig syntax: ' . $e->getMessage());
+        } catch (\Twig\Error\SyntaxError $e) {
+            throw new \FOSSBilling\InformationException('Email template syntax error: ' . $e->getMessage());
         }
     }
 

@@ -1,0 +1,158 @@
+{% extends 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Tax'|trans }}{% endblock %}
+
+{% set params = admin.system_get_params %}
+
+{% set active_menu = 'system' %}
+
+{% block content %}
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Tax rules'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New tax rule'|trans }}
+            </a>
+        </li>
+        <li>
+            <a class="nav-link" href="#tab-settings" data-bs-toggle="tab">{{ 'Tax settings'|trans }}</a>
+        </li>
+    </ul>
+
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                <thead>
+                    <tr>
+                        <th class="w-1">
+                            <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
+                        </th>
+                        <th>{{ 'Title'|trans }}</th>
+                        <th>{{ 'Country'|trans }}</th>
+                        <th>{{ 'State/Region'|trans }}</th>
+                        <th>{{ 'Tax rate'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tax in admin.invoice_tax_get_list({ 'per_page': 100 }).list %}
+                    <tr>
+                        <td>
+                            <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ tax.id }}">
+                        </td>
+                        <td>
+                            <a href='{{ "invoice/tax/#{tax.id}"|url }}'>{{ tax.name }}</a>
+                        </td>
+                        <td>
+                            {% if tax.country %}
+                                {{ guest.system_countries[tax.country] }}
+                            {% else %}
+                                {{ 'Applies to any country'|trans }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if tax.state %}
+                                {{ tax.state }}
+                            {% else %}
+                                {{ 'Applies to any state'|trans }}
+                            {% endif %}
+                        </td>
+                        <td>{{ tax.taxrate }}%</td>
+                        <td>
+                            <a class="btn btn-icon" href='{{ "invoice/tax/#{tax.id}"|url }}'>
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon" href="{{ 'invoice/tax_delete'|api_url(query: { 'id': tax.id }) }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+                {% else %}
+                <tbody>
+                    <tr>
+                        <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+
+            <div class="card-footer d-flex align-items-center">
+                {% include "partial_batch_delete.html.twig" with { 'action': 'invoice/batch_delete_tax' } %}
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-new" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'invoice/tax_create'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Tax title'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="name" value="{{ request.name }}" required placeholder="{{ 'Sales Tax'|trans }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Tax rate'|trans }}:</label>
+                        <div class="col">
+                            <div class="input-group">
+                                <input class="form-control" type="text" name="taxrate" value="{{ request.taxrate }}" required placeholder="18">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
+                        <div class="col">
+                            {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Apply to all countries'|trans) }}
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'State'|trans }}:</label>
+                        <div class="col">
+                            {# mf.selectbox('state', guest.system_states, request.state, 0, 'Apply to all states') #}
+                            <input class="form-control" type="text" name="state" value="{{ request.state }}" placeholder="{{ 'Leave empty to apply to all states'|trans }}">
+                        </div>
+                    </div>
+
+                    <input type="submit" value="{{ 'Create'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-settings" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({message: 'Tax Settings Updated'|trans}) }}>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Enable tax support'|trans }}:</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioTexEnabledYes" type="radio" name="tax_enabled" value="1"{% if params.tax_enabled %} checked{% endif %}>
+                                <label class="form-check-label" for="radioTexEnabledYes">{{ 'Yes'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioTexEnabledNo" type="radio" name="tax_enabled" value="0"{% if not params.tax_enabled %} checked{% endif %}>
+                                <label class="form-check-label" for="radioTexEnabledNo">{{ 'No'|trans }}</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

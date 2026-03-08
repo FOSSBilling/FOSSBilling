@@ -1,0 +1,308 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% set active_menu = 'order' %}
+
+{% block meta_title %}{{ 'Orders'|trans }}{% endblock %}
+
+{% block top_content %}
+{% if request.show_filter %}
+<div class="card mb-3">
+    <div class="card-body">
+        <h5>{{ 'Filter orders'|trans }}</h5>
+        <form method="get">
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="id" value="{{ request.id }}">
+                </div>
+            </div>
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="title" value="{{ request.title }}">
+                </div>
+            </div>
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
+                <div class="col">
+                    {{ mf.selectbox('status', admin.order_get_status_pairs, request.status, 0, 'All statuses'|trans) }}
+                </div>
+            </div>
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
+                <div class="col">
+                    {{ mf.selectbox('type', admin.product_get_types, request.type, 0, 'All types'|trans) }}
+                </div>
+            </div>
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Product'|trans }}:</label>
+                <div class="col">
+                    {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All products'|trans) }}
+                </div>
+            </div>
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Period'|trans }}</label>
+                <div class="col">
+                    {{ mf.selectbox('period', guest.system_periods, request.period, 0, 'All periods'|trans) }}
+                </div>
+            </div>
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Invoice option'|trans }}</label>
+                <div class="col">
+                    {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, request.invoice_option, 0, 'All types'|trans) }}
+                </div>
+            </div>
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label" for="creation_date">{{ 'Creation date'|trans }}</label>
+                <div class="col">
+                    <div class="input-group">
+                        <div class="input-icon w-100">
+                            <input class="form-control datepicker"
+                                   id="creation_date"
+                                   value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                   data-name-from="date_from"
+                                   data-name-to="date_to"
+                            >
+                            <span class="input-icon-addon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                    <path d="M16 3l0 4"></path>
+                                    <path d="M8 3l0 4"></path>
+                                    <path d="M4 11l16 0"></path>
+                                    <path d="M11 15l1 0"></path>
+                                    <path d="M12 15l0 3"></path>
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <input type="hidden" name="_url" value="{{ request._url }}">
+            <input type="hidden" name="show_filter" value="1">
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary w-75" type="submit">{{ 'Filter'|trans }}</button>
+                <a class="btn btn-danger w-25" href="{{ request._url }}?show_filter=1">{{ 'Reset'|trans }}</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% else %}
+    {% set count_orders = admin.order_get_statuses %}
+    <div class="row row-cards mb-3">
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'order'|url(query: { 'status': 'pending_setup' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-warning text-white avatar">{{ count_orders.pending_setup }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Pending Setup'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'order'|url(query: { 'status': 'active' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-success text-white avatar">{{ count_orders.active }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Active'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'order'|url(query: { 'status': 'suspended' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-secondary text-white avatar">{{ count_orders.suspended }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Suspended'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'order'|url }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-blue text-white avatar">{{ count_orders.total }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Total'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="index-tab" data-bs-toggle="tab" data-bs-target="#tab-index" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Orders'|trans }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="new-tab" data-bs-toggle="tab" data-bs-target="#tab-new" type="button" role="tab" aria-controls="index" aria-selected="true">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Order'|trans }}
+            </button>
+        </li>
+    </ul>
+
+    <div class="card">
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
+                {{ include('partial_search.html.twig') }}
+                <div class="table-responsive">
+                    <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                        <thead>
+                            <tr>
+                                <th class="w-1 no-sort">
+                                    <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
+                                </th>
+                                <th class="w-1">#</th>
+                                <th class="w-1"></th>
+                                <th>{{ 'Name'|trans }}</th>
+                                <th>{{ 'Title'|trans }}</th>
+                                <th class="text-center">{{ 'Period'|trans }}</th>
+                                <th class="text-center">{{ 'Amount'|trans }}</th>
+                                <th>{{ 'Status'|trans }}</th>
+                                <th class="w-1"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set orders = admin.order_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                            {% for i, order in orders.list %}
+                            <tr>
+                                <td>
+                                    <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ order.id }}">
+                                </td>
+                                <td><a href='{{ "order/manage/#{order.id}"|url }}'>#{{ order.id }}</a></td>
+                                <td>
+                                    <a href='{{ "client/manage/#{order.client_id}"|url }}'>
+                                        {{ mf.avatar(order.client.email, 24, 'db-avatar avatar avatar-xs') }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href='{{ "client/manage/#{order.client_id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a>
+                                </td>
+                                <td>
+                                    <a href='{{ "order/manage/#{order.id}"|url }}'>{{ order.title }}</a>
+                                </td>
+                                <td class="text-center">{{ order.period|period_title }}</td>
+                                <td class="text-center">{{ order.total|format_currency(order.currency) }}</td>
+                                <td>
+                                    {% if order.status == 'pending_setup' %}
+                                        <span class="badge bg-warning me-1"></span>
+                                    {% endif %}
+                                    {% if order.status == 'failed_setup' %}
+                                    <span class="badge bg-warning me-1"></span>
+                                    {% endif %}
+                                    {% if order.status == 'failed_renew' %}
+                                    <span class="badge bg-warning me-1"></span>
+                                    {% endif %}
+                                    {% if order.status == 'active' %}
+                                        <span class="badge bg-success me-1"></span>
+                                    {% endif %}
+                                    {% if order.status == 'suspended' %}
+                                        <span class="badge bg-danger me-1"></span>
+                                    {% endif %}
+                                    {% if order.status == 'canceled' %}
+                                        <span class="badge bg-secondary me-1"></span>
+                                    {% endif %}
+                                    {{ mf.status_name(order.status) }}
+                                </td>
+                                <td>
+                                    <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
+                                        <svg class="icon">
+                                            <use xlink:href="#edit" />
+                                        </svg>
+                                    </a>
+                                    <a class="btn btn-icon" href="{{ 'order/delete'|api_url(query: { 'id': order.id }) }}"
+                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|url}) }}>
+                                        <svg class="icon">
+                                            <use xlink:href="#delete" />
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td class="text-muted" colspan="8">{{ 'The list is empty'|trans }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <div>
+                        {% include 'partial_batch_delete.html.twig' with { 'action': 'order/batch_delete' } %}
+                        {% include 'partial_pagination.html.twig' with { 'list': orders, 'url': 'order' } %}
+                    </div>
+                    <div>
+                        <a class="btn btn-secondary" href="{{ 'order/export_csv'|api_url }}" title="{{ 'Export Orders'|trans }}">
+                            <svg class="icon">
+                                <use xlink:href="#download" />
+                            </svg>
+                            {{ 'Export Orders'|trans }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
+                <div class="card-body">
+                    <form method="post" action="{{ 'order/new'|url }}">
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
+                            <div class="col">
+                                {% if not request.client_id %}
+                                    <select class="form-control autocomplete-selector"
+                                            placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
+                                            id="client_id"
+                                            name="client_id"
+                                            data-resturl="admin/client/get_pairs"
+                                            required aria-required="true">
+                                    </select>
+                                {% else %}
+                                    {% set client = admin.client_get({ 'id': request.client_id }) %}
+                                    <input type="text" id="client_id" class="form-control" disabled value="{{ client.first_name }} {{ client.last_name }}" />
+                                    <input type="hidden" name="client_id" value="{{ request.client_id }}" />
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Product'|trans }}:</label>
+                            <div class="col">
+                                {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 1) }}
+                            </div>
+                        </div>
+                        <input type="submit" value="{{ 'Continue'|trans }}" class="btn btn-primary">
+                        {% if request.client_id %}
+                            <input type="hidden" name="client_id" value="{{ request.client_id}}">
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

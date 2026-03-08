@@ -9,12 +9,8 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use FOSSBilling\Environment;
-use FOSSBilling\TwigExtensions\DebugBar;
 use Symfony\Component\Filesystem\Path;
-use Twig\Extension\ProfilerExtension;
-use Twig\Profiler\Profile;
 
 class Box_AppAdmin extends Box_App
 {
@@ -55,39 +51,13 @@ class Box_AppAdmin extends Box_App
         exit;
     }
 
+    /**
+     * Get Twig environment for admin area.
+     */
     protected function getTwig(): Twig\Environment
     {
-        $service = $this->di['mod_service']('theme');
-        $theme = $service->getCurrentAdminAreaTheme();
+        $twigFactory = new FOSSBilling\Twig\TwigFactory($this->di);
 
-        $loader = new Box_TwigLoader(
-            [
-                'mods' => PATH_MODS,
-                'theme' => Path::join(PATH_THEMES, $theme['code']),
-                'type' => 'admin',
-            ]
-        );
-
-        $twig = $this->di['twig'];
-        $twig->setLoader($loader);
-        $twig->addGlobal('theme', $theme);
-        $twig->addGlobal('current_theme', $theme['code']);
-
-        if (Environment::isDevelopment()) {
-            $profile = new Profile();
-            $twig->addExtension(new ProfilerExtension($profile));
-            $collector = new NamespacedTwigProfileCollector($profile);
-            if (!$this->debugBar->hasCollector($collector->getName())) {
-                $this->debugBar->addCollector($collector);
-            }
-        }
-
-        $twig->addExtension(new DebugBar($this->getDebugBar()));
-
-        if ($this->di['auth']->isAdminLoggedIn()) {
-            $twig->addGlobal('admin', $this->di['api_admin']);
-        }
-
-        return $twig;
+        return $twigFactory->createAdminEnvironment($this->debugBar);
     }
 }

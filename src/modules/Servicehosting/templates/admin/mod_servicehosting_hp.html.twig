@@ -1,0 +1,106 @@
+{% extends 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'Hosting management'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'servicehosting'|url }}">{{ 'Hosting Plans and Servers'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ hp.name }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>{{ 'Manage Hosting Plan'|trans }}</h3>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{{ 'servicehosting/hp_update'|api_url }}" {{ fb_api_form({message: 'Hosting Plan Updated'|trans}) }}>
+            <div class="mb-3">
+                <label class="form-label" for="plan-name">{{ 'Name'|trans }}:</label>
+                <input class="form-control" id="plan-name" type="text" name="name" value="{{ hp.name }}" required placeholder="{{ 'Unique name to identify this hosting plan'|trans }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-disk">{{ 'Disk Quota'|trans }}:</label>
+                <div class="input-group">
+                    <input class="form-control" id="plan-disk" type="text" name="quota" value="{{ hp.quota }}" aria-describedby="quota">
+                    <span class="input-group-text" id="quota">MB</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-bandwidth">{{ 'Bandwidth'|trans }}:</label>
+                <div class="input-group">
+                    <input class="form-control" id="plan-bandwidth" type="text" name="bandwidth" value="{{ hp.bandwidth }}" aria-describedby="bandwidth">
+                    <span class="input-group-text" id="bandwidth">MB</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-addon">{{ 'Maximum Addon Domains'|trans }}:</label>
+                <input class="form-control" id="plan-addon" type="number" name="max_addon" value="{{ hp.max_addon }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-ftp">{{ 'Maximum FTP Accounts'|trans }}:</label>
+                <input class="form-control" id="plan-ftp" type="number" name="max_ftp" value="{{ hp.max_ftp }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-sql">{{ 'Maximum Databases'|trans }}:</label>
+                <input class="form-control" id="plan-sql" type="number" name="max_sql" value="{{ hp.max_sql }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-email">{{ 'Maximum Email Accounts'|trans }}:</label>
+                <input class="form-control" id="plan-email" type="number" name="max_pop" value="{{ hp.max_pop }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-subdomains">{{ 'Maximum Subdomains'|trans }}:</label>
+                <input class="form-control" id="plan-subdomains" type="number" name="max_sub" value="{{ hp.max_sub }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="plan-parked">{{ 'Maximum Parked Domains'|trans }}:</label>
+                <input class="form-control" id="plan-parked" type="number" name="max_park" value="{{ hp.max_park }}">
+            </div>
+            {% if hp.config|length > 0 %}
+                <h3>{{ 'Server Manager Specific Parameters'|trans }}</h3>
+                {% for name, value in hp.config %}
+                <div class="mb-3">
+                    <label class="form-label" for="plan-special-{{ name }}">{{ name }}:</label>
+                    <textarea class="form-control" id="plan-special-{{ name }}" name="config[{{ name }}]" rows="1">{{ value }}</textarea>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <input type="hidden" name="id" value="{{ hp.id }}">
+            <button class="btn btn-primary w-100" type="submit">{{ 'Update hosting plan'|trans }}</button>
+        </form>
+        <hr>
+
+        <h3>{{ 'Hosting Plan Additional Parameters'|trans }}</h3>
+        <p class="text-muted">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters. List of parameters server managers requires you can find on extensions page.'|trans }}</p>
+
+        <form method="post" action="{{ 'servicehosting/hp_update'|api_url }}" {{ fb_api_form({reload: true}) }}>
+            <div class="mb-3 row g-2">
+                <div class="col">
+                    <label class="form-label">{{ 'Parameter name'|trans }}:</label>
+                    <input class="form-control" type="text" name="new_config_name">
+                </div>
+                <div class="col">
+                    <label class="form-label">{{ 'Parameter value'|trans }}:</label>
+                    <textarea class="form-control" name="new_config_value" rows="1"></textarea>
+                </div>
+            </div>
+            <input type="hidden" name="id" value="{{ hp.id }}">
+            <button class="btn btn-primary w-100" type="submit">{{ 'Add new field'|trans }}</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

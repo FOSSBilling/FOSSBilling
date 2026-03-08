@@ -66,7 +66,7 @@ class Payment_Adapter_Custom
         ];
         $systemService = $this->di['mod_service']('System');
 
-        return $systemService->renderString($vars['_tpl'], true, $vars);
+        return $systemService->renderTplString($vars['_tpl'], true, $vars);
     }
 
     /**

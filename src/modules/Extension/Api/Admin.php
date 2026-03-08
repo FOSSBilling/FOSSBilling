@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -61,8 +62,9 @@ class Admin extends \Api_Abstract
     public function get_extension_readme($data): string
     {
         $extensionInfo = $this->di['extension_manager']->getExtension($data['extension_id']);
+        $markdown = new \FOSSBilling\Twig\Markdown\FOSSBillingMarkdown($this->di);
 
-        return $this->di['parse_markdown']($extensionInfo['readme']);
+        return $markdown->convert($extensionInfo['readme']);
     }
 
     /**
@@ -86,10 +88,10 @@ class Admin extends \Api_Abstract
      */
     public function languages(array $data): array
     {
-        $data['disabled'] ??= false;
-        $data['details'] ??= true;
-
-        return \FOSSBilling\i18n::getLocales($data['details'], $data['disabled']);
+        return \FOSSBilling\i18n::getLocales(
+            (bool) ($data['details'] ?? true),
+            (bool) ($data['disabled'] ?? false)
+        );
     }
 
     /**

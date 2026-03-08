@@ -124,12 +124,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $vars = [];
         $vars['c'] = $clientArr;
         $vars['_tpl'] = $model->subject;
-        $ps = $systemService->renderString($vars['_tpl'], false, $vars);
+        $ps = $systemService->renderEmailTplString($vars['_tpl'], $vars);
 
         $vars = [];
         $vars['c'] = $clientArr;
         $vars['_tpl'] = $model->content;
-        $pc = $systemService->renderString($vars['_tpl'], false, $vars);
+        $pc = $systemService->renderEmailTplString($vars['_tpl'], $vars);
 
         return [$ps, $pc];
     }

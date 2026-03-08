@@ -103,7 +103,7 @@ final class AdminTest extends \BBTestCase
 
         $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
-            ->method('renderString')
+            ->method('renderTplString')
             ->willReturn('returnStringType');
         $di = $this->getDi();
 

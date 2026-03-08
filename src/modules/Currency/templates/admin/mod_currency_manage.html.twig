@@ -1,0 +1,46 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% set active_menu = 'system' %}
+
+{% block meta_title %}{{ 'Currency Management'|trans }}{% endblock %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'extension/settings/currency'|url }}">{{ 'Currency Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ currency.code }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <form method="post" action="{{ 'currency/update'|api_url }}" {{ fb_api_form({message: 'Currency Updated'|trans}) }}>
+        <div class="card-body">
+            <h3 class="card-title">{{ 'Edit Currency Information'|trans }} - {{ currency.code|currency_name }} ({{ currency.code }})</h3>
+            <input type="hidden" name="code" value="{{ currency.code }}">
+            <div class="mb-3 row">
+                <label class="col-md-3 col-form-label">{{ 'Conversion Rate'|trans }}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" name="conversion_rate" value="{{ currency.conversion_rate }}" required>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer text-end">
+            <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
