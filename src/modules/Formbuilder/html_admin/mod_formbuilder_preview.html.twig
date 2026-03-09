@@ -16,6 +16,11 @@
                             <span class="input-group-text">{{ field.suffix }}</span>
                         {% endif %}
                     </div>
+                {% elseif field.type == "url" %}
+                    <input class="form-control" type="url" name="{{ field.name }}"
+                           value="{{ field.default_value }}" id="{{ field.name }}"
+                           placeholder="https://example.com"
+                        {{ (field.readonly==1)? 'readonly="readonly"' : '' }} />
                 {% elseif field.type == "select" %}
                     {% if field.options is empty %}
                         <div class="alert alert-danger" role="alert">

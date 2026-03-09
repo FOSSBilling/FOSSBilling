@@ -140,6 +140,13 @@
                                         <span class="input-group-text" id="appended_text">{{ field.suffix }}</span>
                                     {% endif %}
                                 </div>
+                            {% elseif field.type == "url" %}
+                                <input class="form-control" type="url"
+                                       id="default_value"
+                                       name="default_value"
+                                       value="{{ field.default_value }}"
+                                       placeholder="https://example.com"
+                                    {{ (field.readonly==1)? 'readonly="readonly"' : '' }} />
                             {% elseif field.type == "checkbox" %}
                                 {% for k,v in field.options %}
                                     <label class="form-check form-check-inline">

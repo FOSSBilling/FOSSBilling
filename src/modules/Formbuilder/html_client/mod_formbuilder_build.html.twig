@@ -41,6 +41,13 @@
                         />
                     {% endif %}
 
+                {% elseif field.type == "url" %}
+                    <input type="url" class="form-control" name="{{ field.name }}" value="{{ field.default_value }}"
+                        {% if field.required==1 %}required="required"{% endif %}
+                        {% if field.readonly==1 %}readonly="readonly"{% endif %}
+                        placeholder="https://example.com"
+                    />
+
                 {% elseif field.type == "select" %}
                     <select class="form-select" name="{{ field.name }}" required="required">
                         {% for k,v in field.options %}
