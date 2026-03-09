@@ -138,13 +138,15 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     public function processTransaction($api_admin, $id, $data, $gateway_id): void
     {
         $tx = $this->di['db']->getExistingModelById('Transaction', $id);
+        $invoiceService = $this->di['mod_service']('Invoice');
 
-        // Use the invoice ID associated with the transaction or else fallback to the ID passed via GET.
         if ($tx->invoice_id) {
             $invoice = $this->di['db']->getExistingModelById('Invoice', $tx->invoice_id);
-        } else {
+        } elseif (isset($data['get']['invoice_id']) && $data['get']['invoice_id']) {
             $invoice = $this->di['db']->getExistingModelById('Invoice', $data['get']['invoice_id']);
             $tx->invoice_id = $invoice->id;
+        } else {
+            $invoice = null;
         }
 
         try {
@@ -165,21 +167,17 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'rel_id' => $tx->id,
             ];
 
-            // Only pay the invoice if the transaction has 'succeeded' on Stripe's end & the associated FOSSBilling transaction hasn't been processed.
             if ($charge->status == 'succeeded' && $tx->status !== 'processed') {
-                // Instance the services we need
                 $clientService = $this->di['mod_service']('client');
-                $invoiceService = $this->di['mod_service']('Invoice');
+                $client = $invoice
+                    ? $this->di['db']->getExistingModelById('Client', $invoice->client_id)
+                    : $this->getClientFromTransaction($tx, $charge);
 
-                // Update the account funds
-                $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
                 $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
-                // Now pay the invoice / batch pay if there's no invoice associated with the transaction
-                // Skip payment for deposit invoices - funds were already added above
-                if ($tx->invoice_id && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
+                if ($tx->invoice_id && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
                     $invoiceService->payInvoiceWithCredits($invoice);
-                } elseif (!$tx->invoice_id) {
+                } else {
                     $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
                 }
             }
@@ -205,6 +203,18 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->status = $paymentStatus;
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
+    }
+
+    private function getClientFromTransaction(\Model_Transaction $tx, \Stripe\PaymentIntent $charge): \Model_Client
+    {
+        if ($charge->customer) {
+            $client = $this->di['db']->findOne('Client', 'stripe_customer_id = :customer_id', [':customer_id' => $charge->customer]);
+            if ($client instanceof \Model_Client) {
+                return $client;
+            }
+        }
+
+        throw new Payment_Exception('Unable to determine client for transaction. No invoice or customer information available.');
     }
 
     protected function _generateForm(Model_Invoice $invoice): string
