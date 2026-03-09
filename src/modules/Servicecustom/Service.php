@@ -54,6 +54,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                         throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' is read only. You cannot change its value', null, 5468);
                     }
                 }
+
+                if (($field['type'] ?? null) === 'url') {
+                    $field_name = $field['name'];
+                    if (!empty($data[$field_name])) {
+                        $formbuilderService = $this->di['mod_service']('formbuilder');
+                        if (!$formbuilderService->validateUrlField($data[$field_name])) {
+                            throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' must be a valid URL with a TLD (e.g., https://example.com)', null, 1248);
+                        }
+                    }
+                }
             }
         }
     }

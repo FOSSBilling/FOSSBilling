@@ -29,6 +29,7 @@ final class ServiceTest extends \BBTestCase
     {
         $expected = [
             'text' => 'Text input',
+            'url' => 'URL input',
             'select' => 'Dropdown',
             'radio' => 'Radio select',
             'checkbox' => 'Checkbox',
@@ -44,6 +45,7 @@ final class ServiceTest extends \BBTestCase
         return [
             ['select', true],
             ['custom', false],
+            ['url', true],
         ];
     }
 
@@ -51,6 +53,28 @@ final class ServiceTest extends \BBTestCase
     public function testTypeValidation(string $type, bool $expected): void
     {
         $result = $this->service->typeValidation($type);
+        $this->assertEquals($expected, $result);
+    }
+
+    public static function urlValidationData(): array
+    {
+        return [
+            ['', true],
+            ['https://example.com', true],
+            ['http://example.org', true],
+            ['https://subdomain.example.co.uk', true],
+            ['example', false],
+            ['example.com', false],
+            ['https://example', false],
+            ['not-a-url', false],
+            ['ftp://files.example.com', true],
+        ];
+    }
+
+    #[DataProvider('urlValidationData')]
+    public function testValidateUrlField(string $url, bool $expected): void
+    {
+        $result = $this->service->validateUrlField($url);
         $this->assertEquals($expected, $result);
     }
 

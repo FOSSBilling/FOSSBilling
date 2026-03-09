@@ -31,6 +31,7 @@ class Service implements InjectionAwareInterface
     {
         return [
             'text' => 'Text input',
+            'url' => 'URL input',
             'select' => 'Dropdown',
             'radio' => 'Radio select',
             'checkbox' => 'Checkbox',
@@ -41,6 +42,28 @@ class Service implements InjectionAwareInterface
     public function typeValidation($type): bool
     {
         return array_key_exists($type, $this->getFormFieldsTypes());
+    }
+
+    public function validateUrlField(string $value): bool
+    {
+        if (empty($value)) {
+            return true;
+        }
+
+        if (!filter_var($value, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        $host = parse_url($value, PHP_URL_HOST);
+        if ($host === null) {
+            $host = $value;
+        }
+
+        if (!preg_match('/\.[a-zA-Z]{2,}$/', $host)) {
+            return false;
+        }
+
+        return true;
     }
 
     public function isArrayUnique($data): bool
