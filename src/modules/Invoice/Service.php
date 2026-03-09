@@ -1710,5 +1710,94 @@ class Service implements InjectionAwareInterface
         return $sourceData;
     }
 
+    /**
+     * Get the order ID from an invoice's items.
+     * Returns the first order ID found in the invoice items.
+     *
+     * @param int $invoiceId The invoice ID to search
+     *
+     * @return int|null The order ID or null if not found
+     */
+    public function getOrderIdFromInvoice(int $invoiceId): ?int
+    {
+        $item = $this->di['db']->findOne(
+            'InvoiceItem',
+            'invoice_id = :invoice_id AND type = :type',
+            ['invoice_id' => $invoiceId, 'type' => \Model_InvoiceItem::TYPE_ORDER]
+        );
+
+        if ($item instanceof \Model_InvoiceItem) {
+            return (int) $item->rel_id;
+        }
+
+        return null;
+    }
+
+    /**
+     * Generate a renewal invoice for a subscription payment that arrived without an invoice.
+     * This handles the case where PayPal/Stripe sends a subscription payment before
+     * the cron job generates the renewal invoice.
+     *
+     * @param string $subscriptionSid The subscription ID from the payment gateway
+     * @param int    $clientId         The client ID
+     *
+     * @return \Model_Invoice|null The generated invoice or null if unable to generate
+     */
+    public function generateRenewalInvoiceForSubscriptionPayment(string $subscriptionSid, int $clientId): ?\Model_Invoice
+    {
+        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        $orderService = $this->di['mod_service']('Order');
+
+        try {
+            $subscription = $this->di['db']->findOne('Subscription', 'sid = :sid', ['sid' => $subscriptionSid]);
+            if (!$subscription instanceof \Model_Subscription) {
+                return null;
+            }
+
+            if ($subscription->rel_type !== 'invoice') {
+                return null;
+            }
+
+            $originalOrderId = $this->getOrderIdFromInvoice((int) $subscription->rel_id);
+            if ($originalOrderId === null) {
+                return null;
+            }
+
+            $originalOrder = $this->di['db']->load('ClientOrder', $originalOrderId);
+            if (!$originalOrder instanceof \Model_ClientOrder) {
+                return null;
+            }
+
+            $activeOrder = $this->di['db']->findOne(
+                'ClientOrder',
+                'client_id = :client_id AND product_id = :product_id AND status = :status',
+                [
+                    'client_id' => $clientId,
+                    'product_id' => $originalOrder->product_id,
+                    'status' => \Model_ClientOrder::STATUS_ACTIVE,
+                ]
+            );
+
+            if (!$activeOrder instanceof \Model_ClientOrder) {
+                $activeOrder = $originalOrder;
+            }
+
+            if ($activeOrder->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+                return null;
+            }
+
+            $invoice = $this->generateForOrder($activeOrder);
+            $this->approveInvoice($invoice, ['use_credits' => false]);
+
+            $this->di['logger']->info("Generated renewal invoice #{$invoice->id} for subscription payment (SID: {$subscriptionSid}).");
+
+            return $invoice;
+        } catch (\Exception $e) {
+            error_log("Failed to generate renewal invoice for subscription payment: " . $e->getMessage());
+
+            return null;
+        }
+    }
+
     // End of PDF related functions
 }
