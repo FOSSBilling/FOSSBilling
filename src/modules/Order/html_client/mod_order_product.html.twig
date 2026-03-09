@@ -2,14 +2,14 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% block meta_title %}{{ 'Order'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Order'|trans }} - {{ product.title }}{% endblock %}
 
 {% set loader_nr = request.loader | default("8")%}
 {% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
 
 {% block body_class %}order-product{% endblock %}
 {% block breadcrumb %}
-    <li class="active breadcrumb-item" aria-current="page">{{ 'Order'|trans }}</li>
+    <li class="active breadcrumb-item" aria-current="page">{{ 'Order'|trans }} - {{ product.title }}</li>
 {% endblock %}
 {% block content_before %}{% endblock %}
 
