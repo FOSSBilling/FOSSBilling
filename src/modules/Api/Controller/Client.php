@@ -164,7 +164,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function isRoleLoggedIn($role): bool
+    protected function isRoleLoggedIn($role): bool
     {
         if ($role == 'client') {
             $this->di['is_client_logged'];
@@ -195,12 +195,10 @@ class Client implements InjectionAwareInterface
         } catch (\Exception) {
         }
 
-        if ($role == 'client' || $role == 'admin') {
-            $this->_checkCSRFToken();
-        }
-
         if (!$hasValidSession) {
             $this->_tryTokenLogin();
+        } elseif ($role == 'client' || $role == 'admin') {
+            $this->_checkCSRFToken();
         }
 
         $api = $this->di['api']($role);
@@ -254,7 +252,7 @@ class Client implements InjectionAwareInterface
         return [$_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']];
     }
 
-    private function _tryTokenLogin(): void
+    protected function _tryTokenLogin(): void
     {
         [$username, $password] = $this->getAuth();
 
