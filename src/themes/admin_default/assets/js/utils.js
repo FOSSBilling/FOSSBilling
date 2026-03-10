@@ -9,6 +9,13 @@
  */
 
 /**
+ * Module-scoped registries to avoid polluting the global window object.
+ * These are optionally exposed via window for backward compatibility.
+ */
+const fossBillingEditors = {};
+const editorsRegistry = {};
+
+/**
  * Get CSRF token from cookie
  * @returns {string|null} CSRF token or null if not found
  */
@@ -68,9 +75,8 @@ export function safeQuerySelectorAll(selector, scope = document) {
  */
 export function debounce(func, wait) {
   let timeout;
-  return function executedFunction() {
+  return function executedFunction(...args) {
     const context = this;
-    const args = arguments;
     const later = () => {
       clearTimeout(timeout);
       func.apply(context, args);
@@ -103,7 +109,7 @@ export function throttle(func, limit) {
         }
       }, limit - (Date.now() - lastRan));
     }
-  }
+  };
 }
 
 /**
@@ -171,7 +177,7 @@ export function deepMerge(...objects) {
 
   for (const obj of objects) {
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
           result[key] = deepMerge(result[key] || {}, obj[key]);
         } else {
@@ -209,20 +215,29 @@ export function registerEditor(element, editor) {
   syncEditorData();
   editor.model.document.on('change:data', syncEditorData);
 
-  window.FOSSBilling = window.FOSSBilling || {};
-  window.FOSSBilling.editors = window.FOSSBilling.editors || {};
+  const editorName = element.getAttribute('name') || element.id;
+  const isRequired = element.dataset.editorRequired === 'true';
 
+  // Store editor instances in module-scoped registries first
   if (element.id) {
-    window.FOSSBilling.editors[element.id] = editor;
+    // Store canonical editor instance keyed by element ID
+    fossBillingEditors[element.id] = editor;
   }
 
-  const editorName = element.getAttribute('name') || element.id;
   if (editorName) {
-    window.editors = window.editors || {};
-    window.editors[editorName] = {
-      editor,
-      required: element.dataset.editorRequired === 'true',
+    // Ensure a single global registry interface that mirrors FOSSBilling.editors
+    // Expose a normalized entry that always reflects the canonical editor instance
+    editorsRegistry[editorName] = {
+      editor: editor,
+      required: isRequired,
     };
+  }
+
+  // Expose registries via window for backward compatibility
+  if (typeof window !== 'undefined') {
+    window.FOSSBilling = window.FOSSBilling || {};
+    window.FOSSBilling.editors = fossBillingEditors;
+    window.editors = editorsRegistry;
   }
 
   console.debug('Editor registered:', element.id || 'unnamed', editor);
@@ -238,13 +253,19 @@ export function unregisterEditor(element) {
   delete element.editor;
   element.removeAttribute('data-editor');
 
-  if (element.id && window.FOSSBilling?.editors) {
-    delete window.FOSSBilling.editors[element.id];
+  if (element.id) {
+    delete fossBillingEditors[element.id];
+    if (typeof window !== 'undefined' && window.FOSSBilling?.editors) {
+      delete window.FOSSBilling.editors[element.id];
+    }
   }
 
   const editorName = element.getAttribute('name') || element.id;
-  if (editorName && window.editors) {
-    delete window.editors[editorName];
+  if (editorName) {
+    delete editorsRegistry[editorName];
+    if (typeof window !== 'undefined' && window.editors) {
+      delete window.editors[editorName];
+    }
   }
 
   console.debug('Editor unregistered:', element.id || 'unnamed');
