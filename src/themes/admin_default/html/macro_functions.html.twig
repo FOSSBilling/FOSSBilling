@@ -77,7 +77,7 @@
             {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown }}</div>{% endif %}
         </div>
         <div class="col">
-            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"{% if not element[1].required is defined and not element[1].required == 'false' %} required{% endif %}>
+            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"{% if element[1].required is defined and element[1].required != 'false' %} required{% endif %}>
         </div>
         {% endif %}
     </div>
