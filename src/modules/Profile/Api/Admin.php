@@ -144,7 +144,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function api_key_reset($data): string
     {
-        $client = $this->di['db']->getExistingModelById('Client', $data['di']);
+        $client = $this->di['db']->getExistingModelById('Client', $data['id']);
 
         return $this->getService()->resetApiKey($client);
     }
