@@ -102,7 +102,7 @@
 {% endmacro %}
 
 {% macro currency(price, currency) %}
-    {% if currency == NULL %}
+    {% if currency == null %}
         {% set c = guest.cart_get_currency %}
     {% else %}
         {% set c = guest.currency_get({"code":currency}) %}
