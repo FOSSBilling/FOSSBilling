@@ -4,9 +4,6 @@
 
 {% block meta_title %}{{ 'Order'|trans }} - {{ product.title }}{% endblock %}
 
-{% set loader_nr = request.loader | default("8") %}
-{% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
-
 {% block body_class %}order-product{% endblock %}
 {% block breadcrumb %}
     <li class="active breadcrumb-item" aria-current="page">{{ 'Order'|trans }} - {{ product.title }}</li>
@@ -35,7 +32,4 @@
 
 {% block sidebar2 %}
     {{ include('partial_currency.html.twig') }}
-{% endblock %}
-
-{% block js %}
 {% endblock %}
