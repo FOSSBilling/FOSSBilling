@@ -1991,7 +1991,6 @@ final class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
 
         $reflection = new \ReflectionMethod($serviceMock, 'syncWhois');
-        $reflection->setAccessible(true);
         $reflection->invoke($serviceMock, $domainModel, $order);
     }
 
@@ -2054,7 +2053,6 @@ final class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
 
         $reflection = new \ReflectionMethod($serviceMock, 'syncWhois');
-        $reflection->setAccessible(true);
         $reflection->invoke($serviceMock, $domainModel, $order);
     }
 
@@ -2116,7 +2114,6 @@ final class ServiceTest extends \BBTestCase
         $order->loadBean(new \DummyBean());
 
         $reflection = new \ReflectionMethod($serviceMock, 'syncWhois');
-        $reflection->setAccessible(true);
         $reflection->invoke($serviceMock, $domainModel, $order);
     }
 }
