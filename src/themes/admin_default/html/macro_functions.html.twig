@@ -34,7 +34,7 @@
         <div class="col">
             <select class="form-select" name="config[{{ name }}]">
             {% for k, v in element[1].multiOptions %}
-                <option value="{{ k }}"{% if k == values[name] %} selected{% endif %}/><label>{{ v }}</label>
+                <option value="{{ k }}"{% if k == values[name] %} selected{% endif %}>{{ v }}</option>
             {% endfor %}
             </select>
         </div>
@@ -46,7 +46,7 @@
         <div class="col">
             <select class="form-select" name="config[{{ name }}]" multiple>
             {% for k, v in element[1].multiOptions %}
-                <option value="{{ k }}"{% if k == values[name] %} selected{% endif %}/><label>{{ v }}</label>
+                <option value="{{ k }}"{% if k == values[name] %} selected{% endif %}>{{ v }}</option>
             {% endfor %}
             </select>
         </div>
