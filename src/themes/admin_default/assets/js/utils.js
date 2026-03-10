@@ -68,10 +68,12 @@ export function safeQuerySelectorAll(selector, scope = document) {
  */
 export function debounce(func, wait) {
   let timeout;
-  return function executedFunction(...args) {
+  return function executedFunction() {
+    const context = this;
+    const args = arguments;
     const later = () => {
       clearTimeout(timeout);
-      func(...args);
+      func.apply(context, args);
     };
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
@@ -88,14 +90,15 @@ export function throttle(func, limit) {
   let lastFunc;
   let lastRan;
   return function(...args) {
+    const context = this;
     if (!lastRan) {
-      func(...args);
+      func.apply(context, args);
       lastRan = Date.now();
     } else {
       clearTimeout(lastFunc);
       lastFunc = setTimeout(() => {
         if ((Date.now() - lastRan) >= limit) {
-          func(...args);
+          func.apply(context, args);
           lastRan = Date.now();
         }
       }, limit - (Date.now() - lastRan));
@@ -145,7 +148,8 @@ export function scrollToElement(target, options = {}) {
  * @returns {string} Formatted string
  */
 export function formatBytes(bytes, decimals = 2) {
-  if (!Number.isFinite(bytes) || bytes <= 0) return '0 Bytes';
+  if (!Number.isFinite(bytes) || bytes < 0) return '0 Bytes';
+  if (bytes === 0) return '0 Bytes';
 
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
