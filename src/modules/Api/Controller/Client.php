@@ -187,6 +187,7 @@ class Client implements InjectionAwareInterface
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
 
+        $hasTokenAuthCredentials = $this->hasTokenAuthCredentials();
         $hasValidSession = false;
 
         try {
@@ -195,7 +196,9 @@ class Client implements InjectionAwareInterface
         } catch (\Exception) {
         }
 
-        if (!$hasValidSession) {
+        if ($hasTokenAuthCredentials) {
+            $this->_tryTokenLogin();
+        } elseif (!$hasValidSession) {
             $this->_tryTokenLogin();
         } elseif ($role == 'client' || $role == 'admin') {
             $this->_checkCSRFToken();
@@ -285,6 +288,17 @@ class Client implements InjectionAwareInterface
             default:
                 throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
         }
+    }
+
+    protected function hasTokenAuthCredentials(): bool
+    {
+        try {
+            [$username, $password] = $this->getAuth();
+        } catch (\Exception) {
+            return false;
+        }
+
+        return in_array($username, ['client', 'admin'], true) && $password !== '';
     }
 
     /**

@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 final class TestableClient extends Client
 {
     public bool $hasValidSession = false;
+    public bool $hasTokenAuthCredentials = false;
     public bool $shouldFailCsrf = false;
     public array $calls = [];
     public mixed $renderedData = null;
@@ -34,6 +35,11 @@ final class TestableClient extends Client
     protected function _tryTokenLogin(): void
     {
         $this->calls[] = 'token';
+    }
+
+    protected function hasTokenAuthCredentials(): bool
+    {
+        return $this->hasTokenAuthCredentials;
     }
 
     public function _checkCSRFToken()
@@ -86,8 +92,23 @@ final class ClientTest extends \BBTestCase
     {
         $controller = $this->createController();
         $controller->hasValidSession = false;
+        $controller->hasTokenAuthCredentials = true;
 
         $this->invokeApiCall($controller, 'client', 'test', 'test_method', []);
+
+        $this->assertSame(['ok' => true], $controller->renderedData);
+        $this->assertNull($controller->renderedException);
+        $this->assertSame(['token'], $controller->calls);
+    }
+
+    public function testTokenAuthenticatedRequestBypassesCsrfEvenWithExistingSession(): void
+    {
+        $controller = $this->createController();
+        $controller->hasValidSession = true;
+        $controller->hasTokenAuthCredentials = true;
+        $controller->shouldFailCsrf = true;
+
+        $this->invokeApiCall($controller, 'admin', 'test', 'test_method', []);
 
         $this->assertSame(['ok' => true], $controller->renderedData);
         $this->assertNull($controller->renderedException);
