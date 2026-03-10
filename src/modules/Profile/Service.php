@@ -277,27 +277,120 @@ class Service implements InjectionAwareInterface
 
     private function deleteSessionIfMatching(array $session, string $type, int $id): void
     {
-        // Decode the data for the current session and then verify it is for the selected type
         $data = base64_decode((string) $session['content']);
         $stringStart = ($type === 'admin') ? 'admin|' : 'client_id|';
         if (!str_starts_with($data, $stringStart)) {
             return;
         }
 
-        // Now we strip off the starting portion so we can unserialize the data
         $data = str_replace($stringStart, '', $data);
 
-        // Finally, perform the check depending on what type of session we are looking for and trash it if it's a match
         if ($type === 'admin') {
-            $dataArray = unserialize($data);
-            if ($dataArray['id'] === $id) {
+            $dataArray = $this->phpSessionDecode($data);
+            if (isset($dataArray['id']) && (int) $dataArray['id'] === $id) {
                 $this->trashSessionByArray($session);
             }
         } else {
-            if (unserialize($data) === $id) {
+            $clientId = $this->phpSessionDecode($data);
+            if ((int) $clientId === $id) {
                 $this->trashSessionByArray($session);
             }
         }
+    }
+
+    private function phpSessionDecode(string $data): array|int|false
+    {
+        $result = [];
+        $offset = 0;
+        $dataLength = strlen($data);
+
+        while ($offset < $dataLength) {
+            $colonPos = strpos($data, ':', $offset);
+            if ($colonPos === false) {
+                break;
+            }
+
+            $type = $data[$offset];
+            $offset = $colonPos + 1;
+
+            if ($type === 'i') {
+                $endPos = strpos($data, ';', $offset);
+                if ($endPos === false) {
+                    return false;
+                }
+                $value = (int) substr($data, $offset, $endPos - $offset);
+
+                return $value;
+            }
+
+            if ($type === 'a') {
+                $bracePos = strpos($data, '{', $offset);
+                if ($bracePos === false) {
+                    return false;
+                }
+
+                $colonPos2 = strpos($data, ':', $bracePos);
+                if ($colonPos2 === false) {
+                    return false;
+                }
+
+                $count = (int) substr($data, $offset, $colonPos2 - $offset);
+                $offset = $colonPos2 + 1;
+
+                for ($i = 0; $i < $count; ++$i) {
+                    $keyStart = strpos($data, 's:', $offset);
+                    if ($keyStart === false || $keyStart > strpos($data, ';', $offset)) {
+                        $keyStart = strpos($data, 'i:', $offset);
+                        if ($keyStart === false) {
+                            break;
+                        }
+                        $keyColon = strpos($data, ':', $keyStart + 2);
+                        $keyEnd = strpos($data, ';', $keyColon);
+                        $keyLen = (int) substr($data, $keyStart + 2, $keyColon - $keyStart - 2);
+                        $key = substr($data, $keyEnd + 2, $keyLen);
+                        $offset = $keyEnd + 2 + $keyLen + 2;
+
+                        $valType = $data[$offset];
+                        $offset += 2;
+                        if ($valType === 'i') {
+                            $valEnd = strpos($data, ';', $offset);
+                            $result[$key] = (int) substr($data, $offset, $valEnd - $offset);
+                            $offset = $valEnd + 1;
+                        } elseif ($valType === 's') {
+                            $valColon = strpos($data, ':', $offset);
+                            $valLen = (int) substr($data, $offset, $valColon - $offset);
+                            $offset = $valColon + 2;
+                            $result[$key] = substr($data, $offset, $valLen);
+                            $offset += $valLen + 2;
+                        }
+                    } else {
+                        $keyColon = strpos($data, ':', $keyStart + 2);
+                        $keyEnd = strpos($data, ';', $keyColon);
+                        $keyLen = (int) substr($data, $keyStart + 2, $keyColon - $keyStart - 2);
+                        $key = substr($data, $keyEnd + 2, $keyLen);
+                        $offset = $keyEnd + 2 + $keyLen + 2;
+
+                        $valType = $data[$offset];
+                        $offset += 2;
+                        if ($valType === 'i') {
+                            $valEnd = strpos($data, ';', $offset);
+                            $result[$key] = (int) substr($data, $offset, $valEnd - $offset);
+                            $offset = $valEnd + 1;
+                        } elseif ($valType === 's') {
+                            $valColon = strpos($data, ':', $offset);
+                            $valLen = (int) substr($data, $offset, $valColon - $offset);
+                            $offset = $valColon + 2;
+                            $result[$key] = substr($data, $offset, $valLen);
+                            $offset += $valLen + 2;
+                        }
+                    }
+                }
+
+                return $result;
+            }
+        }
+
+        return $result;
     }
 
     private function trashSessionByArray(array $session): void
