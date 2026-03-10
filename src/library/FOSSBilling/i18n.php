@@ -32,8 +32,14 @@ class i18n
          * If the locale cookie is set and it's one of the enabled locales, use that.
          * Otherwise, fallback to auto-detection when enable.
          */
-        if (!empty($_COOKIE['BBLANG']) && in_array($_COOKIE['BBLANG'], self::getLocales())) {
+        if (!empty($_COOKIE['fb_locale']) && in_array($_COOKIE['fb_locale'], self::getLocales())) {
+            $locale = $_COOKIE['fb_locale'];
+        } elseif (!empty($_COOKIE['BBLANG']) && in_array($_COOKIE['BBLANG'], self::getLocales())) {
             $locale = $_COOKIE['BBLANG'];
+            if (!headers_sent()) {
+                setcookie('fb_locale', $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
+                setcookie('BBLANG', '', ['expires' => time() - 3600, 'path' => '/']);
+            }
         } elseif ($autoDetect) {
             $locale = self::getBrowserLocale();
         }
@@ -84,7 +90,7 @@ class i18n
             foreach (self::getLocales() as $locale) {
                 if (str_starts_with((string) $locale, substr($detectedLocale, 0, 2))) {
                     if (!headers_sent()) {
-                        setcookie('BBLANG', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
+                        setcookie('fb_locale', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
                     }
 
                     return $locale;
@@ -93,7 +99,7 @@ class i18n
         }
 
         if (!headers_sent()) {
-            setcookie('BBLANG', (string) $matchingLocale, ['expires' => strtotime('+1 month'), 'path' => '/']);
+            setcookie('fb_locale', (string) $matchingLocale, ['expires' => strtotime('+1 month'), 'path' => '/']);
         }
 
         return $matchingLocale;

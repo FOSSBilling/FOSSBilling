@@ -7,11 +7,12 @@ require_once __DIR__ . '/../src/load.php';
 require_once __DIR__ . '/../src/vendor/autoload.php';
 $config = include __DIR__ . '/../src/config.php';
 
-define('BB_DB_NAME', $config['db']['name']);
-define('BB_DB_USER', $config['db']['user']);
-define('BB_DB_PASSWORD', $config['db']['password']);
-define('BB_DB_HOST', $config['db']['host']);
-define('BB_DB_TYPE', $config['db']['driver']);
+define('FB_DB_NAME', $config['db']['name']);
+define('FB_DB_USER', $config['db']['user']);
+define('FB_DB_PASSWORD', $config['db']['password']);
+define('FB_DB_HOST', $config['db']['host']);
+define('FB_DB_TYPE', $config['db']['driver']);
+define('FB_DB_PORT', $config['db']['port'] ?? '3306');
 
 // Add test libraries
 set_include_path(implode(PATH_SEPARATOR, [

@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
       dropdownClass: "dropdown-menu ts-dropdown locale-selector-dropdown",
       optionClass: "dropdown-item",
       controlInput: false,
-      items: [FOSSBilling.cookieRead("BBLANG")],
+      items: [FOSSBilling.cookieRead("fb_locale")],
       render: {
         item: (data, escape) => createTomSelectTemplate(data, escape, { showIndicator: true }),
         option: (data, escape) => createTomSelectTemplate(data, escape, { showIndicator: true }),
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     localeSelector.on("change", (value) => {
-      FOSSBilling.cookieCreate("BBLANG", value, 365);
+      FOSSBilling.cookieCreate("fb_locale", value, 365);
       window.location.reload();
     });
   }

@@ -16,9 +16,6 @@ Options -Indexes +SymLinksIfOwnerMatch
     RewriteCond %{QUERY_STRING} (GLOBALS|_REQUEST)(=|\[|\%[0-9A-Z]{0,2})
     RewriteRule .* index.php [F]
 
-    # Alias from bb-ipn.php to ipn.php for those who have upgraded from BoxBilling.
-    RewriteRule ^bb-ipn\.php$ /ipn.php [L]
-
     # Allow access to the index.php, ipn.php, /install/index.php, and /install/install.php files.
     RewriteCond %{REQUEST_URI} ^/(index\.php|ipn\.php|install/index\.php|install/install\.php) [NC]
     RewriteRule ^ - [L]
