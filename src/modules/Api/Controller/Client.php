@@ -196,11 +196,20 @@ class Client implements InjectionAwareInterface
         } catch (\Exception) {
         }
 
+        // Only bypass CSRF checks for pure token/API contexts (no valid session).
         if ($hasTokenAuthCredentials) {
-            $this->_tryTokenLogin();
+            if (!$hasValidSession) {
+                // Pure token-based authentication (no browser session): perform token login and skip CSRF.
+                $this->_tryTokenLogin();
+            } elseif ($role == 'client' || $role == 'admin') {
+                // Browser session exists: require CSRF even if token credentials are also present.
+                $this->_checkCSRFToken();
+            }
         } elseif (!$hasValidSession) {
+            // No valid session and no token credentials: try to establish authentication (legacy behavior).
             $this->_tryTokenLogin();
         } elseif ($role == 'client' || $role == 'admin') {
+            // Authenticated browser session for privileged roles must pass CSRF checks.
             $this->_checkCSRFToken();
         }
 
