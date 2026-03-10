@@ -34,7 +34,7 @@
         <div class="col">
             <select class="form-select" name="config[{{ name }}]">
             {% for k, v in element[1].multiOptions %}
-                <option value="{{ k }}"{% if k == values[name] %} selected{% endif %}/><label>{{ v }}</label>
+                <option value="{{ k }}"{% if k == values[name] %} selected{% endif %}>{{ v }}</option>
             {% endfor %}
             </select>
         </div>
@@ -46,7 +46,7 @@
         <div class="col">
             <select class="form-select" name="config[{{ name }}]" multiple>
             {% for k, v in element[1].multiOptions %}
-                <option value="{{ k }}"{% if k == values[name] %} selected{% endif %}/><label>{{ v }}</label>
+                <option value="{{ k }}"{% if k == values[name] %} selected{% endif %}>{{ v }}</option>
             {% endfor %}
             </select>
         </div>
@@ -77,7 +77,7 @@
             {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown }}</div>{% endif %}
         </div>
         <div class="col">
-            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"{% if not element[1].required is defined and not element[1].required == 'false' %} required{% endif %}>
+            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"{% if element[1].required is defined and element[1].required != 'false' %} required{% endif %}>
         </div>
         {% endif %}
     </div>
@@ -102,7 +102,7 @@
 {% endmacro %}
 
 {% macro currency(price, currency) %}
-    {% if currency == NULL %}
+    {% if currency == null %}
         {% set c = guest.cart_get_currency %}
     {% else %}
         {% set c = guest.currency_get({"code":currency}) %}
