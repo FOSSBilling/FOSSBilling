@@ -76,9 +76,9 @@ class Model_ProductDomainTable extends Model_ProductTable
 
     private function _hasFreePeriod($addon): bool
     {
-        $free_domain_periods = $addon['config']['free_domain_periods'];
+        $free_domain_periods = $addon['config']['free_domain_periods'] ?? [];
         $addon_period = $addon['config']['period'];
-        if (in_array($addon_period, $free_domain_periods) || sizeof($free_domain_periods) > 0) {
+        if (in_array($addon_period, $free_domain_periods)) {
             return true;
         }
 
@@ -97,7 +97,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         $addon_sys_period = $this->di['period']($addon_period);
         $addon_qty = $addon_sys_period->getQty();
 
-        $free_domain_periods = $addon['config']['free_domain_periods'];
+        $free_domain_periods = $addon['config']['free_domain_periods'] ?? [];
         if ((is_countable($free_domain_periods) ? count($free_domain_periods) : 0) > 0) {
             // if hosting and domain periods are equal, return domain quantity (year)
             if ($addon_period == $period) {
@@ -145,7 +145,11 @@ class Model_ProductDomainTable extends Model_ProductTable
         $tld = $item['config']['tld'] ?? null;
         $free_tlds = $item['config']['free_tlds'] ?? [];
 
-        if ($tld != null && !$free_domain && is_array($free_tlds) && in_array($tld, $free_tlds)) {
+        if ($free_domain) {
+            return true;
+        }
+
+        if ($tld != null && is_array($free_tlds) && in_array($tld, $free_tlds)) {
             return true;
         }
 
