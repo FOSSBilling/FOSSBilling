@@ -1739,7 +1739,7 @@ class Service implements InjectionAwareInterface
      * the cron job generates the renewal invoice.
      *
      * @param string $subscriptionSid The subscription ID from the payment gateway
-     * @param int    $clientId         The client ID
+     * @param int    $clientId        The client ID
      *
      * @return \Model_Invoice|null The generated invoice or null if unable to generate
      */
@@ -1793,7 +1793,7 @@ class Service implements InjectionAwareInterface
 
             return $invoice;
         } catch (\Exception $e) {
-            error_log("Failed to generate renewal invoice for subscription payment: " . $e->getMessage());
+            error_log('Failed to generate renewal invoice for subscription payment: ' . $e->getMessage());
 
             return null;
         }
