@@ -187,12 +187,19 @@ class Client implements InjectionAwareInterface
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
 
+        $hasValidSession = false;
+
         try {
             $this->isRoleLoggedIn($role);
-            if ($role == 'client' || $role == 'admin') {
-                $this->_checkCSRFToken();
-            }
+            $hasValidSession = true;
         } catch (\Exception) {
+        }
+
+        if ($role == 'client' || $role == 'admin') {
+            $this->_checkCSRFToken();
+        }
+
+        if (!$hasValidSession) {
             $this->_tryTokenLogin();
         }
 
