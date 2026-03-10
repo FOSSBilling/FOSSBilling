@@ -194,4 +194,39 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($updatedConfig['update_orders']);
         $this->assertNotNull($productModel->updated_at);
     }
+
+    public function testValidateFileUploadAllowsKnownExtensionWithOctetStreamMime(): void
+    {
+        $this->service->setDi($this->getDi());
+
+        $file = $this->createMock(\Symfony\Component\HttpFoundation\File\UploadedFile::class);
+        $file->method('getClientOriginalExtension')->willReturn('exe');
+        $file->method('getClientOriginalName')->willReturn('installer.exe');
+        $file->method('getMimeType')->willReturn('application/octet-stream');
+
+        $this->invokeValidateFileUpload($file);
+
+        $this->addToAssertionCount(1);
+    }
+
+    public function testValidateFileUploadRejectsUnknownExtension(): void
+    {
+        $this->service->setDi($this->getDi());
+
+        $file = $this->createMock(\Symfony\Component\HttpFoundation\File\UploadedFile::class);
+        $file->method('getClientOriginalExtension')->willReturn('php');
+        $file->method('getClientOriginalName')->willReturn('shell.php');
+        $file->method('getMimeType')->willReturn('application/x-httpd-php');
+
+        $this->expectException(\FOSSBilling\Exception::class);
+
+        $this->invokeValidateFileUpload($file);
+    }
+
+    private function invokeValidateFileUpload(\Symfony\Component\HttpFoundation\File\UploadedFile $file): void
+    {
+        $reflection = new \ReflectionMethod(Service::class, 'validateFileUpload');
+        $reflection->setAccessible(true);
+        $reflection->invoke($this->service, $file);
+    }
 }
