@@ -419,4 +419,39 @@ class Tools
 
         return $number;
     }
+
+    public static function createSessionRestoreToken(string $sessionId): string
+    {
+        $expiry = time() + 3600;
+        $payload = $sessionId . '|' . $expiry;
+        $signature = hash_hmac('sha256', $payload, Config::getProperty('info.salt'));
+
+        return base64_encode($payload . '|' . $signature);
+    }
+
+    public static function validateSessionRestoreToken(string $token): ?string
+    {
+        $decoded = base64_decode($token, true);
+        if ($decoded === false) {
+            return null;
+        }
+
+        $parts = explode('|', $decoded);
+        if (count($parts) !== 3) {
+            return null;
+        }
+
+        [$sessionId, $expiry, $signature] = $parts;
+
+        if (time() > (int) $expiry) {
+            return null;
+        }
+
+        $expectedSignature = hash_hmac('sha256', $sessionId . '|' . $expiry, Config::getProperty('info.salt'));
+        if (!hash_equals($expectedSignature, $signature)) {
+            return null;
+        }
+
+        return $sessionId;
+    }
 }
