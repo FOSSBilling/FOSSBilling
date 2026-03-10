@@ -142,18 +142,21 @@ class Model_ProductDomainTable extends Model_ProductTable
     private function _isFreeDomainSet($item): bool
     {
         $free_domain = $item['config']['free_domain'] ?? false;
+
+        if (!$free_domain) {
+            return false;
+        }
+
         $tld = $item['config']['tld'] ?? null;
         $free_tlds = $item['config']['free_tlds'] ?? [];
 
-        if ($free_domain) {
+        // When free_tlds is empty, all TLDs are eligible for a free domain.
+        if (empty($free_tlds)) {
             return true;
         }
 
-        if ($tld != null && is_array($free_tlds) && in_array($tld, $free_tlds)) {
-            return true;
-        }
-
-        return false;
+        // When free_tlds is non-empty, only whitelisted TLDs are eligible.
+        return $tld !== null && in_array($tld, $free_tlds);
     }
 
     private function registerDomainMatch($item, $config)
