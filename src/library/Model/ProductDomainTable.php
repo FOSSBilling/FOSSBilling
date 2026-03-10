@@ -120,15 +120,13 @@ class Model_ProductDomainTable extends Model_ProductTable
                     }
                 }
 
-                if (count($free_domain_qtys) > 1) {
+                if (count($free_domain_qtys) > 0) {
                     return min($ref_item_qty, min($free_domain_qtys));
                 }
-
-                return min($ref_item_qty, $free_domain_qtys[0]);
             }
-        } else {
-            return 0;
         }
+
+        return 0;
     }
 
     /**
