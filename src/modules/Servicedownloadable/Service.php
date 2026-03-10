@@ -33,6 +33,52 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    private function getAllowedFileTypes(): array
+    {
+        $config = $this->di['mod_config']('Servicedownloadable');
+
+        return [
+            'extensions' => $config['allowed_extensions'] ?? ['zip', 'tar', 'gz', 'rar', '7z', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'txt', 'csv'],
+            'mime_types' => $config['allowed_mime_types'] ?? [
+                'application/zip',
+                'application/x-zip-compressed',
+                'application/x-tar',
+                'application/gzip',
+                'application/x-rar-compressed',
+                'application/x-7z-compressed',
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-powerpoint',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'image/png',
+                'image/jpeg',
+                'image/gif',
+                'image/svg+xml',
+                'text/plain',
+                'text/csv',
+            ],
+        ];
+    }
+
+    private function validateFileUpload(\Symfony\Component\HttpFoundation\File\UploadedFile $file): void
+    {
+        $allowedTypes = $this->getAllowedFileTypes();
+
+        $extension = strtolower($file->getClientOriginalExtension());
+        $mimeType = $file->getMimeType();
+
+        if (!in_array($extension, $allowedTypes['extensions'], true)) {
+            throw new \FOSSBilling\Exception('File extension :ext is not allowed. Allowed extensions: :allowed', [':ext' => $extension, ':allowed' => implode(', ', $allowedTypes['extensions'])]);
+        }
+
+        if (!in_array($mimeType, $allowedTypes['mime_types'], true)) {
+            throw new \FOSSBilling\Exception('File type is not allowed');
+        }
+    }
+
     public function __construct()
     {
         $this->filesystem = new Filesystem();
@@ -169,6 +215,8 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('File upload failed: ' . $this->_error_message($errorCode));
         }
 
+        $this->validateFileUpload($file);
+
         $fileNameHash = md5((string) $fileName);
         $fileSavePath = PATH_UPLOADS;
         $file->move($fileSavePath, $fileNameHash);
@@ -235,6 +283,8 @@ class Service implements InjectionAwareInterface
             if ($errorCode !== UPLOAD_ERR_OK) {
                 throw new \FOSSBilling\Exception('File upload failed: ' . $this->_error_message($errorCode));
             }
+
+            $this->validateFileUpload($file);
 
             $fileNameHash = md5((string) $fileName);
             $fileSavePath = PATH_UPLOADS;
