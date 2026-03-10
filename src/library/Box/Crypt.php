@@ -99,7 +99,13 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
             return false;
         }
 
-        return trim($result);
+        $result = trim($result);
+
+        if (!$this->isPlausiblePlaintext($result)) {
+            return false;
+        }
+
+        return $result;
     }
 
     private function getCurrentKey(?string $pass = null): string
@@ -119,5 +125,14 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
         }
 
         return (string) $pass;
+    }
+
+    private function isPlausiblePlaintext(string $text): bool
+    {
+        if (!mb_check_encoding($text, 'UTF-8')) {
+            return false;
+        }
+
+        return !preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $text);
     }
 }

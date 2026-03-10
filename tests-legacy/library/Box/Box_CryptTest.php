@@ -48,7 +48,7 @@ final class Box_CryptTest extends PHPUnit\Framework\TestCase
 
     private function encryptWithKey(string $text, string $key): string
     {
-        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(Box_Crypt::METHOD));
+        $iv = str_repeat("\x01", openssl_cipher_iv_length(Box_Crypt::METHOD));
         $ciphertext = openssl_encrypt($text, Box_Crypt::METHOD, $key, OPENSSL_RAW_DATA, $iv);
 
         return base64_encode($iv . $ciphertext);
