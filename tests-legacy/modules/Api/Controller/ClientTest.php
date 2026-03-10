@@ -127,6 +127,19 @@ final class ClientTest extends \BBTestCase
         $this->invokeApiCall($controller, 'client', 'test', 'test_method', []);
     }
 
+    public function testGuestRequestIgnoresTokenAuthCredentials(): void
+    {
+        $controller = $this->createController();
+        $controller->hasValidSession = true;
+        $controller->hasTokenAuthCredentials = true;
+
+        $this->invokeApiCall($controller, 'guest', 'test', 'test_method', []);
+
+        $this->assertSame(['ok' => true], $controller->renderedData);
+        $this->assertNull($controller->renderedException);
+        $this->assertSame([], $controller->calls);
+    }
+
     private function createController(): TestableClient
     {
         $service = $this->createMock(\Box\Mod\Api\Service::class);

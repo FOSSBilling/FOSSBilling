@@ -187,7 +187,7 @@ class Client implements InjectionAwareInterface
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
 
-        $hasTokenAuthCredentials = $this->hasTokenAuthCredentials();
+        $hasTokenAuthCredentials = in_array($role, ['client', 'admin'], true) && $this->hasTokenAuthCredentials();
         $hasValidSession = false;
 
         try {
