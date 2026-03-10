@@ -176,6 +176,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
                 if ($tx->invoice_id && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
+                    if (!$invoice->approved) {
+                        $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+                    }
                     $invoiceService->payInvoiceWithCredits($invoice);
                 } else {
                     $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
@@ -205,11 +208,11 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($tx);
     }
 
-    private function getClientFromTransaction(\Model_Transaction $tx, \Stripe\PaymentIntent $charge): \Model_Client
+    private function getClientFromTransaction(Model_Transaction $tx, Stripe\PaymentIntent $charge): Model_Client
     {
         if ($charge->customer) {
             $client = $this->di['db']->findOne('Client', 'stripe_customer_id = :customer_id', [':customer_id' => $charge->customer]);
-            if ($client instanceof \Model_Client) {
+            if ($client instanceof Model_Client) {
                 return $client;
             }
         }
