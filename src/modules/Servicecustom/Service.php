@@ -236,9 +236,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('Custom service updated #%s', $model->id);
     }
 
-    public function getServiceCustomByOrderId($orderId)
+    public function getServiceCustomByOrderId($orderId, $clientId = null)
     {
-        $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
+        if ($clientId !== null) {
+            $order = $this->di['db']->findOne('ClientOrder', 'id = ? AND client_id = ?', [$orderId, $clientId]);
+            if (!$order instanceof \Model_ClientOrder) {
+                throw new \FOSSBilling\Exception('Order not found');
+            }
+        } else {
+            $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
+        }
 
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);

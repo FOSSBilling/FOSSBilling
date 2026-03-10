@@ -33,7 +33,9 @@ class Client extends \Api_Abstract
         if (!isset($data['order_id'])) {
             throw new \FOSSBilling\Exception('Order ID is required');
         }
-        $model = $this->getService()->getServiceCustomByOrderId($data['order_id']);
+
+        $identity = $this->getIdentity();
+        $model = $this->getService()->getServiceCustomByOrderId($data['order_id'], $identity->id);
 
         return $this->getService()->customCall($model, $name, $data);
     }
