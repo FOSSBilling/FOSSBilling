@@ -37,7 +37,7 @@ class i18n
         } elseif (!empty($_COOKIE['BBLANG']) && in_array($_COOKIE['BBLANG'], self::getLocales())) {
             $locale = $_COOKIE['BBLANG'];
             if (!headers_sent()) {
-                setcookie('fb_locale', $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
+                setcookie('fb_locale', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
                 setcookie('BBLANG', '', ['expires' => time() - 3600, 'path' => '/']);
             }
         } elseif ($autoDetect) {
