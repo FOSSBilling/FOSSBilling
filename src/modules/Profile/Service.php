@@ -300,97 +300,16 @@ class Service implements InjectionAwareInterface
 
     private function phpSessionDecode(string $data): array|int|false
     {
-        $result = [];
-        $offset = 0;
-        $dataLength = strlen($data);
-
-        while ($offset < $dataLength) {
-            $colonPos = strpos($data, ':', $offset);
-            if ($colonPos === false) {
-                break;
-            }
-
-            $type = $data[$offset];
-            $offset = $colonPos + 1;
-
-            if ($type === 'i') {
-                $endPos = strpos($data, ';', $offset);
-                if ($endPos === false) {
-                    return false;
-                }
-                $value = (int) substr($data, $offset, $endPos - $offset);
-
-                return $value;
-            }
-
-            if ($type === 'a') {
-                $bracePos = strpos($data, '{', $offset);
-                if ($bracePos === false) {
-                    return false;
-                }
-
-                $colonPos2 = strpos($data, ':', $bracePos);
-                if ($colonPos2 === false) {
-                    return false;
-                }
-
-                $count = (int) substr($data, $offset, $colonPos2 - $offset);
-                $offset = $colonPos2 + 1;
-
-                for ($i = 0; $i < $count; ++$i) {
-                    $keyStart = strpos($data, 's:', $offset);
-                    if ($keyStart === false || $keyStart > strpos($data, ';', $offset)) {
-                        $keyStart = strpos($data, 'i:', $offset);
-                        if ($keyStart === false) {
-                            break;
-                        }
-                        $keyColon = strpos($data, ':', $keyStart + 2);
-                        $keyEnd = strpos($data, ';', $keyColon);
-                        $keyLen = (int) substr($data, $keyStart + 2, $keyColon - $keyStart - 2);
-                        $key = substr($data, $keyEnd + 2, $keyLen);
-                        $offset = $keyEnd + 2 + $keyLen + 2;
-
-                        $valType = $data[$offset];
-                        $offset += 2;
-                        if ($valType === 'i') {
-                            $valEnd = strpos($data, ';', $offset);
-                            $result[$key] = (int) substr($data, $offset, $valEnd - $offset);
-                            $offset = $valEnd + 1;
-                        } elseif ($valType === 's') {
-                            $valColon = strpos($data, ':', $offset);
-                            $valLen = (int) substr($data, $offset, $valColon - $offset);
-                            $offset = $valColon + 2;
-                            $result[$key] = substr($data, $offset, $valLen);
-                            $offset += $valLen + 2;
-                        }
-                    } else {
-                        $keyColon = strpos($data, ':', $keyStart + 2);
-                        $keyEnd = strpos($data, ';', $keyColon);
-                        $keyLen = (int) substr($data, $keyStart + 2, $keyColon - $keyStart - 2);
-                        $key = substr($data, $keyEnd + 2, $keyLen);
-                        $offset = $keyEnd + 2 + $keyLen + 2;
-
-                        $valType = $data[$offset];
-                        $offset += 2;
-                        if ($valType === 'i') {
-                            $valEnd = strpos($data, ';', $offset);
-                            $result[$key] = (int) substr($data, $offset, $valEnd - $offset);
-                            $offset = $valEnd + 1;
-                        } elseif ($valType === 's') {
-                            $valColon = strpos($data, ':', $offset);
-                            $valLen = (int) substr($data, $offset, $valColon - $offset);
-                            $offset = $valColon + 2;
-                            $result[$key] = substr($data, $offset, $valLen);
-                            $offset += $valLen + 2;
-                        }
-                    }
-                }
-
-                return $result;
-            }
+        if ($data === '' || !in_array($data[0], ['a', 'i'], true)) {
+            return false;
         }
 
-        return $result;
+        $result = unserialize($data, ['allowed_classes' => false]);
+        if (is_array($result) || is_int($result)) {
+            return $result;
+        }
+
+        return false;
     }
 
     private function trashSessionByArray(array $session): void
