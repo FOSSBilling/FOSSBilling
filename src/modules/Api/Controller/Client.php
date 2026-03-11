@@ -164,7 +164,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function isRoleLoggedIn($role): bool
+    protected function isRoleLoggedIn($role): bool
     {
         if ($role == 'client') {
             $this->di['is_client_logged'];
@@ -187,13 +187,24 @@ class Client implements InjectionAwareInterface
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
 
+        $hasTokenAuthCredentials = in_array($role, ['client', 'admin'], true) && $this->hasTokenAuthCredentials();
+        $hasValidSession = false;
+
         try {
             $this->isRoleLoggedIn($role);
-            if ($role == 'client' || $role == 'admin') {
-                $this->_checkCSRFToken();
-            }
+            $hasValidSession = true;
         } catch (\Exception) {
+        }
+
+        if ($hasTokenAuthCredentials) {
+            // Token auth via the Authorization header is not vulnerable to CSRF (browsers cannot send
+            // Authorization headers cross-origin automatically), so skip CSRF and perform token login.
             $this->_tryTokenLogin();
+        } elseif (!$hasValidSession) {
+            $this->_tryTokenLogin();
+        } elseif ($role == 'client' || $role == 'admin') {
+            // Authenticated browser session for privileged roles must pass CSRF checks.
+            $this->_checkCSRFToken();
         }
 
         $api = $this->di['api']($role);
@@ -247,7 +258,7 @@ class Client implements InjectionAwareInterface
         return [$_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']];
     }
 
-    private function _tryTokenLogin(): void
+    protected function _tryTokenLogin(): void
     {
         [$username, $password] = $this->getAuth();
 
@@ -280,6 +291,17 @@ class Client implements InjectionAwareInterface
             default:
                 throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
         }
+    }
+
+    protected function hasTokenAuthCredentials(): bool
+    {
+        try {
+            [$username, $password] = $this->getAuth();
+        } catch (\Exception) {
+            return false;
+        }
+
+        return in_array($username, ['client', 'admin'], true) && $password !== '';
     }
 
     /**

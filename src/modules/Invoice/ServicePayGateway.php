@@ -12,6 +12,7 @@
 namespace Box\Mod\Invoice;
 
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
@@ -277,7 +278,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $defaults['continue_shopping_url'] = $this->di['tools']->url('/order');
         $defaults['single_page'] = true;
         if ($model instanceof \Model_Invoice) {
-            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->hash}", ['restore_session' => session_id()]);
+            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->hash}", ['restore_token' => Tools::createSessionRestoreToken(session_id())]);
             $defaults['invoice_url'] = $this->di['tools']->url("/invoice/{$model->hash}");
         }
 
@@ -400,10 +401,10 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getReturnUrl(\Model_PayGateway $pg, $model = null): string
     {
         if ($model instanceof \Model_Invoice) {
-            return $this->di['url']->link("/invoice/{$model->hash}", ['status' => 'ok', 'restore_session' => session_id()]);
+            return $this->di['url']->link("/invoice/{$model->hash}", ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
         }
 
-        return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_session' => session_id()]);
+        return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
     }
 
     /**
@@ -412,10 +413,10 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getCancelUrl(\Model_PayGateway $pg, $model = null): string
     {
         if ($model instanceof \Model_Invoice) {
-            return $this->di['url']->link("/invoice/{$model->hash}", ['status' => 'cancel', 'restore_session' => session_id()]);
+            return $this->di['url']->link("/invoice/{$model->hash}", ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
         }
 
-        return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_session' => session_id()]);
+        return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
     }
 
     /**

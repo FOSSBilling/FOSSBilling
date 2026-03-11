@@ -551,6 +551,26 @@ final class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_ServiceCustom', $result);
     }
 
+    public function testGetServiceCustomByOrderIdRejectsOrderOwnedByAnotherClient(): void
+    {
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('findOne')
+            ->with('ClientOrder', 'id = ? AND client_id = ?', [1, 42])
+            ->willReturn(null);
+        $dbMock->expects($this->never())
+            ->method('getExistingModelById');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Order not found');
+
+        $this->service->getServiceCustomByOrderId(1, 42);
+    }
+
     public function testGetServiceCustomByOrderIdOrderServiceNotFoundException(): void
     {
         $dbMock = $this->createMock('\Box_Database');

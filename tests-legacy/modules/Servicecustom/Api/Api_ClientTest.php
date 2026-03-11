@@ -18,26 +18,30 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testCall(): void
     {
+        $identity = (object) ['id' => 42];
+
         $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getServiceCustomByOrderId')
+            ->with(1, 42)
             ->willReturn(new \Model_ServiceCustom());
         $serviceMock->expects($this->atLeastOnce())
             ->method('customCall')
+            ->with($this->isInstanceOf(\Model_ServiceCustom::class), 'delete', ['order_id' => 1, 'method' => 'delete'])
             ->willReturn(null);
 
-        $arguments = [
-            0 => [
-                'order_id' => 1,
-            ],
+        $data = [
+            'order_id' => 1,
+            'method' => 'delete',
         ];
 
         $this->api->setService($serviceMock);
+        $this->api->setIdentity($identity);
 
-        $this->api->__call('delete', $arguments);
+        $this->api->call($data);
     }
 
-    public function testCallArgumentsNotSetException(): void
+    public function testCallMethodNotSetException(): void
     {
         $serviceMock = $this->createMock(\Box\Mod\Servicecustom\Service::class);
         $serviceMock->expects($this->never())
@@ -47,11 +51,13 @@ final class Api_ClientTest extends \BBTestCase
             ->method('customCall')
             ->willReturn(null);
 
-        $arguments = [];
+        $data = [
+            'order_id' => 1,
+        ];
 
         $this->api->setService($serviceMock);
         $this->expectException(\Exception::class);
-        $this->api->__call('delete', $arguments);
+        $this->validateRequiredParams($this->api, 'call', $data);
     }
 
     public function testCallOrderIdNotSetException(): void
@@ -64,12 +70,12 @@ final class Api_ClientTest extends \BBTestCase
             ->method('customCall')
             ->willReturn(null);
 
-        $arguments = [
-            0 => [],
+        $data = [
+            'method' => 'delete',
         ];
 
         $this->api->setService($serviceMock);
         $this->expectException(\Exception::class);
-        $this->api->__call('delete', $arguments);
+        $this->validateRequiredParams($this->api, 'call', $data);
     }
 }
