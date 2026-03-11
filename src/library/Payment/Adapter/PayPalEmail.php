@@ -115,6 +115,20 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             case 'web_accept':
             case 'subscr_payment':
                 if ($ipn['payment_status'] == 'Completed') {
+                    // Idempotency: if this transaction was already fully processed (e.g. webhook retry), do not add funds or pay again
+                    if (isset($tx['status']) && $tx['status'] === 'processed') {
+                        $d = [
+                            'id' => $id,
+                            'error' => '',
+                            'error_code' => null,
+                            'status' => 'processed',
+                            'updated_at' => date('Y-m-d H:i:s'),
+                        ];
+                        $api_admin->invoice_transaction_update($d);
+
+                        return;
+                    }
+
                     $bd = [
                         'id' => $client_id,
                         'amount' => $ipn['mc_gross'],
