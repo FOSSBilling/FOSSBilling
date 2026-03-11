@@ -287,12 +287,12 @@ class Service implements InjectionAwareInterface
 
         if ($type === 'admin') {
             $dataArray = $this->phpSessionDecode($data);
-            if (isset($dataArray['id']) && (int) $dataArray['id'] === $id) {
+            if (is_array($dataArray) && isset($dataArray['id']) && (int) $dataArray['id'] === $id) {
                 $this->trashSessionByArray($session);
             }
         } else {
             $clientId = $this->phpSessionDecode($data);
-            if ((int) $clientId === $id) {
+            if (is_int($clientId) && $clientId === $id) {
                 $this->trashSessionByArray($session);
             }
         }
