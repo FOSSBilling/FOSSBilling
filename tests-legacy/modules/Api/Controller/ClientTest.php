@@ -101,17 +101,18 @@ final class ClientTest extends \BBTestCase
         $this->assertSame(['token'], $controller->calls);
     }
 
-    public function testTokenAuthWithExistingSessionStillRequiresCsrf(): void
+    public function testTokenAuthenticatedRequestBypassesCsrfEvenWithExistingSession(): void
     {
         $controller = $this->createController();
         $controller->hasValidSession = true;
         $controller->hasTokenAuthCredentials = true;
         $controller->shouldFailCsrf = true;
 
-        $this->expectException(InformationException::class);
-        $this->expectExceptionCode(403);
-
         $this->invokeApiCall($controller, 'admin', 'test', 'test_method', []);
+
+        $this->assertSame(['ok' => true], $controller->renderedData);
+        $this->assertNull($controller->renderedException);
+        $this->assertSame(['token'], $controller->calls);
     }
 
     public function testSessionAuthenticatedRequestStillRequiresCsrfToken(): void
