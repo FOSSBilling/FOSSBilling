@@ -174,6 +174,8 @@ class UpdatePatcher implements InjectionAwareInterface
         $crypt = $this->di['crypt'];
         $salt = Config::getProperty('info.salt');
 
+        $hasUpdatedAt = $this->di['dbal']->createSchemaManager()->introspectTable($table)->hasColumn('updated_at');
+
         foreach ($rows as $row) {
             $encryptedValue = $row['encrypted_value'] ?? null;
             if (!is_string($encryptedValue) || $encryptedValue === '' || str_starts_with($encryptedValue, \Box_Crypt::CURRENT_FORMAT_PREFIX)) {
@@ -185,10 +187,12 @@ class UpdatePatcher implements InjectionAwareInterface
                 continue;
             }
 
-            $this->di['dbal']->update($table, [
-                $valueColumn => $crypt->encrypt($decryptedValue, $salt),
-                'updated_at' => date('Y-m-d H:i:s'),
-            ], [
+            $updateData = [$valueColumn => $crypt->encrypt($decryptedValue, $salt)];
+            if ($hasUpdatedAt) {
+                $updateData['updated_at'] = date('Y-m-d H:i:s');
+            }
+
+            $this->di['dbal']->update($table, $updateData, [
                 $idColumn => $row['id'],
             ]);
         }
