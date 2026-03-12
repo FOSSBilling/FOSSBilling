@@ -110,12 +110,12 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
 
     private function getCurrentKey(?string $pass = null): string
     {
-        return hash_pbkdf2('sha256', (string) $this->resolvePassphrase($pass), 'fossbilling_salt', 100000, 32, true);
+        return hash_pbkdf2('sha256', $this->resolvePassphrase($pass), 'fossbilling_salt', 100000, 32, true);
     }
 
     private function getLegacyKey(?string $pass = null): string
     {
-        return pack('H*', hash('md5', (string) $this->resolvePassphrase($pass)));
+        return pack('H*', hash('md5', $this->resolvePassphrase($pass)));
     }
 
     private function resolvePassphrase(?string $pass = null): string
