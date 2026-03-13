@@ -180,7 +180,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                         $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
                     }
                     $invoiceService->payInvoiceWithCredits($invoice);
-                } else {
+                } elseif (!$tx->invoice_id) {
                     $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
                 }
             }
@@ -193,14 +193,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $paymentStatus = match ($charge->status) {
             'succeeded' => 'processed',
             'requires_action' => 'received',
-            'requires_payment_method' => 'received',
             'requires_confirmation' => 'received',
             'requires_capture' => 'received',
             'processing' => 'received',
             'pending' => 'received',
+            'requires_payment_method' => 'error',
             'canceled' => 'error',
             'failed' => 'error',
-            default => 'received',
+            default => 'error',
         };
 
         $tx->status = $paymentStatus;
