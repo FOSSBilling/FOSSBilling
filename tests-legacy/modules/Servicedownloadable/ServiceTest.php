@@ -226,7 +226,6 @@ final class ServiceTest extends \BBTestCase
     private function invokeValidateFileUpload(\Symfony\Component\HttpFoundation\File\UploadedFile $file): void
     {
         $reflection = new \ReflectionMethod(Service::class, 'validateFileUpload');
-        $reflection->setAccessible(true);
         $reflection->invoke($this->service, $file);
     }
 }

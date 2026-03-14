@@ -424,7 +424,7 @@ class Tools
     {
         $expiry = time() + 3600;
         $payload = $sessionId . '|' . $expiry;
-        $signature = hash_hmac('sha256', $payload, Config::getProperty('info.salt'));
+        $signature = hash_hmac('sha256', $payload, (string) Config::getProperty('info.salt'));
 
         return base64_encode($payload . '|' . $signature);
     }
@@ -447,7 +447,7 @@ class Tools
             return null;
         }
 
-        $expectedSignature = hash_hmac('sha256', $sessionId . '|' . $expiry, Config::getProperty('info.salt'));
+        $expectedSignature = hash_hmac('sha256', $sessionId . '|' . $expiry, (string) Config::getProperty('info.salt'));
         if (!hash_equals($expectedSignature, $signature)) {
             return null;
         }

@@ -27,7 +27,7 @@ class Box_Authorization
         return (bool) $this->session->get('admin');
     }
 
-    public function authorizeUser(?object $user, string $plainTextPassword)
+    public function authorizeUser(?object $user, string $plainTextPassword): ?object
     {
         if ($user === null) {
             // 25 to 100ms delay

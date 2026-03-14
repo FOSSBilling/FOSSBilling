@@ -17,12 +17,14 @@ final class TestableClient extends Client
     public mixed $renderedData = null;
     public ?\Exception $renderedException = null;
 
+    #[\Override]
     public function renderJson($data = null, ?\Exception $e = null): void
     {
         $this->renderedData = $data;
         $this->renderedException = $e;
     }
 
+    #[\Override]
     protected function isRoleLoggedIn($role): bool
     {
         if (!$this->hasValidSession) {
@@ -32,17 +34,20 @@ final class TestableClient extends Client
         return true;
     }
 
+    #[\Override]
     protected function _tryTokenLogin(): void
     {
         $this->calls[] = 'token';
     }
 
+    #[\Override]
     protected function hasTokenAuthCredentials(): bool
     {
         return $this->hasTokenAuthCredentials;
     }
 
-    public function _checkCSRFToken()
+    #[\Override]
+    public function _checkCSRFToken(): bool
     {
         $this->calls[] = 'csrf';
 
@@ -161,9 +166,9 @@ final class ClientTest extends \BBTestCase
             }
         };
 
-        $this->di['mod_service'] = $this->di->protect(fn (string $name) => $service);
+        $this->di['mod_service'] = $this->di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => $service);
         $this->di['request'] = $request;
-        $this->di['api'] = $this->di->protect(fn (string $role) => $api);
+        $this->di['api'] = $this->di->protect(fn (string $role): object => $api);
 
         $controller = new TestableClient();
         $controller->setDi($this->di);
@@ -174,7 +179,6 @@ final class ClientTest extends \BBTestCase
     private function invokeApiCall(TestableClient $controller, string $role, string $class, string $method, array $params): void
     {
         $reflection = new \ReflectionMethod(Client::class, '_apiCall');
-        $reflection->setAccessible(true);
         $reflection->invoke($controller, $role, $class, $method, $params);
     }
 }
