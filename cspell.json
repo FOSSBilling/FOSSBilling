@@ -419,7 +419,18 @@
         "dataurl",
         "tomselect",
         "zindex",
-        "CHARSETS"
+        "CHARSETS",
+        "diskimage",
+        "matroska",
+        "msdownload",
+        "msvideo",
+        "msword",
+        "officedocument",
+        "openxmlformats",
+        "presentationml",
+        "quicktime",
+        "spreadsheetml",
+        "wordprocessingml"
     ],
     "ignorePaths": [
         "tests-legacy/**",
