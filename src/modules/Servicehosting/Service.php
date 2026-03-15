@@ -1107,6 +1107,14 @@ class Service implements InjectionAwareInterface
             $dc['free_transfer'] = true;
         }
 
+        if (isset($c['free_tlds'])) {
+            $dc['free_tlds'] = $c['free_tlds'];
+        }
+
+        if (isset($c['free_domain_periods'])) {
+            $dc['free_domain_periods'] = $c['free_domain_periods'];
+        }
+
         $table = $this->di['mod_service']('product');
         $d = $table->getMainDomainProduct();
         if (!$d instanceof \Model_Product) {
