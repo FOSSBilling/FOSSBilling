@@ -164,7 +164,7 @@ class Guest extends \Api_Abstract
 
         // If no recent reset request exists, create a new one
         if (!$reset instanceof \Model_ClientPasswordReset) {
-            $hash = hash('sha256', time() . random_bytes(13));
+            $hash = hash('sha256', random_bytes(32));
             $reset = $this->di['db']->dispense('ClientPasswordReset');
             $reset->client_id = $c->id;
             $reset->ip = $this->ip;

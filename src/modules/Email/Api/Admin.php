@@ -15,6 +15,7 @@
 
 namespace Box\Mod\Email\Api;
 
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -40,7 +41,7 @@ class Admin extends \Api_Abstract
                 'sender' => $item['sender'] ?? '',
                 'recipients' => $item['recipients'] ?? '',
                 'subject' => $item['subject'] ?? '',
-                'content_html' => $item['content_html'] ?? '',
+                'content_html' => Tools::sanitizeContent($item['content_html'] ?? ''),
                 'content_text' => $item['content_text'] ?? '',
                 'created_at' => $item['created_at'] ?? '',
             ];

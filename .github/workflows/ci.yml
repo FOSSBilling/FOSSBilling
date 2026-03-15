@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@1c26ea34a7bf6d5380ad4e84d26954d7774a7c91
+        uses: FOSSBilling/.workflows/.github/actions/php-build@bdd8e329f8d863764bb1dbe1031f30f8404e012d
         with:
           php-version: ${{ matrix.php }}
 
@@ -45,7 +45,7 @@ jobs:
           echo APP_ENV=test >> $GITHUB_ENV
         
       - name: 'PHP Tests (PHPStan and PHPUnit)'
-        uses: FOSSBilling/.workflows/.github/actions/php-test@1c26ea34a7bf6d5380ad4e84d26954d7774a7c91
+        uses: FOSSBilling/.workflows/.github/actions/php-test@bdd8e329f8d863764bb1dbe1031f30f8404e012d
         with:
           php-version: ${{ matrix.php }}
           php-vendor-dir: './src/vendor'
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'Download Preview Release Archive'
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: preview-build
           path: '/tmp'
@@ -120,7 +120,7 @@ jobs:
       actions: write
     needs: [ preview-build ]
     if: ${{ github.ref == 'refs/heads/main' }}
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@1c26ea34a7bf6d5380ad4e84d26954d7774a7c91
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@bdd8e329f8d863764bb1dbe1031f30f8404e012d
     secrets:
       dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
