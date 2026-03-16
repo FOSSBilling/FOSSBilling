@@ -35,8 +35,6 @@ final class ServiceTest extends \BBTestCase
         $expected = array_merge(json_decode($productModel->config ?? '', true), $data);
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-        ;
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
@@ -64,8 +62,6 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn(1);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-        ;
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -107,7 +103,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename": "test.txt"}';
 
-        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
@@ -140,7 +136,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename": "existing.txt", "update_orders": true}';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
@@ -173,7 +169,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = null;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
