@@ -233,7 +233,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('validateOrderDateRegisterExceptionsProvider')]
-    public function testValidateOrderDateRegisterExceptions(array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $isDomainAvailable): void
+    public function testValidateOrderDataRegisterExceptions(array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $isDomainAvailable): void
     {
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->{$isSldValidArr['called']}())->method('isSldValid')
