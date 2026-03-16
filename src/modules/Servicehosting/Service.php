@@ -116,7 +116,7 @@ class Service implements InjectionAwareInterface
         $config = $orderService->getConfig($order);
 
         // Retrieve the server manager for the order
-        $serverManager = $this->_getServerMangerForOrder($model);
+        $serverManager = $this->_getServerManagerForOrder($model);
 
         // Generate a password for the service
         $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
@@ -244,7 +244,7 @@ class Service implements InjectionAwareInterface
         $model = $orderService->getOrderService($order);
 
         // Retrieve the server manager for the order
-        $serverManager = $this->_getServerMangerForOrder($model);
+        $serverManager = $this->_getServerManagerForOrder($model);
 
         // As we replace the password internally with asterisks, generate a new password
         $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
@@ -438,7 +438,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    private function _getServerMangerForOrder($model)
+    private function _getServerManagerForOrder($model)
     {
         $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
 
@@ -698,7 +698,7 @@ class Service implements InjectionAwareInterface
     {
         $sql = 'SELECT *
                 FROM service_hosting_server
-                order by id ASC';
+                ORDER BY id ASC';
 
         return [$sql, []];
     }
@@ -786,7 +786,8 @@ class Service implements InjectionAwareInterface
         $model->ns3 = $data['ns3'] ?? $model->ns3;
         $model->ns4 = $data['ns4'] ?? $model->ns4;
         $model->manager = $data['manager'] ?? $model->manager;
-        $model->port = is_numeric($data['port']) ? $data['port'] : $model->port;
+        $port = $data['port'] ?? null;
+        $model->port = is_numeric($port) ? $port : $model->port;
         $model->config = isset($data['config']) ? json_encode($data['config']) : $model->config;
         $model->secure = $data['secure'] ?? $model->secure;
         $model->username = $data['username'] ?? $model->username;
