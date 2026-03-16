@@ -137,7 +137,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('validateOrderDateTransferExceptionsProvider')]
-    public function testValidateOrderDateTransferExceptions(array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $canBeTransferred): void
+    public function testValidateOrderDataTransferExceptions(array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $canBeTransferred): void
     {
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->{$isSldValidArr['called']}())->method('isSldValid')
