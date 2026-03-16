@@ -55,7 +55,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceDownloadable();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($model);
@@ -85,7 +85,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceDownloadable());
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
@@ -107,7 +107,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename": "test.txt"}';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
