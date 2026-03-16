@@ -161,7 +161,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public static function validateOrderDateRegisterExceptionsProvider(): array
+    public static function validateOrderDataRegisterExceptionsProvider(): array
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
