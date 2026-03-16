@@ -698,7 +698,7 @@ class Service implements InjectionAwareInterface
     {
         $sql = 'SELECT *
                 FROM service_hosting_server
-                order by id ASC';
+                ORDER BY id ASC';
 
         return [$sql, []];
     }
