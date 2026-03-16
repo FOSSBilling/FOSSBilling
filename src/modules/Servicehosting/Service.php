@@ -20,6 +20,8 @@ use Symfony\Component\Finder\Finder;
 
 class Service implements InjectionAwareInterface
 {
+    private const PASSWORD_PLACEHOLDER = '********';
+
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
 
@@ -377,7 +379,7 @@ class Service implements InjectionAwareInterface
             $adapter->changeAccountPassword($account, $newPassword);
         }
 
-        $model->pass = '******';
+        $model->pass = self::PASSWORD_PLACEHOLDER;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Changed hosting account %s password', $model->id);
@@ -535,7 +537,7 @@ class Service implements InjectionAwareInterface
             $result['id'] = $model->id;
             $result['active'] = $model->active;
             $result['secure'] = $model->secure;
-            $result['assigned_ips'] = json_decode($model->assigned_ips ?? '', true) ?? '';
+            $result['assigned_ips'] = json_decode($model->assigned_ips ?? '[]', true) ?? [];
             $result['status_url'] = $model->status_url;
             $result['max_accounts'] = $model->max_accounts;
             $result['manager'] = $model->manager;
@@ -1169,7 +1171,7 @@ class Service implements InjectionAwareInterface
         $array = array_filter($array, fn ($ip): bool => $ip !== '');
 
         // Validate that each entry is a valid IP address (works both with IPv4 and IPv6)
-        $array = array_filter($array, fn ($ip): mixed => filter_var($ip, FILTER_VALIDATE_IP));
+        $array = array_filter($array, fn ($ip): bool => (bool) filter_var($ip, FILTER_VALIDATE_IP));
 
         return json_encode(array_values($array));
     }
