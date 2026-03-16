@@ -116,7 +116,7 @@ class Service implements InjectionAwareInterface
         $config = $orderService->getConfig($order);
 
         // Retrieve the server manager for the order
-        $serverManager = $this->_getServerMangerForOrder($model);
+        $serverManager = $this->_getServerManagerForOrder($model);
 
         // Generate a password for the service
         $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
