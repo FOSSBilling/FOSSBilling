@@ -438,7 +438,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    private function _getServerMangerForOrder($model)
+    private function _getServerManagerForOrder($model)
     {
         $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
 
