@@ -85,7 +85,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceDownloadable());
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
