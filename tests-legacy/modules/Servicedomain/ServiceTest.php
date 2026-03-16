@@ -924,7 +924,7 @@ final class ServiceTest extends \BBTestCase
     {
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
-        $registrarAdapterMock->expects($this->atLeastOnce())->method('isDomaincanBeTransferred')
+        $registrarAdapterMock->expects($this->atLeastOnce())->method('isDomainCanBeTransferred')
             ->willReturn(true);
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
