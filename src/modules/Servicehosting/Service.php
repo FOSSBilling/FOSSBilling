@@ -244,7 +244,7 @@ class Service implements InjectionAwareInterface
         $model = $orderService->getOrderService($order);
 
         // Retrieve the server manager for the order
-        $serverManager = $this->_getServerMangerForOrder($model);
+        $serverManager = $this->_getServerManagerForOrder($model);
 
         // As we replace the password internally with asterisks, generate a new password
         $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
