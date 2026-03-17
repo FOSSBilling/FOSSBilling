@@ -232,7 +232,7 @@
                         </td>
                         <td>
                             <div>
-                                <a href='{{ "support/ticket/#{ticket.id}"|url }}/#reply-box'>#{{ ticket.id }} - {{ ticket.subject|truncate(50) }} ({{ ticket.replies }})</a>
+                                <a href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box'>#{{ ticket.id }} - {{ ticket.subject|truncate(50) }} ({{ ticket.replies }})</a>
                             </div>
                             {% if ticket.notes|length %}
                                 <a href="#" rel="{{ ticket.id }}" title="{{ ticket.notes|length }}" class="show-notes">
