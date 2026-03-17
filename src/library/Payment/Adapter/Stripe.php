@@ -160,6 +160,30 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $tx->amount = $charge->amount / 100;
             $tx->currency = $charge->currency;
 
+            // Prevent duplicate processing for the same successful Stripe payment intent
+            if ($charge->status === 'succeeded') {
+                // If this transaction has already been fully processed, do nothing
+                if ($tx->status === 'processed') {
+                    $tx->updated_at = date('Y-m-d H:i:s');
+                    $this->di['db']->store($tx);
+
+                    return;
+                }
+
+                // If another process is already handling this transaction, do not process again
+                if ($tx->status === 'processing') {
+                    $tx->updated_at = date('Y-m-d H:i:s');
+                    $this->di['db']->store($tx);
+
+                    return;
+                }
+
+                // Claim this transaction for processing before performing any side effects
+                $tx->status = 'processing';
+                $tx->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($tx);
+            }
+
             $bd = [
                 'amount' => $tx->amount,
                 'description' => 'Stripe transaction ' . $charge->id,

@@ -659,6 +659,12 @@ class Service implements InjectionAwareInterface
         if (!$invoice->approved) {
             return;
         }
+        if ($invoice->status == \Model_Invoice::STATUS_PAID) {
+            if (DEBUG) {
+                $this->di['logger']->setChannel('billing')->info("Skipping credit payment for already paid invoice {$invoice->id}.");
+            }
+            return;
+        }
 
         $client = $this->di['db']->load('Client', $invoice->client_id);
         $cbrepo = $this->di['mod_service']('Client', 'Balance');

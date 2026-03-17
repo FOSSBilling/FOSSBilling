@@ -115,6 +115,25 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             case 'web_accept':
             case 'subscr_payment':
                 if ($ipn['payment_status'] == 'Completed') {
+                    // Idempotency: if this transaction was already fully processed (e.g. webhook retry), do not add funds or pay again.
+                    // Only skip when we know a *completed* payment has already been applied, based on stored transaction status.
+                    if (
+                        isset($tx['status'], $tx['txn_status']) &&
+                        $tx['status'] === 'processed' &&
+                        $tx['txn_status'] === 'Completed'
+                    ) {
+                        $d = [
+                            'id' => $id,
+                            'error' => '',
+                            'error_code' => null,
+                            'status' => 'processed',
+                            'updated_at' => date('Y-m-d H:i:s'),
+                        ];
+                        $api_admin->invoice_transaction_update($d);
+
+                        return;
+                    }
+
                     $bd = [
                         'id' => $client_id,
                         'amount' => $ipn['mc_gross'],
@@ -122,14 +141,22 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         'type' => 'PayPal',
                         'rel_id' => $ipn['txn_id'],
                     ];
+
                     if ($this->isIpnDuplicate($ipn)) {
                         throw new Payment_Exception('Cannot process duplicate IPN');
                     }
-                    $api_admin->client_balance_add_funds($bd);
-                    $invoiceService = $this->di['mod_service']('Invoice');
-                    $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
 
-                    if (!$tx['invoice_id'] && $ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
+                    $api_admin->client_balance_add_funds($bd);
+
+                    $invoiceService = $this->di['mod_service']('Invoice');
+                    $invoiceDbModel = null;
+                    if (!empty($tx['invoice_id'])) {
+                        $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
+                    }
+
+                    // For subscription payments, always try to find or generate the correct renewal invoice
+                    // based on the subscription SID, instead of blindly reusing the original invoice ID.
+                    if ($ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
                         $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
                         if ($renewalInvoice instanceof Model_Invoice) {
                             $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->id]);
@@ -138,12 +165,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         }
                     }
 
-                    if ($tx['invoice_id'] && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
+                    if (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Model_Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
                         if (!$invoiceDbModel->approved) {
                             $invoiceService->approveInvoice($invoiceDbModel, ['use_credits' => false]);
                         }
                         $api_admin->invoice_pay_with_credits(['id' => $tx['invoice_id']]);
-                    } elseif (!$tx['invoice_id']) {
+                    } elseif (empty($tx['invoice_id'])) {
                         $api_admin->invoice_batch_pay_with_credits(['client_id' => $client_id]);
                     }
                 }
