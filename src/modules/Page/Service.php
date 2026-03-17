@@ -46,7 +46,7 @@ class Service implements InjectionAwareInterface
         $themeCode = $themeService->getCurrentClientAreaThemeCode();
         $paths = [
             Path::join(PATH_THEMES, (string) $themeCode, 'html'),
-            Path::join(PATH_MODS, 'Page', 'html_client'),
+            Path::join(PATH_MODS, 'Page', 'templates/client'),
         ];
 
         $finder = new Finder();

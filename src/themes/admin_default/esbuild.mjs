@@ -90,7 +90,7 @@ async function purgeCssFile(cssFilePath, themePath, enabled = false) {
       content: [
         `${themePath}/html/**/*.twig`,
         `${themePath}/assets/**/*.js`,
-        `${modulesPath}/*/html_admin/**/*.twig`,
+        `${modulesPath}/*/templates/admin/**/*.twig`,
       ],
       css: [{ raw: css, extension: 'css' }],
       safelist: {

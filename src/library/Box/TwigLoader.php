@@ -59,7 +59,7 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
         $paths[] = Path::join($this->options['theme'], 'html_custom');
         $paths[] = Path::join($this->options['theme'], 'html');
         if (isset($name_split[1])) {
-            $paths[] = Path::join($this->options['mods'], ucfirst($name_split[1]), "html_{$this->options['type']}");
+            $paths[] = Path::join($this->options['mods'], ucfirst($name_split[1]), 'templates', $this->options['type']);
         }
 
         foreach ($paths as $path) {
