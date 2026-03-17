@@ -123,9 +123,11 @@
                                 {% endif %}
                                 {% if buyer.address %}
                                     <dt class="col-sm-6">{{ 'Address'|trans }}:</dt>
-                                    <dd class="col-sm-6">{{ buyer.address }}</dd>
-                                    <dd class="col-sm-6">{{ buyer.city }}, {{ buyer.state }}</dd>
-                                    <dd class="col-sm-6">{{ buyer.zip }}, {{ guest.system_countries[buyer.country] }}</dd>
+                                    <dd class="col-sm-6">
+                                        {{ buyer.address }}<br>
+                                        {{ buyer.city }}, {{ buyer.state }}<br>
+                                        {{ buyer.zip }}, {{ guest.system_countries[buyer.country] }}
+                                    </dd>
                                 {% endif %}
                                 {% if buyer.phone %}
                                     <dt class="col-sm-6">{{ 'Phone'|trans }}:</dt>
