@@ -253,7 +253,6 @@
             if (event.target.matches('.remove-form') || event.target.closest('.remove-form')) {
                 const button = event.target.closest('.remove-form');
                 const fid = button.getAttribute('data-form-id');
-                console.log(fid);
 
                 Modals.create({
                     type: 'danger',
