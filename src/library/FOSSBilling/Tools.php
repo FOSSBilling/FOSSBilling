@@ -56,7 +56,7 @@ class Tools
      * @param int      $length         the length of the password to generate
      * @param bool|int $includeSpecial If special characters should be included. If 4 is passed, that's considered to be true (added for backwards compatibility).
      *
-     * @throws InformationException if it failed to generate a password meeting the requirements within 50 iterations
+     * @throws InformationException if it failed to generate a password meeting the requirements within 100 iterations
      */
     public function generatePassword(int $length = 8, bool|int $includeSpecial = false): string
     {
