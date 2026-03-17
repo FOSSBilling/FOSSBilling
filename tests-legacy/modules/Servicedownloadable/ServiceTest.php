@@ -61,7 +61,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(1);
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
