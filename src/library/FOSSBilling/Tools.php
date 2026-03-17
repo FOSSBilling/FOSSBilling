@@ -56,7 +56,7 @@ class Tools
      * @param int      $length         the length of the password to generate
      * @param bool|int $includeSpecial If special characters should be included. If 4 is passed, that's considered to be true (added for backwards compatibility).
      *
-     * @throws InformationException if it failed to generate a password meeting the requirements within 50 iterations
+     * @throws InformationException if it failed to generate a password meeting the requirements within 100 iterations
      */
     public function generatePassword(int $length = 8, bool|int $includeSpecial = false): string
     {
@@ -192,7 +192,8 @@ class Tools
             return [];
         }
 
-        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
+        $count = is_countable($ids) ? count($ids) : 0;
+        $slots = $count ? implode(',', array_fill(0, $count, '?')) : ''; // same as RedBean genSlots() method
 
         $rows = $this->di['db']->getAll('SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')', $ids);
 
