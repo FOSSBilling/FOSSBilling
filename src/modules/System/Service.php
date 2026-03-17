@@ -15,6 +15,7 @@ use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\SentryHelper;
+use FOSSBilling\Tools;
 use FOSSBilling\Version;
 use Pimple\Container;
 use PrinsFrank\Standards\Country\CountryAlpha2;
@@ -543,7 +544,7 @@ class Service
 
     public function getCurrentUrl(): string
     {
-        $pageScheme = $_SERVER['HTTPS'] ? 'https' : 'http';
+        $pageScheme = Tools::isHTTPS() ? 'https' : 'http';
         $pageURL = $pageScheme . '://';
 
         $serverPort = $_SERVER['SERVER_PORT'] ?? null;

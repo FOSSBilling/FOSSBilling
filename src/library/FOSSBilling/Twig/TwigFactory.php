@@ -15,6 +15,7 @@ use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
 use FOSSBilling\i18n;
+use FOSSBilling\Tools;
 use FOSSBilling\Twig\Enum\AppArea;
 use FOSSBilling\Twig\Extension\ApiExtension;
 use FOSSBilling\Twig\Extension\DebugBarExtension;
@@ -298,7 +299,7 @@ class TwigFactory
             'expires' => 0,
             'path' => '/',
             'samesite' => 'Strict',
-            'secure' => isset($_SERVER['HTTPS']),
+            'secure' => Tools::isHTTPS(),
         ]);
 
         $redirectUri = $session->get('redirect_uri');
