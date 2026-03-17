@@ -185,7 +185,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
 
         // Verify the config was created correctly
-        $updatedConfig = json_decode((string) $productModel->config, true);
+        $updatedConfig = json_decode($productModel->config ?? '', true);
         $this->assertIsArray($updatedConfig);
         $this->assertTrue($updatedConfig['update_orders']);
         $this->assertNotNull($productModel->updated_at);
