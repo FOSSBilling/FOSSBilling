@@ -67,8 +67,9 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
                 return $this->cache[$name] = Path::join($path, $name);
             }
 
-            if (str_ends_with((string) $name, 'icon.svg') && $this->filesystem->exists(Path::join(Path::getDirectory($path), 'icon.svg'))) {
-                return $this->cache[$name] = Path::join(Path::getDirectory($path), 'icon.svg');
+            $modulePath = Path::getDirectory(Path::getDirectory($path));
+            if (str_ends_with((string) $name, 'icon.svg') && $this->filesystem->exists(Path::join($modulePath, 'icon.svg'))) {
+                return $this->cache[$name] = Path::join($modulePath, 'icon.svg');
             }
         }
 
