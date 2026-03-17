@@ -20,7 +20,7 @@ use Symfony\Component\Finder\Finder;
 
 class Service implements InjectionAwareInterface
 {
-    private const PASSWORD_PLACEHOLDER = '********';
+    private const string PASSWORD_PLACEHOLDER = '********';
 
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;

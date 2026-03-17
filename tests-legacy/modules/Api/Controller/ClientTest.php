@@ -160,7 +160,7 @@ final class ClientTest extends \BBTestCase
             ->willReturn('127.0.0.1');
 
         $api = new class {
-            public function test_method(array $params): array
+            public function testMethod(array $params): array
             {
                 return ['ok' => true];
             }
