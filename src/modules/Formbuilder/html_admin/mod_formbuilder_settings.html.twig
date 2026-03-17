@@ -69,7 +69,8 @@
                                 <td>{{ form.order_count }}</td>
                                 <td>{{ form.product_count }}</td>
                                 <td>
-                                <a class="btn btn-icon copy-form" href="#" title="Copy" {{ fb_api_link({ reload: true}) }}
+                                <a class="btn btn-icon copy-form" href="#" title="Copy"
+                                   data-fb-api='{{ fb_api_link({ reload: true})|json_encode }}'
                                    data-form-id="{{ form.id }}">
                                     <svg class="icon">
                                         <use xlink:href="#copy" />
