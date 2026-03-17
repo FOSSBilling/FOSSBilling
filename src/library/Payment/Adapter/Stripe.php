@@ -162,7 +162,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
             // Prevent duplicate processing for the same successful Stripe payment intent
             if ($charge->status === 'succeeded') {
-                // If this transaction has already been fully processed without error, do nothing
                 if ($tx->status === Model_Transaction::STATUS_PROCESSED && empty($tx->error)) {
                     $tx->updated_at = date('Y-m-d H:i:s');
                     $this->di['db']->store($tx);
@@ -170,16 +169,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                     return;
                 }
 
-                // Atomically claim this transaction for processing
-                // Only succeeds if status is 'received' (not already being processed or processed)
                 $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
                 if (!$transactionService->claimForProcessing($tx->id)) {
-                    // Another process is already handling this transaction
                     return;
                 }
 
-                // Reload to get the updated status after successful claim
-                $tx = $this->di['db']->getExistingModelById('Transaction', $tx->id);
+                $tx->status = Model_Transaction::STATUS_PROCESSING;
             }
 
             $bd = [

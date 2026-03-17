@@ -54,6 +54,79 @@ final class ServiceTransactionTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
+    public function testGetReceivedIncludesRecoverableProcessingTransactions(): void
+    {
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('getAll')
+            ->with(
+                $this->callback(function (string $sql): bool {
+                    $this->assertStringContainsString('m.status = :received_status', $sql);
+                    $this->assertStringContainsString('m.status = :processing_status', $sql);
+                    $this->assertStringContainsString('m.updated_at IS NULL OR m.updated_at <= :processing_retry_after', $sql);
+
+                    return true;
+                }),
+                $this->callback(function (array $params): bool {
+                    $this->assertSame(\Model_Transaction::STATUS_RECEIVED, $params['received_status']);
+                    $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params['processing_status']);
+
+                    $retryAfter = strtotime($params['processing_retry_after']);
+                    $this->assertNotFalse($retryAfter);
+                    $this->assertLessThanOrEqual(time() - 299, $retryAfter);
+                    $this->assertGreaterThanOrEqual(time() - 301, $retryAfter);
+
+                    return true;
+                })
+            )
+            ->willReturn([[]]);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $result = $this->service->getReceived();
+        $this->assertIsArray($result);
+    }
+
+    public function testClaimForProcessingAllowsRecoveringStaleProcessingTransactions(): void
+    {
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('exec')
+            ->with(
+                $this->callback(function (string $sql): bool {
+                    $this->assertStringContainsString('status IN (?, ?)', $sql);
+                    $this->assertStringContainsString('status = ? AND (updated_at IS NULL OR updated_at <= ?)', $sql);
+
+                    return true;
+                }),
+                $this->callback(function (array $params): bool {
+                    $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params[0]);
+                    $this->assertSame(123, $params[2]);
+                    $this->assertSame(\Model_Transaction::STATUS_RECEIVED, $params[3]);
+                    $this->assertSame(\Model_Transaction::STATUS_PROCESSED, $params[4]);
+                    $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params[5]);
+
+                    $claimedAt = strtotime($params[1]);
+                    $retryAfter = strtotime($params[6]);
+                    $this->assertNotFalse($claimedAt);
+                    $this->assertNotFalse($retryAfter);
+                    $this->assertGreaterThanOrEqual(299, $claimedAt - $retryAfter);
+                    $this->assertLessThanOrEqual(301, $claimedAt - $retryAfter);
+
+                    return true;
+                })
+            )
+            ->willReturn(1);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $this->assertTrue($this->service->claimForProcessing(123));
+    }
+
     public function testUpdate(): void
     {
         $eventsMock = $this->createMock('\Box_EventManager');
@@ -426,40 +499,6 @@ final class ServiceTransactionTest extends \BBTestCase
         $this->service->setDi($di);
 
         $this->service->processTransaction($id);
-    }
-
-    public function getReceived(): void
-    {
-        $serviceMock = $this->getMockBuilder(ServiceTransaction::class)
-            ->onlyMethods(['getSearchQuery'])
-            ->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getSearchQuery')
-            ->willReturn(['SqlString', []]);
-
-        $assoc = [
-            [
-                'id' => 1,
-                'invoice_id' => 1,
-            ],
-        ];
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn($assoc);
-
-        $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \DummyBean());
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAll')
-            ->willReturn([[]]);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $serviceMock->setDi($di);
-
-        $result = $serviceMock->getReceived();
-        $this->assertIsArray($result);
     }
 
     public function testDebitTransaction(): void
