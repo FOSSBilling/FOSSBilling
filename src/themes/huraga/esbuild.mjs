@@ -111,12 +111,12 @@ async function purgeCssFile(cssFilePath, themePath, enabled = false, client = fa
       ? [
           `${themePath}/html/**/*.twig`,
           `${themePath}/assets/**/*.js`,
-          `${modulesPath}/*/html_client/**/*.twig`,
+          `${modulesPath}/*/templates/client/**/*.twig`,
         ]
       : [
           `${themePath}/html/**/*.twig`,
           `${themePath}/assets/**/*.js`,
-          `${modulesPath}/*/html_admin/**/*.twig`,
+          `${modulesPath}/*/templates/admin/**/*.twig`,
         ];
 
     const purgeCSSResult = await new PurgeCSS().purge({
