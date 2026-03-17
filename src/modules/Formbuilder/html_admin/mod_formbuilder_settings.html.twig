@@ -275,10 +275,10 @@
         document.getElementById('new-form')?.addEventListener('click', function(event) {
             Modals.create({
                 type: 'prompt',
-                title: 'New Form',
-                label: 'Give your form a new title',
-                value: 'My new form',
-                promptConfirmButton: 'Create',
+                title: "{{ 'New Form'|trans }}",
+                label: "{{ 'Give your form a new title'|trans }}",
+                value: "{{ 'My new form'|trans }}",
+                promptConfirmButton: "{{ 'Create'|trans }}",
                 promptConfirmCallback: function(title) {
                     API.admin.post('formbuilder/create_form', { name: title },
                         (id) => {
@@ -297,10 +297,10 @@
 
                 Modals.create({
                     type: 'prompt',
-                    title: 'Copy Form',
-                    label: 'Give your duplicate form a title',
-                    value: 'My duplicate form',
-                    promptConfirmButton: 'Copy',
+                    title: "{{ 'Copy Form'|trans }}",
+                    label: "{{ 'Give your duplicate form a title'|trans }}",
+                    value: "{{ 'My duplicate form'|trans }}",
+                    promptConfirmButton: "{{ 'Copy'|trans }}",
                     promptConfirmCallback: (title) => {
                         API.admin.post('formbuilder/copy_form', { name: title, form_id: fid },
                             (id) => {
