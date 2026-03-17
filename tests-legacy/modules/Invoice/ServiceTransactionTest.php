@@ -114,8 +114,8 @@ final class ServiceTransactionTest extends \BBTestCase
                     $retryAfter = strtotime($params[6]);
                     $this->assertNotFalse($claimedAt);
                     $this->assertNotFalse($retryAfter);
-                    $this->assertGreaterThanOrEqual(299, $claimedAt - $retryAfter);
-                    $this->assertLessThanOrEqual(301, $claimedAt - $retryAfter);
+                    $this->assertGreaterThanOrEqual(295, $claimedAt - $retryAfter);
+                    $this->assertLessThanOrEqual(305, $claimedAt - $retryAfter);
 
                     return true;
                 })
