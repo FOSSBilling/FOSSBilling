@@ -166,7 +166,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testCreateInvalidMissinginvoiceId(): void
+    public function testCreateInvalidMissingInvoiceId(): void
     {
         $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
