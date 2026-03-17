@@ -46,7 +46,7 @@
                 <div class="card-header">
                     <h3 class="card-title">{{ 'Custom forms'|trans }}</h3>
                     <div class="card-actions">
-                        <a href="{{ 'Create new form'|trans }}" id="new-form" class="btn btn-primary">
+                        <a href="#" id="new-form" class="btn btn-primary">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></svg>
                             <span>{{ 'Add new'|trans }}</span>
                         </a>
@@ -253,7 +253,6 @@
             if (event.target.matches('.remove-form') || event.target.closest('.remove-form')) {
                 const button = event.target.closest('.remove-form');
                 const fid = button.getAttribute('data-form-id');
-                console.log(fid);
 
                 Modals.create({
                     type: 'danger',
@@ -275,10 +274,10 @@
         document.getElementById('new-form')?.addEventListener('click', function(event) {
             Modals.create({
                 type: 'prompt',
-                title: 'New Form',
-                label: 'Give your form a new title',
-                value: 'My new form',
-                promptConfirmButton: 'Create',
+                title: "{{ 'New Form'|trans }}",
+                label: "{{ 'Give your form a new title'|trans }}",
+                value: "{{ 'My new form'|trans }}",
+                promptConfirmButton: "{{ 'Create'|trans }}",
                 promptConfirmCallback: function(title) {
                     API.admin.post('formbuilder/create_form', { name: title },
                         (id) => {
@@ -297,10 +296,10 @@
 
                 Modals.create({
                     type: 'prompt',
-                    title: 'Copy Form',
-                    label: 'Give your duplicate form a title',
-                    value: 'My duplicate form',
-                    promptConfirmButton: 'Copy',
+                    title: "{{ 'Copy Form'|trans }}",
+                    label: "{{ 'Give your duplicate form a title'|trans }}",
+                    value: "{{ 'My duplicate form'|trans }}",
+                    promptConfirmButton: "{{ 'Copy'|trans }}",
                     promptConfirmCallback: (title) => {
                         API.admin.post('formbuilder/copy_form', { name: title, form_id: fid },
                             (id) => {
