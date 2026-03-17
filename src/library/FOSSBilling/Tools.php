@@ -19,7 +19,6 @@ use Egulias\EmailValidator\Validation\RFCValidation;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\HttpClient\RetryableHttpClient;
 
 class Tools
 {
@@ -311,7 +310,7 @@ class Tools
      * Try order: ipify.org, ifconfig.io, ip.hestiacp.com.
      *
      * @param bool    $throw if the function should throw an exception on an error
-     * @param ?string $bind  overrides the default network interface bind. Set to `null` to disable this behavior.
+     * @param ?string $bind  overrides the default network interface bind. When `null` (default), the configured default (BIND_TO) is used.
      *
      * @return ?string `null` if there was an error, otherwise an IP address will be returned
      */
@@ -319,22 +318,30 @@ class Tools
     {
         $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
         $bind ??= BIND_TO;
+        $client = HttpClient::create(['bindto' => $bind]);
 
-        try {
-            $client = new RetryableHttpClient(HttpClient::create(['bindto' => $bind]));
-            $response = $client->request('GET', '', [
-                'base_uri' => $services,
-                'timeout' => 2,
-            ]);
-            $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
-            if ($ip) {
-                return $ip;
+        foreach ($services as $service) {
+            try {
+                $response = $client->request('GET', $service, [
+                    'timeout' => 2,
+                ]);
+
+                $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
+                if ($ip) {
+                    return $ip;
+                }
+            } catch (\Exception $e) {
+                error_log(sprintf(
+                    'Error fetching external IP from "%s" (%s): %s',
+                    $service,
+                    get_class($e),
+                    $e->getMessage()
+                ));
             }
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
-            if ($throw) {
-                throw $e;
-            }
+        }
+
+        if ($throw) {
+            throw new \Exception('Unable to determine external IP address from any service.');
         }
 
         return null;
