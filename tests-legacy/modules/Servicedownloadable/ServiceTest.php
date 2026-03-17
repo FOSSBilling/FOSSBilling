@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    protected ?Service $service;
+    protected ?Service $service = null;
 
     public function setUp(): void
     {
@@ -34,7 +34,7 @@ final class ServiceTest extends \BBTestCase
 
         $expected = array_merge(json_decode($productModel->config ?? '', true), $data);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
@@ -61,7 +61,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(1);
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -185,7 +185,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
 
         // Verify the config was created correctly
-        $updatedConfig = json_decode((string) $productModel->config, true);
+        $updatedConfig = json_decode($productModel->config ?? '', true);
         $this->assertIsArray($updatedConfig);
         $this->assertTrue($updatedConfig['update_orders']);
         $this->assertNotNull($productModel->updated_at);
