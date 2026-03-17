@@ -136,7 +136,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename": "existing.txt", "update_orders": true}';
 
-        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
@@ -169,7 +169,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = null;
 
-        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
@@ -187,6 +187,7 @@ final class ServiceTest extends \BBTestCase
         // Verify the config was created correctly
         $updatedConfig = json_decode($productModel->config ?? '', true);
         $this->assertIsArray($updatedConfig);
+        $this->assertArrayHasKey('update_orders', $updatedConfig);
         $this->assertTrue($updatedConfig['update_orders']);
         $this->assertNotNull($productModel->updated_at);
     }
@@ -222,6 +223,7 @@ final class ServiceTest extends \BBTestCase
     private function invokeValidateFileUpload(\Symfony\Component\HttpFoundation\File\UploadedFile $file): void
     {
         $reflection = new \ReflectionMethod(Service::class, 'validateFileUpload');
+        $reflection->setAccessible(true);
         $reflection->invoke($this->service, $file);
     }
 }

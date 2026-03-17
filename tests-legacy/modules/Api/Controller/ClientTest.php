@@ -99,7 +99,7 @@ final class ClientTest extends \BBTestCase
         $controller->hasValidSession = false;
         $controller->hasTokenAuthCredentials = true;
 
-        $this->invokeApiCall($controller, 'client', 'test', 'test_method', []);
+        $this->invokeApiCall($controller, 'client', 'test', 'testMethod', []);
 
         $this->assertSame(['ok' => true], $controller->renderedData);
         $this->assertNull($controller->renderedException);
@@ -113,7 +113,7 @@ final class ClientTest extends \BBTestCase
         $controller->hasTokenAuthCredentials = true;
         $controller->shouldFailCsrf = true;
 
-        $this->invokeApiCall($controller, 'admin', 'test', 'test_method', []);
+        $this->invokeApiCall($controller, 'admin', 'test', 'testMethod', []);
 
         $this->assertSame(['ok' => true], $controller->renderedData);
         $this->assertNull($controller->renderedException);
@@ -129,7 +129,7 @@ final class ClientTest extends \BBTestCase
         $this->expectException(InformationException::class);
         $this->expectExceptionCode(403);
 
-        $this->invokeApiCall($controller, 'client', 'test', 'test_method', []);
+        $this->invokeApiCall($controller, 'client', 'test', 'testMethod', []);
     }
 
     public function testGuestRequestIgnoresTokenAuthCredentials(): void
@@ -138,7 +138,7 @@ final class ClientTest extends \BBTestCase
         $controller->hasValidSession = true;
         $controller->hasTokenAuthCredentials = true;
 
-        $this->invokeApiCall($controller, 'guest', 'test', 'test_method', []);
+        $this->invokeApiCall($controller, 'guest', 'test', 'testMethod', []);
 
         $this->assertSame(['ok' => true], $controller->renderedData);
         $this->assertNull($controller->renderedException);

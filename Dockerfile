@@ -1,4 +1,4 @@
-FROM php:8.5-apache@sha256:0a7f9449974d568e1861e29387bacfa8f484e8f113a121f745a6e550ef26c06b
+FROM php:8.5-apache@sha256:f311cd47250defba3a5f7494206ce32efa1753e7e53f93402561ed6129bc5697
 
 # Install required packages, configure Apache, install PHP extensions, and clean-up.
 RUN apt-get update \
@@ -19,7 +19,7 @@ RUN apt-get update \
 COPY --chown=www-data:www-data ./src/. /var/www/html
 
 # Configure cron job for www-data in a dedicated crontab file for clarity.
-RUN echo '*/5 * * * * /usr/local/bin/php /var/www/html/cron.php' > /tmp/www-data.cron \
+RUN echo '*/5 * * * * /usr/local/bin/php /var/www/html/cron.php >> /var/log/cron.log 2>&1' > /tmp/www-data.cron \
   && crontab -u www-data /tmp/www-data.cron \
   && rm /tmp/www-data.cron
 

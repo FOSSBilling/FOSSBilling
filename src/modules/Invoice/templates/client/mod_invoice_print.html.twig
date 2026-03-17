@@ -80,11 +80,11 @@
                                 {% endif %}
                                 {% if seller.bank_name %}
                                     <dt class="col-sm-6">{{ 'Bank Name'|trans }}:</dt>
-                                    <dd class="col-sm-6">{{seller.bank_name}}</dd>
+                                    <dd class="col-sm-6">{{ seller.bank_name }}</dd>
                                 {% endif %}
                                 {% if seller.bic %}
                                     <dt class="col-sm-6">{{ 'BIC / SWIFT Code'|trans }}:</dt>
-                                    <dd class="col-sm-6">{{seller.bic}}</dd>
+                                    <dd class="col-sm-6">{{ seller.bic }}</dd>
                                 {% endif %}
                                 {% if seller.account_number %}
                                     <dt class="col-sm-6">{{ 'Bank Account'|trans }}:</dt>
@@ -121,9 +121,21 @@
                                 {% endif %}
                                 {% if buyer.address %}
                                     <dt class="col-sm-6">{{ 'Address'|trans }}:</dt>
-                                    <dd class="col-sm-6">{{ buyer.address }}</dd>
-                                    <dd class="col-sm-6">{{ buyer.city }}, {{ buyer.state }}</dd>
-                                    <dd class="col-sm-6">{{ buyer.zip }}, {{ guest.system_countries[buyer.country] }}</dd>
+                                    <dd class="col-sm-6">
+                                        {{ buyer.address }}
+                                        {% if buyer.city or buyer.state %}
+                                            <br>
+                                            {% if buyer.city %}{{ buyer.city }}{% endif %}
+                                            {% if buyer.city and buyer.state %}, {% endif %}
+                                            {% if buyer.state %}{{ buyer.state }}{% endif %}
+                                        {% endif %}
+                                        {% if buyer.zip or buyer.country %}
+                                            <br>
+                                            {% if buyer.zip %}{{ buyer.zip }}{% endif %}
+                                            {% if buyer.zip and buyer.country %}, {% endif %}
+                                            {% if buyer.country %}{{ guest.system_countries[buyer.country] }}{% endif %}
+                                        {% endif %}
+                                    </dd>
                                 {% endif %}
                                 {% if buyer.phone %}
                                     <dt class="col-sm-6">{{ 'Phone'|trans }}:</dt>
@@ -146,7 +158,7 @@
             <table class="table mt-3">
                 <thead>
                 <tr>
-                    <th>{{  '#'|trans }}</th>
+                    <th>{{ '#'|trans }}</th>
                     <th>{{ 'Title'|trans }}</th>
                     <th>{{ 'Price'|trans }}</th>
                     <th class="text-end">{{ 'Total'|trans }}</th>
@@ -160,7 +172,7 @@
                         <td>
                             {{ item.price|format_currency(invoice.currency) }}
                             {% if item.quantity > 1 %}
-                                x {{ item.quantity }} {# item.unit #}
+                                x {{ item.quantity }}{% if item.unit is defined and item.unit %} {{ item.unit }}{% endif %}
                             {% endif %}
                         </td>
                         <td class="text-end">{{ item.total|format_currency(invoice.currency) }}</td>
