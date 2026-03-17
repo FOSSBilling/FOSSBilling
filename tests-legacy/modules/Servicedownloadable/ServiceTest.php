@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    protected ?Service $service;
+    protected Service $service;
 
     public function setUp(): void
     {
