@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Twig\Extension;
 
 use FOSSBilling\Environment as AppEnvironment;
+use FOSSBilling\Twig\Enum\AppArea;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Twig\Attribute\AsTwigFilter;
@@ -220,11 +221,19 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('url', isSafe: ['html'], needsEnvironment: true)]
-    public function url(Environment $env, string $path, ?array $query = null, bool $detectAppArea = true): string
+    public function url(Environment $env, string $path, ?array $query = null, ?string $area = null): string
     {
         $globals = $env->getGlobals();
 
-        if ($detectAppArea && isset($globals['app_area']) && $globals['app_area'] === 'admin') {
+        if ($area === null && isset($globals['app_area'])) {
+            $area = $globals['app_area'];
+        }
+
+        if ($area !== null && AppArea::tryFrom($area) === null) {
+            throw new \InvalidArgumentException(sprintf('Invalid app area "%s". Expected one of: %s.', $area, implode(', ', array_column(AppArea::cases(), 'value'))));
+        }
+
+        if ($area === AppArea::ADMIN->value) {
             return $this->di['url']->adminLink($path, $query);
         }
 

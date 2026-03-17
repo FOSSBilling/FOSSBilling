@@ -286,7 +286,7 @@
             const generate_link = function (selector) {
                 selector = (typeof selector === "undefined") ? document.getElementById('bind_selector').value : selector;
 
-                const initial_link = "{{ 'orderbutton/js'|url(query: { 'options' : 1 }, detect_app_area: false) }}";
+                const initial_link = "{{ 'orderbutton/js'|url(query: { 'options' : 1 }, area: 'client') }}";
 
                 const options = {
                     'width': document.getElementById('popup_width').value,

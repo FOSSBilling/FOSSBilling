@@ -390,7 +390,7 @@ final class ServiceTest extends \BBTestCase
         $this->renderEmailTemplateWithSandbox("{% extends 'base.html' %}");
     }
 
-    public function testRenderEmailTemplateUrlFilterWithNamedArguments(): void
+    public function testRenderEmailTemplateUrlFilterWithClientAreaNamedArgument(): void
     {
         $apiGuest = new class {
             public function system_company(): array
@@ -408,12 +408,40 @@ final class ServiceTest extends \BBTestCase
         $di['url'] = $urlMock;
 
         $result = $this->renderEmailTemplateWithSandbox(
-            "{{ 'login'|url(query: { 'email': 'test@example.com' }, detect_app_area: false) }}",
+            "{{ 'login'|url(query: { 'email': 'test@example.com' }, area: 'client') }}",
             [],
             $di
         );
 
         $this->assertSame('http://example.com/login?email=test%40example.com', $result);
+    }
+
+    public function testRenderEmailTemplateUrlFilterWithAdminAreaNamedArgument(): void
+    {
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'Test'];
+            }
+        };
+
+        $urlMock = $this->createMock(\Box_Url::class);
+        $urlMock->expects($this->once())
+            ->method('adminLink')
+            ->with('staff/login', ['email' => 'staff@example.com'])
+            ->willReturn('http://example.com/admin/staff/login?email=staff%40example.com');
+
+        $di = $this->getDi();
+        $di['api_guest'] = $apiGuest;
+        $di['url'] = $urlMock;
+
+        $result = $this->renderEmailTemplateWithSandbox(
+            "{{ 'staff/login'|url(query: { 'email': 'staff@example.com' }, area: 'admin') }}",
+            [],
+            $di
+        );
+
+        $this->assertSame('http://example.com/admin/staff/login?email=staff%40example.com', $result);
     }
 
     private function renderEmailTemplateWithSandbox(string $template, array $vars = [], ?\Pimple\Container $di = null): string

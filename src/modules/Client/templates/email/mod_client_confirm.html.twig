@@ -39,7 +39,7 @@
 	<p>Hello {{ c.first_name }} {{ c.last_name }},</p>
 	<p>Please verify your email by clicking on the link below:</p>
     <a href="{{ email_confirmation_link }}" target="_blank">Verify email address.</a>
-    <p>You may also <a href="{{ 'login'|url(query: { 'email': c.email }, detect_app_area: false) }}" target="_blank">login</a> or <a href="{{ 'client/profile'|url(detect_app_area: false) }}" target="_blank">edit your profile.</a>
+    <p>You may also <a href="{{ 'login'|url(query: { 'email': c.email }, area: 'client') }}" target="_blank">login</a> or <a href="{{ 'client/profile'|url(area: 'client') }}" target="_blank">edit your profile.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

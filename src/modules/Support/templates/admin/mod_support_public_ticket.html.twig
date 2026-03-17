@@ -102,7 +102,7 @@
                     <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
                 </a>
                 <a class="btn btn-primary"
-                    href='{{ "support/contact-us/conversation/#{ticket.hash}"|url(detect_app_area: false) }}'
+                    href='{{ "support/contact-us/conversation/#{ticket.hash}"|url(area: 'client') }}'
                     target="_blank">
                     <svg class="icon icon-tabler" width="24" height="24">
                         <use xlink:href="#eye" />

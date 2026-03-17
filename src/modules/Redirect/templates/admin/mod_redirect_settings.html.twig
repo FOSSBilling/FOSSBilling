@@ -79,7 +79,7 @@
                 {% for r in redirects %}
                     <tr>
                         <td>
-                            <a href="{{ r.path|url(detect_app_area: false) }}" target="_blank">{{ r.path|url(detect_app_area: false) }}</a>
+                            <a href="{{ r.path|url(area: 'client') }}" target="_blank">{{ r.path|url(area: 'client') }}</a>
                         </td>
                         <td>
                             <svg class="icon">
@@ -90,7 +90,7 @@
                             {% if '://' in r.target %}
                                 <a href="{{ r.target }}" target="_blank">{{ r.target }}</a>
                             {% else %}
-                                <a href="{{ r.target|url(detect_app_area: false) }}" target="_blank">{{ r.target|url(detect_app_area: false) }}</a>
+                                <a href="{{ r.target|url(area: 'client') }}" target="_blank">{{ r.target|url(area: 'client') }}</a>
                             {% endif %}
                         </td>
                         <td>
