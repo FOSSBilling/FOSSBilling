@@ -48,30 +48,6 @@ function checkInstaller(): void
 }
 
 /*
- * Check if any legacy BoxBilling/FOSSBilling files are present.
- */
-function checkLegacyFiles(): void
-{
-    global $filesystem;
-
-    // Detect old files and folders from legacy BoxBilling or FOSSBilling installations.
-    $toCheck = ['bb-data', 'bb-library', 'bb-locale', 'bb-modules', 'bb-themes', 'bb-uploads', 'bb-cron.php', 'bb-di.php', 'bb-load.php', 'bb-config.php'];
-    $legacyFound = null;
-    foreach ($toCheck as $path) {
-        if ($filesystem->exists(Path::normalize($path))) {
-            $legacyFound = true;
-
-            break;
-        }
-    }
-
-    // Show an error if any legacy files/folders found.
-    if ($legacyFound) {
-        throw new Exception('Migration from BoxBilling is required.', 4);
-    }
-}
-
-/*
  * Check if SSL required, and enforce if so.
  */
 function checkSSL(): void
@@ -307,9 +283,6 @@ preInit();
 
 // Initialize the application.
 init();
-
-// Check for legacy BoxBilling/FOSSBilling files.
-checkLegacyFiles();
 
 // Verify the installer was removed.
 checkInstaller();

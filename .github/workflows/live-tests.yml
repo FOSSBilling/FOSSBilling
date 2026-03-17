@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 'PHP Build'
-        uses: FOSSBilling/.workflows/.github/actions/php-build@1c26ea34a7bf6d5380ad4e84d26954d7774a7c91
+        uses: FOSSBilling/.workflows/.github/actions/php-build@de419177cb0d9aacddda30e1b64cbefa6c4a8b63
         with:
           cache-deps: 'true'
           composer-args: '--prefer-dist --optimize-autoloader'
@@ -82,7 +82,7 @@ jobs:
         run: sudo systemctl start mysql.service
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
         with:
           php-version: '8.4'
           extensions: imagick, gd, intl, xml, dom, curl, iconv, json, opcache, mbstring, bz2, simplexml, pdo, pdo_mysql

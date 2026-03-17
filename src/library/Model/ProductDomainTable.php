@@ -76,9 +76,9 @@ class Model_ProductDomainTable extends Model_ProductTable
 
     private function _hasFreePeriod($addon): bool
     {
-        $free_domain_periods = $addon['config']['free_domain_periods'];
+        $free_domain_periods = $addon['config']['free_domain_periods'] ?? [];
         $addon_period = $addon['config']['period'];
-        if (in_array($addon_period, $free_domain_periods) || sizeof($free_domain_periods) > 0) {
+        if (in_array($addon_period, $free_domain_periods)) {
             return true;
         }
 
@@ -97,7 +97,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         $addon_sys_period = $this->di['period']($addon_period);
         $addon_qty = $addon_sys_period->getQty();
 
-        $free_domain_periods = $addon['config']['free_domain_periods'];
+        $free_domain_periods = $addon['config']['free_domain_periods'] ?? [];
         if ((is_countable($free_domain_periods) ? count($free_domain_periods) : 0) > 0) {
             // if hosting and domain periods are equal, return domain quantity (year)
             if ($addon_period == $period) {
@@ -120,15 +120,13 @@ class Model_ProductDomainTable extends Model_ProductTable
                     }
                 }
 
-                if (count($free_domain_qtys) > 1) {
+                if (count($free_domain_qtys) > 0) {
                     return min($ref_item_qty, min($free_domain_qtys));
                 }
-
-                return min($ref_item_qty, $free_domain_qtys[0]);
             }
-        } else {
-            return 0;
         }
+
+        return 0;
     }
 
     /**
@@ -142,14 +140,21 @@ class Model_ProductDomainTable extends Model_ProductTable
     private function _isFreeDomainSet($item): bool
     {
         $free_domain = $item['config']['free_domain'] ?? false;
+
+        if (!$free_domain) {
+            return false;
+        }
+
         $tld = $item['config']['tld'] ?? null;
         $free_tlds = $item['config']['free_tlds'] ?? [];
 
-        if ($tld != null && !$free_domain && is_array($free_tlds) && in_array($tld, $free_tlds)) {
+        // When free_tlds is empty, all TLDs are eligible for a free domain.
+        if (empty($free_tlds)) {
             return true;
         }
 
-        return false;
+        // When free_tlds is non-empty, only whitelisted TLDs are eligible.
+        return $tld !== null && in_array($tld, $free_tlds);
     }
 
     private function registerDomainMatch($item, $config)

@@ -54,8 +54,8 @@
         {% endif %}
     </ul>
 
-    <p>You may view the invoice <a href='{{ "invoice/#{invoice.hash}"|url(detect_app_area: false) }}' target="_blank">here.</a>
-    <p>You may also <a href="{{ 'login'|url(query: { 'email' : c.email }, detect_app_area: false) }}" target="_blank">login</a> or <a href="{{ 'client/profile'|url(detect_app_area: false) }}" target="_blank">edit your profile.</a>
+    <p>You may view the invoice <a href='{{ "invoice/#{invoice.hash}"|url(detect_app_area: false) }}' target="_blank">here.</a></p>
+    <p>You can also <a href="{{'invoice/pdf/#{invoice.hash}'|url(detect_app_area: false) }}" target="_blank">download the invoice as a PDF</a>, <a href="{{ 'login'|url(query: { 'email': c.email }, detect_app_area: false) }}" target="_blank">login</a>, or <a href="{{ 'client/profile'|url(detect_app_area: false) }}" target="_blank">edit your profile.</a></p>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

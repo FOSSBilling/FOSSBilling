@@ -165,6 +165,40 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
+    private function migrateEncryptedColumn(string $table, string $idColumn, string $valueColumn, string $where, array $params = []): void
+    {
+        $rows = $this->di['dbal']
+            ->executeQuery("SELECT {$idColumn} AS id, {$valueColumn} AS encrypted_value FROM {$table} WHERE {$where}", $params)
+            ->fetchAllAssociative();
+
+        /** @var \Box_Crypt $crypt */
+        $crypt = $this->di['crypt'];
+        $salt = Config::getProperty('info.salt');
+
+        $hasUpdatedAt = $this->di['dbal']->createSchemaManager()->introspectTable($table)->hasColumn('updated_at');
+
+        foreach ($rows as $row) {
+            $encryptedValue = $row['encrypted_value'] ?? null;
+            if (!is_string($encryptedValue) || $encryptedValue === '' || str_starts_with($encryptedValue, \Box_Crypt::CURRENT_FORMAT_PREFIX)) {
+                continue;
+            }
+
+            $decryptedValue = $crypt->decrypt($encryptedValue, $salt);
+            if ($decryptedValue === false) {
+                continue;
+            }
+
+            $updateData = [$valueColumn => $crypt->encrypt($decryptedValue, $salt)];
+            if ($hasUpdatedAt) {
+                $updateData['updated_at'] = date('Y-m-d H:i:s');
+            }
+
+            $this->di['dbal']->update($table, $updateData, [
+                $idColumn => $row['id'],
+            ]);
+        }
+    }
+
     /**
      * Get the current patch level of FOSSBilling.
      *
@@ -633,6 +667,12 @@ class UpdatePatcher implements InjectionAwareInterface
 
                 $q = "UPDATE setting SET value = 'themes/huraga/assets/build/favicon.ico' WHERE param = 'company_favicon' AND value = 'themes/huraga/assets/favicon.ico';";
                 $this->executeSql($q);
+            },
+            50 => function (): void {
+                $this->migrateEncryptedColumn('email_template', 'id', 'vars', "vars IS NOT NULL AND vars != ''");
+                $this->migrateEncryptedColumn('extension_meta', 'id', 'meta_value', "meta_key = :meta_key AND meta_value IS NOT NULL AND meta_value != ''", [
+                    'meta_key' => 'config',
+                ]);
             },
         ];
         ksort($patches, SORT_NATURAL);

@@ -40,6 +40,12 @@
                                         <span class="input-group-text">{{ field.suffix }}</span>
                                     {% endif %}
                                 </div>
+                            {% elseif field.type == "url" %}
+                                <input class="form-control" type="url" name="config[{{ field.name }}]" id="{{ field.name }}"
+                                       value="{{ order.config[field.name] }}"
+                                       {% if field.required %}required="required"{% endif %}
+                                       {% if field.readonly %}readonly="readonly"{% endif %}
+                                       placeholder="https://example.com">
                             {% elseif field.type == "select" %}
                                 <select id="{{ field.name }}" class="form-select" name="config[{{ field.name }}]"
                                         required="required">

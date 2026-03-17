@@ -335,6 +335,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $model->locked = $locked;
         }
 
+        $privacy = $whois->getPrivacyEnabled();
+        if ($privacy !== null) {
+            $model->privacy = $privacy;
+        }
+
         // sync whois
         $contact = $whois->getContactRegistrar();
 

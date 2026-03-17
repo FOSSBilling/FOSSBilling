@@ -20,6 +20,8 @@ use Symfony\Component\Finder\Finder;
 
 class Service implements InjectionAwareInterface
 {
+    private const PASSWORD_PLACEHOLDER = '********';
+
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
 
@@ -116,7 +118,7 @@ class Service implements InjectionAwareInterface
         $config = $orderService->getConfig($order);
 
         // Retrieve the server manager for the order
-        $serverManager = $this->_getServerMangerForOrder($model);
+        $serverManager = $this->_getServerManagerForOrder($model);
 
         // Generate a password for the service
         $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
@@ -244,7 +246,7 @@ class Service implements InjectionAwareInterface
         $model = $orderService->getOrderService($order);
 
         // Retrieve the server manager for the order
-        $serverManager = $this->_getServerMangerForOrder($model);
+        $serverManager = $this->_getServerManagerForOrder($model);
 
         // As we replace the password internally with asterisks, generate a new password
         $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
@@ -377,7 +379,7 @@ class Service implements InjectionAwareInterface
             $adapter->changeAccountPassword($account, $newPassword);
         }
 
-        $model->pass = '******';
+        $model->pass = self::PASSWORD_PLACEHOLDER;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Changed hosting account %s password', $model->id);
@@ -438,7 +440,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    private function _getServerMangerForOrder($model)
+    private function _getServerManagerForOrder($model)
     {
         $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
 
@@ -535,7 +537,7 @@ class Service implements InjectionAwareInterface
             $result['id'] = $model->id;
             $result['active'] = $model->active;
             $result['secure'] = $model->secure;
-            $result['assigned_ips'] = json_decode($model->assigned_ips ?? '', true) ?? '';
+            $result['assigned_ips'] = json_decode($model->assigned_ips ?? '[]', true) ?? [];
             $result['status_url'] = $model->status_url;
             $result['max_accounts'] = $model->max_accounts;
             $result['manager'] = $model->manager;
@@ -698,7 +700,7 @@ class Service implements InjectionAwareInterface
     {
         $sql = 'SELECT *
                 FROM service_hosting_server
-                order by id ASC';
+                ORDER BY id ASC';
 
         return [$sql, []];
     }
@@ -786,7 +788,8 @@ class Service implements InjectionAwareInterface
         $model->ns3 = $data['ns3'] ?? $model->ns3;
         $model->ns4 = $data['ns4'] ?? $model->ns4;
         $model->manager = $data['manager'] ?? $model->manager;
-        $model->port = is_numeric($data['port']) ? $data['port'] : $model->port;
+        $port = $data['port'] ?? null;
+        $model->port = is_numeric($port) ? $port : $model->port;
         $model->config = isset($data['config']) ? json_encode($data['config']) : $model->config;
         $model->secure = $data['secure'] ?? $model->secure;
         $model->username = $data['username'] ?? $model->username;
@@ -1107,6 +1110,14 @@ class Service implements InjectionAwareInterface
             $dc['free_transfer'] = true;
         }
 
+        if (isset($c['free_tlds'])) {
+            $dc['free_tlds'] = $c['free_tlds'];
+        }
+
+        if (isset($c['free_domain_periods'])) {
+            $dc['free_domain_periods'] = $c['free_domain_periods'];
+        }
+
         $table = $this->di['mod_service']('product');
         $d = $table->getMainDomainProduct();
         if (!$d instanceof \Model_Product) {
@@ -1160,7 +1171,7 @@ class Service implements InjectionAwareInterface
         $array = array_filter($array, fn ($ip): bool => $ip !== '');
 
         // Validate that each entry is a valid IP address (works both with IPv4 and IPv6)
-        $array = array_filter($array, fn ($ip): mixed => filter_var($ip, FILTER_VALIDATE_IP));
+        $array = array_filter($array, fn ($ip): bool => (bool) filter_var($ip, FILTER_VALIDATE_IP));
 
         return json_encode(array_values($array));
     }

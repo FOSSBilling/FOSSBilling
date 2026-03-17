@@ -12,12 +12,16 @@
             {% for field in form.fields %}
                 {% if form.style.type == 'horizontal' %}
                     <div class="mb-3 row">
-                {% endif %}
-                {% if field.hide_label != 1 %}
-                    <label {% if form.style.type == 'horizontal' %}class="col-sm-2 col-form-label"{% else %}class="form-label"{% endif %} for="{{ field.name }}">{{ field.label }}</label>
-                {% endif %}
-                {% if form.style.type == 'horizontal' %}
-                    <div class="col-sm-10">
+                        {% if field.hide_label != 1 %}
+                            <label class="col-sm-2 col-form-label" for="{{ field.name }}">{{ field.label }}</label>
+                        {% endif %}
+                        {% if field.description %}<div class="col-sm-2 col-form-label form-text mt-0">{{ field.description | markdown }}</div>{% endif %}
+                        <div class="col-sm-10">
+                {% else %}
+                    {% if field.hide_label != 1 %}
+                        <label class="form-label" for="{{ field.name }}">{{ field.label }}</label>
+                    {% endif %}
+                    {% if field.description %}<div class="form-text mt-0 mb-2">{{ field.description | markdown }}</div>{% endif %}
                 {% endif %}
 
                 {% if field.type == "text" %}
@@ -36,6 +40,13 @@
                             {% if field.readonly==1 %}readonly="readonly"{% endif %}
                         />
                     {% endif %}
+
+                {% elseif field.type == "url" %}
+                    <input type="url" class="form-control" name="{{ field.name }}" value="{{ field.default_value }}"
+                        {% if field.required==1 %}required="required"{% endif %}
+                        {% if field.readonly==1 %}readonly="readonly"{% endif %}
+                        placeholder="https://example.com"
+                    />
 
                 {% elseif field.type == "select" %}
                     <select class="form-select" name="{{ field.name }}" required="required">
@@ -73,12 +84,9 @@
                         {% if field.readonly==1 %}readonly="readonly"{% endif %}
                     >{{field.default_value}}</textarea>
                 {% endif %}
-                <div class="form-text">{{field.description}}</div>
 
                 {% if form.style.type == 'horizontal' %}
-                    </div>
-                {% endif %}
-                {% if form.style.type == 'horizontal' %}
+                        </div>
                     </div>
                 {% endif %}
             {% endfor %}

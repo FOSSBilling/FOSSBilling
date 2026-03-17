@@ -84,7 +84,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         // Set the invoice ID if it's not set
         if (!$tx['invoice_id']) {
             $invoiceID = $data['get']['invoice_id'];
-            $tx['invoiceID'] = $invoiceID;
+            $tx['invoice_id'] = $invoiceID;
             $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $invoiceID]);
         }
 
@@ -126,10 +126,22 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         throw new Payment_Exception('Cannot process duplicate IPN');
                     }
                     $api_admin->client_balance_add_funds($bd);
-                    // Skip payment for deposit invoices - funds were already added above
                     $invoiceService = $this->di['mod_service']('Invoice');
                     $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
+
+                    if (!$tx['invoice_id'] && $ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
+                        $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
+                        if ($renewalInvoice instanceof Model_Invoice) {
+                            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->id]);
+                            $tx['invoice_id'] = $renewalInvoice->id;
+                            $invoiceDbModel = $renewalInvoice;
+                        }
+                    }
+
                     if ($tx['invoice_id'] && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
+                        if (!$invoiceDbModel->approved) {
+                            $invoiceService->approveInvoice($invoiceDbModel, ['use_credits' => false]);
+                        }
                         $api_admin->invoice_pay_with_credits(['id' => $tx['invoice_id']]);
                     } elseif (!$tx['invoice_id']) {
                         $api_admin->invoice_batch_pay_with_credits(['client_id' => $client_id]);

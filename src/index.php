@@ -62,10 +62,13 @@ $timeCollector->startMeasure('session_start', 'Starting / restoring the session'
 
 /*
  * Workaround: Session IDs get reset when using PGs like PayPal because of the `samesite=strict` cookie attribute, resulting in the client getting logged out.
- * Internally the return and cancel URLs get a restore_session GET parameter attached to them with the proper session ID to restore, so we do so here.
+ * The return and cancel URLs include a signed restore_token that contains the session ID. We validate and extract it here.
  */
-if (!empty($_GET['restore_session'])) {
-    session_id($_GET['restore_session']);
+if (!empty($_GET['restore_token'])) {
+    $restoredSessionId = FOSSBilling\Tools::validateSessionRestoreToken($_GET['restore_token']);
+    if ($restoredSessionId !== null) {
+        session_id($restoredSessionId);
+    }
 }
 
 $di['session'];

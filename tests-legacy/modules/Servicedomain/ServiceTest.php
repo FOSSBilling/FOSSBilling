@@ -1931,4 +1931,189 @@ final class ServiceTest extends \BBTestCase
 
         $this->assertTrue($result);
     }
+
+    public function testSyncWhoisWithPrivacyEnabled(): void
+    {
+        $contact = new \Registrar_Domain_Contact();
+        $contact->setFirstName('John');
+        $contact->setLastName('Doe');
+        $contact->setEmail('john@example.com');
+        $contact->setCompany('Test Co');
+        $contact->setAddress1('123 Test St');
+        $contact->setCity('Test City');
+        $contact->setCountry('US');
+        $contact->setState('CA');
+        $contact->setZip('12345');
+        $contact->setTelCc('1');
+        $contact->setTel('5551234567');
+
+        $registrarDomain = new \Registrar_Domain();
+        $registrarDomain->setPrivacyEnabled(true);
+        $registrarDomain->setLocked(true);
+        $registrarDomain->setExpirationTime(strtotime('+1 year'));
+        $registrarDomain->setRegistrationTime(time());
+        $registrarDomain->setContactRegistrar($contact);
+
+        $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $registrarAdapterMock->expects($this->atLeastOnce())
+            ->method('getDomainDetails')
+            ->willReturn($registrarDomain);
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+            ->onlyMethods(['_getD'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('_getD')
+            ->willReturn([$registrarDomain, $registrarAdapterMock]);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->willReturnCallback(function ($model) {
+                $this->assertInstanceOf(\Model_ServiceDomain::class, $model);
+                $this->assertEquals(1, $model->privacy);
+                $this->assertEquals(1, $model->locked);
+
+                return 1;
+            });
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->createMock('Box_Log');
+        $serviceMock->setDi($di);
+
+        $domainModel = new \Model_ServiceDomain();
+        $domainModel->loadBean(new \DummyBean());
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+
+        $reflection = new \ReflectionMethod($serviceMock, 'syncWhois');
+        $reflection->invoke($serviceMock, $domainModel, $order);
+    }
+
+    public function testSyncWhoisWithPrivacyDisabled(): void
+    {
+        $contact = new \Registrar_Domain_Contact();
+        $contact->setFirstName('John');
+        $contact->setLastName('Doe');
+        $contact->setEmail('john@example.com');
+        $contact->setCompany('Test Co');
+        $contact->setAddress1('123 Test St');
+        $contact->setCity('Test City');
+        $contact->setCountry('US');
+        $contact->setState('CA');
+        $contact->setZip('12345');
+        $contact->setTelCc('1');
+        $contact->setTel('5551234567');
+
+        $registrarDomain = new \Registrar_Domain();
+        $registrarDomain->setPrivacyEnabled(false);
+        $registrarDomain->setLocked(false);
+        $registrarDomain->setExpirationTime(strtotime('+1 year'));
+        $registrarDomain->setRegistrationTime(time());
+        $registrarDomain->setContactRegistrar($contact);
+
+        $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $registrarAdapterMock->expects($this->atLeastOnce())
+            ->method('getDomainDetails')
+            ->willReturn($registrarDomain);
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+            ->onlyMethods(['_getD'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('_getD')
+            ->willReturn([$registrarDomain, $registrarAdapterMock]);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->willReturnCallback(function ($model) {
+                $this->assertInstanceOf(\Model_ServiceDomain::class, $model);
+                $this->assertEquals(0, $model->privacy);
+                $this->assertEquals(0, $model->locked);
+
+                return 1;
+            });
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->createMock('Box_Log');
+        $serviceMock->setDi($di);
+
+        $domainModel = new \Model_ServiceDomain();
+        $domainModel->loadBean(new \DummyBean());
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+
+        $reflection = new \ReflectionMethod($serviceMock, 'syncWhois');
+        $reflection->invoke($serviceMock, $domainModel, $order);
+    }
+
+    public function testSyncWhoisWithPrivacyNull(): void
+    {
+        $contact = new \Registrar_Domain_Contact();
+        $contact->setFirstName('John');
+        $contact->setLastName('Doe');
+        $contact->setEmail('john@example.com');
+        $contact->setCompany('Test Co');
+        $contact->setAddress1('123 Test St');
+        $contact->setCity('Test City');
+        $contact->setCountry('US');
+        $contact->setState('CA');
+        $contact->setZip('12345');
+        $contact->setTelCc('1');
+        $contact->setTel('5551234567');
+
+        $registrarDomain = new \Registrar_Domain();
+        $registrarDomain->setLocked(true);
+        $registrarDomain->setExpirationTime(strtotime('+1 year'));
+        $registrarDomain->setRegistrationTime(time());
+        $registrarDomain->setContactRegistrar($contact);
+
+        $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $registrarAdapterMock->expects($this->atLeastOnce())
+            ->method('getDomainDetails')
+            ->willReturn($registrarDomain);
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+            ->onlyMethods(['_getD'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('_getD')
+            ->willReturn([$registrarDomain, $registrarAdapterMock]);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->willReturnCallback(function ($model) {
+                $this->assertInstanceOf(\Model_ServiceDomain::class, $model);
+                $this->assertNull($model->privacy);
+                $this->assertEquals(1, $model->locked);
+
+                return 1;
+            });
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->createMock('Box_Log');
+        $serviceMock->setDi($di);
+
+        $domainModel = new \Model_ServiceDomain();
+        $domainModel->loadBean(new \DummyBean());
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+
+        $reflection = new \ReflectionMethod($serviceMock, 'syncWhois');
+        $reflection->invoke($serviceMock, $domainModel, $order);
+    }
 }

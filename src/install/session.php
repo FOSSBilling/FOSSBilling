@@ -49,7 +49,7 @@ class Box_SessionFile
         if (!isset(self::$instance)) {
             self::$instance = new self();
             if (!self::$instance->sessionExists() && !headers_sent()) {
-                session_name('BOXSID');
+                session_name('fb_sid');
                 self::$instance->sessionState = session_start();
             }
         }
