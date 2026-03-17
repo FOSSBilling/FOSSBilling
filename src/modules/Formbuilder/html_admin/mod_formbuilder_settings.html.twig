@@ -160,31 +160,51 @@
             <div class="card-body col-12">
                     <div class="mb-3 row">
                         <div class="d-flex gap-2 flex-wrap mb-3" id="fields">
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a
+                                class="btn btn-outline-primary"
+                                href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text' }) }}"
+                                {{ fb_api_link({reload: true}) }}
+                            >
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
                                 <span>{{ 'Text'|trans }}</span>
                             </a>
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a
+                                class="btn btn-outline-primary"
+                                href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select' }) }}"
+                                {{ fb_api_link({reload: true}) }}
+                            >
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
                                 <span>{{ 'Dropdown'|trans }}</span>
                             </a>
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a
+                                class="btn btn-outline-primary"
+                                href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio' }) }}"
+                                {{ fb_api_link({reload: true}) }}
+                            >
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
                                 <span>{{ 'Radio'|trans }}</span>
                             </a>
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a
+                                class="btn btn-outline-primary"
+                                href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox' }) }}"
+                                {{ fb_api_link({reload: true}) }}
+                            >
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
                                 <span>{{ 'Checkbox'|trans }}</span>
                             </a>
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a
+                                class="btn btn-outline-primary"
+                                href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea' }) }}"
+                                {{ fb_api_link({reload: true}) }}
+                            >
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
