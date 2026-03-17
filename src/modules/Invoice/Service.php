@@ -150,7 +150,7 @@ class Service implements InjectionAwareInterface
         foreach ($items as $item) {
             $order_id = ($item->type == \Model_InvoiceItem::TYPE_ORDER) ? $item->rel_id : null;
 
-            $line_total = $item->price * $item->quantity;
+            $line_total = ($item->price ?? 0) * ($item->quantity ?? 1);
             $total += $line_total;
 
             if ($item->taxed) {
@@ -161,9 +161,9 @@ class Service implements InjectionAwareInterface
                 'id' => $item->id,
                 'title' => $item->title,
                 'period' => $item->period,
-                'quantity' => $item->quantity,
+                'quantity' => $item->quantity ?? 1,
                 'unit' => $item->unit,
-                'price' => $item->price,
+                'price' => $item->price ?? 0,
                 'tax' => 0, // Tax will be calculated on the total taxable subtotal
                 'taxed' => $item->taxed,
                 'charged' => $item->charged,
