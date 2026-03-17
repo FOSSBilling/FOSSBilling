@@ -47,7 +47,20 @@
                                 </dd>
                                 <dt class="col-sm-6">{{ 'Invoice Status'|trans }}:</dt>
                                 <dd class="col-sm-6">
-                                    <span class="badge {% if invoice.status == 'paid' %}text-bg-success{% elseif invoice.status == 'unpaid' %}text-bg-warning{% endif %}">
+                                    <span class="badge
+                                        {% if invoice.status == 'paid' %}
+                                            text-bg-success
+                                        {% elseif invoice.status == 'unpaid' %}
+                                            text-bg-warning
+                                        {% elseif invoice.status == 'overdue' %}
+                                            text-bg-danger
+                                        {% elseif invoice.status == 'canceled' %}
+                                            text-bg-secondary
+                                        {% elseif invoice.status == 'refunded' %}
+                                            text-bg-info
+                                        {% else %}
+                                            text-bg-secondary
+                                        {% endif %}">
                                         {{ invoice.status | capitalize }}
                                     </span>
                                 </dd>
@@ -124,9 +137,19 @@
                                 {% if buyer.address %}
                                     <dt class="col-sm-6">{{ 'Address'|trans }}:</dt>
                                     <dd class="col-sm-6">
-                                        {{ buyer.address }}<br>
-                                        {{ buyer.city }}, {{ buyer.state }}<br>
-                                        {{ buyer.zip }}, {{ guest.system_countries[buyer.country] }}
+                                        {{ buyer.address }}
+                                        {% if buyer.city or buyer.state %}
+                                            <br>
+                                            {% if buyer.city %}{{ buyer.city }}{% endif %}
+                                            {% if buyer.city and buyer.state %}, {% endif %}
+                                            {% if buyer.state %}{{ buyer.state }}{% endif %}
+                                        {% endif %}
+                                        {% if buyer.zip or buyer.country %}
+                                            <br>
+                                            {% if buyer.zip %}{{ buyer.zip }}{% endif %}
+                                            {% if buyer.zip and buyer.country %}, {% endif %}
+                                            {% if buyer.country %}{{ guest.system_countries[buyer.country] }}{% endif %}
+                                        {% endif %}
                                     </dd>
                                 {% endif %}
                                 {% if buyer.phone %}
@@ -164,7 +187,7 @@
                         <td>
                             {{ item.price | money(invoice.currency) }}
                             {% if item.quantity > 1 %}
-                                x {{ item.quantity }} {# item.unit #}
+                                x {{ item.quantity }}{% if item.unit is defined and item.unit %} {{ item.unit }}{% endif %}
                             {% endif %}
                         </td>
                         <td class="text-end">{{ item.total | money(invoice.currency) }}</td>

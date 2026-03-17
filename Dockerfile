@@ -19,7 +19,7 @@ RUN apt-get update \
 COPY --chown=www-data:www-data ./src/. /var/www/html
 
 # Configure cron job for www-data in a dedicated crontab file for clarity.
-RUN echo '*/5 * * * * /usr/local/bin/php /var/www/html/cron.php' > /tmp/www-data.cron \
+RUN echo '*/5 * * * * /usr/local/bin/php /var/www/html/cron.php >> /var/log/cron.log 2>&1' > /tmp/www-data.cron \
   && crontab -u www-data /tmp/www-data.cron \
   && rm /tmp/www-data.cron
 
