@@ -510,9 +510,9 @@ final class ServiceTransactionTest extends \BBTestCase
         $invoiceModel->loadBean(new \DummyBean());
         $invoiceModel->currency = $currency;
 
-        $clientModdel = new \Model_Client();
-        $clientModdel->loadBean(new \DummyBean());
-        $clientModdel->currency = $currency;
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \DummyBean());
+        $clientModel->currency = $currency;
 
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \DummyBean());
@@ -524,7 +524,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->willReturnOnConsecutiveCalls($invoiceModel, $clientModdel);
+            ->willReturnOnConsecutiveCalls($invoiceModel, $clientModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($clientBalanceModel);
