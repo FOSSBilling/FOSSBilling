@@ -552,7 +552,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         foreach ($finder as $file) {
             $code = $file->getBasename('.html.twig');
-            $module = strtolower(Path::getFilenameWithoutExtension(Path::getDirectory($file->getPath())));
+            $module = strtolower(Path::getFilenameWithoutExtension(Path::getDirectory(Path::getDirectory($file->getPath()))));
 
             // Skip if module is not active.
             if (!$extensionService->isExtensionActive('mod', $module)) {
