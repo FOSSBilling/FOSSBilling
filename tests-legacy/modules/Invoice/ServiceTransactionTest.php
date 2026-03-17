@@ -186,7 +186,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $this->service->create($data);
     }
 
-    public function testCreateInvalidMissingbbGatewayId(): void
+    public function testCreateInvalidMissingGatewayId(): void
     {
         $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
