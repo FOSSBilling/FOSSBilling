@@ -34,7 +34,7 @@ final class ServiceTest extends \BBTestCase
 
         $expected = array_merge(json_decode($productModel->config ?? '', true), $data);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
