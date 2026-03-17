@@ -124,7 +124,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $err = $body['error'];
         $tx->txn_status = $err['type'];
         $tx->error = $err['message'];
-        $tx->status = 'error';
+        $tx->status = Model_Transaction::STATUS_ERROR;
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
@@ -163,25 +163,23 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             // Prevent duplicate processing for the same successful Stripe payment intent
             if ($charge->status === 'succeeded') {
                 // If this transaction has already been fully processed without error, do nothing
-                if ($tx->status === 'processed' && empty($tx->error)) {
+                if ($tx->status === Model_Transaction::STATUS_PROCESSED && empty($tx->error)) {
                     $tx->updated_at = date('Y-m-d H:i:s');
                     $this->di['db']->store($tx);
 
                     return;
                 }
 
-                // If another process is already handling this transaction, do not process again
-                if ($tx->status === 'processing') {
-                    $tx->updated_at = date('Y-m-d H:i:s');
-                    $this->di['db']->store($tx);
-
+                // Atomically claim this transaction for processing
+                // Only succeeds if status is 'received' (not already being processed or processed)
+                $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+                if (!$transactionService->claimForProcessing($tx->id)) {
+                    // Another process is already handling this transaction
                     return;
                 }
 
-                // Claim this transaction for processing before performing any side effects
-                $tx->status = 'processing';
-                $tx->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($tx);
+                // Reload to get the updated status after successful claim
+                $tx = $this->di['db']->getExistingModelById('Transaction', $tx->id);
             }
 
             $bd = [
@@ -191,7 +189,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'rel_id' => $tx->id,
             ];
 
-            if ($charge->status == 'succeeded' && $tx->status !== 'processed') {
+            if ($charge->status == 'succeeded' && $tx->status === Model_Transaction::STATUS_PROCESSING) {
                 $clientService = $this->di['mod_service']('client');
                 $client = $invoice
                     ? $this->di['db']->getExistingModelById('Client', $invoice->client_id)
@@ -215,16 +213,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         $paymentStatus = match ($charge->status) {
-            'succeeded' => 'processed',
-            'requires_action' => 'received',
-            'requires_confirmation' => 'received',
-            'requires_capture' => 'received',
-            'processing' => 'received',
-            'pending' => 'received',
-            'requires_payment_method' => 'error',
-            'canceled' => 'error',
-            'failed' => 'error',
-            default => 'error',
+            'succeeded' => Model_Transaction::STATUS_PROCESSED,
+            'requires_action' => Model_Transaction::STATUS_RECEIVED,
+            'requires_confirmation' => Model_Transaction::STATUS_RECEIVED,
+            'requires_capture' => Model_Transaction::STATUS_RECEIVED,
+            'processing' => Model_Transaction::STATUS_RECEIVED,
+            'pending' => Model_Transaction::STATUS_RECEIVED,
+            'requires_payment_method' => Model_Transaction::STATUS_ERROR,
+            'canceled' => Model_Transaction::STATUS_ERROR,
+            'failed' => Model_Transaction::STATUS_ERROR,
+            default => Model_Transaction::STATUS_ERROR,
         };
 
         $tx->status = $paymentStatus;

@@ -663,6 +663,7 @@ class Service implements InjectionAwareInterface
             if (DEBUG) {
                 $this->di['logger']->setChannel('billing')->info("Skipping credit payment for already paid invoice {$invoice->id}.");
             }
+
             return;
         }
 

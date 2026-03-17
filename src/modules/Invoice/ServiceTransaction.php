@@ -303,6 +303,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'total' => array_sum($data),
             \Model_Transaction::STATUS_RECEIVED => $data[\Model_Transaction::STATUS_RECEIVED] ?? 0,
             \Model_Transaction::STATUS_APPROVED => $data[\Model_Transaction::STATUS_APPROVED] ?? 0,
+            \Model_Transaction::STATUS_PROCESSING => $data[\Model_Transaction::STATUS_PROCESSING] ?? 0,
             \Model_Transaction::STATUS_PROCESSED => $data[\Model_Transaction::STATUS_PROCESSED] ?? 0,
             \Model_Transaction::STATUS_ERROR => $data[\Model_Transaction::STATUS_ERROR] ?? 0,
         ];
@@ -313,6 +314,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return [
             \Model_Transaction::STATUS_RECEIVED => 'Received',
             \Model_Transaction::STATUS_APPROVED => 'Approved',
+            \Model_Transaction::STATUS_PROCESSING => 'Processing',
             \Model_Transaction::STATUS_PROCESSED => 'Processed',
             \Model_Transaction::STATUS_ERROR => 'Error',
         ];
@@ -323,6 +325,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return [
             \Model_Transaction::STATUS_RECEIVED => 'Received',
             \Model_Transaction::STATUS_APPROVED => 'Approved/Verified',
+            \Model_Transaction::STATUS_PROCESSING => 'Processing',
             \Model_Transaction::STATUS_PROCESSED => 'Processed',
             \Model_Transaction::STATUS_ERROR => 'Error',
         ];
@@ -346,6 +349,35 @@ class ServiceTransaction implements InjectionAwareInterface
             \Payment_Transaction::TXTYPE_SUBSCR_CANCEL => 'Subscription cancel',
             \Payment_Transaction::TXTYPE_UNKNOWN => 'Unknown',
         ];
+    }
+
+    /**
+     * Atomically claim a transaction for processing.
+     * Uses conditional UPDATE to prevent race conditions when multiple
+     * workers attempt to process the same transaction simultaneously.
+     *
+     * Accepts both 'received' and 'processed' statuses to handle PayPal's
+     * Pending→Completed flow where Pending IPNs may set status to 'processed'
+     * without performing side effects.
+     *
+     * @param int $id Transaction ID
+     *
+     * @return bool True if the transaction was successfully claimed, false if already being processed
+     */
+    public function claimForProcessing(int $id): bool
+    {
+        $affectedRows = $this->di['db']->exec(
+            'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND status IN (?, ?)',
+            [
+                \Model_Transaction::STATUS_PROCESSING,
+                date('Y-m-d H:i:s'),
+                $id,
+                \Model_Transaction::STATUS_RECEIVED,
+                \Model_Transaction::STATUS_PROCESSED,
+            ]
+        );
+
+        return $affectedRows > 0;
     }
 
     public function preProcessTransaction(\Model_Transaction $model)

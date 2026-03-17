@@ -266,8 +266,9 @@ final class ServiceTransactionTest extends \BBTestCase
             'total' => 1,
             'received' => 1,
             'approved' => 0,
-            'error' => 0,
+            'processing' => 0,
             'processed' => 0,
+            'error' => 0,
         ];
         $this->assertEquals($expected, $result);
     }
@@ -280,6 +281,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $expected = [
             'received' => 'Received',
             'approved' => 'Approved',
+            'processing' => 'Processing',
             'processed' => 'Processed',
             'error' => 'Error',
         ];
@@ -294,6 +296,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $expected = [
             'received' => 'Received',
             'approved' => 'Approved/Verified',
+            'processing' => 'Processing',
             'processed' => 'Processed',
             'error' => 'Error',
         ];

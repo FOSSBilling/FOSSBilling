@@ -115,16 +115,13 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             case 'web_accept':
             case 'subscr_payment':
                 if ($ipn['payment_status'] == 'Completed') {
-                    // Idempotency: skip only if we've already processed a Completed payment for this transaction
-                    // Check txn_status BEFORE we update it, so we can distinguish:
-                    // - First Completed IPN (txn_status != 'Completed') → process
-                    // - Retry of same Completed IPN (txn_status == 'Completed') → skip
-                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === 'processed' && $tx['txn_status'] === 'Completed') {
+                    // Skip only if we've already processed a Completed payment for this transaction
+                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Model_Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
                         $d = [
                             'id' => $id,
                             'error' => '',
                             'error_code' => null,
-                            'status' => 'processed',
+                            'status' => Model_Transaction::STATUS_PROCESSED,
                             'updated_at' => date('Y-m-d H:i:s'),
                         ];
                         $api_admin->invoice_transaction_update($d);
@@ -132,7 +129,16 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         return;
                     }
 
-                    // Update txn_status to Completed so the transaction record reflects the final PayPal status
+                    // Claim transaction for processing
+                    // Prevents race conditions when multiple Completed IPNs arrive simultaneously
+                    if (!$api_admin->invoice_transaction_claim_for_processing(['id' => $id])) {
+                        return;
+                    }
+
+                    // Reload transaction to get updated status
+                    $tx = $api_admin->invoice_transaction_get(['id' => $id]);
+
+                    // Update to Completed so transaction record reflects final PayPal status
                     if (!isset($tx['txn_status']) || $tx['txn_status'] !== 'Completed') {
                         $api_admin->invoice_transaction_update(['id' => $id, 'txn_status' => 'Completed']);
                         $tx['txn_status'] = 'Completed';
@@ -231,7 +237,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             'id' => $id,
             'error' => '',
             'error_code' => null,
-            'status' => 'processed',
+            'status' => Model_Transaction::STATUS_PROCESSED,
             'updated_at' => date('Y-m-d H:i:s'),
         ];
         $api_admin->invoice_transaction_update($d);

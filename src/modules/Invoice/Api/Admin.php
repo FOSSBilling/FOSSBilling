@@ -521,6 +521,29 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Atomically claim a transaction for processing.
+     * Uses conditional UPDATE to prevent race conditions when multiple
+     * workers attempt to process the same transaction simultaneously.
+     *
+     * @param array $data Contains 'id' - the transaction ID to claim
+     *
+     * @return bool True if the transaction was successfully claimed, false if already claimed/processed
+     *
+     * @throws \FOSSBilling\Exception if transaction ID is missing
+     */
+    public function transaction_claim_for_processing($data)
+    {
+        $required = [
+            'id' => 'Transaction ID is required',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+
+        return $transactionService->claimForProcessing((int) $data['id']);
+    }
+
+    /**
      * Get available gateways.
      *
      * @return array
