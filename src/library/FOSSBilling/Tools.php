@@ -310,7 +310,7 @@ class Tools
      * Try order: ipify.org, ifconfig.io, ip.hestiacp.com.
      *
      * @param bool    $throw if the function should throw an exception on an error
-     * @param ?string $bind  overrides the default network interface bind. Set to `null` to disable this behavior.
+     * @param ?string $bind  overrides the default network interface bind. When `null` (default), the configured default (BIND_TO) is used.
      *
      * @return ?string `null` if there was an error, otherwise an IP address will be returned
      */
