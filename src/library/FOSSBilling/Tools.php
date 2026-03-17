@@ -318,10 +318,10 @@ class Tools
     {
         $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
         $bind ??= BIND_TO;
+        $client = HttpClient::create(['bindto' => $bind]);
 
         foreach ($services as $service) {
             try {
-                $client = HttpClient::create(['bindto' => $bind]);
                 $response = $client->request('GET', $service, [
                     'timeout' => 2,
                 ]);
