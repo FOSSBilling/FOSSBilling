@@ -136,7 +136,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename": "existing.txt", "update_orders": true}';
 
-        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
@@ -169,7 +169,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = null;
 
-        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
