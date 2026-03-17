@@ -19,7 +19,6 @@ use Egulias\EmailValidator\Validation\RFCValidation;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\HttpClient\RetryableHttpClient;
 
 class Tools
 {
@@ -57,7 +56,7 @@ class Tools
      * @param int      $length         the length of the password to generate
      * @param bool|int $includeSpecial If special characters should be included. If 4 is passed, that's considered to be true (added for backwards compatibility).
      *
-     * @throws InformationException if it failed to generate a password meeting the requirements within 50 iterations
+     * @throws InformationException if it failed to generate a password meeting the requirements within 100 iterations
      */
     public function generatePassword(int $length = 8, bool|int $includeSpecial = false): string
     {
@@ -193,7 +192,8 @@ class Tools
             return [];
         }
 
-        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
+        $count = is_countable($ids) ? count($ids) : 0;
+        $slots = $count ? implode(',', array_fill(0, $count, '?')) : ''; // same as RedBean genSlots() method
 
         $rows = $this->di['db']->getAll('SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')', $ids);
 
@@ -311,7 +311,7 @@ class Tools
      * Try order: ipify.org, ifconfig.io, ip.hestiacp.com.
      *
      * @param bool    $throw if the function should throw an exception on an error
-     * @param ?string $bind  overrides the default network interface bind. Set to `null` to disable this behavior.
+     * @param ?string $bind  overrides the default network interface bind. When `null` (default), the configured default (BIND_TO) is used.
      *
      * @return ?string `null` if there was an error, otherwise an IP address will be returned
      */
@@ -319,22 +319,30 @@ class Tools
     {
         $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
         $bind ??= BIND_TO;
+        $client = HttpClient::create(['bindto' => $bind]);
 
-        try {
-            $client = new RetryableHttpClient(HttpClient::create(['bindto' => $bind]));
-            $response = $client->request('GET', '', [
-                'base_uri' => $services,
-                'timeout' => 2,
-            ]);
-            $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
-            if ($ip) {
-                return $ip;
+        foreach ($services as $service) {
+            try {
+                $response = $client->request('GET', $service, [
+                    'timeout' => 2,
+                ]);
+
+                $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
+                if ($ip) {
+                    return $ip;
+                }
+            } catch (\Exception $e) {
+                error_log(sprintf(
+                    'Error fetching external IP from "%s" (%s): %s',
+                    $service,
+                    get_class($e),
+                    $e->getMessage()
+                ));
             }
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
-            if ($throw) {
-                throw $e;
-            }
+        }
+
+        if ($throw) {
+            throw new \Exception('Unable to determine external IP address from any service.');
         }
 
         return null;
