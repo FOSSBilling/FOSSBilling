@@ -115,8 +115,11 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             case 'web_accept':
             case 'subscr_payment':
                 if ($ipn['payment_status'] == 'Completed') {
-                    // Idempotency: if this transaction was already fully processed (e.g. webhook retry), do not add funds or pay again
-                    if (isset($tx['status']) && $tx['status'] === 'processed') {
+                    // Idempotency: skip only if we've already processed a Completed payment for this transaction
+                    // Check txn_status BEFORE we update it, so we can distinguish:
+                    // - First Completed IPN (txn_status != 'Completed') → process
+                    // - Retry of same Completed IPN (txn_status == 'Completed') → skip
+                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === 'processed' && $tx['txn_status'] === 'Completed') {
                         $d = [
                             'id' => $id,
                             'error' => '',
@@ -127,6 +130,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         $api_admin->invoice_transaction_update($d);
 
                         return;
+                    }
+
+                    // Update txn_status to Completed so the transaction record reflects the final PayPal status
+                    if (!isset($tx['txn_status']) || $tx['txn_status'] !== 'Completed') {
+                        $api_admin->invoice_transaction_update(['id' => $id, 'txn_status' => 'Completed']);
+                        $tx['txn_status'] = 'Completed';
                     }
 
                     $bd = [

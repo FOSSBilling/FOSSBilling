@@ -124,7 +124,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $err = $body['error'];
         $tx->txn_status = $err['type'];
         $tx->error = $err['message'];
-        $tx->status = 'processed';
+        $tx->status = 'error';
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
@@ -162,8 +162,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
             // Prevent duplicate processing for the same successful Stripe payment intent
             if ($charge->status === 'succeeded') {
-                // If this transaction has already been fully processed, do nothing
-                if ($tx->status === 'processed') {
+                // If this transaction has already been fully processed without error, do nothing
+                if ($tx->status === 'processed' && empty($tx->error)) {
                     $tx->updated_at = date('Y-m-d H:i:s');
                     $this->di['db']->store($tx);
 
