@@ -529,7 +529,7 @@ class Service
     {
         if ($ip) {
             try {
-                return \FOSSBilling\Tools::getExternalIP();
+                return Tools::getExternalIP();
             } catch (\Exception) {
                 return '';
             }
