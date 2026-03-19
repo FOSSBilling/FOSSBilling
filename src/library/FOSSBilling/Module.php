@@ -68,7 +68,7 @@ class Module implements InjectionAwareInterface
             throw new Exception('Missing manifest file for the :mod module.', [':mod' => $this->module], 5897);
         }
 
-        $contents = file_get_contents(Path::join($this->getModulePath(), self::MANIFEST_FILENAME));
+        $contents = $this->filesystem->readFile(Path::join($this->getModulePath(), self::MANIFEST_FILENAME));
 
         try {
             $json = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);

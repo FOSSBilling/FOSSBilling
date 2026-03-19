@@ -99,7 +99,11 @@ class Config
         if ($clearCache) {
             // If opcache is installed and enabled, invalidate the cache for the config file
             if (function_exists('opcache_invalidate') && function_exists('opcache_compile_file')) {
-                @$filesystem->touch(PATH_CACHE);
+                try {
+                    $filesystem->touch(PATH_CACHE);
+                } catch (\Exception) {
+                    // Silently ignore if touch fails
+                }
                 @opcache_invalidate(PATH_CONFIG, true);
                 @opcache_compile_file(PATH_CONFIG);
             }

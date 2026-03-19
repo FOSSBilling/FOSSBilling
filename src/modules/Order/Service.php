@@ -337,6 +337,7 @@ class Service implements InjectionAwareInterface
         $data = $this->di['db']->toArray($model);
         $data['config'] = json_decode($model->config ?? '', true) ?? [];
         $data['total'] = $this->getTotal($model);
+        $data['discount'] ??= 0;
         $data['title'] = $model->title;
         $data['meta'] = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', [':id' => $model->id]);
         $data['active_tickets'] = $supportService->getActiveTicketsCountForOrder($model);
@@ -1457,7 +1458,7 @@ class Service implements InjectionAwareInterface
 
     public function getTotal(\Model_ClientOrder $model): float
     {
-        return $this->calculateTotal($model->price, $model->quantity);
+        return $this->calculateTotal($model->price ?? 0, $model->quantity ?? 1);
     }
 
     private function calculateTotal($price, $quantity): float
