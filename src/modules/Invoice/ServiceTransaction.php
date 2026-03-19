@@ -16,7 +16,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
-    private const PROCESSING_RECOVERY_TIMEOUT = 300;
+    private const int PROCESSING_RECOVERY_TIMEOUT = 300;
 
     protected ?\Pimple\Container $di = null;
 
