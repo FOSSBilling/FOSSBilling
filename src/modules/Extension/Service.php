@@ -16,6 +16,7 @@ use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
@@ -235,9 +236,10 @@ class Service implements InjectionAwareInterface
         foreach ($result as $key => $value) {
             $icon_url = $value['icon_url'] ?? null;
             if ($icon_url && isset($value['id'])) {
-                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), basename((string) $icon_url));
+                $iconFilename = pathinfo((string) $icon_url, PATHINFO_BASENAME);
+                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), $iconFilename);
                 if ($this->filesystem->exists($iconPath)) {
-                    $result[$key]['icon_path'] = 'mod_' . ucfirst((string) $value['id']) . '_' . basename((string) $icon_url);
+                    $result[$key]['icon_path'] = 'mod_' . ucfirst((string) $value['id']) . '_' . $iconFilename;
                 }
             }
         }
@@ -251,25 +253,24 @@ class Service implements InjectionAwareInterface
     private function _getAvailable(): array
     {
         $mods = [];
-        $handle = opendir(PATH_MODS);
-        while ($name = readdir($handle)) {
-            if (preg_match('/^[a-zA-Z0-9]+$/', $name)) {
-                $m = $name;
-                $mod = $this->di['mod']($m);
-                if ($mod->isCore()) {
-                    continue;
-                }
+        $finder = new Finder();
+        $finder->directories()->in(PATH_MODS)->depth('== 0')->name('/^[a-zA-Z0-9]+$/');
 
-                if (!$mod->hasManifest()) {
-                    error_log("Module {$m} manifest file is missing or is not readable.");
-
-                    continue;
-                }
-
-                $mods[] = strtolower($m);
+        foreach ($finder as $dir) {
+            $m = $dir->getBasename();
+            $mod = $this->di['mod']($m);
+            if ($mod->isCore()) {
+                continue;
             }
+
+            if (!$mod->hasManifest()) {
+                error_log("Module {$m} manifest file is missing or is not readable.");
+
+                continue;
+            }
+
+            $mods[] = strtolower($m);
         }
-        closedir($handle);
 
         return $mods;
     }
@@ -503,7 +504,6 @@ class Service implements InjectionAwareInterface
         $this->filesystem->mkdir($extractedPath, 0o755);
 
         // Download the extension archive and save it to the cache folder
-        $fileHandler = fopen($zipPath, 'w');
         $client = \Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
         $response = $client->request('GET', $latest['download_url']);
 
@@ -512,9 +512,11 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Failed to download the extension with error :code', [':code' => $code]);
         }
 
+        $fileHandler = fopen($zipPath, 'w');
         foreach ($client->stream($response) as $chunk) {
             fwrite($fileHandler, $chunk->getContent());
         }
+        fclose($fileHandler);
 
         // Extract the archive
         $zip = new \PhpZip\ZipFile();
