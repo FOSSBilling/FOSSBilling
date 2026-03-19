@@ -84,7 +84,7 @@
         </div>
         <div class="card-footer" id="reply-to">
             {% if ticket.status != 'closed' %}
-                <form method="post" action="{{ 'support/ticket_reply'|api_url }}" {{ fb_api_form({ reload: true }) }}>
+                <form method="post" action="{{ 'support/ticket_reply'|api_url(role: 'guest') }}" {{ fb_api_form({ reload: true }) }}>
                     <input type="hidden" name="hash" value="{{ ticket.hash }}" />
 
                     <textarea name="message" cols="5" rows="10" class="editor-textarea form-control" required="required" id="ticket-reply-text"></textarea>
