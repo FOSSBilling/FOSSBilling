@@ -335,7 +335,7 @@ class Tools
                 error_log(sprintf(
                     'Error fetching external IP from "%s" (%s): %s',
                     $service,
-                    get_class($e),
+                    $e::class,
                     $e->getMessage()
                 ));
             }

@@ -71,7 +71,7 @@ final class ServiceTransactionTest extends \BBTestCase
                     $this->assertSame(\Model_Transaction::STATUS_RECEIVED, $params['received_status']);
                     $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params['processing_status']);
 
-                    $retryAfter = strtotime($params['processing_retry_after']);
+                    $retryAfter = strtotime((string) $params['processing_retry_after']);
                     $this->assertNotFalse($retryAfter);
 
                     $now = time();
@@ -110,8 +110,8 @@ final class ServiceTransactionTest extends \BBTestCase
                     $this->assertSame(\Model_Transaction::STATUS_PROCESSED, $params[4]);
                     $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params[5]);
 
-                    $claimedAt = strtotime($params[1]);
-                    $retryAfter = strtotime($params[6]);
+                    $claimedAt = strtotime((string) $params[1]);
+                    $retryAfter = strtotime((string) $params[6]);
                     $this->assertNotFalse($claimedAt);
                     $this->assertNotFalse($retryAfter);
                     $this->assertGreaterThanOrEqual(295, $claimedAt - $retryAfter);
