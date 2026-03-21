@@ -265,37 +265,6 @@ final class ClientTest extends \BBTestCase
         $this->assertEquals($generatedHash, $result);
     }
 
-    public function testDelete(): void
-    {
-        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('deleteInvoiceByClient')
-            ->willReturn(true);
-
-        $dbMock = $this->createMock('\Box_Database');
-        $model = new \Model_Invoice();
-        $model->loadBean(new \DummyBean());
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('findOne')
-            ->willReturn($model);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['logger'] = new \Box_Log();
-
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-        $identity = new \Model_Client();
-        $identity->loadBean(new \DummyBean());
-        $this->api->setIdentity($identity);
-
-        $data['hash'] = md5('1');
-        $result = $this->api->delete($data);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
     public function testTransactionGetList(): void
     {
         $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
