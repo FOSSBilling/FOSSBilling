@@ -1333,9 +1333,8 @@ class Service implements InjectionAwareInterface
             'invoice' => $invoice,
         ];
 
-        $loader = new FilesystemLoader(Path::join(__DIR__, 'pdf_template'));
-        $twigFactory = new \FOSSBilling\Twig\TwigFactory($this->di);
-        $twig = $twigFactory->createBaseEnvironment();
+        $loader = new FilesystemLoader(Path::join(__DIR__, 'templates', 'pdf'));
+        $twig = $this->di['twig'];
         $twig->setLoader($loader);
         $html = $twig->render($this->getPdfTemplate(), $vars);
 
@@ -1575,9 +1574,9 @@ class Service implements InjectionAwareInterface
     // Start of PDF related functions
     private function getPdfCss(): string
     {
-        $basePath = Path::join(__DIR__, 'pdf_template');
-        $customCssPath = Path::join($basePath, 'custom-pdf.css');
-        $defaultCssPath = Path::join($basePath, 'default-pdf.css');
+        $basePath = Path::join(__DIR__, 'templates', 'pdf');
+        $customCssPath = Path::join($basePath, 'custom-invoice.css');
+        $defaultCssPath = Path::join($basePath, 'default-invoice.css');
 
         if ($this->filesystem->exists($customCssPath)) {
             $CSS = $this->filesystem->readFile($customCssPath);
@@ -1594,11 +1593,11 @@ class Service implements InjectionAwareInterface
 
     private function getPdfTemplate(): string
     {
-        if ($this->filesystem->exists(Path::join(__DIR__, 'pdf_template', 'custom-pdf.twig'))) {
-            return 'custom-pdf.twig';
+        if ($this->filesystem->exists(Path::join(__DIR__, 'templates', 'pdf', 'custom-invoice.twig'))) {
+            return 'custom-invoice.twig';
         }
 
-        return 'default-pdf.twig';
+        return 'default-invoice.twig';
     }
 
     private function getPdfLogoSource(string $originalUrl): array

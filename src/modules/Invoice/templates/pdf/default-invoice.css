@@ -1,6 +1,6 @@
 /**
  * This file contains the default CSS used for the PDF generator.
- * You can copy and rename this file to 'custom-pdf.css' and customize the CSS as you wish.
+ * You can copy and rename this file to 'custom-invoice.css' and customize the CSS as you wish.
  * The file will be loaded and inserted into the <style> tags for the PDF generation.
  * The backend used for PDF generation is Dompdf, which has fairly limited CSS support, roughly CSS 2.1
  */
