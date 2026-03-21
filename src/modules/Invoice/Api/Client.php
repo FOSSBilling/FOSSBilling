@@ -134,25 +134,6 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Client removes unpaid invoice.
-     *
-     * @return bool
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
-    public function delete($data)
-    {
-        $identity = $this->getIdentity();
-        $model = $this->di['db']->findOne('Invoice', 'hash = :hash AND client_id = :client_id', ['hash' => $data['hash'], 'client_id' => $identity->id]);
-        if (!$model) {
-            throw new \FOSSBilling\Exception('Invoice was not found');
-        }
-
-        return $this->getService()->deleteInvoiceByClient($model);
-    }
-
-    /**
      * Get paginated list of transactions.
      *
      * @optional string $invoice_hash - filter transactions by invoice hash
