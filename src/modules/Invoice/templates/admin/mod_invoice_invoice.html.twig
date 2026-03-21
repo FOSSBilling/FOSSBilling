@@ -700,6 +700,11 @@
     <div class="block">
         <button class="btn btn-primary" type="button" onclick="window.print()">
             <span class="dark-icon i-print"></span> {{ 'Print'|trans }}</button>
+            {% if invoice.status == 'unpaid' %}
+            <a class="btn btn-primary" href="{{ 'api/admin/invoice/delete'|link({ 'id': id.hash }) }}"
+                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|alink}) }}>
+                <span class="dark-icon i-bin"></span> {{ 'Delete'|trans }}</a>
+            {% endif %}
     </div>
 </div>
 {% endblock %}
