@@ -964,24 +964,6 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function deleteInvoiceByClient(\Model_Invoice $model): bool
-    {
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientInvoiceDelete', 'params' => ['id' => $model->id]]);
-
-        // check if invoice is associated with order
-        $invoiceItem = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$model->id]);
-        foreach ($invoiceItem as $item) {
-            if ($item->type == \Model_InvoiceItem::TYPE_ORDER) {
-                throw new InformationException('Invoice is related to order #:id. Please cancel order first.', [':id' => $item->rel_id]);
-            }
-        }
-
-        $this->rmInvoice($model);
-        $this->di['logger']->info("Removed invoice #{$model->id}.");
-
-        return true;
-    }
-
     public function renewInvoice(\Model_ClientOrder $model, array $data)
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->id]]);
