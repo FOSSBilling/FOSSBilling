@@ -14,6 +14,7 @@ namespace FOSSBilling;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Uid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
@@ -654,9 +655,6 @@ class UpdatePatcher implements InjectionAwareInterface
                 }
             },
             49 => function (): void {
-                // Patch to update logo and favicon paths from assets/ to assets/build/ for huraga theme
-                // This is needed because the esbuild migration moved assets to a build directory
-                // @see https://github.com/FOSSBilling/FOSSBilling/pull/XXXX
                 $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo.svg' WHERE param = 'company_logo' AND value = 'themes/huraga/assets/img/logo.svg';";
                 $this->executeSql($q);
 
@@ -671,6 +669,27 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->migrateEncryptedColumn('extension_meta', 'id', 'meta_value', "meta_key = :meta_key AND meta_value IS NOT NULL AND meta_value != ''", [
                     'meta_key' => 'config',
                 ]);
+            },
+            51 => function (): void {
+                $oldDir = Path::join(PATH_MODS, 'Invoice', 'pdf_template');
+                $newDir = Path::join(PATH_MODS, 'Invoice', 'templates', 'pdf');
+
+                if (!$this->filesystem->exists($oldDir)) {
+                    return;
+                }
+
+                $fileActions = [
+                    Path::join($oldDir, 'custom-pdf.twig') => Path::join($newDir, 'custom-invoice.twig'),
+                    Path::join($oldDir, 'custom-pdf.css') => Path::join($newDir, 'custom-invoice.css'),
+                    Path::join($oldDir, 'default-pdf.twig') => 'unlink',
+                    Path::join($oldDir, 'default-pdf.css') => 'unlink',
+                ];
+                $this->executeFileActions($fileActions);
+
+                $finder = new Finder();
+                if (!$finder->in($oldDir)->depth('== 0')->hasResults()) {
+                    $this->filesystem->remove($oldDir);
+                }
             },
         ];
         ksort($patches, SORT_NATURAL);
