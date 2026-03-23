@@ -136,9 +136,11 @@ Order our services at {{ "order"|link }}
         $this->di['em']->persist($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Created mail message #%s', $model->getId());
+        $id = $model->getId() ?? throw new \FOSSBilling\Exception('Failed to retrieve ID after creating mail message');
 
-        return $model->getId();
+        $this->di['logger']->info('Created mail message #%s', $id);
+
+        return $id;
     }
 
     /**
