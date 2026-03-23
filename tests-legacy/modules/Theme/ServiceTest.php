@@ -38,10 +38,19 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('setCurrentThemePreset');
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn([]);
+        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByExtensionAndScope')
+            ->willReturn(null);
+
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -51,7 +60,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
 
         $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
 
         $serviceMock->setDi($di);
         $result = $serviceMock->getCurrentThemePreset($themeMock);
@@ -60,9 +69,23 @@ final class ServiceTest extends \BBTestCase
 
     public function testSetCurrentThemePreset(): void
     {
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('exec');
+        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByExtensionAndScope')
+            ->willReturn(null);
+
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist');
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -72,7 +95,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
 
         $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
 
         $this->service->setDi($di);
         $result = $this->service->setCurrentThemePreset($themeMock, 'dark_blue');
@@ -82,9 +105,18 @@ final class ServiceTest extends \BBTestCase
 
     public function testDeletePreset(): void
     {
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('exec');
+        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->exactly(2))
+            ->method('deleteByExtensionAndScope');
+
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -94,7 +126,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
 
         $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
 
         $this->service->setDi($di);
         $result = $this->service->deletePreset($themeMock, 'dark_blue');
@@ -110,9 +142,19 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateSettings');
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAssoc');
+        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findByExtensionAndScope')
+            ->willReturn([]);
+
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -130,7 +172,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
 
         $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
 
         $serviceMock->setDi($di);
         $result = $serviceMock->getThemePresets($themeMock, 'dark_blue');
@@ -145,9 +187,19 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetThemePresetsThemeDoNotHaveSettingsDataFile(): void
     {
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAssoc');
+        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findByExtensionAndScope')
+            ->willReturn([]);
+
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -161,7 +213,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
 
         $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $this->service->setDi($di);
 
         $result = $this->service->getThemePresets($themeMock);
@@ -175,14 +227,22 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetThemeSettings(): void
     {
-        $extensionMetaModel = new \Model_ExtensionMeta();
-        $extensionMetaModel->loadBean(new \DummyBean());
-        $extensionMetaModel->meta_value = '{}';
+        $extensionMeta = (new \Box\Mod\Extension\Entity\ExtensionMeta())
+            ->setMetaValue('{}');
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('findOne')
-            ->willReturn($extensionMetaModel);
+        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByExtensionAndScope')
+            ->willReturn($extensionMeta);
+
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -191,7 +251,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
 
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
 
         $this->service->setDi($di);
         $result = $this->service->getThemeSettings($themeMock, 'default');
@@ -207,10 +267,19 @@ final class ServiceTest extends \BBTestCase
             ->method('getCurrentThemePreset')
             ->willReturn('default');
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('findOne')
+        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByExtensionAndScope')
             ->willReturn(null);
+
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -222,7 +291,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
 
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $serviceMock->setDi($di);
 
         $result = $serviceMock->getThemeSettings($themeMock);
@@ -232,18 +301,23 @@ final class ServiceTest extends \BBTestCase
 
     public function testUpdateSettings(): void
     {
-        $extensionMetaModel = new \Model_ExtensionMeta();
-        $extensionMetaModel->loadBean(new \DummyBean());
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('findOne')
+        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByExtensionAndScope')
             ->willReturn(null);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($extensionMetaModel);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
+
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->willReturn($repositoryMock);
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist');
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -252,7 +326,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
 
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
 
         $this->service->setDi($di);
         $params = [];

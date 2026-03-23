@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Theme;
 
+use Box\Mod\Extension\Entity\ExtensionMeta;
+use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -19,6 +21,7 @@ use Symfony\Component\Finder\Finder;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private ?ExtensionMetaRepository $extensionMetaRepository = null;
     private readonly Filesystem $filesystem;
 
     /**
@@ -37,6 +40,9 @@ class Service implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->extensionMetaRepository = isset($this->di['em'])
+            ? $this->di['em']->getRepository(ExtensionMeta::class)
+            : null;
     }
 
     public function getDi(): ?\Pimple\Container
@@ -58,6 +64,19 @@ class Service implements InjectionAwareInterface
         self::$clientThemeCache = null;
     }
 
+    public function getExtensionMetaRepository(): ExtensionMetaRepository
+    {
+        if ($this->extensionMetaRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+
+            $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
+        }
+
+        return $this->extensionMetaRepository;
+    }
+
     public function getTheme($name): Model\Theme
     {
         return new Model\Theme($name);
@@ -65,16 +84,9 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentThemePreset(Model\Theme $theme)
     {
-        $current = $this->di['db']->getCell(
-            "SELECT meta_value
-        FROM extension_meta
-        WHERE 1
-        AND extension = 'mod_theme'
-        AND rel_id = 'current'
-        AND rel_type = 'preset'
-        AND meta_key = :theme",
-            [':theme' => $theme->getName()]
-        );
+        $current = $this->getExtensionMetaRepository()
+            ->findOneByExtensionAndScope('mod_theme', $theme->getName(), 'preset', 'current')
+            ?->getMetaValue();
         if (empty($current)) {
             $current = $theme->getCurrentPreset();
             $this->setCurrentThemePreset($theme, $current);
@@ -85,75 +97,39 @@ class Service implements InjectionAwareInterface
 
     public function setCurrentThemePreset(Model\Theme $theme, $preset): bool
     {
-        $params = ['theme' => $theme->getName(), 'preset' => $preset];
-        $updated = $this->di['db']->exec("
-            UPDATE extension_meta
-            SET meta_value = :preset
-            WHERE 1
-            AND extension = 'mod_theme'
-            AND rel_type = 'preset'
-            AND rel_id = 'current'
-            AND meta_key = :theme
-            LIMIT 1
-            ", $params);
+        $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope('mod_theme', $theme->getName(), 'preset', 'current');
 
-        if (!$updated) {
-            $updated = $this->di['db']->exec("
-            INSERT INTO extension_meta (
-                extension,
-                rel_type,
-                rel_id,
-                meta_value,
-                meta_key,
-                created_at,
-                updated_at
-            )
-            VALUES (
-                'mod_theme',
-                'preset',
-                'current',
-                :preset,
-                :theme,
-                NOW(),
-                NOW()
-            )
-            ", $params);
+        if (!$meta instanceof ExtensionMeta) {
+            $meta = (new ExtensionMeta())
+                ->setExtension('mod_theme')
+                ->setRelType('preset')
+                ->setRelId('current')
+                ->setMetaKey($theme->getName());
+
+            $this->di['em']->persist($meta);
         }
+
+        $meta->setMetaValue((string) $preset);
+        $this->di['em']->flush();
 
         return true;
     }
 
     public function deletePreset(Model\Theme $theme, $preset): bool
     {
-        // delete settings
-        $this->di['db']->exec(
-            "DELETE FROM extension_meta
-            WHERE extension = 'mod_theme'
-            AND rel_type = 'settings'
-            AND rel_id = :theme
-            AND meta_key = :preset",
-            ['theme' => $theme->getName(), 'preset' => $preset]
-        );
-
-        // delete default preset
-        $this->di['db']->exec(
-            "DELETE FROM extension_meta
-            WHERE extension = 'mod_theme'
-            AND rel_type = 'preset'
-            AND rel_id = 'current'
-            AND meta_key = :theme",
-            ['theme' => $theme->getName()]
-        );
+        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
+        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', $theme->getName(), 'preset', 'current');
 
         return true;
     }
 
     public function getThemePresets(Model\Theme $theme)
     {
-        $presets = $this->di['db']->getAssoc(
-            "SELECT meta_key FROM extension_meta WHERE extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :key",
-            ['key' => $theme->getName()]
-        );
+        $presets = [];
+        $metaRows = $this->getExtensionMetaRepository()->findByExtensionAndScope('mod_theme', null, 'settings', $theme->getName(), ['metaKey' => 'ASC']);
+        foreach ($metaRows as $meta) {
+            $presets[$meta->getMetaKey()] = $meta->getMetaKey();
+        }
 
         // insert default presets to database
         if (empty($presets)) {
@@ -179,13 +155,9 @@ class Service implements InjectionAwareInterface
             $preset = $this->getCurrentThemePreset($theme);
         }
 
-        $meta = $this->di['db']->findOne(
-            'ExtensionMeta',
-            "extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :theme AND meta_key = :preset",
-            ['theme' => $theme->getName(), 'preset' => $preset]
-        );
-        if ($meta) {
-            return json_decode($meta->meta_value ?? '', true);
+        $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
+        if ($meta instanceof ExtensionMeta) {
+            return json_decode($meta->getMetaValue() ?? '', true) ?? [];
         }
 
         return $theme->getPresetFromSettingsDataFile($preset);
@@ -193,24 +165,20 @@ class Service implements InjectionAwareInterface
 
     public function updateSettings(Model\Theme $theme, $preset, array $params): bool
     {
-        $meta = $this->di['db']->findOne(
-            'ExtensionMeta',
-            "extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :theme AND meta_key = :preset",
-            ['theme' => $theme->getName(), 'preset' => $preset]
-        );
+        $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
 
-        if (!$meta) {
-            $meta = $this->di['db']->dispense('ExtensionMeta');
-            $meta->extension = 'mod_theme';
-            $meta->rel_type = 'settings';
-            $meta->rel_id = $theme->getName();
-            $meta->meta_key = $preset;
-            $meta->created_at = date('Y-m-d H:i:s');
+        if (!$meta instanceof ExtensionMeta) {
+            $meta = (new ExtensionMeta())
+                ->setExtension('mod_theme')
+                ->setRelType('settings')
+                ->setRelId($theme->getName())
+                ->setMetaKey((string) $preset);
+
+            $this->di['em']->persist($meta);
         }
 
-        $meta->meta_value = json_encode($params);
-        $meta->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($meta);
+        $meta->setMetaValue(json_encode($params));
+        $this->di['em']->flush();
 
         return true;
     }

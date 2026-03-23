@@ -11,20 +11,63 @@
 
 namespace Box\Mod\Massmailer;
 
+use Box\Mod\Massmailer\Entity\MassmailerMessage;
+use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
+use Doctrine\DBAL\ArrayParameterType;
 use FOSSBilling\Environment;
+use FOSSBilling\InformationException;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
+    private const FILTER_CLIENT_STATUS = 'client_status';
+    private const FILTER_CLIENT_GROUPS = 'client_groups';
+    private const FILTER_HAS_ORDER = 'has_order';
+    private const FILTER_HAS_ORDER_WITH_STATUS = 'has_order_with_status';
+    private const FILTER_KEYS = [
+        self::FILTER_CLIENT_STATUS,
+        self::FILTER_CLIENT_GROUPS,
+        self::FILTER_HAS_ORDER,
+        self::FILTER_HAS_ORDER_WITH_STATUS,
+    ];
+    private const CLIENT_STATUSES = [
+        \Model_Client::ACTIVE,
+        \Model_Client::SUSPENDED,
+        \Model_Client::CANCELED,
+    ];
+    private const ORDER_STATUSES = [
+        \Model_ClientOrder::STATUS_PENDING_SETUP,
+        \Model_ClientOrder::STATUS_FAILED_SETUP,
+        \Model_ClientOrder::STATUS_FAILED_RENEW,
+        \Model_ClientOrder::STATUS_ACTIVE,
+        \Model_ClientOrder::STATUS_CANCELED,
+        \Model_ClientOrder::STATUS_SUSPENDED,
+    ];
+
     protected ?\Pimple\Container $di = null;
+    protected ?MassmailerMessageRepository $messageRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->messageRepository = $this->di['em']->getRepository(MassmailerMessage::class);
     }
 
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getMessageRepository(): MassmailerMessageRepository
+    {
+        if ($this->messageRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+
+            $this->messageRepository = $this->di['em']->getRepository(MassmailerMessage::class);
+        }
+
+        return $this->messageRepository;
     }
 
     public function install(): void
@@ -52,68 +95,93 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService->setConfig(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);
     }
 
-    public function getSearchQuery($data): array
+    public function getSearchQueryBuilder(array $data): \Doctrine\ORM\QueryBuilder
     {
-        $sql = 'SELECT *
-            FROM mod_massmailer
-            WHERE 1 ';
-
-        $params = [];
-
-        $search = (isset($data['search']) && !empty($data['search'])) ? $data['search'] : null;
-        $status = $data['status'] ?? null;
-
-        if ($status !== null) {
-            $sql .= ' AND status = :status';
-            $params[':status'] = $status;
-        }
-
-        if ($search !== null) {
-            $sql .= ' AND (subject LIKE :search OR content LIKE :search OR from_email LIKE :search OR from_name LIKE :search)';
-            $params[':search'] = '%' . $search . '%';
-        }
-
-        $sql .= ' ORDER BY created_at DESC';
-
-        return [$sql, $params];
+        return $this->getMessageRepository()->getSearchQueryBuilder($data);
     }
 
-    public function getMessageReceivers($model, $data = [])
+    public function getMessageReceivers(MassmailerMessage $model): array
     {
-        $row = $this->toApiArray($model);
-        $filter = $row['filter'];
+        $filter = $this->normalizeFilter($model->getFilter(), true);
 
-        $sql = 'SELECT DISTINCT c.id
-            FROM client c
-            LEFT JOIN client_order co ON (co.client_id = c.id)
-            WHERE 1
-        ';
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('DISTINCT c.id')
+            ->from('client', 'c')
+            ->leftJoin('c', 'client_order', 'co', 'co.client_id = c.id')
+            ->orderBy('c.id', 'DESC');
 
-        $values = [];
-        if (!empty($filter)) {
-            if (isset($filter['client_status']) && !empty($filter['client_status'])) {
-                $sql .= sprintf(" AND c.status IN ('%s')", implode("', '", $filter['client_status']));
+        $this->appendInCondition($query, 'c.status', 'client_status', $filter[self::FILTER_CLIENT_STATUS] ?? [], ArrayParameterType::STRING);
+        $this->appendInCondition($query, 'c.client_group_id', 'client_groups', $filter[self::FILTER_CLIENT_GROUPS] ?? [], ArrayParameterType::INTEGER);
+        $this->appendInCondition($query, 'co.product_id', 'has_order', $filter[self::FILTER_HAS_ORDER] ?? [], ArrayParameterType::INTEGER);
+        $this->appendInCondition($query, 'co.status', 'has_order_with_status', $filter[self::FILTER_HAS_ORDER_WITH_STATUS] ?? [], ArrayParameterType::STRING);
+
+        return $query->executeQuery()->fetchAllAssociative();
+    }
+
+    public function normalizeFilter(mixed $filter, bool $strict = false): array
+    {
+        if (is_string($filter)) {
+            $filter = trim($filter);
+            if ($filter === '') {
+                return [];
             }
 
-            if (isset($filter['client_groups']) && !empty($filter['client_groups'])) {
-                $sql .= sprintf(" AND c.client_group_id IN ('%s')", implode("', '", $filter['client_groups']));
-            }
-
-            if (isset($filter['has_order']) && !empty($filter['has_order'])) {
-                $sql .= sprintf(" AND co.product_id IN ('%s')", implode("', '", $filter['has_order']));
-            }
-
-            if (isset($filter['has_order_with_status']) && !empty($filter['has_order_with_status'])) {
-                $sql .= sprintf(" AND co.status IN ('%s')", implode("', '", $filter['has_order_with_status']));
+            try {
+                $filter = json_decode($filter, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                return $this->handleInvalidFilter('filter', $strict);
             }
         }
 
-        $sql .= ' ORDER BY c.id DESC';
+        if ($filter === null) {
+            return [];
+        }
 
-        return $this->di['db']->getAll($sql, $values);
+        if (!is_array($filter)) {
+            return $this->handleInvalidFilter('filter', $strict);
+        }
+
+        $unknownKeys = array_diff(array_keys($filter), self::FILTER_KEYS);
+        if ($strict && $unknownKeys !== []) {
+            return $this->handleInvalidFilter((string) reset($unknownKeys), $strict);
+        }
+
+        $normalized = [];
+        $normalized[self::FILTER_CLIENT_STATUS] = $this->normalizeEnumFilterValues(
+            $filter[self::FILTER_CLIENT_STATUS] ?? [],
+            self::CLIENT_STATUSES,
+            self::FILTER_CLIENT_STATUS,
+            $strict
+        );
+        $normalized[self::FILTER_CLIENT_GROUPS] = $this->normalizeIdFilterValues(
+            $filter[self::FILTER_CLIENT_GROUPS] ?? [],
+            'client_group',
+            self::FILTER_CLIENT_GROUPS,
+            $strict
+        );
+        $normalized[self::FILTER_HAS_ORDER] = $this->normalizeIdFilterValues(
+            $filter[self::FILTER_HAS_ORDER] ?? [],
+            'product',
+            self::FILTER_HAS_ORDER,
+            $strict
+        );
+        $normalized[self::FILTER_HAS_ORDER_WITH_STATUS] = $this->normalizeEnumFilterValues(
+            $filter[self::FILTER_HAS_ORDER_WITH_STATUS] ?? [],
+            self::ORDER_STATUSES,
+            self::FILTER_HAS_ORDER_WITH_STATUS,
+            $strict
+        );
+
+        return array_filter($normalized, static fn (array $values): bool => $values !== []);
     }
 
-    public function getParsed($model, $client_id): array
+    public function serializeFilter(mixed $filter): string
+    {
+        return json_encode($this->normalizeFilter($filter, true), JSON_THROW_ON_ERROR);
+    }
+
+    public function getParsed(MassmailerMessage $model, int $client_id): array
     {
         $clientService = $this->di['mod_service']('client');
         $systemService = $this->di['mod_service']('system');
@@ -123,18 +191,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $vars = [];
         $vars['c'] = $clientArr;
-        $vars['_tpl'] = $model->subject;
+        $vars['_tpl'] = $model->getSubject();
         $ps = $systemService->renderString($vars['_tpl'], false, $vars);
 
         $vars = [];
         $vars['c'] = $clientArr;
-        $vars['_tpl'] = $model->content;
+        $vars['_tpl'] = $model->getContent();
         $pc = $systemService->renderString($vars['_tpl'], false, $vars);
 
         return [$ps, $pc];
     }
 
-    public function sendMessage($model, $client_id, bool $sendNow = false): bool
+    public function sendMessage(MassmailerMessage $model, int $client_id, bool $sendNow = false): bool
     {
         [$ps, $pc] = $this->getParsed($model, $client_id);
 
@@ -145,8 +213,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $data = [
             'to' => $client->email,
             'to_name' => $client->first_name . ' ' . $client->last_name,
-            'from' => $model->from_email,
-            'from_name' => $model->from_name,
+            'from' => $model->getFromEmail(),
+            'from_name' => $model->getFromName(),
             'subject' => $ps,
             'content' => $pc,
             'client_id' => $client_id,
@@ -171,23 +239,134 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray($row)
+    public function toApiArray(MassmailerMessage|array $row): array
     {
-        if ($row instanceof \RedBeanPHP\OODBBean) {
-            $row = $row->export();
+        if ($row instanceof MassmailerMessage) {
+            $row = $row->toApiArray();
         }
 
-        $row['filter'] = json_decode($row['filter'] ?? '', true) ?? [];
+        $row['filter'] = $this->normalizeFilter($row['filter'] ?? null);
 
         return $row;
     }
 
-    public function sendMail($params): void
+    public function sendMail(array $params): void
     {
-        $model = $this->di['db']->load('mod_massmailer', $params['msg_id']);
-        if (!$model) {
+        $model = $this->getMessageRepository()->find((int) $params['msg_id']);
+        if (!$model instanceof MassmailerMessage) {
             throw new \Exception('Mass mail message not found');
         }
         $this->sendMessage($model, $params['client_id']);
+    }
+
+    private function normalizeEnumFilterValues(mixed $values, array $allowedValues, string $field, bool $strict): array
+    {
+        if ($values === null || $values === []) {
+            return [];
+        }
+
+        if (!is_array($values)) {
+            return $this->handleInvalidFilter($field, $strict);
+        }
+
+        $selectedValues = [];
+        foreach ($values as $value) {
+            if (!is_scalar($value)) {
+                return $this->handleInvalidFilter($field, $strict);
+            }
+
+            $value = trim((string) $value);
+            if ($value === '' || !in_array($value, $allowedValues, true)) {
+                return $this->handleInvalidFilter($field, $strict);
+            }
+
+            $selectedValues[$value] = true;
+        }
+
+        $normalized = [];
+        foreach ($allowedValues as $allowedValue) {
+            if (isset($selectedValues[$allowedValue])) {
+                $normalized[] = $allowedValue;
+            }
+        }
+
+        return $normalized;
+    }
+
+    private function normalizeIdFilterValues(mixed $values, string $table, string $field, bool $strict): array
+    {
+        if ($values === null || $values === []) {
+            return [];
+        }
+
+        if (!is_array($values)) {
+            return $this->handleInvalidFilter($field, $strict);
+        }
+
+        $normalized = [];
+        foreach ($values as $value) {
+            if (is_int($value)) {
+            } elseif (is_string($value) && ctype_digit($value)) {
+                $value = (int) $value;
+            } else {
+                return $this->handleInvalidFilter($field, $strict);
+            }
+
+            if ($value < 1) {
+                return $this->handleInvalidFilter($field, $strict);
+            }
+
+            $normalized[$value] = $value;
+        }
+
+        $normalized = array_values($normalized);
+        sort($normalized);
+
+        if ($normalized === []) {
+            return [];
+        }
+
+        $existingIds = $this->getExistingIds($table, $normalized);
+        if (count($existingIds) !== count($normalized)) {
+            return $this->handleInvalidFilter($field, $strict);
+        }
+
+        return $existingIds;
+    }
+
+    private function getExistingIds(string $table, array $ids): array
+    {
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('id')
+            ->from($table)
+            ->where('id IN (:ids)')
+            ->setParameter('ids', $ids, ArrayParameterType::INTEGER);
+
+        $rows = $query->executeQuery()->fetchAllAssociative();
+        $existingIds = array_map(static fn (array $row): int => (int) $row['id'], $rows);
+        sort($existingIds);
+
+        return array_values(array_unique($existingIds));
+    }
+
+    private function appendInCondition(\Doctrine\DBAL\Query\QueryBuilder $query, string $column, string $parameterName, array $filterValues, ArrayParameterType $parameterType): void
+    {
+        if ($filterValues === []) {
+            return;
+        }
+
+        $query
+            ->andWhere(sprintf('%s IN (:%s)', $column, $parameterName))
+            ->setParameter($parameterName, $filterValues, $parameterType);
+    }
+
+    private function handleInvalidFilter(string $field, bool $strict): array
+    {
+        if ($strict) {
+            throw new InformationException(sprintf('Mass mail filter contains invalid values for "%s"', $field));
+        }
+
+        return [];
     }
 }
