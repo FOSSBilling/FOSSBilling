@@ -1386,19 +1386,11 @@ class Service implements InjectionAwareInterface
 
     private function validateConfigAgainstForm(array $config, array $form): void
     {
-        $fieldDefinitions = [];
         foreach ($form['fields'] as $field) {
-            $fieldDefinitions[$field['name']] = $field;
-        }
+            $name  = $field['name'];
+            $value = $config[$name] ?? null;
 
-        foreach ($config as $key => $value) {
-            if (!isset($fieldDefinitions[$key])) {
-                continue;
-            }
-
-            $field = $fieldDefinitions[$key];
-
-            if ($field['required'] && ($value === null || $value === '' || (is_array($value) && count($value) === 0))) {
+            if (!empty($field['required']) && ($value === null || $value === '' || (is_array($value) && count($value) === 0))) {
                 throw new \FOSSBilling\Exception('Field ":field" is required', [':field' => $field['label']], 4892);
             }
 
