@@ -1564,6 +1564,85 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
+    public function testCreateOrderSetsFormIdFromProduct(): void
+    {
+        $modelClient = new \Model_Client();
+        $modelClient->loadBean(new \DummyBean());
+        $modelClient->currency = 'USD';
+
+        $modelProduct = new \Model_Product();
+        $modelProduct->loadBean(new \DummyBean());
+        $modelProduct->id = 1;
+        $modelProduct->type = 'custom';
+        $modelProduct->form_id = 42;
+
+        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyRepositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
+            ->willReturn($currencyModel);
+        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getCurrencyRepository'])
+            ->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())
+            ->method('getCurrencyRepository')
+            ->willReturn($currencyRepositoryMock);
+        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock->expects($this->atLeastOnce())
+            ->method('isStockAvailable')
+            ->with($modelProduct)
+            ->willReturn(true);
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $productServiceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+
+        $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('dispense')
+            ->with('ClientOrder')
+            ->willReturn($clientOrderModel);
+        $newId = 1;
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($clientOrderModel)
+            ->willReturn($newId);
+
+        $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
+        $periodMock->expects($this->atLeastOnce())
+            ->method('getCode')
+            ->willReturn('1Y');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock, $productServiceMock) {
+            if ($serviceName == 'currency') {
+                return $currencyServiceMock;
+            }
+            if ($serviceName == 'cart') {
+                return $cartServiceMock;
+            }
+            if ($serviceName == 'servicecustom') {
+                return $productServiceMock;
+            }
+        });
+        $di['events_manager'] = $eventMock;
+        $di['db'] = $dbMock;
+        $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
+        $di['logger'] = new \Box_Log();
+
+        $this->service->setDi($di);
+        $this->service->createOrder($modelClient, $modelProduct, ['period' => '1Y', 'price' => '10']);
+
+        $this->assertEquals(42, $clientOrderModel->form_id, 'Order form_id should be set from product');
+    }
+
     public function testGetMasterOrderForClient(): void
     {
         $clientModel = new \Model_Client();
