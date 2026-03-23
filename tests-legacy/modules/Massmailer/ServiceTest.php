@@ -88,7 +88,7 @@ final class ServiceTest extends \BBTestCase
 
         $result = $this->service->getMessageReceivers($model);
 
-        $this->assertSame([['id' => 1]], $result);
+        $this->assertSame([['id' => '1']], $result);
     }
 
     public function testGetMessageReceiversRejectsInvalidStoredFilter(): void
