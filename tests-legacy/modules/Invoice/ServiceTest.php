@@ -157,6 +157,9 @@ final class ServiceTest extends \BBTestCase
         $subscriptionServiceMock->expects($this->atLeastOnce())
             ->method('isSubscribable')
             ->willReturn(true);
+
+        $invoiceItemServiceMock = $this->createMock(\Box\Mod\Invoice\ServiceInvoiceItem::class);
+
         $modelToArrayResult = [
             'id' => 1,
             'serie' => 'BB',
@@ -213,9 +216,10 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock) {
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock, $invoiceItemServiceMock) {
             $service = null;
             if ($sub == 'InvoiceItem') {
+                $service = $invoiceItemServiceMock;
             }
             if ($serviceName == 'system') {
                 $service = $systemService;
