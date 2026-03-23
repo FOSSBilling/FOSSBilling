@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Massmailer\Api;
 
+use Box\Mod\Massmailer\Entity\MassmailerMessage;
+use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use FOSSBilling\InformationException;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -27,28 +29,13 @@ final class AdminTest extends \BBTestCase
 
     public function testUpdateStoresNormalizedFilter(): void
     {
-        $model = new \Model_MassmailerMessage();
-        $model->loadBean(new \DummyBean());
-        $model->id = 1;
-        $model->content = 'content';
-        $model->subject = 'subject';
-        $model->status = 'draft';
-
-        $dbMock = $this->createMock(\Box_Database::class);
-        $dbMock->expects($this->once())
-            ->method('getExistingModelById')
-            ->with('mod_massmailer', 1, 'Message not found')
-            ->willReturn($model);
-        $dbMock->expects($this->once())
-            ->method('store')
-            ->with($this->callback(static function ($storedModel): bool {
-                return $storedModel->filter === '{"client_status":["active","canceled"],"has_order_with_status":["active","suspended"]}';
-            }))
-            ->willReturn(1);
+        $model = (new MassmailerMessage())
+            ->setContent('content')
+            ->setSubject('subject')
+            ->setStatus(MassmailerMessage::STATUS_DRAFT);
 
         $service = new \Box\Mod\Massmailer\Service();
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->createDi($model);
         $di['logger'] = new \Box_Log();
         $service->setDi($di);
 
@@ -64,28 +51,18 @@ final class AdminTest extends \BBTestCase
         ]);
 
         $this->assertTrue($result);
+        $this->assertSame('{"client_status":["active","canceled"],"has_order_with_status":["active","suspended"]}', $model->getFilter());
     }
 
     public function testUpdateRejectsInvalidFilter(): void
     {
-        $model = new \Model_MassmailerMessage();
-        $model->loadBean(new \DummyBean());
-        $model->id = 1;
-        $model->content = 'content';
-        $model->subject = 'subject';
-        $model->status = 'draft';
-
-        $dbMock = $this->createMock(\Box_Database::class);
-        $dbMock->expects($this->once())
-            ->method('getExistingModelById')
-            ->with('mod_massmailer', 1, 'Message not found')
-            ->willReturn($model);
-        $dbMock->expects($this->never())
-            ->method('store');
+        $model = (new MassmailerMessage())
+            ->setContent('content')
+            ->setSubject('subject')
+            ->setStatus(MassmailerMessage::STATUS_DRAFT);
 
         $service = new \Box\Mod\Massmailer\Service();
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di = $this->createDi($model, false);
         $di['logger'] = new \Box_Log();
         $service->setDi($di);
 
@@ -101,5 +78,35 @@ final class AdminTest extends \BBTestCase
                 'client_status' => ['active', 'not-valid'],
             ],
         ]);
+    }
+
+    private function createDi(MassmailerMessage $message, bool $expectFlush = true): \Pimple\Container
+    {
+        $di = $this->getDi();
+
+        $repo = $this->getMockBuilder(MassmailerMessageRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repo->expects($this->once())
+            ->method('find')
+            ->with(1)
+            ->willReturn($message);
+
+        $em = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
+        $em->method('getRepository')
+            ->with(MassmailerMessage::class)
+            ->willReturn($repo);
+
+        if ($expectFlush) {
+            $em->expects($this->once())
+                ->method('flush');
+        } else {
+            $em->expects($this->never())
+                ->method('flush');
+        }
+
+        $di['em'] = $em;
+
+        return $di;
     }
 }

@@ -11,6 +11,9 @@
 
 namespace Box\Mod\Massmailer;
 
+use Box\Mod\Massmailer\Entity\MassmailerMessage;
+use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
+use Doctrine\DBAL\ArrayParameterType;
 use FOSSBilling\Environment;
 use FOSSBilling\InformationException;
 
@@ -41,15 +44,30 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     ];
 
     protected ?\Pimple\Container $di = null;
+    protected ?MassmailerMessageRepository $messageRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->messageRepository = $this->di['em']->getRepository(MassmailerMessage::class);
     }
 
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getMessageRepository(): MassmailerMessageRepository
+    {
+        if ($this->messageRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+
+            $this->messageRepository = $this->di['em']->getRepository(MassmailerMessage::class);
+        }
+
+        return $this->messageRepository;
     }
 
     public function install(): void
@@ -77,51 +95,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService->setConfig(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);
     }
 
-    public function getSearchQuery($data): array
+    public function getSearchQueryBuilder(array $data): \Doctrine\ORM\QueryBuilder
     {
-        $sql = 'SELECT *
-            FROM mod_massmailer
-            WHERE 1 ';
-
-        $params = [];
-
-        $search = (isset($data['search']) && !empty($data['search'])) ? $data['search'] : null;
-        $status = $data['status'] ?? null;
-
-        if ($status !== null) {
-            $sql .= ' AND status = :status';
-            $params[':status'] = $status;
-        }
-
-        if ($search !== null) {
-            $sql .= ' AND (subject LIKE :search OR content LIKE :search OR from_email LIKE :search OR from_name LIKE :search)';
-            $params[':search'] = '%' . $search . '%';
-        }
-
-        $sql .= ' ORDER BY created_at DESC';
-
-        return [$sql, $params];
+        return $this->getMessageRepository()->getSearchQueryBuilder($data);
     }
 
     public function getMessageReceivers($model, $data = [])
     {
-        $filter = $this->normalizeFilter($model->filter ?? null, true);
+        $filter = $this->normalizeFilter($model->getFilter(), true);
 
-        $sql = 'SELECT DISTINCT c.id
-            FROM client c
-            LEFT JOIN client_order co ON (co.client_id = c.id)
-            WHERE 1
-        ';
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('DISTINCT c.id')
+            ->from('client', 'c')
+            ->leftJoin('c', 'client_order', 'co', 'co.client_id = c.id')
+            ->orderBy('c.id', 'DESC');
 
-        $values = [];
-        $this->appendInCondition($sql, $values, 'c.status', $filter[self::FILTER_CLIENT_STATUS] ?? []);
-        $this->appendInCondition($sql, $values, 'c.client_group_id', $filter[self::FILTER_CLIENT_GROUPS] ?? []);
-        $this->appendInCondition($sql, $values, 'co.product_id', $filter[self::FILTER_HAS_ORDER] ?? []);
-        $this->appendInCondition($sql, $values, 'co.status', $filter[self::FILTER_HAS_ORDER_WITH_STATUS] ?? []);
+        $this->appendInCondition($query, 'c.status', 'client_status', $filter[self::FILTER_CLIENT_STATUS] ?? [], ArrayParameterType::STRING);
+        $this->appendInCondition($query, 'c.client_group_id', 'client_groups', $filter[self::FILTER_CLIENT_GROUPS] ?? [], ArrayParameterType::INTEGER);
+        $this->appendInCondition($query, 'co.product_id', 'has_order', $filter[self::FILTER_HAS_ORDER] ?? [], ArrayParameterType::INTEGER);
+        $this->appendInCondition($query, 'co.status', 'has_order_with_status', $filter[self::FILTER_HAS_ORDER_WITH_STATUS] ?? [], ArrayParameterType::STRING);
 
-        $sql .= ' ORDER BY c.id DESC';
-
-        return $this->di['db']->getAll($sql, $values);
+        return $query->executeQuery()->fetchAllAssociative();
     }
 
     public function normalizeFilter(mixed $filter, bool $strict = false): array
@@ -186,7 +181,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return json_encode($this->normalizeFilter($filter, true), JSON_THROW_ON_ERROR);
     }
 
-    public function getParsed($model, $client_id): array
+    public function getParsed(MassmailerMessage $model, $client_id): array
     {
         $clientService = $this->di['mod_service']('client');
         $systemService = $this->di['mod_service']('system');
@@ -196,18 +191,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $vars = [];
         $vars['c'] = $clientArr;
-        $vars['_tpl'] = $model->subject;
+        $vars['_tpl'] = $model->getSubject();
         $ps = $systemService->renderString($vars['_tpl'], false, $vars);
 
         $vars = [];
         $vars['c'] = $clientArr;
-        $vars['_tpl'] = $model->content;
+        $vars['_tpl'] = $model->getContent();
         $pc = $systemService->renderString($vars['_tpl'], false, $vars);
 
         return [$ps, $pc];
     }
 
-    public function sendMessage($model, $client_id, bool $sendNow = false): bool
+    public function sendMessage(MassmailerMessage $model, $client_id, bool $sendNow = false): bool
     {
         [$ps, $pc] = $this->getParsed($model, $client_id);
 
@@ -218,8 +213,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $data = [
             'to' => $client->email,
             'to_name' => $client->first_name . ' ' . $client->last_name,
-            'from' => $model->from_email,
-            'from_name' => $model->from_name,
+            'from' => $model->getFromEmail(),
+            'from_name' => $model->getFromName(),
             'subject' => $ps,
             'content' => $pc,
             'client_id' => $client_id,
@@ -246,7 +241,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function toApiArray($row)
     {
-        if ($row instanceof \RedBeanPHP\OODBBean) {
+        if ($row instanceof MassmailerMessage) {
+            $row = $row->toApiArray();
+        } elseif ($row instanceof \RedBeanPHP\OODBBean) {
             $row = $row->export();
         } elseif ($row instanceof \RedBeanPHP\SimpleModel) {
             $row = $row->unbox()->export();
@@ -261,8 +258,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function sendMail($params): void
     {
-        $model = $this->di['db']->load('mod_massmailer', $params['msg_id']);
-        if (!$model) {
+        $model = $this->getMessageRepository()->find((int) $params['msg_id']);
+        if (!$model instanceof MassmailerMessage) {
             throw new \Exception('Mass mail message not found');
         }
         $this->sendMessage($model, $params['client_id']);
@@ -346,23 +343,29 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function getExistingIds(string $table, array $ids): array
     {
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $rows = $this->di['db']->getAll(sprintf('SELECT id FROM %s WHERE id IN (%s)', $table, $placeholders), $ids);
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('id')
+            ->from($table)
+            ->where('id IN (:ids)')
+            ->setParameter('ids', $ids, ArrayParameterType::INTEGER);
+
+        $rows = $query->executeQuery()->fetchAllAssociative();
         $existingIds = array_map(static fn (array $row): int => (int) $row['id'], $rows);
         sort($existingIds);
 
         return array_values(array_unique($existingIds));
     }
 
-    private function appendInCondition(string &$sql, array &$values, string $column, array $filterValues): void
+    private function appendInCondition(\Doctrine\DBAL\Query\QueryBuilder $query, string $column, string $parameterName, array $filterValues, ArrayParameterType $parameterType): void
     {
         if ($filterValues === []) {
             return;
         }
 
-        $placeholders = implode(',', array_fill(0, count($filterValues), '?'));
-        $sql .= sprintf(' AND %s IN (%s)', $column, $placeholders);
-        array_push($values, ...$filterValues);
+        $query
+            ->andWhere(sprintf('%s IN (:%s)', $column, $parameterName))
+            ->setParameter($parameterName, $filterValues, $parameterType);
     }
 
     private function handleInvalidFilter(string $field, bool $strict): array
