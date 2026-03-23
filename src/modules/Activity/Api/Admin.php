@@ -58,16 +58,12 @@ class Admin extends \Api_Abstract
             return false;
         }
 
-        $priority = $data['priority'] ?? 6;
-
-        $entry = $this->di['db']->dispense('ActivitySystem');
-        $entry->client_id = $data['client_id'] ?? null;
-        $entry->admin_id = $data['admin_id'] ?? null;
-        $entry->priority = $priority;
-        $entry->message = $data['m'];
-        $entry->created_at = date('Y-m-d H:i:s');
-        $entry->ip = $this->di['request']->getClientIp();
-        $this->di['db']->store($entry);
+        $this->getService()->logEvent([
+            'client_id' => $data['client_id'] ?? null,
+            'admin_id' => $data['admin_id'] ?? null,
+            'priority' => $data['priority'] ?? 6,
+            'message' => $data['m'],
+        ]);
 
         return true;
     }
