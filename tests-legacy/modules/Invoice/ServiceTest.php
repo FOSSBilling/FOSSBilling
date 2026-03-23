@@ -537,7 +537,7 @@ final class ServiceTest extends \BBTestCase
                     'id' => 1,
                 ],
             ],
-            'approve',
+            'approve' => true,
         ];
 
         $clientModel = new \Model_Client();
