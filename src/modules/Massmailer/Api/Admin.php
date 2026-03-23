@@ -97,7 +97,7 @@ class Admin extends \Api_Abstract
      *
      * @optional string $content - mail message content
      *
-     * @return bool
+     * @return int
      */
     #[RequiredParams(['subject' => 'Message subject was not passed'])]
     public function create(array $data): int
@@ -188,7 +188,7 @@ Order our services at {{ "order"|link }}
     /**
      * Copy mail message by ID.
      *
-     * @return bool
+     * @return int
      */
     public function copy(array $data): int
     {
