@@ -136,9 +136,14 @@ Order our services at {{ "order"|link }}
         $this->di['em']->persist($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Created mail message #%s', $model->getId());
+        $id = $model->getId();
+        if ($id === null) {
+            throw new \FOSSBilling\Exception('Failed to retrieve ID of created mail message.');
+        }
 
-        return $model->getId();
+        $this->di['logger']->info('Created mail message #%s', $id);
+
+        return $id;
     }
 
     /**
@@ -207,9 +212,14 @@ Order our services at {{ "order"|link }}
         $this->di['em']->persist($copy);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Copied mail message #%s to #%s', $model->getId(), $copy->getId());
+        $id = $copy->getId();
+        if ($id === null) {
+            throw new \FOSSBilling\Exception('Failed to retrieve ID of copied mail message.');
+        }
 
-        return $copy->getId();
+        $this->di['logger']->info('Copied mail message #%s to #%s', $model->getId(), $id);
+
+        return $id;
     }
 
     /**
