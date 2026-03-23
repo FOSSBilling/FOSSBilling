@@ -171,7 +171,6 @@ class Service
                 FROM setting
                 WHERE param IN('" . implode("', '", $params) . "')
                 ";
-        $result = [];
         $rows = $this->di['db']->getAll($query);
         $result = [];
         foreach ($rows as $row) {
@@ -1066,14 +1065,14 @@ class Service
             'hide_company_public',
             'company_signature',
         ];
-        $comaony_legal = ['company_tos', 'company_privacy_policy', 'company_note'];
+        $company_legal = ['company_tos', 'company_privacy_policy', 'company_note'];
 
         $staff_service = $this->di['mod_service']('Staff');
         if (in_array($param, $company) && !$staff_service->hasPermission(null, 'system', 'manage_company_details')) {
             return false;
         }
 
-        if (in_array($param, $comaony_legal) && !$staff_service->hasPermission(null, 'system', 'manage_company_legal')) {
+        if (in_array($param, $company_legal) && !$staff_service->hasPermission(null, 'system', 'manage_company_legal')) {
             return false;
         }
 
