@@ -1,14 +1,24 @@
+{% set base_top_offset = 275 %}
+{% set line_height = 25 %}
+{% set text_1_base_offset = 185 %}
+{% set text_2_base_offset = 420 %}
+
 {% if buyer_lines >= seller_lines %}
-	{% set top = 275 + (25 * buyer_lines) %}
+	{% set top = base_top_offset + (line_height * buyer_lines) %}
 {% else %}
-	{% set top = 275 + (25 * seller_lines) %}
+	{% set top = base_top_offset + (line_height * seller_lines) %}
 {% endif %}
 
-{% set max_lines = (top - 275) / 25 %}
-{% set text_1_top = 185 + (max_lines * 25) %}
+{% set max_lines = (top - base_top_offset) / line_height %}
+{% set text_1_top = text_1_base_offset + (max_lines * line_height) %}
 
 {% set line_items = invoice.lines|length %}
-{% set text_2_top = 420 + (25 * max_lines) + (line_items * 25) + (invoice.tax > 0 ? 25 : 0) + ((invoice.discount|default and invoice.discount > 0) ? 25 : 0) %}
+{% set text_2_top = text_2_base_offset
+	+ (line_height * max_lines)
+	+ (line_items * line_height)
+	+ (invoice.tax > 0 ? line_height : 0)
+	+ ((invoice.discount|default and invoice.discount > 0) ? line_height : 0)
+%}
 
 {% set address_lines = [] %}
 	{% for line in [footer.address_1, footer.address_2, footer.address_3] %}
@@ -16,7 +26,7 @@
 			{% set address_lines = address_lines|merge([line]) %}
 		{% endif %}
 	{% endfor %}
-{% set address = address_lines|join(',') %}
+{% set address = address_lines|join(', ') %}
 
 <!DOCTYPE html>
 <html>
@@ -90,7 +100,7 @@
 					</tr>
 				{% endfor %}
 				<tr>
-					<th colspan='4'>_________________________________________________________________________________________</th>
+					<td colspan="4" style="border-bottom: 1px solid #000; padding: 0;"></td>
 				</tr>
 				{% if invoice.tax > 0 %}
 					<tr>

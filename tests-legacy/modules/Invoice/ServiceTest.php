@@ -824,7 +824,7 @@ final class ServiceTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
-        $result = $serviceMock->refundInvoice($invoiceModel, 'custonNote');
+        $result = $serviceMock->refundInvoice($invoiceModel, 'customNote');
         $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
@@ -1104,7 +1104,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Invoice', $result);
     }
 
-    public function testSgenerateForOrderAmountIsZero(): void
+    public function testGenerateForOrderAmountIsZero(): void
     {
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \DummyBean());
@@ -1210,7 +1210,7 @@ final class ServiceTest extends \BBTestCase
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
             ->method('executeTask')
             ->with($invoiceItemModel)
-            ->willThrowException(new \FOSSBilling\Exception('tesitng exception..'));
+            ->willThrowException(new \FOSSBilling\Exception('testing exception..'));
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
             ->method('getAllNotExecutePaidItems')
             ->willReturn([[]]);
