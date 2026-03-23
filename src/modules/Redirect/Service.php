@@ -79,7 +79,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->persist($redirect);
         $this->di['em']->flush();
 
-        return $redirect->getId() ?? 0;
+        $id = $redirect->getId();
+        if ($id === null) {
+            throw new \FOSSBilling\Exception('Failed to create redirect.');
+        }
+
+        return $id;
     }
 
     public function update(ExtensionMeta $redirect, array $data): bool
