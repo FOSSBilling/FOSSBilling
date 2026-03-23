@@ -65,7 +65,7 @@ class Admin extends \Api_Abstract
         $model->subject = $data['subject'] ?? $model->subject;
         $model->status = $data['status'] ?? $model->status;
         if (isset($data['filter'])) {
-            $model->filter = json_encode($data['filter']);
+            $model->filter = $this->getService()->serializeFilter($data['filter']);
         }
 
         if (isset($data['from_name'])) {
