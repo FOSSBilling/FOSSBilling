@@ -24,7 +24,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function get_list($data)
+    public function get_list(array $data): array
     {
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $qb = $this->getService()->getSearchQueryBuilder($data);
@@ -43,7 +43,7 @@ class Admin extends \Api_Abstract
      *
      * @return array
      */
-    public function get($data)
+    public function get(array $data): array
     {
         $model = $this->_getMessage($data);
 
@@ -60,7 +60,7 @@ class Admin extends \Api_Abstract
      * @optional string $from_email - mail message email from email
      * @optional array $filter  - filter parameters to select clients
      */
-    public function update($data): bool
+    public function update(array $data): bool
     {
         $model = $this->_getMessage($data);
 
@@ -100,7 +100,7 @@ class Admin extends \Api_Abstract
      * @return bool
      */
     #[RequiredParams(['subject' => 'Message subject was not passed'])]
-    public function create($data)
+    public function create(array $data): int
     {
         $default_content = '{% apply markdown %}
 Hi {{ c.first_name }} {{ c.last_name }},
@@ -144,7 +144,7 @@ Order our services at {{ "order"|link }}
     /**
      * Send test mail message by ID to client.
      */
-    public function send_test($data): bool
+    public function send_test(array $data): bool
     {
         $model = $this->_getMessage($data);
         $client_id = $this->_getTestClientId();
@@ -163,7 +163,7 @@ Order our services at {{ "order"|link }}
     /**
      * Send mail message by ID.
      */
-    public function send($data): bool
+    public function send(array $data): bool
     {
         $model = $this->_getMessage($data);
 
@@ -171,7 +171,7 @@ Order our services at {{ "order"|link }}
             throw new \FOSSBilling\InformationException('Add some content before sending message');
         }
 
-        $clients = $this->getService()->getMessageReceivers($model, $data);
+        $clients = $this->getService()->getMessageReceivers($model);
         foreach ($clients as $c) {
             $this->getService()->sendMessage($model, $c['id']);
         }
@@ -190,7 +190,7 @@ Order our services at {{ "order"|link }}
      *
      * @return bool
      */
-    public function copy($data)
+    public function copy(array $data): int
     {
         $model = $this->_getMessage($data);
 
@@ -217,17 +217,17 @@ Order our services at {{ "order"|link }}
      *
      * @return array
      */
-    public function receivers($data)
+    public function receivers(array $data): array
     {
         $model = $this->_getMessage($data);
 
-        return $this->getService()->getMessageReceivers($model, $data);
+        return $this->getService()->getMessageReceivers($model);
     }
 
     /**
      * Delete mail message by ID.
      */
-    public function delete($data): bool
+    public function delete(array $data): bool
     {
         $model = $this->_getMessage($data);
         $id = $model->getId();
@@ -245,7 +245,7 @@ Order our services at {{ "order"|link }}
      *
      * @return array - parsed subject and content strings
      */
-    public function preview($data): array
+    public function preview(array $data): array
     {
         $model = $this->_getMessage($data);
         $client_id = $this->_getTestClientId();
@@ -253,7 +253,7 @@ Order our services at {{ "order"|link }}
 
         $recipients = [];
         $getRecipients = $data['include_recipients'] ?? false;
-        $clients = $this->getService()->getMessageReceivers($model, $data);
+        $clients = $this->getService()->getMessageReceivers($model);
 
         if ($getRecipients) {
             $clientService = $this->di['mod_service']('client');
@@ -301,7 +301,7 @@ Order our services at {{ "order"|link }}
     }
 
     #[RequiredParams(['id' => 'Message ID was not passed'])]
-    private function _getMessage($data)
+    private function _getMessage(array $data): MassmailerMessage
     {
         $model = $this->getService()->getMessageRepository()->find((int) $data['id']);
         if (!$model instanceof MassmailerMessage) {

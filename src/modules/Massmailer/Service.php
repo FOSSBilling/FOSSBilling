@@ -100,7 +100,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->getMessageRepository()->getSearchQueryBuilder($data);
     }
 
-    public function getMessageReceivers($model, $data = [])
+    public function getMessageReceivers(MassmailerMessage $model): array
     {
         $filter = $this->normalizeFilter($model->getFilter(), true);
 
@@ -181,7 +181,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return json_encode($this->normalizeFilter($filter, true), JSON_THROW_ON_ERROR);
     }
 
-    public function getParsed(MassmailerMessage $model, $client_id): array
+    public function getParsed(MassmailerMessage $model, int $client_id): array
     {
         $clientService = $this->di['mod_service']('client');
         $systemService = $this->di['mod_service']('system');
@@ -202,7 +202,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$ps, $pc];
     }
 
-    public function sendMessage(MassmailerMessage $model, $client_id, bool $sendNow = false): bool
+    public function sendMessage(MassmailerMessage $model, int $client_id, bool $sendNow = false): bool
     {
         [$ps, $pc] = $this->getParsed($model, $client_id);
 
@@ -239,16 +239,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray($row)
+    public function toApiArray(MassmailerMessage|array $row): array
     {
         if ($row instanceof MassmailerMessage) {
             $row = $row->toApiArray();
-        } elseif ($row instanceof \RedBeanPHP\OODBBean) {
-            $row = $row->export();
-        } elseif ($row instanceof \RedBeanPHP\SimpleModel) {
-            $row = $row->unbox()->export();
-        } elseif (is_object($row)) {
-            $row = get_object_vars($row);
         }
 
         $row['filter'] = $this->normalizeFilter($row['filter'] ?? null);
@@ -256,7 +250,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $row;
     }
 
-    public function sendMail($params): void
+    public function sendMail(array $params): void
     {
         $model = $this->getMessageRepository()->find((int) $params['msg_id']);
         if (!$model instanceof MassmailerMessage) {
@@ -312,7 +306,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $normalized = [];
         foreach ($values as $value) {
             if (is_int($value)) {
-                $value = (int) $value;
             } elseif (is_string($value) && ctype_digit($value)) {
                 $value = (int) $value;
             } else {
