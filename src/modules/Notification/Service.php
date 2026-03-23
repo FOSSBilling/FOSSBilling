@@ -82,7 +82,10 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($meta);
         $this->di['em']->flush();
 
-        $id = $meta->getId() ?? 0;
+        $id = $meta->getId();
+        if ($id === null) {
+            throw new \FOSSBilling\Exception('Failed to create notification message: missing ID after persistence.');
+        }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminNotificationAdd', 'params' => ['id' => $id]]);
 
         return $id;
