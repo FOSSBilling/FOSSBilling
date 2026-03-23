@@ -64,6 +64,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $service->updateSettings($t, $preset, $_POST);
             $service->regenerateThemeCssAndJsFiles($t, $preset, $api);
         } catch (\Exception $e) {
+            $error = $e->getMessage();
             error_log($e->getMessage());
         }
 

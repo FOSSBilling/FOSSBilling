@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Currency;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -20,7 +21,7 @@ final class ServiceTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -39,14 +40,14 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
         $rate = 0.6;
         $expected = 1 / $rate;
-$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
         $repositoryMock->expects($this->atLeastOnce())
             ->method('getRateByCode')
             ->willReturn($rate);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -65,14 +66,14 @@ $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\Curr
     {
         $service = new \Box\Mod\Currency\Service();
 
-$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
         $repositoryMock->expects($this->atLeastOnce())
             ->method('getRateByCode')
             ->willReturn(0.0);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -98,7 +99,7 @@ $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\Curr
             ->method('getRateByCode')
             ->willReturn(null);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -140,16 +141,16 @@ $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\Curr
             ->method('findDefault')
             ->willReturn($model);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
             ->willReturn($repositoryMock);
 
-$serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['getBaseCurrencyRate'])
-            ->getMock();
+        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+                    ->onlyMethods(['getBaseCurrencyRate'])
+                    ->getMock();
 
         $serviceMock->expects($this->any()) // will not be called when currencies are the same, so using any()
             ->method('getBaseCurrencyRate')
@@ -166,8 +167,6 @@ $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
 
     public static function getCurrencyByClientIdProvider(): array
     {
-        
-
         return [
             [
                 'USD',
@@ -182,8 +181,8 @@ $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
         ];
     }
 
-#[\PHPUnit\Framework\Attributes\DataProvider('getCurrencyByClientIdProvider')]
-    public function testGetCurrencyByClientId(?string $currency, $expectsGetByCode, $expectsGetDefault): void
+    #[DataProvider('getCurrencyByClientIdProvider')]
+    public function testGetCurrencyByClientId(?string $currency, string $expectsGetByCode, string $expectsGetDefault): void
     {
         $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->disableOriginalConstructor()
@@ -205,7 +204,7 @@ $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
             ->method('findOneByCode')
             ->willReturn($model);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -231,7 +230,7 @@ $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
         ];
     }
 
-#[\PHPUnit\Framework\Attributes\DataProvider('getRateByCodeProvider')]
+    #[DataProvider('getRateByCodeProvider')]
     public function testGetRateByCode(string $code, ?float $returns, ?float $expected): void
     {
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
@@ -241,14 +240,14 @@ $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
             ->method('getRateByCode')
             ->willReturn($returns);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
             ->willReturn($repositoryMock);
 
-$di = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['em'] = $emMock;
 
         $service = new \Box\Mod\Currency\Service();
@@ -268,8 +267,8 @@ $di = new \Pimple\Container();
         ];
     }
 
-#[\PHPUnit\Framework\Attributes\DataProvider('setAsDefaultProvider')]
-    public function testSetAsDefault($modelType, $expects): void
+    #[DataProvider('setAsDefaultProvider')]
+    public function testSetAsDefault(string $modelType, string $expects): void
     {
         // Create model mock based on type
         if ($modelType === 'default_currency') {
@@ -316,7 +315,7 @@ $di = new \Pimple\Container();
             ->with('USD')
             ->willReturn($refetchedModel);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -331,7 +330,7 @@ $di = new \Pimple\Container();
             ->method('clear')
             ->with(\Box\Mod\Currency\Entity\Currency::class);
 
-$di = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['em'] = $emMock;
         $di['logger'] = new \Box_Log();
 
@@ -358,14 +357,14 @@ $di = new \Pimple\Container();
             ->disableOriginalConstructor()
             ->getMock();
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
             ->willReturn($repositoryMock);
 
-$di = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['em'] = $emMock;
 
         $service = new \Box\Mod\Currency\Service();
@@ -381,14 +380,14 @@ $di = new \Pimple\Container();
             'EUR' => 'Euro',
             'GBP' => 'Pound Sterling',
         ];
-$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
         $repositoryMock->expects($this->atLeastOnce())
             ->method('getPairs')
             ->willReturn($pairs);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -407,9 +406,9 @@ $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\Curr
 
     public function testRmDefaultCurrencyException(): void
     {
-$model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
         $model->expects($this->any())
             ->method('getCode')
             ->willReturn('EUR');
@@ -421,7 +420,7 @@ $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -453,7 +452,7 @@ $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -465,7 +464,7 @@ $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
         $emMock->expects($this->atLeastOnce())
             ->method('flush');
 
-$di = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['em'] = $emMock;
 
         $service = new \Box\Mod\Currency\Service();
@@ -491,14 +490,14 @@ $di = new \Pimple\Container();
             ->disableOriginalConstructor()
             ->getMock();
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
             ->willReturn($repositoryMock);
 
-$di = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['em'] = $emMock;
 
         $service = new \Box\Mod\Currency\Service();
@@ -544,7 +543,7 @@ $di = new \Pimple\Container();
             ->disableOriginalConstructor()
             ->getMock();
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -582,14 +581,14 @@ $di = new \Pimple\Container();
             ->disableOriginalConstructor()
             ->getMock();
 
-$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
         $repositoryMock->expects($this->atLeastOnce())
             ->method('findOneByCode')
             ->willReturn($model);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -621,14 +620,14 @@ $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\Curr
         $price_format = '€{{Price}}';
         $conversion_rate = 0.6;
 
-$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
         $repositoryMock->expects($this->atLeastOnce())
             ->method('findOneByCode')
             ->willReturn(null);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -653,9 +652,9 @@ $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\Curr
         $price_format = '€{{Price}}';
         $conversion_rate = 0;
 
-$model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -664,7 +663,7 @@ $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->method('findOneByCode')
             ->willReturn($model);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -693,9 +692,9 @@ $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->method('isDefault')
             ->willReturn(true);
 
-$otherModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $otherModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
         $otherModel->expects($this->any())
             ->method('getCode')
             ->willReturn('USD');
@@ -713,7 +712,7 @@ $otherModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::cl
             ->method('findAll')
             ->willReturn([$defaultModel, $otherModel]);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -742,9 +741,9 @@ $otherModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::cl
 
     public function testUpdateCurrencyRatesRateNotNumeric(): void
     {
-$model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
         $model->expects($this->any())
             ->method('getCode')
             ->willReturn('EUR');
@@ -762,7 +761,7 @@ $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->method('findAll')
             ->willReturn([$model]);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -778,7 +777,7 @@ $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->method('_getRate')
             ->willReturn(0.0);
 
-$di = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
         $di['em'] = $emMock;
         $serviceMock->setDi($di);
@@ -803,14 +802,14 @@ $di = new \Pimple\Container();
 
         $code = 'EUR';
 
-$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
         $repositoryMock->expects($this->atLeastOnce())
             ->method('findOneByCode')
             ->willReturn($model);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -826,7 +825,7 @@ $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\Curr
             ->method('fire')
             ->willReturn(true);
 
-$di = new \Pimple\Container();
+        $di = new \Pimple\Container();
         $di['logger'] = new \Box_Log();
         $di['em'] = $emMock;
         $di['events_manager'] = $manager;
@@ -844,14 +843,14 @@ $di = new \Pimple\Container();
     {
         $code = 'EUR';
 
-$repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+                    ->disableOriginalConstructor()
+                    ->getMock();
         $repositoryMock->expects($this->atLeastOnce())
             ->method('findOneByCode')
             ->willReturn(null);
 
-        $emMock = $this->getMockBuilder('\Doctrine\ORM\EntityManager')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->expects($this->atLeastOnce())

@@ -10,18 +10,18 @@
  */
 class Box_Period
 {
-    final public const UNIT_DAY = 'D';
-    final public const UNIT_WEEK = 'W';
-    final public const UNIT_MONTH = 'M';
-    final public const UNIT_YEAR = 'Y';
+    final public const string UNIT_DAY = 'D';
+    final public const string UNIT_WEEK = 'W';
+    final public const string UNIT_MONTH = 'M';
+    final public const string UNIT_YEAR = 'Y';
 
-    final public const PERIOD_WEEK = '1W';
-    final public const PERIOD_MONTH = '1M';
-    final public const PERIOD_QUARTER = '3M';
-    final public const PERIOD_BIANNUAL = '6M';
-    final public const PERIOD_ANNUAL = '1Y';
-    final public const PERIOD_BIENNIAL = '2Y';
-    final public const PERIOD_TRIENNIAL = '3Y';
+    final public const string PERIOD_WEEK = '1W';
+    final public const string PERIOD_MONTH = '1M';
+    final public const string PERIOD_QUARTER = '3M';
+    final public const string PERIOD_BIANNUAL = '6M';
+    final public const string PERIOD_ANNUAL = '1Y';
+    final public const string PERIOD_BIENNIAL = '2Y';
+    final public const string PERIOD_TRIENNIAL = '3Y';
 
     /**
      * Predefined periods.

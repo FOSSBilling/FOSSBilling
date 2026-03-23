@@ -108,7 +108,7 @@ class Server_Package
     }
 
     /**
-     * Get the quota of the Server_Package instance.
+     * Get the disk quota of the Server_Package instance in MB.
      *
      * @return string returns the quota
      */
@@ -118,7 +118,7 @@ class Server_Package
     }
 
     /**
-     * Set the quota of the Server_Package instance.
+     * Set the disk quota of the Server_Package instance in MB.
      *
      * @param string|null $quota the quota to be set
      *

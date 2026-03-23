@@ -70,13 +70,12 @@ final class Api_Handler implements InjectionAwareInterface
             if (!$staff_service->hasPermission($this->identity, $mod)) {
                 if ($this->_acl_exception) {
                     throw new FOSSBilling\Exception('You do not have access to the :mod module', [':mod' => $mod], 725);
-                } else {
-                    if (DEBUG) {
-                        error_log('You do not have access to ' . $mod . ' module');
-                    }
-
-                    return null;
                 }
+                if (DEBUG) {
+                    error_log('You do not have access to ' . $mod . ' module');
+                }
+
+                return null;
             }
         }
 
@@ -115,10 +114,10 @@ final class Api_Handler implements InjectionAwareInterface
     /**
      * Validate required parameters for an API method using attributes.
      *
-     * @param Api_Abstract $api The API instance
-     * @param string $method_name The method name
-     * @param array $data The data array passed to the method
-     * @return void
+     * @param Api_Abstract $api         The API instance
+     * @param string       $method_name The method name
+     * @param array        $data        The data array passed to the method
+     *
      * @throws FOSSBilling\InformationException If required parameters are missing
      */
     public function validateRequiredParams(Api_Abstract $api, string $method_name, array $data): void

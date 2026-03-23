@@ -78,7 +78,7 @@ class Admin extends \Api_Abstract
         $charge = false;
 
         // Check if the payment type is "Custom Payment", Add the transaction and process it.
-        if ($payGateway['code'] == 'Custom' && $payGateway['enabled'] == 1) {
+        if (($payGateway['code'] ?? null) == 'Custom' && ($payGateway['enabled'] ?? 0) == 1) {
             // create transaction
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
             $newtx = $transactionService->create([
@@ -521,6 +521,29 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Atomically claim a transaction for processing.
+     * Uses conditional UPDATE to prevent race conditions when multiple
+     * workers attempt to process the same transaction simultaneously.
+     *
+     * @param array $data Contains 'id' - the transaction ID to claim
+     *
+     * @return bool True if the transaction was successfully claimed, false if already claimed/processed
+     *
+     * @throws \FOSSBilling\Exception if transaction ID is missing
+     */
+    public function transaction_claim_for_processing($data)
+    {
+        $required = [
+            'id' => 'Transaction ID is required',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+
+        return $transactionService->claimForProcessing((int) $data['id']);
+    }
+
+    /**
      * Get available gateways.
      *
      * @return array
@@ -660,9 +683,12 @@ class Admin extends \Api_Abstract
         [$sql, $params] = $subscriptionService->getSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
-        foreach ($pager['list'] as $key => $item) {
-            $subscription = $this->di['db']->getExistingModelById('Subscription', $item['id'], 'Subscription not found');
-            $pager['list'][$key] = $subscriptionService->toApiArray($subscription);
+
+        if (isset($pager['list']) && is_array($pager['list'])) {
+            foreach ($pager['list'] as $key => $item) {
+                $subscription = $this->di['db']->getExistingModelById('Subscription', $item['id'], 'Subscription not found');
+                $pager['list'][$key] = $subscriptionService->toApiArray($subscription);
+            }
         }
 
         return $pager;
@@ -876,7 +902,7 @@ class Admin extends \Api_Abstract
      * Deletes invoices with given IDs.
      */
     #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id]);
@@ -889,7 +915,7 @@ class Admin extends \Api_Abstract
      * Deletes subscriptions with given IDs.
      */
     #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete_subscription($data)
+    public function batch_delete_subscription($data): bool
     {
         foreach ($data['ids'] as $id) {
             $this->subscription_delete(['id' => $id]);
@@ -902,7 +928,7 @@ class Admin extends \Api_Abstract
      * Deletes transactions with given IDs.
      */
     #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete_transaction($data)
+    public function batch_delete_transaction($data): bool
     {
         foreach ($data['ids'] as $id) {
             $this->transaction_delete(['id' => $id]);
@@ -915,7 +941,7 @@ class Admin extends \Api_Abstract
      * Deletes taxes with given IDs.
      */
     #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete_tax($data)
+    public function batch_delete_tax($data): bool
     {
         foreach ($data['ids'] as $id) {
             $this->tax_delete(['id' => $id]);

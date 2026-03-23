@@ -32,7 +32,7 @@ class Guest extends \Api_Abstract
     ])]
     public function ticket_create(array $data): string
     {
-        if (strlen($data['message']) < 4) {
+        if (strlen((string) $data['message']) < 4) {
             throw new \FOSSBilling\InformationException('Please enter your message');
         }
 
@@ -57,8 +57,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Close public ticket.
-     *
-     * @return bool
      */
     #[RequiredParams(['hash' => 'Public ticket hash required'])]
     public function ticket_close(array $data): bool
@@ -85,13 +83,10 @@ class Guest extends \Api_Abstract
     }
 
     /*
-    * Support Knowledge Base Functions.
-    */
-
+     * Support Knowledge Base Functions.
+     */
     /**
      * Get whether the knowledge base is enabled, or not.
-     *
-     * @return bool
      */
     public function kb_enabled(): bool
     {
@@ -101,8 +96,6 @@ class Guest extends \Api_Abstract
     /**
      * Get paginated list of knowledge base articles.
      * Returns only active articles.
-     *
-     * @return array
      */
     public function kb_article_get_list(array $data): array
     {
@@ -123,8 +116,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Get active knowledge base article.
-     *
-     * @return array
      */
     public function kb_article_get(array $data): array
     {
@@ -152,8 +143,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Get paginated list of knowledge base categories.
-     *
-     * @return array
      */
     public function kb_category_get_list(array $data): array
     {
@@ -175,8 +164,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Get knowledge base categories id, title pairs.
-     *
-     * @return array
      */
     public function kb_category_get_pairs(array $data): array
     {
@@ -185,8 +172,6 @@ class Guest extends \Api_Abstract
 
     /**
      * Get knowledge base category by ID or SLUG.
-     *
-     * @return array
      */
     public function kb_category_get(array $data): array
     {

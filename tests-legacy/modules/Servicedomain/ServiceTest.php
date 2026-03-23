@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Servicedomain;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -24,7 +25,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public static function getCartProductTitleProvider()
+    public static function getCartProductTitleProvider(): array
     {
         return [
             [
@@ -51,7 +52,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('getCartProductTitleProvider')]
-    public function testGetCartProductTitle($data, $expected): void
+    public function testGetCartProductTitle(array $data, string $expected): void
     {
         $product = new \Model_CartProduct();
         $product->loadBean(new \DummyBean());
@@ -62,7 +63,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $expected);
     }
 
-    public static function validateOrderDataExceptionsProvider()
+    public static function validateOrderDataExceptionsProvider(): array
     {
         return [
             [
@@ -74,7 +75,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('validateOrderDataExceptionsProvider')]
-    public function testValidateOrderDataExceptions($data): void
+    public function testValidateOrderDataExceptions(array $data): void
     {
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
 
@@ -87,10 +88,8 @@ final class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public static function validateOrderDateTransferExceptionsProvider()
+    public static function validateOrderDateTransferExceptionsProvider(): array
     {
-        
-
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
         $tldModel->tld = '.com';
@@ -138,13 +137,13 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('validateOrderDateTransferExceptionsProvider')]
-    public function testValidateOrderDateTransferExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBeTransferred): void
+    public function testValidateOrderDateTransferExceptions(array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $canBeTransferred): void
     {
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->{$isSldValidArr['called']}())->method('isSldValid')
             ->willReturn($isSldValidArr['returns']);
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'canBeTransferred'])->getMock();
@@ -162,10 +161,8 @@ final class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public static function validateOrderDateRegisterExceptionsProvider()
+    public static function validateOrderDateRegisterExceptionsProvider(): array
     {
-        
-
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
         $tldModel->tld = '.com';
@@ -236,13 +233,13 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('validateOrderDateRegisterExceptionsProvider')]
-    public function testValidateOrderDateRegisterExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $isDomainAvailable): void
+    public function testValidateOrderDateRegisterExceptions(array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $isDomainAvailable): void
     {
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
         $validatorMock->expects($this->{$isSldValidArr['called']}())->method('isSldValid')
             ->willReturn($isSldValidArr['returns']);
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['tldFindOneByTld', 'isDomainAvailable'])->getMock();
@@ -293,7 +290,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->willReturn($tldModel);
         $serviceMock->expects($this->atLeastOnce())->method('validateOrderData')
-            ;
+        ;
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
@@ -325,9 +322,9 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(function ($name) use ($orderServiceMock, $systemServiceMock) {
             if ($name == 'order') {
                 return $orderServiceMock;
-            } else {
-                return $systemServiceMock;
             }
+
+            return $systemServiceMock;
         });
         $di['db'] = $dbMock;
 
@@ -367,15 +364,15 @@ final class ServiceTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['validateOrderData'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('validateOrderData')
-            ;
+        ;
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($name) use ($orderServiceMock, $systemServiceMock) {
             if ($name == 'order') {
                 return $orderServiceMock;
-            } else {
-                return $systemServiceMock;
             }
+
+            return $systemServiceMock;
         });
         $serviceMock->setDi($di);
 
@@ -386,10 +383,8 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->action_create($order);
     }
 
-    public static function actionActivateProvider()
+    public static function actionActivateProvider(): array
     {
-        
-
         return [
             [
                 'register',
@@ -405,7 +400,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('actionActivateProvider')]
-    public function testActionActivate($action, $registerDomainCalled, $transferDomainCalled): void
+    public function testActionActivate(string $action, string $registerDomainCalled, string $transferDomainCalled): void
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \DummyBean());
@@ -424,9 +419,9 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
         $registrarAdapterMock->expects($this->$registerDomainCalled())->method('registerDomain')
-            ;
+        ;
         $registrarAdapterMock->expects($this->$transferDomainCalled())->method('transferDomain')
-            ;
+        ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['_getD', 'syncWhois'])->getMock();
@@ -497,7 +492,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
         $registrarAdapterMock->expects($this->atLeastOnce())->method('renewDomain')
-            ;
+        ;
         $registrarAdapterMock->expects($this->atLeastOnce())->method('getDomainDetails')
             ->willReturn($registrarDomainMock);
 
@@ -581,7 +576,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
         $registrarAdapterMock->expects($this->atLeastOnce())->method('deleteDomain')
-            ;
+        ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['_getD'])->getMock();
@@ -656,7 +651,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
         $registrarAdapterMock->expects($this->atLeastOnce())->method('deleteDomain')
-            ;
+        ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['_getD'])->getMock();
@@ -686,7 +681,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
         $registrarAdapterMock->expects($this->atLeastOnce())->method('modifyNs')
-            ;
+        ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['_getD'])->getMock();
@@ -717,7 +712,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function updateNameserversExceptionProvider()
+    public static function updateNameserversExceptionProvider(): array
     {
         return [
             [
@@ -730,7 +725,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('updateNameserversExceptionProvider')]
-    public function testUpdateNameserversException($data): void
+    public function testUpdateNameserversException(array $data): void
     {
         $serviceDomainModel = new \Model_ServiceDomain();
         $serviceDomainModel->loadBean(new \DummyBean());
@@ -744,7 +739,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
         $registrarAdapterMock->expects($this->atLeastOnce())->method('modifyContact')
-            ;
+        ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['_getD'])->getMock();
@@ -814,7 +809,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
         $registrarAdapterMock->expects($this->atLeastOnce())->method('lock')
-            ;
+        ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['_getD'])->getMock();
@@ -843,7 +838,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
         $registrarAdapterMock->expects($this->atLeastOnce())->method('unlock')
-            ;
+        ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['_getD'])->getMock();
@@ -872,7 +867,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
         $registrarAdapterMock->expects($this->atLeastOnce())->method('enablePrivacyProtection')
-            ;
+        ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['_getD'])->getMock();
@@ -901,7 +896,7 @@ final class ServiceTest extends \BBTestCase
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
         $registrarAdapterMock->expects($this->atLeastOnce())->method('disablePrivacyProtection')
-            ;
+        ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['_getD'])->getMock();
@@ -1069,10 +1064,8 @@ final class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public static function toApiArrayProvider()
+    public static function toApiArrayProvider(): array
     {
-        
-
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
 
@@ -1089,7 +1082,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('toApiArrayProvider')]
-    public function testToApiArray($identity, $dbLoadCalled): void
+    public function testToApiArray(?\Model_Admin $identity, string $dbLoadCalled): void
     {
         $model = new \Model_ServiceDomain();
         $model->loadBean(new \DummyBean());
@@ -1209,7 +1202,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('batchSyncExpirationDates')
             ->willReturn(true);
-        $di['mod_service'] = $di->protect(fn ($serviceName) => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($serviceName): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
         $boxEventMock->expects($this->atLeastOnce())
@@ -1226,14 +1219,14 @@ final class ServiceTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
             ->onlyMethods(['syncExpirationDate'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('syncExpirationDate')
-            ;
+        ;
 
         $systemServiceMock = $this->getMockBuilder(\Box\Mod\System\Service::class)
             ->onlyMethods(['getParamValue', 'setParamValue'])->getMock();
         $systemServiceMock->expects($this->atLeastOnce())->method('getParamValue')
             ->willReturn(null);
         $systemServiceMock->expects($this->atLeastOnce())->method('setParamValue')
-            ;
+        ;
 
         $domains = [
             'domain1.com',
@@ -1264,7 +1257,7 @@ final class ServiceTest extends \BBTestCase
         $systemServiceMock->expects($this->atLeastOnce())->method('getParamValue')
             ->willReturn(date('Y-m-d H:i:s'));
         $systemServiceMock->expects($this->never())->method('setParamValue')
-            ;
+        ;
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->never())
@@ -1281,7 +1274,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public static function tldGetSearchQueryProvider()
+    public static function tldGetSearchQueryProvider(): array
     {
         return [
             [
@@ -1323,7 +1316,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('tldGetSearchQueryProvider')]
-    public function testTldGetSearchQuery($data, $expectedQuery, $expectedBindings): void
+    public function testTldGetSearchQuery(array $data, string $expectedQuery, array $expectedBindings): void
     {
         $di = $this->getDi();
 
@@ -1937,5 +1930,190 @@ final class ServiceTest extends \BBTestCase
         $result = $this->service->updateDomain($model, $data);
 
         $this->assertTrue($result);
+    }
+
+    public function testSyncWhoisWithPrivacyEnabled(): void
+    {
+        $contact = new \Registrar_Domain_Contact();
+        $contact->setFirstName('John');
+        $contact->setLastName('Doe');
+        $contact->setEmail('john@example.com');
+        $contact->setCompany('Test Co');
+        $contact->setAddress1('123 Test St');
+        $contact->setCity('Test City');
+        $contact->setCountry('US');
+        $contact->setState('CA');
+        $contact->setZip('12345');
+        $contact->setTelCc('1');
+        $contact->setTel('5551234567');
+
+        $registrarDomain = new \Registrar_Domain();
+        $registrarDomain->setPrivacyEnabled(true);
+        $registrarDomain->setLocked(true);
+        $registrarDomain->setExpirationTime(strtotime('+1 year'));
+        $registrarDomain->setRegistrationTime(time());
+        $registrarDomain->setContactRegistrar($contact);
+
+        $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $registrarAdapterMock->expects($this->atLeastOnce())
+            ->method('getDomainDetails')
+            ->willReturn($registrarDomain);
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+            ->onlyMethods(['_getD'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('_getD')
+            ->willReturn([$registrarDomain, $registrarAdapterMock]);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->willReturnCallback(function ($model) {
+                $this->assertInstanceOf(\Model_ServiceDomain::class, $model);
+                $this->assertEquals(1, $model->privacy);
+                $this->assertEquals(1, $model->locked);
+
+                return 1;
+            });
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->createMock('Box_Log');
+        $serviceMock->setDi($di);
+
+        $domainModel = new \Model_ServiceDomain();
+        $domainModel->loadBean(new \DummyBean());
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+
+        $reflection = new \ReflectionMethod($serviceMock, 'syncWhois');
+        $reflection->invoke($serviceMock, $domainModel, $order);
+    }
+
+    public function testSyncWhoisWithPrivacyDisabled(): void
+    {
+        $contact = new \Registrar_Domain_Contact();
+        $contact->setFirstName('John');
+        $contact->setLastName('Doe');
+        $contact->setEmail('john@example.com');
+        $contact->setCompany('Test Co');
+        $contact->setAddress1('123 Test St');
+        $contact->setCity('Test City');
+        $contact->setCountry('US');
+        $contact->setState('CA');
+        $contact->setZip('12345');
+        $contact->setTelCc('1');
+        $contact->setTel('5551234567');
+
+        $registrarDomain = new \Registrar_Domain();
+        $registrarDomain->setPrivacyEnabled(false);
+        $registrarDomain->setLocked(false);
+        $registrarDomain->setExpirationTime(strtotime('+1 year'));
+        $registrarDomain->setRegistrationTime(time());
+        $registrarDomain->setContactRegistrar($contact);
+
+        $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $registrarAdapterMock->expects($this->atLeastOnce())
+            ->method('getDomainDetails')
+            ->willReturn($registrarDomain);
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+            ->onlyMethods(['_getD'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('_getD')
+            ->willReturn([$registrarDomain, $registrarAdapterMock]);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->willReturnCallback(function ($model) {
+                $this->assertInstanceOf(\Model_ServiceDomain::class, $model);
+                $this->assertEquals(0, $model->privacy);
+                $this->assertEquals(0, $model->locked);
+
+                return 1;
+            });
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->createMock('Box_Log');
+        $serviceMock->setDi($di);
+
+        $domainModel = new \Model_ServiceDomain();
+        $domainModel->loadBean(new \DummyBean());
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+
+        $reflection = new \ReflectionMethod($serviceMock, 'syncWhois');
+        $reflection->invoke($serviceMock, $domainModel, $order);
+    }
+
+    public function testSyncWhoisWithPrivacyNull(): void
+    {
+        $contact = new \Registrar_Domain_Contact();
+        $contact->setFirstName('John');
+        $contact->setLastName('Doe');
+        $contact->setEmail('john@example.com');
+        $contact->setCompany('Test Co');
+        $contact->setAddress1('123 Test St');
+        $contact->setCity('Test City');
+        $contact->setCountry('US');
+        $contact->setState('CA');
+        $contact->setZip('12345');
+        $contact->setTelCc('1');
+        $contact->setTel('5551234567');
+
+        $registrarDomain = new \Registrar_Domain();
+        $registrarDomain->setLocked(true);
+        $registrarDomain->setExpirationTime(strtotime('+1 year'));
+        $registrarDomain->setRegistrationTime(time());
+        $registrarDomain->setContactRegistrar($contact);
+
+        $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $registrarAdapterMock->expects($this->atLeastOnce())
+            ->method('getDomainDetails')
+            ->willReturn($registrarDomain);
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
+            ->onlyMethods(['_getD'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('_getD')
+            ->willReturn([$registrarDomain, $registrarAdapterMock]);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->willReturnCallback(function ($model) {
+                $this->assertInstanceOf(\Model_ServiceDomain::class, $model);
+                $this->assertNull($model->privacy);
+                $this->assertEquals(1, $model->locked);
+
+                return 1;
+            });
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = $this->createMock('Box_Log');
+        $serviceMock->setDi($di);
+
+        $domainModel = new \Model_ServiceDomain();
+        $domainModel->loadBean(new \DummyBean());
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+
+        $reflection = new \ReflectionMethod($serviceMock, 'syncWhois');
+        $reflection->invoke($serviceMock, $domainModel, $order);
     }
 }

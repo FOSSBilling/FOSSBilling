@@ -15,6 +15,7 @@ use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\SentryHelper;
+use FOSSBilling\Tools;
 use FOSSBilling\Version;
 use Pimple\Container;
 use PrinsFrank\Standards\Country\CountryAlpha2;
@@ -82,19 +83,19 @@ class Service
             throw new \FOSSBilling\Exception('Parameter key is missing');
         }
 
-        $query = 'SELECT value
-                FROM setting
-                WHERE param = :param
-                ';
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($query);
-        $stmt->execute(['param' => $param]);
-        $results = $stmt->fetchColumn();
-        if ($results === false) {
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('value')
+            ->from('setting')
+            ->where('param = :param')
+            ->setParameter('param', $param);
+
+        $result = $query->executeQuery()->fetchOne();
+        if ($result === false) {
             return $default;
         }
 
-        return $results;
+        return $result;
     }
 
     public function setParamValue($param, $value, $createIfNotExists = true): bool
@@ -104,18 +105,32 @@ class Service
             return true;
         }
 
-        $pdo = $this->di['pdo'];
         if ($this->paramExists($param)) {
-            $query = 'UPDATE setting SET value = :value WHERE param = :param';
-            $stmt = $pdo->prepare($query);
-            $stmt->execute(['param' => $param, 'value' => $value]);
+            $query = $this->di['dbal']->createQueryBuilder();
+            $query
+                ->update('setting')
+                ->set('value', ':value')
+                ->where('param = :param')
+                ->setParameter('param', $param)
+                ->setParameter('value', $value)
+                ->executeStatement();
         } elseif ($createIfNotExists) {
             try {
-                $query = 'INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, :created_at, :updated_at)';
-                $stmt = $pdo->prepare($query);
-                $stmt->execute(['param' => $param, 'value' => $value, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
+                $query = $this->di['dbal']->createQueryBuilder();
+                $query
+                    ->insert('setting')
+                    ->values([
+                        'param' => ':param',
+                        'value' => ':value',
+                        'created_at' => ':created_at',
+                        'updated_at' => ':updated_at',
+                    ])
+                    ->setParameter('param', $param)
+                    ->setParameter('value', $value)
+                    ->setParameter('created_at', date('Y-m-d H:i:s'))
+                    ->setParameter('updated_at', date('Y-m-d H:i:s'))
+                    ->executeStatement();
             } catch (\Exception $e) {
-                // ignore duplicate key error
                 if ($e->getCode() != 23000) {
                     throw $e;
                 }
@@ -127,20 +142,19 @@ class Service
 
     public function paramExists($param): bool
     {
-        $pdo = $this->di['pdo'];
-        $q = 'SELECT id
-              FROM setting
-              WHERE param = :param';
-        $stmt = $pdo->prepare($q);
-        $stmt->execute(['param' => $param]);
-        $results = $stmt->fetchColumn();
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('id')
+            ->from('setting')
+            ->where('param = :param')
+            ->setParameter('param', $param);
 
-        return (bool) $results;
+        $result = $query->executeQuery()->fetchOne();
+
+        return (bool) $result;
     }
 
     /**
-     * @param string[] $params
-     *
      * @return mixed[]
      */
     private function _getMultipleParams($params): array
@@ -149,7 +163,7 @@ class Service
             return [];
         }
         foreach ($params as $param) {
-            if (!preg_match('/^[a-z0-9_]+$/', $param)) {
+            if (!preg_match('/^[a-z0-9_]+$/', (string) $param)) {
                 throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_', ['param_' => $param]);
             }
         }
@@ -157,7 +171,6 @@ class Service
                 FROM setting
                 WHERE param IN('" . implode("', '", $params) . "')
                 ";
-        $result = [];
         $rows = $this->di['db']->getAll($query);
         $result = [];
         foreach ($rows as $row) {
@@ -194,43 +207,43 @@ class Service
         $results = $this->_getMultipleParams($c);
 
         $logoUrl = $results['company_logo'] ?? null;
-        if ($logoUrl !== null && !str_contains($logoUrl, 'http')) {
+        if ($logoUrl !== null && !str_contains((string) $logoUrl, 'http')) {
             $logoUrl = SYSTEM_URL . $logoUrl;
         }
 
         $logoUrlDark = $results['company_logo_dark'] ?? null;
-        if ($logoUrlDark !== null && !str_contains($logoUrlDark, 'http')) {
+        if ($logoUrlDark !== null && !str_contains((string) $logoUrlDark, 'http')) {
             $logoUrlDark = SYSTEM_URL . $logoUrlDark;
         }
         $logoUrlDark ??= $logoUrl;
 
         $faviconUrl = $results['company_favicon'] ?? null;
-        if ($faviconUrl !== null && !str_contains($faviconUrl, 'http')) {
+        if ($faviconUrl !== null && !str_contains((string) $faviconUrl, 'http')) {
             $faviconUrl = SYSTEM_URL . $faviconUrl;
         }
 
         return [
             'www' => SYSTEM_URL,
-            'name' => isset($results['company_name']) ? htmlspecialchars($results['company_name'], ENT_QUOTES, 'UTF-8') : null,
-            'email' => isset($results['company_email']) ? htmlspecialchars($results['company_email'], ENT_QUOTES, 'UTF-8') : null,
-            'tel' => isset($results['company_tel']) ? htmlspecialchars($results['company_tel'], ENT_QUOTES, 'UTF-8') : null,
+            'name' => isset($results['company_name']) ? htmlspecialchars((string) $results['company_name'], ENT_QUOTES, 'UTF-8') : null,
+            'email' => isset($results['company_email']) ? htmlspecialchars((string) $results['company_email'], ENT_QUOTES, 'UTF-8') : null,
+            'tel' => isset($results['company_tel']) ? htmlspecialchars((string) $results['company_tel'], ENT_QUOTES, 'UTF-8') : null,
             'signature' => $results['company_signature'] ?? null,
             'logo_url' => $logoUrl,
             'logo_url_dark' => $logoUrlDark,
             'favicon_url' => $faviconUrl,
-            'address_1' => isset($results['company_address_1']) ? htmlspecialchars($results['company_address_1'], ENT_QUOTES, 'UTF-8') : null,
-            'address_2' => isset($results['company_address_2']) ? htmlspecialchars($results['company_address_2'], ENT_QUOTES, 'UTF-8') : null,
-            'address_3' => isset($results['company_address_3']) ? htmlspecialchars($results['company_address_3'], ENT_QUOTES, 'UTF-8') : null,
+            'address_1' => isset($results['company_address_1']) ? htmlspecialchars((string) $results['company_address_1'], ENT_QUOTES, 'UTF-8') : null,
+            'address_2' => isset($results['company_address_2']) ? htmlspecialchars((string) $results['company_address_2'], ENT_QUOTES, 'UTF-8') : null,
+            'address_3' => isset($results['company_address_3']) ? htmlspecialchars((string) $results['company_address_3'], ENT_QUOTES, 'UTF-8') : null,
             'account_number' => $results['company_account_number'] ?? null,
-            'bank_name' => isset($results['company_bank_name']) ? htmlspecialchars($results['company_bank_name'], ENT_QUOTES, 'UTF-8') : null,
-            'bic' => isset($results['company_bic']) ? htmlspecialchars($results['company_bic'], ENT_QUOTES, 'UTF-8') : null,
+            'bank_name' => isset($results['company_bank_name']) ? htmlspecialchars((string) $results['company_bank_name'], ENT_QUOTES, 'UTF-8') : null,
+            'bic' => isset($results['company_bic']) ? htmlspecialchars((string) $results['company_bic'], ENT_QUOTES, 'UTF-8') : null,
             'display_bank_info' => $results['company_display_bank_info'] ?? null,
             'bank_info_pagebottom' => $results['company_bank_info_pagebottom'] ?? null,
-            'number' => isset($results['company_number']) ? htmlspecialchars($results['company_number'], ENT_QUOTES, 'UTF-8') : null,
+            'number' => isset($results['company_number']) ? htmlspecialchars((string) $results['company_number'], ENT_QUOTES, 'UTF-8') : null,
             'note' => $results['company_note'] ?? null,
             'privacy_policy' => $results['company_privacy_policy'] ?? null,
             'tos' => $results['company_tos'] ?? null,
-            'vat_number' => isset($results['company_vat_number']) ? htmlspecialchars($results['company_vat_number'], ENT_QUOTES, 'UTF-8') : null,
+            'vat_number' => isset($results['company_vat_number']) ? htmlspecialchars((string) $results['company_vat_number'], ENT_QUOTES, 'UTF-8') : null,
         ];
     }
 
@@ -349,9 +362,9 @@ class Service
                         'text' => __trans("Error reporting in FOSSBilling has changed since you last reviewed it. You may want to consider reviewing the changes to see what's been changed. (This message will remain for 24 hours)"),
                         'url' => $url,
                     ];
-                } else {
-                    return [];
                 }
+
+                return [];
             });
 
             if ($result) {
@@ -460,6 +473,7 @@ class Service
         } catch (\Exception $e) {
             if (!$try_render) {
                 $errorMsg = 'Template rendering failed: ' . $e->getMessage();
+
                 throw new \FOSSBilling\InformationException($errorMsg, null, $e->getCode());
             }
 
@@ -468,10 +482,11 @@ class Service
         }
     }
 
-    public function clearCache(): bool
+    public function clearCache(?string $cachePath = null): bool
     {
-        $this->filesystem->remove(PATH_CACHE);
-        $this->filesystem->mkdir(PATH_CACHE);
+        $path = $cachePath ?? PATH_CACHE;
+        $this->filesystem->remove($path);
+        $this->filesystem->mkdir($path);
 
         return true;
     }
@@ -480,7 +495,7 @@ class Service
     {
         if ($ip) {
             try {
-                return \FOSSBilling\Tools::getExternalIP();
+                return Tools::getExternalIP();
             } catch (\Exception) {
                 return '';
             }
@@ -495,7 +510,7 @@ class Service
 
     public function getCurrentUrl(): string
     {
-        $pageScheme = $_SERVER['HTTPS'] ? 'https' : 'http';
+        $pageScheme = Tools::isHTTPS() ? 'https' : 'http';
         $pageURL = $pageScheme . '://';
 
         $serverPort = $_SERVER['SERVER_PORT'] ?? null;
@@ -528,21 +543,20 @@ class Service
 
     public function getPublicParamValue($param)
     {
-        $query = 'SELECT value
-                FROM setting
-                WHERE param = :param
-                AND public = 1
-               ';
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('value')
+            ->from('setting')
+            ->where('param = :param')
+            ->andWhere('public = 1')
+            ->setParameter('param', $param);
 
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($query);
-        $stmt->execute(['param' => $param]);
-        $results = $stmt->fetchColumn();
-        if ($results === false) {
+        $result = $query->executeQuery()->fetchOne();
+        if ($result === false) {
             throw new \FOSSBilling\Exception('Parameter :param does not exist', [':param' => $param]);
         }
 
-        return $results;
+        return $result;
     }
 
     public function getLocales(): array
@@ -831,10 +845,8 @@ class Service
         $config = $mod->getConfig();
         if (isset($config['countries'])) {
             preg_match_all('#([A-Z]{2})=(.+)#', $config['countries'], $matches);
-            if (isset($matches[1]) && !empty($matches[1]) && isset($matches[2]) && !empty($matches[2])) {
-                if ((is_countable($matches[1]) ? count($matches[1]) : 0) == (is_countable($matches[2]) ? count($matches[2]) : 0)) {
-                    $countries = array_combine($matches[1], $matches[2]);
-                }
+            if (!empty($matches[1]) && !empty($matches[2]) && count($matches[1]) == count($matches[2])) {
+                $countries = array_combine($matches[1], $matches[2]);
             }
         }
 
@@ -1053,14 +1065,14 @@ class Service
             'hide_company_public',
             'company_signature',
         ];
-        $comaony_legal = ['company_tos', 'company_privacy_policy', 'company_note'];
+        $company_legal = ['company_tos', 'company_privacy_policy', 'company_note'];
 
         $staff_service = $this->di['mod_service']('Staff');
         if (in_array($param, $company) && !$staff_service->hasPermission(null, 'system', 'manage_company_details')) {
             return false;
         }
 
-        if (in_array($param, $comaony_legal) && !$staff_service->hasPermission(null, 'system', 'manage_company_legal')) {
+        if (in_array($param, $company_legal) && !$staff_service->hasPermission(null, 'system', 'manage_company_legal')) {
             return false;
         }
 

@@ -15,7 +15,8 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
 {
     protected ?Pimple\Container $di = null;
 
-    final public const METHOD = 'aes-256-cbc';
+    final public const string METHOD = 'aes-256-cbc';
+    final public const string CURRENT_FORMAT_PREFIX = 'v2:';
 
     public function __construct()
     {
@@ -36,8 +37,31 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
 
     public function encrypt(string $text, ?string $pass = null): string
     {
-        $key = $this->_getSalt($pass);
+        return self::CURRENT_FORMAT_PREFIX . $this->encryptWithKey($text, $this->getCurrentKey($pass));
+    }
 
+    public function decrypt(?string $text, ?string $pass = null)
+    {
+        if (is_null($text)) {
+            return false;
+        }
+
+        if (str_starts_with($text, self::CURRENT_FORMAT_PREFIX)) {
+            return $this->decryptWithKey(substr($text, strlen(self::CURRENT_FORMAT_PREFIX)), $this->getCurrentKey($pass));
+        }
+
+        foreach ([$this->getCurrentKey($pass), $this->getLegacyKey($pass)] as $key) {
+            $result = $this->decryptWithKey($text, $key);
+            if ($result !== false) {
+                return $result;
+            }
+        }
+
+        return false;
+    }
+
+    private function encryptWithKey(string $text, string $key): string
+    {
         $ivsize = openssl_cipher_iv_length(self::METHOD);
         $iv = openssl_random_pseudo_bytes($ivsize);
 
@@ -52,18 +76,16 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
         return base64_encode($iv . $ciphertext);
     }
 
-    public function decrypt(?string $text, ?string $pass = null)
+    private function decryptWithKey(string $text, string $key): string|false
     {
-        if (is_null($text)) {
+        $decoded = base64_decode($text, true);
+        if ($decoded === false) {
             return false;
         }
-        $key = $this->_getSalt($pass);
-
-        $text = base64_decode($text);
 
         $ivsize = openssl_cipher_iv_length(self::METHOD);
-        $iv = mb_substr($text, 0, $ivsize, '8bit');
-        $ciphertext = mb_substr($text, $ivsize, null, '8bit');
+        $iv = mb_substr($decoded, 0, $ivsize, '8bit');
+        $ciphertext = mb_substr($decoded, $ivsize, null, '8bit');
 
         $result = openssl_decrypt(
             $ciphertext,
@@ -73,15 +95,44 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
             $iv
         );
 
-        return trim($result);
+        if ($result === false) {
+            return false;
+        }
+
+        $result = trim($result);
+
+        if (!$this->isPlausiblePlaintext($result)) {
+            return false;
+        }
+
+        return $result;
     }
 
-    private function _getSalt(?string $pass = null): string
+    private function getCurrentKey(?string $pass = null): string
     {
-        if ($pass == null) {
+        return hash_pbkdf2('sha256', $this->resolvePassphrase($pass), 'fossbilling_salt', 100000, 32, true);
+    }
+
+    private function getLegacyKey(?string $pass = null): string
+    {
+        return pack('H*', hash('md5', $this->resolvePassphrase($pass)));
+    }
+
+    private function resolvePassphrase(?string $pass = null): string
+    {
+        if ($pass === null) {
             $pass = Config::getProperty('info.salt');
         }
 
-        return pack('H*', hash('md5', (string) $pass));
+        return (string) $pass;
+    }
+
+    private function isPlausiblePlaintext(string $text): bool
+    {
+        if (!mb_check_encoding($text, 'UTF-8')) {
+            return false;
+        }
+
+        return !preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $text);
     }
 }

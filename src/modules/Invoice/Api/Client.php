@@ -49,12 +49,13 @@ class Client extends \Api_Abstract
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function get($data)
     {
-        $model = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
+        $identity = $this->getIdentity();
+        $model = $this->di['db']->findOne('Invoice', 'hash = :hash AND client_id = :client_id', ['hash' => $data['hash'], 'client_id' => $identity->id]);
         if (!$model) {
             throw new \FOSSBilling\Exception('Invoice was not found');
         }
 
-        return $this->getService()->toApiArray($model, true, $this->getIdentity());
+        return $this->getService()->toApiArray($model, true, $identity);
     }
 
     /**
@@ -69,7 +70,8 @@ class Client extends \Api_Abstract
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function update($data)
     {
-        $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
+        $identity = $this->getIdentity();
+        $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash AND client_id = :client_id', ['hash' => $data['hash'], 'client_id' => $identity->id]);
         if (!$invoice) {
             throw new \FOSSBilling\Exception('Invoice was not found');
         }
@@ -129,24 +131,6 @@ class Client extends \Api_Abstract
         $this->di['logger']->info('Generated add funds invoice #%s', $invoice->id);
 
         return $invoice->hash;
-    }
-
-    /**
-     * Client removes unpaid invoice.
-     *
-     * @return bool
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
-    public function delete($data)
-    {
-        $model = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
-        if (!$model) {
-            throw new \FOSSBilling\Exception('Invoice was not found');
-        }
-
-        return $this->getService()->deleteInvoiceByClient($model);
     }
 
     /**

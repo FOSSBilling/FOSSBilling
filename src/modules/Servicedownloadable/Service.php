@@ -20,6 +20,62 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
 {
+    private const array DEFAULT_ALLOWED_EXTENSIONS = [
+        'zip', 'tar', 'gz', 'tgz', 'bz2', 'xz', 'rar', '7z',
+        'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+        'txt', 'csv', 'xml', 'json', 'yml', 'yaml', 'sql',
+        'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp',
+        'mp3', 'wav', 'ogg', 'mp4', 'm4v', 'mov', 'avi', 'mkv', 'webm',
+        'exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm', 'apk', 'ipa',
+        'jar', 'war', 'ear', 'iso', 'bin', 'img',
+    ];
+
+    private const array DEFAULT_ALLOWED_MIME_TYPES = [
+        'application/octet-stream',
+        'application/zip',
+        'application/x-zip-compressed',
+        'application/x-tar',
+        'application/gzip',
+        'application/x-gzip',
+        'application/x-bzip2',
+        'application/x-xz',
+        'application/x-rar-compressed',
+        'application/x-7z-compressed',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/json',
+        'application/xml',
+        'application/sql',
+        'application/x-msdownload',
+        'application/vnd.microsoft.portable-executable',
+        'application/x-apple-diskimage',
+        'application/vnd.android.package-archive',
+        'application/java-archive',
+        'application/x-iso9660-image',
+        'image/png',
+        'image/jpeg',
+        'image/gif',
+        'image/svg+xml',
+        'image/webp',
+        'audio/mpeg',
+        'audio/wav',
+        'audio/ogg',
+        'video/mp4',
+        'video/quicktime',
+        'video/x-msvideo',
+        'video/x-matroska',
+        'video/webm',
+        'text/plain',
+        'text/csv',
+        'text/xml',
+        'text/yaml',
+    ];
+
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
 
@@ -31,6 +87,40 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    private function getAllowedFileTypes(): array
+    {
+        return [
+            'extensions' => self::DEFAULT_ALLOWED_EXTENSIONS,
+            'mime_types' => self::DEFAULT_ALLOWED_MIME_TYPES,
+        ];
+    }
+
+    private function validateFileUpload(\Symfony\Component\HttpFoundation\File\UploadedFile $file): void
+    {
+        $allowedTypes = $this->getAllowedFileTypes();
+
+        $extension = strtolower($file->getClientOriginalExtension());
+        $mimeType = strtolower((string) $file->getMimeType());
+
+        if (!in_array($extension, $allowedTypes['extensions'], true)) {
+            throw new \FOSSBilling\Exception('File extension :ext is not allowed. Allowed extensions: :allowed', [':ext' => $extension, ':allowed' => implode(', ', $allowedTypes['extensions'])]);
+        }
+
+        if (!$this->isAllowedMimeType($mimeType, $allowedTypes['mime_types']) && $this->di->offsetExists('logger')) {
+            $this->di['logger']->warn(
+                'Accepting downloadable upload %s with unexpected MIME type %s because the extension %s is allowed',
+                $file->getClientOriginalName(),
+                $mimeType,
+                $extension
+            );
+        }
+    }
+
+    private function isAllowedMimeType(string $mimeType, array $allowedMimeTypes): bool
+    {
+        return $mimeType === '' || $mimeType === 'application/octet-stream' || in_array($mimeType, $allowedMimeTypes, true);
     }
 
     public function __construct()
@@ -169,6 +259,8 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('File upload failed: ' . $this->_error_message($errorCode));
         }
 
+        $this->validateFileUpload($file);
+
         $fileNameHash = md5((string) $fileName);
         $fileSavePath = PATH_UPLOADS;
         $file->move($fileSavePath, $fileNameHash);
@@ -235,6 +327,8 @@ class Service implements InjectionAwareInterface
             if ($errorCode !== UPLOAD_ERR_OK) {
                 throw new \FOSSBilling\Exception('File upload failed: ' . $this->_error_message($errorCode));
             }
+
+            $this->validateFileUpload($file);
 
             $fileNameHash = md5((string) $fileName);
             $fileSavePath = PATH_UPLOADS;
@@ -330,7 +424,7 @@ class Service implements InjectionAwareInterface
      * no response is sent, but the method will still perform logging and return
      * a boolean indicating that the operation completed.
      *
-     * @param \Model_Product $product The product model whose associated file should be downloaded.
+     * @param \Model_Product $product the product model whose associated file should be downloaded
      *
      * @return bool True if the download operation completed successfully, regardless of whether
      *              a response was actually sent (e.g. in a testing environment).
@@ -340,7 +434,7 @@ class Service implements InjectionAwareInterface
      *                                cases, the exception is thrown with an HTTP-style error
      *                                code of 404.
      */
-    public function sendProductFile(\Model_Product $product)
+    public function sendProductFile(\Model_Product $product): bool
     {
         $config = $product->config;
         $config = json_decode($config ?? '', true) ?: [];
@@ -350,7 +444,7 @@ class Service implements InjectionAwareInterface
         }
 
         $fileName = $config['filename'];
-        $filePath = Path::join(PATH_UPLOADS, md5($fileName));
+        $filePath = Path::join(PATH_UPLOADS, md5((string) $fileName));
 
         if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);

@@ -27,7 +27,7 @@ class SentryHelper
      * If you modify what's reported, update this to the version number to the release that includes your changes.
      * This is important as we rely on it to inform the user that they may want to review what's been changed.
      */
-    final public const last_change = '0.6.0';
+    final public const string last_change = '0.6.0';
 
     // A full list of our own modules which we want to receive error reports for
     private static array $allowedModules = [
@@ -235,9 +235,9 @@ class SentryHelper
             return 'NGINX';
         } elseif (PHP_SAPI === 'cli-server') {
             return 'PHP Development Server';
-        } else {
-            return 'Unknown';
         }
+
+        return 'Unknown';
     }
 
     public static function skipReporting(?string $module = null, ?string $theme = null): bool

@@ -11,30 +11,25 @@
 
 namespace Box\Mod\Servicecustom\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 /**
  * Custom product management.
  */
 class Client extends \Api_Abstract
 {
     /**
-     * Universal method to call method from plugin
-     * Pass any other params and they will be passed to plugin.
+     * Call a method from the service's plugin.
+     * Pass any additional params and they will be passed to the plugin method.
      *
      * @throws \FOSSBilling\Exception
      */
-    public function __call($name, $arguments)
+    #[RequiredParams(['order_id' => 'Order ID is required', 'method' => 'Method is required'])]
+    public function call($data)
     {
-        if (!isset($arguments[0])) {
-            throw new \FOSSBilling\Exception('API call is missing arguments', null, 7103);
-        }
+        $identity = $this->getIdentity();
+        $model = $this->getService()->getServiceCustomByOrderId($data['order_id'], $identity->id);
 
-        $data = $arguments[0];
-
-        if (!isset($data['order_id'])) {
-            throw new \FOSSBilling\Exception('Order ID is required');
-        }
-        $model = $this->getService()->getServiceCustomByOrderId($data['order_id']);
-
-        return $this->getService()->customCall($model, $name, $data);
+        return $this->getService()->customCall($model, $data['method'], $data);
     }
 }

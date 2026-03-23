@@ -50,7 +50,7 @@ class Admin extends \Api_Abstract
      * Set new theme as default.
      */
     #[RequiredParams(['code' => 'Theme code was not passed'])]
-    public function select($data)
+    public function select($data): bool
     {
         $theme = $this->getService()->getTheme($data['code']);
 
@@ -73,7 +73,7 @@ class Admin extends \Api_Abstract
      * Delete theme preset.
      */
     #[RequiredParams(['code' => 'Theme code was not passed', 'preset' => 'Preset name is missing'])]
-    public function preset_delete($data)
+    public function preset_delete($data): bool
     {
         $service = $this->getService();
 
@@ -87,7 +87,7 @@ class Admin extends \Api_Abstract
      * Select new theme preset.
      */
     #[RequiredParams(['code' => 'Theme code was not passed', 'preset' => 'Preset name is missing'])]
-    public function preset_select($data)
+    public function preset_select($data): bool
     {
         $service = $this->getService();
         $theme = $service->getTheme($data['code']);

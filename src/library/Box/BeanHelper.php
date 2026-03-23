@@ -22,6 +22,7 @@ class Box_BeanHelper extends RedBeanPHP\BeanHelper\SimpleFacadeBeanHelper implem
         return $this->di;
     }
 
+    #[Override]
     public function getModelForBean(RedBeanPHP\OODBBean $bean): ?object
     {
         $prefix = '\\Model_';

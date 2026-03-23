@@ -293,7 +293,7 @@ class ErrorPage
 
                     <div class="footer" style="clear:both">
                         <hr>
-                        <p>Powered By FOSSBilling</p>
+                        <p>Powered by FOSSBilling</p>
                         <p>
                             <a href="https://github.com/fossbilling/fossbilling">Source code</a> |
                             <a href="https://fossbilling.org/discord">Discord</a> |

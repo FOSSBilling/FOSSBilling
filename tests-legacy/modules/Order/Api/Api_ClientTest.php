@@ -6,9 +6,9 @@
  * Date: 8/5/14
  * Time: 4:52 PM.
  */
+
 namespace Box\Tests\Mod\Order\Api;
 
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -285,7 +285,7 @@ final class Api_ClientTest extends \BBTestCase
     {
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -320,7 +320,7 @@ final class Api_ClientTest extends \BBTestCase
     {
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['findForClientById', 'toApiArray'])->getMock();

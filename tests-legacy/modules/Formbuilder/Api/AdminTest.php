@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Formbuilder\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -12,7 +13,7 @@ final class AdminTest extends \BBTestCase
     protected ?\Box\Mod\Formbuilder\Service $service;
     protected ?Admin $api;
 
-    public function getServiceMock()
+    public function getServiceMock(): \PHPUnit\Framework\MockObject\MockObject
     {
         return $this->createMock(\Box\Mod\Formbuilder\Service::class);
     }
@@ -348,7 +349,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function form_settings_data()
+    public static function form_settings_data(): array
     {
         return [
             ['form_id', 'Form id was not passed', 1654],

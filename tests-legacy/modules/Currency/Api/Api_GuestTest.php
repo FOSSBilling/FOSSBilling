@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Currency\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -68,7 +69,7 @@ final class Api_GuestTest extends \BBTestCase
     }
 
     #[DataProvider('getProvider')]
-    public function testGet(array $data, $modelFlag, $expectsGetByCode, $expectsGetDefault): void
+    public function testGet(array $data, string $modelFlag, string $expectsGetByCode, string $expectsGetDefault): void
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
 
@@ -82,7 +83,7 @@ final class Api_GuestTest extends \BBTestCase
         ];
 
         // Create model mock based on flag
-        $model = ($modelFlag === 'has_model') 
+        $model = ($modelFlag === 'has_model')
             ? $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
                 ->disableOriginalConstructor()
                 ->getMock()

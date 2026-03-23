@@ -15,17 +15,17 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    final public const CUSTOM = 'custom';
-    final public const LICENSE = 'license';
-    final public const ADDON = 'addon';
-    final public const DOMAIN = 'domain';
-    final public const DOWNLOADABLE = 'downloadable';
-    final public const HOSTING = 'hosting';
-    final public const VPS = 'vps';
+    final public const string CUSTOM = 'custom';
+    final public const string LICENSE = 'license';
+    final public const string ADDON = 'addon';
+    final public const string DOMAIN = 'domain';
+    final public const string DOWNLOADABLE = 'downloadable';
+    final public const string HOSTING = 'hosting';
+    final public const string VPS = 'vps';
 
-    final public const SETUP_AFTER_ORDER = 'after_order';
-    final public const SETUP_AFTER_PAYMENT = 'after_payment';
-    final public const SETUP_MANUAL = 'manual';
+    final public const string SETUP_AFTER_ORDER = 'after_order';
+    final public const string SETUP_AFTER_PAYMENT = 'after_payment';
+    final public const string SETUP_MANUAL = 'manual';
 
     protected ?\Pimple\Container $di = null;
 
@@ -291,7 +291,7 @@ class Service implements InjectionAwareInterface
         }
         if (is_array($data['addons'] ?? null)) {
             $addons = array_values(array_filter($data['addons']));
-            if (is_null($addons)) {
+            if (empty($addons)) {
                 $model->addons = null;
             } else {
                 $model->addons = json_encode($addons);
@@ -745,9 +745,9 @@ class Service implements InjectionAwareInterface
 
             if ($p) {
                 return min($p);
-            } else {
-                return null;
             }
+
+            return null;
         }
 
         return null;
@@ -885,7 +885,7 @@ class Service implements InjectionAwareInterface
         $model->freesetup = $data['freesetup'] ?? 0;
         $model->once_per_client = (bool) ($data['once_per_client'] ?? 0);
         $model->recurring = (bool) ($data['recurring'] ?? 0);
-        $model->maxuses = (int) $data['maxuses'] ?? null;
+        $model->maxuses = isset($data['maxuses']) ? (int) $data['maxuses'] : null;
         $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['start_at'])) : null;
         $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['end_at'])) : null;
         $model->products = json_encode($products);
@@ -927,12 +927,12 @@ class Service implements InjectionAwareInterface
         $model->used = $data['used'] ?? $model->used;
         $model->start_at = !empty($data['start_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['start_at'])) : null;
         $model->end_at = !empty($data['end_at']) ? date('Y-m-d H:i:s', strtotime((string) $data['end_at'])) : null;
-        $model->maxuses = (int) $data['maxuses'] ?? $model->maxuses;
+        $model->maxuses = (int) ($data['maxuses'] ?? $model->maxuses);
 
         if (!is_array($data['products'] ?? null)) {
             $model->products = null;
         } else {
-            $products = array_values(array_filter($data['products'] ?? null));
+            $products = array_values(array_filter($data['products']));
             if (empty($products)) {
                 $model->products = null;
             } else {
@@ -942,7 +942,7 @@ class Service implements InjectionAwareInterface
         if (!is_array($data['client_groups'] ?? null)) {
             $model->client_groups = null;
         } else {
-            $client_groups = array_values(array_filter($data['client_groups'] ?? null));
+            $client_groups = array_values(array_filter($data['client_groups']));
             if (empty($client_groups)) {
                 $model->client_groups = null;
             } else {
@@ -953,7 +953,7 @@ class Service implements InjectionAwareInterface
         if (!is_array($data['periods'] ?? null)) {
             $model->periods = null;
         } else {
-            $periods = array_values(array_filter($data['periods'] ?? null));
+            $periods = array_values(array_filter($data['periods']));
             if (empty($periods)) {
                 $model->periods = null;
             } else {

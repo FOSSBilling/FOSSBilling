@@ -113,8 +113,8 @@ class ServiceBalance implements InjectionAwareInterface
     }
 
     /**
-     * @param float  $amount
-     * @param string $description
+     * @param float|string $amount
+     * @param string       $description
      *
      * @return \Model_ClientBalance
      *

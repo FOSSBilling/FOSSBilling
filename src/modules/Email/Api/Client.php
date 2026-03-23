@@ -15,6 +15,7 @@
 
 namespace Box\Mod\Email\Api;
 
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \Api_Abstract
@@ -34,15 +35,15 @@ class Client extends \Api_Abstract
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
-                'id' => $item['id'],
-                'client_id' => $item['client_id'],
-                'sender' => $item['sender'],
-                'recipients' => $item['recipients'],
-                'subject' => $item['subject'],
-                'content_html' => $item['content_html'],
-                'content_text' => $item['content_text'],
-                'created_at' => $item['created_at'],
-                'updated_at' => $item['updated_at'],
+                'id' => $item['id'] ?? '',
+                'client_id' => $item['client_id'] ?? '',
+                'sender' => $item['sender'] ?? '',
+                'recipients' => $item['recipients'] ?? '',
+                'subject' => $item['subject'] ?? '',
+                'content_html' => Tools::sanitizeContent($item['content_html'] ?? ''),
+                'content_text' => $item['content_text'] ?? '',
+                'created_at' => $item['created_at'] ?? '',
+                'updated_at' => $item['updated_at'] ?? '',
             ];
         }
 

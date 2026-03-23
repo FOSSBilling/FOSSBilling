@@ -385,7 +385,7 @@ class Admin extends \Api_Abstract
      * @optional bool $delete_addons - Remove addons also. Default false.
      */
     #[RequiredParams(['ids' => 'Order IDs were not passed'])]
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         $delete_addons = isset($data['delete_addons']) && (bool) $data['delete_addons'];
 

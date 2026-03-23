@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Activity;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -12,14 +15,10 @@ final class ServiceTest extends \BBTestCase
     public function testDi(): void
     {
         $service = new \Box\Mod\Activity\Service();
-
-        $di = $this->getDi();
-        $db = $this->createMock('Box_Database');
-
-        $di['db'] = $db;
+        $di = $this->createDi($this->createDbalConnection());
         $service->setDi($di);
-        $result = $service->getDi();
-        $this->assertEquals($di, $result);
+
+        $this->assertEquals($di, $service->getDi());
     }
 
     public static function searchFilters(): array
@@ -32,7 +31,6 @@ final class ServiceTest extends \BBTestCase
             [['search' => 'keyword'], 'm.message LIKE ', true],
             [['min_priority' => 6], 'm.priority <= :min_priority', true],
             [['priority' => 6], 'm.priority = :priority', true],
-            // When both priority and min_priority are set, priority takes precedence
             [['priority' => 5, 'min_priority' => 3], 'm.priority = :priority', true],
             [['priority' => 5, 'min_priority' => 3], 'm.priority <= :min_priority', false],
         ];
@@ -41,105 +39,140 @@ final class ServiceTest extends \BBTestCase
     #[DataProvider('searchFilters')]
     public function testGetSearchQuery(array $filterKey, string $search, bool $expected): void
     {
-        $di = $this->getDi();
         $service = new \Box\Mod\Activity\Service();
-        $service->setDi($di);
+        $service->setDi($this->createDi($this->createDbalConnection()));
+
         $result = $service->getSearchQuery($filterKey);
+
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
-        $this->assertEquals($expected, str_contains($result[0], $search));
+        $this->assertSame($expected, str_contains($result[0], $search));
+    }
+
+    public function testLogEventInsertsRow(): void
+    {
+        $dbal = $this->createDbalConnection();
+        $service = new \Box\Mod\Activity\Service();
+        $service->setDi($this->createDi($dbal));
+
+        $service->logEvent([
+            'client_id' => 3,
+            'priority' => 4,
+            'message' => 'Created order',
+        ]);
+
+        $row = $dbal->executeQuery('SELECT client_id, priority, message, ip FROM activity_system')->fetchAssociative();
+        $this->assertSame('3', (string) $row['client_id']);
+        $this->assertSame('4', (string) $row['priority']);
+        $this->assertSame('Created order', $row['message']);
+        $this->assertSame('127.0.0.1', $row['ip']);
     }
 
     public function testLogEmail(): void
     {
+        $dbal = $this->createDbalConnection();
         $service = new \Box\Mod\Activity\Service();
-        $data = [
-            'client_id' => 1,
-            'sender' => 'sender',
-            'recipients' => 'recipients',
-            'subject' => 'subject',
-            'content_html' => 'html',
-            'content_text' => 'text',
-        ];
+        $service->setDi($this->createDi($dbal));
 
-        $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \DummyBean());
+        $result = $service->logEmail('subject', 1, 'sender', 'recipients', 'html', 'text');
 
-        $di = $this->getDi();
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($model);
-        $db->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn([]);
-
-        $di['db'] = $db;
-        $service->setDi($di);
-
-        $result = $service->logEmail($data['subject'], $data['client_id'], $data['sender'], $data['recipients'], $data['content_html'], $data['content_text']);
+        $row = $dbal->executeQuery('SELECT subject, client_id FROM activity_client_email')->fetchAssociative();
         $this->assertTrue($result);
+        $this->assertSame('subject', $row['subject']);
+        $this->assertSame('1', (string) $row['client_id']);
     }
 
     public function testToApiArray(): void
     {
-        $clientHistoryModel = new \Model_ActivityClientHistory();
-        $clientHistoryModel->loadBean(new \DummyBean());
-        $clientHistoryModel->client_id = 1;
+        $dbal = $this->createDbalConnection();
+        $dbal->insert('client', [
+            'id' => 1,
+            'first_name' => 'Ada',
+            'last_name' => 'Lovelace',
+            'email' => 'ada@example.com',
+        ]);
 
-        $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \DummyBean());
-
-        $expectionError = 'Client not found';
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->with('Client', $clientHistoryModel->client_id, $expectionError)
-            ->willReturn($clientModel);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $history = new \Model_ActivityClientHistory();
+        $history->loadBean(new \DummyBean());
+        $history->id = 5;
+        $history->client_id = 1;
+        $history->ip = '127.0.0.1';
+        $history->created_at = '2026-03-23 10:00:00';
 
         $service = new \Box\Mod\Activity\Service();
-        $service->setDi($di);
+        $service->setDi($this->createDi($dbal));
 
-        $result = $service->toApiArray($clientHistoryModel);
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('id', $result);
-        $this->assertArrayHasKey('ip', $result);
-        $this->assertArrayHasKey('created_at', $result);
+        $result = $service->toApiArray($history);
 
-        $this->assertIsArray($result['client']);
-        $this->assertArrayHasKey('id', $result['client']);
-        $this->assertArrayHasKey('first_name', $result['client']);
-        $this->assertArrayHasKey('last_name', $result['client']);
-        $this->assertArrayHasKey('email', $result['client']);
+        $this->assertSame(5, $result['id']);
+        $this->assertSame('127.0.0.1', $result['ip']);
+        $this->assertSame('Ada', $result['client']['first_name']);
+        $this->assertSame('ada@example.com', $result['client']['email']);
     }
 
-    public function testRmByClient(): void
+    public function testRmByClientDeletesRows(): void
     {
-        $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \DummyBean());
-        $clientModel->id = 1;
+        $dbal = $this->createDbalConnection();
+        $dbal->insert('activity_system', [
+            'client_id' => 1,
+            'priority' => 1,
+            'message' => 'One',
+            'ip' => '127.0.0.1',
+            'created_at' => '2026-03-23 10:00:00',
+        ]);
+        $dbal->insert('activity_system', [
+            'client_id' => 2,
+            'priority' => 1,
+            'message' => 'Two',
+            'ip' => '127.0.0.1',
+            'created_at' => '2026-03-23 10:00:00',
+        ]);
 
-        $activitySystemModel = new \Model_ActivitySystem();
-        $activitySystemModel->loadBean(new \DummyBean());
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->with('ActivitySystem', 'client_id = ?', [$clientModel->id])
-            ->willReturn([$activitySystemModel]);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash')
-            ->with($activitySystemModel);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
+        $client->id = 1;
 
         $service = new \Box\Mod\Activity\Service();
-        $service->setDi($di);
+        $service->setDi($this->createDi($dbal));
+        $service->rmByClient($client);
 
-        $service->rmByClient($clientModel);
+        $remaining = (int) $dbal->executeQuery('SELECT COUNT(*) FROM activity_system')->fetchOne();
+        $this->assertSame(1, $remaining);
+    }
+
+    private function createDi(Connection $dbal): \Pimple\Container
+    {
+        $di = $this->getDi();
+        $di['dbal'] = $dbal;
+
+        $extensionService = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionService->method('isExtensionActive')
+            ->willReturn(false);
+
+        $request = $this->createMock(\Symfony\Component\HttpFoundation\Request::class);
+        $request->method('getClientIp')
+            ->willReturn('127.0.0.1');
+
+        $di['request'] = $request;
+        $di['mod_service'] = $di->protect(fn (string $service): object => match ($service) {
+            'extension' => $extensionService,
+            default => throw new \RuntimeException("Unexpected service $service"),
+        });
+
+        return $di;
+    }
+
+    private function createDbalConnection(): Connection
+    {
+        $connection = DriverManager::getConnection([
+            'driver' => 'pdo_sqlite',
+            'memory' => true,
+        ]);
+
+        $connection->executeStatement('CREATE TABLE activity_system (id INTEGER PRIMARY KEY AUTOINCREMENT, client_id INTEGER, admin_id INTEGER, priority INTEGER, message TEXT, ip TEXT, created_at TEXT)');
+        $connection->executeStatement('CREATE TABLE activity_client_email (id INTEGER PRIMARY KEY AUTOINCREMENT, client_id INTEGER, sender TEXT, recipients TEXT, subject TEXT, content_html TEXT, content_text TEXT, created_at TEXT)');
+        $connection->executeStatement('CREATE TABLE client (id INTEGER PRIMARY KEY, first_name TEXT, last_name TEXT, email TEXT)');
+
+        return $connection;
     }
 }

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -30,7 +30,7 @@ final class ClientTest extends \BBTestCase
             'order_id' => 1,
         ];
 
-        $apiMock = $this->getMockBuilder(\Box\Mod\Servicelicense\Api\Client::class)
+        $apiMock = $this->getMockBuilder(Client::class)
             ->onlyMethods(['_getService'])
             ->getMock();
         $apiMock->expects($this->atLeastOnce())

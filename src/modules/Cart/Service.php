@@ -730,24 +730,6 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('Promo', 'code = :code AND active = 1 ORDER BY id ASC', [':code' => $code]);
     }
 
-    private function getItemPrice(\Model_CartProduct $model)
-    {
-        $product = $this->di['db']->load('Product', $model->product_id);
-        $config = $this->getItemConfig($model);
-        $repo = $product->getTable();
-
-        return $repo->getProductPrice($product, $config);
-    }
-
-    private function getItemSetupPrice(\Model_CartProduct $model)
-    {
-        $product = $this->di['db']->load('Product', $model->product_id);
-        $config = $this->getItemConfig($model);
-        $repo = $product->getTable();
-
-        return $repo->getProductSetupPrice($product, $config);
-    }
-
     /**
      * Function checks if product is related to other products in cart
      * If relation exists then count discount for this.
@@ -782,9 +764,9 @@ class Service implements InjectionAwareInterface
         $service = $product->getService();
         if (method_exists($service, 'getCartProductTitle')) {
             return $service->getCartProductTitle($product, $config);
-        } else {
-            return $product->title;
         }
+
+        return $product->title;
     }
 
     protected function getItemPromoDiscount(\Model_CartProduct $model, \Model_Promo $promo)

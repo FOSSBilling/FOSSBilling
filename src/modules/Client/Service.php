@@ -11,7 +11,9 @@
 
 namespace Box\Mod\Client;
 
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Tools;
 
 class Service implements InjectionAwareInterface
 {
@@ -32,7 +34,7 @@ class Service implements InjectionAwareInterface
         $db = $this->di['db'];
         $result = $db->getRow('SELECT id, client_id FROM extension_meta WHERE extension = "mod_client" AND meta_key = "confirm_email" AND meta_value = :hash', [':hash' => $hash]);
         if (!$result) {
-            throw new \FOSSBilling\InformationException('Invalid email confirmation link');
+            throw new InformationException('Invalid email confirmation link');
         }
         $db->exec('UPDATE client SET email_approved = 1 WHERE id = :id', ['id' => $result['client_id']]);
         $db->exec('DELETE FROM extension_meta WHERE id = :id', ['id' => $result['id']]);
@@ -154,11 +156,11 @@ class Service implements InjectionAwareInterface
         // smartSearch
         if ($search) {
             if (is_numeric($search)) {
-                $where[] = 'c.id = :cid or c.aid = :caid';
+                $where[] = '(c.id = :cid OR c.aid = :caid)';
                 $params[':cid'] = $search;
                 $params[':caid'] = $search;
             } else {
-                $where[] = "c.company LIKE :s_company OR c.first_name LIKE :s_first_time OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name";
+                $where[] = "(c.company LIKE :s_company OR c.first_name LIKE :s_first_time OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name)";
                 $search = '%' . $search . '%';
                 $params[':s_company'] = $search;
                 $params[':s_first_time'] = $search;
@@ -180,7 +182,7 @@ class Service implements InjectionAwareInterface
     {
         $limit = $data['per_page'] ?? 30;
         if (!is_numeric($limit) || $limit < 1) {
-            throw new \FOSSBilling\InformationException('Invalid per page number');
+            throw new InformationException('Invalid per page number');
         }
 
         [$sql, $params] = $this->getSearchQuery($data, "SELECT c.id, IF(c.company <> '', CONCAT_WS(' ', c.first_name, c.last_name, ' (', c.company, ')'), CONCAT_WS(' ', c.first_name, c.last_name)) as client");
@@ -222,12 +224,12 @@ class Service implements InjectionAwareInterface
 
         $invoice = $this->di['db']->findOne('Invoice', 'client_id = :client_id', [':client_id' => $model->id]);
         if ($invoice instanceof \Model_Invoice) {
-            throw new \FOSSBilling\InformationException('Currency cannot be changed. Client already has invoices issued.');
+            throw new InformationException('Currency cannot be changed. Client already has invoices issued.');
         }
 
         $order = $this->di['db']->findOne('ClientOrder', 'client_id = :client_id', [':client_id' => $model->id]);
         if ($order instanceof \Model_ClientOrder) {
-            throw new \FOSSBilling\InformationException('Currency cannot be changed. Client already has orders.');
+            throw new InformationException('Currency cannot be changed. Client already has orders.');
         }
 
         return true;
@@ -236,15 +238,15 @@ class Service implements InjectionAwareInterface
     public function addFunds(\Model_Client $client, $amount, $description, array $data = []): bool
     {
         if (!$client->currency) {
-            throw new \FOSSBilling\InformationException('You must define the client\'s currency before adding funds.');
+            throw new InformationException('You must define the client\'s currency before adding funds.');
         }
 
         if (!is_numeric($amount)) {
-            throw new \FOSSBilling\InformationException('Funds amount is invalid');
+            throw new InformationException('Funds amount is invalid');
         }
 
         if (empty($description)) {
-            throw new \FOSSBilling\InformationException('Funds description is invalid');
+            throw new InformationException('Funds description is invalid');
         }
 
         $credit = $this->di['db']->dispense('ClientBalance');
@@ -281,7 +283,7 @@ class Service implements InjectionAwareInterface
         $where = [];
         $params = [];
         if ($search) {
-            $where[] = 'c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.id LIKE :id';
+            $where[] = '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.id LIKE :id)';
             $params[':first_name'] = '%' . $search . '%';
             $params[':last_name'] = '%' . $search . '%';
             $params[':id'] = $search;
@@ -407,7 +409,7 @@ class Service implements InjectionAwareInterface
     public function get($data)
     {
         if (!isset($data['id']) && !isset($data['email'])) {
-            throw new \FOSSBilling\InformationException('Client ID or email is required');
+            throw new InformationException('Client ID or email is required');
         }
 
         $db = $this->di['db'];
@@ -487,9 +489,16 @@ class Service implements InjectionAwareInterface
         $system = $this->di['mod']('system');
         $systemCfg = $system->getConfig();
 
-        $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
+        // Special handling for the phone country codes
+        $phoneCC = $data['phone_cc'] ?? null;
         if (!empty($phoneCC)) {
-            $client->phone_cc = intval($phoneCC);
+            $client->phone_cc = Tools::validatePhoneCC($phoneCC);
+        }
+
+        // Special handling for the phone number itself
+        $phone = $data['phone'] ?? null;
+        if (!empty($phone) && is_string($phone)) {
+            $client->phone = Tools::validatePhoneNumber($phone);
         }
 
         $client->aid = $data['aid'] ?? null;
@@ -498,7 +507,6 @@ class Service implements InjectionAwareInterface
         $client->status = $data['status'] ?? null;
         $client->gender = $data['gender'] ?? null;
         $client->birthday = $data['birthday'] ?? null;
-        $client->phone = $data['phone'] ?? null;
         $client->company = $data['company'] ?? null;
         $client->company_vat = $data['company_vat'] ?? null;
         $client->company_number = $data['company_number'] ?? null;
@@ -587,9 +595,12 @@ class Service implements InjectionAwareInterface
         $table = $this->di['table']('ClientPasswordReset');
         $table->rmByClient($model);
 
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare('DELETE FROM extension_meta WHERE client_id = :id');
-        $stmt->execute(['id' => $model->id]);
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->delete('extension_meta')
+            ->where('client_id = :id')
+            ->setParameter('id', $model->id);
+        $query->executeStatement();
 
         $this->di['db']->trash($model);
     }
@@ -627,7 +638,7 @@ class Service implements InjectionAwareInterface
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
-            throw new \FOSSBilling\InformationException('Email address cannot be changed');
+            throw new InformationException('Email address cannot be changed');
         }
 
         return true;
@@ -641,7 +652,7 @@ class Service implements InjectionAwareInterface
             if (!isset($checkArr[$field]) || empty($checkArr[$field])) {
                 $name = ucwords(str_replace('_', ' ', $field));
 
-                throw new \FOSSBilling\InformationException('Field :field cannot be empty', [':field' => $name]);
+                throw new InformationException('Field :field cannot be empty', [':field' => $name]);
             }
         }
     }
@@ -657,7 +668,7 @@ class Service implements InjectionAwareInterface
                 if (!isset($checkArr[$cFieldName]) || empty($checkArr[$cFieldName])) {
                     $name = isset($cField['title']) && !empty($cField['title']) ? $cField['title'] : ucwords(str_replace('_', ' ', $cFieldName));
 
-                    throw new \FOSSBilling\InformationException('Field :field cannot be empty', [':field' => $name]);
+                    throw new InformationException('Field :field cannot be empty', [':field' => $name]);
                 }
             }
         }
@@ -685,7 +696,7 @@ class Service implements InjectionAwareInterface
      *
      * @return bool|int
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws InformationException
      */
     public function password_reset_valid($data)
     {
@@ -697,16 +708,16 @@ class Service implements InjectionAwareInterface
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
         if (!$reset instanceof \Model_ClientPasswordReset) {
-            throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+            throw new InformationException('The link has expired or you have already reset your password.');
         }
 
         $c = $this->di['db']->findOne('Client', 'id = ?', [$reset->client_id]);
         // Return the client ID if the reset request is valid (from within the last 15 minutes), otherwise return false
         if (strtotime($reset->created_at) - time() + 900 < 0) {
             return false;
-        } else {
-            return $c->id;
         }
+
+        return $c->id;
     }
 
     /*

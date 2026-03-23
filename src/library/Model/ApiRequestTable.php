@@ -35,19 +35,15 @@ class Model_ApiRequestTable implements FOSSBilling\InjectionAwareInterface
     {
         $sinceIso = date('Y-m-d H:i:s', $since);
 
-        $sql = 'SELECT count(id) as cc
-                WHERE created_at > :since';
-
         $params = [':since' => $sinceIso];
 
         if ($ip !== null) {
-            $sql .= ' AND ip = :ip';
+            $sql = 'SELECT count(id) as cc FROM api_request WHERE created_at > :since AND ip = :ip';
             $params[':ip'] = $ip;
+        } else {
+            $sql = 'SELECT count(id) as cc FROM api_request WHERE created_at > :since';
         }
 
-        $stmt = $this->di['pdo']->prepare($sql);
-        $stmt->execute($params);
-
-        return $stmt->fetchColumn($stmt);
+        return $this->di['dbal']->executeQuery($sql, $params)->fetchOne();
     }
 }

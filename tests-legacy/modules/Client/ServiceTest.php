@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Client;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -237,7 +238,7 @@ final class ServiceTest extends \BBTestCase
             ],
             [
                 ['search' => '2'],
-                'c.id = :cid or c.aid = :caid',
+                '(c.id = :cid OR c.aid = :caid)',
                 [':cid' => '2', ':caid' => '2'],
             ],
             [

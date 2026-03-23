@@ -19,7 +19,6 @@ use Egulias\EmailValidator\Validation\RFCValidation;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\HttpClient\RetryableHttpClient;
 
 class Tools
 {
@@ -57,7 +56,7 @@ class Tools
      * @param int      $length         the length of the password to generate
      * @param bool|int $includeSpecial If special characters should be included. If 4 is passed, that's considered to be true (added for backwards compatibility).
      *
-     * @throws InformationException if it failed to generate a password meeting the requirements within 50 iterations
+     * @throws InformationException if it failed to generate a password meeting the requirements within 100 iterations
      */
     public function generatePassword(int $length = 8, bool|int $includeSpecial = false): string
     {
@@ -115,9 +114,9 @@ class Tools
 
         if ($valid) {
             return $password;
-        } else {
-            throw new InformationException('We were unable to generate a password with the required parameters');
         }
+
+        throw new InformationException('We were unable to generate a password with the required parameters');
     }
 
     public function slug($str): string
@@ -193,7 +192,8 @@ class Tools
             return [];
         }
 
-        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
+        $count = is_countable($ids) ? count($ids) : 0;
+        $slots = $count ? implode(',', array_fill(0, $count, '?')) : ''; // same as RedBean genSlots() method
 
         $rows = $this->di['db']->getAll('SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')', $ids);
 
@@ -229,9 +229,9 @@ class Tools
                 $friendlyName = ucfirst(__trans('Email address'));
 
                 throw new InformationException(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
-            } else {
-                return false;
             }
+
+            return false;
         }
 
         return $email;
@@ -311,7 +311,7 @@ class Tools
      * Try order: ipify.org, ifconfig.io, ip.hestiacp.com.
      *
      * @param bool    $throw if the function should throw an exception on an error
-     * @param ?string $bind  overrides the default network interface bind. Set to `null` to disable this behavior.
+     * @param ?string $bind  overrides the default network interface bind. When `null` (default), the configured default (BIND_TO) is used.
      *
      * @return ?string `null` if there was an error, otherwise an IP address will be returned
      */
@@ -319,22 +319,30 @@ class Tools
     {
         $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
         $bind ??= BIND_TO;
+        $client = HttpClient::create(['bindto' => $bind]);
 
-        try {
-            $client = new RetryableHttpClient(HttpClient::create(['bindto' => $bind]));
-            $response = $client->request('GET', '', [
-                'base_uri' => $services,
-                'timeout' => 2,
-            ]);
-            $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
-            if ($ip) {
-                return $ip;
+        foreach ($services as $service) {
+            try {
+                $response = $client->request('GET', $service, [
+                    'timeout' => 2,
+                ]);
+
+                $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
+                if ($ip) {
+                    return $ip;
+                }
+            } catch (\Exception $e) {
+                error_log(sprintf(
+                    'Error fetching external IP from "%s" (%s): %s',
+                    $service,
+                    $e::class,
+                    $e->getMessage()
+                ));
             }
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
-            if ($throw) {
-                throw $e;
-            }
+        }
+
+        if ($throw) {
+            throw new \Exception('Unable to determine external IP address from any service.');
         }
 
         return null;
@@ -365,8 +373,9 @@ class Tools
      * Sanitize user content to prevent XSS attacks.
      * Uses Symfony's HTML Sanitizer component for robust protection.
      *
-     * @param string $content The content to sanitize. If empty, returns an empty string.
-     * @param bool $allowHtml Whether to allow safe HTML tags (default: true for rich content)
+     * @param string $content   The content to sanitize. If empty, returns an empty string.
+     * @param bool   $allowHtml Whether to allow safe HTML tags (default: true for rich content)
+     *
      * @return string Sanitized content safe for output
      */
     public static function sanitizeContent(string $content = '', bool $allowHtml = true): string
@@ -384,15 +393,73 @@ class Tools
         }
 
         // Use Symfony's HTML Sanitizer
-        $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer(
-            (new \Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig())
-                ->allowSafeElements()
-                ->allowElement('a', ['href', 'title'])
-                ->allowElement('code')
-                ->allowElement('pre')
-                ->allowLinkSchemes(['http', 'https', 'mailto', 'tel'])
-        );
+        $config = (new \Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig())
+            ->allowSafeElements()
+            ->allowElement('a', ['href', 'title'])
+            ->allowElement('code')
+            ->allowElement('pre')
+            ->allowLinkSchemes(['http', 'https', 'mailto', 'tel']);
+
+        $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer($config);
 
         return trim($sanitizer->sanitize($content));
+    }
+
+    public static function validatePhoneCC(string|int $countryCode): int
+    {
+        if (!is_numeric($countryCode) || $countryCode <= 0 || $countryCode > 999) {
+            throw new InformationException('The provided phone country code does not appear to be valid.');
+        }
+
+        return intval($countryCode);
+    }
+
+    public static function validatePhoneNumber(string $number): string
+    {
+        $digitsOnly = preg_replace('/\D+/', '', $number);
+        if (strlen((string) $digitsOnly) < 1 || strlen((string) $digitsOnly) > 12) {
+            throw new InformationException('The provided phone number does not appear to be valid.');
+        }
+
+        if (str_starts_with($number, '+')) {
+            throw new InformationException('Please use the separate field for the phone country code.');
+        }
+
+        return $number;
+    }
+
+    public static function createSessionRestoreToken(string $sessionId): string
+    {
+        $expiry = time() + 3600;
+        $payload = $sessionId . '|' . $expiry;
+        $signature = hash_hmac('sha256', $payload, (string) Config::getProperty('info.salt'));
+
+        return base64_encode($payload . '|' . $signature);
+    }
+
+    public static function validateSessionRestoreToken(string $token): ?string
+    {
+        $decoded = base64_decode($token, true);
+        if ($decoded === false) {
+            return null;
+        }
+
+        $parts = explode('|', $decoded);
+        if (count($parts) !== 3) {
+            return null;
+        }
+
+        [$sessionId, $expiry, $signature] = $parts;
+
+        if (time() > (int) $expiry) {
+            return null;
+        }
+
+        $expectedSignature = hash_hmac('sha256', $sessionId . '|' . $expiry, (string) Config::getProperty('info.salt'));
+        if (!hash_equals($expectedSignature, $signature)) {
+            return null;
+        }
+
+        return $sessionId;
     }
 }

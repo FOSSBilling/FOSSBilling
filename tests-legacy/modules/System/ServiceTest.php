@@ -3,9 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Mod\System;
-use PHPUnit\Framework\Attributes\DataProvider; 
-use PHPUnit\Framework\Attributes\Group;
 
+use PHPUnit\Framework\Attributes\Group;
 use Twig\Environment;
 
 #[Group('Core')]
@@ -30,7 +29,7 @@ final class ServiceTest extends \BBTestCase
     public function testGetCompany(): void
     {
         $expected = [
-            'www' => 'https://localhost/',
+            'www' => SYSTEM_URL,
             'name' => 'Inc. Test',
             'email' => 'work@example.eu',
             'tel' => null,
@@ -181,7 +180,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeServiceMock);
         $this->service->setDi($di);
 
-        $result = $this->service->templateExists('defaultFile.cp');
+        $result = $this->service->templateExists('defaultFile.html.twig');
         $this->assertIsBool($result);
         $this->assertFalse($result);
     }
@@ -191,11 +190,6 @@ final class ServiceTest extends \BBTestCase
         $vars = [
             '_client_id' => 1,
         ];
-
-        $this
-            ->getMockBuilder('Drupal\Core\Template\TwigEnvironment')
-            ->disableOriginalConstructor()
-            ->getMock();
 
         $twigMock = $this->getMockBuilder(Environment::class)->disableOriginalConstructor()->getMock();
         $twigMock->expects($this->atLeastOnce())
@@ -230,10 +224,6 @@ final class ServiceTest extends \BBTestCase
 
         $twigMock->expects($this->atLeastOnce())
             ->method('addGlobal');
-        // $twigMock->method('createTemplate')
-        //     ->willReturn(new \FakeTemplateWrapper('test'));
-        // $twigMock->method('load')
-        //     ->willReturn(new \FakeTemplateWrapper('test'));
         $twigMock->method('render')
             ->willReturn('');
 
@@ -254,36 +244,44 @@ final class ServiceTest extends \BBTestCase
 
     public function testClearCache(): void
     {
-        // Create cache directory with .gitkeep if it doesn't exist
-        $cacheDir = PATH_CACHE;
+        // Use a temporary directory for testing instead of PATH_CACHE
+        $cacheDir = sys_get_temp_dir() . '/fossbilling_test_cache_' . uniqid();
+
+        // Create cache directory with .gitkeep
         if (!is_dir($cacheDir)) {
-            mkdir($cacheDir, 0755, true);
+            mkdir($cacheDir, 0o755, true);
         }
+
         $gitkeepFile = $cacheDir . '/.gitkeep';
-        $gitkeepExists = file_exists($gitkeepFile);
-        if (!$gitkeepExists) {
-            file_put_contents($gitkeepFile, '');
-        }
+        file_put_contents($gitkeepFile, '');
 
-        $result = $this->service->clearCache();
+        // Call clearCache with the temp directory
+        $result = $this->service->clearCache($cacheDir);
 
-        // Restore .gitkeep file if it was present before test
-        if ($gitkeepExists || !$gitkeepExists) {
-            file_put_contents($gitkeepFile, '');
-        }
+        // Restore .gitkeep file after clearCache removes it
+        file_put_contents($gitkeepFile, '');
 
         $this->assertIsBool($result);
         $this->assertTrue($result);
+
+        // Cleanup temp directory
+        if (is_dir($cacheDir)) {
+            // Remove .gitkeep file first, then the directory
+            if (file_exists($gitkeepFile)) {
+                unlink($gitkeepFile);
+            }
+            rmdir($cacheDir);
+        }
     }
 
     public function testGetPeriod(): void
     {
         $code = '1W';
-        $expexted = 'Every week';
+        $expected = 'Every week';
         $result = $this->service->getPeriod($code);
 
         $this->assertIsString($result);
-        $this->assertEquals($expexted, $result);
+        $this->assertEquals($expected, $result);
     }
 
     public function testGetCountries(): void

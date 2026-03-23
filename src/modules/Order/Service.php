@@ -220,13 +220,13 @@ class Service implements InjectionAwareInterface
                 $repo_class = $this->_getServiceClassName($order);
 
                 return $this->di['db']->load($repo_class, $order->service_id);
-            } else {
-                return $this->di['db']->findOne(
-                    'service_' . $order->service_type,
-                    'id = :id',
-                    [':id' => $order->service_id]
-                );
             }
+
+            return $this->di['db']->findOne(
+                'service_' . $order->service_type,
+                'id = :id',
+                [':id' => $order->service_id]
+            );
         }
 
         return null;
@@ -337,6 +337,7 @@ class Service implements InjectionAwareInterface
         $data = $this->di['db']->toArray($model);
         $data['config'] = json_decode($model->config ?? '', true) ?? [];
         $data['total'] = $this->getTotal($model);
+        $data['discount'] ??= 0;
         $data['title'] = $model->title;
         $data['meta'] = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', [':id' => $model->id]);
         $data['active_tickets'] = $supportService->getActiveTicketsCountForOrder($model);
@@ -359,6 +360,130 @@ class Service implements InjectionAwareInterface
         $data['client'] = $clientService->toApiArray($client, false);
 
         return $data;
+    }
+
+    /**
+     * Get multiple orders in a batch for API response.
+     *
+     * @param array                           $ids      Array of order IDs to fetch
+     * @param \Model_Admin|\Model_Client|null $identity The requesting identity
+     *
+     * @return array Array of order API arrays. Missing IDs are silently skipped.
+     */
+    public function getBatchForApi(array $ids, $identity = null): array
+    {
+        $ids = $this->normalizeIds($ids);
+        if (empty($ids)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $orders = $this->di['db']->getAll("SELECT * FROM client_order WHERE id IN ($placeholders)", $ids);
+        if (empty($orders)) {
+            return [];
+        }
+        $orders = $this->orderRowsByIds($orders, $ids);
+
+        $orderIds = array_column($orders, 'id');
+        $clientIds = $this->normalizeIds(array_column($orders, 'client_id'));
+        $productIds = $this->normalizeIds(array_column($orders, 'product_id'));
+
+        $clients = [];
+        if (!empty($clientIds)) {
+            $placeholders = implode(',', array_fill(0, count($clientIds), '?'));
+            $clientModels = $this->di['db']->find('Client', "id IN ($placeholders)", $clientIds);
+            $clientService = $this->di['mod_service']('client');
+            foreach ($clientModels as $client) {
+                $clients[$client->id] = $clientService->toApiArray($client, false, $identity);
+            }
+        }
+
+        $meta = [];
+        if (!empty($orderIds)) {
+            $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+            $metaRows = $this->di['db']->getAll(
+                "SELECT client_order_id, name, value FROM client_order_meta WHERE client_order_id IN ($placeholders)",
+                $orderIds
+            );
+            foreach ($metaRows as $row) {
+                $meta[$row['client_order_id']][$row['name']] = $row['value'];
+            }
+        }
+
+        $activeTickets = [];
+        if (!empty($orderIds)) {
+            $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+            $rows = $this->di['db']->getAll(
+                "SELECT rel_id, COUNT(id) as counter FROM support_ticket
+                WHERE rel_type = 'order'
+                AND rel_id IN ($placeholders)
+                AND (status = 'open' OR status = 'on_hold')
+                GROUP BY rel_id",
+                $orderIds
+            );
+            foreach ($rows as $row) {
+                $activeTickets[$row['rel_id']] = (int) $row['counter'];
+            }
+        }
+
+        $plugins = [];
+        if ($identity instanceof \Model_Admin && !empty($productIds)) {
+            $placeholders = implode(',', array_fill(0, count($productIds), '?'));
+            $productRows = $this->di['db']->getAll(
+                "SELECT id, plugin FROM product WHERE id IN ($placeholders)",
+                $productIds
+            );
+            foreach ($productRows as $row) {
+                $plugins[$row['id']] = $row['plugin'];
+            }
+        }
+
+        $result = [];
+        foreach ($orders as $order) {
+            $clientId = $order['client_id'];
+            $data = $order;
+            $data['config'] = json_decode($order['config'] ?? '', true) ?? [];
+            $data['total'] = $this->calculateTotal($order['price'], $order['quantity']);
+            $data['title'] = $order['title'];
+            $data['meta'] = $meta[$order['id']] ?? [];
+            $data['active_tickets'] = $activeTickets[$order['id']] ?? 0;
+            if (!isset($clients[$clientId])) {
+                $this->di['logger']->err('Missing client for order ' . $order['id']);
+                $data['client'] = [];
+            } else {
+                $data['client'] = $clients[$clientId];
+            }
+
+            if ($identity instanceof \Model_Admin) {
+                $data['plugin'] = $plugins[$order['product_id']] ?? null;
+            }
+
+            $result[] = $data;
+        }
+
+        return $result;
+    }
+
+    private function normalizeIds(array $ids): array
+    {
+        return array_values(array_unique(array_map(intval(...), array_filter($ids, is_numeric(...)))));
+    }
+
+    private function orderRowsByIds(array $rows, array $ids): array
+    {
+        $rowsById = [];
+        foreach ($rows as $row) {
+            $rowsById[(int) $row['id']] = $row;
+        }
+
+        $ordered = [];
+        foreach ($ids as $id) {
+            if (isset($rowsById[$id])) {
+                $ordered[] = $rowsById[$id];
+            }
+        }
+
+        return $ordered;
     }
 
     public function getSearchQuery($data): array
@@ -792,22 +917,22 @@ class Service implements InjectionAwareInterface
             }
 
             return $repo->$m($order);
-        } else {
-            // @new logic for services
-            $o = $this->di['db']->findOne(
-                'client_order',
-                'id = :id',
-                [':id' => $order->id]
-            );
-            $service = null;
-            $sdbname = 'service_' . $order->service_type;
-            if ($order->service_id) {
-                $service = $this->di['db']->load($sdbname, $order->service_id);
-            }
-            if (method_exists($repo, $action) && is_callable([$repo, $action])) {
-                return $repo->$action($o, $service);
-            }
         }
+        // @new logic for services
+        $o = $this->di['db']->findOne(
+            'client_order',
+            'id = :id',
+            [':id' => $order->id]
+        );
+        $service = null;
+        $sdbname = 'service_' . $order->service_type;
+        if ($order->service_id) {
+            $service = $this->di['db']->load($sdbname, $order->service_id);
+        }
+        if (method_exists($repo, $action) && is_callable([$repo, $action])) {
+            return $repo->$action($o, $service);
+        }
+
         error_log("Service {$order->service_type} does not support action {$action}.");
 
         return null;
@@ -1149,9 +1274,8 @@ class Service implements InjectionAwareInterface
         } catch (\Exception $e) {
             if (!$forceDelete) {
                 throw $e;
-            } else {
-                error_log("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
             }
+            error_log("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
         }
 
         $id = $order->id;
@@ -1385,9 +1509,14 @@ class Service implements InjectionAwareInterface
         return $srepo->toApiArray($service, true, $identity);
     }
 
-    public function getTotal(\Model_ClientOrder $model)
+    public function getTotal(\Model_ClientOrder $model): float
     {
-        return $model->price * $model->quantity;
+        return $this->calculateTotal($model->price ?? 0, $model->quantity ?? 1);
+    }
+
+    private function calculateTotal($price, $quantity): float
+    {
+        return (float) $price * (int) $quantity;
     }
 
     public function setUnpaidInvoice(\Model_ClientOrder $order, \Model_Invoice $proforma): void
@@ -1422,11 +1551,12 @@ class Service implements InjectionAwareInterface
 
     public function rmByClient(\Model_Client $client): void
     {
-        $sql = 'DELETE FROM client_order WHERE  client_id = :id';
-
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute(['id' => $client->id]);
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->delete('client_order')
+            ->where('client_id = :id')
+            ->setParameter('id', $client->id)
+            ->executeStatement();
     }
 
     public function exportCSV(array $headers)

@@ -51,7 +51,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param int         $since - timestamp
+     * @param int|string  $since - timestamp or string date
      * @param string|null $ip
      */
     public function getRequestCount($since, $ip = null, $isLoginMethod = false): int

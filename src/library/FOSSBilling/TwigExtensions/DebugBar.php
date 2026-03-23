@@ -27,6 +27,7 @@ class DebugBar extends AbstractExtension
         $this->debugbarRenderer = $debugBar->getJavascriptRenderer();
     }
 
+    #[\Override]
     public function getFunctions(): array
     {
         return [
@@ -44,17 +45,17 @@ class DebugBar extends AbstractExtension
     {
         if (Environment::isDevelopment()) {
             return $this->debugbarRenderer->renderHead();
-        } else {
-            return '';
         }
+
+        return '';
     }
 
     public function render(): string
     {
         if (Environment::isDevelopment()) {
             return $this->debugbarRenderer->render();
-        } else {
-            return '';
         }
+
+        return '';
     }
 }

@@ -9,8 +9,10 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use FOSSBilling\Config;
+use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
@@ -75,28 +77,22 @@ $di['crypt'] = function () use ($di) {
  * @return PDO The PDO object used for database connections
  */
 $di['pdo'] = function () {
-    $config = Config::getProperty('db');
+    $debugConfig = Config::getProperty('debug_and_monitoring', []);
+    $dbConfig = Config::getProperty('db');
+    $driverOptions = [
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ];
 
-    $pdo = new PDO(
-        $config['type'] . ':host=' . $config['host'] . ';port=' . $config['port'] . ';dbname=' . $config['name'],
-        $config['user'],
-        $config['password'],
-        [
-            PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]
-    );
+    $connection = DriverManagerFactory::getConnection($driverOptions);
+    /** @var PDO $pdo */
+    $pdo = $connection->getNativeConnection();
 
-    if (isset($config['debug']) && $config['debug']) {
+    if (isset($debugConfig['debug']) && $debugConfig['debug']) {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
     }
 
-    if ($config['type'] === 'mysql') {
-        $pdo->exec('SET NAMES "utf8"');
-        $pdo->exec('SET CHARACTER SET utf8');
-        $pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
-        $pdo->exec('SET character_set_results = utf8');
+    if ($dbConfig['driver'] === 'pdo_mysql') {
+        // Set server default charset for newly created tables. Connection charset is handled by DBAL via DSN.
         $pdo->exec('SET character_set_server = utf8');
         $pdo->exec('SET SESSION interactive_timeout = 28800');
         $pdo->exec('SET SESSION wait_timeout = 28800');
@@ -135,6 +131,20 @@ $di['db'] = function () use ($di) {
     return $db;
 };
 
+/*
+ * Creates and returns a Doctrine DBAL connection instance.
+ *
+ * @return Connection The Doctrine DBAL connection instance.
+ */
+$di['dbal'] = (fn (): Connection => DriverManagerFactory::getConnection());
+
+/*
+ * Creates and returns a Doctrine ORM EntityManager instance.
+ *
+ * @param void
+ *
+ * @return EntityManager The Doctrine ORM EntityManager instance.
+ */
 $di['em'] = (fn (): EntityManager => EntityManagerFactory::create());
 
 /*
@@ -294,18 +304,26 @@ $di['twig'] = $di->factory(function () use ($di) {
         $_GET['ajax'] = true;
     }
 
-    // CSRF token
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        $token = hash('md5', $_COOKIE['PHPSESSID'] ?? '');
-    } else {
-        $token = hash('md5', session_id());
+    // CSRF token - cookie-based double-submit pattern.
+    $session = $di['session'];
+    $csrfToken = $session->get('csrf_token');
+    if (empty($csrfToken)) {
+        $csrfToken = bin2hex(random_bytes(32));
+        $session->set('csrf_token', $csrfToken);
+    }
+    setcookie('csrf_token', (string) $csrfToken, [
+        'expires' => 0,
+        'path' => '/',
+        'samesite' => 'Strict',
+        'secure' => isset($_SERVER['HTTPS']),
+    ]);
+
+    $redirectUri = $session->get('redirect_uri');
+    if (!empty($redirectUri)) {
+        $twig->addGlobal('redirect_uri', $redirectUri);
     }
 
-    if (!empty($_SESSION['redirect_uri'])) {
-        $twig->addGlobal('redirect_uri', $_SESSION['redirect_uri']);
-    }
-
-    $twig->addGlobal('CSRFToken', $token);
+    $twig->addGlobal('CSRFToken', $csrfToken);
     $twig->addGlobal('request', $_GET);
     $twig->addGlobal('guest', $di['api_guest']);
     $twig->addGlobal('FOSSBillingVersion', FOSSBilling\Version::VERSION);
@@ -332,12 +350,11 @@ $di['is_client_logged'] = function () use ($di) {
         if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Client is not logged in');
-        } else {
-            // Redirect to login page if browser request
-            $di['set_return_uri'];
-            $login_url = $di['url']->link('login');
-            header("Location: $login_url");
         }
+        // Redirect to login page if browser request
+        $di['set_return_uri'];
+        $login_url = $di['url']->link('login');
+        header("Location: $login_url");
     }
 
     return true;
@@ -406,12 +423,11 @@ $di['loggedin_client'] = function () use ($di) {
         if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Client is not logged in');
-        } else {
-            // Redirect to login page if browser request
-            $login_url = $di['url']->link('login');
-            header("Location: $login_url");
-            exit;
         }
+        // Redirect to login page if browser request
+        $login_url = $di['url']->link('login');
+        header("Location: $login_url");
+        exit;
     }
 };
 
@@ -444,12 +460,11 @@ $di['loggedin_admin'] = function () use ($di) {
         if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
             // Throw Exception if api request
             throw new Exception('Admin is not logged in');
-        } else {
-            // Redirect to login page if browser request
-            $login_url = $di['url']->adminLink('staff/login');
-            header("Location: $login_url");
-            exit;
         }
+        // Redirect to login page if browser request
+        $login_url = $di['url']->adminLink('staff/login');
+        header("Location: $login_url");
+        exit;
     }
 };
 

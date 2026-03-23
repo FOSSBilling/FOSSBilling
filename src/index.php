@@ -12,10 +12,15 @@
 require __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 global $di;
 
+use DebugBar\DataCollector\TimeDataCollector;
+
 // Setting up the debug bar
 $debugBar = new DebugBar\StandardDebugBar();
-$debugBar['request']->useHtmlVarDumper();
-$debugBar['messages']->useHtmlVarDumper();
+$timeCollector = $debugBar->getCollector('time');
+
+if (!$timeCollector instanceof TimeDataCollector) {
+    throw new RuntimeException('Time collector not found in debug bar.');
+}
 
 // PDO collector
 $pdoCollector = new DebugBar\DataCollector\PDO\PDOCollector();
@@ -27,7 +32,7 @@ $pdoCollector->addConnection($di['pdo'], 'RedBeanPHP');
 $connection = $di['em']->getConnection();
 $native = $connection->getNativeConnection();
 
-if ($native instanceof \PDO) {
+if ($native instanceof PDO) {
     $pdoCollector->addConnection($native, 'Doctrine');
 }
 
@@ -38,7 +43,6 @@ $config['info']['salt'] = '********';
 $config['db'] = array_fill_keys(array_keys($config['db']), '********');
 
 $configCollector = new DebugBar\DataCollector\ConfigCollector($config);
-$configCollector->useHtmlVarDumper();
 
 $debugBar->addCollector($configCollector);
 
@@ -54,18 +58,21 @@ if (str_starts_with((string) $url, '/page/')) {
 $_GET['_url'] = $url;
 $http_err_code = $_GET['_errcode'] ?? null;
 
-$debugBar['time']->startMeasure('session_start', 'Starting / restoring the session');
+$timeCollector->startMeasure('session_start', 'Starting / restoring the session');
 
 /*
  * Workaround: Session IDs get reset when using PGs like PayPal because of the `samesite=strict` cookie attribute, resulting in the client getting logged out.
- * Internally the return and cancel URLs get a restore_session GET parameter attached to them with the proper session ID to restore, so we do so here.
+ * The return and cancel URLs include a signed restore_token that contains the session ID. We validate and extract it here.
  */
-if (!empty($_GET['restore_session'])) {
-    session_id($_GET['restore_session']);
+if (!empty($_GET['restore_token'])) {
+    $restoredSessionId = FOSSBilling\Tools::validateSessionRestoreToken($_GET['restore_token']);
+    if ($restoredSessionId !== null) {
+        session_id($restoredSessionId);
+    }
 }
 
 $di['session'];
-$debugBar['time']->stopMeasure('session_start');
+$timeCollector->stopMeasure('session_start');
 
 if (strncasecmp((string) $url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     define('ADMIN_AREA', true);
@@ -80,9 +87,9 @@ if (strncasecmp((string) $url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
 $app->setUrl($appUrl);
 $app->setDi($di);
 
-$debugBar['time']->startMeasure('translate', 'Setting up translations');
+$timeCollector->startMeasure('translate', 'Setting up translations');
 $di['translate']();
-$debugBar['time']->stopMeasure('translate');
+$timeCollector->stopMeasure('translate');
 
 // If HTTP error code has been passed, handle it.
 if (!is_null($http_err_code)) {

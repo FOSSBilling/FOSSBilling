@@ -10,6 +10,7 @@
  */
 class Model_ProductDomainTable extends Model_ProductTable
 {
+    #[Override]
     public function getUnit(Model_Product $model): string
     {
         return 'year';
@@ -56,9 +57,9 @@ class Model_ProductDomainTable extends Model_ProductTable
                     $factor = $this->discountFactor($addon, $config['period']);
 
                     return $factor * $this->getProductPrice($product, $config);
-                } else {
-                    return 0;
                 }
+
+                return 0;
             }
 
             if (
@@ -75,13 +76,13 @@ class Model_ProductDomainTable extends Model_ProductTable
 
     private function _hasFreePeriod($addon): bool
     {
-        $free_domain_periods = $addon['config']['free_domain_periods'];
+        $free_domain_periods = $addon['config']['free_domain_periods'] ?? [];
         $addon_period = $addon['config']['period'];
-        if (in_array($addon_period, $free_domain_periods) || sizeof($free_domain_periods) > 0) {
+        if (in_array($addon_period, $free_domain_periods)) {
             return true;
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     /**
@@ -96,7 +97,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         $addon_sys_period = $this->di['period']($addon_period);
         $addon_qty = $addon_sys_period->getQty();
 
-        $free_domain_periods = $addon['config']['free_domain_periods'];
+        $free_domain_periods = $addon['config']['free_domain_periods'] ?? [];
         if ((is_countable($free_domain_periods) ? count($free_domain_periods) : 0) > 0) {
             // if hosting and domain periods are equal, return domain quantity (year)
             if ($addon_period == $period) {
@@ -119,15 +120,13 @@ class Model_ProductDomainTable extends Model_ProductTable
                     }
                 }
 
-                if (count($free_domain_qtys) > 1) {
+                if (count($free_domain_qtys) > 0) {
                     return min($ref_item_qty, min($free_domain_qtys));
-                } else {
-                    return min($ref_item_qty, $free_domain_qtys[0]);
                 }
             }
-        } else {
-            return 0;
         }
+
+        return 0;
     }
 
     /**
@@ -141,14 +140,21 @@ class Model_ProductDomainTable extends Model_ProductTable
     private function _isFreeDomainSet($item): bool
     {
         $free_domain = $item['config']['free_domain'] ?? false;
+
+        if (!$free_domain) {
+            return false;
+        }
+
         $tld = $item['config']['tld'] ?? null;
         $free_tlds = $item['config']['free_tlds'] ?? [];
 
-        if ($tld != null && !$free_domain && is_array($free_tlds) && in_array($tld, $free_tlds)) {
+        // When free_tlds is empty, all TLDs are eligible for a free domain.
+        if (empty($free_tlds)) {
             return true;
-        } else {
-            return false;
         }
+
+        // When free_tlds is non-empty, only whitelisted TLDs are eligible.
+        return $tld !== null && in_array($tld, $free_tlds);
     }
 
     private function registerDomainMatch($item, $config)
@@ -177,21 +183,22 @@ class Model_ProductDomainTable extends Model_ProductTable
     /**
      * @return array<mixed, array<'active'|'allow_register'|'allow_transfer'|'min_years'|'price_registration'|'price_renew'|'price_transfer'|'registrar'|'tld', mixed>>
      */
+    #[Override]
     public function getPricingArray(Model_Product $product): array
     {
         $pricing = [];
 
-        $sql = '
-            SELECT t.*, r.name
-            FROM tld t
-            LEFT JOIN tld_registrar r ON (r.id = t.tld_registrar_id)
-            WHERE t.active = 1
-            ORDER BY t.id ASC
-        ';
-        $stmt = $this->di['pdo']->prepare($sql);
-        $stmt->execute();
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('t.*', 'r.name')
+            ->from('tld', 't')
+            ->leftJoin('t', 'tld_registrar', 'r', 'r.id = t.tld_registrar_id')
+            ->where('t.active = 1')
+            ->orderBy('t.id', 'ASC');
 
-        foreach ($stmt->fetchAll() as $tld) {
+        $result = $query->executeQuery();
+        $results = $result->fetchAllAssociative();
+        foreach ($results as $tld) {
             $pricing[$tld['tld']] = [
                 'tld' => $tld['tld'],
                 'price_registration' => $tld['price_registration'],
@@ -211,6 +218,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return $pricing;
     }
 
+    #[Override]
     public function getProductPrice(Model_Product $product, ?array $config = null)
     {
         $rtable = $this->di['mod_service']('servicedomain', 'Tld');
@@ -248,6 +256,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return 0;
     }
 
+    #[Override]
     public function getProductSetupPrice(Model_Product $product, ?array $config = null): float
     {
         return (float) 0;

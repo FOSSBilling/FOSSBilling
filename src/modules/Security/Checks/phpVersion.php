@@ -42,9 +42,9 @@ class phpVersion implements \FOSSBilling\Interfaces\SecurityCheckInterface
                         return new SecurityCheckResult(SecurityCheckResultEnum::PASS, __trans('PHP :version: is the latest version of PHP.', [':version:' => $phpVersionString]));
                     } elseif ($version['isSecureVersion']) {
                         return new SecurityCheckResult(SecurityCheckResultEnum::PASS, __trans("PHP :version: isn't the latest, but is still supported.", [':version:' => $phpVersionString]));
-                    } else {
-                        return new SecurityCheckResult(SecurityCheckResultEnum::FAIL, __trans('PHP :version: is out of date and does not get security patches.', [':version:' => $phpVersionString]));
                     }
+
+                    return new SecurityCheckResult(SecurityCheckResultEnum::FAIL, __trans('PHP :version: is out of date and does not get security patches.', [':version:' => $phpVersionString]));
                 }
             }
         } catch (\Exception) {

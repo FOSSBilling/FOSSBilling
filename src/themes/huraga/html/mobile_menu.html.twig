@@ -83,7 +83,7 @@
 
 {% if settings.sidebar_balance_enabled and client %}
     <li class="pt-3 ps-3">
-        <h5 class="text-secondary d-block pb-1">{{ 'Account balance'|trans }}</h5>
+        <h5 class="text-secondary d-block pb-1">{{ 'Account Balance'|trans }}</h5>
         <h4><strong>{{ profile.balance | money(profile.currency) }}</strong></h4>
     </li>
 {% endif %}
@@ -102,7 +102,7 @@
         {% if client %}
             <div class="dropdown">
                 <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img class="img-fluid rounded-circle" alt="{{ profile.first_name }} {{ profile.last_name }} gravatar" src="{{ profile.email|gravatar(60) }}" height="25px" width="25px">
+                    <div class="db-avatar rounded-circle" data-avatar-seed="{{ profile.email|hash('xxh128') }}" data-avatar-size="25" style="width: 25px; height: 25px; display: inline-block;"></div>
                     {% if profile.company %}
                         <span>{{ profile.first_name }} {{ profile.last_name }}|{{ profile.company }}</span>
                     {% else %}
@@ -113,7 +113,7 @@
                     <li><a class="dropdown-item"
                            href="{{ 'client/profile'|link }}">{{ 'Profile'|trans }}</a></li>
                     <li><a class="dropdown-item"
-                           href="{{ 'client/logout'|link }}">{{ 'Sign out'|trans }}</a></li>
+                           href="{{ 'client/logout'|link }}">{{ 'Sign Out'|trans }}</a></li>
                 </ul>
             </div>
         {% else %}

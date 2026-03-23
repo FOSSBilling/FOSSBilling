@@ -96,11 +96,10 @@ class Server_Manager_Whm extends Server_Manager
                 $response = $this->request($action, $params);
                 if (isset($response->data->url)) {
                     return $response->data->url;
-                } else {
-                    $this->getLog()->err('Unexpected API response: ' . print_r($response, true));
-
-                    return 'https://' . $this->_config['host'] . '/cpanel';
                 }
+                $this->getLog()->err('Unexpected API response: ' . print_r($response, true));
+
+                return 'https://' . $this->_config['host'] . '/cpanel';
             } catch (Server_Exception $e) {
                 $this->getLog()->err("Failed to get login URL: {$e->getMessage()}.");
 
@@ -135,11 +134,10 @@ class Server_Manager_Whm extends Server_Manager
                 // Check if the response is an object and access it accordingly
                 if (isset($response->data->url)) {
                     return $response->data->url;
-                } else {
-                    $this->getLog()->err('Unexpected API response: ' . print_r($response, true));
-
-                    return 'https://' . $this->_config['host'] . '/whm';
                 }
+                $this->getLog()->err('Unexpected API response: ' . print_r($response, true));
+
+                return 'https://' . $this->_config['host'] . '/whm';
             } catch (Server_Exception $e) {
                 $this->getLog()->err("Failed to get login URL: {$e->getMessage()}.");
 
@@ -175,6 +173,7 @@ class Server_Manager_Whm extends Server_Manager
      *
      * @throws RandomException if an error occurs during the generation of a random number
      */
+    #[Override]
     public function generateUsername(string $domain): string
     {
         $processedDomain = strtolower((string) preg_replace('/[^A-Za-z0-9]/', '', $domain));

@@ -52,7 +52,6 @@ class Admin extends \Api_Abstract
      */
     public function logout(): bool
     {
-        unset($_COOKIE['BOXADMR']);
         $this->di['session']->destroy('admin');
         $this->di['logger']->info('Admin logged out');
 
@@ -72,7 +71,7 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
-        if (!is_null($data['email'])) {
+        if (!is_null($data['email'] ?? null)) {
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
         }
 
@@ -103,9 +102,10 @@ class Admin extends \Api_Abstract
     ])]
     public function change_password($data)
     {
-        $this->di['validator']->isPasswordStrong($data['new_password']);
+        $newPassword = $data['new_password'] ?? null;
+        $this->di['validator']->isPasswordStrong($newPassword);
 
-        if ($data['new_password'] != $data['confirm_password']) {
+        if ($newPassword != $data['confirm_password']) {
             throw new \FOSSBilling\InformationException('Passwords do not match');
         }
 
@@ -144,7 +144,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function api_key_reset($data): string
     {
-        $client = $this->di['db']->getExistingModelById('Client', $data['di']);
+        $client = $this->di['db']->getExistingModelById('Client', $data['id']);
 
         return $this->getService()->resetApiKey($client);
     }

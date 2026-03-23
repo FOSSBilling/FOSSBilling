@@ -21,14 +21,14 @@
  */
 class Box_Log implements FOSSBilling\InjectionAwareInterface
 {
-    final public const EMERG = 0; // Emergency: system is unusable
-    final public const ALERT = 1; // Alert: action must be taken immediately
-    final public const CRIT = 2; // Critical: critical conditions
-    final public const ERR = 3; // Error: error conditions
-    final public const WARN = 4; // Warning: warning conditions
-    final public const NOTICE = 5; // Notice: normal but significant condition
-    final public const INFO = 6; // Informational: informational messages
-    final public const DEBUG = 7; // Debug: debug messages
+    final public const int EMERG = 0; // Emergency: system is unusable
+    final public const int ALERT = 1; // Alert: action must be taken immediately
+    final public const int CRIT = 2; // Critical: critical conditions
+    final public const int ERR = 3; // Error: error conditions
+    final public const int WARN = 4; // Warning: warning conditions
+    final public const int NOTICE = 5; // Notice: normal but significant condition
+    final public const int INFO = 6; // Informational: informational messages
+    final public const int DEBUG = 7; // Debug: debug messages
 
     protected array $_priorities = [
         self::EMERG => 'EMERG',

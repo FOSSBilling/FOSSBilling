@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Formbuilder;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -18,42 +21,63 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetDi(): void
     {
-        $di = $this->getDi();
+        $di = $this->createDi($this->createDbalConnection());
         $this->service->setDi($di);
-        $getDi = $this->service->getDi();
-        $this->assertEquals($di, $getDi);
+
+        $this->assertEquals($di, $this->service->getDi());
     }
 
     public function testGetFormFieldsTypes(): void
     {
         $expected = [
             'text' => 'Text input',
+            'url' => 'URL input',
             'select' => 'Dropdown',
             'radio' => 'Radio select',
             'checkbox' => 'Checkbox',
             'textarea' => 'Text area',
         ];
 
-        $result = $this->service->getFormFieldsTypes();
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expected, $this->service->getFormFieldsTypes());
     }
 
-    public static function typeValidationData()
+    public static function typeValidationData(): array
     {
         return [
             ['select', true],
             ['custom', false],
+            ['url', true],
         ];
     }
 
     #[DataProvider('typeValidationData')]
     public function testTypeValidation(string $type, bool $expected): void
     {
-        $result = $this->service->typeValidation($type);
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expected, $this->service->typeValidation($type));
     }
 
-    public static function isArrayUniqueData()
+    public static function urlValidationData(): array
+    {
+        return [
+            ['', true],
+            ['https://example.com', true],
+            ['http://example.org', true],
+            ['https://subdomain.example.co.uk', true],
+            ['example', false],
+            ['example.com', false],
+            ['https://example', false],
+            ['not-a-url', false],
+            ['ftp://files.example.com', true],
+        ];
+    }
+
+    #[DataProvider('urlValidationData')]
+    public function testValidateUrlField(string $url, bool $expected): void
+    {
+        $this->assertSame($expected, $this->service->validateUrlField($url));
+    }
+
+    public static function isArrayUniqueData(): array
     {
         return [
             [['sameValue', 'sameValue'], false],
@@ -65,514 +89,245 @@ final class ServiceTest extends \BBTestCase
     #[DataProvider('isArrayUniqueData')]
     public function testIsArrayUnique(array $data, bool $expected): void
     {
-        $result = $this->service->isArrayUnique($data);
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expected, $this->service->isArrayUnique($data));
     }
 
-    public function testAddNewForm(): void
+    public function testAddNewFormAndGetForm(): void
     {
-        $newFormId = 1;
-        $data = [
-            'name' => 'testName',
-            'style' => [],
-        ];
-
-        $model = new \Model_Form();
-        $model->loadBean(new \DummyBean());
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($model);
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn($newFormId);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['logger'] = new \Box_Log();
-
+        $dbal = $this->createDbalConnection();
+        $di = $this->createDi($dbal);
         $this->service->setDi($di);
 
-        $result = $this->service->addNewForm($data);
+        $formId = $this->service->addNewForm([
+            'name' => 'Support Form',
+            'type' => 'default',
+            'show_title' => '1',
+        ]);
 
-        $this->assertIsInt($result);
-        $this->assertEquals($newFormId, $result);
+        $form = $this->service->getForm($formId);
+
+        $this->assertSame('Support Form', $form['name']);
+        $this->assertSame(['type' => 'default', 'show_title' => '1'], $form['style']);
+        $this->assertSame([], $form['fields']);
     }
 
-    public function testAddNewField(): void
+    public function testAddNewFieldAndGetField(): void
     {
-        $newFieldId = 1;
-        $data = [
-            'form_id' => 1,
+        $dbal = $this->createDbalConnection();
+        $di = $this->createDi($dbal);
+        $this->service->setDi($di);
+
+        $formId = $this->service->addNewForm(['name' => 'Signup Form']);
+        $fieldId = $this->service->addNewField([
+            'form_id' => $formId,
             'type' => 'select',
-        ];
+        ]);
 
-        $model = new \Model_FormField();
-        $model->loadBean(new \DummyBean());
-        $model->id = 2;
+        $field = $this->service->getField($fieldId);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($model);
+        $this->assertSame($formId, (int) $field['form_id']);
+        $this->assertSame('select', $field['type']);
+        $this->assertIsObject($field['options']);
+    }
 
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn($newFieldId);
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn(0);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['logger'] = new \Box_Log();
-
+    public function testUpdateFieldUpdatesStructuredOptions(): void
+    {
+        $dbal = $this->createDbalConnection();
+        $di = $this->createDi($dbal);
         $this->service->setDi($di);
 
-        $result = $this->service->addNewField($data);
-
-        $this->assertIsInt($result);
-        $this->assertEquals($newFieldId, $result);
-    }
-
-    public static function updateFieldTypeData()
-    {
-        return [
-            ['select'],
-            ['textarea'],
-        ];
-    }
-
-    #[DataProvider('updateFieldTypeData')]
-    public function testUpdateField(string $fieldType): void
-    {
-        $updateFIeldId = 2;
-        $data = [
-            'id' => $updateFIeldId,
-            'form_id' => 1,
-            'type' => $fieldType,
-            'default_value' => 'defaultTestValue',
-            'values' => ['test'],
-            'labels' => ['labels'],
-            'name' => 'testFIeld',
-            'textarea_size' => [64], // @TODO WHY ARRAY??
-            'textarea_option' => [''], // textarea_size & textarea_option should have an equal number of elements
-        ];
-
-        $model = new \Model_FormField();
-        $model->loadBean(new \DummyBean());
-
-        $modelArray = [
-            'id' => $updateFIeldId,
-            'form_id' => 1,
-            'options' => '{"hidden":"hidden"}',
-        ];
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($model);
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn($updateFIeldId);
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($model);
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('toArray')
-            ->willReturn($modelArray);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['logger'] = new \Box_Log();
-
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
-        $di['validator'] = $validatorMock;
-
-        $this->service->setDi($di);
-
-        $result = $this->service->updateField($data);
-        $this->assertIsInt($result);
-        $this->assertEquals($updateFIeldId, $result);
-    }
-
-    public function testUpdateFieldExists(): void
-    {
-        $data = [
-            'id' => 2,
-            'form_id' => 1,
-            'name' => 'testFIeld',
+        $formId = $this->service->addNewForm(['name' => 'Order Form']);
+        $fieldId = $this->service->addNewField([
+            'form_id' => $formId,
             'type' => 'select',
-        ];
+            'name' => 'server_location',
+        ]);
 
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['formFieldNameExists', 'getField'])
-            ->getMock();
+        $updatedId = $this->service->updateField([
+            'id' => $fieldId,
+            'name' => 'server_location',
+            'label' => 'Server location',
+            'type' => 'select',
+            'values' => ['eu', 'us'],
+            'labels' => ['Europe', 'United States'],
+            'default_value' => 'eu',
+        ]);
 
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('formFieldNameExists')
-            ->willReturn(true);
+        $field = $this->service->getField($updatedId);
 
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getField');
+        $this->assertSame($fieldId, $updatedId);
+        $this->assertSame('Server location', $field['label']);
+        $this->assertEquals((object) ['Europe' => 'eu', 'United States' => 'us'], $field['options']);
+    }
+
+    public function testUpdateFieldRejectsDuplicateFieldNames(): void
+    {
+        $dbal = $this->createDbalConnection();
+        $di = $this->createDi($dbal);
+        $this->service->setDi($di);
+
+        $formId = $this->service->addNewForm(['name' => 'Order Form']);
+        $this->service->addNewField([
+            'form_id' => $formId,
+            'type' => 'text',
+            'name' => 'hostname',
+        ]);
+        $fieldId = $this->service->addNewField([
+            'form_id' => $formId,
+            'type' => 'text',
+            'name' => 'username',
+        ]);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(7628);
-        $this->expectExceptionMessage('Unfortunately field with this name exists in this form already. Form must have different field names.');
-        $serviceMock->updateField($data);
+
+        $this->service->updateField([
+            'id' => $fieldId,
+            'name' => 'hostname',
+            'type' => 'text',
+        ]);
     }
 
-    public function testUpdateFieldValuesNotUnique(): void
+    public function testUpdateFieldRejectsDuplicateSelectValues(): void
     {
-        $data = [
-            'id' => 2,
-            'form_id' => 1,
+        $dbal = $this->createDbalConnection();
+        $di = $this->createDi($dbal);
+        $this->service->setDi($di);
+
+        $formId = $this->service->addNewForm(['name' => 'Order Form']);
+        $fieldId = $this->service->addNewField([
+            'form_id' => $formId,
             'type' => 'select',
-            'default_value' => 'defaultTestValue',
-            'values' => ['test', 'test'],
-            'labels' => ['labels'],
-            'name' => 'testFIeld',
-        ];
-
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['formFieldNameExists', 'getField'])
-            ->getMock();
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('formFieldNameExists')
-            ->willReturn(false);
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getField');
+            'name' => 'server_location',
+        ]);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(1597);
-        $this->expectExceptionMessage(ucfirst($data['type']) . ' values must be unique');
-        $serviceMock->updateField($data);
-    }
 
-    public function testUpdateFieldLabelsNotUnique(): void
-    {
-        $data = [
-            'id' => 2,
-            'form_id' => 1,
+        $this->service->updateField([
+            'id' => $fieldId,
+            'name' => 'server_location',
             'type' => 'select',
-            'default_value' => 'defaultTestValue',
-            'values' => ['test'],
-            'labels' => ['labels', 'labels'],
-            'name' => 'testFIeld',
-        ];
-
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['formFieldNameExists', 'getField'])
-            ->getMock();
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('formFieldNameExists')
-            ->willReturn(false);
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getField');
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionCode(1598);
-        $this->expectExceptionMessage(ucfirst($data['type']) . ' labels must be unique');
-        $serviceMock->updateField($data);
+            'values' => ['eu', 'eu'],
+            'labels' => ['Europe', 'Duplicate'],
+        ]);
     }
 
-    public function testUpdateFieldTextAreaSizeException(): void
+    public function testRemoveFormClearsRelatedRows(): void
     {
-        $data = [
-            'id' => 2,
-            'form_id' => 1,
-            'type' => 'textarea',
-            'default_value' => 'defaultTestValue',
-            'values' => ['test'],
-            'labels' => ['labels'],
-            'name' => 'testFIeld',
-            'textarea_size' => [''], // @TODO WHY ARRAY??
-            'textarea_option' => [''], // textarea_size & textarea_option should have an equal number of elements
-        ];
-
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['formFieldNameExists', 'getField'])
-            ->getMock();
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('formFieldNameExists')
-            ->willReturn(false);
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getField');
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionCode(3510);
-        $this->expectExceptionMessage('Textarea size options must be integer values');
-        $serviceMock->updateField($data);
-    }
-
-    public function testGetForm(): void
-    {
-        $modelArray = [
-            'style' => '',
-            'id' => 1,
-        ];
-        $getAllResult = [
-            [
-                'options' => '{"options":["hidden"]}',
-                'default_value' => 'TestingValue',
-            ],
-        ];
-
-        $model = new \Model_Form();
-        $model->loadBean(new \DummyBean());
-
-        $dbMock = $this->createMock('\Box_Database');
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($model);
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('toArray')
-            ->willReturn($modelArray);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAll')
-            ->willReturn($getAllResult);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-
-        $formId = 1;
-
+        $dbal = $this->createDbalConnection();
+        $di = $this->createDi($dbal);
         $this->service->setDi($di);
-        $result = $this->service->getForm($formId);
-        $this->assertIsArray($result);
+
+        $formId = $this->service->addNewForm(['name' => 'Provisioning Form']);
+        $this->service->addNewField([
+            'form_id' => $formId,
+            'type' => 'text',
+            'name' => 'hostname',
+        ]);
+
+        $dbal->insert('product', ['id' => 5, 'form_id' => $formId]);
+        $dbal->insert('client_order', ['id' => 8, 'form_id' => $formId]);
+
+        $this->assertTrue($this->service->removeForm($formId));
+        $this->assertSame(0, (int) $dbal->executeQuery('SELECT COUNT(*) FROM form WHERE id = ?', [$formId])->fetchOne());
+        $this->assertSame(0, (int) $dbal->executeQuery('SELECT COUNT(*) FROM form_field WHERE form_id = ?', [$formId])->fetchOne());
+        $this->assertNull($dbal->executeQuery('SELECT form_id FROM product WHERE id = 5')->fetchOne());
+        $this->assertNull($dbal->executeQuery('SELECT form_id FROM client_order WHERE id = 8')->fetchOne());
     }
 
-    public function testGetFormFields(): void
+    public function testDuplicateFormCopiesFields(): void
     {
-        $formId = 1;
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAll')
-            ->willReturn([]);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-
+        $dbal = $this->createDbalConnection();
+        $di = $this->createDi($dbal);
         $this->service->setDi($di);
-        $result = $this->service->getFormFields($formId);
-        $this->assertIsArray($result);
-    }
 
-    public function testGetFormFieldsCount(): void
-    {
-        $formId = 1;
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn([]);
+        $formId = $this->service->addNewForm(['name' => 'Original']);
+        $this->service->addNewField([
+            'form_id' => $formId,
+            'type' => 'text',
+            'name' => 'hostname',
+        ]);
 
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $duplicateId = $this->service->duplicateForm([
+            'form_id' => $formId,
+            'name' => 'Copy',
+        ]);
 
-        $this->service->setDi($di);
-        $result = $this->service->getFormFieldsCount($formId);
-        $this->assertIsArray($result);
-    }
-
-    public function testGetFormPairs(): void
-    {
-        $formId = 1;
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAssoc')
-            ->willReturn([]);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-
-        $this->service->setDi($di);
-        $result = $this->service->getFormPairs();
-        $this->assertIsArray($result);
-    }
-
-    public function testGetField(): void
-    {
-        $fieldId = 2;
-        $modelArray = [
-            'id' => 2,
-            'options' => '{"options":["hidden"]}',
-        ];
-
-        $expectedArray = $modelArray;
-        $expectedArray['options'] = json_decode($expectedArray['options'] ?? '');
-
-        $model = new \Model_FormField();
-        $model->loadBean(new \DummyBean());
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($model);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('toArray')
-            ->willReturn($modelArray);
-
-        $di = $this->getDi();
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
-        $di['validator'] = $validatorMock;
-        $di['db'] = $dbMock;
-
-        $this->service->setDi($di);
-        $result = $this->service->getField($fieldId);
-        $this->assertIsArray($result);
-        $this->assertEquals($expectedArray, $result);
-    }
-
-    public function testRemoveForm(): void
-    {
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->exactly(4))
-            ->method('exec');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['logger'] = new \Box_Log();
-
-        $this->service->setDi($di);
-        $formId = 1;
-        $result = $this->service->removeForm($formId);
-        $this->assertTrue($result);
-    }
-
-    public function testRemoveField(): void
-    {
-        $data = ['id' => 1];
-
-        $model = new \Model_FormField();
-        $model->loadBean(new \DummyBean());
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($model);
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['logger'] = new \Box_Log();
-
-        $this->service->setDi($di);
-        $result = $this->service->removeField($data);
-        $this->assertTrue($result);
-    }
-
-    public function testFormFieldNameExists(): void
-    {
-        $data = [
-            'field_name' => 'testingName',
-            'form_id' => 2,
-            'field_id' => 10,
-        ];
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('findOne')
-            ->willReturn(new \Model_FormField());
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-
-        $this->service->setDi($di);
-        $result = $this->service->formFieldNameExists($data);
-        $this->assertTrue($result);
-    }
-
-    public function testGetForms(): void
-    {
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAll')
-            ->willReturn([]);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-
-        $this->service->setDi($di);
-        $result = $this->service->getForms();
-        $this->assertIsArray($result);
-    }
-
-    public function testDuplicateForm(): void
-    {
-        $data = [
-            'form_id' => 1,
-            'name' => 'testForm',
-        ];
-
-        $newFormId = 3;
-        $newFieldId = 4;
-        $fields = [
-            'options' => [],
-        ];
-
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['getFormFields', 'addNewForm', 'addNewField'])
-            ->getMock();
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getFormFields')
-            ->willReturn($fields);
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('addNewForm')
-            ->willReturn($newFormId);
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('addNewField')
-            ->willReturn($newFieldId);
-
-        $di = $this->getDi();
-        $di['logger'] = new \Box_Log();
-
-        $serviceMock->setDi($di);
-        $result = $serviceMock->duplicateForm($data);
-        $this->assertIsInt($result);
-        $this->assertEquals($newFormId, $result);
+        $this->assertSame('Copy', $this->service->getForm($duplicateId)['name']);
+        $this->assertCount(1, $this->service->getFormFields($duplicateId));
     }
 
     public function testUpdateFormSettings(): void
     {
-        $data = [
+        $dbal = $this->createDbalConnection();
+        $di = $this->createDi($dbal);
+        $this->service->setDi($di);
+
+        $formId = $this->service->addNewForm(['name' => 'Original']);
+
+        $this->assertTrue($this->service->updateFormSettings([
+            'form_id' => $formId,
+            'form_name' => 'Renamed',
             'type' => 'default',
-            'form_name' => 'testForm',
-            'form_id' => 1,
-        ];
+            'show_title' => '1',
+        ]));
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->exactly(2))
-            ->method('exec');
+        $form = $this->service->getForm($formId);
+        $this->assertSame('Renamed', $form['name']);
+        $this->assertSame(['type' => 'default', 'show_title' => '1'], $form['style']);
+    }
 
+    private function createDi(Connection $dbal): \Pimple\Container
+    {
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['dbal'] = $dbal;
         $di['logger'] = new \Box_Log();
 
-        $this->service->setDi($di);
-        $result = $this->service->updateFormSettings($data);
-        $this->assertTrue($result);
+        $validator = $this->getMockBuilder(\FOSSBilling\Validate::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $validator->method('checkRequiredParamsForArray');
+        $di['validator'] = $validator;
+
+        return $di;
+    }
+
+    private function createDbalConnection(): Connection
+    {
+        $connection = DriverManager::getConnection([
+            'driver' => 'pdo_sqlite',
+            'memory' => true,
+        ]);
+
+        $connection->executeStatement('CREATE TABLE form (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, style TEXT, created_at TEXT, updated_at TEXT)');
+        $connection->executeStatement('CREATE TABLE form_field (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            form_id INTEGER,
+            name TEXT,
+            label TEXT,
+            hide_label INTEGER,
+            description TEXT,
+            type TEXT,
+            default_value TEXT,
+            required INTEGER,
+            hidden INTEGER,
+            readonly INTEGER,
+            is_unique INTEGER,
+            prefix TEXT,
+            suffix TEXT,
+            options TEXT,
+            show_initial TEXT,
+            show_middle TEXT,
+            show_prefix TEXT,
+            show_suffix TEXT,
+            text_size INTEGER,
+            created_at TEXT,
+            updated_at TEXT
+        )');
+        $connection->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, form_id INTEGER)');
+        $connection->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, form_id INTEGER)');
+
+        return $connection;
     }
 }

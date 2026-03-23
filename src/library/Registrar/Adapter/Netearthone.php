@@ -19,6 +19,7 @@ class Registrar_Adapter_Netearthone extends Registrar_Adapter_Resellerclub
         }
     }
 
+    #[Override]
     public static function getConfig(): array
     {
         return [

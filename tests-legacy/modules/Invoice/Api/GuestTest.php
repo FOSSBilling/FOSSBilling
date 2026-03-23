@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -149,7 +149,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn () => $gatewayServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $gatewayServiceMock);
 
         $this->api->setDi($di);
 

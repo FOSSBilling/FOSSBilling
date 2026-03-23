@@ -10,16 +10,16 @@
  */
 class Model_InvoiceItem extends RedBeanPHP\SimpleModel
 {
-    final public const TYPE_DEPOSIT = 'deposit'; // this type of item cannot be charged with credits
-    final public const TYPE_CUSTOM = 'custom';
-    final public const TYPE_ORDER = 'order';
-    final public const TYPE_HOOK_CALL = 'hook_call';
+    final public const string TYPE_DEPOSIT = 'deposit'; // this type of item cannot be charged with credits
+    final public const string TYPE_CUSTOM = 'custom';
+    final public const string TYPE_ORDER = 'order';
+    final public const string TYPE_HOOK_CALL = 'hook_call';
 
-    final public const TASK_VOID = 'void';
-    final public const TASK_ACTIVATE = 'activate';
-    final public const TASK_RENEW = 'renew';
+    final public const string TASK_VOID = 'void';
+    final public const string TASK_ACTIVATE = 'activate';
+    final public const string TASK_RENEW = 'renew';
 
-    final public const STATUS_PENDING_PAYMENT = 'pending_payment';
-    final public const STATUS_PENDING_SETUP = 'pending_setup';
-    final public const STATUS_EXECUTED = 'executed';
+    final public const string STATUS_PENDING_PAYMENT = 'pending_payment';
+    final public const string STATUS_PENDING_SETUP = 'pending_setup';
+    final public const string STATUS_EXECUTED = 'executed';
 }

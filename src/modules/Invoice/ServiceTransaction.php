@@ -16,6 +16,8 @@ use FOSSBilling\InjectionAwareInterface;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
+    private const int PROCESSING_RECOVERY_TIMEOUT = 300;
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -79,6 +81,17 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
 
         $skip_validation = isset($data['skip_validation']) && (bool) $data['skip_validation'];
+        if (!empty($data['gateway_id'])) {
+            try {
+                $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
+            } catch (\Exception) {
+                if (isset($this->di['logger'])) {
+                    $this->di['logger']->warning('IPN with invalid gateway_id rejected: ' . $data['gateway_id']);
+                }
+
+                throw new \FOSSBilling\InformationException('Invalid payment gateway');
+            }
+        }
         if (!$skip_validation) {
             if (!isset($data['invoice_id'])) {
                 throw new \FOSSBilling\InformationException('Transaction invoice ID is missing');
@@ -292,6 +305,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'total' => array_sum($data),
             \Model_Transaction::STATUS_RECEIVED => $data[\Model_Transaction::STATUS_RECEIVED] ?? 0,
             \Model_Transaction::STATUS_APPROVED => $data[\Model_Transaction::STATUS_APPROVED] ?? 0,
+            \Model_Transaction::STATUS_PROCESSING => $data[\Model_Transaction::STATUS_PROCESSING] ?? 0,
             \Model_Transaction::STATUS_PROCESSED => $data[\Model_Transaction::STATUS_PROCESSED] ?? 0,
             \Model_Transaction::STATUS_ERROR => $data[\Model_Transaction::STATUS_ERROR] ?? 0,
         ];
@@ -302,6 +316,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return [
             \Model_Transaction::STATUS_RECEIVED => 'Received',
             \Model_Transaction::STATUS_APPROVED => 'Approved',
+            \Model_Transaction::STATUS_PROCESSING => 'Processing',
             \Model_Transaction::STATUS_PROCESSED => 'Processed',
             \Model_Transaction::STATUS_ERROR => 'Error',
         ];
@@ -312,6 +327,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return [
             \Model_Transaction::STATUS_RECEIVED => 'Received',
             \Model_Transaction::STATUS_APPROVED => 'Approved/Verified',
+            \Model_Transaction::STATUS_PROCESSING => 'Processing',
             \Model_Transaction::STATUS_PROCESSED => 'Processed',
             \Model_Transaction::STATUS_ERROR => 'Error',
         ];
@@ -335,6 +351,56 @@ class ServiceTransaction implements InjectionAwareInterface
             \Payment_Transaction::TXTYPE_SUBSCR_CANCEL => 'Subscription cancel',
             \Payment_Transaction::TXTYPE_UNKNOWN => 'Unknown',
         ];
+    }
+
+    public function getReceived()
+    {
+        $sql = 'SELECT m.*
+                FROM transaction as m
+                WHERE m.status = :received_status
+                    OR (m.status = :processing_status AND (m.updated_at IS NULL OR m.updated_at <= :processing_retry_after))
+                ORDER BY m.id DESC';
+
+        return $this->di['db']->getAll($sql, [
+            'received_status' => \Model_Transaction::STATUS_RECEIVED,
+            'processing_status' => \Model_Transaction::STATUS_PROCESSING,
+            'processing_retry_after' => $this->getProcessingRecoveryThreshold(),
+        ]);
+    }
+
+    private function getProcessingRecoveryThreshold(): string
+    {
+        return date('Y-m-d H:i:s', time() - self::PROCESSING_RECOVERY_TIMEOUT);
+    }
+
+    /**
+     * Atomically claim a transaction for processing.
+     * Uses conditional UPDATE to prevent race conditions when multiple
+     * workers attempt to process the same transaction simultaneously.
+     *
+     * Accepts 'received' and 'processed' statuses immediately, and allows
+     * stale 'processing' transactions to be reclaimed after the recovery timeout.
+     *
+     * @param int $id Transaction ID
+     *
+     * @return bool True if the transaction was successfully claimed, false if already being processed
+     */
+    public function claimForProcessing(int $id): bool
+    {
+        $affectedRows = $this->di['db']->exec(
+            'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))',
+            [
+                \Model_Transaction::STATUS_PROCESSING,
+                date('Y-m-d H:i:s'),
+                $id,
+                \Model_Transaction::STATUS_RECEIVED,
+                \Model_Transaction::STATUS_PROCESSED,
+                \Model_Transaction::STATUS_PROCESSING,
+                $this->getProcessingRecoveryThreshold(),
+            ]
+        );
+
+        return $affectedRows > 0;
     }
 
     public function preProcessTransaction(\Model_Transaction $model)
@@ -368,7 +434,7 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     public function processTransaction($id)
     {
-        /** @var \Model_Transaction $tx */
+        /** @var \Model_Transaction|null $tx */
         $tx = $this->di['db']->load('Transaction', $id);
         if (!$tx) {
             throw new \FOSSBilling\Exception('Transaction :id not found.', ['id' => $id], 404);
@@ -392,16 +458,6 @@ class ServiceTransaction implements InjectionAwareInterface
         $ipn = json_decode($tx->ipn ?? '', true);
 
         return $adapter->processTransaction($this->di['api_system'], $id, $ipn, $tx->gateway_id);
-    }
-
-    public function getReceived()
-    {
-        $filter = [
-            'status' => 'received',
-        ];
-        [$sql, $params] = $this->getSearchQuery($filter);
-
-        return $this->di['db']->getAll($sql, $params);
     }
 
     public function process(\Model_Transaction $tx): \Model_Transaction

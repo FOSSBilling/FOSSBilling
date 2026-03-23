@@ -66,7 +66,7 @@ class Client implements InjectionAwareInterface
     {
         $call = $class . '_' . $method;
 
-        $this->tryCall($role, $call, $_GET);
+        $this->tryCall($role, $class, $call, $_GET);
 
         return null;
     }
@@ -83,7 +83,7 @@ class Client implements InjectionAwareInterface
 
         $call = $class . '_' . $method;
 
-        $this->tryCall($role, $call, $p);
+        $this->tryCall($role, $class, $call, $p);
 
         return null;
     }
@@ -91,10 +91,10 @@ class Client implements InjectionAwareInterface
     /**
      * @param string $call
      */
-    private function tryCall($role, $call, $p): void
+    private function tryCall($role, $class, $call, $p): void
     {
         try {
-            $this->_apiCall($role, $call, $p);
+            $this->_apiCall($role, $class, $call, $p);
         } catch (\Exception $exc) {
             // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
             \Sentry\captureException($exc);
@@ -164,7 +164,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function isRoleLoggedIn($role): bool
+    protected function isRoleLoggedIn($role): bool
     {
         if ($role == 'client') {
             $this->di['is_client_logged'];
@@ -176,7 +176,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function _apiCall($role, $method, $params): null
+    private function _apiCall($role, $class, $method, $params): null
     {
         $this->_loadConfig();
         $this->checkAllowedIps();
@@ -187,18 +187,47 @@ class Client implements InjectionAwareInterface
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
 
+        $hasTokenAuthCredentials = in_array($role, ['client', 'admin'], true) && $this->hasTokenAuthCredentials();
+        $hasValidSession = false;
+
         try {
             $this->isRoleLoggedIn($role);
-            if ($role == 'client' || $role == 'admin') {
-                $this->_checkCSRFToken();
-            }
+            $hasValidSession = true;
         } catch (\Exception) {
+        }
+
+        if ($hasTokenAuthCredentials) {
+            // Token auth via the Authorization header is not vulnerable to CSRF (browsers cannot send
+            // Authorization headers cross-origin automatically), so skip CSRF and perform token login.
             $this->_tryTokenLogin();
+        } elseif (!$hasValidSession) {
+            $this->_tryTokenLogin();
+        } elseif ($role == 'client' || $role == 'admin') {
+            // Authenticated browser session for privileged roles must pass CSRF checks.
+            $this->_checkCSRFToken();
         }
 
         $api = $this->di['api']($role);
         unset($params['CSRFToken']);
         $result = $api->$method($params);
+
+        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower((string) $_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+        $isLoginMethod = ($method === 'login');
+        $isStaffLogin = ($class === 'staff');
+        $isClientLogin = ($class === 'client');
+
+        if ($isLoginMethod && !$isAjax && ($isStaffLogin || $isClientLogin)) {
+            if ($isStaffLogin) {
+                $redirectUrl = $this->di['url']->adminLink('');
+            } elseif ($isClientLogin) {
+                $redirectUrl = $this->di['url']->link('');
+            } else {
+                $redirectUrl = '/';
+            }
+
+            header('Location: ' . $redirectUrl);
+            exit;
+        }
 
         $this->renderJson($result);
 
@@ -229,7 +258,7 @@ class Client implements InjectionAwareInterface
         return [$_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']];
     }
 
-    private function _tryTokenLogin(): void
+    protected function _tryTokenLogin(): void
     {
         [$username, $password] = $this->getAuth();
 
@@ -262,6 +291,17 @@ class Client implements InjectionAwareInterface
             default:
                 throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
         }
+    }
+
+    protected function hasTokenAuthCredentials(): bool
+    {
+        try {
+            [$username, $password] = $this->getAuth();
+        } catch (\Exception) {
+            return false;
+        }
+
+        return in_array($username, ['client', 'admin'], true) && $password !== '';
     }
 
     /**
@@ -331,27 +371,22 @@ class Client implements InjectionAwareInterface
             return true;
         }
 
-        $input = $this->filesystem->readFile('php://input') ?? '';
+        $input = $this->filesystem->readFile('php://input');
         $data = json_decode($input);
         if (!is_object($data)) {
             $data = new \stdClass();
         }
 
-        $token = $data->CSRFToken ?? $_POST['CSRFToken'] ?? $_GET['CSRFToken'] ?? null;
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            $expectedToken = (!is_null($_COOKIE['PHPSESSID'])) ? hash('md5', (string) $_COOKIE['PHPSESSID']) : null;
-        } else {
-            $expectedToken = hash('md5', session_id());
-        }
+        $cookieToken = $_COOKIE['csrf_token'] ?? null;
+        $headerToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
 
-        /* Due to the way the cart works, it creates a new session which causes issues with the CSRF token system.
-         * Due to this, we whitelist the checkout URL.
-         */
-        if (str_contains((string) $_SERVER['REQUEST_URI'], '/api/client/cart/checkout')) {
-            return true;
-        }
+        $token = $data->CSRFToken ?? $_POST['CSRFToken'] ?? $_GET['CSRFToken'] ?? $headerToken ?? null;
 
-        if (!is_null($expectedToken) && $expectedToken !== $token) {
+        $sessionToken = $this->di['session']->get('csrf_token');
+
+        $validTokens = array_filter([$cookieToken, $headerToken, $sessionToken]);
+
+        if (empty($validTokens) || !in_array($token, $validTokens, true)) {
             throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
         }
     }

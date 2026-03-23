@@ -36,7 +36,7 @@ class Admin extends \Api_Abstract
      * Delete custom page.
      */
     #[RequiredParams(['id' => 'Custom page ID was not passed'])]
-    public function delete($data)
+    public function delete($data): bool
     {
         $this->getService()->deletePage($data['id']);
 
@@ -47,7 +47,7 @@ class Admin extends \Api_Abstract
      * Delete custom pages.
      */
     #[RequiredParams(['ids' => 'Custom page IDs were not passed'])]
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         $this->getService()->deletePage($data['ids']);
 

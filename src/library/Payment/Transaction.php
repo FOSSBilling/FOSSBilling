@@ -10,15 +10,15 @@
  */
 class Payment_Transaction
 {
-    final public const STATUS_UNKNOWN = 'unknown';
-    final public const STATUS_PENDING = 'pending';
-    final public const STATUS_COMPLETE = 'complete';
+    final public const string STATUS_UNKNOWN = 'unknown';
+    final public const string STATUS_PENDING = 'pending';
+    final public const string STATUS_COMPLETE = 'complete';
 
-    final public const TXTYPE_PAYMENT = 'payment';
-    final public const TXTYPE_REFUND = 'refund';
-    final public const TXTYPE_SUBSCR_CREATE = 'subscription_create';
-    final public const TXTYPE_SUBSCR_CANCEL = 'subscription_cancel';
-    final public const TXTYPE_UNKNOWN = 'unknown';
+    final public const string TXTYPE_PAYMENT = 'payment';
+    final public const string TXTYPE_REFUND = 'refund';
+    final public const string TXTYPE_SUBSCR_CREATE = 'subscription_create';
+    final public const string TXTYPE_SUBSCR_CANCEL = 'subscription_cancel';
+    final public const string TXTYPE_UNKNOWN = 'unknown';
 
     private $id;
     private string $type = self::TXTYPE_UNKNOWN;

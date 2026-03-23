@@ -37,8 +37,8 @@ class Session
 
 class Box_SessionFile
 {
-    final public const SESSION_STARTED = true;
-    final public const SESSION_NOT_STARTED = false;
+    final public const bool SESSION_STARTED = true;
+    final public const bool SESSION_NOT_STARTED = false;
 
     protected $sessionState = self::SESSION_NOT_STARTED;
 
@@ -49,7 +49,7 @@ class Box_SessionFile
         if (!isset(self::$instance)) {
             self::$instance = new self();
             if (!self::$instance->sessionExists() && !headers_sent()) {
-                session_name('BOXSID');
+                session_name('fb_sid');
                 self::$instance->sessionState = session_start();
             }
         }

@@ -79,9 +79,9 @@ class Guest extends \Api_Abstract
         'tld' => 'TLD is missing',
         'sld' => 'SLD is missing',
     ])]
-    public function check($data)
+    public function check($data): bool
     {
-        $sld = htmlspecialchars($data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $sld = htmlspecialchars((string) $data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
             throw new \FOSSBilling\InformationException('Domain :domain is invalid', [':domain' => $sld]);
@@ -109,7 +109,7 @@ class Guest extends \Api_Abstract
         'tld' => 'TLD is missing',
         'sld' => 'SLD is missing',
     ])]
-    public function can_be_transferred($data)
+    public function can_be_transferred($data): bool
     {
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$tld instanceof \Model_Tld) {

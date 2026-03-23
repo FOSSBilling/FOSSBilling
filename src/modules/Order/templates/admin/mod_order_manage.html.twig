@@ -1,0 +1,821 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ order.title }}{% endblock %}
+
+{% block breadcrumbs %}
+    <ul class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'order'|alink }}">{{ 'Orders'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ order.title }}</li>
+    </ul>
+{% endblock %}
+
+{% set active_menu = 'order' %}
+
+{% set service_partial = 'mod_service' ~ order.service_type ~ '_manage.html.twig' %}
+{% if order.group_master == 1 %}
+    {% set addons = admin.order_addons({ 'id': order.id }) %}
+{% endif %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h5>{{ 'Order Management'|trans }}</h5>
+    </div>
+
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-info" data-bs-toggle="tab">{{ 'Details'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-manage" data-bs-toggle="tab">{{ 'Edit order'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-config" data-bs-toggle="tab">{{ 'Edit order config'|trans }}</a>
+        </li>
+        {% if admin.system_template_exists({ "file": service_partial }) %}
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-service" data-bs-toggle="tab">{{ 'Service management'|trans }}</a>
+        </li>
+        {% endif %}
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-invoices" data-bs-toggle="tab">{{ 'Invoices'|trans }}</a>
+        </li>
+        {% if addons|length > 0 %}
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-addons" data-bs-toggle="tab">{{ 'Addons'|trans }}</a>
+        </li>
+        {% endif %}
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-status" data-bs-toggle="tab">{{ 'History'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-support" data-bs-toggle="tab">{{ 'Support'|trans }}</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
+            <div class="card-body overflow-auto">
+                <h3>{{ order.title }}</h3>
+
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <tbody>
+                        <tr>
+                            <td class="w-50 text-end">{{ 'Order'|trans }}</td>
+                            <td>#{{ order.id }} ({{ order.service_type }})</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Client'|trans }}</td>
+                            <td><a href="{{ 'client/manage'|alink }}/{{order.client.id}}">{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Title'|trans }}</td>
+                            <td><a href="{{ 'product/manage'|alink }}/{{ order.product_id }}"><strong>{{ order.title }}</strong></a></td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Payment amount'|trans }}</td>
+                            <td>{{ mf.currency_format( order.total, order.currency) }} {% if order.period %}{{mf.period_name(order.period)}}{% endif %} {% if order.quantity > 1 %}({{ order.quantity }} x {{ mf.currency_format( order.price, order.currency) }}){% endif %}</td>
+                        </tr>
+                        {% if order.discount and order.discount > 0%}
+                        <tr>
+                            <td class="text-end">{{ 'Order discount'|trans }}</td>
+                            <td>-{{ mf.currency_format( order.discount, order.currency) }} </td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Payment amount after discount'|trans }}</td>
+                            <td>{{ mf.currency_format( order.total - order.discount, order.currency) }} </td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td class="text-end">{{ 'Order status'|trans }}</td>
+                            <td>
+                            {% if order.status == 'pending_setup' or order.status == 'failed_setup' or order.status == 'failed_renew' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if order.status == 'active' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if order.status == 'suspended' %}
+                                <span class="badge bg-danger me-1"></span>
+                            {% endif %}
+                            {% if order.status == 'canceled' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(order.status) }}
+                            </td>
+                        </tr>
+                        {% if order.notes %}
+                        <tr>
+                            <td class="text-end">{{ 'Order notes'|trans }}</td>
+                            <td>
+                                <svg class="icon">
+                                    <use xlink:href="#support" />
+                                </svg>
+                                <a>{{ order.notes }}</a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td class="text-end">{{ 'Order Date'|trans }}</td>
+                            <td>{{ order.created_at|format_date }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Activation Date'|trans }}</td>
+                            <td>{% if order.activated_at %}{{ order.activated_at|format_date }} ({{ order.activated_at|timeago }} {{ 'ago'|trans }}){% else %}-{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Renewal Date'|trans }}</td>
+                            <td>{% if order.expires_at %}{{ order.expires_at|format_date }} ({{ order.expires_at|daysleft }} {{ 'day(s)'|trans }}){% else %}-{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Order group ID'|trans }}</td>
+                            <td>{{ order.group_id|default('-') }}</td>
+                        </tr>
+                        {% if order.promo_id %}
+                        <tr>
+                            <td class="text-end">{{ 'Order promo code'|trans }}</td>
+                            <td>
+                                {% set promo = admin.product_promo_get({ 'id': order.promo_id }) %}
+                                {{ promo.code }}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% if order.active_tickets > 0 %}
+                        <tr>
+                            <td class="text-end">{{ 'Active support tickets'|trans }}</td>
+                            <td>
+                                <div class="num">
+                                    <a href="{{ 'support'|alink({ 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card-footer text-center">
+                {% set order_actions %}
+                    {% if order.status == 'pending_setup' or order.status == 'failed_setup' %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'api/admin/order/activate'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#play" />
+                        </svg>
+                        <span>{{ 'Activate'|trans }}</span>
+                    </a>
+                    {% endif %}
+
+                    {% if order.status == 'active' or order.status == 'failed_renew' %}
+                    {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'api/admin/order/renew'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#refresh" />
+                        </svg>
+                        <span>{{ 'Renew'|trans }}</span>
+                    </a>
+
+                    {% if params.suspend_reason_list|trim == null %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'api/admin/order/suspend'|link({id: order.id}), modal: {type: 'prompt', title: 'Suspension Reason'|trans, label: 'Reason for Suspension'|trans, key: 'reason'}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#pause" />
+                        </svg>
+                        <span>{{ 'Suspend'|trans }}</span>
+                    </a>
+                    {% else %}
+                    <div id="suspend_popup" style="position: fixed; z-index: 99999; padding: 5px; margin: 0px; min-width: 310px; max-width: 310px; top: 30%; left: 45%; display: none;">
+                        <h5 id="suspend_popup_title">{{ 'Suspension reason'|trans }}</h5>
+                        <div id="suspend_popup_content" class="confirm">
+                            <div id="suspend_popup_message">
+                                <div>{{ 'Reason for Suspension'|trans }}
+                                    {% for reason in params.suspend_reason_list|trim|split("\r\n") %}
+                                    <div class="item">
+                                        <input type="radio" value="{{ reason }}" name="reason">
+                                        <label>{{ reason }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div id="suspend_popup_panel">
+                                <input type="button" class="btn btn-primary w-100" value="&nbsp;{{ 'Suspend'|trans }}&nbsp;" id="popup_ok" onclick="return susp.suspendOrder('/api/admin/order/suspend?id={{ order.id }}', 'reason');">
+                                <input type="button" class="btn btn-primary" value="&nbsp;Cancel&nbsp;" id="popup_cancel" onclick="return susp.suspenderHide();">
+                            </div>
+                        </div>
+                    </div>
+                    <a class="btn btn-primary" id="suspend_button" href="#" onclick="return susp.showSuspendPopup()" {{ fb_api_link({ reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#close" />
+                        </svg>
+                        <span>{{ 'Suspend'|trans }}</span>
+                    </a>
+                    {% endif %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'api/admin/order/cancel'|link({id: order.id}), modal: {type: 'prompt', title: 'Cancellation Reason'|trans, label: 'Reason for Cancellation'|trans, key: 'reason'}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#close" />
+                        </svg>
+                        <span>{{ 'Cancel'|trans }}</span>
+                    </a>
+                    {% endif %}
+
+                    {% if order.status == 'suspended' %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'api/admin/order/unsuspend'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#play" />
+                        </svg>
+                        <span>{{ 'Unsuspend'|trans }}</span>
+                    </a>
+                    {% endif %}
+
+                    {% if order.status == 'canceled' %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'api/admin/order/uncancel'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#play" />
+                        </svg>
+                        <span>{{ 'Activate'|trans }}</span>
+                    </a>
+                    {% endif %}
+
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#delete" />
+                        </svg>
+                        <span>{{ 'Delete'|trans }}</span>
+                    </button>
+
+                    {% if not order.unpaid_invoice_id %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'api/admin/invoice/renewal_invoice'|link({id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        <span>{{ 'Issue invoice'|trans }}</span>
+                    </a>
+                    {% endif %}
+                {% endset %}
+
+                {{ order_actions }}
+            </div>
+        </div>
+
+        <div class="modal modal-blur fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content">
+                    <form method="post" action="{{ 'api/admin/order/delete'|link }}" {{ fb_api_form({ redirect: 'order'|alink}) }}>
+                        <div class="modal-status bg-danger"></div>
+                        <div class="modal-body">
+                            <div class="modal-title">{{ 'Are you sure?'|trans }}</div>
+                            <input name="id" type="number" hidden value="{{ order.id }}">
+                            <p>{{ 'Are you sure you want to delete the selected item?'|trans }}</p>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" name="force_delete" class="form-check-input" id="forceDelete">
+                                <label class="form-check-label"for="forceDelete">{{ 'Force the deletion of the item'|trans }}</label>
+                            </div>
+                            <span class="text-muted">{{ 'Selecting this will force the item to be removed from the database even if errors occur.'|trans }}</span>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                            <button type="submit" class="btn btn-primary">{{ 'Delete'|trans }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-manage" role="tabpanel">
+            <div class="card-body">
+                <h3>{{ 'Order Management'|trans }}</h2>
+                <form method="post" action="{{ 'api/admin/order/update'|link }}" {{ fb_api_form({ reload: true}) }}>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="title" value="{{ order.title }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Changes status without performing action'|trans }}</label>
+                        <div class="col">
+                            {{ mf.selectbox('status', admin.order_get_status_pairs, order.status, 0, 'Select status'|trans) }}
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Invoice option'|trans }}</label>
+                        <div class="col">
+                            {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, order.invoice_option) }}
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Price'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="price" value="{{ order.price }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Reason'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="reason" value="{{ order.reason }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Period'|trans }}</label>
+                        <div class="col">
+                            {{ mf.selectbox('period', guest.system_periods, order.period, 0, 'Not recurrent'|trans) }}
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label" for="expires_at">{{ 'Date Expires'|trans }}</label>
+                        <div class="col">
+                            <div class="input-group">
+                                <div class="input-icon w-100">
+                                    <input class="form-control datepicker"
+                                           id="expires_at"
+                                           value="{% if order.expires_at %}{{ order.expires_at|date('Y-m-d') }}{% endif %}"
+                                           name="expires_at"
+                                    >
+                                    <span class="input-icon-addon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                            <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                            <path d="M16 3l0 4"></path>
+                                            <path d="M8 3l0 4"></path>
+                                            <path d="M4 11l16 0"></path>
+                                            <path d="M11 15l1 0"></path>
+                                            <path d="M12 15l0 3"></path>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Notes'|trans }}</label>
+                        <div class="col">
+                            <textarea class="form-control" name="notes" rows="2">{{ order.notes }}</textarea>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ order.id }}">
+                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+
+            {# <form method="post" action="{{ 'api/admin/order/update'|link }}" data-fb-api='{ "reload": true }'>
+                <fieldset>
+                    <legend>Order promotion code</legend>
+
+                    <div class="mb-3 row noborder">
+                        <label>{{ 'Promo code'|trans }}</label>
+                        <div class="formRight">
+                            <input type="text" name="promo_id" value="{{ order.promo_id }}" required>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <input type="submit" value="{{ 'Update promo'|trans }}" class="btn btn-primary w-100">
+                </fieldset>
+                <input type="hidden" name="id" value="{{ order.id }}">
+            </form> #}
+            {# order_actions #}
+
+            {# if order.status == 'pending_setup' or order.status == 'failed_setup' %}
+            <div class="help">
+                <h2>Order parameters</h2>
+            </div>
+
+            <form method="post" action="{{ 'api/admin/order/update_config'|link }}" {{ fb_api_form({ message: 'Order Config Updated'|trans}) }}>
+                {% for name, value in order.config %}
+                <div class="mb-3 row">
+                    <label class="topLabel">{{ name }}</label>
+                        <div class="formBottom">
+                            <textarea rows="2" name="config[{{ name }}]">{{ value }}</textarea>
+                        </div>
+                    <div class="fix"></div>
+                </div>
+                {% endfor %}
+
+                <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary submitForm" />
+                <input type="hidden" name="id" value="{{ order.id }}"/>
+            </form>
+            {% endif #}
+        </div>
+
+        <div class="tab-pane fade" id="tab-config" role="tabpanel">
+            <div class="card-body">
+                <h5>{{ 'Order config management'|trans }}</h5>
+                <p class="text-muted">{{ 'Please be cautious and make sure you know what you are doing when editing order config! FOSSBilling relies on these parameters and you might get unexpected results if you change some of them.'|trans }}</p>
+
+                <form method="post" action="{{ 'api/admin/order/update_config'|link }}" {{ fb_api_form({ reload: true}) }}>
+                    {% for key, config in order.config %}
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ key }}</label>
+                        <div class="col">
+                            {% if config is iterable %}
+                                {% for key2, config2 in config %}
+                                    <input class="form-control" type="text" name="config[{{ key }}][{{ key2 }}]" value="{{ config2 }}"{% if config2 is null %} placeholder="null"{% endif %}>
+                                {% endfor %}
+                            {% else %}
+                                <input class="form-control" type="text" name="config[{{ key }}]" value="{{ config }}"{% if config is null %} placeholder="null"{% endif %}>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                {# Use formbuilder form if available #}
+                {% if product_form_id and guest.extension_is_on({ 'mod': 'formbuilder' }) %}
+                    {% set form = guest.formbuilder_get({ "id": product_form_id }) %}
+                    {% set form_field_names = form.fields|map(f => f.name)|list %}
+                    <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="api-form" data-api-reload="1">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                        <input type="hidden" name="id" value="{{ order.id }}"/>
+
+                        <div class="row">
+                            <div class="col-12">
+                                {% for field in form.fields %}
+                                    <div class="mb-3 row">
+                                        <div class="col-md-3">
+                                            {% if field.hide_label!=1 %}
+                                                <label class="col-form-label {% if field.required == 1 %}required{% endif %}"
+                                                       for="{{ field.name|e('html') }}">{{ field.label }}</label>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            {% if field.type == "text" %}
+                                                <div class="input-group">
+                                                    {% if field.prefix %}
+                                                        <span class="input-group-text">{{ field.prefix }}</span>
+                                                    {% endif %}
+                                                    <input class="form-control" type="text"
+                                                           name="config[{{ field.name|e('html') }}]" id="{{ field.name|e('html') }}"
+                                                           value="{{ order.config[field.name]|default('')|e('html') }}"
+                                                           {% if field.required %}required="required"{% endif %}
+                                                           {% if field.readonly %}readonly="readonly"{% endif %}>
+                                                    {% if field.suffix %}
+                                                        <span class="input-group-text">{{ field.suffix }}</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% elseif field.type == "select" %}
+                                                <select id="{{ field.name|e('html') }}" class="form-select" name="config[{{ field.name|e('html') }}]"
+                                                        {% if field.required %}required="required"{% endif %}>
+                                                    {% for k,v in field.options %}
+                                                        <option value="{{ v|e('html') }}"
+                                                                {% if v == order.config[field.name] %}selected="selected"{% endif %}>{{ k }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            {% elseif field.type == "checkbox" %}
+                                                {% for k,v in field.options %}
+                                                    <label class="form-check form-check-inline">
+                                                        <input id="{{ field.name|e('html') }}_{{ loop.index }}" class="form-check-input" type="checkbox"
+                                                               name="config[{{ field.name|e('html') }}][]"
+                                                               value="{{ v|e('html') }}"
+                                                               {% if v in (order.config[field.name]|default([])) %}checked="checked"{% endif %}>
+                                                        <span class="form-check-label">{{ k }}</span>
+                                                    </label>
+                                                {% endfor %}
+                                            {% elseif field.type == "radio" %}
+                                                {% for k,v in field.options %}
+                                                    <label class="form-check form-check-inline">
+                                                        <input id="{{ field.name|e('html') }}_{{ loop.index }}" class="form-check-input" type="radio"
+                                                               name="config[{{ field.name|e('html') }}]" value="{{ v|e('html') }}"
+                                                               {% if order.config[field.name] == v %}checked{% endif %}>
+                                                        <span class="form-check-label">{{ k }}</span>
+                                                    </label>
+                                                {% endfor %}
+                                            {% elseif field.type == "textarea" %}
+                                                <textarea class="form-control" rows="5"
+                                                          name="config[{{ field.name|e('html') }}]"
+                                                          id="{{ field.name|e('html') }}"
+                                                          {% if field.required==1 %}required="required"{% endif %}
+                                                          {% if field.readonly==1 %}readonly="readonly"{% endif %}>{{ order.config[field.name]|default('')|e('html') }}</textarea>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+
+                                {# Also show any additional config keys that aren't in the formbuilder form (e.g., period) #}
+                                {% for key, value in order.config %}
+                                    {% if key not in form_field_names %}
+                                        <div class="mb-3 row">
+                                            <label class="form-label col-3 col-form-label">{{ key }}</label>
+                                            <div class="col">
+                                                {% if value is iterable %}
+                                                    {% for key2, config2 in value %}
+                                                        <input class="form-control" type="text" name="config[{{ key|e('html') }}][{{ key2|e('html') }}]" value="{{ config2|e('html') }}"{% if config2 is null %} placeholder="null"{% endif %}>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <input class="form-control" type="text" name="config[{{ key|e('html') }}]" value="{{ value|e('html') }}"{% if value is null %} placeholder="null"{% endif %}>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+                    </form>
+                {% else %}
+                    {# Fallback: show existing config keys (original behavior) #}
+                    <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="api-form" data-api-reload="1">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                        {% for key, config in order.config %}
+                        <div class="mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ key }}</label>
+                            <div class="col">
+                                {% if config is iterable %}
+                                    {% for key2, config2 in config %}
+                                        <input class="form-control" type="text" name="config[{{ key|e('html') }}][{{ key2|e('html') }}]" value="{{ config2|e('html') }}"{% if config2 is null %} placeholder="null"{% endif %}>
+                                    {% endfor %}
+                                {% else %}
+                                    <input class="form-control" type="text" name="config[{{ key|e('html') }}]" value="{{ config|e('html') }}"{% if config is null %} placeholder="null"{% endif %}>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <input type="hidden" name="id" value="{{ order.id }}">
+                        <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-addons" role="tabpanel">
+            <div class="help">
+                <h3>{{ 'Addons you have ordered with this service'|trans }}</h3>
+            </div>
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Product/Service'|trans }}</th>
+                        <th>{{ 'Billing Cycle'|trans }}</th>
+                        <th>{{ 'Price'|trans }}</th>
+                        <th>{{ 'Next due date'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i, addon in addons %}
+                    <tr>
+                        <td>{{ addon.title }}</td>
+                        <td>{{ mf.period_name(addon.period) }}</td>
+                        <td>{{ mf.currency_format( addon.total, addon.currency) }}</td>
+                        <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
+                        <td>
+                            {% if addon.status == 'pending_setup' or addon.status == 'failed_setup' or addon.status == 'failed_renew' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if addon.status == 'active' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if addon.status == 'suspended' %}
+                                <span class="badge bg-danger me-1"></span>
+                            {% endif %}
+                            {% if addon.status == 'canceled' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(addon.status) }}
+                        </td>
+                        <td>
+                            <a class="btn btn-icon" href="{{ '/order/manage'|alink }}/{{ addon.id }}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane fade" id="tab-service" role="tabpanel">
+            {% if guest.system_template_exists({ 'file': service_partial }) %}
+                {% set service = admin.order_service({ 'id': order.id }) %}
+                {{ include(service_partial, { 'order': order, 'service': service }) }}
+            {% elseif order.form_id and guest.extension_is_on({ 'mod': 'formbuilder' }) %}
+                {{ include('mod_formbuilder_manage.html.twig', order) }}
+            {% else %}
+                {# trans 'Order form was not found' #}
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade overflow-auto" id="tab-invoices" role="tabpanel">
+            <div class="help">
+                <h3>{{ 'Order invoices'|trans }}</h3>
+            </div>
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>{{ 'Amount'|trans }}</th>
+                        <th>{{ 'Issued at'|trans }}</th>
+                        <th>{{ 'Paid at'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id }) %}
+                    {% for invoice in invoices.list %}
+                    <tr>
+                        <td><a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">#{{ invoice.id }}</a></td>
+                        <td>{{ mf.currency_format( invoice.total, invoice.currency, 1) }}</td>
+                        <td>{{ invoice.created_at|format_date }}</td>
+                        <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
+                        <td>
+                            {% if invoice.status == 'paid' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if invoice.status == 'unpaid' %}
+                                <span class="badge bg-danger me-1"></span>
+                            {% endif %}
+                            {% if invoice.status == 'refunded' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if invoice.status == 'canceled' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(invoice.status) }}
+                        </td>
+                        <td>
+                            <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane fade overflow-auto" id="tab-status" role="tabpanel">
+            <div class="card-body">
+                <h3>{{ 'Order status history'|trans }}</h3>
+            </div>
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th class="w-1">{{ 'Date'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th>{{ 'Note'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set statuses = admin.order_status_history_get_list({ 'per_page': 50, 'id': order.id }) %}
+                    {% for i, sh in statuses.list %}
+                    <tr>
+                        <td class="d-none d-lg-table-cell">{{ sh.created_at|format_datetime }}</td>
+                        <td class="d-lg-none">{{ sh.created_at|format_datetime(pattern="MM/DD/YY MM:HH") }}</td>
+                        <td>
+                            {% set class = 'bg-secondary' %}
+
+                            {% if sh.status == 'active' %}
+                                {% set class = 'bg-success' %}
+                            {% endif %}
+
+                            {% if sh.status == 'pending_setup' or sh.status == 'failed_renew'%}
+                                {% set class = 'bg-warning' %}
+                            {% endif %}
+
+                            {% if sh.status == 'failed_setup' or sh.status == 'suspended' or sh.status == 'canceled'%}
+                                {% set class = 'bg-danger' %}
+                            {% endif %}
+
+                            <span class="badge {{ class }} me-1 d-none d-lg-inline-block"></span>
+                            <span class="badge {{ class }} ms-2 d-lg-none"></span>
+                            <span class="d-none d-lg-inline-block">{{ mf.status_name(sh.status) }}</span>
+                        </td>
+                        <td class="text-wrap">{{ sh.notes }}</td>
+                        <td>
+                            <a class="btn btn-icon"
+                                {{ fb_api_link({href: 'api/admin/order/status_history_delete'|link({id: sh.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|alink}) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane fade" id="tab-support" role="tabpanel">
+            <div class="help">
+                <h3>{{ 'Support tickets regarding this order'|trans }}</h3>
+            </div>
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th class="w-1">#</th>
+                        <th>{{ 'Help desk'|trans }}</th>
+                        <th>{{ 'Subject'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set tickets = admin.support_ticket_get_list({ 'per_page': '20', 'order_id': order.id, 'deep': 0, 'include_first': 0 }) %}
+                    {% for ticket in tickets.list %}
+                    <tr>
+                        <td>{{ ticket.id }}</td>
+                        <td>{{ ticket.helpdesk.name }}</td>
+                        <td>
+                            <a href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">{{ ticket.subject|truncate(30) }}</a>
+                        </td>
+                        <td>
+                            {% if order.status == 'pending_setup' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if order.status == 'active' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if order.status == 'suspended' %}
+                                <span class="badge bg-danger me-1"></span>
+                            {% endif %}
+                            {% if order.status == 'canceled' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(ticket.status) }}
+                        </td>
+                        <td>
+                            <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    var susp = {
+        showSuspendPopup: () => {
+            document.getElementById('suspend_popup').style.display = 'block';
+        },
+        suspendOrder: (url, name) => {
+            var p = {};
+            var inps = document.getElementsByName(name);
+            var value = '';
+
+            for (var i = 0; i < inps.length; i++) {
+            if (inps[i].checked) {
+                value = inps[i].value;
+                break;
+            }
+            }
+
+            p[name] = value;
+            API.makeRequest('GET', Tools.getBaseURL(url), p,
+                (result) => {
+                    return API._afterComplete(document.getElementById('suspend_button'), result);
+                });
+
+            document.getElementById('suspend_popup').style.display = 'none';
+
+            return false;
+        },
+        suspenderHide: () => {
+            document.getElementById('suspend_popup').style.display = 'none';
+        }
+    };
+</script>
+{% endblock %}

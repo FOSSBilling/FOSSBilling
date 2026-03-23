@@ -16,16 +16,15 @@ use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    private readonly Filesystem $filesystem;
 
-    public function __construct(?Filesystem $filesystem = null)
+    public function __construct(private readonly ?Filesystem $filesystem = new Filesystem())
     {
-        $this->filesystem = $filesystem ?? new Filesystem();
     }
 
     public function setDi(\Pimple\Container $di): void
@@ -236,10 +235,11 @@ class Service implements InjectionAwareInterface
 
         foreach ($result as $key => $value) {
             $icon_url = $value['icon_url'] ?? null;
-            if ($icon_url) {
-                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), basename((string) $icon_url));
+            if ($icon_url && isset($value['id'])) {
+                $iconFilename = pathinfo((string) $icon_url, PATHINFO_BASENAME);
+                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), $iconFilename);
                 if ($this->filesystem->exists($iconPath)) {
-                    $result[$key]['icon_path'] = 'mod_' . ucfirst((string) $value['id']) . '_' . basename((string) $icon_url);
+                    $result[$key]['icon_path'] = 'mod_' . ucfirst((string) $value['id']) . '_' . $iconFilename;
                 }
             }
         }
@@ -253,25 +253,24 @@ class Service implements InjectionAwareInterface
     private function _getAvailable(): array
     {
         $mods = [];
-        $handle = opendir(PATH_MODS);
-        while ($name = readdir($handle)) {
-            if ($name && ctype_alnum($name)) {
-                $m = $name;
-                $mod = $this->di['mod']($m);
-                if ($mod->isCore()) {
-                    continue;
-                }
+        $finder = new Finder();
+        $finder->directories()->in(PATH_MODS)->depth('== 0')->name('/^[a-zA-Z0-9]+$/');
 
-                if (!$mod->hasManifest()) {
-                    error_log("Module {$m} manifest file is missing or is not readable.");
-
-                    continue;
-                }
-
-                $mods[] = strtolower($m);
+        foreach ($finder as $dir) {
+            $m = $dir->getBasename();
+            $mod = $this->di['mod']($m);
+            if ($mod->isCore()) {
+                continue;
             }
+
+            if (!$mod->hasManifest()) {
+                error_log("Module {$m} manifest file is missing or is not readable.");
+
+                continue;
+            }
+
+            $mods[] = strtolower($m);
         }
-        closedir($handle);
 
         return $mods;
     }
@@ -345,6 +344,9 @@ class Service implements InjectionAwareInterface
     /**
      * @return \Model_Extension
      */
+    /**
+     * @return \Model_Extension|null
+     */
     public function findExtension($type, $id)
     {
         return $this->di['db']->findOne('Extension', 'type = ? and name = ? ', [$type, $id]);
@@ -358,8 +360,8 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Activate an extension
-     * @param \Model_Extension $ext
+     * Activate an extension.
+     *
      * @return array|array{has_settings: bool, id: string, redirect: bool, type: string}
      */
     public function activate(\Model_Extension $ext): array
@@ -395,10 +397,9 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Deactivate an extension
-     * @param \Model_Extension $ext
+     * Deactivate an extension.
+     *
      * @throws \FOSSBilling\InformationException
-     * @return bool
      */
     public function deactivate(\Model_Extension $ext): bool
     {
@@ -433,10 +434,11 @@ class Service implements InjectionAwareInterface
 
     /**
      * Uninstall a deactivated extension, remove its files from the disk and call $extension->uninstall() to trigger database cleanup.
+     *
      * @param string $type Type of the extension (mod, theme, ...)
-     * @param string $id ID of the extension
+     * @param string $id   ID of the extension
+     *
      * @throws \FOSSBilling\Exception
-     * @return bool
      */
     public function uninstall(string $type, string $id): bool
     {
@@ -456,6 +458,7 @@ class Service implements InjectionAwareInterface
         // Try calling $module->uninstall() for modules to trigger database cleanup
         if ($type === \FOSSBilling\ExtensionManager::TYPE_MOD) {
             $mod = $this->di['mod']($id);
+
             try {
                 $mod->uninstall();
             } catch (\Exception $e) {
@@ -470,6 +473,7 @@ class Service implements InjectionAwareInterface
                 $this->di['logger']->info('Removed extension files for "%s" from %s', $id, $path);
             } catch (IOException $e) {
                 $this->di['logger']->warn('Failed to remove extension files for "%s": %s', $id, $e->getMessage());
+
                 throw new \FOSSBilling\Exception('Failed to remove extension files. Please check file permissions and try again or manually remove the files from :path', [':path' => $path]);
             }
         } else {
@@ -500,7 +504,6 @@ class Service implements InjectionAwareInterface
         $this->filesystem->mkdir($extractedPath, 0o755);
 
         // Download the extension archive and save it to the cache folder
-        $fileHandler = fopen($zipPath, 'w');
         $client = \Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
         $response = $client->request('GET', $latest['download_url']);
 
@@ -509,9 +512,11 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Failed to download the extension with error :code', [':code' => $code]);
         }
 
+        $fileHandler = fopen($zipPath, 'w');
         foreach ($client->stream($response) as $chunk) {
             fwrite($fileHandler, $chunk->getContent());
         }
+        fclose($fileHandler);
 
         // Extract the archive
         $zip = new \PhpZip\ZipFile();
@@ -550,16 +555,16 @@ class Service implements InjectionAwareInterface
 
     public function getInstalledMods()
     {
-        $query = "SELECT name
-                FROM extension
-                WHERE type = 'mod'
-                AND status = 'installed'
-               ";
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($query);
-        $stmt->execute();
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('name')
+            ->from('extension')
+            ->where('type = :type')
+            ->andWhere('status = :status')
+            ->setParameter('type', 'mod')
+            ->setParameter('status', 'installed');
 
-        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+        return $query->executeQuery()->fetchFirstColumn();
     }
 
     private function installModule(\Model_Extension $ext): bool
@@ -678,11 +683,14 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Get the filesystem path for an extension based on its type and ID
-     * @param string $type Extension type
-     * @param string $id Extension ID
-     * @param bool $includeMessagesSubdir Whether to include LC_MESSAGES subdirectory for translations (used during installation)
+     * Get the filesystem path for an extension based on its type and ID.
+     *
+     * @param string $type                  Extension type
+     * @param string $id                    Extension ID
+     * @param bool   $includeMessagesSubdir Whether to include LC_MESSAGES subdirectory for translations (used during installation)
+     *
      * @return string The filesystem path for the extension
+     *
      * @throws \FOSSBilling\Exception If the extension type is not supported
      */
     public function getExtensionPath(string $type, string $id, bool $includeMessagesSubdir = false): string
@@ -708,14 +716,16 @@ class Service implements InjectionAwareInterface
      */
     public function getCoreAndActiveModules(): array
     {
-        $query = "SELECT name, name
-                FROM extension
-                WHERE `type` = 'mod'
-                AND status = 'installed'
-               ";
-        $stmt = $this->di['pdo']->prepare($query);
-        $stmt->execute();
-        $extensions = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('name', 'name')
+            ->from('extension')
+            ->where('type = :type')
+            ->andWhere('status = :status')
+            ->setParameter('type', 'mod')
+            ->setParameter('status', 'installed');
+        $result = $query->executeQuery();
+        $extensions = $result->fetchAllKeyValue();
 
         if (!$extensions) {
             $list = [];
@@ -795,9 +805,9 @@ class Service implements InjectionAwareInterface
             if (!is_null($app)) {
                 echo $app->render('error', ['exception' => $e]);
                 exit;
-            } else {
-                throw $e;
             }
+
+            throw $e;
         }
 
         $module_permissions = $this->getSpecificModulePermissions($module);
@@ -809,9 +819,9 @@ class Service implements InjectionAwareInterface
             if (!is_null($app)) {
                 echo $app->render('error', ['exception' => $e]);
                 exit;
-            } else {
-                throw $e;
             }
+
+            throw $e;
         }
     }
 }

@@ -70,9 +70,9 @@ class PasswordManager
         $hash = password_hash($password, $this->algo, $this->options);
         if (!is_string($hash)) {
             throw new \Exception("Password hashing failed with {$this->algo} and the following options: " . print_r($this->options, true));
-        } else {
-            return $hash;
         }
+
+        return $hash;
     }
 
     public function verify(string $password, string $hash): bool

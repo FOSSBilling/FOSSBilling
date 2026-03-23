@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Hook;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -72,7 +72,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $hookService);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $hookService);
 
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
@@ -190,7 +190,7 @@ final class ServiceTest extends \BBTestCase
         });
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
         $di['validator'] = $validatorMock;
         $this->service->setDi($di);
         $result = $this->service->batchConnect($mod);

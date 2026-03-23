@@ -29,11 +29,53 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $this->di;
     }
 
+    private function getLoadedAssets(): array
+    {
+        if (!$this->di->offsetExists('loaded_assets')) {
+            $this->di['loaded_assets'] = [];
+        }
+
+        return $this->di['loaded_assets'];
+    }
+
+    private function markAssetAsLoaded(string $path): void
+    {
+        $assets = $this->getLoadedAssets();
+        $assets[] = $this->normalizeAssetPath($path);
+        $this->di['loaded_assets'] = $assets;
+    }
+
+    private function isAssetLoaded(string $path): bool
+    {
+        $normalizedPath = $this->normalizeAssetPath($path);
+        $loadedAssets = $this->getLoadedAssets();
+
+        return in_array($normalizedPath, $loadedAssets, true);
+    }
+
+    private function normalizeAssetPath(string $path): string
+    {
+        $path = trim($path);
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            $parsed = parse_url($path);
+            $path = $parsed['path'] ?? $path;
+        }
+
+        $qPos = strpos($path, '?');
+        if ($qPos !== false) {
+            $path = substr($path, 0, $qPos);
+        }
+
+        return ltrim($path, '/\\');
+    }
+
     /**
      * Returns a list of filters to add to the existing list.
      *
      * @return array An array of filters
      */
+    #[Override]
     public function getFilters()
     {
         return [
@@ -42,8 +84,6 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             'alink' => new TwigFilter('alink', $this->twig_bb_admin_link_filter(...), ['is_safe' => ['html']]),
             'link' => new TwigFilter('link', $this->twig_bb_client_link_filter(...), ['is_safe' => ['html']]),
             'autolink' => new TwigFilter('autolink', $this->twig_autolink_filter(...)),
-
-            'gravatar' => new TwigFilter('gravatar', $this->twig_gravatar_filter(...)),
 
             'markdown' => new TwigFilter('markdown', $this->twig_markdown_filter(...), ['needs_environment' => true, 'is_safe' => ['html']]),
 
@@ -74,6 +114,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
             'iplookup' => new TwigFilter('iplookup', $this->ipLookupLink(...), ['is_safe' => ['html']]),
 
+            'hash' => new TwigFilter('hash', $this->twig_hash(...)),
+
             // We override these default twig filters so we can explicitly disable it from calling certain functions that may leak data or allow commands to be executed on the system.
             'filter' => new TwigFilter('filter', $this->filteredFilter(...)),
             'map' => new TwigFilter('map', $this->filteredMap(...)),
@@ -87,10 +129,17 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
      *
      * @return array An array of functions
      */
+    #[Override]
     public function getFunctions()
     {
         return [
+            new TwigFunction('render_widgets', $this->twig_render_widgets(...), ['needs_environment' => true, 'is_safe' => ['html']]),
             new TwigFunction('svg_sprite', $this->twig_svg_sprite(...), ['needs_environment' => true, 'is_safe' => ['html']]),
+
+            // FOSSBilling API functions
+            new TwigFunction('fb_api', $this->fb_api(...), ['is_safe' => ['html']]),
+            new TwigFunction('fb_api_form', $this->fb_api_form(...), ['is_safe' => ['html']]),
+            new TwigFunction('fb_api_link', $this->fb_api_link(...), ['is_safe' => ['html']]),
         ];
     }
 
@@ -102,6 +151,45 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     public function getName(): string
     {
         return 'bb';
+    }
+
+    /**
+     * Part of the Widgets module. Renders the widgets of a specified slot.
+     *
+     * @param Twig\Environment $env     the Twig environment (injected automatically)
+     * @param string           $slot    name of the slot
+     * @param array            $context optional slot context, such as order or client details
+     *
+     * @return string slot content
+     */
+    public function twig_render_widgets(Twig\Environment $env, string $slot, array $context = []): string
+    {
+        $widgets = $this->di['mod_service']('Widgets')->getSlotWidgets($slot);
+
+        if (empty($widgets)) {
+            return '';
+        }
+
+        $output = '';
+
+        foreach ($widgets as $widget) {
+            try {
+                $templateName = 'widgets/' . $widget['template'] . '.html.twig';
+                $output .= $env->render($templateName, $context);
+            } catch (Throwable $e) {
+                // Render error widget on failure
+                $output .= $env->render('widgets/mod_widgets_error.html.twig', array_merge($context, [
+                    'widget' => [
+                        'slot' => $slot,
+                        'mod_name' => $widget['module'],
+                        'template' => $widget['template'],
+                    ],
+                    'error' => FOSSBilling\Environment::isDevelopment() ? $e->getMessage() : null,
+                ]));
+            }
+        }
+
+        return $output;
     }
 
     public function twig_ipcountryname_filter($value)
@@ -207,24 +295,24 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_script_tag($path): string
     {
-        return sprintf('<script type="text/javascript" src="%s?%s"></script>', $path, FOSSBilling\Version::VERSION);
+        if ($this->isAssetLoaded($path)) {
+            return '';
+        }
+
+        $this->markAssetAsLoaded($path);
+
+        return sprintf('<script src="%s?%s"></script>', $path, FOSSBilling\Version::VERSION);
     }
 
     public function twig_stylesheet_tag($path, $media = 'screen'): string
     {
-        return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, FOSSBilling\Version::VERSION, $media);
-    }
-
-    public function twig_gravatar_filter($email, $size = 20): string
-    {
-        if (empty($email)) {
+        if ($this->isAssetLoaded($path)) {
             return '';
         }
 
-        $url = 'https://www.gravatar.com/avatar/';
-        $url .= md5(strtolower(trim((string) $email)));
+        $this->markAssetAsLoaded($path);
 
-        return $url . "?s=$size&d=mp&r=g";
+        return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, FOSSBilling\Version::VERSION, $media);
     }
 
     public function twig_autolink_filter($text): ?string
@@ -317,6 +405,15 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $value;
     }
 
+    public function twig_hash($value, $algo = 'xxh128'): string
+    {
+        if (!in_array($algo, hash_algos(), true)) {
+            throw new InvalidArgumentException(sprintf('Hash algorithm "%s" is not supported.', $algo));
+        }
+
+        return hash($algo, (string) $value);
+    }
+
     public function filteredFilter($array, $arrow)
     {
         if (!$arrow instanceof Closure) {
@@ -402,5 +499,212 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         return file_get_contents($spritePath);
+    }
+
+    /**
+     * Core function for generating data-fb-api attributes.
+     *
+     * @param array $config API configuration
+     *
+     * @return string HTML attribute string
+     *
+     * @throws RuntimeException on invalid configuration
+     */
+    public function fb_api(array $config): string
+    {
+        $config = $this->validateFbApiConfig($config);
+
+        try {
+            $json = json_encode($config, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        } catch (JsonException $e) {
+            error_log('fb_api: failed to encode JSON: ' . $e->getMessage());
+
+            return 'data-fb-api=\'{}\'';
+        }
+
+        return 'data-fb-api=\'' . $json . '\'';
+    }
+
+    /**
+     * Generate data-fb-api attribute for forms, or full <form> tag.
+     *
+     * Usage - just attribute (backward compatible):
+     *   <form method="post" action="{{ 'api/admin/order/update'|link }}" {{ fb_api_form({reload: true}) }}>
+     *       ...fields...
+     *   </form>
+     *
+     * Usage - full tag (simplified):
+     *   {{ fb_api_form({tag: 'form', action: 'api/admin/order/update'|link, reload: true, content: '...fields...'}) }}
+     *
+     * @param array $config Config with optional 'tag', 'action', 'content', and other API options
+     *
+     * @return string HTML attribute string or full <form> tag
+     *
+     * @throws RuntimeException on invalid configuration
+     */
+    public function fb_api_form(array $config = []): string
+    {
+        $tag = $config['tag'] ?? null;
+        $content = $config['content'] ?? '';
+        $action = $config['action'] ?? null;
+        unset($config['tag'], $config['content'], $config['action']);
+
+        $config['type'] = 'form';
+
+        try {
+            $json = json_encode($config, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        } catch (JsonException $e) {
+            throw new RuntimeException('fb_api_form: failed to encode JSON: ' . $e->getMessage());
+        }
+
+        $attr = 'method="post" data-fb-api=\'' . $json . '\'';
+
+        if ($tag === 'form') {
+            $actionAttr = $action ? 'action="' . htmlspecialchars((string) $action, ENT_QUOTES, 'UTF-8') . '" ' : '';
+
+            return '<form ' . $actionAttr . $attr . '>' . $content . '</form>';
+        }
+
+        return $attr;
+    }
+
+    /**
+     * Generate data-fb-api attribute for links, or full <a> tag.
+     *
+     * Usage - just attribute (backward compatible):
+     *   <a href="{{ 'api/admin/client/delete'|link({id: client.id}) }}" {{ fb_api_link({reload: true}) }}>Delete</a>
+     *
+     * Usage - full tag (eliminates duplicate href):
+     *   {{ fb_api_link({tag: 'a', href: 'api/admin/client/delete'|link({id: client.id}), reload: true, content: '<svg class="icon"><use xlink:href="#delete"/></svg><span>Delete</span>'}) }}
+     *
+     * @param array $config Config with optional 'tag', 'href', 'content', and other API options
+     *
+     * @return string HTML attribute string or full <a> tag
+     *
+     * @throws RuntimeException on invalid configuration
+     */
+    public function fb_api_link(array $config): string
+    {
+        $tag = $config['tag'] ?? null;
+        $content = $config['content'] ?? '';
+        $href = $config['href'] ?? null;
+        unset($config['tag'], $config['content']);
+
+        $config['type'] = 'link';
+        $attr = $this->fb_api($config);
+
+        if ($tag === 'a') {
+            $hrefAttr = $href ? 'href="' . htmlspecialchars((string) $href, ENT_QUOTES, 'UTF-8') . '" ' : '';
+
+            return '<a ' . $hrefAttr . $attr . '>' . $content . '</a>';
+        }
+
+        $hrefAttr = $href ? 'href="' . htmlspecialchars((string) $href, ENT_QUOTES, 'UTF-8') . '" ' : '';
+
+        return $hrefAttr . $attr;
+    }
+
+    /**
+     * Validate fb_api configuration and normalize values.
+     *
+     * @param array $config Raw configuration
+     *
+     * @return array Validated and normalized configuration
+     *
+     * @throws RuntimeException on invalid options
+     */
+    private function validateFbApiConfig(array $config): array
+    {
+        $allowedKeys = ['type', 'href', 'endpoint', 'params', 'message', 'redirect', 'reload', 'modal', 'callback'];
+
+        foreach (array_keys($config) as $key) {
+            if (!in_array($key, $allowedKeys, true)) {
+                $suggestion = $this->getClosestMatch($key, $allowedKeys);
+                $hint = $suggestion ? " Did you mean: '{$suggestion}'?" : '';
+
+                throw new RuntimeException("fb_api: unknown option '{$key}'{$hint}");
+            }
+        }
+
+        if (isset($config['modal'])) {
+            $config['modal'] = $this->validateModalConfig($config['modal']);
+        }
+
+        foreach (['href', 'message', 'redirect', 'callback'] as $key) {
+            if (isset($config[$key]) && !is_string($config[$key])) {
+                throw new RuntimeException(sprintf('fb_api: "%s" must be a string', $key));
+            }
+        }
+
+        if (isset($config['reload']) && !is_bool($config['reload'])) {
+            throw new RuntimeException('fb_api: "reload" must be a boolean');
+        }
+
+        if (isset($config['params']) && !is_array($config['params'])) {
+            throw new RuntimeException('fb_api: "params" must be an array');
+        }
+
+        return $config;
+    }
+
+    /**
+     * Validate modal configuration.
+     *
+     * @param array $modal Modal configuration
+     *
+     * @return array Validated modal configuration
+     *
+     * @throws RuntimeException on invalid modal options
+     */
+    private function validateModalConfig(array $modal): array
+    {
+        $allowedModalKeys = ['type', 'title', 'content', 'button', 'buttonColor', 'label', 'value', 'key'];
+
+        foreach (array_keys($modal) as $key) {
+            if (!in_array($key, $allowedModalKeys, true)) {
+                throw new RuntimeException("fb_api.modal: unknown option '{$key}'");
+            }
+        }
+
+        $allowedTypes = ['confirm', 'danger', 'prompt'];
+        $modalType = $modal['type'] ?? null;
+
+        if ($modalType === null) {
+            throw new RuntimeException("fb_api.modal: 'type' is required");
+        }
+
+        if (!in_array($modalType, $allowedTypes, true)) {
+            throw new RuntimeException("fb_api.modal: invalid type '{$modalType}'. Allowed: " . implode(', ', $allowedTypes));
+        }
+
+        if ($modalType === 'prompt' && !isset($modal['key'])) {
+            throw new RuntimeException("fb_api.modal: 'key' is required for 'prompt' type");
+        }
+
+        return $modal;
+    }
+
+    /**
+     * Find closest matching string from a list (for helpful error messages).
+     *
+     * @param string $input   User input
+     * @param array  $options Available options
+     *
+     * @return string|null Closest match or null
+     */
+    private function getClosestMatch(string $input, array $options): ?string
+    {
+        $closest = null;
+        $minDistance = PHP_INT_MAX;
+
+        foreach ($options as $option) {
+            $distance = levenshtein($input, $option);
+            if ($distance < $minDistance && $distance <= 3) {
+                $minDistance = $distance;
+                $closest = $option;
+            }
+        }
+
+        return $closest;
     }
 }

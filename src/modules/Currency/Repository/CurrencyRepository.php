@@ -22,7 +22,6 @@ class CurrencyRepository extends EntityRepository
      * Build a QueryBuilder for searching currencies.
      *
      * @param array $data Array of filters
-     * @return QueryBuilder
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
@@ -40,10 +39,7 @@ class CurrencyRepository extends EntityRepository
     }
 
     /**
-     * Find a currency by its code
-     *
-     * @param string $code
-     * @return Currency|null
+     * Find a currency by its code.
      */
     public function findOneByCode(string $code): ?Currency
     {
@@ -59,8 +55,6 @@ class CurrencyRepository extends EntityRepository
      * Note: Doctrine's identity map provides automatic caching within a request.
      * If the default currency is changed via `Service::setAsDefault()`, that method
      * clears the identity map to ensure subsequent calls return fresh data.
-     *
-     * @return Currency|null
      */
     public function findDefault(): ?Currency
     {
@@ -68,9 +62,7 @@ class CurrencyRepository extends EntityRepository
     }
 
     /**
-     * Get all currency code/title pairs
-     *
-     * @return array
+     * Get all currency code/title pairs.
      */
     public function getPairs(): array
     {
@@ -93,6 +85,7 @@ class CurrencyRepository extends EntityRepository
      * Returns the rate as a float for calculations, or null if currency not found.
      *
      * @param string $code Currency code
+     *
      * @return float|null The conversion rate as a float, or null if not found
      */
     public function getRateByCode(string $code): ?float
@@ -106,13 +99,13 @@ class CurrencyRepository extends EntityRepository
                 ->getSingleScalarResult();
 
             return $rate !== null ? (float) $rate : null;
-        } catch (\Doctrine\ORM\NoResultException | \Doctrine\ORM\NonUniqueResultException) {
+        } catch (\Doctrine\ORM\NoResultException|\Doctrine\ORM\NonUniqueResultException) {
             return null;
         }
     }
 
     /**
-     * Set all currencies to non-default
+     * Set all currencies to non-default.
      *
      * @return int Number of affected rows
      */

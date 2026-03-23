@@ -163,7 +163,7 @@ class ServiceSubscription implements InjectionAwareInterface
         }
 
         if ($search) {
-            $sql .= ' AND sid = :sid OR id = :mid ';
+            $sql .= ' AND (sid = :sid OR id = :mid) ';
             $params[':sid'] = $search;
             $params[':mid'] = $search;
         }
@@ -209,9 +209,9 @@ class ServiceSubscription implements InjectionAwareInterface
             && !empty($list[0]['period'])
         ) {
             return true;
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     public function getSubscriptionPeriod(\Model_Invoice $invoice)

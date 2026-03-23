@@ -3,10 +3,9 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Profile;
-use PHPUnit\Framework\Attributes\DataProvider; 
-use PHPUnit\Framework\Attributes\Group;
 
 use Box\Mod\Profile\Service;
+use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase

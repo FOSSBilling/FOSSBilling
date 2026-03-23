@@ -10,8 +10,8 @@
  */
 class Model_Invoice extends RedBeanPHP\SimpleModel
 {
-    final public const STATUS_PAID = 'paid';
-    final public const STATUS_UNPAID = 'unpaid';
-    final public const STATUS_REFUNDED = 'refunded';
-    final public const STATUS_CANCELED = 'canceled';
+    final public const string STATUS_PAID = 'paid';
+    final public const string STATUS_UNPAID = 'unpaid';
+    final public const string STATUS_REFUNDED = 'refunded';
+    final public const string STATUS_CANCELED = 'canceled';
 }

@@ -10,15 +10,15 @@
  */
 class Model_SupportTicket extends RedBeanPHP\SimpleModel
 {
-    final public const OPENED = 'open';
-    final public const ONHOLD = 'on_hold';
-    final public const CLOSED = 'closed';
+    final public const string OPENED = 'open';
+    final public const string ONHOLD = 'on_hold';
+    final public const string CLOSED = 'closed';
 
-    final public const REL_TYPE_ORDER = 'order';
+    final public const string REL_TYPE_ORDER = 'order';
 
-    final public const REL_STATUS_PENDING = 'pending';
-    final public const REL_STATUS_COMPLETE = 'complete';
+    final public const string REL_STATUS_PENDING = 'pending';
+    final public const string REL_STATUS_COMPLETE = 'complete';
 
-    final public const REL_TASK_CANCEL = 'cancel';
-    final public const REL_TASK_UPGRADE = 'upgrade';
+    final public const string REL_TASK_CANCEL = 'cancel';
+    final public const string REL_TASK_UPGRADE = 'upgrade';
 }

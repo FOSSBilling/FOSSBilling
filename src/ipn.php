@@ -18,12 +18,18 @@ $di['translate']();
 
 $filesystem = new Filesystem();
 
-$invoiceID = $_POST['invoice_id'] ?? $_GET['invoice_id'] ?? $_POST['bb_invoice_id'] ?? $_GET['bb_invoice_id'] ?? null;
+$invoiceID = $_POST['invoice_id'] ?? $_GET['invoice_id'] ?? null;
 
-$gatewayID = $_POST['gateway_id'] ?? $_GET['gateway_id'] ?? $_POST['bb_gateway_id'] ?? $_GET['bb_gateway_id'] ?? null;
+$gatewayID = $_POST['gateway_id'] ?? $_GET['gateway_id'] ?? null;
 
-$_GET['bb_invoice_id'] = $invoiceID;
-$_GET['bb_gateway_id'] = $gatewayID;
+if ($gatewayID !== null) {
+    $gatewayID = filter_var($gatewayID, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    if ($gatewayID === false) {
+        http_response_code(400);
+        echo json_encode(['error' => ['message' => 'Invalid gateway ID']]);
+        exit;
+    }
+}
 
 $ipn = [
     'skip_validation' => true,
@@ -45,8 +51,8 @@ try {
 }
 
 // redirect to invoice if gateways requires
-if (isset($_GET['redirect'], $_GET['invoice_hash']) || isset($_GET['bb_redirect'], $_GET['bb_invoice_hash'])) {
-    $hash = $_GET['invoice_hash'] ?? $_GET['bb_invoice_hash'];
+if (isset($_GET['redirect'], $_GET['invoice_hash'])) {
+    $hash = $_GET['invoice_hash'];
     $url = $di['url']->link('invoice/' . $hash);
     header("Location: $url");
     exit;

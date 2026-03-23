@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -177,7 +177,7 @@ final class ServicePayGatewayTest extends \BBTestCase
             'description' => null,
             'enabled' => null,
             'test_mode' => null,
-            'callback' => 'https://localhost/ipn.php?',
+            'callback' => SYSTEM_URL . 'ipn.php?',
         ];
 
         $di = $this->getDi();

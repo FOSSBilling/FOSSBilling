@@ -9,7 +9,7 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use DebugBar\Bridge\NamespacedTwigProfileCollector;
+use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use FOSSBilling\Environment;
 use FOSSBilling\TwigExtensions\DebugBar;
 use Symfony\Component\Filesystem\Path;
@@ -39,6 +39,7 @@ class Box_AppAdmin extends Box_App
         }
     }
 
+    #[Override]
     public function render($fileName, $variableArray = []): string
     {
         $template = $this->getTwig()->load(Path::changeExtension($fileName, '.html.twig'));
@@ -46,6 +47,7 @@ class Box_AppAdmin extends Box_App
         return $template->render($variableArray);
     }
 
+    #[Override]
     public function redirect($path): never
     {
         $location = $this->di['url']->adminLink($path);

@@ -3,21 +3,8 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Stats;
-use PHPUnit\Framework\Attributes\DataProvider; 
-use PHPUnit\Framework\Attributes\Group;
 
-class PdoMock extends \PDO
-{
-    public function __construct()
-    {
-    }
-}
-class PdoStatmentsMock extends \PDOStatement
-{
-    public function __construct()
-    {
-    }
-}
+use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
@@ -57,13 +44,18 @@ final class ServiceTest extends \BBTestCase
     {
         $data = [];
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAll')
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->atLeastOnce())
+            ->method('fetchAllAssociative')
             ->willReturn([]);
 
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->atLeastOnce())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
+
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
 
         $this->service->setDi($di);
         $result = $this->service->getProductSummary($data);
@@ -72,10 +64,19 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetSummary(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
-            ->getMock();
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('execute');
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->atLeastOnce())
+            ->method('fetchOne')
+            ->willReturn(null);
+
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->atLeastOnce())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
+
+        $di = $this->getDi();
+        $di['dbal'] = $dbalMock;
+        $this->service->setDi($di);
 
         $expected = [
             'clients_total' => null,
@@ -102,17 +103,6 @@ final class ServiceTest extends \BBTestCase
             'tickets_this_month' => null,
             'tickets_last_month' => null,
         ];
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('fetchColumn');
-
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatmentMock);
-
-        $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
-        $this->service->setDi($di);
 
         $result = $this->service->getSummary();
         $this->assertIsArray($result);
@@ -121,20 +111,18 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetSummaryIncome(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
-            ->getMock();
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('execute');
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('fetchColumn');
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->atLeastOnce())
+            ->method('fetchOne')
+            ->willReturn(null);
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatmentMock);
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->atLeastOnce())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
 
         $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $di['dbal'] = $dbalMock;
         $this->service->setDi($di);
 
         $expected = [
@@ -152,25 +140,19 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetProductSales(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
-            ->getMock();
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('execute');
-
-        $res = [
-            'testProduct' => 1,
-        ];
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('fetchAll')
+        $res = ['testProduct' => 1];
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->atLeastOnce())
+            ->method('fetchAllKeyValue')
             ->willReturn($res);
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatmentMock);
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->atLeastOnce())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
 
         $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $di['dbal'] = $dbalMock;
         $this->service->setDi($di);
 
         $data = [
@@ -183,28 +165,24 @@ final class ServiceTest extends \BBTestCase
 
     public function testIncomeAndRefundStats(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
-            ->getMock();
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('execute');
-
         $res = [
             [
                 'refund' => 0,
                 'income' => 0,
             ],
         ];
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('fetchAll')
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->atLeastOnce())
+            ->method('fetchAllAssociative')
             ->willReturn($res);
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatmentMock);
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->atLeastOnce())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
 
         $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $di['dbal'] = $dbalMock;
         $this->service->setDi($di);
 
         $result = $this->service->incomeAndRefundStats([]);
@@ -214,22 +192,18 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetRefunds(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
-            ->getMock();
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('execute');
-
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('fetchAll')
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->atLeastOnce())
+            ->method('fetchAllKeyValue')
             ->willReturn([]);
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatmentMock);
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->atLeastOnce())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
 
         $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $di['dbal'] = $dbalMock;
 
         $this->service->setDi($di);
 
@@ -243,22 +217,18 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetIncome(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
-            ->getMock();
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('execute');
-
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('fetchAll')
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->atLeastOnce())
+            ->method('fetchAllKeyValue')
             ->willReturn([]);
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatmentMock);
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->atLeastOnce())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
 
         $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $di['dbal'] = $dbalMock;
 
         $this->service->setDi($di);
 
@@ -272,22 +242,18 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetClientCountries(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
-            ->getMock();
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('execute');
-
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('fetchAll')
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->atLeastOnce())
+            ->method('fetchAllKeyValue')
             ->willReturn([]);
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatmentMock);
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->atLeastOnce())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
 
         $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $di['dbal'] = $dbalMock;
 
         $this->service->setDi($di);
 
@@ -297,22 +263,18 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetSalesByCountry(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
-            ->getMock();
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('execute');
-
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('fetchAll')
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->atLeastOnce())
+            ->method('fetchAllKeyValue')
             ->willReturn([]);
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatmentMock);
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->atLeastOnce())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
 
         $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $di['dbal'] = $dbalMock;
 
         $this->service->setDi($di);
 
@@ -322,22 +284,18 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetTableStats(): void
     {
-        $pdoStatmentMock = $this->getMockBuilder(PdoStatmentsMock::class)
-            ->getMock();
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('execute');
-
-        $pdoStatmentMock->expects($this->atLeastOnce())
-            ->method('fetchAll')
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->atLeastOnce())
+            ->method('fetchAllKeyValue')
             ->willReturn([]);
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatmentMock);
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->atLeastOnce())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
 
         $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+        $di['dbal'] = $dbalMock;
 
         $this->service->setDi($di);
 
@@ -345,7 +303,7 @@ final class ServiceTest extends \BBTestCase
             'date_from' => 'yesterday',
             'date_to' => 'now',
         ];
-        $result = $this->service->getTableStats('TableName', $data);
+        $result = $this->service->getTableStats('client', $data);
         $this->assertIsArray($result);
     }
 }

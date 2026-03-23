@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable;
-use PHPUnit\Framework\Attributes\DataProvider; 
+
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    protected ?Service $service;
+    protected ?Service $service = null;
 
     public function setUp(): void
     {
@@ -34,9 +34,7 @@ final class ServiceTest extends \BBTestCase
 
         $expected = array_merge(json_decode($productModel->config ?? '', true), $data);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
@@ -55,7 +53,7 @@ final class ServiceTest extends \BBTestCase
         $model = new \Model_ServiceDownloadable();
         $model->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($model);
@@ -63,9 +61,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(1);
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -85,13 +81,13 @@ final class ServiceTest extends \BBTestCase
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceDownloadable());
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->service->setDi($di);
         $this->service->action_delete($clientOrderModel);
@@ -107,7 +103,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename": "test.txt"}';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
@@ -140,7 +136,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename": "existing.txt", "update_orders": true}';
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
@@ -173,7 +169,7 @@ final class ServiceTest extends \BBTestCase
         $productModel->loadBean(new \DummyBean());
         $productModel->config = null;
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->with($productModel)
@@ -189,9 +185,44 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
 
         // Verify the config was created correctly
-        $updatedConfig = json_decode($productModel->config, true);
+        $updatedConfig = json_decode($productModel->config ?? '', true);
         $this->assertIsArray($updatedConfig);
+        $this->assertArrayHasKey('update_orders', $updatedConfig);
         $this->assertTrue($updatedConfig['update_orders']);
         $this->assertNotNull($productModel->updated_at);
+    }
+
+    public function testValidateFileUploadAllowsKnownExtensionWithOctetStreamMime(): void
+    {
+        $this->service->setDi($this->getDi());
+
+        $file = $this->createMock(\Symfony\Component\HttpFoundation\File\UploadedFile::class);
+        $file->method('getClientOriginalExtension')->willReturn('exe');
+        $file->method('getClientOriginalName')->willReturn('installer.exe');
+        $file->method('getMimeType')->willReturn('application/octet-stream');
+
+        $this->invokeValidateFileUpload($file);
+
+        $this->addToAssertionCount(1);
+    }
+
+    public function testValidateFileUploadRejectsUnknownExtension(): void
+    {
+        $this->service->setDi($this->getDi());
+
+        $file = $this->createMock(\Symfony\Component\HttpFoundation\File\UploadedFile::class);
+        $file->method('getClientOriginalExtension')->willReturn('php');
+        $file->method('getClientOriginalName')->willReturn('shell.php');
+        $file->method('getMimeType')->willReturn('application/x-httpd-php');
+
+        $this->expectException(\FOSSBilling\Exception::class);
+
+        $this->invokeValidateFileUpload($file);
+    }
+
+    private function invokeValidateFileUpload(\Symfony\Component\HttpFoundation\File\UploadedFile $file): void
+    {
+        $reflection = new \ReflectionMethod(Service::class, 'validateFileUpload');
+        $reflection->invoke($this->service, $file);
     }
 }

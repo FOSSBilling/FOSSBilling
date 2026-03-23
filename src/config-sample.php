@@ -9,12 +9,12 @@
  * Import /install/sql/content.sql to your database
  * Open browser https://www.yourdomain.com/admin to create a new admin account.
  * Remove /install directory
- * 
+ *
  * For more information, see the documentation: https://fossbilling.org/docs/customizing-fossbilling/config
  */
 
 return [
-    /* 
+    /*
      * These configuration options allow you to configure the security options inside of FOSSBilling.
      * The default values are what we recommended running unless they are causing issues.
      */
@@ -61,7 +61,7 @@ return [
     'url' => 'localhost/',
 
     /*
-     * The URL prefix to access the BB admin area. Ex: '/admin' for https://example.com/admin.
+     * The URL prefix to access the admin area. Ex: '/admin' for https://example.com/admin.
      */
     'admin_area_prefix' => '/admin',
 
@@ -97,7 +97,7 @@ return [
      */
     'disable_auto_cron' => true,
 
-    /* 
+    /*
      * These configuration options allow you to configure the default localisation.
      */
     'i18n' => [
@@ -109,7 +109,7 @@ return [
         'date_format' => 'medium',
         'time_format' => 'short',
 
-        // Specifying a pattern will override the above date/time options. 
+        // Specifying a pattern will override the above date/time options.
         // @see https://unicode-org.github.io/icu/userguide/format_parse/datetime/#datetime-format-syntax
         'datetime_pattern' => '',
     ],
@@ -123,7 +123,7 @@ return [
         /*
          * Database type. Don't change this if in doubt.
          */
-        'type' => 'mysql',
+        'driver' => 'pdo_mysql',
 
         /*
          * Database hostname. Don't change this if in doubt.

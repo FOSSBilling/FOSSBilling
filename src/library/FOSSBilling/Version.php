@@ -14,11 +14,11 @@ namespace FOSSBilling;
 
 final class Version
 {
-    public const VERSION = '0.0.1';
-    public const PATCH = 0;
-    public const MINOR = 1;
-    public const MAJOR = 2;
-    public const semverRegex = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
+    public const string VERSION = '0.0.1';
+    public const int PATCH = 0;
+    public const int MINOR = 1;
+    public const int MAJOR = 2;
+    public const string semverRegex = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
 
     /**
      * Compare the specified FOSSBilling version string $version
@@ -57,19 +57,18 @@ final class Version
             // We are still in pre-release status, so handle the version increments differently
             if ($new[1] !== $current[1]) {
                 return self::MAJOR;
-            } else {
-                return self::MINOR;
             }
-        } else {
-            // We aren't in pre-production anymore, so treat it using normal semver practices
-            if ($new[0] !== $current[0]) {
-                return self::MAJOR;
-            } elseif ($new[1] !== $current[1]) {
-                return self::MINOR;
-            } else {
-                return self::PATCH;
-            }
+
+            return self::MINOR;
         }
+        // We aren't in pre-production anymore, so treat it using normal semver practices
+        if ($new[0] !== $current[0]) {
+            return self::MAJOR;
+        } elseif ($new[1] !== $current[1]) {
+            return self::MINOR;
+        }
+
+        return self::PATCH;
     }
 
     public static function isPreviewVersion(string $version = Version::VERSION): bool

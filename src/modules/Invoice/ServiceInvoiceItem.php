@@ -148,7 +148,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->quantity = $data['quantity'] ?? 1;
         $pi->unit = $data['unit'] ?? null;
         $pi->charged = $data['charged'] ?? 0;
-        $pi->price = (float) $data['price'] ?? 0;
+        $pi->price = (float) ($data['price'] ?? 0);
         $pi->taxed = $data['taxed'] ?? false;
         $pi->created_at = date('Y-m-d H:i:s');
         $pi->updated_at = date('Y-m-d H:i:s');
@@ -349,10 +349,12 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $sql = 'SELECT invoice_item.*
                 FROM invoice_item
                   left join invoice on invoice_item.invoice_id = invoice.id
-                WHERE invoice_item.status != :item_status and invoice.status = :invoice_status';
+                WHERE invoice_item.status != :item_status and invoice.status = :invoice_status
+                AND (invoice.paid_at IS NULL OR invoice.paid_at <= :cutoff_time)';
         $bindings = [
             ':item_status' => \Model_InvoiceItem::STATUS_EXECUTED,
             ':invoice_status' => \Model_Invoice::STATUS_PAID,
+            ':cutoff_time' => date('Y-m-d H:i:s', strtotime('-10 minutes')),
         ];
 
         return $this->di['db']->getAll($sql, $bindings);

@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 5.5.38, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.13  Distrib 8.0, for Linux (x86_64)
 --
--- Host: localhost    Database: boxbilling
+-- Host: localhost    Database: fossbilling
 -- ------------------------------------------------------
--- Server version	5.5.38-0ubuntu0.14.04.1
+-- Server version	8.0.x
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -28,7 +28,7 @@ CREATE TABLE `activity_admin_history` (
   `created_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `admin_id_idx` (`admin_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -48,7 +48,7 @@ CREATE TABLE `activity_client_email` (
   `created_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -64,7 +64,7 @@ CREATE TABLE `activity_client_history` (
   `created_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -84,7 +84,7 @@ CREATE TABLE `activity_system` (
   PRIMARY KEY (`id`),
   KEY `admin_id_idx` (`admin_id`),
   KEY `client_id_idx` (`client_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -145,7 +145,7 @@ CREATE TABLE `admin_password_reset` (
     `updated_at` datetime DEFAULT NULL,
     PRIMARY KEY (`id`),
     KEY `admin_id_idx` (`admin_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -234,7 +234,7 @@ CREATE TABLE `client` (
   `state` varchar(100) DEFAULT NULL,
   `postcode` varchar(100) DEFAULT NULL,
   `country` varchar(100) DEFAULT NULL,
-  `document_type` ENUM('passport') DEFAULT NULL,
+  `document_type` varchar(50) DEFAULT NULL,
   `document_nr` varchar(20) DEFAULT NULL,
   `notes` text,
   `currency` varchar(10) DEFAULT NULL,
@@ -723,7 +723,7 @@ CREATE TABLE `post` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `admin_id` bigint(20) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
-  `description` text DEFAULT NULL,
+  `description` text,
   `content` text,
   `slug` varchar(255) DEFAULT NULL,
   `status` varchar(30) DEFAULT 'draft' COMMENT 'active, draft',
@@ -1074,7 +1074,7 @@ CREATE TABLE `service_hosting_server` (
   `username` text,
   `password` text,
   `accesshash` text,
-  `password_length` tinyint DEFAULT NULL,
+  `password_length` tinyint(4) DEFAULT NULL,
   `port` varchar(20) DEFAULT NULL,
   `config` text,
   `secure` tinyint(1) DEFAULT NULL,
@@ -1419,12 +1419,14 @@ CREATE TABLE `transaction` (
   `error_code` int(11) DEFAULT NULL,
   `validate_ipn` tinyint(1) DEFAULT '1',
   `ipn` text,
+  `ipn_hash` varchar(64) DEFAULT NULL,
   `output` text,
   `note` text,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `invoice_id_idx` (`invoice_id`)
+  KEY `invoice_id_idx` (`invoice_id`),
+  KEY `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

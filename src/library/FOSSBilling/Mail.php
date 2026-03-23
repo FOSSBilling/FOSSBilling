@@ -32,8 +32,6 @@ class Mail
      * @param string       $bodyHTML  the HTML content of the email body
      * @param string|null  $transport (optional) The name of the transport to use for sending the email
      * @param string|null  $dsn       (optional) The DSN to use for sending the email. (See: https://symfony.com/doc/current/mailer.html#using-a-3rd-party-transport)
-     *
-     * @return void
      */
     public function __construct(array|string $from, array|string $to, string $subject, string $bodyHTML, ?string $transport, ?string $dsn = null)
     {
@@ -191,8 +189,8 @@ class Mail
             $authString = !empty($pass) ? $username . ':' . $pass : $username;
 
             return "smtp://$authString@" . $host . ':' . $options['smtp_port'];
-        } else {
-            return 'smtp://' . $host . ':' . $options['smtp_port'];
         }
+
+        return 'smtp://' . $host . ':' . $options['smtp_port'];
     }
 }

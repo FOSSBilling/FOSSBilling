@@ -114,9 +114,9 @@ class Server_Manager_Directadmin extends Server_Manager
 
         if (filter_var($port, FILTER_VALIDATE_INT) !== false && $port >= 0 && $port <= 65535) {
             return $this->_config['port'];
-        } else {
-            return 2222;
         }
+
+        return 2222;
     }
 
     /**
@@ -418,9 +418,9 @@ class Server_Manager_Directadmin extends Server_Manager
         } catch (Exception $e) {
             if (strtolower($e->getMessage()) == strtolower(sprintf('Server Manager DirectAdmin Error: "%s" ', 'That domain already exists'))) {
                 return true;
-            } else {
-                throw new Server_Exception($e->getMessage());
             }
+
+            throw new Server_Exception($e->getMessage());
         }
 
         if (str_contains(implode('', $results), 'Unable to assign the Reseller ANY ips')) {
@@ -493,6 +493,7 @@ class Server_Manager_Directadmin extends Server_Manager
      *
      * @throws RandomException
      */
+    #[Override]
     public function generateUsername(string $domain): string
     {
         $prefix = $this->_config['config']['userprefix'] ?? '';

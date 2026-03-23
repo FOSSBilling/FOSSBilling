@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace Box\Mod\Extension;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\Filesystem\Filesystem;
@@ -235,17 +236,47 @@ final class ServiceTest extends \BBTestCase
             ->method('hasPermission')
             ->willReturn(true);
 
-        $pdoStatment = $this->createMock(PdoStatmentsMock::class);
-        $pdoStatment->expects($this->atLeastOnce())
-            ->method('execute');
-        $pdoStatment->expects($this->atLeastOnce())
-            ->method('fetchAll')
-            ->willReturn([]);
+        $dbalMock = new class {
+            public function createQueryBuilder(): object
+            {
+                return new class {
+                    public function select($field)
+                    {
+                        return $this;
+                    }
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatment);
+                    public function from($table)
+                    {
+                        return $this;
+                    }
+
+                    public function where($cond)
+                    {
+                        return $this;
+                    }
+
+                    public function andWhere($cond)
+                    {
+                        return $this;
+                    }
+
+                    public function setParameter($key, $val)
+                    {
+                        return $this;
+                    }
+
+                    public function executeQuery()
+                    {
+                        return $this;
+                    }
+
+                    public function fetchFirstColumn(): array
+                    {
+                        return [];
+                    }
+                };
+            }
+        };
 
         $link = 'extension';
 
@@ -253,7 +284,6 @@ final class ServiceTest extends \BBTestCase
         $urlMock->expects($this->atLeastOnce())
             ->method('adminLink')
             ->willReturn('http://fossbilling.org/index.php?_url=/' . $link);
-        $di['url'] = $urlMock;
 
         $di = $this->getDi();
         $di['mod'] = $di->protect(function ($name) use ($di) {
@@ -266,16 +296,15 @@ final class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(function ($mod) use ($extensionServiceMock, $staffServiceMock) {
             if ($mod == 'staff') {
                 return $staffServiceMock;
-            } else {
-                return $extensionServiceMock;
             }
+
+            return $extensionServiceMock;
         });
-        $di['pdo'] = $pdoMock;
         $di['url'] = $urlMock;
+        $di['dbal'] = $dbalMock;
 
         $this->service->setDi($di);
         $result = $this->service->getAdminNavigation(new \Model_Admin());
-
         $this->assertIsArray($result);
     }
 
@@ -498,14 +527,14 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
 
         // Only mock getExtensionPath to return our temp dir, let other methods work normally
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)
+        $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getExtensionPath'])
             ->setConstructorArgs([$this->filesystemMock])
             ->getMock();
 
         // Create temp directory that actually exists for the first test
         $tmpDir = sys_get_temp_dir() . '/fb_test_ext_' . uniqid();
-        mkdir($tmpDir, 0755, true);
+        mkdir($tmpDir, 0o755, true);
 
         // Configure getExtensionPath to return the temp directory
         $serviceMock->expects($this->atLeastOnce())
@@ -566,20 +595,50 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetInstalledMods(): void
     {
-        $pdoStatment = $this->createMock(PdoStatmentsMock::class);
-        $pdoStatment->expects($this->atLeastOnce())
-            ->method('execute');
-        $pdoStatment->expects($this->atLeastOnce())
-            ->method('fetchAll')
-            ->willReturn([]);
+        $dbalMock = new class {
+            public function createQueryBuilder(): object
+            {
+                return new class {
+                    public function select($field)
+                    {
+                        return $this;
+                    }
 
-        $pdoMock = $this->createMock(PdoMock::class);
-        $pdoMock->expects($this->atLeastOnce())
-            ->method('prepare')
-            ->willReturn($pdoStatment);
+                    public function from($table)
+                    {
+                        return $this;
+                    }
 
-        $di = $this->getDi();
-        $di['pdo'] = $pdoMock;
+                    public function where($cond)
+                    {
+                        return $this;
+                    }
+
+                    public function andWhere($cond)
+                    {
+                        return $this;
+                    }
+
+                    public function setParameter($key, $val)
+                    {
+                        return $this;
+                    }
+
+                    public function executeQuery()
+                    {
+                        return $this;
+                    }
+
+                    public function fetchFirstColumn(): array
+                    {
+                        return [];
+                    }
+                };
+            }
+        };
+
+        $di = new \Pimple\Container();
+        $di['dbal'] = $dbalMock;
 
         $this->service->setDi($di);
         $result = $this->service->getInstalledMods();

@@ -31,7 +31,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['name' => 'Form name was not provided'])]
     public function create_form($data)
     {
-        if (isset($data['type']) && (strtolower($data['type']) != 'horizontal' || strtolower($data['type']) != 'default')) {
+        if (isset($data['type']) && !in_array(strtolower($data['type']), ['horizontal', 'default'])) {
             throw new \FOSSBilling\Exception('Form style was not found in predefined list', null, 3657);
         }
 

@@ -14,9 +14,9 @@ abstract class BBDatabaseTestCase extends TestCase
     {
         if ($this->conn === null) {
             if (self::$pdo == null) {
-                self::$pdo = new PDO('mysql:dbname=' . BB_DB_NAME . ';host=127.0.0.1;port=' . BB_DB_PORT, BB_DB_USER, BB_DB_PASSWORD);
+                self::$pdo = new PDO('mysql:dbname=' . FB_DB_NAME . ';host=127.0.0.1;port=' . FB_DB_PORT, FB_DB_USER, FB_DB_PASSWORD);
             }
-            $this->conn = $this->createDefaultDBConnection(self::$pdo, BB_DB_NAME);
+            $this->conn = $this->createDefaultDBConnection(self::$pdo, FB_DB_NAME);
         }
 
         return $this->conn;

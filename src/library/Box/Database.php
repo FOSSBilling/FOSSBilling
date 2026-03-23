@@ -105,9 +105,9 @@ class Box_Database implements InjectionAwareInterface
     {
         if (is_null($sql)) {
             return $this->orm->findAll($table);
-        } else {
-            return $this->orm->findAll($table, $sql, $bindings);
         }
+
+        return $this->orm->findAll($table, $sql, $bindings);
     }
 
     /**
@@ -155,16 +155,6 @@ class Box_Database implements InjectionAwareInterface
         }
 
         return $this->orm->trash($bean);
-    }
-
-    public function getInsertID()
-    {
-        return $this->di['pdo']->lastInsertId();
-    }
-
-    public function getColumns($table)
-    {
-        return $this->orm->getColumns($table);
     }
 
     public function toArray($modelOrBean)

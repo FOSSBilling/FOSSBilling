@@ -28,7 +28,7 @@ FOSSBilling is a free and open-source billing and client management solution des
   * [Tom Select](https://tom-select.js.org/): Enhanced select boxes with search and tagging
   * [Autosize](http://www.jacklmoore.com/autosize/): Automatic textarea resizing
   * [Flag Icons](https://flagicons.lipis.dev/): Country flag icon library
-  * jQuery is being slowly phased out. Avoid it and use vanilla JavaScript for new pieces of code.
+  * jQuery has been fully removed from the codebase. Use vanilla JavaScript for all new code.
 * **Build Tools:**
   * [esbuild](https://esbuild.github.io/): Fast JavaScript/CSS bundler and minifier
   * [Sass](https://sass-lang.com/): CSS preprocessing
@@ -64,6 +64,8 @@ The application uses a modern PHP architecture with dependency injection, event-
 * **Composer** for PHP dependency management
 * **Node.js and npm** for frontend asset management
 * **MySQL/MariaDB** database server
+
+**Important:** If PHP is not installed or configured on the system, try using `ddev` to manage the development environment and run PHP/Composer commands.
 
 ### Dependencies
 
@@ -212,9 +214,9 @@ tests-legacy/                  # Legacy PHPUnit tests
   * It automatically appends the CSRFToken parameter to the request data, you don't need to define it additionally.
 * If you are using an HTML form to put/update data, you should use the `api-form` convention.
   * For details on how it works, examine the /src/themes/admin_default/assets/js/fossbilling.js file, especially the `apiForm` method.
-  * You can read other modules' html_admin templates to see how it's used
+  * You can read other modules' templates/admin templates to see how it's used
   * The `api-form` can handle most of the create/update tasks, so try using it before resorting to manual API calls.
-* You also should use `api-link` wherever you can when making simple API calls. Read other modules' html_admin templates to see how it's used
+* You also should use `api-link` wherever you can when making simple API calls. Read other modules' templates/admin templates to see how it's used
 
 ### Contributing Workflow
 

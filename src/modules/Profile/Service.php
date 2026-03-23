@@ -12,6 +12,7 @@
 namespace Box\Mod\Profile;
 
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Tools;
 
 class Service implements InjectionAwareInterface
 {
@@ -137,6 +138,14 @@ class Service implements InjectionAwareInterface
             $client->email = $email;
         }
 
+        if (isset($data['phone_cc'])) {
+            $client->phone_cc = Tools::validatePhoneCC($data['phone_cc']);
+        }
+
+        if (isset($data['phone']) && is_string($data['phone'])) {
+            $client->phone = Tools::validatePhoneNumber($data['phone']);
+        }
+
         $client->first_name = $data['first_name'] ?? $client->first_name;
         $client->last_name = $data['last_name'] ?? $client->last_name;
         $client->gender = ClientValidator::validateGender($data['gender'] ?? $client->gender);
@@ -147,8 +156,6 @@ class Service implements InjectionAwareInterface
         $client->type = $data['type'] ?? $client->type;
         $client->address_1 = $data['address_1'] ?? $client->address_1;
         $client->address_2 = $data['address_2'] ?? $client->address_2;
-        $client->phone_cc = $data['phone_cc'] ?? $client->phone_cc;
-        $client->phone = $data['phone'] ?? $client->phone;
         $client->country = $data['country'] ?? $client->country;
         $client->postcode = $data['postcode'] ?? $client->postcode;
         $client->city = $data['city'] ?? $client->city;
@@ -270,27 +277,39 @@ class Service implements InjectionAwareInterface
 
     private function deleteSessionIfMatching(array $session, string $type, int $id): void
     {
-        // Decode the data for the current session and then verify it is for the selected type
         $data = base64_decode((string) $session['content']);
         $stringStart = ($type === 'admin') ? 'admin|' : 'client_id|';
         if (!str_starts_with($data, $stringStart)) {
             return;
         }
 
-        // Now we strip off the starting portion so we can unserialize the data
         $data = str_replace($stringStart, '', $data);
 
-        // Finally, perform the check depending on what type of session we are looking for and trash it if it's a match
         if ($type === 'admin') {
-            $dataArray = unserialize($data);
-            if ($dataArray['id'] === $id) {
+            $dataArray = $this->phpSessionDecode($data);
+            if (is_array($dataArray) && isset($dataArray['id']) && (int) $dataArray['id'] === $id) {
                 $this->trashSessionByArray($session);
             }
         } else {
-            if (unserialize($data) === $id) {
+            $clientId = $this->phpSessionDecode($data);
+            if (is_int($clientId) && $clientId === $id) {
                 $this->trashSessionByArray($session);
             }
         }
+    }
+
+    private function phpSessionDecode(string $data): array|int|false
+    {
+        if ($data === '' || !in_array($data[0], ['a', 'i'], true)) {
+            return false;
+        }
+
+        $result = unserialize($data, ['allowed_classes' => false]);
+        if (is_array($result) || is_int($result)) {
+            return $result;
+        }
+
+        return false;
     }
 
     private function trashSessionByArray(array $session): void

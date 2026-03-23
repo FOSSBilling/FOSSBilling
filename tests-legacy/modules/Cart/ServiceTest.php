@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 namespace Box\Tests\Mod\Cart;
-use PHPUnit\Framework\Attributes\DataProvider; 
-use PHPUnit\Framework\Attributes\Group;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
 
 #[Group('Core')]
@@ -75,8 +75,6 @@ final class ServiceTest extends \BBTestCase
 
     public static function getSessionCartDoesNotExistProvider(): array
     {
-        
-
         return [
             [
                 100,
@@ -92,7 +90,7 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('getSessionCartDoesNotExistProvider')]
-    public function testGetSessionCartDoesNotExist(?int $sessionGetWillReturn, $getCurrencyByClientIdExpects, $getDefaultExpects): void
+    public function testGetSessionCartDoesNotExist(?int $sessionGetWillReturn, string $getCurrencyByClientIdExpects, string $getDefaultExpects): void
     {
         $service = new \Box\Mod\Cart\Service();
 
@@ -129,7 +127,7 @@ final class ServiceTest extends \BBTestCase
             ->method('get')
             ->willReturn($sessionGetWillReturn);
 
-$currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
         if ($sessionGetWillReturn === null) {
@@ -806,7 +804,7 @@ $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Reposit
         $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
-        $serviceHostingServiceMock = $this->getMockBuilder('\Box\Mod\Servicehosting')->getMock();
+        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing'])
@@ -817,7 +815,7 @@ $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Reposit
 
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
             ->willThrowException(new \FOSSBilling\Exception('Period parameter not passed'));
@@ -845,7 +843,7 @@ $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Reposit
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $serviceHostingServiceMock = $this->getMockBuilder('\Box\Mod\Servicehosting')->getMock();
+        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isPeriodEnabledForProduct'])
@@ -859,10 +857,10 @@ $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Reposit
 
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-            ;
+        ;
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);
@@ -887,7 +885,7 @@ $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Reposit
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $serviceHostingServiceMock = $this->getMockBuilder('\Box\Mod\Servicehosting')->getMock();
+        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isStockAvailable'])
@@ -1105,7 +1103,7 @@ $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Reposit
             ->method('toApiArray')
             ->willReturn([]);
 
-$currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
         $currencyRepositoryMock->expects($this->atLeastOnce())

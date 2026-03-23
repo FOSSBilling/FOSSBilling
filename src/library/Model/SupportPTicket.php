@@ -10,7 +10,7 @@
  */
 class Model_SupportPTicket extends RedBeanPHP\SimpleModel
 {
-    final public const OPENED = 'open';
-    final public const ONHOLD = 'on_hold';
-    final public const CLOSED = 'closed';
+    final public const string OPENED = 'open';
+    final public const string ONHOLD = 'on_hold';
+    final public const string CLOSED = 'closed';
 }

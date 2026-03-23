@@ -71,17 +71,15 @@ class dangerousFunctions implements \FOSSBilling\Interfaces\SecurityCheckInterfa
         } else {
             $result = __trans("The following PHP functions are enabled, potentially being a security concern:\n");
             foreach ($functionsFound as $function => $properties) {
-                if (function_exists($function)) {
-                    $result .= '- ' . $function . "\n";
-                    $state = $properties['type']; // Since we only have pass / warn, no additional logic is needed.
-                }
+                $result .= '- ' . $function . "\n";
+                $state = $properties['type']; // Since we only have pass / warn, no additional logic is needed.
             }
         }
 
         if ($state === SecurityCheckResultEnum::PASS) {
             return new SecurityCheckResult(SecurityCheckResultEnum::PASS, __trans('No potentially dangerous PHP functions were detected as enabled'));
-        } else {
-            return new SecurityCheckResult(SecurityCheckResultEnum::WARN, $result);
         }
+
+        return new SecurityCheckResult(SecurityCheckResultEnum::WARN, $result);
     }
 }

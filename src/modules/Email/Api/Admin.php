@@ -15,6 +15,7 @@
 
 namespace Box\Mod\Email\Api;
 
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -31,15 +32,18 @@ class Admin extends \Api_Abstract
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
 
         foreach ($pager['list'] as $key => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
             $pager['list'][$key] = [
                 'id' => $item['id'],
                 'client_id' => $item['client_id'],
-                'sender' => $item['sender'],
-                'recipients' => $item['recipients'],
-                'subject' => $item['subject'],
-                'content_html' => $item['content_html'],
-                'content_text' => $item['content_text'],
-                'created_at' => $item['created_at'],
+                'sender' => $item['sender'] ?? '',
+                'recipients' => $item['recipients'] ?? '',
+                'subject' => $item['subject'] ?? '',
+                'content_html' => Tools::sanitizeContent($item['content_html'] ?? ''),
+                'content_text' => $item['content_text'] ?? '',
+                'created_at' => $item['created_at'] ?? '',
             ];
         }
 
@@ -116,7 +120,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
-    public function email_delete($data)
+    public function email_delete($data): bool
     {
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
@@ -178,7 +182,7 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
-    public function template_delete($data)
+    public function template_delete($data): bool
     {
         $model = $this->di['db']->findOne('EmailTemplate', 'id = ?', [$data['id']]);
 
@@ -223,7 +227,6 @@ class Admin extends \Api_Abstract
      * @return bool
      *
      * @throws \FOSSBilling\Exception
-     *
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_update($data)
@@ -301,15 +304,15 @@ class Admin extends \Api_Abstract
      */
     public function send_test(array $data): bool
     {
-        $currentUser = $this->di['loggedin_admin'];
+        $currentUser = $this->di['loggedin_admin'] ?? null;
 
         $email = [
             'code' => 'mod_email_test',
-            'to' => $currentUser->email,
-            'to_name' => $currentUser->name,
+            'to' => $currentUser->email ?? '',
+            'to_name' => $currentUser->name ?? '',
             'send_now' => true,
             'throw_exceptions' => true,
-            'staff_member_name' => $currentUser->name,
+            'staff_member_name' => $currentUser->name ?? '',
         ];
 
         return $this->getService()->sendTemplate($email);
@@ -328,7 +331,7 @@ class Admin extends \Api_Abstract
 
     /**
      * Send email template to email, client or staff members. If template with code does not exist,
-     * it will be created. Default email template file must exist at mod_example/html_email/mod_example_code.html.twig file.
+     * it will be created. Default email template file must exist at mod_example/templates/email/mod_example_code.html.twig file.
      *
      * @optional string $to_staff - True to send to all active staff members. Default false
      * @optional string $to_client - Set client ID to send email to client. Default null
@@ -356,7 +359,7 @@ class Admin extends \Api_Abstract
      * Deletes email logs with given IDs.
      */
     #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete($data)
+    public function batch_delete($data): bool
     {
         foreach ($data['ids'] as $id) {
             $this->email_delete(['id' => $id]);

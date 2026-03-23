@@ -241,9 +241,8 @@ class Server_Manager_Plesk extends Server_Manager
         $client = $account->getClient();
         if (!$id) {
             throw new Server_Exception('Can\'t modify client');
-        } else {
-            $client->setId($id);
         }
+        $client->setId($id);
 
         $account->setPackage($package);
         $this->updateSubscription($account);
