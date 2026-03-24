@@ -265,5 +265,42 @@
                 },
             );
         }
+
+        // Handle URL parameters for pre-filling domain form
+        const urlParams = new URLSearchParams(window.location.search);
+
+        const tldParam = urlParams.get('tld');
+        if (tldParam) {
+            const registerTldSelect = document.querySelector('select[name="register_tld"]');
+            if (registerTldSelect) {
+                for (let i = 0; i < registerTldSelect.options.length; i++) {
+                    if (registerTldSelect.options[i].value === tldParam) {
+                        registerTldSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            const transferTldSelect = document.querySelector('select[name="transfer_tld"]');
+            if (transferTldSelect) {
+                for (let i = 0; i < transferTldSelect.options.length; i++) {
+                    if (transferTldSelect.options[i].value === tldParam) {
+                        transferTldSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        const nameParam = urlParams.get('name');
+        if (nameParam) {
+            const registerSldInput = document.querySelector('input[name="register_sld"]');
+            if (registerSldInput) {
+                registerSldInput.value = nameParam;
+            }
+            const transferSldInput = document.querySelector('input[name="transfer_sld"]');
+            if (transferSldInput) {
+                transferSldInput.value = nameParam;
+            }
+        }
     });
 </script>
