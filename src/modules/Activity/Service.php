@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Activity;
 
+use Doctrine\DBAL\Connection;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -27,23 +28,31 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    private function getDbal(): Connection
+    {
+        return $this->di['dbal'];
+    }
+
+    private static function getDbalFromDi(\Pimple\Container $di): Connection
+    {
+        return $di['dbal'];
+    }
+
     public function logEvent($data): void
     {
         $extensionService = $this->di['mod_service']('extension');
-        if ($extensionService->isExtensionActive('mod', 'demo')) {
-            $ip = null;
-        } else {
-            $ip = $this->di['request']->getClientIp();
-        }
+        $ip = $extensionService->isExtensionActive('mod', 'demo')
+            ? null
+            : $this->di['request']->getClientIp();
 
-        $entry = $this->di['db']->dispense('ActivitySystem');
-        $entry->client_id = $data['client_id'] ?? null;
-        $entry->admin_id = $data['admin_id'] ?? null;
-        $entry->priority = $data['priority'] ?? null;
-        $entry->message = $data['message'];
-        $entry->created_at = date('Y-m-d H:i:s');
-        $entry->ip = $ip;
-        $this->di['db']->store($entry);
+        $this->getDbal()->insert('activity_system', [
+            'client_id' => $data['client_id'] ?? null,
+            'admin_id' => $data['admin_id'] ?? null,
+            'priority' => $data['priority'] ?? null,
+            'message' => $data['message'],
+            'created_at' => date('Y-m-d H:i:s'),
+            'ip' => $ip,
+        ]);
     }
 
     /** EVENTS  **/
@@ -53,18 +62,13 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
 
         $extensionService = $di['mod_service']('extension');
-        if ($extensionService->isExtensionActive('mod', 'demo')) {
-            $ip = null;
-        } else {
-            $ip = $params['ip'];
-        }
+        $ip = $extensionService->isExtensionActive('mod', 'demo') ? null : $params['ip'];
 
-        $log = $di['db']->dispense('ActivityClientHistory');
-        $log->client_id = $params['id'];
-        $log->ip = $ip;
-        $log->created_at = date('Y-m-d H:i:s');
-
-        $di['db']->store($log);
+        self::getDbalFromDi($di)->insert('activity_client_history', [
+            'client_id' => $params['id'],
+            'ip' => $ip,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     public static function onAfterAdminLogin(\Box_Event $event): void
@@ -73,18 +77,13 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
 
         $extensionService = $di['mod_service']('extension');
-        if ($extensionService->isExtensionActive('mod', 'demo')) {
-            $ip = null;
-        } else {
-            $ip = $params['ip'];
-        }
+        $ip = $extensionService->isExtensionActive('mod', 'demo') ? null : $params['ip'];
 
-        $log = $di['db']->dispense('ActivityAdminHistory');
-        $log->admin_id = $params['id'];
-        $log->ip = $ip;
-        $log->created_at = date('Y-m-d H:i:s');
-
-        $di['db']->store($log);
+        self::getDbalFromDi($di)->insert('activity_admin_history', [
+            'admin_id' => $params['id'],
+            'ip' => $ip,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     public static function onBeforeAdminCronRun(\Box_Event $event): void
@@ -99,18 +98,22 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $ageInSeconds = intval($retention) * 86_400;
-        $emailAgeInSeconds = intval($emailRetention) * 86_400;
+        $ageInSeconds = $retention * 86_400;
+        $emailAgeInSeconds = $emailRetention * 86_400;
+        $dbal = self::getDbalFromDi($di);
 
         try {
             if ($retention !== 0) {
-                $di['db']->exec('DELETE FROM activity_admin_history WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
-                $di['db']->exec('DELETE FROM activity_client_history WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
-                $di['db']->exec('DELETE FROM activity_system WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $ageInSeconds)]);
+                $createdAt = date('Y-m-d H:i:s', time() - $ageInSeconds);
+                $dbal->executeStatement('DELETE FROM activity_admin_history WHERE created_at <= ?', [$createdAt]);
+                $dbal->executeStatement('DELETE FROM activity_client_history WHERE created_at <= ?', [$createdAt]);
+                $dbal->executeStatement('DELETE FROM activity_system WHERE created_at <= ?', [$createdAt]);
             }
 
             if ($emailRetention !== 0) {
-                $di['db']->exec('DELETE FROM activity_client_email WHERE created_at <= :created_at', [':created_at' => date('Y-m-d H:i:s', time() - $emailAgeInSeconds)]);
+                $dbal->executeStatement('DELETE FROM activity_client_email WHERE created_at <= ?', [
+                    date('Y-m-d H:i:s', time() - $emailAgeInSeconds),
+                ]);
             }
         } catch (\Exception $e) {
             error_log($e->getMessage());
@@ -136,17 +139,14 @@ class Service implements InjectionAwareInterface
         $date_to = $data['date_to'] ?? null;
         $where = [];
 
-        // Exact priority match takes precedence over minimum priority
         if ($priority !== null && $priority !== '') {
             $where[] = 'm.priority = :priority';
             $params[':priority'] = $priority;
         } elseif ($min_priority !== null && $min_priority !== '') {
-            // Only apply minimum priority if exact priority is not set
             $where[] = 'm.priority <= :min_priority';
             $params[':min_priority'] = $min_priority;
         }
 
-        // Handle user filter radio buttons
         if ($user_filter === 'only_staff') {
             $where[] = 'm.admin_id IS NOT NULL';
         } elseif ($user_filter === 'only_clients') {
@@ -183,9 +183,8 @@ class Service implements InjectionAwareInterface
             $params[':search'] = '%' . $search . '%';
         }
 
-        if (!empty($where)) {
-            $whereStatement = implode(' and ', $where);
-            $sql .= ' WHERE ' . $whereStatement;
+        if ($where !== []) {
+            $sql .= ' WHERE ' . implode(' and ', $where);
         }
 
         $sql .= ' ORDER by m.id desc';
@@ -195,43 +194,45 @@ class Service implements InjectionAwareInterface
 
     public function logEmail($subject, $clientId = null, $sender = null, $recipients = null, $content_html = null, $content_text = null): bool
     {
-        $entry = $this->di['db']->dispense('ActivityClientEmail');
-
-        $entry->client_id = $clientId;
-        $entry->sender = $sender;
-        $entry->recipients = $recipients;
-        $entry->subject = $subject;
-        $entry->content_html = $content_html;
-        $entry->content_text = $content_text;
-        $entry->created_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($entry);
+        $this->getDbal()->insert('activity_client_email', [
+            'client_id' => $clientId,
+            'sender' => $sender,
+            'recipients' => $recipients,
+            'subject' => $subject,
+            'content_html' => $content_html,
+            'content_text' => $content_text,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
 
         return true;
     }
 
     public function toApiArray(\Model_ActivityClientHistory $model): array
     {
-        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
+        $client = $this->getDbal()->executeQuery(
+            'SELECT id, first_name, last_name, email FROM client WHERE id = ?',
+            [$model->client_id]
+        )->fetchAssociative();
+
+        if ($client === false) {
+            throw new \FOSSBilling\Exception('Client not found');
+        }
 
         return [
             'id' => $model->id,
             'ip' => $model->ip,
             'created_at' => $model->created_at,
             'client' => [
-                'id' => $client->id,
-                'first_name' => $client->first_name,
-                'last_name' => $client->last_name,
-                'email' => $client->email,
+                'id' => $client['id'],
+                'first_name' => $client['first_name'],
+                'last_name' => $client['last_name'],
+                'email' => $client['email'],
             ],
         ];
     }
 
     public function rmByClient(\Model_Client $client): void
     {
-        $models = $this->di['db']->find('ActivitySystem', 'client_id = ?', [$client->id]);
-        foreach ($models as $model) {
-            $this->di['db']->trash($model);
-        }
+        $this->getDbal()->executeStatement('DELETE FROM activity_system WHERE client_id = ?', [$client->id]);
     }
 }
