@@ -686,6 +686,7 @@ class Service implements InjectionAwareInterface
         $order = $this->di['db']->dispense('ClientOrder');
         $order->client_id = $client->id;
         $order->product_id = $product->id;
+        $order->form_id = $product->form_id;
         $order->group_id = ($parent_order) ? $parent_order->group_id : uniqid();
         $order->group_master = ($parent_order) ? 0 : 1;
         $order->title = $generatedOrderTitle ?? $data['title'] ?? $product->title;
@@ -1366,6 +1367,12 @@ class Service implements InjectionAwareInterface
 
     public function updateOrderConfig(\Model_ClientOrder $order, array $config): bool
     {
+        if ($order->form_id) {
+            $formbuilderService = $this->di['mod_service']('formbuilder');
+            $form = $formbuilderService->getForm($order->form_id);
+            $this->validateConfigAgainstForm($config, $form);
+        }
+
         $oldConfig = $order->config;
 
         $order->config = json_encode($config);
@@ -1375,6 +1382,35 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info(sprintf("Order #%s config changes:\n%s\n%s", $order->id, $oldConfig, $order->config));
 
         return true;
+    }
+
+    private function validateConfigAgainstForm(array $config, array $form): void
+    {
+        foreach ($form['fields'] as $field) {
+            $name  = $field['name'];
+            $value = $config[$name] ?? null;
+
+            if (!empty($field['required']) && ($value === null || $value === '' || (is_array($value) && count($value) === 0))) {
+                throw new \FOSSBilling\Exception('Field ":field" is required', [':field' => $field['label']], 4892);
+            }
+
+            $options = $field['options'] ?? [];
+            if (!empty($options)) {
+                if ($field['type'] === 'select' || $field['type'] === 'radio') {
+                    if ($value !== null && $value !== '' && !array_key_exists($value, $options) && !in_array($value, $options, true)) {
+                        throw new \FOSSBilling\Exception('Invalid value for field ":field"', [':field' => $field['label']], 4893);
+                    }
+                } elseif ($field['type'] === 'checkbox') {
+                    if (is_array($value)) {
+                        foreach ($value as $v) {
+                            if (!in_array($v, $options, true)) {
+                                throw new \FOSSBilling\Exception('Invalid value for field ":field"', [':field' => $field['label']], 4894);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public function getOrderStatusSearchQuery($data): array
