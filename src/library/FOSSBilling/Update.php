@@ -302,7 +302,6 @@ class Update implements InjectionAwareInterface
         }
 
         // Log off the current user and destroy the session.
-        unset($_COOKIE['BOXADMR']);
         $this->di['session']->destroy('admin');
     }
 }

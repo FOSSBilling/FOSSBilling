@@ -59,7 +59,7 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
         $paths[] = Path::join($this->options['theme'], 'html_custom');
         $paths[] = Path::join($this->options['theme'], 'html');
         if (isset($name_split[1])) {
-            $paths[] = Path::join($this->options['mods'], ucfirst($name_split[1]), "html_{$this->options['type']}");
+            $paths[] = Path::join($this->options['mods'], ucfirst($name_split[1]), 'templates', $this->options['type']);
         }
 
         foreach ($paths as $path) {
@@ -67,8 +67,9 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
                 return $this->cache[$name] = Path::join($path, $name);
             }
 
-            if (str_ends_with((string) $name, 'icon.svg') && $this->filesystem->exists(Path::join(Path::getDirectory($path), 'icon.svg'))) {
-                return $this->cache[$name] = Path::join(Path::getDirectory($path), 'icon.svg');
+            $modulePath = Path::getDirectory(Path::getDirectory($path));
+            if (str_ends_with((string) $name, 'icon.svg') && $this->filesystem->exists(Path::join($modulePath, 'icon.svg'))) {
+                return $this->cache[$name] = Path::join($modulePath, 'icon.svg');
             }
         }
 

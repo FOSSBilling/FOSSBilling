@@ -14,6 +14,7 @@ namespace FOSSBilling;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Uid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
@@ -161,6 +162,40 @@ class UpdatePatcher implements InjectionAwareInterface
             error_log($e->getMessage());
 
             throw new Exception('There was an error while applying database patches. Please check the error log for information on the error, correct it, and then perform the backup patching method to complete the update.');
+        }
+    }
+
+    private function migrateEncryptedColumn(string $table, string $idColumn, string $valueColumn, string $where, array $params = []): void
+    {
+        $rows = $this->di['dbal']
+            ->executeQuery("SELECT {$idColumn} AS id, {$valueColumn} AS encrypted_value FROM {$table} WHERE {$where}", $params)
+            ->fetchAllAssociative();
+
+        /** @var \Box_Crypt $crypt */
+        $crypt = $this->di['crypt'];
+        $salt = Config::getProperty('info.salt');
+
+        $hasUpdatedAt = $this->di['dbal']->createSchemaManager()->introspectTable($table)->hasColumn('updated_at');
+
+        foreach ($rows as $row) {
+            $encryptedValue = $row['encrypted_value'] ?? null;
+            if (!is_string($encryptedValue) || $encryptedValue === '' || str_starts_with($encryptedValue, \Box_Crypt::CURRENT_FORMAT_PREFIX)) {
+                continue;
+            }
+
+            $decryptedValue = $crypt->decrypt($encryptedValue, $salt);
+            if ($decryptedValue === false) {
+                continue;
+            }
+
+            $updateData = [$valueColumn => $crypt->encrypt($decryptedValue, $salt)];
+            if ($hasUpdatedAt) {
+                $updateData['updated_at'] = date('Y-m-d H:i:s');
+            }
+
+            $this->di['dbal']->update($table, $updateData, [
+                $idColumn => $row['id'],
+            ]);
         }
     }
 
@@ -620,9 +655,6 @@ class UpdatePatcher implements InjectionAwareInterface
                 }
             },
             49 => function (): void {
-                // Patch to update logo and favicon paths from assets/ to assets/build/ for huraga theme
-                // This is needed because the esbuild migration moved assets to a build directory
-                // @see https://github.com/FOSSBilling/FOSSBilling/pull/XXXX
                 $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo.svg' WHERE param = 'company_logo' AND value = 'themes/huraga/assets/img/logo.svg';";
                 $this->executeSql($q);
 
@@ -631,6 +663,33 @@ class UpdatePatcher implements InjectionAwareInterface
 
                 $q = "UPDATE setting SET value = 'themes/huraga/assets/build/favicon.ico' WHERE param = 'company_favicon' AND value = 'themes/huraga/assets/favicon.ico';";
                 $this->executeSql($q);
+            },
+            50 => function (): void {
+                $this->migrateEncryptedColumn('email_template', 'id', 'vars', "vars IS NOT NULL AND vars != ''");
+                $this->migrateEncryptedColumn('extension_meta', 'id', 'meta_value', "meta_key = :meta_key AND meta_value IS NOT NULL AND meta_value != ''", [
+                    'meta_key' => 'config',
+                ]);
+            },
+            51 => function (): void {
+                $oldDir = Path::join(PATH_MODS, 'Invoice', 'pdf_template');
+                $newDir = Path::join(PATH_MODS, 'Invoice', 'templates', 'pdf');
+
+                if (!$this->filesystem->exists($oldDir)) {
+                    return;
+                }
+
+                $fileActions = [
+                    Path::join($oldDir, 'custom-pdf.twig') => Path::join($newDir, 'custom-invoice.twig'),
+                    Path::join($oldDir, 'custom-pdf.css') => Path::join($newDir, 'custom-invoice.css'),
+                    Path::join($oldDir, 'default-pdf.twig') => 'unlink',
+                    Path::join($oldDir, 'default-pdf.css') => 'unlink',
+                ];
+                $this->executeFileActions($fileActions);
+
+                $finder = new Finder();
+                if (!$finder->in($oldDir)->depth('== 0')->hasResults()) {
+                    $this->filesystem->remove($oldDir);
+                }
             },
         ];
         ksort($patches, SORT_NATURAL);

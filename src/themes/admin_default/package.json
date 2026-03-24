@@ -5,7 +5,7 @@
     "dev": "node ./esbuild.mjs"
   },
   "dependencies": {
-    "@dicebear/core": "^9.0.0",
+    "@dicebear/core": "^9.4.1",
     "@dicebear/identicon": "^9.0.0",
     "@melloware/coloris": "^0.25.0",
     "@tabler/core": "^1.2.0",
@@ -17,10 +17,10 @@
   },
   "devDependencies": {
     "autoprefixer": "10.4.27",
-    "esbuild": "0.27.3",
+    "esbuild": "0.27.4",
     "postcss": "8.5.8",
     "purgecss": "8.0.0",
-    "sass": "1.97.3",
+    "sass": "1.98.0",
     "svg-sprite": "2.0.4"
   }
 }

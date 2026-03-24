@@ -13,6 +13,7 @@ namespace Box\Mod\Email;
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -116,7 +117,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'sender' => $model->sender,
             'recipients' => $model->recipients,
             'subject' => $model->subject,
-            'content_html' => $model->content_html,
+            'content_html' => Tools::sanitizeContent($model->content_html ?? ''),
             'content_text' => $model->content_text,
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
@@ -269,7 +270,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', (string) $code, $matches);
         $mod = $matches[1];
 
-        $path = Path::join(PATH_MODS, ucfirst($mod), 'html_email', "{$code}.html.twig");
+        $path = Path::join(PATH_MODS, ucfirst($mod), 'templates/email', "{$code}.html.twig");
 
         if ($this->filesystem->exists($path)) {
             $tpl = $this->filesystem->readFile($path);
@@ -537,11 +538,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
 
         $finder = new Finder();
-        $finder = $finder->files()->in(PATH_MODS . '/*/html_email/')->name('*.html.twig');
+        $finder = $finder->files()->in(PATH_MODS . '/*/templates/email/')->name('*.html.twig');
 
         foreach ($finder as $file) {
             $code = $file->getBasename('.html.twig');
-            $module = strtolower(Path::getFilenameWithoutExtension(Path::getDirectory($file->getPath())));
+            $module = strtolower(Path::getFilenameWithoutExtension(Path::getDirectory(Path::getDirectory($file->getPath()))));
 
             // Skip if module is not active.
             if (!$extensionService->isExtensionActive('mod', $module)) {

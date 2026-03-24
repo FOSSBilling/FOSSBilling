@@ -144,9 +144,7 @@ class Guest extends \Api_Abstract
         if (!$c instanceof \Model_Admin) {
             return true;
         }
-        $hash = hash('sha256', time() . random_bytes(13));
-
-        $c->pass = $hash;
+        $hash = hash('sha256', random_bytes(32));
 
         $reset = $this->di['db']->dispense('AdminPasswordReset');
         $reset->admin_id = $c->id;

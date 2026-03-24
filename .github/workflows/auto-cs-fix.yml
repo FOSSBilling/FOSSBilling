@@ -10,15 +10,15 @@ jobs:
     name: Rector & PHP-CS-Fixer
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: PHP Build
-        uses: FOSSBilling/.workflows/.github/actions/php-build@1c26ea34a7bf6d5380ad4e84d26954d7774a7c91
+        uses: FOSSBilling/.workflows/.github/actions/php-build@de419177cb0d9aacddda30e1b64cbefa6c4a8b63
         with:
           php-version: 8.3
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
         with:
           php-version: 8.3
           extensions: intl, xml, dom, curl, iconv, json
@@ -30,14 +30,14 @@ jobs:
           mkdir cache/rector
 
       - name: Restore Rector Cache
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         with:
           path: ./cache/rector
           key: ${{ env.MONTH }}-rector
           restore-keys: ${{ env.MONTH }}-rector
           
       - name: Restore CS-Fixer Cache
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         with:
           path: .php-cs-fixer.cache
           key: ${{ env.MONTH }}-csfixer

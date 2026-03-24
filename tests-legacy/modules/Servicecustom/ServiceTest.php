@@ -128,6 +128,81 @@ final class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
+    public function testValidateCustomFormInvalidUrlException(): void
+    {
+        $form = [
+            'fields' => [
+                0 => [
+                    'type' => 'url',
+                    'name' => 'website',
+                    'label' => 'Website',
+                    'required' => 0,
+                ],
+            ],
+        ];
+
+        $formbuilderService = $this->createMock(\Box\Mod\Formbuilder\Service::class);
+        $formbuilderService->expects($this->atLeastOnce())
+            ->method('getForm')
+            ->willReturn($form);
+        $formbuilderService->expects($this->atLeastOnce())
+            ->method('validateUrlField')
+            ->willReturn(false);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $formbuilderService);
+
+        $this->service->setDi($di);
+
+        $product = [
+            'form_id' => 1,
+        ];
+        $data = [
+            'website' => 'invalid-url',
+        ];
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Field Website must be a valid URL with a TLD (e.g., https://example.com)');
+        $this->service->validateCustomForm($data, $product);
+    }
+
+    public function testValidateCustomFormValidUrl(): void
+    {
+        $form = [
+            'fields' => [
+                0 => [
+                    'type' => 'url',
+                    'name' => 'website',
+                    'label' => 'Website',
+                    'required' => 0,
+                ],
+            ],
+        ];
+
+        $formbuilderService = $this->createMock(\Box\Mod\Formbuilder\Service::class);
+        $formbuilderService->expects($this->atLeastOnce())
+            ->method('getForm')
+            ->willReturn($form);
+        $formbuilderService->expects($this->atLeastOnce())
+            ->method('validateUrlField')
+            ->willReturn(true);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $formbuilderService);
+
+        $this->service->setDi($di);
+
+        $product = [
+            'form_id' => 1,
+        ];
+        $data = [
+            'website' => 'https://example.com',
+        ];
+
+        $result = $this->service->validateCustomForm($data, $product);
+        $this->assertNull($result);
+    }
+
     public function testActionCreate(): void
     {
         $order = new \Model_ClientOrder();
@@ -474,6 +549,26 @@ final class ServiceTest extends \BBTestCase
         $result = $this->service->getServiceCustomByOrderId(1);
 
         $this->assertInstanceOf('Model_ServiceCustom', $result);
+    }
+
+    public function testGetServiceCustomByOrderIdRejectsOrderOwnedByAnotherClient(): void
+    {
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('findOne')
+            ->with('ClientOrder', 'id = ? AND client_id = ?', [1, 42])
+            ->willReturn(null);
+        $dbMock->expects($this->never())
+            ->method('getExistingModelById');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Order not found');
+
+        $this->service->getServiceCustomByOrderId(1, 42);
     }
 
     public function testGetServiceCustomByOrderIdOrderServiceNotFoundException(): void

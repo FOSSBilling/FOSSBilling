@@ -1564,6 +1564,85 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($newId, $result);
     }
 
+    public function testCreateOrderSetsFormIdFromProduct(): void
+    {
+        $modelClient = new \Model_Client();
+        $modelClient->loadBean(new \DummyBean());
+        $modelClient->currency = 'USD';
+
+        $modelProduct = new \Model_Product();
+        $modelProduct->loadBean(new \DummyBean());
+        $modelProduct->id = 1;
+        $modelProduct->type = 'custom';
+        $modelProduct->form_id = 42;
+
+        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyRepositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
+            ->willReturn($currencyModel);
+        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getCurrencyRepository'])
+            ->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())
+            ->method('getCurrencyRepository')
+            ->willReturn($currencyRepositoryMock);
+        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock->expects($this->atLeastOnce())
+            ->method('isStockAvailable')
+            ->with($modelProduct)
+            ->willReturn(true);
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $productServiceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+
+        $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('dispense')
+            ->with('ClientOrder')
+            ->willReturn($clientOrderModel);
+        $newId = 1;
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($clientOrderModel)
+            ->willReturn($newId);
+
+        $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
+        $periodMock->expects($this->atLeastOnce())
+            ->method('getCode')
+            ->willReturn('1Y');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock, $productServiceMock) {
+            if ($serviceName == 'currency') {
+                return $currencyServiceMock;
+            }
+            if ($serviceName == 'cart') {
+                return $cartServiceMock;
+            }
+            if ($serviceName == 'servicecustom') {
+                return $productServiceMock;
+            }
+        });
+        $di['events_manager'] = $eventMock;
+        $di['db'] = $dbMock;
+        $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
+        $di['logger'] = new \Box_Log();
+
+        $this->service->setDi($di);
+        $this->service->createOrder($modelClient, $modelProduct, ['period' => '1Y', 'price' => '10']);
+
+        $this->assertEquals(42, $clientOrderModel->form_id, 'Order form_id should be set from product');
+    }
+
     public function testGetMasterOrderForClient(): void
     {
         $clientModel = new \Model_Client();
@@ -2052,5 +2131,192 @@ final class ServiceTest extends \BBTestCase
         $clientOrder->loadBean(new \DummyBean());
         $result = $this->service->updateOrderMeta($clientOrder, $meta);
         $this->assertEquals(2, $result);
+    }
+
+    public function testUpdateOrderConfigNoFormId(): void
+    {
+        $di = $this->getDi();
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('store');
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+
+        $this->service->setDi($di);
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->form_id = null;
+
+        $result = $this->service->updateOrderConfig($order, ['key' => 'value']);
+        $this->assertTrue($result);
+    }
+
+    public function testUpdateOrderConfigRequiredFieldMissing(): void
+    {
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(4892);
+
+        $form = [
+            'fields' => [
+                ['name' => 'hostname', 'label' => 'Hostname', 'type' => 'text', 'required' => true, 'options' => []],
+            ],
+        ];
+
+        $formbuilderServiceMock = $this->createMock(\Box\Mod\Formbuilder\Service::class);
+        $formbuilderServiceMock->expects($this->once())
+            ->method('getForm')
+            ->with(7)
+            ->willReturn($form);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($formbuilderServiceMock) {
+            if ($serviceName === 'formbuilder') {
+                return $formbuilderServiceMock;
+            }
+        });
+
+        $this->service->setDi($di);
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->form_id = 7;
+
+        $this->service->updateOrderConfig($order, []);
+    }
+
+    public function testUpdateOrderConfigInvalidSelectOption(): void
+    {
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(4893);
+
+        $form = [
+            'fields' => [
+                ['name' => 'plan', 'label' => 'Plan', 'type' => 'select', 'required' => false, 'options' => ['basic' => 'Basic', 'pro' => 'Pro']],
+            ],
+        ];
+
+        $formbuilderServiceMock = $this->createMock(\Box\Mod\Formbuilder\Service::class);
+        $formbuilderServiceMock->expects($this->once())
+            ->method('getForm')
+            ->willReturn($form);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($formbuilderServiceMock) {
+            if ($serviceName === 'formbuilder') {
+                return $formbuilderServiceMock;
+            }
+        });
+
+        $this->service->setDi($di);
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->form_id = 8;
+
+        $this->service->updateOrderConfig($order, ['plan' => 'enterprise']);
+    }
+
+    public function testUpdateOrderConfigInvalidRadioOption(): void
+    {
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(4893);
+
+        $form = [
+            'fields' => [
+                ['name' => 'os', 'label' => 'OS', 'type' => 'radio', 'required' => false, 'options' => ['linux' => 'Linux', 'windows' => 'Windows']],
+            ],
+        ];
+
+        $formbuilderServiceMock = $this->createMock(\Box\Mod\Formbuilder\Service::class);
+        $formbuilderServiceMock->expects($this->once())
+            ->method('getForm')
+            ->willReturn($form);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($formbuilderServiceMock) {
+            if ($serviceName === 'formbuilder') {
+                return $formbuilderServiceMock;
+            }
+        });
+
+        $this->service->setDi($di);
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->form_id = 9;
+
+        $this->service->updateOrderConfig($order, ['os' => 'macos']);
+    }
+
+    public function testUpdateOrderConfigInvalidCheckboxOption(): void
+    {
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(4894);
+
+        $form = [
+            'fields' => [
+                ['name' => 'addons', 'label' => 'Addons', 'type' => 'checkbox', 'required' => false, 'options' => ['backup', 'ssl']],
+            ],
+        ];
+
+        $formbuilderServiceMock = $this->createMock(\Box\Mod\Formbuilder\Service::class);
+        $formbuilderServiceMock->expects($this->once())
+            ->method('getForm')
+            ->willReturn($form);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($formbuilderServiceMock) {
+            if ($serviceName === 'formbuilder') {
+                return $formbuilderServiceMock;
+            }
+        });
+
+        $this->service->setDi($di);
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->form_id = 10;
+
+        $this->service->updateOrderConfig($order, ['addons' => ['backup', 'ddos-protection']]);
+    }
+
+    public function testUpdateOrderConfigValidWithForm(): void
+    {
+        $form = [
+            'fields' => [
+                ['name' => 'hostname', 'label' => 'Hostname', 'type' => 'text', 'required' => true, 'options' => []],
+                ['name' => 'plan', 'label' => 'Plan', 'type' => 'select', 'required' => false, 'options' => ['basic' => 'Basic', 'pro' => 'Pro']],
+                ['name' => 'addons', 'label' => 'Addons', 'type' => 'checkbox', 'required' => false, 'options' => ['backup', 'ssl']],
+            ],
+        ];
+
+        $formbuilderServiceMock = $this->createMock(\Box\Mod\Formbuilder\Service::class);
+        $formbuilderServiceMock->expects($this->once())
+            ->method('getForm')
+            ->willReturn($form);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('store');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($formbuilderServiceMock) {
+            if ($serviceName === 'formbuilder') {
+                return $formbuilderServiceMock;
+            }
+        });
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+
+        $this->service->setDi($di);
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->form_id = 11;
+
+        $result = $this->service->updateOrderConfig($order, ['hostname' => 'myhost.example.com', 'plan' => 'pro', 'addons' => ['backup', 'ssl']]);
+        $this->assertTrue($result);
     }
 }

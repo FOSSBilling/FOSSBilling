@@ -54,6 +54,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                         throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' is read only. You cannot change its value', null, 5468);
                     }
                 }
+
+                if (($field['type'] ?? null) === 'url') {
+                    $field_name = $field['name'];
+                    if (!empty($data[$field_name])) {
+                        $formbuilderService = $this->di['mod_service']('formbuilder');
+                        if (!$formbuilderService->validateUrlField($data[$field_name])) {
+                            throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' must be a valid URL with a TLD (e.g., https://example.com)', null, 1248);
+                        }
+                    }
+                }
             }
         }
     }
@@ -226,9 +236,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('Custom service updated #%s', $model->id);
     }
 
-    public function getServiceCustomByOrderId($orderId)
+    public function getServiceCustomByOrderId($orderId, $clientId = null)
     {
-        $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
+        if ($clientId !== null) {
+            $order = $this->di['db']->findOne('ClientOrder', 'id = ? AND client_id = ?', [$orderId, $clientId]);
+            if (!$order instanceof \Model_ClientOrder) {
+                throw new \FOSSBilling\Exception('Order not found');
+            }
+        } else {
+            $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
+        }
 
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);

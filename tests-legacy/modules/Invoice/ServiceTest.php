@@ -157,6 +157,9 @@ final class ServiceTest extends \BBTestCase
         $subscriptionServiceMock->expects($this->atLeastOnce())
             ->method('isSubscribable')
             ->willReturn(true);
+
+        $invoiceItemServiceMock = $this->createMock(\Box\Mod\Invoice\ServiceInvoiceItem::class);
+
         $modelToArrayResult = [
             'id' => 1,
             'serie' => 'BB',
@@ -213,9 +216,10 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock) {
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock, $invoiceItemServiceMock) {
             $service = null;
             if ($sub == 'InvoiceItem') {
+                $service = $invoiceItemServiceMock;
             }
             if ($serviceName == 'system') {
                 $service = $systemService;
@@ -537,7 +541,7 @@ final class ServiceTest extends \BBTestCase
                     'id' => 1,
                 ],
             ],
-            'approve',
+            'approve' => true,
         ];
 
         $clientModel = new \Model_Client();
@@ -824,7 +828,7 @@ final class ServiceTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
-        $result = $serviceMock->refundInvoice($invoiceModel, 'custonNote');
+        $result = $serviceMock->refundInvoice($invoiceModel, 'customNote');
         $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
@@ -955,71 +959,6 @@ final class ServiceTest extends \BBTestCase
 
         $result = $serviceMock->deleteInvoiceByAdmin($invoiceModel);
         $this->assertTrue($result);
-    }
-
-    public function testDeleteInvoiceByClient(): void
-    {
-        $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \DummyBean());
-
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['rmInvoice'])
-            ->getMock();
-        $serviceMock->expects($this->once())
-            ->method('rmInvoice');
-
-        $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \DummyBean());
-
-        $eventManagerMock = $this->createMock('\Box_EventManager');
-        $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn([$invoiceItemModel]);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
-        $di['logger'] = new \Box_Log();
-
-        $serviceMock->setDi($di);
-
-        $result = $serviceMock->deleteInvoiceByClient($invoiceModel);
-        $this->assertTrue($result);
-    }
-
-    public function testDeleteInvoiceByClientInvoiceIsRelatedToOrder(): void
-    {
-        $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \DummyBean());
-        $invoiceItemModel->type = \Model_InvoiceItem::TYPE_ORDER;
-        $rel_id = 1;
-        $invoiceItemModel->rel_id = $rel_id;
-
-        $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \DummyBean());
-
-        $eventManagerMock = $this->createMock('\Box_EventManager');
-        $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn([$invoiceItemModel]);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['events_manager'] = $eventManagerMock;
-
-        $this->service->setDi($di);
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage(sprintf('Invoice is related to order #%d. Please cancel order first.', $rel_id));
-        $this->service->deleteInvoiceByClient($invoiceModel);
     }
 
     public function testRenewInvoice(): void
@@ -1169,7 +1108,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Invoice', $result);
     }
 
-    public function testSgenerateForOrderAmountIsZero(): void
+    public function testGenerateForOrderAmountIsZero(): void
     {
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \DummyBean());
@@ -1275,7 +1214,7 @@ final class ServiceTest extends \BBTestCase
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
             ->method('executeTask')
             ->with($invoiceItemModel)
-            ->willThrowException(new \FOSSBilling\Exception('tesitng exception..'));
+            ->willThrowException(new \FOSSBilling\Exception('testing exception..'));
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
             ->method('getAllNotExecutePaidItems')
             ->willReturn([[]]);

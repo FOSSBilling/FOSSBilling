@@ -150,7 +150,7 @@ class Service implements InjectionAwareInterface
         foreach ($items as $item) {
             $order_id = ($item->type == \Model_InvoiceItem::TYPE_ORDER) ? $item->rel_id : null;
 
-            $line_total = $item->price * $item->quantity;
+            $line_total = ($item->price ?? 0) * ($item->quantity ?? 1);
             $total += $line_total;
 
             if ($item->taxed) {
@@ -161,9 +161,9 @@ class Service implements InjectionAwareInterface
                 'id' => $item->id,
                 'title' => $item->title,
                 'period' => $item->period,
-                'quantity' => $item->quantity,
+                'quantity' => $item->quantity ?? 1,
                 'unit' => $item->unit,
-                'price' => $item->price,
+                'price' => $item->price ?? 0,
                 'tax' => 0, // Tax will be calculated on the total taxable subtotal
                 'taxed' => $item->taxed,
                 'charged' => $item->charged,
@@ -375,7 +375,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
-            $invoice = $service->toApiArray($invoiceModel, ['id' => $params['id'] ?? 0]);
+            $invoice = $service->toApiArray($invoiceModel, true);
             $email = [];
             $email['to_client'] = $invoiceModel->client_id;
             $email['code'] = 'mod_invoice_payment_reminder';
@@ -413,7 +413,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            $invoice = $service->toApiArray($invoiceModel, ['id' => $params['id']]);
+            $invoice = $service->toApiArray($invoiceModel, true);
             $email = [];
             $email['to_client'] = $invoice['client']['id'];
             $email['code'] = 'mod_invoice_due_after';
@@ -657,6 +657,13 @@ class Service implements InjectionAwareInterface
     public function tryPayWithCredits(\Model_Invoice $invoice)
     {
         if (!$invoice->approved) {
+            return;
+        }
+        if ($invoice->status == \Model_Invoice::STATUS_PAID) {
+            if (DEBUG) {
+                $this->di['logger']->setChannel('billing')->info("Skipping credit payment for already paid invoice {$invoice->id}.");
+            }
+
             return;
         }
 
@@ -953,24 +960,6 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceDelete', 'params' => ['id' => $id]]);
 
         $this->di['logger']->info('Removed invoice #%s', $id);
-
-        return true;
-    }
-
-    public function deleteInvoiceByClient(\Model_Invoice $model): bool
-    {
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientInvoiceDelete', 'params' => ['id' => $model->id]]);
-
-        // check if invoice is associated with order
-        $invoiceItem = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$model->id]);
-        foreach ($invoiceItem as $item) {
-            if ($item->type == \Model_InvoiceItem::TYPE_ORDER) {
-                throw new InformationException('Invoice is related to order #:id. Please cancel order first.', [':id' => $item->rel_id]);
-            }
-        }
-
-        $this->rmInvoice($model);
-        $this->di['logger']->info("Removed invoice #{$model->id}.");
 
         return true;
     }
@@ -1344,7 +1333,7 @@ class Service implements InjectionAwareInterface
             'invoice' => $invoice,
         ];
 
-        $loader = new FilesystemLoader(Path::join(__DIR__, 'pdf_template'));
+        $loader = new FilesystemLoader(Path::join(__DIR__, 'templates', 'pdf'));
         $twig = $this->di['twig'];
         $twig->setLoader($loader);
         $html = $twig->render($this->getPdfTemplate(), $vars);
@@ -1585,9 +1574,9 @@ class Service implements InjectionAwareInterface
     // Start of PDF related functions
     private function getPdfCss(): string
     {
-        $basePath = Path::join(__DIR__, 'pdf_template');
-        $customCssPath = Path::join($basePath, 'custom-pdf.css');
-        $defaultCssPath = Path::join($basePath, 'default-pdf.css');
+        $basePath = Path::join(__DIR__, 'templates', 'pdf');
+        $customCssPath = Path::join($basePath, 'custom-invoice.css');
+        $defaultCssPath = Path::join($basePath, 'default-invoice.css');
 
         if ($this->filesystem->exists($customCssPath)) {
             $CSS = $this->filesystem->readFile($customCssPath);
@@ -1604,11 +1593,11 @@ class Service implements InjectionAwareInterface
 
     private function getPdfTemplate(): string
     {
-        if ($this->filesystem->exists(Path::join(__DIR__, 'pdf_template', 'custom-pdf.twig'))) {
-            return 'custom-pdf.twig';
+        if ($this->filesystem->exists(Path::join(__DIR__, 'templates', 'pdf', 'custom-invoice.twig'))) {
+            return 'custom-invoice.twig';
         }
 
-        return 'default-pdf.twig';
+        return 'default-invoice.twig';
     }
 
     private function getPdfLogoSource(string $originalUrl): array
@@ -1708,6 +1697,95 @@ class Service implements InjectionAwareInterface
         }
 
         return $sourceData;
+    }
+
+    /**
+     * Get the order ID from an invoice's items.
+     * Returns the first order ID found in the invoice items.
+     *
+     * @param int $invoiceId The invoice ID to search
+     *
+     * @return int|null The order ID or null if not found
+     */
+    public function getOrderIdFromInvoice(int $invoiceId): ?int
+    {
+        $item = $this->di['db']->findOne(
+            'InvoiceItem',
+            'invoice_id = :invoice_id AND type = :type',
+            ['invoice_id' => $invoiceId, 'type' => \Model_InvoiceItem::TYPE_ORDER]
+        );
+
+        if ($item instanceof \Model_InvoiceItem) {
+            return (int) $item->rel_id;
+        }
+
+        return null;
+    }
+
+    /**
+     * Generate a renewal invoice for a subscription payment that arrived without an invoice.
+     * This handles the case where PayPal/Stripe sends a subscription payment before
+     * the cron job generates the renewal invoice.
+     *
+     * @param string $subscriptionSid The subscription ID from the payment gateway
+     * @param int    $clientId        The client ID
+     *
+     * @return \Model_Invoice|null The generated invoice or null if unable to generate
+     */
+    public function generateRenewalInvoiceForSubscriptionPayment(string $subscriptionSid, int $clientId): ?\Model_Invoice
+    {
+        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        $orderService = $this->di['mod_service']('Order');
+
+        try {
+            $subscription = $this->di['db']->findOne('Subscription', 'sid = :sid', ['sid' => $subscriptionSid]);
+            if (!$subscription instanceof \Model_Subscription) {
+                return null;
+            }
+
+            if ($subscription->rel_type !== 'invoice') {
+                return null;
+            }
+
+            $originalOrderId = $this->getOrderIdFromInvoice((int) $subscription->rel_id);
+            if ($originalOrderId === null) {
+                return null;
+            }
+
+            $originalOrder = $this->di['db']->load('ClientOrder', $originalOrderId);
+            if (!$originalOrder instanceof \Model_ClientOrder) {
+                return null;
+            }
+
+            $activeOrder = $this->di['db']->findOne(
+                'ClientOrder',
+                'client_id = :client_id AND product_id = :product_id AND status = :status',
+                [
+                    'client_id' => $clientId,
+                    'product_id' => $originalOrder->product_id,
+                    'status' => \Model_ClientOrder::STATUS_ACTIVE,
+                ]
+            );
+
+            if (!$activeOrder instanceof \Model_ClientOrder) {
+                $activeOrder = $originalOrder;
+            }
+
+            if ($activeOrder->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+                return null;
+            }
+
+            $invoice = $this->generateForOrder($activeOrder);
+            $this->approveInvoice($invoice, ['use_credits' => false]);
+
+            $this->di['logger']->info("Generated renewal invoice #{$invoice->id} for subscription payment (SID: {$subscriptionSid}).");
+
+            return $invoice;
+        } catch (\Exception $e) {
+            error_log('Failed to generate renewal invoice for subscription payment: ' . $e->getMessage());
+
+            return null;
+        }
     }
 
     // End of PDF related functions

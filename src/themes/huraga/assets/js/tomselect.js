@@ -37,7 +37,7 @@ export default function initLanguageSelector() {
   }
 
   // Get saved language preference
-  const savedLang = getCookie('BBLANG') || '';
+  const savedLang = getCookie('fb_locale') || '';
 
   new TomSelect('.js-language-selector', {
     copyClassesToDropdown: false,
@@ -51,7 +51,7 @@ export default function initLanguageSelector() {
       option: (data, escape) => localeSelectorTemplate(data, escape),
     },
     onItemAdd: (value) => {
-      setCookie('BBLANG', value, 365);
+      setCookie('fb_locale', value, 365);
       window.location.reload();
     },
   });

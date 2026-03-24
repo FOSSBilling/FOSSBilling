@@ -11,15 +11,21 @@
 
 namespace Box\Mod\Notification;
 
+use Box\Mod\Extension\Entity\ExtensionMeta;
+use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private ?ExtensionMetaRepository $extensionMetaRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->extensionMetaRepository = isset($this->di['em'])
+            ? $this->di['em']->getRepository(ExtensionMeta::class)
+            : null;
     }
 
     public function getDi(): ?\Pimple\Container
@@ -27,37 +33,77 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getSearchQuery($filter): array
+    public function getExtensionMetaRepository(): ExtensionMetaRepository
     {
-        $q = "SELECT *
-            FROM extension_meta
-            WHERE extension = 'mod_notification'
-            AND meta_key = 'message'
-            ORDER BY id DESC
-        ";
+        if ($this->extensionMetaRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
 
-        return [$q, []];
+            $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
+        }
+
+        return $this->extensionMetaRepository;
     }
 
-    public function toApiArray($row)
+    public function getSearchQueryBuilder(array $filter = []): \Doctrine\ORM\QueryBuilder
     {
-        return $this->di['db']->toArray($row);
+        return $this->getExtensionMetaRepository()
+            ->createQueryBuilderForExtension('mod_notification', 'n')
+            ->andWhere('n.metaKey = :metaKey')
+            ->setParameter('metaKey', 'message')
+            ->orderBy('n.id', 'DESC');
     }
 
-    public function create($message)
+    public function toApiArray(ExtensionMeta $row): array
     {
-        $meta = $this->di['db']->dispense('extension_meta');
-        $meta->extension = 'mod_notification';
-        $meta->rel_type = 'staff';
-        $meta->rel_id = 1;
-        $meta->meta_key = 'message';
-        $meta->meta_value = $message;
-        $meta->created_at = date('Y-m-d H:i:s');
-        $meta->updated_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($meta);
+        return $row->toApiArray();
+    }
 
+    public function get(int $id): ExtensionMeta
+    {
+        $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndId('mod_notification', $id);
+        if (!$meta instanceof ExtensionMeta || $meta->getMetaKey() !== 'message') {
+            throw new \FOSSBilling\Exception('Notification message was not found');
+        }
+
+        return $meta;
+    }
+
+    public function create(string $message): int
+    {
+        $meta = (new ExtensionMeta())
+            ->setExtension('mod_notification')
+            ->setRelType('staff')
+            ->setRelId('1')
+            ->setMetaKey('message')
+            ->setMetaValue($message);
+
+        $this->di['em']->persist($meta);
+        $this->di['em']->flush();
+
+        $id = $meta->getId();
+        if ($id === null) {
+            throw new \FOSSBilling\Exception('Failed to create notification message: missing ID after persistence.');
+        }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminNotificationAdd', 'params' => ['id' => $id]]);
 
         return $id;
+    }
+
+    public function delete(int $id): bool
+    {
+        $meta = $this->get($id);
+        $this->di['em']->remove($meta);
+        $this->di['em']->flush();
+
+        return true;
+    }
+
+    public function deleteAll(): bool
+    {
+        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_notification', 'message');
+
+        return true;
     }
 }
