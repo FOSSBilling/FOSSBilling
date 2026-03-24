@@ -697,7 +697,6 @@ class Service implements InjectionAwareInterface
         $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
         $order->config = json_encode($config);
         $order->invoice_option = $invoiceOption;
-        $order->form_id = $product->form_id;
 
         if ($period) {
             $bp = $this->di['period']($data['period']);
@@ -1388,7 +1387,7 @@ class Service implements InjectionAwareInterface
     private function validateConfigAgainstForm(array $config, array $form): void
     {
         foreach ($form['fields'] as $field) {
-            $name  = $field['name'];
+            $name = $field['name'];
             $value = $config[$name] ?? null;
 
             if (!empty($field['required']) && ($value === null || $value === '' || (is_array($value) && count($value) === 0))) {
