@@ -52,7 +52,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return array_map($this->toApiArray(...), $redirects);
     }
 
-    public function getRedirectByPath($path)
+    public function getRedirectByPath($path): ?string
     {
         $redirect = $this->getExtensionMetaRepository()->findOneByExtensionAndScope('mod_redirect', (string) $path);
 
@@ -90,8 +90,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function update(ExtensionMeta $redirect, array $data): bool
     {
         $redirect
-            ->setMetaKey(trim(htmlspecialchars($data['path'] ?? $redirect->getMetaKey(), ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/'))
-            ->setMetaValue(trim(htmlspecialchars($data['target'] ?? $redirect->getMetaValue(), ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/'));
+            ->setMetaKey(trim(htmlspecialchars((string) ($data['path'] ?? $redirect->getMetaKey()), ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/'))
+            ->setMetaValue(trim(htmlspecialchars((string) ($data['target'] ?? $redirect->getMetaValue()), ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/'));
 
         $this->di['em']->flush();
 

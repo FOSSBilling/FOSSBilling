@@ -158,7 +158,7 @@ final class ServiceTest extends \BBTestCase
             ->method('isSubscribable')
             ->willReturn(true);
 
-        $invoiceItemServiceMock = $this->createMock(\Box\Mod\Invoice\ServiceInvoiceItem::class);
+        $invoiceItemServiceMock = $this->createMock(ServiceInvoiceItem::class);
 
         $modelToArrayResult = [
             'id' => 1,

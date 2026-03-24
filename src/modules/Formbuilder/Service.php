@@ -75,7 +75,7 @@ class Service implements InjectionAwareInterface
         return (is_countable($data) ? count($data) : 0) === count($unique);
     }
 
-    public function addNewForm($data)
+    public function addNewForm($data): int
     {
         $style = [
             'type' => $data['type'] ?? 'horizontal',
@@ -95,7 +95,7 @@ class Service implements InjectionAwareInterface
         return $formId;
     }
 
-    public function addNewField($field)
+    public function addNewField($field): int
     {
         $fieldNumber = (int) $this->getFormFieldsCount($field['form_id']) + 1;
         $types = $this->getFormFieldsTypes();
@@ -280,7 +280,7 @@ class Service implements InjectionAwareInterface
         return $fields;
     }
 
-    public function getFormFieldsCount($form_id)
+    public function getFormFieldsCount($form_id): int
     {
         return (int) $this->getDbal()->executeQuery(
             'SELECT COUNT(*) FROM form_field WHERE form_id = ?',
@@ -288,7 +288,10 @@ class Service implements InjectionAwareInterface
         )->fetchOne();
     }
 
-    public function getFormPairs()
+    /**
+     * @return mixed[]
+     */
+    public function getFormPairs(): array
     {
         $pairs = [];
         $rows = $this->getDbal()->executeQuery('SELECT id, name FROM form')->fetchAllAssociative();
