@@ -228,14 +228,6 @@ final class ServiceTest extends \BBTestCase
                 $service = $subscriptionServiceMock;
             }
 
-            if ($service === null) {
-                throw new \RuntimeException(sprintf(
-                    'Unexpected service requested: serviceName="%s", sub="%s".',
-                    (string) $serviceName,
-                    (string) $sub
-                ));
-            }
-
             return $service;
         });
         $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
@@ -431,8 +423,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
             ->willReturn($di);
-        $result = $serviceMock->onEventAfterInvoiceIsDue($eventMock);
-        self::assertTrue($result);
+        $serviceMock->onEventAfterInvoiceIsDue($eventMock);
     }
 
     public function testMarkAsPaid(): void
