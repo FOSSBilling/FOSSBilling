@@ -278,6 +278,8 @@ final class ServiceTest extends \BBTestCase
             if ($serviceName == 'email') {
                 return $emailService;
             }
+
+            return null;
         });
         $di['db'] = $dbMock;
 
@@ -325,10 +327,11 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
-            if ($serviceName == 'invoice') {
+            $serviceName = strtolower((string) $serviceName);
+            if ($serviceName === 'invoice') {
                 return $serviceMock;
             }
-            if ($serviceName == 'email' || $serviceName == 'Email') {
+            if ($serviceName === 'email') {
                 return $emailService;
             }
         });
@@ -420,7 +423,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
             ->willReturn($di);
-        $result = $serviceMock->onEventAfterInvoiceIsDue($eventMock);
+        $serviceMock->onEventAfterInvoiceIsDue($eventMock);
     }
 
     public function testMarkAsPaid(): void
@@ -589,7 +592,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyServiceMock, $itemInvoiceServiceMock) {
-            if ($serviceName == 'Currency') {
+            if ($serviceName == 'currency') {
                 return $currencyServiceMock;
             }
             if ($sub == 'InvoiceItem') {

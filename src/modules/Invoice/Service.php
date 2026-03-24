@@ -518,7 +518,7 @@ class Service implements InjectionAwareInterface
 
     public function countIncome(\Model_Invoice $invoice): void
     {
-        $table = $this->di['mod_service']('Currency');
+        $table = $this->di['mod_service']('currency');
 
         $invoice->base_income = $table->toBaseCurrency($invoice->currency, $this->getTotal($invoice));
         if ($invoice->refund !== null) {
@@ -533,7 +533,7 @@ class Service implements InjectionAwareInterface
     public function prepareInvoice(\Model_Client $client, array $data)
     {
         if (!$client->currency) {
-            $currencyService = $this->di['mod_service']('Currency');
+            $currencyService = $this->di['mod_service']('currency');
             /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
             $currencyRepository = $currencyService->getCurrencyRepository();
             $currency = $currencyRepository->findDefault();
