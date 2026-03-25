@@ -358,7 +358,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn('default');
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
-        $tmpDir = sys_get_temp_dir() . '/fb_test_' . uniqid();
+        $tmpDir = sys_get_temp_dir() . '/fb_test_' . uniqid('', true);
         mkdir($tmpDir, 0o755, true);
         $testFile = $tmpDir . '/test_settings.json';
 
@@ -387,7 +387,7 @@ final class ServiceTest extends \BBTestCase
     {
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
 
-        $tmpDir = sys_get_temp_dir() . '/fb_test_assets_' . uniqid();
+        $tmpDir = sys_get_temp_dir() . '/' . uniqid('fb_test_assets_', true);
         mkdir($tmpDir, 0o755, true);
 
         $themeMock->expects($this->atLeastOnce())
