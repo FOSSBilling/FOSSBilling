@@ -123,7 +123,10 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getThemePresets(Model\Theme $theme)
+    /**
+     * @return mixed[]
+     */
+    public function getThemePresets(Model\Theme $theme): array
     {
         $presets = [];
         $metaRows = $this->getExtensionMetaRepository()->findByExtensionAndScope('mod_theme', null, 'settings', $theme->getName(), ['metaKey' => 'ASC']);
