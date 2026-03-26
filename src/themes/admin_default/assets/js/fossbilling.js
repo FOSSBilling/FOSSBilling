@@ -61,19 +61,22 @@ globalThis.FOSSBilling = {
   },
 
   cookieCreate: function (name, value, days) {
+    let expires;
     if (days) {
-      var date = new Date();
+      let date = new Date();
       date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-      var expires = "; expires=" + date.toGMTString();
-    } else var expires = "";
+      expires = "; expires=" + date.toUTCString();
+    } else {
+      expires = "";
+    }
     document.cookie = name + "=" + value + expires + "; path=/";
   },
 
   cookieRead: function (name) {
-    var nameEQ = name + "=";
-    var ca = document.cookie.split(";");
-    for (var i = 0; i < ca.length; i++) {
-      var c = ca[i];
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(";");
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
       while (c.charAt(0) == " ") c = c.substring(1, c.length);
       if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
     }
@@ -140,20 +143,31 @@ globalThis.FOSSBilling = {
       }
     });
 
-    //===== Information boxes =====//
-    document.querySelectorAll('.hideit').forEach(element => {
-      element.addEventListener('click', function() {
-        // Simple fade out effect
-        let opacity = 1;
-        const fadeEffect = setInterval(() => {
-          if (opacity > 0) {
-            opacity -= 0.1;
-            this.style.opacity = opacity;
-          } else {
-            clearInterval(fadeEffect);
-            this.style.display = 'none';
-          }
-        }, 40); // 40ms * 10 steps ~= 400ms duration
-      });
-    });
-  });
+   //===== Information boxes =====//
+   document.querySelectorAll('.hideit').forEach(element => {
+     element.addEventListener('click', function() {
+       // Simple fade out effect
+       let opacity = 1;
+       const fadeEffect = setInterval(() => {
+         if (opacity > 0) {
+           opacity -= 0.1;
+           this.style.opacity = opacity;
+         } else {
+           clearInterval(fadeEffect);
+           this.style.display = 'none';
+         }
+       }, 40); // 40ms * 10 steps ~= 400ms duration
+     });
+   });
+
+   //===== Tab parameter support =====//
+   const urlParams = new URLSearchParams(window.location.search);
+   const tabParam = urlParams.get('tab');
+   if (tabParam) {
+     const tabTrigger = document.querySelector(`button[data-bs-target="#${tabParam}"], a[data-bs-target="#${tabParam}"]`);
+     if (tabTrigger) {
+       const tab = new bootstrap.Tab(tabTrigger);
+       tab.show();
+     }
+   }
+ });

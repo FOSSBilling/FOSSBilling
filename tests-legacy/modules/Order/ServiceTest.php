@@ -14,7 +14,7 @@ class PdoMock extends \PDO
     }
 }
 
-class PdoStatmentsMock extends \PDOStatement
+class PdoStatementsMock extends \PDOStatement
 {
     public function __construct()
     {

@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: PHP Build
-        uses: FOSSBilling/.workflows/.github/actions/php-build@de419177cb0d9aacddda30e1b64cbefa6c4a8b63
+        uses: FOSSBilling/.workflows/.github/actions/php-build@14f9ee16814897607dac1886accc76aefcea3378
         with:
           php-version: 8.3
 

@@ -21,8 +21,6 @@ class Admin extends \Api_Abstract
      *
      * @optional string $status - filter list by status
      * @optional string $search - search query to search for mail messages
-     *
-     * @return array
      */
     public function get_list(array $data): array
     {
@@ -40,8 +38,6 @@ class Admin extends \Api_Abstract
 
     /**
      * Get mail message by id.
-     *
-     * @return array
      */
     public function get(array $data): array
     {
@@ -96,8 +92,6 @@ class Admin extends \Api_Abstract
      * Create mail message.
      *
      * @optional string $content - mail message content
-     *
-     * @return int
      */
     #[RequiredParams(['subject' => 'Message subject was not passed'])]
     public function create(array $data): int
@@ -192,8 +186,6 @@ Order our services at {{ "order"|url }}
 
     /**
      * Copy mail message by ID.
-     *
-     * @return int
      */
     public function copy(array $data): int
     {
@@ -224,8 +216,6 @@ Order our services at {{ "order"|url }}
 
     /**
      * Get message receivers list.
-     *
-     * @return array
      */
     public function receivers(array $data): array
     {

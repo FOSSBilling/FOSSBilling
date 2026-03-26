@@ -19,22 +19,22 @@ use FOSSBilling\InformationException;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
-    private const FILTER_CLIENT_STATUS = 'client_status';
-    private const FILTER_CLIENT_GROUPS = 'client_groups';
-    private const FILTER_HAS_ORDER = 'has_order';
-    private const FILTER_HAS_ORDER_WITH_STATUS = 'has_order_with_status';
-    private const FILTER_KEYS = [
+    private const string FILTER_CLIENT_STATUS = 'client_status';
+    private const string FILTER_CLIENT_GROUPS = 'client_groups';
+    private const string FILTER_HAS_ORDER = 'has_order';
+    private const string FILTER_HAS_ORDER_WITH_STATUS = 'has_order_with_status';
+    private const array FILTER_KEYS = [
         self::FILTER_CLIENT_STATUS,
         self::FILTER_CLIENT_GROUPS,
         self::FILTER_HAS_ORDER,
         self::FILTER_HAS_ORDER_WITH_STATUS,
     ];
-    private const CLIENT_STATUSES = [
+    private const array CLIENT_STATUSES = [
         \Model_Client::ACTIVE,
         \Model_Client::SUSPENDED,
         \Model_Client::CANCELED,
     ];
-    private const ORDER_STATUSES = [
+    private const array ORDER_STATUSES = [
         \Model_ClientOrder::STATUS_PENDING_SETUP,
         \Model_ClientOrder::STATUS_FAILED_SETUP,
         \Model_ClientOrder::STATUS_FAILED_RENEW,
@@ -222,7 +222,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
-            throw new \FOSSBilling\InformationException('Disabled for security reasons (Demo mode enabled)');
+            throw new InformationException('Disabled for security reasons (Demo mode enabled)');
         }
 
         if (!Environment::isProduction()) {
