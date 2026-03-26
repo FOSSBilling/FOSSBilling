@@ -765,35 +765,26 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getTemplateList(array $data = []): array
     {
-        $this->templateBatchGenerate();
+        $where = [];
+        $bindings = [];
 
-        $templates = $this->di['db']->find('EmailTemplate', ' ORDER BY category ASC, action_code ASC');
-        $items = [];
-        foreach ($templates as $template) {
-            if (!$template instanceof \Model_EmailTemplate) {
-                continue;
-            }
-
-            $items[] = $this->templateToApiArray($template, true);
+        if (isset($data['code']) && $data['code'] !== '') {
+            $where[] = 'action_code LIKE :code';
+            $bindings[':code'] = '%' . $data['code'] . '%';
         }
 
-        $code = isset($data['code']) ? strtolower((string) $data['code']) : null;
-        $search = isset($data['search']) ? strtolower((string) $data['search']) : null;
-
-        if ($code) {
-            $items = array_values(array_filter($items, static fn (array $item): bool => str_contains(strtolower((string) $item['action_code']), $code)));
-        }
-
-        if ($search) {
-            $items = array_values(array_filter($items, static function (array $item) use ($search): bool {
-                foreach (['action_code', 'subject', 'content', 'category', 'description'] as $field) {
-                    if (str_contains(strtolower((string) ($item[$field] ?? '')), $search)) {
-                        return true;
-                    }
-                }
-
-                return false;
-            }));
+        if (isset($data['search']) && $data['search'] !== '') {
+            $searchParam = '%' . $data['search'] . '%';
+            $where[] = '(action_code LIKE :search_action_code'
+                . ' OR COALESCE(subject, \'\') LIKE :search_subject'
+                . ' OR COALESCE(content, \'\') LIKE :search_content'
+                . ' OR COALESCE(category, \'\') LIKE :search_category'
+                . ' OR COALESCE(description, \'\') LIKE :search_description)';
+            $bindings[':search_action_code'] = $searchParam;
+            $bindings[':search_subject'] = $searchParam;
+            $bindings[':search_content'] = $searchParam;
+            $bindings[':search_category'] = $searchParam;
+            $bindings[':search_description'] = $searchParam;
         }
 
         $request = $this->di['request'] ?? null;
@@ -801,15 +792,35 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $perPage = (int) ($data['per_page'] ?? $request?->query->get('per_page', $this->di['pager']->getDefaultPerPage()) ?? $this->di['pager']->getDefaultPerPage());
         $perPage = max(1, $perPage);
 
-        $total = count($items);
+        // getCell() requires raw SQL with the physical table name; model-aware methods
+        // (find/findOne) accept the RedBeanPHP model name ('EmailTemplate').
+        $countSql = 'SELECT COUNT(*) FROM email_template';
+        if (!empty($where)) {
+            $countSql .= ' WHERE ' . implode(' AND ', $where);
+        }
+        $total = (int) $this->di['db']->getCell($countSql, $bindings);
+
         $offset = ($page - 1) * $perPage;
+
+        $condition = (!empty($where) ? implode(' AND ', $where) . ' ' : '')
+            . sprintf('ORDER BY category ASC, action_code ASC LIMIT %u OFFSET %u', $perPage, $offset);
+
+        $templates = $this->di['db']->find('EmailTemplate', $condition, $bindings);
+
+        $list = [];
+        foreach ($templates as $template) {
+            if (!$template instanceof \Model_EmailTemplate) {
+                continue;
+            }
+            $list[] = $this->templateToApiArray($template, false);
+        }
 
         return [
             'pages' => $total > 0 ? (int) ceil($total / $perPage) : 0,
             'page' => $page,
             'per_page' => $perPage,
             'total' => $total,
-            'list' => array_slice($items, $offset, $perPage),
+            'list' => $list,
         ];
     }
 
