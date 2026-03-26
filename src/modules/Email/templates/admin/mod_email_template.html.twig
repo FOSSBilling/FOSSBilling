@@ -1,6 +1,6 @@
 {% extends "layout_default.html.twig" %}
 
-{% block meta_title %}{{ 'Email template'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Email Template'|trans }}{% endblock %}
 {% set active_menu = 'system' %}
 
 {% block breadcrumbs %}
@@ -44,7 +44,7 @@
                     <form method="post" action="admin/email/template_update" {{ fb_api_form({message: 'Template Updated'|trans}) }}>
                         <input type="hidden" name="id" value="{{ template.id }}">
                         <div class="card-body">
-                            <h3 class="card-title">{{ 'Manage email template'|trans }}</h3>
+                            <h3 class="card-title">{{ 'Manage Email Template'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Email templates can receive variables from FOSSBilling. Available variables are listed under the "Variables" tab. Copy a variable name to your email template and hit preview to see parsed content. Please note that values will be different when an actual email is sent.'|trans }}</p>
                             {% if template.is_custom %}
                                 <div class="alert alert-info">{{ 'This is a custom database-only template.'|trans }}</div>
@@ -56,13 +56,13 @@
                                 <div class="alert alert-info">{{ 'This built-in template is currently using its file-backed default.'|trans }}</div>
                             {% endif %}
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Email subject'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Email Subject'|trans }}</label>
                                 <div class="col-md-7">
                                     <input class="form-control" type="text" name="subject" value="{{ template.subject }}" id="email-subject" required>
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Email message'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Email Message'|trans }}</label>
                                 <div class="col-md-7">
                                     <textarea class="form-control" name="content" id="email-template" rows="10" required>{{ template.content }}</textarea>
                                 </div>
@@ -104,7 +104,7 @@
                     <form method="post" action="admin/email/template_update" {{ fb_api_form({ message: 'Template Updated'|trans}) }}>
                         <input type="hidden" name="id" value="{{ template.id }}">
                         <div class="card-body">
-                            <h3 class="card-title">{{ 'Template settings'|trans }}</h3>
+                            <h3 class="card-title">{{ 'Template Settings'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Enable or disable this email template.'|trans }}</p>
 
                             <div class="mb-3 row">
@@ -136,7 +136,7 @@
 
                 <div class="tab-pane fade" id="tab-vars" role="tabpanel">
                     <div class="card-body border-bottom">
-                        <h3 class="card-title">{{ 'List of variables used in this email'|trans }}</h3>
+                        <h3 class="card-title">{{ 'List of Variables Used in This Email'|trans }}</h3>
                         <p class="card-subtitle">{{ 'These values will change when real email is sent. You can pass these variables to admin or guest API to get additional information from database.'|trans }}</p>
                     </div>
                     <div class="table-responsive">
@@ -144,7 +144,7 @@
                             <thead>
                             <tr>
                                 <th>{{ 'Variable'|trans }}</th>
-                                <th>{{ 'Example value'|trans }}</th>
+                                <th>{{ 'Example Value'|trans }}</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -190,7 +190,7 @@
 
                 <div class="tab-pane fade" id="tab-examples" role="tabpanel">
                     <div class="card-body">
-                        <h3 class="card-title">{{ 'Email templates examples'|trans }}</h3>
+                        <h3 class="card-title">{{ 'Email Template Examples'|trans }}</h3>
                         <p class="card-subtitle">{{ 'Email template playground. Use this tool to try rendering email templates.'|trans }}</p>
 
                         <div class="mb-3">
@@ -270,10 +270,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 contentResult = content;
                 showEmailPreview(subjectResult, contentResult);
             }, function(error) {
-                FOSSBilling.message(`{{ 'Failed to render email content'|trans }}: ${error.message}`, 'error');
+            FOSSBilling.message(`{{ 'Failed to Render Email Content'|trans }}: ${error.message}`, 'error');
             });
         }, function(error) {
-            FOSSBilling.message(`{{ 'Failed to render email subject'|trans }}: ${error.message}`, 'error');
+            FOSSBilling.message(`{{ 'Failed to Render Email Subject'|trans }}: ${error.message}`, 'error');
         });
     });
 
@@ -287,9 +287,9 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         API.admin.post('email/template_render', params, function(result) {
-            showEmailPreview('<em class="text-muted">{{ "No subject for example preview"|trans }}</em>', result);
+            showEmailPreview('<em class="text-muted">{{ "No Subject for Example Preview"|trans }}</em>', result);
         }, function(error) {
-            FOSSBilling.message(`{{ 'Failed to render template'|trans }}: ${error.message}`, 'error');
+            FOSSBilling.message(`{{ 'Failed to Render Template'|trans }}: ${error.message}`, 'error');
         });
     });
 });

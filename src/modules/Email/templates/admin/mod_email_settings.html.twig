@@ -26,21 +26,21 @@
 
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Email templates'|trans }}</a>
+                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Email Templates'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
                     <svg class="icon me-2">
                         <use xlink:href="#plus" />
                     </svg>
-                    {{ 'New template'|trans }}
+                    {{ 'New Template'|trans }}
                 </a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-queue" data-bs-toggle="tab">{{ 'Email queue'|trans }}</a>
+                <a class="nav-link" href="#tab-queue" data-bs-toggle="tab">{{ 'Email Queue'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-email" data-bs-toggle="tab">{{ 'Email settings'|trans }}</a>
+                <a class="nav-link" href="#tab-email" data-bs-toggle="tab">{{ 'Email Settings'|trans }}</a>
             </li>
         </ul>
         <div class="card">
@@ -52,19 +52,19 @@
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#mail" />
                             </svg>
-                            <span>{{ 'Sync defaults'|trans }}</span>
+                            <span>{{ 'Sync Defaults'|trans }}</span>
                         </a>
                         <a class="btn btn-primary" href="{{ 'api/admin/email/batch_template_enable'|link }}" {{ fb_api_link({ message: 'All Email Templates Enabled'|trans}) }}>
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#play" />
                             </svg>
-                            <span>{{ 'Enable all'|trans }}</span>
+                            <span>{{ 'Enable All'|trans }}</span>
                         </a>
                         <a class="btn btn-primary" href="{{ 'api/admin/email/batch_template_disable'|link }}" {{ fb_api_link({ message: 'All Email Templates Disabled'|trans}) }}>
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#close" />
                             </svg>
-                            <span>{{ 'Disable all'|trans }}</span>
+                            <span>{{ 'Disable All'|trans }}</span>
                         </a>
                     </div>
                     {{ include('partial_search.html.twig') }}
@@ -89,7 +89,7 @@
                                         {% if template.is_custom %}
                                             <span class="badge bg-blue-lt ms-2">{{ 'Custom'|trans }}</span>
                                         {% elseif not template.has_default %}
-                                            <span class="badge bg-warning-lt ms-2">{{ 'Missing default'|trans }}</span>
+                                            <span class="badge bg-warning-lt ms-2">{{ 'Missing Default'|trans }}</span>
                                         {% elseif template.is_overridden %}
                                             <span class="badge bg-azure-lt ms-2">{{ 'Customized'|trans }}</span>
                                         {% else %}
@@ -138,7 +138,7 @@
                 <div class="tab-pane fade" id="tab-new" role="tabpanel">
                     <form method="post" action="{{ 'api/admin/email/template_create'|link }}" {{ fb_api_form({ reload: true}) }}>
                         <div class="card-body">
-                            <h3 class="card-title">{{ 'Where I can use new email template?'|trans }}</h3>
+                            <h3 class="card-title">{{ 'Where Can I Use a New Email Template?'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Newly created email templates can be used in custom event hooks.'|trans }}</p>
 
                             <div class="mb-3 row">
@@ -161,7 +161,7 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Action code'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Action Code'|trans }}</label>
                                 <div class="col-md-6">
                                     <input class="form-control" type="text" name="action_code" value="{{ requests.action_code }}" required>
                                 </div>
@@ -200,8 +200,8 @@
                                 <th>{{ 'To (Email)'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
                                 <th>{{ 'Tries'|trans }}</th>
-                                <th>{{ 'Created at'|trans }}</th>
-                                <th>{{ 'Updated at'|trans }}</th>
+                                <th>{{ 'Created At'|trans }}</th>
+                                <th>{{ 'Updated At'|trans }}</th>
                                 <th class="w-1"></th>
                             </tr>
                             </thead>
@@ -259,11 +259,11 @@
                 <div class="tab-pane fade" id="tab-email" role="tabpanel">
                     <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({ message: 'Email Settings Updated'|trans}) }}>
                         <div class="card-body">
-                            <h3 class="card-title">{{ 'Configure email options'|trans }}</h3>
+                            <h3 class="card-title">{{ 'Configure Email Options'|trans }}</h3>
                             <p class="card-subtitle">{{ 'FOSSBilling sends emails using <em>sendmail</em> by default or you can configure your own SMTP server'|trans|raw }}</p>
 
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'From name'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'From Name'|trans }}</label>
                                 <div class="col-md-6">
                                     <input class="form-control" type="text" name="from_name" value="{{ params.from_name }}" placeholder="{{ company.name }}">
                                     <small class="form-hint">{{ 'Leave blank to use company public name'|trans }}</small>
@@ -271,7 +271,7 @@
                             </div>
 
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'From email'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'From Email'|trans }}</label>
                                 <div class="col-md-6">
                                     <input class="form-control" type="email" name="from_email" value="{{ params.from_email }}" placeholder="{{ company.email }}">
                                     <small class="form-hint">{{ 'Leave blank to use company public email'|trans }}</small>
@@ -281,7 +281,7 @@
                             <hr />
 
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Queue options'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Queue Options'|trans }}</label>
                                 <div class="col-md-6">
                                     <div class="mb-2">
                                         <small class="form-hint">{{ 'Send emails per cron run (0 = unlimited)'|trans }}</small>
@@ -301,7 +301,7 @@
                             <hr />
 
                             <div class="mb-3 row">
-                                <label class="col-md-3 form-label">{{ 'Log sent emails to database'|trans }}</label>
+                                <label class="col-md-3 form-label">{{ 'Log Sent Emails to Database'|trans }}</label>
                                 <div class="col-md-6">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radioLogEnabledYes" type="radio" name="log_enabled" value="1"{% if params.log_enabled %} checked{% endif %}>
@@ -314,7 +314,7 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-md-3 form-label">{{ 'Email transport'|trans }}</label>
+                                <label class="col-md-3 form-label">{{ 'Email Transport'|trans }}</label>
                                 <div class="col-md-6" id="mailer">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radioSendMail" type="radio" name="mailer" value="sendmail"{% if params.mailer == 'sendmail' or not params.mailer %} checked{% endif %}>
@@ -390,9 +390,9 @@
                                 <svg class="icon">
                                     <use xlink:href="#wifi" />
                                 </svg>
-                                {{ 'Send a test email to yourself'|trans }}
+                                {{ 'Send a Test Email to Yourself'|trans }}
                             </button>
-                            <input type="submit" value="{{ 'Update email settings'|trans }}" class="btn btn-primary">
+                            <input type="submit" value="{{ 'Update Email Settings'|trans }}" class="btn btn-primary">
                         </div>
                     </form>
                 </div>

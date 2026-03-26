@@ -14,7 +14,7 @@
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'email/history'|alink }}">{{ 'Email history'|trans }}</a>
+            <a href="{{ 'email/history'|alink }}">{{ 'Email History'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ email.subject }}</li>
     </ol>
@@ -55,7 +55,7 @@
             <span class="d-block text-secondary">{{ 'Preview'|trans }}</span>
         </button>
         <a class="btn btn-primary"
-            {{ fb_api_link({href: 'api/admin/email/email_resend'|link({id: email.id}), message: 'Email resent'|trans}) }}>
+            {{ fb_api_link({href: 'api/admin/email/email_resend'|link({id: email.id}), message: 'Email Resent'|trans}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
                 <use xlink:href="#refresh" />
             </svg>
