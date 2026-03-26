@@ -1024,12 +1024,6 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $di['pager'] = $pager;
         $di['request'] = $request;
-        $crypt = $this->createMock('\Box_Crypt');
-        $crypt->expects($this->atLeastOnce())
-            ->method('decrypt')
-            ->willReturn(false);
-        $di['crypt'] = $crypt;
-        $di['config'] = ['salt' => md5(random_bytes(13))];
         $service->setDi($di);
 
         $result = $service->getTemplateList([]);
