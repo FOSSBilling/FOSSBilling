@@ -976,9 +976,8 @@ final class ServiceTest extends \BBTestCase
     public function testGetTemplateListUsesModelAwareFind(): void
     {
         $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['templateBatchGenerate'])->getMock();
-        $service->expects($this->atLeastOnce())
-            ->method('templateBatchGenerate')
-            ->willReturn(true);
+        $service->expects($this->never())
+            ->method('templateBatchGenerate');
 
         $template = new \Model_EmailTemplate();
         $template->loadBean(new \DummyBean());
@@ -992,8 +991,18 @@ final class ServiceTest extends \BBTestCase
 
         $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
+            ->method('getCell')
+            ->willReturn(1);
+        $db->expects($this->atLeastOnce())
             ->method('find')
-            ->with('EmailTemplate', ' ORDER BY category ASC, action_code ASC')
+            ->with(
+                'EmailTemplate',
+                $this->logicalAnd(
+                    $this->stringContains('ORDER BY category ASC, action_code ASC'),
+                    $this->stringContains('LIMIT'),
+                    $this->stringContains('OFFSET')
+                )
+            )
             ->willReturn([$template]);
         $db->expects($this->never())
             ->method('findAll');
@@ -1015,12 +1024,6 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $di['pager'] = $pager;
         $di['request'] = $request;
-        $crypt = $this->createMock('\Box_Crypt');
-        $crypt->expects($this->atLeastOnce())
-            ->method('decrypt')
-            ->willReturn(false);
-        $di['crypt'] = $crypt;
-        $di['config'] = ['salt' => md5(random_bytes(13))];
         $service->setDi($di);
 
         $result = $service->getTemplateList([]);
