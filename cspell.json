@@ -429,7 +429,8 @@
         "presentationml",
         "quicktime",
         "spreadsheetml",
-        "wordprocessingml"
+        "wordprocessingml",
+        "srclink"
     ],
     "ignorePaths": [
         "tests-legacy/**",
