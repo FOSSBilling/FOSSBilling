@@ -1,7 +1,7 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 <div class="card-body">
-    <h3>{{ 'Hosting settings'|trans }}</h3>
+    <h3>{{ 'Hosting Settings'|trans }}</h3>
     <form method="post" action="{{ 'api/admin/product/update_config'|link }}" {{ fb_api_form({message: 'Hosting Settings Updated'|trans}) }} id="hosting-settings-form">
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Server'|trans }}:</label>
@@ -31,7 +31,7 @@
 
         <hr />
 
-        <h3 class="mt-4">{{ 'Domain configuration'|trans }}</h3>
+        <h3 class="mt-4">{{ 'Domain Configuration'|trans }}</h3>
         <p class="text-muted">{{ 'Select which domain options are available to customers when ordering this product.'|trans }}</p>
 
         <div class="mb-3 row">
@@ -83,7 +83,7 @@
 
         <hr />
 
-        <h3 class="mt-4">{{ 'Free domain options'|trans }}</h3>
+        <h3 class="mt-4">{{ 'Free Domain Options'|trans }}</h3>
 
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Free domain registration'|trans }}:</label>
@@ -148,7 +148,7 @@
     <hr>
 
     <div class="d-flex align-items-center mb-3">
-        <h3 class="mb-0">{{ 'Hosting plans'|trans }}</h3>
+        <h3 class="mb-0">{{ 'Hosting Plans'|trans }}</h3>
         <a href="{{ 'servicehosting#tab-new-server'|alink }}" class="ms-auto btn btn-primary">
             <svg class="icon me-2">
                 <use xlink:href="#plus" />

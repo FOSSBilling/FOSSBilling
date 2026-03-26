@@ -1,6 +1,6 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 
-{% block meta_title %}{{ 'Processing payment ...'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Processing Payment...'|trans }}{% endblock %}
 
     {% block breadcrumb %}
         <li class="breadcrumb-item"><a href="{{ '/invoice'|link }}">{{ 'Invoices'|trans }}</a></li>
@@ -13,7 +13,7 @@
     <div class="col-md-12">
         <div class="card mb-4">
             <div class="card-header">
-                <h1>{{ 'Processing payment ...'|trans }}</h1>
+                <h1>{{ 'Processing Payment...'|trans }}</h1>
                 <p>{{ 'Thank you for your patience.'|trans }}</p>
             </div>
             <div class="card-body">
@@ -21,7 +21,7 @@
                     {{ payment.result|raw }}
                 {% endif %}
                 {% if payment.type == 'form' %}
-                    <h2>{{ 'Redirecting to payment gateway...'|trans }}</h2>
+                    <h2>{{ 'Redirecting to Payment Gateway...'|trans }}</h2>
                     <form method="post" action="{{ payment.service_url }}" name="payment_form">
                             {% for key, value in payment.result %}
                                 <input type="hidden" name="{{ key }}" value="{{ value }}" />

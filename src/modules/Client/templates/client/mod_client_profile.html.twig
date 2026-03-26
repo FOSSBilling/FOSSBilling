@@ -1,6 +1,6 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 
-{% block meta_title %}{{ 'Profile details'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Profile Details'|trans }}{% endblock %}
 {% block page_header %}{{ 'User profile settings'|trans }}{% endblock %}
 {% block breadcrumb %}
     <li class="breadcrumb-item active" aria-current="page">{{ 'Profile'|trans }}</li>{% endblock %}
@@ -35,7 +35,7 @@
                 </div>
                 <div class="tab-content">
                     <div class="card-body tab-pane active" id="details-tab-pane" role="tabpanel" tabindex="0">
-                        <h5 class="card-title mb-1">{{ 'Update details'|trans }}</h5>
+                        <h5 class="card-title mb-1">{{ 'Update Details'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'Keep your personal data up to date.'|trans }}</p>
                         <form method="post" action="client/profile/update" id="profile-update" {{ fb_api_form({message: 'Profile Updated'|trans}) }}>
                             <div class="row mb-4 d-flex justify-content-center">

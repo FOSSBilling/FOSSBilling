@@ -2,7 +2,7 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'Orders settings'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Orders Settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
@@ -18,14 +18,14 @@
         <li class="breadcrumb-item">
             <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ 'Orders settings'|trans }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Orders Settings'|trans }}</li>
     </ol>
 {% endblock %}
 
 {% block content %}
 <div class="card">
     <div class="card-body">
-        <h3>{{ 'Orders settings'|trans }}</h3>
+        <h3>{{ 'Orders Settings'|trans }}</h3>
 
         {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
         <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({message: 'Settings Updated'|trans}) }}>

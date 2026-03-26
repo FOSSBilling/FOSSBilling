@@ -42,7 +42,7 @@
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
             <div class="card-body">
-                <h3>{{ 'Transaction details'|trans }} #{{transaction.id}}</h3>
+                <h3>{{ 'Transaction Details'|trans }} #{{transaction.id}}</h3>
 
                 {% if transaction.error %}
                     <strong class="red">{{ transaction.error_code }} - {{ transaction.error }}</strong>
@@ -199,7 +199,7 @@
 
         <div class="tab-pane fade" id="tab-note" role="tabpanel">
             <div class="card-body">
-                <h3>{{ 'Note about this transaction'|trans }}</h3>
+                <h3>{{ 'Note About This Transaction'|trans }}</h3>
 
                 <form method="post" action="{{ 'api/admin/invoice/transaction_update'|link }}" {{ fb_api_form({message: 'Transaction Note Updated'|trans}) }}>
                     <div class="mb-3 row">

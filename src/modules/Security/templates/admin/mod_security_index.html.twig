@@ -2,7 +2,7 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'Security dashboard'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Security Dashboard'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 {% set params = admin.system_get_params %}
@@ -10,7 +10,7 @@
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">{{ 'Security dashboard'|trans }}</h3>
+            <h3 class="card-title">{{ 'Security Dashboard'|trans }}</h3>
             <div class="card-actions">
                 <a class="btn btn-primary btn-3" href="{{ 'api/admin/security/run_checks'|link }}" {{ fb_api_link({callback: 'setResults'}) }}>{{ "Run All Checks"|trans }}</a>
             </div>
