@@ -1,0 +1,236 @@
+{% set background_opacity = request.background_opacity | default('50') %}
+{% set width = request.width | default('600') %}
+{% set background_color = request.background_color | default('#000000') %}
+{% set theme_color = request.theme_color | default(settings.color_scheme | default('green')) %}
+{% set loader_nr = request.loader | default('8') %}
+{% set loader_url = 'img/assets/loaders/loader' ~ loader_nr ~ '.gif' %}
+{% set border_radius = request.border_radius | default(0) %}
+{% set bind_selector = request.bind_selector | default('.order-button') %}
+
+(() => {
+    const bindSelector = {{ bind_selector|json_encode|raw }};
+    const popupBaseUrl = {{ 'orderbutton'|url(area: 'client')|json_encode|raw }};
+    const loaderImageUrl = {{ loader_url|mod_asset_url('orderbutton')|json_encode|raw }};
+    const themeColor = {{ theme_color|json_encode|raw }};
+    const forcedProductId = {{ request.product_id|default(null)|json_encode|raw }};
+    const showCustomFormValues = {{ request.show_custom_form_values ? 'true' : 'false' }};
+    const closeOnBackgroundClick = {{ request.background_close ? 'true' : 'false' }};
+    const width = Number.parseInt({{ width|json_encode|raw }}, 10) || 600;
+    const borderRadius = Number.parseInt({{ border_radius|json_encode|raw }}, 10) || 0;
+    const backgroundOpacity = Math.min(Math.max(Number.parseInt({{ background_opacity|json_encode|raw }}, 10) || 50, 0), 100) / 100;
+    const maxPopupHeightOffset = 32;
+
+    class OrderButton {
+        constructor() {
+            this.dataProductId = null;
+            this.backgroundElem = null;
+            this.iframeElem = null;
+            this.loaderImageElem = null;
+            this.handleDocumentClick = this.handleDocumentClick.bind(this);
+            this.handleKeyUp = this.handleKeyUp.bind(this);
+            this.handleResize = this.handleResize.bind(this);
+        }
+
+        setDataProductId(productId) {
+            this.dataProductId = productId;
+        }
+
+        getDataProductId() {
+            return this.dataProductId;
+        }
+
+        attachEvents() {
+            document.addEventListener('keyup', this.handleKeyUp);
+            document.addEventListener('click', this.handleDocumentClick);
+            window.setTimeout(() => document.dispatchEvent(new Event('OrderButtonEventsReady')), 0);
+        }
+
+        handleKeyUp(event) {
+            if (event.key === 'Escape') {
+                this.hideElements();
+            }
+        }
+
+        handleDocumentClick(event) {
+            let trigger = null;
+
+            if (!(event.target instanceof Element)) {
+                return;
+            }
+
+            try {
+                trigger = event.target.closest(bindSelector);
+            } catch (error) {
+                return;
+            }
+
+            if (!trigger) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (forcedProductId !== null && forcedProductId !== '') {
+                this.setDataProductId(forcedProductId);
+            } else {
+                this.setDataProductId(trigger.getAttribute('data-product'));
+            }
+
+            this.popup();
+        }
+
+        hideElements() {
+            if (this.backgroundElem) {
+                this.backgroundElem.style.display = 'none';
+            }
+
+            if (this.iframeElem) {
+                this.iframeElem.style.display = 'none';
+            }
+        }
+
+        srclink() {
+            const url = new URL(popupBaseUrl, window.location.href);
+            const productId = this.getDataProductId();
+
+            url.searchParams.set('theme_color', themeColor);
+            url.searchParams.set('loader', '1');
+
+            if (productId) {
+                url.searchParams.set('order', productId);
+            }
+
+            if (showCustomFormValues) {
+                url.searchParams.set('show_custom_form_values', '1');
+            }
+
+            return url.toString();
+        }
+
+        createIframe() {
+            this.iframeElem = document.createElement('iframe');
+            this.iframeElem.setAttribute('frameborder', '0');
+            this.iframeElem.setAttribute('allowtransparency', 'true');
+            this.iframeElem.src = this.srclink();
+            this.iframeElem.className = 'fossbilling-orderbutton-iframe';
+            this.iframeElem.style.position = 'fixed';
+            this.iframeElem.style.top = '50%';
+            this.iframeElem.style.left = '50%';
+            this.iframeElem.style.transform = 'translate(-50%, -50%)';
+            this.iframeElem.style.width = `min(${width}px, calc(100vw - 2rem))`;
+            this.iframeElem.style.maxWidth = 'calc(100vw - 2rem)';
+            this.iframeElem.style.height = '80vh';
+            this.iframeElem.style.maxHeight = 'calc(100vh - 2rem)';
+            this.iframeElem.style.border = '0';
+            this.iframeElem.style.backgroundColor = 'transparent';
+            this.iframeElem.style.borderRadius = `${borderRadius}px`;
+            this.iframeElem.style.display = 'none';
+            this.iframeElem.style.margin = '0 auto';
+            this.iframeElem.style.padding = '0';
+            this.iframeElem.style.zIndex = '1002';
+
+            this.iframeElem.addEventListener('load', () => {
+                this.loaderImageElem.style.display = 'none';
+                this.updateIframeHeight();
+                this.iframeElem.style.display = 'block';
+            });
+
+            window.addEventListener('resize', this.handleResize);
+            document.body.appendChild(this.iframeElem);
+        }
+
+        updateIframeHeight() {
+            if (!this.iframeElem) {
+                return;
+            }
+
+            const viewportHeight = Math.max(window.innerHeight - maxPopupHeightOffset, 320);
+
+            try {
+                const frameDocument = this.iframeElem.contentWindow?.document;
+                const contentHeight = frameDocument?.documentElement?.scrollHeight ?? frameDocument?.body?.scrollHeight;
+
+                if (typeof contentHeight === 'number' && contentHeight > 0) {
+                    this.iframeElem.style.height = `${Math.min(contentHeight, viewportHeight)}px`;
+                    return;
+                }
+            } catch (error) {
+                // Same-origin access should be available, but keep the popup functional if it is not.
+            }
+
+            this.iframeElem.style.height = `${Math.floor(viewportHeight * 0.8)}px`;
+        }
+
+        handleResize() {
+            this.updateIframeHeight();
+        }
+
+        createBackground() {
+            this.backgroundElem = document.createElement('div');
+            this.backgroundElem.id = 'popup-background';
+            this.backgroundElem.style.display = 'none';
+            this.backgroundElem.style.position = 'fixed';
+            this.backgroundElem.style.top = '0';
+            this.backgroundElem.style.left = '0';
+            this.backgroundElem.style.width = '100%';
+            this.backgroundElem.style.height = '100%';
+            this.backgroundElem.style.backgroundColor = {{ background_color|json_encode|raw }};
+            this.backgroundElem.style.opacity = backgroundOpacity.toString();
+            this.backgroundElem.style.zIndex = '1000';
+
+            if (closeOnBackgroundClick) {
+                this.backgroundElem.addEventListener('click', () => this.hideElements());
+            }
+
+            document.body.appendChild(this.backgroundElem);
+        }
+
+        createLoaderImage() {
+            this.loaderImageElem = document.createElement('img');
+            this.loaderImageElem.src = loaderImageUrl;
+            this.loaderImageElem.alt = '';
+            this.loaderImageElem.style.display = 'block';
+            this.loaderImageElem.style.position = 'fixed';
+            this.loaderImageElem.style.top = '50%';
+            this.loaderImageElem.style.left = '50%';
+            this.loaderImageElem.style.transform = 'translate(-50%, -50%)';
+            this.loaderImageElem.style.zIndex = '1001';
+
+            this.backgroundElem.appendChild(this.loaderImageElem);
+        }
+
+        popup() {
+            const sourceLink = this.srclink();
+
+            if (this.backgroundElem && this.iframeElem) {
+                this.backgroundElem.style.display = 'block';
+
+                if (this.iframeElem.src !== sourceLink) {
+                    this.loaderImageElem.style.display = 'block';
+                    this.iframeElem.style.display = 'none';
+                    this.iframeElem.src = sourceLink;
+                } else {
+                    this.iframeElem.style.display = 'block';
+                }
+
+                return;
+            }
+
+            this.createBackground();
+            this.createLoaderImage();
+            this.backgroundElem.style.display = 'block';
+            this.createIframe();
+        }
+    }
+
+    const init = () => {
+        const orderButton = new OrderButton();
+        orderButton.attachEvents();
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+    } else {
+        init();
+    }
+})();

@@ -40,6 +40,6 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     {
         header('Content-Type: application/javascript');
 
-        return $app->render('mod_orderbutton_js');
+        return $app->render('mod_orderbutton_embed_js');
     }
 }
