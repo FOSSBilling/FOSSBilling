@@ -46,6 +46,13 @@
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Manage email template'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Email templates can receive variables from FOSSBilling. Available variables are listed under the "Variables" tab. Copy a variable name to your email template and hit preview to see parsed content. Please note that values will be different when an actual email is sent.'|trans }}</p>
+                            {% if template.is_custom %}
+                                <div class="alert alert-info">{{ 'This is a custom database-only template.'|trans }}</div>
+                            {% elseif template.is_overridden %}
+                                <div class="alert alert-info">{{ 'This built-in template is currently customized. Reset will remove the override and use the file-backed default again.'|trans }}</div>
+                            {% else %}
+                                <div class="alert alert-info">{{ 'This built-in template is currently using its file-backed default.'|trans }}</div>
+                            {% endif %}
                             <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Email subject'|trans }}</label>
                                 <div class="col-md-7">
@@ -60,11 +67,15 @@
                             </div>
                         </div>
                         <div class="card-footer d-flex justify-content-between">
-                            <a class="btn btn-danger"
-                               href="{{ 'api/admin/email/template_reset'|link({'code' : template.action_code })}}"
-                               {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Reset'|trans}, reload: true}) }}>
-                                {{ 'Reset'|trans }}
-                            </a>
+                            {% if template.has_default %}
+                                <a class="btn btn-danger"
+                                   href="{{ 'api/admin/email/template_reset'|link({'code' : template.action_code })}}"
+                                   {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Reset'|trans}, reload: true}) }}>
+                                    {{ 'Reset'|trans }}
+                                </a>
+                            {% else %}
+                                <span></span>
+                            {% endif %}
                             <div class="text-end">
                                 <button class="btn btn-secondary" id="preview-button"
                                     {% if template.vars|length == 0 %}

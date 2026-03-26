@@ -691,6 +691,24 @@ class UpdatePatcher implements InjectionAwareInterface
                     $this->filesystem->remove($oldDir);
                 }
             },
+            52 => function (): void {
+                $schemaManager = $this->di['dbal']->createSchemaManager();
+                $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('email_template'));
+
+                if (!in_array('is_custom', $columns, true)) {
+                    $this->executeSql("ALTER TABLE `email_template` ADD COLUMN `is_custom` TINYINT(1) DEFAULT '0' AFTER `enabled`;");
+                }
+
+                $emailService = $this->di['mod_service']('email');
+                $templates = $this->di['dbal']->executeQuery('SELECT id, action_code FROM email_template')->fetchAllAssociative();
+                foreach ($templates as $template) {
+                    $isCustom = $emailService->hasDefaultTemplate((string) ($template['action_code'] ?? '')) ? 0 : 1;
+                    $this->di['dbal']->executeStatement('UPDATE email_template SET is_custom = :is_custom WHERE id = :id', [
+                        'is_custom' => $isCustom,
+                        'id' => $template['id'],
+                    ]);
+                }
+            },
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -712,4 +730,5 @@ class UpdatePatcher implements InjectionAwareInterface
         $loader->checkClassMap();
         $loader->register(true);
     }
+
 }

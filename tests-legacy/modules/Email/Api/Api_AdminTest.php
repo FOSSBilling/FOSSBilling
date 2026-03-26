@@ -250,32 +250,40 @@ final class Api_AdminTest extends \BBTestCase
     public function testTemplateGetList(): void
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
-        $emailService = new \Box\Mod\Email\Service();
-
         $willReturn = [
             'list' => [
                 [
                     'id' => 1,
+                    'action_code' => 'mod_email_test',
+                    'category' => 'email',
+                    'enabled' => 1,
+                    'subject' => 'Subject',
+                    'description' => '',
+                    'is_custom' => false,
+                    'has_default' => true,
+                    'is_overridden' => false,
                 ],
             ],
         ];
 
-        $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
-        $pager->expects($this->atLeastOnce())
-            ->method('getPaginatedResultSet')
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplateList'])->getMock();
+        $emailService->expects($this->atLeastOnce())
+            ->method('getTemplateList')
             ->willReturn($willReturn);
+
+        $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
+            ->onlyMethods(['getDefaultPerPage'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $pager->expects($this->atLeastOnce())
+            ->method('getDefaultPerPage')
+            ->willReturn(100);
 
         $di = $this->getDi();
         $di['pager'] = $pager;
 
         $adminApi->setDi($di);
-        $emailService->setDi($di);
-
-        $service = $emailService;
-        $adminApi->setService($service);
+        $adminApi->setService($emailService);
 
         $result = $adminApi->template_get_list([]);
         $this->assertIsArray($result);
@@ -295,16 +303,13 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_EmailTemplate();
         $model->loadBean(new \DummyBean());
 
-        $db = $this->createMock('\Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($model);
-
         $di = $this->getDi();
-        $di['db'] = $db;
         $adminApi->setDi($di);
 
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['templateToApiArray'])->getMock();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate', 'templateToApiArray'])->getMock();
+        $emailService->expects($this->atLeastOnce())
+            ->method('getTemplate')
+            ->willReturn($model);
         $emailService->expects($this->atLeastOnce())
             ->method('templateToApiArray')
             ->willReturn([]);
@@ -325,24 +330,29 @@ final class Api_AdminTest extends \BBTestCase
         $model = new \Model_EmailTemplate();
         $model->loadBean(new \DummyBean());
         $model->id = 1;
+        $model->is_custom = 1;
 
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate'])->getMock();
+        $emailService->expects($this->atLeastOnce())
+            ->method('getTemplate')
+            ->willReturn($model);
+        $loggerMock = $this->createMock('Box_Log');
         $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
-            ->method('findOne')
-            ->willReturn($model);
-
-        $loggerMock = $this->createMock('Box_Log');
+            ->method('trash')
+            ->willReturn(true);
 
         $di = $this->getDi();
         $di['db'] = $db;
         $di['logger'] = $loggerMock;
         $adminApi->setDi($di);
+        $adminApi->setService($emailService);
 
         $result = $adminApi->template_delete($data);
         $this->assertTrue($result);
     }
 
-    public function testTemplateDeleteTemplateNotFound(): void
+    public function testTemplateDeleteBuiltinTemplateException(): void
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
@@ -350,17 +360,21 @@ final class Api_AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('findOne')
-            ->willReturn(null);
+        $model = new \Model_EmailTemplate();
+        $model->loadBean(new \DummyBean());
+        $model->is_custom = 0;
 
         $di = $this->getDi();
-        $di['db'] = $db;
         $adminApi->setDi($di);
 
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate'])->getMock();
+        $emailService->expects($this->atLeastOnce())
+            ->method('getTemplate')
+            ->willReturn($model);
+        $adminApi->setService($emailService);
+
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Email template not found');
+        $this->expectExceptionMessage('Only custom email templates can be deleted');
         $adminApi->template_delete($data);
     }
 
@@ -419,14 +433,11 @@ final class Api_AdminTest extends \BBTestCase
 
         $emailTemplateModel = new \Model_EmailTemplate();
         $emailTemplateModel->loadBean(new \DummyBean());
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($emailTemplateModel);
-
         $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['updateTemplate'])->getMock();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate', 'updateTemplate'])->getMock();
+        $emailService->expects($this->atLeastOnce())
+            ->method('getTemplate')
+            ->willReturn($emailTemplateModel);
         $emailService->expects($this->atLeastOnce())
             ->method('updateTemplate')
             ->with($emailTemplateModel, $data['enabled'], $data['category'], $data['subject'], $data['content'])
@@ -457,7 +468,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setService($emailService);
 
         $result = $adminApi->template_reset($data);
-        $this->assertEquals($result, $id);
+        $this->assertTrue($result);
     }
 
     public function testBatchTemplateGenerate(): void

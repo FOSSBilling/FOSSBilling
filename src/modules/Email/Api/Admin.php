@@ -144,8 +144,7 @@ class Admin extends \Api_Abstract
     public function template_get_list($data)
     {
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        [$sql, $params] = $this->getService()->templateGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->getService()->getTemplateList(array_merge($data, ['per_page' => $per_page]));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -155,6 +154,9 @@ class Admin extends \Api_Abstract
                 'enabled' => $item['enabled'] ?? '',
                 'subject' => $item['subject'] ?? '',
                 'description' => $item['description'] ?? '',
+                'is_custom' => $item['is_custom'] ?? false,
+                'has_default' => $item['has_default'] ?? false,
+                'is_overridden' => $item['is_overridden'] ?? false,
             ];
         }
 
@@ -171,7 +173,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_get($data)
     {
-        $model = $this->di['db']->getExistingModelById('EmailTemplate', $data['id'], 'Email template not found');
+        $model = $this->getService()->getTemplate((int) $data['id']);
 
         return $this->getService()->templateToApiArray($model, true);
     }
@@ -184,10 +186,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_delete($data): bool
     {
-        $model = $this->di['db']->findOne('EmailTemplate', 'id = ?', [$data['id']]);
-
-        if (!$model instanceof \Model_EmailTemplate) {
-            throw new \FOSSBilling\Exception('Email template not found');
+        $model = $this->getService()->getTemplate((int) $data['id']);
+        if (!(bool) ($model->is_custom ?? false)) {
+            throw new \FOSSBilling\Exception('Only custom email templates can be deleted');
         }
 
         $id = $model->id;
@@ -236,7 +237,7 @@ class Admin extends \Api_Abstract
         $subject = $data['subject'] ?? null;
         $content = $data['content'] ?? null;
 
-        $model = $this->di['db']->getExistingModelById('EmailTemplate', $data['id'], 'Email template not found');
+        $model = $this->getService()->getTemplate((int) $data['id']);
 
         return $this->getService()->updateTemplate($model, $enabled, $category, $subject, $content);
     }
