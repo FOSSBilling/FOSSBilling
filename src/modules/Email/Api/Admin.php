@@ -186,8 +186,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_delete($data): bool
     {
-        $model = $this->getService()->getTemplate((int) $data['id']);
-        if (!(bool) ($model->is_custom ?? false)) {
+        $service = $this->getService();
+        $model = $service->getTemplate((int) $data['id']);
+        if (!(bool) ($model->is_custom ?? false) && $service->hasDefaultTemplate((string) $model->action_code)) {
             throw new \FOSSBilling\Exception('Only custom email templates can be deleted');
         }
 

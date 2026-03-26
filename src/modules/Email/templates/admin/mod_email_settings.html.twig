@@ -88,6 +88,8 @@
                                         <a href="{{ '/email/template'|alink }}/{{ template.id }}">{{ template.subject }}</a>
                                         {% if template.is_custom %}
                                             <span class="badge bg-blue-lt ms-2">{{ 'Custom'|trans }}</span>
+                                        {% elseif not template.has_default %}
+                                            <span class="badge bg-warning-lt ms-2">{{ 'Missing default'|trans }}</span>
                                         {% elseif template.is_overridden %}
                                             <span class="badge bg-azure-lt ms-2">{{ 'Customized'|trans }}</span>
                                         {% else %}
@@ -112,7 +114,7 @@
                                                 <use xlink:href="#edit" />
                                             </svg>
                                         </a>
-                                        {% if template.is_custom %}
+                                        {% if template.is_custom or not template.has_default %}
                                             <a class="btn btn-icon"
                                                 data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
                                                 {{ fb_api_link({href: 'api/admin/email/template_delete'|link({id: template.id}), modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'This action will delete the email template'|trans, button: 'Delete'|trans}, reload: true}) }}>

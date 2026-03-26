@@ -48,6 +48,8 @@
                             <p class="card-subtitle">{{ 'Email templates can receive variables from FOSSBilling. Available variables are listed under the "Variables" tab. Copy a variable name to your email template and hit preview to see parsed content. Please note that values will be different when an actual email is sent.'|trans }}</p>
                             {% if template.is_custom %}
                                 <div class="alert alert-info">{{ 'This is a custom database-only template.'|trans }}</div>
+                            {% elseif not template.has_default %}
+                                <div class="alert alert-warning">{{ 'This template no longer has a file-backed default. You can keep editing it or delete it if it is no longer needed.'|trans }}</div>
                             {% elseif template.is_overridden %}
                                 <div class="alert alert-info">{{ 'This built-in template is currently customized. Reset will remove the override and use the file-backed default again.'|trans }}</div>
                             {% else %}
@@ -72,6 +74,12 @@
                                    href="{{ 'api/admin/email/template_reset'|link({'code' : template.action_code })}}"
                                    {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Reset'|trans}, reload: true}) }}>
                                     {{ 'Reset'|trans }}
+                                </a>
+                            {% elseif template.is_custom or not template.has_default %}
+                                <a class="btn btn-danger"
+                                   href="{{ 'api/admin/email/template_delete'|link({'id' : template.id })}}"
+                                   {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, reload: true}) }}>
+                                    {{ 'Delete'|trans }}
                                 </a>
                             {% else %}
                                 <span></span>

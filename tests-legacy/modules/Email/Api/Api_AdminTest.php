@@ -332,10 +332,12 @@ final class Api_AdminTest extends \BBTestCase
         $model->id = 1;
         $model->is_custom = 1;
 
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate'])->getMock();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate', 'hasDefaultTemplate'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('getTemplate')
             ->willReturn($model);
+        $emailService->expects($this->never())
+            ->method('hasDefaultTemplate');
         $loggerMock = $this->createMock('Box_Log');
         $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
@@ -367,15 +369,58 @@ final class Api_AdminTest extends \BBTestCase
         $di = $this->getDi();
         $adminApi->setDi($di);
 
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate'])->getMock();
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate', 'hasDefaultTemplate'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('getTemplate')
             ->willReturn($model);
+        $emailService->expects($this->atLeastOnce())
+            ->method('hasDefaultTemplate')
+            ->willReturn(true);
         $adminApi->setService($emailService);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Only custom email templates can be deleted');
         $adminApi->template_delete($data);
+    }
+
+    public function testTemplateDeleteBuiltInWithoutDefault(): void
+    {
+        $adminApi = new \Box\Mod\Email\Api\Admin();
+
+        $data = [
+            'id' => 1,
+        ];
+
+        $model = new \Model_EmailTemplate();
+        $model->loadBean(new \DummyBean());
+        $model->id = 1;
+        $model->is_custom = 0;
+        $model->action_code = 'mod_removed_template';
+
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate', 'hasDefaultTemplate'])->getMock();
+        $emailService->expects($this->atLeastOnce())
+            ->method('getTemplate')
+            ->willReturn($model);
+        $emailService->expects($this->atLeastOnce())
+            ->method('hasDefaultTemplate')
+            ->willReturn(false);
+
+        $loggerMock = $this->createMock('Box_Log');
+        $db = $this->createMock('Box_Database');
+        $db->expects($this->atLeastOnce())
+            ->method('trash')
+            ->with($model)
+            ->willReturn(true);
+
+        $di = $this->getDi();
+        $di['db'] = $db;
+        $di['logger'] = $loggerMock;
+        $adminApi->setDi($di);
+        $adminApi->setService($emailService);
+
+        $result = $adminApi->template_delete($data);
+
+        $this->assertTrue($result);
     }
 
     public function testTemplateCreate(): void
