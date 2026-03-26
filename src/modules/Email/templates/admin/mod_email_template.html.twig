@@ -1,6 +1,6 @@
 {% extends "layout_default.html.twig" %}
 
-{% block meta_title %}{{ 'Email template'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Email Template'|trans }}{% endblock %}
 {% set active_menu = 'system' %}
 
 {% block breadcrumbs %}
@@ -44,7 +44,7 @@
                     <form method="post" action="admin/email/template_update" {{ fb_api_form({message: 'Template Updated'|trans}) }}>
                         <input type="hidden" name="id" value="{{ template.id }}">
                         <div class="card-body">
-                            <h3 class="card-title">{{ 'Manage email template'|trans }}</h3>
+                            <h3 class="card-title">{{ 'Manage Email Template'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Email templates can receive variables from FOSSBilling. Available variables are listed under the "Variables" tab. Copy a variable name to your email template and hit preview to see parsed content. Please note that values will be different when an actual email is sent.'|trans }}</p>
                             <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Email subject'|trans }}</label>
@@ -85,7 +85,7 @@
                     <form method="post" action="admin/email/template_update" {{ fb_api_form({ message: 'Template Updated'|trans}) }}>
                         <input type="hidden" name="id" value="{{ template.id }}">
                         <div class="card-body">
-                            <h3 class="card-title">{{ 'Template settings'|trans }}</h3>
+                            <h3 class="card-title">{{ 'Template Settings'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Enable or disable this email template.'|trans }}</p>
 
                             <div class="mb-3 row">
@@ -117,7 +117,7 @@
 
                 <div class="tab-pane fade" id="tab-vars" role="tabpanel">
                     <div class="card-body border-bottom">
-                        <h3 class="card-title">{{ 'List of variables used in this email'|trans }}</h3>
+                        <h3 class="card-title">{{ 'List of Variables Used in This Email'|trans }}</h3>
                         <p class="card-subtitle">{{ 'These values will change when real email is sent. You can pass these variables to admin or guest API to get additional information from database.'|trans }}</p>
                     </div>
                     <div class="table-responsive">
@@ -171,7 +171,7 @@
 
                 <div class="tab-pane fade" id="tab-examples" role="tabpanel">
                     <div class="card-body">
-                        <h3 class="card-title">{{ 'Email templates examples'|trans }}</h3>
+                        <h3 class="card-title">{{ 'Email Templates Examples'|trans }}</h3>
                         <p class="card-subtitle">{{ 'Email template playground. Use this tool to try rendering email templates.'|trans }}</p>
 
                         <div class="mb-3">

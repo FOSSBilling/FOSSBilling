@@ -2,7 +2,7 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'Activity settings'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Activity Settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
@@ -18,7 +18,7 @@
 		<li class="breadcrumb-item">
 			<a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
 		</li>
-		<li class="breadcrumb-item active" aria-current="page">{{ 'Activity settings'|trans }}</li>
+		<li class="breadcrumb-item active" aria-current="page">{{ 'Activity Settings'|trans }}</li>
 	</ul>
 {% endblock %}
 
@@ -26,7 +26,7 @@
 	{% set params = admin.extension_config_get({ 'ext': 'mod_activity' }) %}
 	<div class="card">
 		<div class="card-header">
-			<h3 class="card-title">{{ 'Activity settings'|trans }}</h3>
+			<h3 class="card-title">{{ 'Activity Settings'|trans }}</h3>
 		</div>
 
 		<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>

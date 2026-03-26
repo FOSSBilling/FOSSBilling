@@ -2,7 +2,7 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'System settings'|trans }}{% endblock %}
+{% block meta_title %}{{ 'System Settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
@@ -18,7 +18,7 @@
         <li class="breadcrumb-item">
             <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ 'System settings'|trans }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'System Settings'|trans }}</li>
     </ol>
 {% endblock %}
 
@@ -28,10 +28,10 @@
     <div class="card-tabs">
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Company details'|trans }}</a>
+                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Company Details'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company legal'|trans }}</a>
+                <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company Legal'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-countries" data-bs-toggle="tab" role="tab">{{ 'Countries'|trans }}</a>
@@ -43,10 +43,10 @@
                 <a class="nav-link" href="#tab-about" data-bs-toggle="tab" role="tab">{{ 'About'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-reporting" data-bs-toggle="tab" role="tab">{{ 'Error reporting'|trans }}</a>
+                <a class="nav-link" href="#tab-reporting" data-bs-toggle="tab" role="tab">{{ 'Error Reporting'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#network-interface" data-bs-toggle="tab" role="tab">{{ 'Network interface'|trans }}</a>
+                <a class="nav-link" href="#network-interface" data-bs-toggle="tab" role="tab">{{ 'Network Interface'|trans }}</a>
             </li>
         </ul>
 
@@ -214,11 +214,11 @@
                     <form method="post" action="{{ 'api/admin/system/update_params'|link }}" {{ fb_api_form({ message: 'Company Updated'|trans}) }}>
                         <div class="card-body">
                             <div class="mb-3">
-                                <h3>{{ 'Company terms of service, legal regulation'|trans }}</h3>
+                                <h3>{{ 'Company Terms of Service, Legal Regulation'|trans }}</h3>
                                 <textarea class="form-control bb-textarea" name="company_tos" rows="5">{{ params.company_tos }}</textarea>
                             </div>
                             <div class="mb-3">
-                                <h3>{{ 'Company privacy policy'|trans }}</h3>
+                                <h3>{{ 'Company Privacy Policy'|trans }}</h3>
                                 <textarea class="form-control bb-textarea" name="company_privacy_policy" rows="5">{{ params.company_privacy_policy }}</textarea>
                             </div>
                             <div class="mb-3">
@@ -518,7 +518,7 @@ ZW=Zimbabwe
 
                 <div class="tab-pane fade" id="tab-cache" role="tabpanel">
                     <div class="card-header">
-                        <h3 class="card-title">{{ 'Cache control'|trans }}</h3>
+                        <h3 class="card-title">{{ 'Cache Control'|trans }}</h3>
                         <div class="card-actions">
                             <form method="post" action="{{ 'api/admin/system/clear_cache'|link }}" {{ fb_api_form({ message: 'Cache Directory Cleared'|trans}) }}>
                                 <button class="btn btn-danger" type="submit">{{ 'Invalidate cache'|trans }}</button>
@@ -593,7 +593,7 @@ ZW=Zimbabwe
 
                 <div class="tab-pane fade" id="tab-reporting" role="tabpanel">
                     <div class="card-header">
-                        <h3 class="card-title">{{ 'Error reporting'|trans }}</h3>
+                        <h3 class="card-title">{{ 'Error Reporting'|trans }}</h3>
                     </div>
                     <div class="card-body">
                         {% set last_change = admin.system_last_error_reporting_change %}
@@ -646,7 +646,7 @@ ZW=Zimbabwe
 
                 <div class="tab-pane fade" id="network-interface" role="tabpanel">
                     <div class="card-header">
-                        <h3 class="card-title">{{ 'Network interface'|trans }}</h3>
+                        <h3 class="card-title">{{ 'Network Interface'|trans }}</h3>
                     </div>
                     <div class="card-body">
                         <div class="alert alert-info" role="alert" id="external-ip">
