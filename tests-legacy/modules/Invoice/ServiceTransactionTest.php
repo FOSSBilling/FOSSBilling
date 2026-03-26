@@ -323,6 +323,29 @@ final class ServiceTransactionTest extends \BBTestCase
         $this->assertEquals($expectedParams, $result[1]);
     }
 
+    public function testGetSearchQueryKeepsClientScopeWhenSearchFilterIsUsed(): void
+    {
+        $di = $this->getDi();
+
+        $this->service->setDi($di);
+
+        [$sql, $params] = $this->service->getSearchQuery([
+            'client_id' => 42,
+            'search' => 'needle',
+        ]);
+
+        $this->assertStringContainsString('AND i.client_id = :client_id', $sql);
+        $this->assertStringContainsString(
+            'AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)',
+            $sql
+        );
+        $this->assertSame(42, $params['client_id']);
+        $this->assertSame('%needle%', $params['note']);
+        $this->assertSame('%needle%', $params['search_invoice_id']);
+        $this->assertSame('%needle%', $params['search_txn_id']);
+        $this->assertSame('%needle%', $params['ipn']);
+    }
+
     public function testCounter(): void
     {
         $queryResult = [['status' => \Model_Transaction::STATUS_RECEIVED, 'counter' => 1]];
