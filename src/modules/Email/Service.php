@@ -20,6 +20,9 @@ use Symfony\Component\Finder\Finder;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
+    private const int BUILTIN_TEMPLATE = 0;
+    private const int CUSTOM_TEMPLATE = 1;
+
     protected ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
 
@@ -182,18 +185,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $db = $this->di['db'];
 
-        $t = $db->findOne('EmailTemplate', 'action_code = :action', [':action' => $data['code']]);
-        if (!$t instanceof \Model_EmailTemplate) {
-            [$s, $c, $desc, $enabled, $mod] = $this->_getDefaults($data);
-            $t = $db->dispense('EmailTemplate');
-            $t->enabled = $enabled;
-            $t->action_code = $data['code'];
-            $t->category = $mod;
-            $t->subject = $s;
-            $t->content = $c;
-            $t->description = $desc;
-            $db->store($t);
-        }
+        $t = $this->getOrCreateTemplateByCode($data['code'], $data);
 
         $this->setVars($t, $vars);
 
@@ -292,6 +284,151 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$subject, $content, $description, $enabled, $mod];
     }
 
+    private function getDefaultTemplate(string $code, array $data = []): ?array
+    {
+        $path = $this->getDefaultTemplatePath($code);
+        if ($path === null) {
+            return null;
+        }
+
+        [$subject, $content, $description, $enabled, $category] = $this->_getDefaults(array_merge($data, ['code' => $code]));
+
+        return [
+            'action_code' => $code,
+            'category' => $category,
+            'subject' => $subject,
+            'content' => $content,
+            'description' => $description,
+            'enabled' => $enabled,
+            'path' => $path,
+        ];
+    }
+
+    public function hasDefaultTemplate(string $code): bool
+    {
+        return $this->getDefaultTemplatePath($code) !== null;
+    }
+
+    private function getDefaultTemplatePath(string $code): ?string
+    {
+        $matches = [];
+        if (!preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', $code, $matches)) {
+            return null;
+        }
+
+        $module = ucfirst($matches[1]);
+        $path = Path::join(PATH_MODS, $module, 'templates/email', "{$code}.html.twig");
+
+        return $this->filesystem->exists($path) ? $path : null;
+    }
+
+    private function isCustomTemplate(\Model_EmailTemplate $template): bool
+    {
+        return (int) ($template->is_custom ?? self::BUILTIN_TEMPLATE) === self::CUSTOM_TEMPLATE;
+    }
+
+    private function createBuiltinTemplateRecord(string $code, array $default): \Model_EmailTemplate
+    {
+        $template = $this->di['db']->dispense('EmailTemplate');
+        $template->action_code = $code;
+        $template->category = $default['category'];
+        $template->description = $default['description'];
+        $template->enabled = $default['enabled'];
+        $template->is_custom = self::BUILTIN_TEMPLATE;
+        $template->subject = null;
+        $template->content = null;
+
+        $this->di['db']->store($template);
+
+        return $template;
+    }
+
+    private function createTemplateRecordFromData(string $code, array $data): \Model_EmailTemplate
+    {
+        $default = $this->getDefaultTemplate($code, $data);
+        if ($default !== null) {
+            return $this->createBuiltinTemplateRecord($code, $default);
+        }
+
+        [$subject, $content, $description, $enabled, $category] = $this->_getDefaults($data);
+
+        $template = $this->di['db']->dispense('EmailTemplate');
+        $template->action_code = $code;
+        $template->category = $category;
+        $template->enabled = $enabled;
+        $template->description = $description;
+        $template->subject = $subject;
+        $template->content = $content;
+        $template->is_custom = self::CUSTOM_TEMPLATE;
+
+        $this->di['db']->store($template);
+
+        return $template;
+    }
+
+    private function getOrCreateTemplateByCode(string $code, array $data = []): \Model_EmailTemplate
+    {
+        $template = $this->di['db']->findOne('EmailTemplate', 'action_code = :action', [':action' => $code]);
+        if ($template instanceof \Model_EmailTemplate) {
+            $default = $this->getDefaultTemplate($code, $data);
+            if ($default !== null && !$this->isCustomTemplate($template)) {
+                $this->syncBuiltinTemplateMetadata($template, $default);
+            }
+
+            return $template;
+        }
+
+        return $this->createTemplateRecordFromData($code, $data);
+    }
+
+    private function syncBuiltinTemplateMetadata(\Model_EmailTemplate $template, array $default): void
+    {
+        $updated = false;
+
+        if (($template->category === null || $template->category === '') && $default['category'] !== null) {
+            $template->category = $default['category'];
+            $updated = true;
+        }
+
+        if (($template->description === null || $template->description === '') && $default['description'] !== null) {
+            $template->description = $default['description'];
+            $updated = true;
+        }
+
+        if ($template->enabled === null || $template->enabled === '') {
+            $template->enabled = $default['enabled'];
+            $updated = true;
+        }
+
+        if (!isset($template->is_custom) || $template->is_custom === '') {
+            $template->is_custom = self::BUILTIN_TEMPLATE;
+            $updated = true;
+        }
+
+        if ($updated) {
+            $this->di['db']->store($template);
+        }
+    }
+
+    private function getEffectiveTemplateParts(\Model_EmailTemplate $template): array
+    {
+        if ($this->isCustomTemplate($template)) {
+            return [$template->subject ?? '', $template->content ?? ''];
+        }
+
+        $default = $this->getDefaultTemplate($template->action_code);
+
+        $subject = $template->subject;
+        $content = $template->content;
+
+        if ($default !== null) {
+            $subject = ($subject !== null && $subject !== '') ? $subject : $default['subject'];
+            $content = ($content !== null && $content !== '') ? $content : $default['content'];
+        }
+
+        return [$subject ?? '', $content ?? ''];
+    }
+
     private function _queue($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null)
     {
         $db = $this->di['db'];
@@ -337,8 +474,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     private function _parse(\Model_EmailTemplate $t, $vars): array
     {
         $systemService = $this->di['mod_service']('System');
-        $pc = $systemService->renderString($t->content, false, $vars);
-        $ps = $systemService->renderString($t->subject, false, $vars);
+        [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($t);
+        $pc = $systemService->renderString($contentTemplate, false, $vars);
+        $ps = $systemService->renderString($subjectTemplate, false, $vars);
 
         return [$ps, $pc];
     }
@@ -439,17 +577,24 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function templateToApiArray(\Model_EmailTemplate $model, $deep = false): array
     {
+        $isCustom = $this->isCustomTemplate($model);
+        [$subject, $content] = $this->getEffectiveTemplateParts($model);
         $data = [
             'id' => $model->id,
             'action_code' => $model->action_code,
             'category' => $model->category,
             'enabled' => $model->enabled,
-            'subject' => $model->subject,
+            'subject' => $subject,
             'description' => $model->description,
+            'is_custom' => $isCustom,
+            'has_default' => !$isCustom && $this->hasDefaultTemplate((string) $model->action_code),
+            'is_overridden' => !$isCustom && (($model->subject !== null && $model->subject !== '') || ($model->content !== null && $model->content !== '')),
         ];
         if ($deep) {
-            $data['content'] = $model->content;
+            $data['content'] = $content;
             $data['vars'] = $this->getVars($model);
+            $data['subject_override'] = $isCustom ? null : $model->subject;
+            $data['content_override'] = $isCustom ? null : $model->content;
         }
 
         return $data;
@@ -468,21 +613,27 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
         $vars = $this->getVars($model);
 
+        $default = $this->isCustomTemplate($model) ? null : $this->getDefaultTemplate((string) $model->action_code);
+
         if (isset($subject)) {
-            // check subject syntax before saving
-            // should throw exception if render fails
             $vars['_tpl'] = $subject;
             $systemService->renderString($subject, false, $vars);
-            $model->subject = $subject;
+            if ($default !== null && $subject === $default['subject']) {
+                $model->subject = null;
+            } else {
+                $model->subject = $subject;
+            }
         }
 
         if (isset($content)) {
-            // check content syntax before saving
-            // should throw exception if render fails
             $vars['_tpl'] = $content;
             $systemService->renderString($content, false, $vars);
 
-            $model->content = $content;
+            if ($default !== null && $content === $default['content']) {
+                $model->content = null;
+            } else {
+                $model->content = $content;
+            }
         }
 
         $this->di['db']->store($model);
@@ -493,15 +644,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function resetTemplateByCode($code): bool
     {
-        $t = $this->di['db']->findOne('EmailTemplate', 'action_code = :action', [':action' => $code]);
-
-        if (!$t instanceof \Model_EmailTemplate) {
-            throw new \FOSSBilling\Exception('Email template :code was not found', [':code' => $code]);
+        $default = $this->getDefaultTemplate((string) $code);
+        if ($default === null) {
+            throw new \FOSSBilling\Exception('Email template :code does not have a file-backed default', [':code' => $code]);
         }
 
-        $d = ['code' => $code];
-        [$s, $c] = $this->_getDefaults($d);
-        $this->updateTemplate($t, null, null, $s, $c);
+        $t = $this->getOrCreateTemplateByCode((string) $code, ['code' => $code]);
+        if ($this->isCustomTemplate($t)) {
+            throw new \FOSSBilling\Exception('Custom email template :code cannot be reset to a default', [':code' => $code]);
+        }
+
+        $t->subject = null;
+        $t->content = null;
+        $this->di['db']->store($t);
         $this->di['logger']->info('Reset email template: %s', $t->action_code);
 
         return true;
@@ -525,6 +680,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->enabled = $enabled;
         $model->category = $category;
         $model->content = $content;
+        $model->is_custom = self::CUSTOM_TEMPLATE;
 
         $modelId = $this->di['db']->store($model);
 
@@ -549,27 +705,30 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 continue;
             }
 
-            // Skip if template already exists.
-            if ($this->di['db']->findOne('EmailTemplate', 'action_code = :code', [':code' => $code])) {
+            $template = $this->di['db']->findOne('EmailTemplate', 'action_code = :code', [':code' => $code]);
+            $default = $this->getDefaultTemplate($code, ['code' => $code]);
+            if ($default === null) {
                 continue;
             }
 
-            [$subject, $content, $description, $enabled, $module] = $this->_getDefaults(['code' => $code]);
-            $template = $this->templateCreate($code, $subject, $content, $enabled, $module);
+            if (!$template instanceof \Model_EmailTemplate) {
+                $this->createBuiltinTemplateRecord($code, $default);
+                continue;
+            }
 
-            if ($description) {
-                $template->description = $description;
-                $this->di['db']->store($template);
+            if (!$this->isCustomTemplate($template)) {
+                $this->syncBuiltinTemplateMetadata($template, $default);
             }
         }
 
-        $this->di['logger']->info('Generated email templates for installed modules.');
+        $this->di['logger']->info('Synced file-backed email templates for installed modules.');
 
         return true;
     }
 
     public function templateBatchDisable(): bool
     {
+        $this->templateBatchGenerate();
         $sql = 'UPDATE email_template SET enabled = 0 WHERE 1';
         $this->di['db']->exec($sql);
         $this->di['logger']->info('Disabled all email templates');
@@ -579,11 +738,79 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function templateBatchEnable(): bool
     {
+        $this->templateBatchGenerate();
         $sql = 'UPDATE email_template SET enabled = 1 WHERE 1';
         $this->di['db']->exec($sql);
         $this->di['logger']->info('Enabled all email templates');
 
         return true;
+    }
+
+    public function getTemplate(int $id): \Model_EmailTemplate
+    {
+        $model = $this->di['db']->findOne('EmailTemplate', 'id = ?', [$id]);
+        if (!$model instanceof \Model_EmailTemplate) {
+            throw new \FOSSBilling\Exception('Email template not found');
+        }
+
+        if (!$this->isCustomTemplate($model)) {
+            $default = $this->getDefaultTemplate((string) $model->action_code);
+            if ($default !== null) {
+                $this->syncBuiltinTemplateMetadata($model, $default);
+            }
+        }
+
+        return $model;
+    }
+
+    public function getTemplateList(array $data = []): array
+    {
+        $this->templateBatchGenerate();
+
+        $templates = $this->di['db']->find('EmailTemplate', ' ORDER BY category ASC, action_code ASC');
+        $items = [];
+        foreach ($templates as $template) {
+            if (!$template instanceof \Model_EmailTemplate) {
+                continue;
+            }
+
+            $items[] = $this->templateToApiArray($template, true);
+        }
+
+        $code = isset($data['code']) ? strtolower((string) $data['code']) : null;
+        $search = isset($data['search']) ? strtolower((string) $data['search']) : null;
+
+        if ($code) {
+            $items = array_values(array_filter($items, static fn (array $item): bool => str_contains(strtolower((string) $item['action_code']), $code)));
+        }
+
+        if ($search) {
+            $items = array_values(array_filter($items, static function (array $item) use ($search): bool {
+                foreach (['action_code', 'subject', 'content', 'category', 'description'] as $field) {
+                    if (str_contains(strtolower((string) ($item[$field] ?? '')), $search)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }));
+        }
+
+        $request = $this->di['request'] ?? null;
+        $page = max(1, (int) ($data['page'] ?? $request?->query->get('page', 1) ?? 1));
+        $perPage = (int) ($data['per_page'] ?? $request?->query->get('per_page', $this->di['pager']->getDefaultPerPage()) ?? $this->di['pager']->getDefaultPerPage());
+        $perPage = max(1, $perPage);
+
+        $total = count($items);
+        $offset = ($page - 1) * $perPage;
+
+        return [
+            'pages' => $total > 0 ? (int) ceil($total / $perPage) : 0,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'list' => array_slice($items, $offset, $perPage),
+        ];
     }
 
     /**

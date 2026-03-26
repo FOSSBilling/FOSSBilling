@@ -52,7 +52,7 @@
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#mail" />
                             </svg>
-                            <span>{{ 'Regenerate templates'|trans }}</span>
+                            <span>{{ 'Sync defaults'|trans }}</span>
                         </a>
                         <a class="btn btn-primary" href="{{ 'api/admin/email/batch_template_enable'|link }}" {{ fb_api_link({ message: 'All Email Templates Enabled'|trans}) }}>
                             <svg class="icon icon-tabler" width="24" height="24">
@@ -86,6 +86,13 @@
                                 <tr>
                                     <td>
                                         <a href="{{ '/email/template'|alink }}/{{ template.id }}">{{ template.subject }}</a>
+                                        {% if template.is_custom %}
+                                            <span class="badge bg-blue-lt ms-2">{{ 'Custom'|trans }}</span>
+                                        {% elseif template.is_overridden %}
+                                            <span class="badge bg-azure-lt ms-2">{{ 'Customized'|trans }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-lt ms-2">{{ 'Default'|trans }}</span>
+                                        {% endif %}
                                     </td>
                                     <td>{{ template.category }}</td>
                                     <td>{{ template.action_code }}</td>
@@ -105,18 +112,20 @@
                                                 <use xlink:href="#edit" />
                                             </svg>
                                         </a>
-                                        <a class="btn btn-icon"
-                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                            {{ fb_api_link({href: 'api/admin/email/template_delete'|link({id: template.id}), modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'This action will delete the email template'|trans, button: 'Delete'|trans}, reload: true}) }}>
-                                            <svg class="icon">
-                                                <use xlink:href="#delete" />
-                                            </svg>
-                                        </a>
+                                        {% if template.is_custom %}
+                                            <a class="btn btn-icon"
+                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                                {{ fb_api_link({href: 'api/admin/email/template_delete'|link({id: template.id}), modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'This action will delete the email template'|trans, button: 'Delete'|trans}, reload: true}) }}>
+                                                <svg class="icon">
+                                                    <use xlink:href="#delete" />
+                                                </svg>
+                                            </a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td class="text-muted" colspan="5">{{ 'The list is empty. Depending on modules enabled email templates will be inserted after first event occurrence.'|trans }}</td>
+                                    <td class="text-muted" colspan="5">{{ 'The list is empty. Built-in templates are discovered from active modules, while custom templates live only in the database.'|trans }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
