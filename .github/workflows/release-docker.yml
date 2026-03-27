@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: 'Get Latest Release Version Tag'
         id: get-latest
-        uses: pozetroninc/github-action-get-latest-release@master
+        uses: pozetroninc/github-action-get-latest-release@53d33d213ee71c72360e3c829caf7cee94ec21e2 # master
         with:
           excludes: 'prerelease,draft'
           repository: 'FOSSBilling/FOSSBilling'
