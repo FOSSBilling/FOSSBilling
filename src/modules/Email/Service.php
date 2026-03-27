@@ -409,10 +409,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $updated = true;
         }
 
-        $isOverridden = !empty($template->is_overridden);
-        if (!isset($template->is_overridden)) {
-            $isOverridden = ($template->subject !== null && $template->subject !== '')
-                || ($template->content !== null && $template->content !== '');
+        if (isset($template->is_overridden)) {
+            $isOverridden = !empty($template->is_overridden);
+        } else {
+            // Determine override status by comparing against file-backed defaults
+            $isOverridden = ($template->subject !== $default['subject'])
+                || ($template->content !== $default['content']);
             $template->is_overridden = $isOverridden ? 1 : 0;
             $updated = true;
         }
