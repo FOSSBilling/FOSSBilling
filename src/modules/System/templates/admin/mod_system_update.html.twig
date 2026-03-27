@@ -13,9 +13,9 @@
         <div class="card-body">
             {% if admin.system_update_available or update_info['branch'] == 'preview' %}
                 {% if update_info['branch'] == 'preview' %}
-                    <h2 class="card-title">{{ 'Update release notes'|trans }}</h2>
+                    <h2 class="card-title">{{ 'Update Release Notes'|trans }}</h2>
                 {% else %}
-                    <h2 class="card-title mb-0">{{ 'Update release notes'|trans }} ({{ FOSSBillingVersion }} => {{ update_info['version'] }})</h2>
+                    <h2 class="card-title mb-0">{{ 'Update Release Notes'|trans }} ({{ FOSSBillingVersion }} => {{ update_info['version'] }})</h2>
                     <span>{{ 'Required PHP version:'|trans }} {{ update_info['minimum_php_version'] }}</span>
                 {% endif %}
                 {% if update_info['update_type'] == 2 %}
@@ -32,7 +32,7 @@
 
                 {{ update_info['release_notes']|markdown }}
             {% else %}
-                <h2 class="card-title">{{ 'There is no update available'|trans }}</h2>
+                <h2 class="card-title">{{ 'There Is No Update Available'|trans }}</h2>
                 <p>{{ 'You appear to be running the latest version of FOSSBilling, so no action is needed at the moment. If you think this is a mistake, you may use the button below to check again.'|trans }}</p>
             {% endif %}
         </div>

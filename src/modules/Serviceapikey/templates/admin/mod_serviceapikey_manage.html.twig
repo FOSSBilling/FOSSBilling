@@ -26,7 +26,7 @@
 </div>
 
 <div class="card-body">
-    <h2>{{ 'API key configuration'|trans }}</h2>
+    <h2>{{ 'API Key Configuration'|trans }}</h2>
     <P>{{ 'Changing the API key generation options will not automatically regenerate the API key. You must do so manually.'|trans }}</p>
 
     <form method="post" action="{{ 'api/admin/serviceapikey/update'|link }}" {{ fb_api_form({message: 'API Key Updated'|trans}) }}>

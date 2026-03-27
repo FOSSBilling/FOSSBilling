@@ -97,7 +97,7 @@ class Service implements InjectionAwareInterface
 
     public function addNewField($field): int
     {
-        $fieldNumber = (int) $this->getFormFieldsCount($field['form_id']) + 1;
+        $fieldNumber = $this->getFormFieldsCount($field['form_id']) + 1;
         $types = $this->getFormFieldsTypes();
         $type = $field['type'];
 
@@ -368,7 +368,7 @@ class Service implements InjectionAwareInterface
         )->fetchAllAssociative();
     }
 
-    public function duplicateForm($data)
+    public function duplicateForm($data): int
     {
         $fields = $this->getFormFields($data['form_id']);
         $newFormId = $this->addNewForm([
