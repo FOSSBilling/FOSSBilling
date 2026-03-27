@@ -604,7 +604,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $isCustom = $this->isCustomTemplate($model);
         [$subject, $content] = $this->getEffectiveTemplateParts($model);
-        $isOverridden = !$isCustom && !empty($model->is_overridden);
+
+        $isOverridden = false;
+        if (!$isCustom) {
+            if (isset($model->is_overridden)) {
+                $isOverridden = !empty($model->is_overridden);
+            } else {
+                $isOverridden = ($model->subject !== null && $model->subject !== '')
+                    || ($model->content !== null && $model->content !== '');
+            }
+        }
+
         $data = [
             'id' => $model->id,
             'action_code' => $model->action_code,
