@@ -1125,6 +1125,31 @@ final class ServiceTest extends \BBTestCase
         $service->resetTemplateByCode('mod_email_missing');
     }
 
+    public function testResetTemplateByCodeThrowsExceptionForCustomTemplate(): void
+    {
+        $service = new \Box\Mod\Email\Service();
+
+        $templateModel = new \Model_EmailTemplate();
+        $templateModel->loadBean(new \DummyBean());
+        $templateModel->id = 1;
+        $templateModel->action_code = 'mod_email_test';
+        $templateModel->is_custom = 1;
+
+        $db = $this->createMock('Box_Database');
+        $db->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->willReturn($templateModel);
+
+        $di = $this->getDi();
+        $di['db'] = $db;
+
+        $service->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Custom email template mod_email_test cannot be reset to a default');
+        $service->resetTemplateByCode('mod_email_test');
+    }
+
     public function testSendMail(): void
     {
         $dbMock = $this->createMock('\Box_Database');
