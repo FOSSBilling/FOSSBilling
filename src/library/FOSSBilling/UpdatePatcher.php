@@ -718,7 +718,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     $subject = $template['subject'];
                     $content = $template['content'];
 
-                    $isOverridden = ($subject !== null && $subject !== '') || ($content !== null && $content !== '');
+                    $isOverridden = ($subject !== $default['subject']) || ($content !== $default['content']);
 
                     if (!$isOverridden) {
                         $subject = $default['subject'];
@@ -794,5 +794,4 @@ class UpdatePatcher implements InjectionAwareInterface
 
         return $this->filesystem->exists($path) ? $path : null;
     }
-
 }
