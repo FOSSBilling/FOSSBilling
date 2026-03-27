@@ -259,8 +259,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $description = $data['default_description'] ?? null;
 
         $matches = [];
-        preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', (string) $code, $matches);
-        $mod = $matches[1];
+        if (preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', (string) $code, $matches)) {
+            $mod = $matches[1];
+        } else {
+            $mod = 'custom';
+        }
 
         $path = Path::join(PATH_MODS, ucfirst($mod), 'templates/email', "{$code}.html.twig");
 
@@ -335,8 +338,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $template->description = $default['description'];
         $template->enabled = $default['enabled'];
         $template->is_custom = self::BUILTIN_TEMPLATE;
-        $template->subject = null;
-        $template->content = null;
+        $template->is_overridden = 0;
+        $template->subject = $default['subject'];
+        $template->content = $default['content'];
 
         $this->di['db']->store($template);
 
@@ -405,6 +409,25 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $updated = true;
         }
 
+        $isOverridden = !empty($template->is_overridden);
+        if (!isset($template->is_overridden)) {
+            $isOverridden = ($template->subject !== null && $template->subject !== '')
+                || ($template->content !== null && $template->content !== '');
+            $template->is_overridden = $isOverridden ? 1 : 0;
+            $updated = true;
+        }
+
+        if (!$isOverridden) {
+            if ($template->subject !== $default['subject']) {
+                $template->subject = $default['subject'];
+                $updated = true;
+            }
+            if ($template->content !== $default['content']) {
+                $template->content = $default['content'];
+                $updated = true;
+            }
+        }
+
         if ($updated) {
             $this->di['db']->store($template);
         }
@@ -416,17 +439,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return [$template->subject ?? '', $template->content ?? ''];
         }
 
-        $default = $this->getDefaultTemplate($template->action_code);
-
-        $subject = $template->subject;
-        $content = $template->content;
-
-        if ($default !== null) {
-            $subject = ($subject !== null && $subject !== '') ? $subject : $default['subject'];
-            $content = ($content !== null && $content !== '') ? $content : $default['content'];
+        if ($template->subject !== null && $template->content !== null) {
+            return [$template->subject, $template->content];
         }
 
-        return [$subject ?? '', $content ?? ''];
+        $default = $this->getDefaultTemplate($template->action_code);
+        if ($default !== null) {
+            $subject = $template->subject ?? $default['subject'];
+            $content = $template->content ?? $default['content'];
+
+            return [$subject ?? '', $content ?? ''];
+        }
+
+        return [$template->subject ?? '', $template->content ?? ''];
     }
 
     private function _queue($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null)
@@ -579,6 +604,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $isCustom = $this->isCustomTemplate($model);
         [$subject, $content] = $this->getEffectiveTemplateParts($model);
+        $isOverridden = !$isCustom && !empty($model->is_overridden);
         $data = [
             'id' => $model->id,
             'action_code' => $model->action_code,
@@ -588,7 +614,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'description' => $model->description,
             'is_custom' => $isCustom,
             'has_default' => !$isCustom && $this->hasDefaultTemplate((string) $model->action_code),
-            'is_overridden' => !$isCustom && (($model->subject !== null && $model->subject !== '') || ($model->content !== null && $model->content !== '')),
+            'is_overridden' => $isOverridden,
         ];
         if ($deep) {
             $data['content'] = $content;
@@ -613,27 +639,25 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
         $vars = $this->getVars($model);
 
-        $default = $this->isCustomTemplate($model) ? null : $this->getDefaultTemplate((string) $model->action_code);
+        $isCustom = $this->isCustomTemplate($model);
+        $default = $isCustom ? null : $this->getDefaultTemplate((string) $model->action_code);
 
         if (isset($subject)) {
             $vars['_tpl'] = $subject;
             $systemService->renderString($subject, false, $vars);
-            if ($default !== null && $subject === $default['subject']) {
-                $model->subject = null;
-            } else {
-                $model->subject = $subject;
-            }
+            $model->subject = $subject;
         }
 
         if (isset($content)) {
             $vars['_tpl'] = $content;
             $systemService->renderString($content, false, $vars);
+            $model->content = $content;
+        }
 
-            if ($default !== null && $content === $default['content']) {
-                $model->content = null;
-            } else {
-                $model->content = $content;
-            }
+        if (!$isCustom && $default !== null) {
+            $subjectMatches = $model->subject === $default['subject'];
+            $contentMatches = $model->content === $default['content'];
+            $model->is_overridden = ($subjectMatches && $contentMatches) ? 0 : 1;
         }
 
         $this->di['db']->store($model);
@@ -654,8 +678,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\Exception('Custom email template :code cannot be reset to a default', [':code' => $code]);
         }
 
-        $t->subject = null;
-        $t->content = null;
+        $t->subject = $default['subject'];
+        $t->content = $default['content'];
+        $t->is_overridden = 0;
         $this->di['db']->store($t);
         $this->di['logger']->info('Reset email template: %s', $t->action_code);
 
@@ -713,6 +738,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             if (!$template instanceof \Model_EmailTemplate) {
                 $this->createBuiltinTemplateRecord($code, $default);
+
                 continue;
             }
 

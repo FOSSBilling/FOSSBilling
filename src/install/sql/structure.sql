@@ -429,6 +429,7 @@ CREATE TABLE `email_template` (
   `category` varchar(30) DEFAULT NULL COMMENT 'general, domain, invoice, hosting, support, download, custom, license',
   `enabled` tinyint(1) DEFAULT '1',
   `is_custom` tinyint(1) DEFAULT '0',
+  `is_overridden` tinyint(1) DEFAULT '0' COMMENT 'Whether subject/content have been customized from file defaults',
   `subject` varchar(255) DEFAULT NULL,
   `content` text,
   `description` text,
