@@ -187,13 +187,14 @@ class Admin extends \Api_Abstract
     public function template_delete($data): bool
     {
         $service = $this->getService();
-        $model = $service->getTemplate((int) $data['id']);
-        if (!(bool) ($model->is_custom ?? false) && $service->hasDefaultTemplate((string) $model->action_code)) {
+        $template = $service->getTemplate((int) $data['id']);
+        if (!$template->isCustom() && $service->hasDefaultTemplate($template->getActionCode())) {
             throw new \FOSSBilling\Exception('Only custom email templates can be deleted');
         }
 
-        $id = $model->id;
-        $this->di['db']->trash($model);
+        $id = $template->getId();
+        $this->di['em']->remove($template);
+        $this->di['em']->flush();
 
         $this->di['logger']->info('Deleted email template #%s', $id);
 
@@ -218,9 +219,9 @@ class Admin extends \Api_Abstract
         $enabled = $data['enabled'] ?? 0;
         $category = $data['category'] ?? null;
 
-        $templateModel = $this->getService()->templateCreate($data['action_code'], $data['subject'], $data['content'], $enabled, $category);
+        $template = $this->getService()->templateCreate($data['action_code'], $data['subject'], $data['content'], $enabled, $category);
 
-        return $templateModel->id;
+        return $template->getId();
     }
 
     /**
