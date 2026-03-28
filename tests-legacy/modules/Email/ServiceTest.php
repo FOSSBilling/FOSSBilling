@@ -953,6 +953,40 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
+    public function testGetTemplateDoesNotReEnableDisabledBuiltinTemplate(): void
+    {
+        $template = $this->createTemplateEntity('mod_support_ticket_open');
+        $template->setEnabled(false);
+        $template->setIsCustom(false);
+        $template->setIsOverridden(false);
+        $template->setCategory(null);
+        $template->setDescription(null);
+        $template->setSubject('Outdated subject');
+        $template->setContent('Outdated content');
+
+        $repoMock = $this->getMockBuilder(EmailTemplateRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repoMock->expects($this->once())
+            ->method('find')
+            ->with(1)
+            ->willReturn($template);
+
+        $di = $this->getDi();
+        $di['em'] = $this->createEmMock($repoMock);
+
+        $service = new \Box\Mod\Email\Service();
+        $service->setDi($di);
+
+        $result = $service->getTemplate(1);
+
+        $this->assertSame($template, $result);
+        $this->assertFalse($result->isEnabled());
+        $this->assertNotNull($result->getCategory());
+        $this->assertNotSame('Outdated subject', $result->getSubject());
+        $this->assertNotSame('Outdated content', $result->getContent());
+    }
+
     public function testGetTemplateListUsesDoctrinePagination(): void
     {
         $template = $this->createTemplateEntity('mod_email_test');
@@ -997,6 +1031,56 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
         $this->assertSame(1, $result['total']);
         $this->assertCount(1, $result['list']);
+    }
+
+    public function testGetTemplateListKeepsNormalizedDoctrineRows(): void
+    {
+        $willReturn = [
+            'total' => 1,
+            'list' => [[
+                'id' => 1,
+                'action_code' => 'mod_support_ticket_open',
+                'category' => 'Support',
+                'enabled' => false,
+                'subject' => 'Subject',
+                'description' => 'Description',
+                'is_custom' => false,
+                'is_overridden' => false,
+            ]],
+        ];
+
+        $qbMock = $this->getMockBuilder(\Doctrine\ORM\QueryBuilder::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $repoMock = $this->getMockBuilder(EmailTemplateRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repoMock->expects($this->atLeastOnce())
+            ->method('getSearchQueryBuilder')
+            ->willReturn($qbMock);
+
+        $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
+            ->onlyMethods(['paginateDoctrineQuery'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $pager->expects($this->atLeastOnce())
+            ->method('paginateDoctrineQuery')
+            ->willReturn($willReturn);
+
+        $di = $this->getDi();
+        $di['em'] = $this->createEmMock($repoMock);
+        $di['pager'] = $pager;
+
+        $service = new \Box\Mod\Email\Service();
+        $service->setDi($di);
+
+        $result = $service->getTemplateList([]);
+
+        $this->assertSame(1, $result['total']);
+        $this->assertCount(1, $result['list']);
+        $this->assertSame('mod_support_ticket_open', $result['list'][0]['action_code']);
+        $this->assertTrue($result['list'][0]['has_default']);
     }
 
     public function testBatchSend(): void

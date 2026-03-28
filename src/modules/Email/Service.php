@@ -408,11 +408,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $updated = true;
         }
 
-        if (!$template->isEnabled() && $default['enabled']) {
-            $template->setEnabled((bool) $default['enabled']);
-            $updated = true;
-        }
-
         $isOverridden = $template->isOverridden();
         if (!$isOverridden) {
             if ($template->getSubject() !== $default['subject']) {
@@ -762,10 +757,21 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $list = [];
         foreach ($result['list'] as $template) {
-            if (!$template instanceof EmailTemplate) {
+            if ($template instanceof EmailTemplate) {
+                $list[] = $this->templateToApiArray($template, false);
                 continue;
             }
-            $list[] = $this->templateToApiArray($template, false);
+
+            if (!is_array($template)) {
+                continue;
+            }
+
+            $isCustom = (bool) ($template['is_custom'] ?? false);
+            $template['has_default'] ??= !$isCustom && isset($template['action_code']) && $this->hasDefaultTemplate($template['action_code']);
+            if (!array_key_exists('is_overridden', $template)) {
+                $template['is_overridden'] = false;
+            }
+            $list[] = $template;
         }
         $result['list'] = $list;
 
