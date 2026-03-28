@@ -35,9 +35,6 @@ final class ServiceTest extends \BBTestCase
             ->method('getRepository')
             ->with(EmailTemplate::class)
             ->willReturn($repositoryMock);
-        $emMock->expects($this->any())->method('flush');
-        $emMock->expects($this->any())->method('persist');
-        $emMock->expects($this->any())->method('remove');
 
         return $emMock;
     }
