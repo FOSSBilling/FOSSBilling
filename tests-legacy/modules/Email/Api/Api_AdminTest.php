@@ -24,9 +24,6 @@ final class Api_AdminTest extends \BBTestCase
             ->getMock();
         $emMock->method('getRepository')
             ->willReturn($repositoryMock);
-        $emMock->method('flush');
-        $emMock->method('persist');
-        $emMock->method('remove');
 
         return $emMock;
     }
