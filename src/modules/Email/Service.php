@@ -790,17 +790,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $result = $this->di['pager']->paginateDoctrineQuery($qb, $page, $perPage);
 
         $list = [];
-        foreach ($result['list'] as $template) {
-            if ($template instanceof EmailTemplate) {
-                $list[] = $this->templateToApiArray($template, false);
+        foreach ($result['list'] as $templateRow) {
+            if (!is_array($templateRow)) {
                 continue;
             }
 
-            if (!is_array($template)) {
-                continue;
-            }
-
-            $list[] = $this->templateRowToApiArray($template);
+            $list[] = $this->templateRowToApiArray($templateRow);
         }
         $result['list'] = $list;
 
