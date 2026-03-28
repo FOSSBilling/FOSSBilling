@@ -75,6 +75,8 @@
                                 <th class="w-1">{{ 'Subject'|trans }}</th>
                                 <th>{{ 'Extension'|trans }}</th>
                                 <th>{{ 'Code'|trans }}</th>
+                                <th>{{ 'Type'|trans }}</th>
+                                <th>{{ 'Status'|trans }}</th>
                                 <th>{{ 'Enabled'|trans }}</th>
                                 <th class="w-1"></th>
                             </tr>
@@ -83,21 +85,29 @@
                             <tbody>
                             {% set templates = admin.email_template_get_list({ 'per_page': 100, 'page': request.page }|merge(request)) %}
                             {% for i, template in templates.list %}
+                                {% set type_label = template.is_custom ? 'Custom'|trans : 'Built-in'|trans %}
+                                {% set type_class = template.is_custom ? 'bg-blue-lt' : 'bg-secondary-lt' %}
+                                {% if template.is_custom %}
+                                    {% set status_label = 'Database Only'|trans %}
+                                    {% set status_class = 'bg-blue-lt' %}
+                                {% elseif not template.has_default %}
+                                    {% set status_label = 'Missing Default'|trans %}
+                                    {% set status_class = 'bg-warning-lt' %}
+                                {% elseif template.is_overridden %}
+                                    {% set status_label = 'Customized'|trans %}
+                                    {% set status_class = 'bg-azure-lt' %}
+                                {% else %}
+                                    {% set status_label = 'Default'|trans %}
+                                    {% set status_class = 'bg-secondary-lt' %}
+                                {% endif %}
                                 <tr>
                                     <td>
                                         <a href="{{ '/email/template'|alink }}/{{ template.id }}">{{ template.subject }}</a>
-                                        {% if template.is_custom %}
-                                            <span class="badge bg-blue-lt ms-2">{{ 'Custom'|trans }}</span>
-                                        {% elseif not template.has_default %}
-                                            <span class="badge bg-warning-lt ms-2">{{ 'Missing Default'|trans }}</span>
-                                        {% elseif template.is_overridden %}
-                                            <span class="badge bg-azure-lt ms-2">{{ 'Customized'|trans }}</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary-lt ms-2">{{ 'Default'|trans }}</span>
-                                        {% endif %}
                                     </td>
                                     <td>{{ template.category }}</td>
                                     <td>{{ template.action_code }}</td>
+                                    <td><span class="badge {{ type_class }}">{{ type_label }}</span></td>
+                                    <td><span class="badge {{ status_class }}">{{ status_label }}</span></td>
                                     <td>
                                         {% if template.enabled == 1 %}
                                             <span class="badge bg-success me-1"></span>
@@ -127,7 +137,7 @@
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td class="text-muted" colspan="5">{{ 'The list is empty. Built-in templates are discovered from active modules, while custom templates live only in the database.'|trans }}</td>
+                                    <td class="text-muted" colspan="7">{{ 'The list is empty. Built-in templates are discovered from active modules, while custom templates live only in the database.'|trans }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
