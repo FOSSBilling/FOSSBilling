@@ -46,25 +46,42 @@
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Manage Email Template'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Email templates can receive variables from FOSSBilling. Available variables are listed under the "Variables" tab. Copy a variable name to your email template and hit preview to see parsed content. Please note that values will be different when an actual email is sent.'|trans }}</p>
+                            {% if template.is_custom %}
+                                <div class="alert alert-info">{{ 'This is a custom template stored in the database.'|trans }}</div>
+                            {% elseif not template.has_default %}
+                                <div class="alert alert-warning">{{ 'This template no longer has a file-backed default.'|trans }}</div>
+                            {% elseif template.is_overridden %}
+                                <div class="alert alert-info">{{ 'This built-in template is customized. Reset it to use the file-backed default.'|trans }}</div>
+                            {% else %}
+                                <div class="alert alert-info">{{ 'This built-in template is using the file-backed default.'|trans }}</div>
+                            {% endif %}
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Email subject'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Email Subject'|trans }}</label>
                                 <div class="col-md-7">
                                     <input class="form-control" type="text" name="subject" value="{{ template.subject }}" id="email-subject" required>
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Email message'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Email Message'|trans }}</label>
                                 <div class="col-md-7">
                                     <textarea class="form-control" name="content" id="email-template" rows="10" required>{{ template.content }}</textarea>
                                 </div>
                             </div>
                         </div>
                         <div class="card-footer d-flex justify-content-between">
-                            <a class="btn btn-danger"
-                               href="{{ 'api/admin/email/template_reset'|link({'code' : template.action_code })}}"
-                               {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Reset'|trans}, reload: true}) }}>
-                                {{ 'Reset'|trans }}
-                            </a>
+                            {% if template.has_default %}
+                                <a class="btn btn-danger"
+                                   href="{{ 'api/admin/email/template_reset'|link({'code' : template.action_code })}}"
+                                   {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Reset'|trans}, reload: true}) }}>
+                                    {{ 'Reset'|trans }}
+                                </a>
+                            {% elseif template.is_custom or not template.has_default %}
+                                <a class="btn btn-danger"
+                                   href="{{ 'api/admin/email/template_delete'|link({'id' : template.id })}}"
+                                   {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, reload: true}) }}>
+                                    {{ 'Delete'|trans }}
+                                </a>
+                            {% endif %}
                             <div class="text-end">
                                 <button class="btn btn-secondary" id="preview-button"
                                     {% if template.vars|length == 0 %}
@@ -125,7 +142,7 @@
                             <thead>
                             <tr>
                                 <th>{{ 'Variable'|trans }}</th>
-                                <th>{{ 'Example value'|trans }}</th>
+                                <th>{{ 'Example Value'|trans }}</th>
                             </tr>
                             </thead>
                             <tbody>

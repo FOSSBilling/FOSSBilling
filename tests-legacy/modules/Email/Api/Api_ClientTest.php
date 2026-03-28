@@ -4,11 +4,31 @@ declare(strict_types=1);
 
 namespace Box\Tests\Mod\Email\Api;
 
+use Box\Mod\Email\Repository\EmailTemplateRepository;
+use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class Api_ClientTest extends \BBTestCase
 {
+    private function createEmMock(?object $repositoryMock = null): object
+    {
+        if ($repositoryMock === null) {
+            $repositoryMock = $this->getMockBuilder(EmailTemplateRepository::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+        }
+        $emMock = $this->getMockBuilder(EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->method('getRepository')
+            ->willReturn($repositoryMock);
+        $emMock->method('flush');
+        $emMock->method('persist');
+
+        return $emMock;
+    }
+
     public function testGetList(): void
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
@@ -29,6 +49,7 @@ final class Api_ClientTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['pager'] = $pager;
+        $di['em'] = $this->createEmMock();
 
         $clientApi->setDi($di);
         $emailService->setDi($di);

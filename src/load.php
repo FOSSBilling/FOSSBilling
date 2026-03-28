@@ -69,29 +69,34 @@ function checkUpdatePatcher(): void
 {
     global $di, $filesystem, $request;
 
+    if ($request->getPathInfo() !== '/run-patcher' && $request->query->get('_url') !== '/run-patcher') {
+        return;
+    }
+
+    $patcher = new FOSSBilling\UpdatePatcher();
+    $patcher->setDi($di);
+
     $version = FOSSBilling\Version::VERSION;
-    if ($di['cache']->getItem('updatePatcher')->isHit() && $version === $di['cache']->getItem('updatePatcher')->get()) {
+    if ($di['cache']->getItem('updatePatcher')->isHit()
+        && $version === $di['cache']->getItem('updatePatcher')->get()
+        && $patcher->availablePatches() === 0
+    ) {
         exit('The update patcher has already been run for this version.');
     }
 
-    if ($request->getPathInfo() == '/run-patcher' || $request->query->get('_url') === '/run-patcher') {
-        $patcher = new FOSSBilling\UpdatePatcher();
-        $patcher->setDi($di);
+    try {
+        $patcher->applyConfigPatches();
+        $patcher->applyCorePatches();
 
-        try {
-            $patcher->applyConfigPatches();
-            $patcher->applyCorePatches();
+        // Clear the file cache after applying patches.
+        $filesystem->remove(PATH_CACHE);
+        $filesystem->mkdir(PATH_CACHE);
 
-            // Clear the file cache after applying patches.
-            $filesystem->remove(PATH_CACHE);
-            $filesystem->mkdir(PATH_CACHE);
+        $di['cache']->getItem('updatePatcher')->set(FOSSBilling\Version::VERSION);
 
-            $di['cache']->getItem('updatePatcher')->set(FOSSBilling\Version::VERSION);
-
-            exit('Any missing config migrations or database patches have been applied and the cache has been cleared.');
-        } catch (Exception $e) {
-            exit("An error occurred while attempting to apply patches: <br>{$e->getMessage()}.");
-        }
+        exit('Any missing config migrations or database patches have been applied and the cache has been cleared.');
+    } catch (Exception $e) {
+        exit("An error occurred while attempting to apply patches: <br>{$e->getMessage()}.");
     }
 }
 

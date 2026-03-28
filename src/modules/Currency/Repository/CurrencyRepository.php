@@ -29,7 +29,7 @@ class CurrencyRepository extends EntityRepository
 
         // Apply search filter if provided
         if (!empty($data['search'])) {
-            $qb->andWhere('c.code LIKE :search OR c.title LIKE :search')
+            $qb->andWhere('(c.code LIKE :search OR c.title LIKE :search)')
                ->setParameter('search', '%' . $data['search'] . '%');
         }
 

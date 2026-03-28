@@ -35,7 +35,7 @@ class PostRepository extends EntityRepository
 
         // Apply search filter (title OR content)
         if (!empty($data['search'])) {
-            $qb->andWhere('p.title LIKE :search OR p.content LIKE :search')
+            $qb->andWhere('(p.title LIKE :search OR p.content LIKE :search)')
                ->setParameter('search', '%' . $data['search'] . '%');
         }
 

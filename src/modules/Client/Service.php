@@ -106,7 +106,7 @@ class Service implements InjectionAwareInterface
         $where = [];
         $params = [];
         if ($id) {
-            $where[] = 'c.id = :client_id or c.aid = :alt_client_id';
+            $where[] = '(c.id = :client_id OR c.aid = :alt_client_id)';
             $params[':client_id'] = $id;
             $params[':alt_client_id'] = $id;
         }
