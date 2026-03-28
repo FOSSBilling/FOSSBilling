@@ -19,9 +19,6 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 #[ORM\Table(name: 'email_template')]
 class EmailTemplate implements ApiArrayInterface
 {
-    public const BUILTIN_TEMPLATE = 0;
-    public const CUSTOM_TEMPLATE = 1;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER)]

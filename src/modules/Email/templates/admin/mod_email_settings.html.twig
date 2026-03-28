@@ -52,7 +52,7 @@
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#mail" />
                             </svg>
-                            <span>{{ 'Sync Defaults'|trans }}</span>
+                            <span>{{ 'Regenerate Templates'|trans }}</span>
                         </a>
                         <a class="btn btn-primary" href="{{ 'api/admin/email/batch_template_enable'|link }}" {{ fb_api_link({ message: 'All Email Templates Enabled'|trans}) }}>
                             <svg class="icon icon-tabler" width="24" height="24">
@@ -137,7 +137,7 @@
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td class="text-muted" colspan="7">{{ 'The list is empty. Built-in templates are discovered from active modules, while custom templates live only in the database.'|trans }}</td>
+                                    <td class="text-muted" colspan="7">{{ 'The list is empty. Built-in templates are discovered from active modules, while custom templates are stored only in the database.'|trans }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>

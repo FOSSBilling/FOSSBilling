@@ -25,7 +25,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     protected ?\Pimple\Container $di = null;
     protected ?EmailTemplateRepository $templateRepository = null;
     private readonly Filesystem $filesystem;
-    private bool $templateSchemaChecked = false;
 
     public function __construct()
     {
@@ -44,8 +43,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getTemplateRepository(): EmailTemplateRepository
     {
-        $this->ensureTemplateSchemaIsUpToDate();
-
         if ($this->templateRepository === null) {
             if ($this->di === null) {
                 throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
@@ -54,26 +51,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         return $this->templateRepository;
-    }
-
-    private function ensureTemplateSchemaIsUpToDate(): void
-    {
-        if ($this->templateSchemaChecked || $this->di === null || !$this->di->offsetExists('dbal')) {
-            return;
-        }
-
-        $schemaManager = $this->di['dbal']->createSchemaManager();
-        $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('email_template'));
-
-        if (!in_array('is_custom', $columns, true)) {
-            $this->di['dbal']->executeStatement("ALTER TABLE `email_template` ADD COLUMN `is_custom` TINYINT(1) DEFAULT '0' AFTER `enabled`;");
-        }
-
-        if (!in_array('is_overridden', $columns, true)) {
-            $this->di['dbal']->executeStatement("ALTER TABLE `email_template` ADD COLUMN `is_overridden` TINYINT(1) DEFAULT '0' COMMENT 'Whether subject/content have been customized from file defaults' AFTER `is_custom`;");
-        }
-
-        $this->templateSchemaChecked = true;
     }
 
     public function getModulePermissions(): array
@@ -333,7 +310,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'content' => $content,
             'description' => $description,
             'enabled' => $enabled,
-            'path' => $path,
         ];
     }
 

@@ -47,13 +47,13 @@
                             <h3 class="card-title">{{ 'Manage Email Template'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Email templates can receive variables from FOSSBilling. Available variables are listed under the "Variables" tab. Copy a variable name to your email template and hit preview to see parsed content. Please note that values will be different when an actual email is sent.'|trans }}</p>
                             {% if template.is_custom %}
-                                <div class="alert alert-info">{{ 'This is a custom database-only template.'|trans }}</div>
+                                <div class="alert alert-info">{{ 'This is a custom template stored in the database.'|trans }}</div>
                             {% elseif not template.has_default %}
-                                <div class="alert alert-warning">{{ 'This template no longer has a file-backed default. You can keep editing it or delete it if it is no longer needed.'|trans }}</div>
+                                <div class="alert alert-warning">{{ 'This template no longer has a file-backed default.'|trans }}</div>
                             {% elseif template.is_overridden %}
-                                <div class="alert alert-info">{{ 'This built-in template is currently customized. Reset will remove the override and use the file-backed default again.'|trans }}</div>
+                                <div class="alert alert-info">{{ 'This built-in template is customized. Reset it to use the file-backed default.'|trans }}</div>
                             {% else %}
-                                <div class="alert alert-info">{{ 'This built-in template is currently using its file-backed default.'|trans }}</div>
+                                <div class="alert alert-info">{{ 'This built-in template is using the file-backed default.'|trans }}</div>
                             {% endif %}
                             <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Email Subject'|trans }}</label>
@@ -188,7 +188,7 @@
 
                 <div class="tab-pane fade" id="tab-examples" role="tabpanel">
                     <div class="card-body">
-                        <h3 class="card-title">{{ 'Email Template Examples'|trans }}</h3>
+                        <h3 class="card-title">{{ 'Email Templates Examples'|trans }}</h3>
                         <p class="card-subtitle">{{ 'Email template playground. Use this tool to try rendering email templates.'|trans }}</p>
 
                         <div class="mb-3">
@@ -268,10 +268,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 contentResult = content;
                 showEmailPreview(subjectResult, contentResult);
             }, function(error) {
-            FOSSBilling.message(`{{ 'Failed to Render Email Content'|trans }}: ${error.message}`, 'error');
+                FOSSBilling.message(`{{ 'Failed to render email content'|trans }}: ${error.message}`, 'error');
             });
         }, function(error) {
-            FOSSBilling.message(`{{ 'Failed to Render Email Subject'|trans }}: ${error.message}`, 'error');
+            FOSSBilling.message(`{{ 'Failed to render email subject'|trans }}: ${error.message}`, 'error');
         });
     });
 
@@ -285,9 +285,9 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         API.admin.post('email/template_render', params, function(result) {
-            showEmailPreview('<em class="text-muted">{{ "No Subject for Example Preview"|trans }}</em>', result);
+            showEmailPreview('<em class="text-muted">{{ "No subject for example preview"|trans }}</em>', result);
         }, function(error) {
-            FOSSBilling.message(`{{ 'Failed to Render Template'|trans }}: ${error.message}`, 'error');
+            FOSSBilling.message(`{{ 'Failed to render template'|trans }}: ${error.message}`, 'error');
         });
     });
 });
