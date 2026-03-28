@@ -791,6 +791,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $list = [];
         foreach ($result['list'] as $templateRow) {
+            if ($templateRow instanceof EmailTemplate) {
+                $templateRow = $templateRow->toApiArray();
+            }
+
             if (!is_array($templateRow)) {
                 continue;
             }
