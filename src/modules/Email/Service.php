@@ -25,6 +25,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     protected ?\Pimple\Container $di = null;
     protected ?EmailTemplateRepository $templateRepository = null;
     private readonly Filesystem $filesystem;
+    private bool $templateSchemaChecked = false;
 
     public function __construct()
     {
@@ -43,6 +44,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getTemplateRepository(): EmailTemplateRepository
     {
+        $this->ensureTemplateSchemaIsUpToDate();
+
         if ($this->templateRepository === null) {
             if ($this->di === null) {
                 throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
@@ -51,6 +54,26 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         return $this->templateRepository;
+    }
+
+    private function ensureTemplateSchemaIsUpToDate(): void
+    {
+        if ($this->templateSchemaChecked || $this->di === null || !$this->di->offsetExists('dbal')) {
+            return;
+        }
+
+        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('email_template'));
+
+        if (!in_array('is_custom', $columns, true)) {
+            $this->di['dbal']->executeStatement("ALTER TABLE `email_template` ADD COLUMN `is_custom` TINYINT(1) DEFAULT '0' AFTER `enabled`;");
+        }
+
+        if (!in_array('is_overridden', $columns, true)) {
+            $this->di['dbal']->executeStatement("ALTER TABLE `email_template` ADD COLUMN `is_overridden` TINYINT(1) DEFAULT '0' COMMENT 'Whether subject/content have been customized from file defaults' AFTER `is_custom`;");
+        }
+
+        $this->templateSchemaChecked = true;
     }
 
     public function getModulePermissions(): array
@@ -588,6 +611,39 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
+    private function templateRowToApiArray(array $template): array
+    {
+        $actionCode = (string) ($template['action_code'] ?? '');
+        $isCustom = (bool) ($template['is_custom'] ?? false);
+        $isOverridden = !$isCustom && (bool) ($template['is_overridden'] ?? false);
+        $default = (!$isCustom && $actionCode !== '') ? $this->getDefaultTemplate($actionCode) : null;
+
+        $subject = $template['subject'] ?? null;
+        $description = $template['description'] ?? null;
+        $category = $template['category'] ?? null;
+
+        if ($default !== null) {
+            $category ??= $default['category'];
+            $description ??= $default['description'];
+
+            if (!$isOverridden || $subject === null || $subject === '') {
+                $subject = $default['subject'];
+            }
+        }
+
+        return [
+            'id' => $template['id'] ?? null,
+            'action_code' => $actionCode,
+            'category' => $category,
+            'enabled' => (bool) ($template['enabled'] ?? false),
+            'subject' => $subject ?? '',
+            'description' => $description,
+            'is_custom' => $isCustom,
+            'has_default' => !$isCustom && $default !== null,
+            'is_overridden' => $isOverridden,
+        ];
+    }
+
     public function updateTemplate(EmailTemplate $template, $enabled = null, $category = null, $subject = null, $content = null): bool
     {
         if (isset($enabled)) {
@@ -766,12 +822,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 continue;
             }
 
-            $isCustom = (bool) ($template['is_custom'] ?? false);
-            $template['has_default'] ??= !$isCustom && isset($template['action_code']) && $this->hasDefaultTemplate($template['action_code']);
-            if (!array_key_exists('is_overridden', $template)) {
-                $template['is_overridden'] = false;
-            }
-            $list[] = $template;
+            $list[] = $this->templateRowToApiArray($template);
         }
         $result['list'] = $list;
 

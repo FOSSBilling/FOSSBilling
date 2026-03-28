@@ -987,6 +987,151 @@ final class ServiceTest extends \BBTestCase
         $this->assertNotSame('Outdated content', $result->getContent());
     }
 
+    public function testGetTemplateListAddsMissingIsOverriddenColumnBeforeDoctrineQuery(): void
+    {
+        $repoMock = $this->getMockBuilder(EmailTemplateRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $qbMock = $this->getMockBuilder(\Doctrine\ORM\QueryBuilder::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repoMock->expects($this->once())
+            ->method('getSearchQueryBuilder')
+            ->willReturn($qbMock);
+
+        $schemaManager = new class($this->createMock(\Doctrine\DBAL\Connection::class), new \Doctrine\DBAL\Platforms\MySQLPlatform()) extends \Doctrine\DBAL\Schema\AbstractSchemaManager {
+            public function listTableColumns(string $table): array
+            {
+                \PHPUnit\Framework\Assert::assertSame('email_template', $table);
+
+                return [
+                    new class('id') {
+                        public function __construct(private string $name)
+                        {
+                        }
+
+                        public function getName(): string
+                        {
+                            return $this->name;
+                        }
+                    },
+                    new class('action_code') {
+                        public function __construct(private string $name)
+                        {
+                        }
+
+                        public function getName(): string
+                        {
+                            return $this->name;
+                        }
+                    },
+                    new class('enabled') {
+                        public function __construct(private string $name)
+                        {
+                        }
+
+                        public function getName(): string
+                        {
+                            return $this->name;
+                        }
+                    },
+                    new class('is_custom') {
+                        public function __construct(private string $name)
+                        {
+                        }
+
+                        public function getName(): string
+                        {
+                            return $this->name;
+                        }
+                    },
+                ];
+            }
+
+            protected function selectTableNames(string $databaseName): \Doctrine\DBAL\Result
+            {
+                throw new \BadMethodCallException();
+            }
+
+            protected function selectTableColumns(string $databaseName, ?string $tableName = null): \Doctrine\DBAL\Result
+            {
+                throw new \BadMethodCallException();
+            }
+
+            protected function selectIndexColumns(string $databaseName, ?string $tableName = null): \Doctrine\DBAL\Result
+            {
+                throw new \BadMethodCallException();
+            }
+
+            protected function selectForeignKeyColumns(string $databaseName, ?string $tableName = null): \Doctrine\DBAL\Result
+            {
+                throw new \BadMethodCallException();
+            }
+
+            protected function fetchTableOptionsByTable(string $databaseName, ?string $tableName = null): array
+            {
+                throw new \BadMethodCallException();
+            }
+
+            protected function _getPortableTableColumnDefinition(array $tableColumn): \Doctrine\DBAL\Schema\Column
+            {
+                throw new \BadMethodCallException();
+            }
+
+            protected function _getPortableTableDefinition(array $table): string
+            {
+                throw new \BadMethodCallException();
+            }
+
+            protected function _getPortableViewDefinition(array $view): \Doctrine\DBAL\Schema\View
+            {
+                throw new \BadMethodCallException();
+            }
+
+            protected function _getPortableTableForeignKeyDefinition(array $tableForeignKey): \Doctrine\DBAL\Schema\ForeignKeyConstraint
+            {
+                throw new \BadMethodCallException();
+            }
+        };
+
+        $dbal = $this->getMockBuilder(\Doctrine\DBAL\Connection::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['createSchemaManager', 'executeStatement'])
+            ->getMock();
+        $dbal->expects($this->once())
+            ->method('createSchemaManager')
+            ->willReturn($schemaManager);
+        $dbal->expects($this->once())
+            ->method('executeStatement')
+            ->with($this->stringContains('ADD COLUMN `is_overridden`'));
+
+        $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
+            ->onlyMethods(['paginateDoctrineQuery'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $pager->expects($this->once())
+            ->method('paginateDoctrineQuery')
+            ->with($qbMock)
+            ->willReturn([
+                'total' => 0,
+                'list' => [],
+            ]);
+
+        $di = $this->getDi();
+        $di['dbal'] = $dbal;
+        $di['pager'] = $pager;
+
+        $service = new \Box\Mod\Email\Service();
+        $service->setDi($di);
+        $this->setTemplateRepository($service, $repoMock);
+
+        $result = $service->getTemplateList([]);
+
+        $this->assertSame(0, $result['total']);
+        $this->assertSame([], $result['list']);
+    }
+
     public function testGetTemplateListUsesDoctrinePagination(): void
     {
         $template = $this->createTemplateEntity('mod_email_test');
@@ -1040,10 +1185,10 @@ final class ServiceTest extends \BBTestCase
             'list' => [[
                 'id' => 1,
                 'action_code' => 'mod_support_ticket_open',
-                'category' => 'Support',
+                'category' => null,
                 'enabled' => false,
-                'subject' => 'Subject',
-                'description' => 'Description',
+                'subject' => null,
+                'description' => null,
                 'is_custom' => false,
                 'is_overridden' => false,
             ]],
@@ -1081,6 +1226,8 @@ final class ServiceTest extends \BBTestCase
         $this->assertCount(1, $result['list']);
         $this->assertSame('mod_support_ticket_open', $result['list'][0]['action_code']);
         $this->assertTrue($result['list'][0]['has_default']);
+        $this->assertNotSame('', $result['list'][0]['subject']);
+        $this->assertNotNull($result['list'][0]['category']);
     }
 
     public function testBatchSend(): void
