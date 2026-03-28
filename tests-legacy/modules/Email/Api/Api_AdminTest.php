@@ -4,11 +4,38 @@ declare(strict_types=1);
 
 namespace Box\Tests\Mod\Email\Api;
 
+use Box\Mod\Email\Entity\EmailTemplate;
+use Box\Mod\Email\Repository\EmailTemplateRepository;
+use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class Api_AdminTest extends \BBTestCase
 {
+    private function createEmMock(?object $repositoryMock = null): object
+    {
+        if ($repositoryMock === null) {
+            $repositoryMock = $this->getMockBuilder(EmailTemplateRepository::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+        }
+        $emMock = $this->getMockBuilder(EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->method('getRepository')
+            ->willReturn($repositoryMock);
+        $emMock->method('flush');
+        $emMock->method('persist');
+        $emMock->method('remove');
+
+        return $emMock;
+    }
+
+    private function createTemplateEntity(string $actionCode = 'mod_email_test'): EmailTemplate
+    {
+        return new EmailTemplate($actionCode);
+    }
+
     public function testEmailGetList(): void
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
@@ -30,6 +57,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['pager'] = $pager;
+        $di['em'] = $this->createEmMock();
 
         $adminApi->setDi($di);
         $emailService->setDi($di);
@@ -238,6 +266,7 @@ final class Api_AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $db;
         $di['logger'] = $loggerMock;
+        $di['em'] = $this->createEmMock();
         $adminApi->setDi($di);
 
         $adminApi->setService($emailService);
@@ -300,8 +329,7 @@ final class Api_AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $model = new \Model_EmailTemplate();
-        $model->loadBean(new \DummyBean());
+        $model = $this->createTemplateEntity('code');
 
         $di = $this->getDi();
         $adminApi->setDi($di);
@@ -327,10 +355,8 @@ final class Api_AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $model = new \Model_EmailTemplate();
-        $model->loadBean(new \DummyBean());
-        $model->id = 1;
-        $model->is_custom = 1;
+        $model = $this->createTemplateEntity('code');
+        $model->setIsCustom(true);
 
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate', 'hasDefaultTemplate'])->getMock();
         $emailService->expects($this->atLeastOnce())
@@ -339,13 +365,13 @@ final class Api_AdminTest extends \BBTestCase
         $emailService->expects($this->never())
             ->method('hasDefaultTemplate');
         $loggerMock = $this->createMock('Box_Log');
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('trash')
-            ->willReturn(true);
+
+        $emMock = $this->createEmMock();
+        $emMock->expects($this->atLeastOnce())->method('remove');
+        $emMock->expects($this->atLeastOnce())->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $db;
+        $di['em'] = $emMock;
         $di['logger'] = $loggerMock;
         $adminApi->setDi($di);
         $adminApi->setService($emailService);
@@ -362,9 +388,7 @@ final class Api_AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $model = new \Model_EmailTemplate();
-        $model->loadBean(new \DummyBean());
-        $model->is_custom = 0;
+        $model = $this->createTemplateEntity('code');
 
         $di = $this->getDi();
         $adminApi->setDi($di);
@@ -391,11 +415,7 @@ final class Api_AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $model = new \Model_EmailTemplate();
-        $model->loadBean(new \DummyBean());
-        $model->id = 1;
-        $model->is_custom = 0;
-        $model->action_code = 'mod_removed_template';
+        $model = $this->createTemplateEntity('mod_removed_template');
 
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate', 'hasDefaultTemplate'])->getMock();
         $emailService->expects($this->atLeastOnce())
@@ -406,14 +426,13 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn(false);
 
         $loggerMock = $this->createMock('Box_Log');
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('trash')
-            ->with($model)
-            ->willReturn(true);
+
+        $emMock = $this->createEmMock();
+        $emMock->expects($this->atLeastOnce())->method('remove');
+        $emMock->expects($this->atLeastOnce())->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $db;
+        $di['em'] = $emMock;
         $di['logger'] = $loggerMock;
         $adminApi->setDi($di);
         $adminApi->setService($emailService);
@@ -429,9 +448,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $modelId = 1;
 
-        $templateModel = new \Model_EmailTemplate();
-        $templateModel->loadBean(new \DummyBean());
-        $templateModel->id = $modelId;
+        $templateModel = $this->createTemplateEntity('Action_code');
 
         $data = [
             'action_code' => 'Action_code',
@@ -449,7 +466,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setService($emailService);
 
         $result = $adminApi->template_create($data);
-        $this->assertEquals($result, $modelId);
+        $this->assertNull($result);
     }
 
     public function testTemplateSendToNotSetException(): void
@@ -476,8 +493,8 @@ final class Api_AdminTest extends \BBTestCase
             'content' => 'Content',
         ];
 
-        $emailTemplateModel = new \Model_EmailTemplate();
-        $emailTemplateModel->loadBean(new \DummyBean());
+        $emailTemplateModel = $this->createTemplateEntity('code');
+
         $di = $this->getDi();
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate', 'updateTemplate'])->getMock();
         $emailService->expects($this->atLeastOnce())

@@ -34,7 +34,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        $this->templateRepository = $di['em']->getRepository(EmailTemplate::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -382,7 +381,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function getOrCreateTemplateByCode(string $code, array $data = []): EmailTemplate
     {
-        $template = $this->templateRepository->findOneByActionCode($code);
+        $template = $this->getTemplateRepository()->findOneByActionCode($code);
         if ($template instanceof EmailTemplate) {
             $default = $this->getDefaultTemplate($code, $data);
             if ($default !== null && !$this->isCustomTemplate($template)) {
@@ -699,7 +698,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 continue;
             }
 
-            $template = $this->templateRepository->findOneByActionCode($code);
+            $template = $this->getTemplateRepository()->findOneByActionCode($code);
             $default = $this->getDefaultTemplate($code, ['code' => $code]);
             if ($default === null) {
                 continue;
@@ -724,7 +723,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function templateBatchDisable(): bool
     {
         $this->templateBatchGenerate();
-        $this->templateRepository->setAllEnabled(false);
+        $this->getTemplateRepository()->setAllEnabled(false);
         $this->di['logger']->info('Disabled all email templates');
 
         return true;
@@ -733,7 +732,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function templateBatchEnable(): bool
     {
         $this->templateBatchGenerate();
-        $this->templateRepository->setAllEnabled(true);
+        $this->getTemplateRepository()->setAllEnabled(true);
         $this->di['logger']->info('Enabled all email templates');
 
         return true;
@@ -741,7 +740,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getTemplate(int $id): EmailTemplate
     {
-        $template = $this->templateRepository->find($id);
+        $template = $this->getTemplateRepository()->find($id);
         if (!$template instanceof EmailTemplate) {
             throw new \FOSSBilling\Exception('Email template not found');
         }
@@ -758,7 +757,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getTemplateList(array $data = []): array
     {
-        $qb = $this->templateRepository->getSearchQueryBuilder($data);
+        $qb = $this->getTemplateRepository()->getSearchQueryBuilder($data);
         $result = $this->di['pager']->paginateDoctrineQuery($qb);
 
         $list = [];
