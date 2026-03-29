@@ -25,7 +25,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testProcessReceivedATransactions(): void
+    public function testProcessReceivedTransactions(): void
     {
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \DummyBean());
@@ -481,14 +481,14 @@ final class ServiceTransactionTest extends \BBTestCase
         $serviceMock->preProcessTransaction($transactionModel);
     }
 
-    public static function paymentsAdapterProvider_withprocessTransaction(): array
+    public static function paymentsAdapterProvider_withProcessTransaction(): array
     {
         return [
             ['\Payment_Adapter_PayPalEmail'],
         ];
     }
 
-    #[DataProvider('paymentsAdapterProvider_withprocessTransaction')]
+    #[DataProvider('paymentsAdapterProvider_withProcessTransaction')]
     public function testProcessTransactionSupportProcessTransaction(string $adapter): void
     {
         $id = 1;
