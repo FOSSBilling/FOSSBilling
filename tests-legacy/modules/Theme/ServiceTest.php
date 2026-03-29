@@ -28,6 +28,7 @@ final class ServiceTest extends \BBTestCase
     {
         $result = $this->service->getTheme('huraga');
         $this->assertInstanceOf('\\' . Model\Theme::class, $result);
+        $this->assertSame('huraga', $result->getName());
     }
 
     public function testGetCurrentThemePreset(): void
@@ -359,7 +360,7 @@ final class ServiceTest extends \BBTestCase
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $tmpDir = sys_get_temp_dir() . '/fb_test_' . uniqid('', true);
-        mkdir($tmpDir, 0o755, true);
+        mkdir($tmpDir, 0755, true);
         $testFile = $tmpDir . '/test_settings.json';
 
         $themeMock->expects($this->atLeastOnce())
@@ -388,7 +389,7 @@ final class ServiceTest extends \BBTestCase
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
 
         $tmpDir = sys_get_temp_dir() . '/' . uniqid('fb_test_assets_', true);
-        mkdir($tmpDir, 0o755, true);
+        mkdir($tmpDir, 0755, true);
 
         $themeMock->expects($this->atLeastOnce())
             ->method('getPathAssets')

@@ -45,9 +45,17 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function typeValidation($type): bool
+    public function isValidFieldType(string $type): bool
     {
         return array_key_exists($type, $this->getFormFieldsTypes());
+    }
+
+    /**
+     * @deprecated Use isValidFieldType() instead.
+     */
+    public function typeValidation($type): bool
+    {
+        return $this->isValidFieldType((string) $type);
     }
 
     public function validateUrlField(string $value): bool
@@ -68,11 +76,11 @@ class Service implements InjectionAwareInterface
         return (bool) preg_match('/\.[a-zA-Z]{2,}$/', $host);
     }
 
-    public function isArrayUnique($data): bool
+    public function isArrayUnique($array): bool
     {
-        $unique = array_unique($data);
+        $unique = array_unique($array);
 
-        return (is_countable($data) ? count($data) : 0) === count($unique);
+        return (is_countable($array) ? count($array) : 0) === count($unique);
     }
 
     public function addNewForm($data): int
@@ -149,7 +157,7 @@ class Service implements InjectionAwareInterface
         return $fieldId;
     }
 
-    private function slugify($text)
+    private function slugify($text): string
     {
         $text = preg_replace('~[^\\pL\d]+~u', '_', (string) $text);
         $text = trim((string) $text, '_');
@@ -168,7 +176,7 @@ class Service implements InjectionAwareInterface
         return $text;
     }
 
-    public function updateField($field)
+    public function updateField(array $field): int
     {
         $fieldId = $field['id'];
         $label = $field['label'] ?? 'New field';
@@ -240,7 +248,7 @@ class Service implements InjectionAwareInterface
         return $fieldId;
     }
 
-    public function getForm($formId)
+    public function getForm(int $formId): array
     {
         $result = $this->getDbal()->executeQuery(
             'SELECT * FROM form WHERE id = ?',

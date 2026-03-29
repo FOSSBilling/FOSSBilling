@@ -16,15 +16,21 @@
                 <div class="card-header py-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h1 class="mb-1">{{ company.name }} {{ 'Privacy Policy'|trans }}</h1>
-                            <span class="small text-muted">
-                                {{ company.signature }}
-                            </span>
+                            {% if company is defined and company %}
+                                <h1 class="mb-1">{{ company.name }} {{ 'Privacy Policy'|trans }}</h1>
+                                <span class="small text-muted">
+                                    {{ company.signature }}
+                                </span>
+                            {% else %}
+                                <h1 class="mb-1">{{ 'Privacy Policy'|trans }}</h1>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
                 <div class="card-body">
-                    {{ company.privacy_policy|markdown }}
+                    {% if company is defined and company %}
+                        {{ company.privacy_policy|markdown|e }}
+                    {% endif %}
                 </div>
             </div>
         </div>
