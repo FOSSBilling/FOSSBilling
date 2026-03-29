@@ -68,7 +68,7 @@ class Admin extends \Api_Abstract
     public function add_field($data)
     {
         $service = $this->getService();
-        if (!isset($data['type']) || !$service->typeValidation($data['type'])) {
+        if (!isset($data['type']) || !$service->isValidFieldType($data['type'])) {
             throw new \FOSSBilling\Exception('Form field type is invalid', null, 2684);
         }
         if (isset($data['options']) && is_array($data['options']) && !$service->isArrayUnique($data['options'])) {

@@ -50,14 +50,6 @@ class Service implements InjectionAwareInterface
         return array_key_exists($type, $this->getFormFieldsTypes());
     }
 
-    /**
-     * @deprecated Use isValidFieldType() instead.
-     */
-    public function typeValidation($type): bool
-    {
-        return $this->isValidFieldType((string) $type);
-    }
-
     public function validateUrlField(string $value): bool
     {
         if (empty($value)) {

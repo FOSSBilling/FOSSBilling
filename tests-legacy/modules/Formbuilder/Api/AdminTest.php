@@ -77,7 +77,7 @@ final class AdminTest extends \BBTestCase
 
         $serviceMock = $this->getServiceMock();
         $serviceMock->expects($this->atLeastOnce())
-            ->method('typeValidation')
+            ->method('isValidFieldType')
             ->willReturn(true);
 
         $serviceMock->expects($this->atLeastOnce())
