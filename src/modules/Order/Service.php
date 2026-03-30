@@ -11,7 +11,6 @@
 
 namespace Box\Mod\Order;
 
-use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 
@@ -612,17 +611,15 @@ class Service implements InjectionAwareInterface
     public function createOrder(\Model_Client $client, \Model_Product $product, array $data)
     {
         $currencyService = $this->di['mod_service']('currency');
-        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
-        $currencyRepository = $currencyService->getCurrencyRepository();
 
         if (isset($data['currency']) && !empty($data['currency'])) {
-            $currency = $currencyRepository->findOneByCode($data['currency']);
+            $currency = $currencyService->getByCode($data['currency']);
         } elseif ($client->currency) {
-            $currency = $currencyRepository->findOneByCode($client->currency);
+            $currency = $currencyService->getByCode($client->currency);
         } else {
-            $currency = $currencyRepository->findDefault();
+            $currency = $currencyService->getDefault();
         }
-        if (!$currency instanceof Currency) {
+        if ($currency === null) {
             throw new \FOSSBilling\Exception('Currency could not be determined for order');
         }
 
@@ -707,7 +704,7 @@ class Service implements InjectionAwareInterface
             $order->price = $data['price'];
         } else {
             $repo = $product->getTable();
-            $rate = $currencyRepository->getRateByCode($currency->getCode());
+            $rate = $currencyService->getRate($currency->getCode());
             if ($rate === null) {
                 throw new \FOSSBilling\Exception("Currency rate for '{$currency->getCode()}' is not configured");
             }

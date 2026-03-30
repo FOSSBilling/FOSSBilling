@@ -36,6 +36,9 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    /**
+     * @internal For internal use only. Use getByCode(), getDefault(), or getRate() for cross-module access.
+     */
     public function getCurrencyRepository(): CurrencyRepository
     {
         if ($this->currencyRepository === null) {
@@ -47,6 +50,26 @@ class Service implements InjectionAwareInterface
         }
 
         return $this->currencyRepository;
+    }
+
+    public function getByCode(string $code): ?Currency
+    {
+        return $this->getCurrencyRepository()->findOneByCode($code);
+    }
+
+    public function getById(int $id): ?Currency
+    {
+        return $this->getCurrencyRepository()->find($id);
+    }
+
+    public function getDefault(): ?Currency
+    {
+        return $this->getCurrencyRepository()->findDefault();
+    }
+
+    public function getRate(string $code): ?float
+    {
+        return $this->getCurrencyRepository()->getRateByCode($code);
     }
 
     public function getModulePermissions(): array

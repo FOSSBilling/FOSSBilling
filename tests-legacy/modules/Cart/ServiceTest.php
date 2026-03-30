@@ -127,27 +127,23 @@ final class ServiceTest extends \BBTestCase
             ->method('get')
             ->willReturn($sessionGetWillReturn);
 
-        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        if ($sessionGetWillReturn === null) {
-            $currencyRepositoryMock->expects($this->atLeastOnce())
-                ->method('findDefault')
-                ->willReturn($currencyModel);
-        } else {
-            $currencyRepositoryMock->expects($this->never())
-                ->method('findDefault');
-        }
-
         $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['getCurrencyByClientId', 'getCurrencyRepository'])
+            ->onlyMethods(['getCurrencyByClientId', 'getDefault'])
             ->getMock();
-        $currencyServiceMock->expects($this->$getCurrencyByClientIdExpects())
-            ->method('getCurrencyByClientId')
-            ->willReturn($currencyModel);
-        $currencyServiceMock->expects($this->atLeastOnce())
-            ->method('getCurrencyRepository')
-            ->willReturn($currencyRepositoryMock);
+
+        if ($sessionGetWillReturn !== null) {
+            $currencyServiceMock->expects($this->atLeastOnce())
+                ->method('getCurrencyByClientId')
+                ->willReturn($currencyModel);
+            $currencyServiceMock->expects($this->never())
+                ->method('getDefault');
+        } else {
+            $currencyServiceMock->expects($this->never())
+                ->method('getCurrencyByClientId');
+            $currencyServiceMock->expects($this->atLeastOnce())
+                ->method('getDefault')
+                ->willReturn($currencyModel);
+        }
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -1072,6 +1068,7 @@ final class ServiceTest extends \BBTestCase
     {
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
+        $cartModel->currency_id = 1;
 
         $cartProductModel = new \Model_CartProduct();
         $cartProductModel->loadBean(new \DummyBean());
@@ -1103,16 +1100,9 @@ final class ServiceTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $currencyRepositoryMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn($currencyModel);
-
         $currencyService->expects($this->atLeastOnce())
-            ->method('getCurrencyRepository')
-            ->willReturn($currencyRepositoryMock);
+            ->method('getById')
+            ->willReturn($currencyModel);
 
         $di = new \Pimple\Container();
         $di['db'] = $dbMock;

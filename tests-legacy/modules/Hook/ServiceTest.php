@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Box\Mod\Hook;
 
 use Box\Mod\Extension\Entity\Extension;
-use Box\Mod\Extension\Repository\ExtensionRepository;
 use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -62,29 +61,22 @@ final class ServiceTest extends \BBTestCase
         $extension = new Extension('mod', 'activity');
         $this->setEntityId($extension, 1);
 
-        $repoMock = $this->getMockBuilder(ExtensionRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repoMock->expects($this->atLeastOnce())
-            ->method('find')
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('getExtensionById')
             ->with(1)
             ->willReturn($extension);
-
-        $emMock = $this->getMockBuilder(EntityManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $emMock->expects($this->atLeastOnce())
-            ->method('getRepository')
-            ->with(Extension::class)
-            ->willReturn($repoMock);
 
         $hookService = $this->createMock(Service::class);
         $hookService->expects($this->atLeastOnce())
             ->method('batchConnect');
 
         $di = $this->getDi();
-        $di['em'] = $emMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $hookService);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match ($name) {
+            'extension' => $extensionServiceMock,
+            'hook' => $hookService,
+            default => $this->createMock(\FOSSBilling\InjectionAwareInterface::class),
+        });
 
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')

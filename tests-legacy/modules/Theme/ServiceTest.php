@@ -39,29 +39,24 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('setCurrentThemePreset');
 
-        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->atLeastOnce())
-            ->method('findOneByExtensionAndScope')
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('getMetaValue')
             ->willReturn(null);
-
-        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $emMock->expects($this->atLeastOnce())
-            ->method('getRepository')
-            ->willReturn($repositoryMock);
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
             ->method('getCurrentPreset')
             ->willReturn('CurrentPresetString');
+        $themeMock->expects($this->atLeastOnce())
+            ->method('getName')
+            ->willReturn('default');
 
         $di = $this->getDi();
-
-        $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
-        $di['em'] = $emMock;
+        $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+            'extension' => $extensionServiceMock,
+            default => $this->createMock(\FOSSBilling\InjectionAwareInterface::class),
+        });
 
         $serviceMock->setDi($di);
         $result = $serviceMock->getCurrentThemePreset($themeMock);
@@ -70,23 +65,10 @@ final class ServiceTest extends \BBTestCase
 
     public function testSetCurrentThemePreset(): void
     {
-        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->atLeastOnce())
-            ->method('findOneByExtensionAndScope')
-            ->willReturn(null);
-
-        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $emMock->expects($this->atLeastOnce())
-            ->method('getRepository')
-            ->willReturn($repositoryMock);
-        $emMock->expects($this->atLeastOnce())
-            ->method('persist');
-        $emMock->expects($this->atLeastOnce())
-            ->method('flush');
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('setMeta')
+            ->willReturn(new \Box\Mod\Extension\Entity\ExtensionMeta());
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -94,9 +76,10 @@ final class ServiceTest extends \BBTestCase
             ->willReturn('default');
 
         $di = $this->getDi();
-
-        $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
-        $di['em'] = $emMock;
+        $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+            'extension' => $extensionServiceMock,
+            default => $this->createMock(\FOSSBilling\InjectionAwareInterface::class),
+        });
 
         $this->service->setDi($di);
         $result = $this->service->setCurrentThemePreset($themeMock, 'dark_blue');
@@ -106,18 +89,9 @@ final class ServiceTest extends \BBTestCase
 
     public function testDeletePreset(): void
     {
-        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->exactly(2))
-            ->method('deleteByExtensionAndScope');
-
-        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $emMock->expects($this->atLeastOnce())
-            ->method('getRepository')
-            ->willReturn($repositoryMock);
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionServiceMock->expects($this->exactly(2))
+            ->method('deleteMeta');
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -125,9 +99,10 @@ final class ServiceTest extends \BBTestCase
             ->willReturn('default');
 
         $di = $this->getDi();
-
-        $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
-        $di['em'] = $emMock;
+        $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+            'extension' => $extensionServiceMock,
+            default => $this->createMock(\FOSSBilling\InjectionAwareInterface::class),
+        });
 
         $this->service->setDi($di);
         $result = $this->service->deletePreset($themeMock, 'dark_blue');
@@ -143,19 +118,10 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('updateSettings');
 
-        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->atLeastOnce())
-            ->method('findByExtensionAndScope')
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('findMeta')
             ->willReturn([]);
-
-        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $emMock->expects($this->atLeastOnce())
-            ->method('getRepository')
-            ->willReturn($repositoryMock);
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -171,9 +137,10 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($corePresets);
 
         $di = $this->getDi();
-
-        $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
-        $di['em'] = $emMock;
+        $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+            'extension' => $extensionServiceMock,
+            default => $this->createMock(\FOSSBilling\InjectionAwareInterface::class),
+        });
 
         $serviceMock->setDi($di);
         $result = $serviceMock->getThemePresets($themeMock, 'dark_blue');
@@ -188,19 +155,10 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetThemePresetsThemeDoNotHaveSettingsDataFile(): void
     {
-        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->atLeastOnce())
-            ->method('findByExtensionAndScope')
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('findMeta')
             ->willReturn([]);
-
-        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $emMock->expects($this->atLeastOnce())
-            ->method('getRepository')
-            ->willReturn($repositoryMock);
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -212,9 +170,10 @@ final class ServiceTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-
-        $di['theme'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $themeMock);
-        $di['em'] = $emMock;
+        $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+            'extension' => $extensionServiceMock,
+            default => $this->createMock(\FOSSBilling\InjectionAwareInterface::class),
+        });
         $this->service->setDi($di);
 
         $result = $this->service->getThemePresets($themeMock);
@@ -231,19 +190,10 @@ final class ServiceTest extends \BBTestCase
         $extensionMeta = (new \Box\Mod\Extension\Entity\ExtensionMeta())
             ->setMetaValue('{}');
 
-        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->atLeastOnce())
-            ->method('findOneByExtensionAndScope')
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('getMeta')
             ->willReturn($extensionMeta);
-
-        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $emMock->expects($this->atLeastOnce())
-            ->method('getRepository')
-            ->willReturn($repositoryMock);
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -251,8 +201,10 @@ final class ServiceTest extends \BBTestCase
             ->willReturn('default');
 
         $di = $this->getDi();
-
-        $di['em'] = $emMock;
+        $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+            'extension' => $extensionServiceMock,
+            default => $this->createMock(\FOSSBilling\InjectionAwareInterface::class),
+        });
 
         $this->service->setDi($di);
         $result = $this->service->getThemeSettings($themeMock, 'default');
@@ -268,19 +220,10 @@ final class ServiceTest extends \BBTestCase
             ->method('getCurrentThemePreset')
             ->willReturn('default');
 
-        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->atLeastOnce())
-            ->method('findOneByExtensionAndScope')
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('getMeta')
             ->willReturn(null);
-
-        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $emMock->expects($this->atLeastOnce())
-            ->method('getRepository')
-            ->willReturn($repositoryMock);
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -291,8 +234,10 @@ final class ServiceTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-
-        $di['em'] = $emMock;
+        $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+            'extension' => $extensionServiceMock,
+            default => $this->createMock(\FOSSBilling\InjectionAwareInterface::class),
+        });
         $serviceMock->setDi($di);
 
         $result = $serviceMock->getThemeSettings($themeMock);
@@ -302,23 +247,10 @@ final class ServiceTest extends \BBTestCase
 
     public function testUpdateSettings(): void
     {
-        $repositoryMock = $this->getMockBuilder(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->atLeastOnce())
-            ->method('findOneByExtensionAndScope')
-            ->willReturn(null);
-
-        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $emMock->expects($this->atLeastOnce())
-            ->method('getRepository')
-            ->willReturn($repositoryMock);
-        $emMock->expects($this->atLeastOnce())
-            ->method('persist');
-        $emMock->expects($this->atLeastOnce())
-            ->method('flush');
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('setMeta')
+            ->willReturn(new \Box\Mod\Extension\Entity\ExtensionMeta());
 
         $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
         $themeMock->expects($this->atLeastOnce())
@@ -326,8 +258,10 @@ final class ServiceTest extends \BBTestCase
             ->willReturn('default');
 
         $di = $this->getDi();
-
-        $di['em'] = $emMock;
+        $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+            'extension' => $extensionServiceMock,
+            default => $this->createMock(\FOSSBilling\InjectionAwareInterface::class),
+        });
 
         $this->service->setDi($di);
         $params = [];
@@ -372,7 +306,6 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
         $result = $serviceMock->regenerateThemeSettingsDataFile($themeMock);
 
-        // Clean up temp file
         if (file_exists($testFile)) {
             unlink($testFile);
         }
@@ -400,7 +333,6 @@ final class ServiceTest extends \BBTestCase
 
         $result = $this->service->regenerateThemeCssAndJsFiles($themeMock, 'default', new \Model_Admin());
 
-        // Clean up temp directory
         if (is_dir($tmpDir)) {
             rmdir($tmpDir);
         }

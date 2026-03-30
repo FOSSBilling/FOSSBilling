@@ -11,7 +11,6 @@
 
 namespace Box\Mod\Invoice;
 
-use Box\Mod\Currency\Entity\Currency;
 use Dompdf\Dompdf;
 use FOSSBilling\Environment;
 use FOSSBilling\InformationException;
@@ -442,13 +441,11 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
 
         $currencyService = $this->di['mod_service']('currency');
-        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
-        $currencyRepository = $currencyService->getCurrencyRepository();
 
         $invoice->serie = $systemService->getParamValue('invoice_series_paid');
         $invoice->approved = true;
 
-        $currencyRate = $currencyRepository->getRateByCode((string) $invoice->currency);
+        $currencyRate = $currencyService->getRate((string) $invoice->currency);
         if ($currencyRate === null) {
             throw new \FOSSBilling\Exception("Currency rate for code '{$invoice->currency}' is not configured.");
         }
@@ -534,11 +531,9 @@ class Service implements InjectionAwareInterface
     {
         if (!$client->currency) {
             $currencyService = $this->di['mod_service']('currency');
-            /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
-            $currencyRepository = $currencyService->getCurrencyRepository();
-            $currency = $currencyRepository->findDefault();
+            $currency = $currencyService->getDefault();
 
-            if (!$currency instanceof Currency) {
+            if ($currency === null) {
                 throw new \FOSSBilling\Exception('Default currency not found');
             }
 

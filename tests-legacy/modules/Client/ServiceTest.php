@@ -56,20 +56,20 @@ final class ServiceTest extends \BBTestCase
 
     public function testGenerateEmailConfirmationLink(): void
     {
-        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $emMock->expects($this->atLeastOnce())
-            ->method('persist');
-        $emMock->expects($this->atLeastOnce())
-            ->method('flush');
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('createMeta')
+            ->willReturn(new \Box\Mod\Extension\Entity\ExtensionMeta());
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('url')
             ->willReturn('fossbilling.org/index.php/client/confirm-email/');
 
         $di = $this->getDi();
-        $di['em'] = $emMock;
+        $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+            'extension' => $extensionServiceMock,
+            default => $this->createMock(\FOSSBilling\InjectionAwareInterface::class),
+        });
         $di['tools'] = $toolsMock;
 
         $clientService = new \Box\Mod\Client\Service();

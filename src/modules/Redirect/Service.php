@@ -11,20 +11,13 @@
 
 namespace Box\Mod\Redirect;
 
-use Box\Mod\Extension\Entity\ExtensionMeta;
-use Box\Mod\Extension\Repository\ExtensionMetaRepository;
-
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    private ?ExtensionMetaRepository $extensionMetaRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        $this->extensionMetaRepository = isset($this->di['em'])
-            ? $this->di['em']->getRepository(ExtensionMeta::class)
-            : null;
     }
 
     public function getDi(): ?\Pimple\Container
@@ -32,37 +25,27 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function getExtensionMetaRepository(): ExtensionMetaRepository
-    {
-        if ($this->extensionMetaRepository === null) {
-            if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-            }
-
-            $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
-        }
-
-        return $this->extensionMetaRepository;
-    }
-
     public function getRedirects(): array
     {
-        $redirects = $this->getExtensionMetaRepository()->findByExtensionAndScope('mod_redirect', null, null, null, ['id' => 'ASC']);
+        $extensionService = $this->di['mod_service']('extension');
+        $redirects = $extensionService->findMeta('mod_redirect', null, null, null, ['id' => 'ASC']);
 
         return array_map($this->toApiArray(...), $redirects);
     }
 
     public function getRedirectByPath($path): ?string
     {
-        $redirect = $this->getExtensionMetaRepository()->findOneByExtensionAndScope('mod_redirect', (string) $path);
+        $extensionService = $this->di['mod_service']('extension');
+        $redirect = $extensionService->getMeta('mod_redirect', (string) $path);
 
         return $redirect?->getMetaValue();
     }
 
-    public function get(int $id): ExtensionMeta
+    public function get(int $id): \Box\Mod\Extension\Entity\ExtensionMeta
     {
-        $redirect = $this->getExtensionMetaRepository()->findOneByExtensionAndId('mod_redirect', $id);
-        if (!$redirect instanceof ExtensionMeta) {
+        $extensionService = $this->di['mod_service']('extension');
+        $redirect = $extensionService->getMetaById('mod_redirect', $id);
+        if ($redirect === null) {
             throw new \FOSSBilling\Exception('Redirect not found');
         }
 
@@ -71,13 +54,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function create(string $path, string $target): int
     {
-        $redirect = (new ExtensionMeta())
-            ->setExtension('mod_redirect')
-            ->setMetaKey($path)
-            ->setMetaValue($target);
-
-        $this->di['em']->persist($redirect);
-        $this->di['em']->flush();
+        $extensionService = $this->di['mod_service']('extension');
+        $redirect = $extensionService->createMeta('mod_redirect', $path, $target);
 
         $id = $redirect->getId();
         if ($id === null) {
@@ -87,26 +65,26 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $id;
     }
 
-    public function update(ExtensionMeta $redirect, array $data): bool
+    public function update(\Box\Mod\Extension\Entity\ExtensionMeta $redirect, array $data): bool
     {
-        $redirect
-            ->setMetaKey(trim(htmlspecialchars((string) ($data['path'] ?? $redirect->getMetaKey()), ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/'))
-            ->setMetaValue(trim(htmlspecialchars((string) ($data['target'] ?? $redirect->getMetaValue()), ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/'));
+        $path = trim(htmlspecialchars((string) ($data['path'] ?? $redirect->getMetaKey()), ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
+        $target = trim(htmlspecialchars((string) ($data['target'] ?? $redirect->getMetaValue()), ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
 
-        $this->di['em']->flush();
+        $extensionService = $this->di['mod_service']('extension');
+        $extensionService->updateMeta($redirect, $path, $target);
 
         return true;
     }
 
-    public function delete(ExtensionMeta $redirect): bool
+    public function delete(\Box\Mod\Extension\Entity\ExtensionMeta $redirect): bool
     {
-        $this->di['em']->remove($redirect);
-        $this->di['em']->flush();
+        $extensionService = $this->di['mod_service']('extension');
+        $extensionService->removeMeta($redirect);
 
         return true;
     }
 
-    public function toApiArray(ExtensionMeta $redirect): array
+    public function toApiArray(\Box\Mod\Extension\Entity\ExtensionMeta $redirect): array
     {
         return [
             'id' => $redirect->getId(),

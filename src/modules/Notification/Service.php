@@ -12,20 +12,15 @@
 namespace Box\Mod\Notification;
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
-use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    private ?ExtensionMetaRepository $extensionMetaRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        $this->extensionMetaRepository = isset($this->di['em'])
-            ? $this->di['em']->getRepository(ExtensionMeta::class)
-            : null;
     }
 
     public function getDi(): ?\Pimple\Container
@@ -33,23 +28,11 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getExtensionMetaRepository(): ExtensionMetaRepository
-    {
-        if ($this->extensionMetaRepository === null) {
-            if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-            }
-
-            $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
-        }
-
-        return $this->extensionMetaRepository;
-    }
-
     public function getSearchQueryBuilder(array $filter = []): \Doctrine\ORM\QueryBuilder
     {
-        return $this->getExtensionMetaRepository()
-            ->createQueryBuilderForExtension('mod_notification', 'n')
+        $extensionService = $this->di['mod_service']('extension');
+
+        return $extensionService->createMetaQueryBuilder('mod_notification', 'n')
             ->andWhere('n.metaKey = :metaKey')
             ->setParameter('metaKey', 'message')
             ->orderBy('n.id', 'DESC');
@@ -62,8 +45,9 @@ class Service implements InjectionAwareInterface
 
     public function get(int $id): ExtensionMeta
     {
-        $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndId('mod_notification', $id);
-        if (!$meta instanceof ExtensionMeta || $meta->getMetaKey() !== 'message') {
+        $extensionService = $this->di['mod_service']('extension');
+        $meta = $extensionService->getMetaById('mod_notification', $id);
+        if ($meta === null || $meta->getMetaKey() !== 'message') {
             throw new \FOSSBilling\Exception('Notification message was not found');
         }
 
@@ -72,15 +56,8 @@ class Service implements InjectionAwareInterface
 
     public function create(string $message): int
     {
-        $meta = (new ExtensionMeta())
-            ->setExtension('mod_notification')
-            ->setRelType('staff')
-            ->setRelId('1')
-            ->setMetaKey('message')
-            ->setMetaValue($message);
-
-        $this->di['em']->persist($meta);
-        $this->di['em']->flush();
+        $extensionService = $this->di['mod_service']('extension');
+        $meta = $extensionService->createMeta('mod_notification', 'message', $message, 'staff', '1');
 
         $id = $meta->getId();
         if ($id === null) {
@@ -94,15 +71,16 @@ class Service implements InjectionAwareInterface
     public function delete(int $id): bool
     {
         $meta = $this->get($id);
-        $this->di['em']->remove($meta);
-        $this->di['em']->flush();
+        $extensionService = $this->di['mod_service']('extension');
+        $extensionService->removeMeta($meta);
 
         return true;
     }
 
     public function deleteAll(): bool
     {
-        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_notification', 'message');
+        $extensionService = $this->di['mod_service']('extension');
+        $extensionService->deleteMeta('mod_notification', 'message');
 
         return true;
     }

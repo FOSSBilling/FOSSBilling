@@ -68,8 +68,6 @@ class Service implements InjectionAwareInterface
         }
 
         $currencyService = $this->di['mod_service']('currency');
-        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
-        $currencyRepository = $currencyService->getCurrencyRepository();
 
         // Try to get client's currency if client is logged in
         $currency = null;
@@ -79,9 +77,9 @@ class Service implements InjectionAwareInterface
         }
 
         // Fallback to default currency
-        if (!$currency instanceof Currency) {
-            $currency = $currencyRepository->findDefault();
-            if (!$currency instanceof Currency) {
+        if ($currency === null) {
+            $currency = $currencyService->getDefault();
+            if ($currency === null) {
                 throw new \FOSSBilling\Exception('Default currency not found');
             }
         }
@@ -348,14 +346,12 @@ class Service implements InjectionAwareInterface
         $products = $this->getCartProducts($model);
 
         $currencyService = $this->di['mod_service']('currency');
-        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
-        $currencyRepository = $currencyService->getCurrencyRepository();
-        $currency = $currencyRepository->find($model->currency_id);
-        if (!$currency instanceof Currency) {
-            $currency = $currencyRepository->findDefault();
+        $currency = $model->currency_id ? $currencyService->getById($model->currency_id) : null;
+        if ($currency === null) {
+            $currency = $currencyService->getDefault();
         }
 
-        if (!$currency instanceof Currency) {
+        if ($currency === null) {
             throw new \FOSSBilling\Exception('Currency not found and no default currency is configured');
         }
 
@@ -528,12 +524,10 @@ class Service implements InjectionAwareInterface
         }
 
         $currencyService = $this->di['mod_service']('currency');
-        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
-        $currencyRepository = $currencyService->getCurrencyRepository();
-        $currency = $currencyRepository->find($cart->currency_id);
-        if (!$currency instanceof Currency) {
-            $currency = $currencyRepository->findDefault();
-            if (!$currency instanceof Currency) {
+        $currency = $currencyService->getById($cart->currency_id);
+        if ($currency === null) {
+            $currency = $currencyService->getDefault();
+            if ($currency === null) {
                 throw new \FOSSBilling\Exception('Default currency not found.');
             }
         }

@@ -43,6 +43,9 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    /**
+     * @internal For internal use only. Use the service layer methods for cross-module access.
+     */
     public function getExtensionRepository(): ExtensionRepository
     {
         if ($this->extensionRepository === null) {
@@ -55,6 +58,9 @@ class Service implements InjectionAwareInterface
         return $this->extensionRepository;
     }
 
+    /**
+     * @internal For internal use only. Use getMeta(), setMeta(), deleteMeta(), findMeta() for cross-module access.
+     */
     public function getExtensionMetaRepository(): ExtensionMetaRepository
     {
         if ($this->extensionMetaRepository === null) {
@@ -797,5 +803,117 @@ class Service implements InjectionAwareInterface
 
             throw $e;
         }
+    }
+
+    public function getExtensionById(int $id): ?Extension
+    {
+        return $this->getExtensionRepository()->find($id);
+    }
+
+    public function getMeta(string $extension, ?string $metaKey = null, ?string $relType = null, ?string $relId = null): ?ExtensionMeta
+    {
+        return $this->getExtensionMetaRepository()->findOneByExtensionAndScope($extension, $metaKey, $relType, $relId);
+    }
+
+    public function getMetaValue(string $extension, ?string $metaKey = null, ?string $relType = null, ?string $relId = null): ?string
+    {
+        return $this->getMeta($extension, $metaKey, $relType, $relId)?->getMetaValue();
+    }
+
+    public function setMeta(string $extension, string $metaKey, mixed $value, ?string $relType = null, ?string $relId = null, ?int $clientId = null): ExtensionMeta
+    {
+        $meta = $this->getMeta($extension, $metaKey, $relType, $relId);
+
+        if ($meta === null) {
+            $meta = new ExtensionMeta();
+            $meta->setExtension($extension);
+            $meta->setMetaKey($metaKey);
+            if ($relType !== null) {
+                $meta->setRelType($relType);
+            }
+            if ($relId !== null) {
+                $meta->setRelId($relId);
+            }
+            if ($clientId !== null) {
+                $meta->setClientId($clientId);
+            }
+            $this->di['em']->persist($meta);
+        }
+
+        $meta->setMetaValue(is_string($value) ? $value : json_encode($value));
+        $this->di['em']->flush();
+
+        return $meta;
+    }
+
+    public function deleteMeta(string $extension, ?string $metaKey = null, ?string $relType = null, ?string $relId = null): int
+    {
+        return $this->getExtensionMetaRepository()->deleteByExtensionAndScope($extension, $metaKey, $relType, $relId);
+    }
+
+    /**
+     * @return ExtensionMeta[]
+     */
+    public function findMeta(string $extension, ?string $metaKey = null, ?string $relType = null, ?string $relId = null, array $orderBy = ['id' => 'ASC'], ?int $limit = null): array
+    {
+        return $this->getExtensionMetaRepository()->findByExtensionAndScope($extension, $metaKey, $relType, $relId, $orderBy, $limit);
+    }
+
+    public function createMeta(string $extension, string $metaKey, string $metaValue, ?string $relType = null, ?string $relId = null, ?int $clientId = null): ExtensionMeta
+    {
+        $meta = new ExtensionMeta();
+        $meta->setExtension($extension);
+        $meta->setMetaKey($metaKey);
+        $meta->setMetaValue($metaValue);
+        if ($relType !== null) {
+            $meta->setRelType($relType);
+        }
+        if ($relId !== null) {
+            $meta->setRelId($relId);
+        }
+        if ($clientId !== null) {
+            $meta->setClientId($clientId);
+        }
+
+        $this->di['em']->persist($meta);
+        $this->di['em']->flush();
+
+        return $meta;
+    }
+
+    public function getMetaById(string $extension, int $id): ?ExtensionMeta
+    {
+        return $this->getExtensionMetaRepository()->findOneByExtensionAndId($extension, $id);
+    }
+
+    public function removeMeta(ExtensionMeta $meta): void
+    {
+        $this->di['em']->remove($meta);
+        $this->di['em']->flush();
+    }
+
+    public function updateMeta(ExtensionMeta $meta, ?string $metaKey = null, ?string $metaValue = null, ?string $relType = null, ?string $relId = null): ExtensionMeta
+    {
+        if ($metaKey !== null) {
+            $meta->setMetaKey($metaKey);
+        }
+        if ($metaValue !== null) {
+            $meta->setMetaValue($metaValue);
+        }
+        if ($relType !== null) {
+            $meta->setRelType($relType);
+        }
+        if ($relId !== null) {
+            $meta->setRelId($relId);
+        }
+
+        $this->di['em']->flush();
+
+        return $meta;
+    }
+
+    public function createMetaQueryBuilder(string $extension, string $alias = 'em'): \Doctrine\ORM\QueryBuilder
+    {
+        return $this->getExtensionMetaRepository()->createQueryBuilderForExtension($extension, $alias);
     }
 }
