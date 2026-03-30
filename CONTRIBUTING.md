@@ -194,6 +194,35 @@ Do not use an AI or LLM to generate changes, respond to issues, or interact with
 
 All PHP must adhere to [PSR-12](https://www.php-fig.org/psr/psr-12/).
 
+### Doctrine Guidelines
+
+When using Doctrine ORM, follow these patterns:
+
+__Entity Design__:
+
+* Entities live in `src/modules/{Module}/Entity/`
+* Repositories live in `src/modules/{Module}/Repository/`
+* Use scalar IDs (`int`, `string`) for cross-module references instead of Doctrine associations
+* Doctrine associations are allowed only between entities owned by the same module
+
+__Cross-Module Interactions__:
+
+* Use the service layer (`$di['mod_service']('module')`) for all cross-module operations
+* Do not depend on entities or repositories from other modules
+
+__Example__:
+
+```php
+// Correct - cross-module access through service layer
+$currencyService = $this->di['mod_service']('currency');
+// ask the currency module to perform the operation or return the data needed
+
+// Incorrect - direct entity access from another module
+$currency = $this->di['em']->find(\Box\Mod\Currency\Entity\Currency::class, $code);
+```
+
+__Rationale__: Scalar IDs preserve module independence and reduce coupling between modules, migration order, entity loading behavior, and persistence rules. This allows modules to be installed, removed, or migrated more safely and independently.
+
 ### JavaScript Style Guide
 
 JavaScript must use modern vanilla JavaScript (ES6+). jQuery has been fully removed from the codebase.
