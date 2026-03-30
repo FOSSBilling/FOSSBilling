@@ -122,13 +122,9 @@ class Service implements InjectionAwareInterface
      */
     public function getCurrencyByClientId(int $client_id): Currency
     {
-        $sql = 'SELECT currency FROM client WHERE id = :client_id';
-        $values = [':client_id' => $client_id];
+        $currencyCode = $this->di['dbal']->fetchOne('SELECT currency FROM client WHERE id = ?', [$client_id]);
 
-        $db = $this->di['db'];
-        $currencyCode = $db->getCell($sql, $values);
-
-        if ($currencyCode === null || $currencyCode === '') {
+        if ($currencyCode === null || $currencyCode === '' || $currencyCode === false) {
             $default = $this->currencyRepository->findDefault();
             if ($default === null) {
                 throw new \FOSSBilling\Exception('Default currency not found');

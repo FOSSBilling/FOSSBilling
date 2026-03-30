@@ -208,6 +208,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         // send email to admins
         if (isset($data['to_admin']) && $data['to_admin'] > 0) {
+            /** @todo Doctrine: Replace with actual Admin entity once the Staff module is migrated to Doctrine. */
             $oneStaff = $this->di['db']->findOne('Admin', 'id=?', [$data['to_admin']]);
             $vars['c'] = $oneStaff;
         }

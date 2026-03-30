@@ -189,9 +189,11 @@ final class ServiceTest extends \BBTestCase
             ->getMock();
 
         $di = new \Pimple\Container();
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->atLeastOnce())
-            ->method('getCell')
+        $dbal = $this->getMockBuilder(\Doctrine\DBAL\Connection::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $dbal->expects($this->atLeastOnce())
+            ->method('fetchOne')
             ->willReturn($currency);
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
@@ -211,7 +213,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getRepository')
             ->willReturn($repositoryMock);
 
-        $di['db'] = $db;
+        $di['dbal'] = $dbal;
         $di['em'] = $emMock;
 
         $service = new \Box\Mod\Currency\Service();
