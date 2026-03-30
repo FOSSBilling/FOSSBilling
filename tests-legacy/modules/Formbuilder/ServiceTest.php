@@ -41,7 +41,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame($expected, $this->service->getFormFieldsTypes());
     }
 
-    public static function typeValidationData(): array
+    public static function typeFieldValidationData(): array
     {
         return [
             ['select', true],
@@ -50,10 +50,10 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[DataProvider('typeValidationData')]
-    public function testTypeValidation(string $type, bool $expected): void
+    #[DataProvider('typeFieldValidationData')]
+    public function testIsValidFieldType(string $type, bool $expected): void
     {
-        $this->assertSame($expected, $this->service->typeValidation($type));
+        $this->assertSame($expected, $this->service->isValidFieldType($type));
     }
 
     public static function urlValidationData(): array
