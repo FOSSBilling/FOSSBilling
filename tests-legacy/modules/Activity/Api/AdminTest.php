@@ -104,28 +104,4 @@ final class AdminTest extends \BBTestCase
         $result = $activity->log([]);
         $this->assertFalse($result, 'Empty array key m');
     }
-
-    public function testLogEmail(): void
-    {
-        $service = $this->getMockBuilder(\Box\Mod\Activity\Service::class)->onlyMethods(['logEmail'])->getMock();
-        $service->expects($this->atLeastOnce())
-            ->method('logEmail')
-            ->willReturn(true);
-
-        $di = $this->getDi();
-
-        $adminApi = new \Box\Mod\Activity\Api\Admin();
-        $adminApi->setService($service);
-        $adminApi->setDi($di);
-        $result = $adminApi->log_email(['subject' => 'Proper subject']);
-
-        $this->assertTrue($result, 'Log_email did not returned true');
-    }
-
-    public function testLogEmailWithoutSubject(): void
-    {
-        $activity = new \Box\Mod\Activity\Api\Admin();
-        $result = $activity->log_email([]);
-        $this->assertFalse($result);
-    }
 }

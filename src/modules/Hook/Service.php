@@ -11,6 +11,7 @@
 
 namespace Box\Mod\Hook;
 
+use Box\Mod\Extension\Entity\Extension;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -58,10 +59,10 @@ class Service implements InjectionAwareInterface
             $event->setReturnValue(false);
         } else {
             $di = $event->getDi();
-            $ext = $di['db']->load('extension', $params['id']);
-            if (is_object($ext) && $ext->type == 'mod') {
+            $extension = $di['em']->getRepository(Extension::class)->find($params['id']);
+            if ($extension !== null && $extension->getType() === 'mod') {
                 $service = $di['mod_service']('hook');
-                $service->batchConnect($ext->name);
+                $service->batchConnect($extension->getName());
             }
             $event->setReturnValue(true);
         }

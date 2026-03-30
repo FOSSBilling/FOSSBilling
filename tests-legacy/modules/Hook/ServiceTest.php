@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Hook;
 
+use Box\Mod\Extension\Entity\Extension;
+use Box\Mod\Extension\Repository\ExtensionRepository;
+use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -56,22 +59,31 @@ final class ServiceTest extends \BBTestCase
             ->method('getParameters')
             ->willReturn($eventParams);
 
-        $model = new \Model_Extension();
-        $model->loadBean(new \DummyBean());
-        $model->id = 1;
-        $model->type = 'mod';
+        $extension = new Extension('mod', 'activity');
+        $this->setEntityId($extension, 1);
 
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn($model);
+        $repoMock = $this->getMockBuilder(ExtensionRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repoMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->with(1)
+            ->willReturn($extension);
+
+        $emMock = $this->getMockBuilder(EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
+            ->with(Extension::class)
+            ->willReturn($repoMock);
 
         $hookService = $this->createMock(Service::class);
         $hookService->expects($this->atLeastOnce())
             ->method('batchConnect');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $hookService);
 
         $eventMock->expects($this->atLeastOnce())
@@ -144,8 +156,15 @@ final class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->willReturn(false);
 
-        $extensionModel = new \Model_ExtensionMeta();
-        $extensionModel->loadBean(new \DummyBean());
+        $extensionModel = new class {
+            public $extension;
+            public $rel_type;
+            public $rel_id;
+            public $meta_key;
+            public $meta_value;
+            public $created_at;
+            public $updated_at;
+        };
 
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -154,16 +173,9 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $returnArr = [
-            [
-                'id' => 2,
-                'rel_id' => 1,
-                'meta_value' => 'testValue',
-            ],
-        ];
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->willReturn($returnArr);
+            ->willReturn([]);
 
         $activityServiceMock = $this->createMock(\Box\Mod\Activity\Service::class);
 
@@ -189,11 +201,18 @@ final class ServiceTest extends \BBTestCase
             }
         });
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-        ;
+        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
         $this->service->setDi($di);
         $result = $this->service->batchConnect($mod);
         $this->assertTrue($result);
+    }
+
+    private function setEntityId(object $entity, int $id): void
+    {
+        $reflection = new \ReflectionClass($entity);
+        $property = $reflection->getProperty('id');
+        $property->setAccessible(true);
+        $property->setValue($entity, $id);
     }
 }

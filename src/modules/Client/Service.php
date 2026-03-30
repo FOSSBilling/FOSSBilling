@@ -11,6 +11,8 @@
 
 namespace Box\Mod\Client;
 
+use Box\Mod\Extension\Entity\ExtensionMeta;
+use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
@@ -18,6 +20,7 @@ use FOSSBilling\Tools;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    protected ?ExtensionMetaRepository $extensionMetaRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -27,6 +30,18 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getExtensionMetaRepository(): ExtensionMetaRepository
+    {
+        if ($this->extensionMetaRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+            $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
+        }
+
+        return $this->extensionMetaRepository;
     }
 
     public function approveClientEmailByHash($hash): bool
@@ -45,16 +60,16 @@ class Service implements InjectionAwareInterface
     public function generateEmailConfirmationLink($client_id)
     {
         $hash = strtolower((string) $this->di['tools']->generatePassword(50));
-        $db = $this->di['db'];
 
-        $meta = $db->dispense('ExtensionMeta');
-        $meta->extension = 'mod_client';
-        $meta->client_id = $client_id;
-        $meta->meta_key = 'confirm_email';
-        $meta->meta_value = $hash;
-        $meta->created_at = date('Y-m-d H:i:s');
-        $meta->updated_at = date('Y-m-d H:i:s');
-        $db->store($meta);
+        $meta = new ExtensionMeta();
+        $meta->setExtension('mod_client');
+        $meta->setClientId($client_id !== null ? (int) $client_id : null);
+        $meta->setMetaKey('confirm_email');
+        $meta->setMetaValue($hash);
+
+        $em = $this->di['em'];
+        $em->persist($meta);
+        $em->flush();
 
         return $this->di['tools']->url('/client/confirm-email/' . $hash);
     }
