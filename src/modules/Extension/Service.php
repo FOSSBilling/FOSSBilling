@@ -11,6 +11,10 @@
 
 namespace Box\Mod\Extension;
 
+use Box\Mod\Extension\Entity\Extension;
+use Box\Mod\Extension\Entity\ExtensionMeta;
+use Box\Mod\Extension\Repository\ExtensionMetaRepository;
+use Box\Mod\Extension\Repository\ExtensionRepository;
 use FOSSBilling\Config;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Exception\IOException;
@@ -22,6 +26,8 @@ use Symfony\Contracts\Cache\ItemInterface;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    protected ?ExtensionRepository $extensionRepository = null;
+    protected ?ExtensionMetaRepository $extensionMetaRepository = null;
 
     public function __construct(private readonly ?Filesystem $filesystem = new Filesystem())
     {
@@ -35,6 +41,30 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getExtensionRepository(): ExtensionRepository
+    {
+        if ($this->extensionRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+            $this->extensionRepository = $this->di['em']->getRepository(Extension::class);
+        }
+
+        return $this->extensionRepository;
+    }
+
+    public function getExtensionMetaRepository(): ExtensionMetaRepository
+    {
+        if ($this->extensionMetaRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+            $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
+        }
+
+        return $this->extensionMetaRepository;
     }
 
     public function getModulePermissions(): array
@@ -67,17 +97,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $query = "SELECT id
-                FROM extension
-                WHERE type = :type
-                AND status = 'installed'
-                AND name = :id
-                LIMIT 1
-               ";
-
-        $id_or_null = $this->di['db']->getCell($query, ['type' => $type, 'id' => $id]);
-
-        return (bool) $id_or_null;
+        return $this->getExtensionRepository()->hasInstalledExtension($type, $id);
     }
 
     public static function onBeforeAdminCronRun(\Box_Event $event): bool
@@ -96,16 +116,21 @@ class Service implements InjectionAwareInterface
 
     public function removeNotExistingModules(): bool|int
     {
-        $list = $this->di['db']->find('Extension', "type = 'mod'");
+        $list = $this->getExtensionRepository()->findByType('mod');
+        $em = $this->di['em'];
         $removedItems = 0;
         foreach ($list as $ext) {
             try {
-                $mod = $this->di['mod']($ext->name);
+                $mod = $this->di['mod']($ext->getName());
                 $mod->getManifest();
             } catch (\Exception) {
-                $this->di['db']->trash($ext);
+                $em->remove($ext);
                 ++$removedItems;
             }
+        }
+
+        if ($removedItems > 0) {
+            $em->flush();
         }
 
         return $removedItems == 0 ? true : $removedItems;
@@ -113,26 +138,9 @@ class Service implements InjectionAwareInterface
 
     public function getSearchQuery($filter): array
     {
-        $search = $filter['search'] ?? null;
-        $type = $filter['type'] ?? null;
+        $qb = $this->getExtensionRepository()->getSearchQueryBuilder($filter);
 
-        $params = [];
-        $sql = "SELECT * FROM extension
-            WHERE status = 'installed' ";
-
-        if ($type !== null) {
-            $sql .= ' AND type = :type';
-            $params[':type'] = $type;
-        }
-
-        if ($search !== null) {
-            $sql .= ' AND name LIKE :search';
-            $params[':search'] = '%' . $search . '%';
-        }
-
-        $sql .= ' ORDER BY type ASC, status DESC, id ASC';
-
-        return [$sql, $params];
+        return [$qb->getDQL(), $qb->getParameters()->toArray()];
     }
 
     /**
@@ -142,8 +150,8 @@ class Service implements InjectionAwareInterface
     {
         $this->removeNotExistingModules();
 
-        [$sql, $params] = $this->getSearchQuery($filter);
-        $installed = $this->di['db']->getAll($sql, $params);
+        $qb = $this->getExtensionRepository()->getSearchQueryBuilder($filter);
+        $installed = $qb->getQuery()->getResult();
 
         $has_settings = $filter['has_settings'] ?? null;
         $only_installed = $filter['installed'] ?? null;
@@ -163,19 +171,19 @@ class Service implements InjectionAwareInterface
         }
 
         foreach ($installed as $im) {
-            $m = $this->di['mod']($im['name']);
+            $m = $this->di['mod']($im->getName());
 
             try {
                 $manifest = $m->getManifest();
             } catch (\Exception $e) {
-                error_log("Error while decoding the manifest file for {$im['name']} : {$e->getMessage()}.");
+                error_log("Error while decoding the manifest file for {$im->getName()} : {$e->getMessage()}.");
 
                 continue;
             }
 
-            $manifest['version'] = $im['version'];
-            $manifest['status'] = $im['status'];
-            if ($im['type'] == 'mod' && $im['status'] == 'installed') {
+            $manifest['version'] = $im->getVersion();
+            $manifest['status'] = $im->getStatus();
+            if ($im->getType() == 'mod' && $im->getStatus() == 'installed') {
                 $manifest['has_settings'] = $m->hasSettingsPage();
             }
 
@@ -188,8 +196,8 @@ class Service implements InjectionAwareInterface
 
             // unset installed modules
             foreach ($installed as $ins) {
-                if (in_array($ins['name'], $a)) {
-                    $key = array_search($ins['name'], $a);
+                if (in_array($ins->getName(), $a)) {
+                    $key = array_search($ins->getName(), $a);
                     unset($a[$key]);
                 }
             }
@@ -341,18 +349,12 @@ class Service implements InjectionAwareInterface
         return $nav;
     }
 
-    /**
-     * @return \Model_Extension
-     */
-    /**
-     * @return \Model_Extension|null
-     */
-    public function findExtension($type, $id)
+    public function findExtension(string $type, string $id): ?Extension
     {
-        return $this->di['db']->findOne('Extension', 'type = ? and name = ? ', [$type, $id]);
+        return $this->getExtensionRepository()->findOneByTypeAndName($type, $id);
     }
 
-    public function update(\Model_Extension $model): never
+    public function update(Extension $model): never
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
@@ -364,23 +366,23 @@ class Service implements InjectionAwareInterface
      *
      * @return array|array{has_settings: bool, id: string, redirect: bool, type: string}
      */
-    public function activate(\Model_Extension $ext): array
+    public function activate(Extension $ext): array
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
         $result = [
-            'id' => $ext->name,
-            'type' => $ext->type,
+            'id' => $ext->getName(),
+            'type' => $ext->getType(),
             'redirect' => false,
             'has_settings' => false,
         ];
 
-        switch ($ext->type) {
+        switch ($ext->getType()) {
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
-                $mod = $this->di['mod']($ext->name);
+                $mod = $this->di['mod']($ext->getName());
                 $manifest = $mod->getManifest();
                 $this->installModule($ext);
-                $ext->version = $manifest['version'];
+                $ext->setVersion($manifest['version']);
                 $result['redirect'] = $mod->hasAdminController();
                 $result['has_settings'] = $mod->hasSettingsPage();
 
@@ -390,8 +392,8 @@ class Service implements InjectionAwareInterface
                 break;
         }
 
-        $ext->status = 'installed';
-        $this->di['db']->store($ext);
+        $ext->setStatus(Extension::STATUS_INSTALLED);
+        $this->di['em']->flush();
 
         return $result;
     }
@@ -401,13 +403,13 @@ class Service implements InjectionAwareInterface
      *
      * @throws \FOSSBilling\InformationException
      */
-    public function deactivate(\Model_Extension $ext): bool
+    public function deactivate(Extension $ext): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
-        switch ($ext->type) {
+        switch ($ext->getType()) {
             case \FOSSBilling\ExtensionManager::TYPE_HOOK:
-                $file = Path::changeExtension(ucfirst($ext->name), '.php');
+                $file = Path::changeExtension(ucfirst($ext->getName()), '.php');
                 $destination = Path::join(PATH_LIBRARY, 'Hook', $file);
                 if ($this->filesystem->exists($destination)) {
                     $this->filesystem->remove($destination);
@@ -416,7 +418,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
-                $mod = $ext->name;
+                $mod = $ext->getName();
                 if ($this->isCoreModule($mod)) {
                     throw new \FOSSBilling\InformationException('Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
                 }
@@ -427,7 +429,9 @@ class Service implements InjectionAwareInterface
                 break;
         }
 
-        $this->di['db']->trash($ext);
+        $em = $this->di['em'];
+        $em->remove($ext);
+        $em->flush();
 
         return true;
     }
@@ -553,25 +557,16 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getInstalledMods()
+    public function getInstalledMods(): array
     {
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('name')
-            ->from('extension')
-            ->where('type = :type')
-            ->andWhere('status = :status')
-            ->setParameter('type', 'mod')
-            ->setParameter('status', 'installed');
-
-        return $query->executeQuery()->fetchFirstColumn();
+        return $this->getExtensionRepository()->findInstalledNamesByType('mod');
     }
 
-    private function installModule(\Model_Extension $ext): bool
+    private function installModule(Extension $ext): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
-        $mod = $this->di['mod']($ext->name);
+        $mod = $this->di['mod']($ext->getName());
 
         if ($mod->isCore()) {
             throw new \FOSSBilling\InformationException('FOSSBilling core modules cannot be installed or removed');
@@ -593,8 +588,8 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $ext->version = $info['version'];
-        $this->di['db']->store($ext);
+        $ext->setVersion($info['version']);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -602,21 +597,23 @@ class Service implements InjectionAwareInterface
     public function activateExistingExtension(array $data): array
     {
         $ext = $this->findExtension($data['type'], $data['id']);
-        if (!$ext instanceof \Model_Extension) {
-            $ext = $this->di['db']->dispense('Extension');
-            $ext->name = $data['id'];
-            $ext->type = $data['type'];
-            $ext->version = null;
-            $ext->status = 'deactivated';
-            $ext_id = $this->di['db']->store($ext);
+        $em = $this->di['em'];
+
+        if (!$ext instanceof Extension) {
+            $ext = new Extension($data['type'], $data['id']);
+            $ext->setVersion(null);
+            $ext->setStatus(Extension::STATUS_DEACTIVATED);
+            $em->persist($ext);
+            $em->flush();
         }
-        $ext_id ??= $ext->id;
+        $ext_id = $ext->getId();
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminActivateExtension', 'params' => ['id' => $ext_id]]);
 
         try {
             $result = $this->activate($ext);
         } catch (\Exception $e) {
-            $this->di['db']->trash($ext);
+            $em->remove($ext);
+            $em->flush();
 
             throw $e;
         }
@@ -626,23 +623,23 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getConfig($ext): array
+    public function getConfig(string $ext): array
     {
         return $this->di['cache']->get("config_{$ext}", function (ItemInterface $item) use ($ext) {
             $item->expiresAfter(60 * 60);
 
-            $c = $this->di['db']->findOne('ExtensionMeta', 'extension = :ext AND meta_key = :key', [':ext' => $ext, ':key' => 'config']);
-            if (is_null($c)) {
-                $c = $this->di['db']->dispense('ExtensionMeta');
-                $c->extension = $ext;
-                $c->meta_key = 'config';
-                $c->meta_value = null;
-                $c->created_at = date('Y-m-d H:i:s');
-                $c->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($c);
+            $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope($ext, 'config');
+            if ($meta === null) {
+                $meta = new ExtensionMeta();
+                $meta->setExtension($ext);
+                $meta->setMetaKey('config');
+                $meta->setMetaValue(null);
+                $em = $this->di['em'];
+                $em->persist($meta);
+                $em->flush();
                 $config = [];
             } else {
-                $config = $this->di['crypt']->decrypt($c->meta_value, $this->_getSalt());
+                $config = $this->di['crypt']->decrypt($meta->getMetaValue(), $this->_getSalt());
                 $config = is_string($config) ? json_decode($config, true) : [];
             }
 
@@ -652,29 +649,23 @@ class Service implements InjectionAwareInterface
         });
     }
 
-    public function setConfig($data): bool
+    public function setConfig(array $data): bool
     {
         $this->hasManagePermission($data['ext']);
         $ext = $data['ext'];
         $this->getConfig($ext); // Creates new config if it does not exist in DB
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminExtensionConfigSave', 'params' => $data]);
-        $sql = "
-            UPDATE extension_meta
-            SET meta_value = :config
-            WHERE extension = :ext
-            AND meta_key = 'config'
-            LIMIT 1;
-        ";
 
         $config = json_encode($data);
         $config = $this->di['crypt']->encrypt($config, $this->_getSalt());
 
-        $params = [
-            'ext' => $ext,
-            'config' => $config,
-        ];
-        $this->di['db']->exec($sql, $params);
+        $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope($ext, 'config');
+        if ($meta !== null) {
+            $meta->setMetaValue($config);
+            $this->di['em']->flush();
+        }
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminExtensionConfigSave', 'params' => $data]);
         $this->di['logger']->info("Updated extension {$ext} configuration.");
         $this->di['cache']->delete("config_{$ext}");
@@ -716,27 +707,10 @@ class Service implements InjectionAwareInterface
      */
     public function getCoreAndActiveModules(): array
     {
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('name', 'name')
-            ->from('extension')
-            ->where('type = :type')
-            ->andWhere('status = :status')
-            ->setParameter('type', 'mod')
-            ->setParameter('status', 'installed');
-        $result = $query->executeQuery();
-        $extensions = $result->fetchAllKeyValue();
-
-        if (!$extensions) {
-            $list = [];
-        } else {
-            $list = array_values($extensions);
-        }
-
         $extensionMod = $this->di['mod']('extension');
-        $mods = $extensionMod->getCoreModules();
+        $coreModules = $extensionMod->getCoreModules();
 
-        $modules = array_merge($mods, $list);
+        $modules = $this->getExtensionRepository()->findInstalledAndCoreNames($coreModules);
         sort($modules);
 
         return $modules;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Extension\Api;
 
+use Box\Mod\Extension\Entity\Extension;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -151,13 +152,12 @@ final class AdminTest extends \BBTestCase
             'type' => 'extensionType',
         ];
 
-        $model = new \Model_Extension();
-        $model->loadBean(new \DummyBean());
+        $extension = new Extension('extensionType', 'extensionId');
 
         $serviceMock = $this->createMock(\Box\Mod\Extension\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('findExtension')
-            ->willReturn($model);
+            ->willReturn($extension);
         $serviceMock->expects($this->atLeastOnce())
             ->method('deactivate')
             ->willReturn(true);
@@ -184,13 +184,12 @@ final class AdminTest extends \BBTestCase
             'type' => 'extensionType',
         ];
 
-        $model = new \Model_Extension();
-        $model->loadBean(new \DummyBean());
+        $extension = new Extension('extensionType', 'extensionId');
 
         $serviceMock = $this->createMock(\Box\Mod\Extension\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('findExtension')
-            ->willReturn($model);
+            ->willReturn($extension);
         $serviceMock->expects($this->atLeastOnce())
             ->method('uninstall')
             ->willReturn(true);
@@ -222,9 +221,6 @@ final class AdminTest extends \BBTestCase
             'id' => $data['id'],
             'type' => $data['type'],
         ];
-
-        $model = new \Model_Extension();
-        $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->createMock(\Box\Mod\Extension\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -260,9 +256,6 @@ final class AdminTest extends \BBTestCase
             'type' => $data['type'],
         ];
 
-        $model = new \Model_Extension();
-        $model->loadBean(new \DummyBean());
-
         $serviceMock = $this->createMock(\Box\Mod\Extension\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('downloadAndExtract')
@@ -272,12 +265,9 @@ final class AdminTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
-        $dbMock = $this->createMock('\Box_Database');
-
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        $di['db'] = $dbMock;
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);

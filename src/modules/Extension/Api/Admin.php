@@ -161,7 +161,7 @@ class Admin extends \Api_Abstract
     {
         $ext = $this->_getExtension($data);
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminDeactivateExtension', 'params' => ['id' => $ext->id]]);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminDeactivateExtension', 'params' => ['id' => $ext->getId()]]);
 
         $service = $this->getService();
         $service->deactivate($ext);
@@ -179,7 +179,7 @@ class Admin extends \Api_Abstract
     public function uninstall($data): bool
     {
         $ext = $this->_getExtension($data);
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUninstallExtension', 'params' => ['id' => $ext->id]]);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUninstallExtension', 'params' => ['id' => $ext->getId()]]);
 
         $this->getService()->uninstall($data['type'], $data['id']);
 
@@ -254,7 +254,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
         $ext = $service->findExtension($data['type'], $data['id']);
-        if (!$ext instanceof \Model_Extension) {
+        if (!$ext instanceof \Box\Mod\Extension\Entity\Extension) {
             throw new \FOSSBilling\Exception('Extension not found');
         }
 
