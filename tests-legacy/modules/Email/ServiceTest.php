@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Box\Tests\Mod\Email;
 
 use Box\Mod\Email\Entity\EmailLog;
+use Box\Mod\Email\Entity\EmailQueue;
 use Box\Mod\Email\Entity\EmailTemplate;
 use Box\Mod\Email\Repository\EmailLogRepository;
+use Box\Mod\Email\Repository\EmailQueueRepository;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
@@ -24,7 +26,7 @@ class ServiceEmailTestDouble extends \Box\Mod\Email\Service
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    private function createEmMock(?object $templateRepositoryMock = null, ?object $emailLogRepositoryMock = null): object
+    private function createEmMock(?object $templateRepositoryMock = null, ?object $emailLogRepositoryMock = null, ?object $emailQueueRepositoryMock = null): object
     {
         if ($templateRepositoryMock === null) {
             $templateRepositoryMock = $this->getMockBuilder(EmailTemplateRepository::class)
@@ -38,14 +40,21 @@ final class ServiceTest extends \BBTestCase
                 ->getMock();
         }
 
+        if ($emailQueueRepositoryMock === null) {
+            $emailQueueRepositoryMock = $this->getMockBuilder(EmailQueueRepository::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+        }
+
         $emMock = $this->getMockBuilder(EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->method('getRepository')
-            ->willReturnCallback(static function (string $entityClass) use ($templateRepositoryMock, $emailLogRepositoryMock) {
+            ->willReturnCallback(static function (string $entityClass) use ($templateRepositoryMock, $emailLogRepositoryMock, $emailQueueRepositoryMock) {
                 return match ($entityClass) {
                     EmailTemplate::class => $templateRepositoryMock,
                     EmailLog::class => $emailLogRepositoryMock,
+                    EmailQueue::class => $emailQueueRepositoryMock,
                     default => throw new \RuntimeException("Unexpected repository request for {$entityClass}"),
                 };
             });
@@ -73,6 +82,16 @@ final class ServiceTest extends \BBTestCase
         }
     }
 
+    private function setEmailQueueRepository(object $service, object $repository): void
+    {
+        $reflection = new \ReflectionClass($service);
+        if ($reflection->hasProperty('emailQueueRepository')) {
+            $property = $reflection->getProperty('emailQueueRepository');
+            $property->setAccessible(true);
+            $property->setValue($service, $repository);
+        }
+    }
+
     private function createTemplateEntity(string $actionCode = 'mod_email_test'): EmailTemplate
     {
         return new EmailTemplate($actionCode);
@@ -81,6 +100,11 @@ final class ServiceTest extends \BBTestCase
     private function createEmailLogEntity(): EmailLog
     {
         return new EmailLog();
+    }
+
+    private function createEmailQueueEntity(string $recipient = 'test@example.com', string $sender = 'sender@example.com', string $subject = 'Test', string $content = 'Content'): EmailQueue
+    {
+        return new EmailQueue($recipient, $sender, $subject, $content);
     }
 
     private function setEntityId(object $entity, int $id): void
@@ -1087,23 +1111,23 @@ final class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Email\Service();
 
-        $queueModel = new \DummyBean();
-        $queueModel->priority = 10;
-        $queueModel->tries = 10;
-        $queueModel->subject = 'subject';
-        $queueModel->client_id = 1;
-        $queueModel->sender = 'sender@example.com';
-        $queueModel->recipient = 'receiver@example.com';
-        $queueModel->content = 'content';
-        $queueModel->from_name = 'From Name';
-        $queueModel->to_name = 'To Name';
+        $queueEntity = $this->createEmailQueueEntity('receiver@example.com', 'sender@example.com', 'subject', 'content');
+        $queueEntity->setClientId(1);
+        $queueEntity->setFromName('From Name');
+        $queueEntity->setToName('To Name');
+        $queueEntity->setPriority(10);
+        $this->setEntityId($queueEntity, 1);
 
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->exactly(1))
-            ->method('findAll')->willReturn([$queueModel]);
-        $db->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn(true);
+        $queueRepoMock = $this->getMockBuilder(EmailQueueRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $queueRepoMock->expects($this->once())
+            ->method('findUnsent')
+            ->willReturn([$queueEntity]);
+
+        $emMock = $this->createEmMock(null, null, $queueRepoMock);
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
@@ -1114,14 +1138,12 @@ final class ServiceTest extends \BBTestCase
             ]);
 
         $extension = $this->createMock(\Box\Mod\Extension\Service::class);
-        $isExtensionActiveReturn = false;
         $extension->expects($this->atLeastOnce())
             ->method('isExtensionActive')
-            ->willReturn($isExtensionActiveReturn);
+            ->willReturn(false);
 
         $di = $this->getDi();
-        $di['db'] = $db;
-        $di['em'] = $this->createEmMock();
+        $di['em'] = $emMock;
         $di['logger'] = $this->createMock('Box_Log');
         $di['mod_service'] = $di->protect(function ($name) use ($extension) {
             if ($name == 'extension') {
@@ -1204,22 +1226,14 @@ final class ServiceTest extends \BBTestCase
 
     public function testSendMail(): void
     {
-        $dbMock = $this->createMock('\Box_Database');
-
-        $queueEmail = new \Model_ModEmailQueue();
-        $queueEmail->loadBean(new \DummyBean());
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->with('ModEmailQueue')
-            ->willReturn($queueEmail);
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store');
+        $emMock = $this->createEmMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('persist');
+        $emMock->expects($this->atLeastOnce())
+            ->method('flush');
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['em'] = $this->createEmMock();
-
+        $di['em'] = $emMock;
         $di['logger'] = $this->createMock('Box_Log');
         $modMock = $this->createMock('\stdClass');
         $extension = $this->createMock(\Box\Mod\Extension\Service::class);

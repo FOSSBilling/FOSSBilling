@@ -741,6 +741,10 @@ class UpdatePatcher implements InjectionAwareInterface
                     $this->executeSql('RENAME TABLE `activity_client_email` TO `email_log`;');
                 }
 
+                if ($schemaManager->tablesExist(['mod_email_queue']) && !$schemaManager->tablesExist(['email_queue'])) {
+                    $this->executeSql('RENAME TABLE `mod_email_queue` TO `email_queue`;');
+                }
+
                 $extService = $this->di['mod_service']('extension');
                 $activityConfig = $extService->getConfig('mod_activity');
                 $emailConfig = $extService->getConfig('mod_email');

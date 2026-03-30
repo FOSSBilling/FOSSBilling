@@ -344,24 +344,6 @@ class Admin extends \Api_Abstract
 
     public function get_queue(array $data)
     {
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        [$sql, $params] = $this->getService()->queueGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
-
-        foreach ($pager['list'] as $key => $item) {
-            $pager['list'][$key] = [
-                'id' => $item['id'] ?? '',
-                'recipient' => $item['recipient'] ?? '',
-                'subject' => $item['subject'] ?? '',
-                'content' => $item['content'] ?? '',
-                'to_name' => $item['to_name'] ?? '',
-                'status' => $item['status'] ?? '',
-                'tries' => $item['tries'] ?? '',
-                'created_at' => $item['created_at'] ?? '',
-                'updated_at' => $item['updated_at'] ?? '',
-            ];
-        }
-
-        return $pager;
+        return $this->getService()->getQueueList($data);
     }
 }
