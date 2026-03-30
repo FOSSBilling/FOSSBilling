@@ -406,7 +406,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
                     // If the Kb extension exists, uninstall it.
                     $kb_ext = $ext_service->findExtension('mod', 'kb');
-                    if ($kb_ext instanceof \Model_Extension) {
+                    if ($kb_ext instanceof \Box\Mod\Extension\Entity\Extension) {
                         $ext_service->uninstall($kb_ext);
                     }
                 } catch (\Exception) {
@@ -426,7 +426,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     $ext_service = $this->di['mod_service']('extension');
                     // If the queue extension exists, uninstall it.
                     $queue_ext = $ext_service->findExtension('mod', 'queue');
-                    if ($queue_ext instanceof \Model_Extension) {
+                    if ($queue_ext instanceof \Box\Mod\Extension\Entity\Extension) {
                         $ext_service->uninstall($queue_ext);
                     }
                 } catch (\Exception) {
