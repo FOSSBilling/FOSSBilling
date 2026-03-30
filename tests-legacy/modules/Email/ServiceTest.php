@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Box\Tests\Mod\Email;
 
+use Box\Mod\Email\Entity\EmailLog;
 use Box\Mod\Email\Entity\EmailTemplate;
+use Box\Mod\Email\Repository\EmailLogRepository;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -21,20 +24,31 @@ class ServiceEmailTestDouble extends \Box\Mod\Email\Service
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    private function createEmMock(?object $repositoryMock = null): object
+    private function createEmMock(?object $templateRepositoryMock = null, ?object $emailLogRepositoryMock = null): object
     {
-        if ($repositoryMock === null) {
-            $repositoryMock = $this->getMockBuilder(EmailTemplateRepository::class)
+        if ($templateRepositoryMock === null) {
+            $templateRepositoryMock = $this->getMockBuilder(EmailTemplateRepository::class)
                 ->disableOriginalConstructor()
                 ->getMock();
         }
+
+        if ($emailLogRepositoryMock === null) {
+            $emailLogRepositoryMock = $this->getMockBuilder(EmailLogRepository::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+        }
+
         $emMock = $this->getMockBuilder(EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $emMock->expects($this->any())
-            ->method('getRepository')
-            ->with(EmailTemplate::class)
-            ->willReturn($repositoryMock);
+        $emMock->method('getRepository')
+            ->willReturnCallback(static function (string $entityClass) use ($templateRepositoryMock, $emailLogRepositoryMock) {
+                return match ($entityClass) {
+                    EmailTemplate::class => $templateRepositoryMock,
+                    EmailLog::class => $emailLogRepositoryMock,
+                    default => throw new \RuntimeException("Unexpected repository request for {$entityClass}"),
+                };
+            });
 
         return $emMock;
     }
@@ -49,9 +63,24 @@ final class ServiceTest extends \BBTestCase
         }
     }
 
+    private function setEmailLogRepository(object $service, object $repository): void
+    {
+        $reflection = new \ReflectionClass($service);
+        if ($reflection->hasProperty('emailLogRepository')) {
+            $property = $reflection->getProperty('emailLogRepository');
+            $property->setAccessible(true);
+            $property->setValue($service, $repository);
+        }
+    }
+
     private function createTemplateEntity(string $actionCode = 'mod_email_test'): EmailTemplate
     {
         return new EmailTemplate($actionCode);
+    }
+
+    private function createEmailLogEntity(): EmailLog
+    {
+        return new EmailLog();
     }
 
     private function setEntityId(object $entity, int $id): void
@@ -77,69 +106,49 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public static function getSearchQueryProvider(): array
-    {
-        return [
-            [
-                [],
-                'SELECT * FROM activity_client_email ORDER BY id DESC',
-                [],
-            ],
-            [
-                [
-                    'search' => 'search_query',
-                ],
-                'SELECT * FROM activity_client_email WHERE (sender LIKE :sender OR recipients LIKE :recipient OR subject LIKE :subject OR content_text LIKE :content_text OR content_html LIKE :content_html) ORDER BY id DESC',
-                [
-                    ':sender' => '%search_query%',
-                    ':recipient' => '%search_query%',
-                    ':subject' => '%search_query%',
-                    ':content_text' => '%search_query%',
-                    ':content_html' => '%search_query%',
-                ],
-            ],
-            [
-                [
-                    'client_id' => 5,
-                ],
-                'SELECT * FROM activity_client_email WHERE client_id = :client_id ORDER BY id DESC',
-                [
-                    ':client_id' => 5,
-                ],
-            ],
-            [
-                [
-                    'search' => 'search_query',
-                    'client_id' => 5,
-                ],
-                'SELECT * FROM activity_client_email WHERE (sender LIKE :sender OR recipients LIKE :recipient OR subject LIKE :subject OR content_text LIKE :content_text OR content_html LIKE :content_html) AND client_id = :client_id ORDER BY id DESC',
-                [
-                    ':sender' => '%search_query%',
-                    ':recipient' => '%search_query%',
-                    ':subject' => '%search_query%',
-                    ':content_text' => '%search_query%',
-                    ':content_html' => '%search_query%',
-                    ':client_id' => 5,
-                ],
-            ],
-        ];
-    }
-
-    #[DataProvider('getSearchQueryProvider')]
-    public function testGetSearchQuery(array $data, string $query, array $bindings): void
+    public function testGetEmailLogList(): void
     {
         $service = new \Box\Mod\Email\Service();
         $di = $this->getDi();
 
-        $di['em'] = $this->createEmMock();
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $repository = $this->getMockBuilder(EmailLogRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repository->expects($this->once())
+            ->method('getSearchQueryBuilder')
+            ->with(['client_id' => 5])
+            ->willReturn($queryBuilder);
+
+        $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
+            ->onlyMethods(['paginateDoctrineQuery'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $pager->expects($this->once())
+            ->method('paginateDoctrineQuery')
+            ->with($queryBuilder, null, null)
+            ->willReturn([
+                'list' => [[
+                    'id' => 1,
+                    'client_id' => 5,
+                    'sender' => 'sender@example.com',
+                    'recipients' => 'recipient@example.com',
+                    'subject' => 'Subject',
+                    'content_html' => '<b>HTML</b>',
+                    'content_text' => 'TEXT',
+                    'created_at' => '2026-03-23 10:00:00',
+                ]],
+            ]);
+
+        $di['em'] = $this->createEmMock(null, $repository);
+        $di['pager'] = $pager;
         $service->setDi($di);
-        $result = $service->getSearchQuery($data);
 
-        $this->assertIsString($result[0]);
-        $this->assertIsArray($result[1]);
+        $result = $service->getEmailLogList(['client_id' => 5]);
 
-        $this->assertEquals($result[0], $query);
-        $this->assertEquals($result[1], $bindings);
+        $this->assertSame(1, $result['list'][0]['id']);
+        $this->assertSame(5, $result['list'][0]['client_id']);
+        $this->assertStringContainsString('HTML', $result['list'][0]['content_html']);
     }
 
     public function testEmailFindOneForClientById(): void
@@ -149,18 +158,19 @@ final class ServiceTest extends \BBTestCase
         $id = 5;
         $client_id = 1;
 
-        $activityEmail = new \Model_ActivityClientEmail();
-        $activityEmail->loadBean(new \DummyBean());
-        $activityEmail->client_id = $client_id;
-        $activityEmail->id = $id;
+        $emailLog = $this->createEmailLogEntity();
+        $this->setEntityId($emailLog, $id);
+        $emailLog->setClientId($client_id);
 
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('findOne')
-            ->willReturn($activityEmail);
+        $repository = $this->getMockBuilder(EmailLogRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repository->expects($this->once())
+            ->method('findOneForClientById')
+            ->with($client_id, $id)
+            ->willReturn($emailLog);
 
-        $di['db'] = $db;
-        $di['em'] = $this->createEmMock();
+        $di['em'] = $this->createEmMock(null, $repository);
         $service->setDi($di);
 
         $client = new \Model_Client();
@@ -169,10 +179,10 @@ final class ServiceTest extends \BBTestCase
 
         $result = $service->findOneForClientById($client, $id);
 
-        $this->assertInstanceOf('Model_ActivityClientEmail', $result);
-        $this->assertNotNull($result->id);
-        $this->assertEquals($result->id, $activityEmail->id);
-        $this->assertEquals($result->client_id, $activityEmail->client_id);
+        $this->assertInstanceOf(EmailLog::class, $result);
+        $this->assertNotNull($result->getId());
+        $this->assertEquals($result->getId(), $emailLog->getId());
+        $this->assertEquals($result->getClientId(), $emailLog->getClientId());
     }
 
     public function testEmailRmByClient(): void
@@ -180,20 +190,15 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Email\Service();
         $di = $this->getDi();
 
-        $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \DummyBean());
+        $repository = $this->getMockBuilder(EmailLogRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repository->expects($this->once())
+            ->method('deleteByClientId')
+            ->with(1)
+            ->willReturn(1);
 
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn([$model]);
-
-        $db->expects($this->atLeastOnce())
-            ->method('trash')
-            ->willReturn(null);
-
-        $di['db'] = $db;
-        $di['em'] = $this->createEmMock();
+        $di['em'] = $this->createEmMock(null, $repository);
         $service->setDi($di);
 
         $client = new \Model_Client();
@@ -209,18 +214,17 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Email\Service();
         $di = $this->getDi();
 
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('trash')
-            ->willReturn(null);
+        $em = $this->createEmMock();
+        $em->expects($this->once())
+            ->method('remove');
+        $em->expects($this->once())
+            ->method('flush');
 
-        $di['db'] = $db;
-        $di['em'] = $this->createEmMock();
+        $di['em'] = $em;
         $service->setDi($di);
 
-        $email = new \Model_ActivityClientEmail();
-        $email->loadBean(new \DummyBean());
-        $email->id = 1;
+        $email = $this->createEmailLogEntity();
+        $this->setEntityId($email, 1);
 
         $result = $service->rm($email);
         $this->assertTrue($result);
@@ -238,19 +242,15 @@ final class ServiceTest extends \BBTestCase
         $content_html = 'HTML';
         $content_text = 'TEXT';
         $created = date('Y-m-d H:i:s', time() - 86400);
-        $updated = date('Y-m-d H:i:s');
-
-        $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \DummyBean());
-        $model->id = $id;
-        $model->client_id = $client_id;
-        $model->sender = $sender;
-        $model->recipients = $recipients;
-        $model->subject = $subject;
-        $model->content_html = $content_html;
-        $model->content_text = $content_text;
-        $model->created_at = $created;
-        $model->updated_at = $updated;
+        $model = $this->createEmailLogEntity();
+        $this->setEntityId($model, $id);
+        $model->setClientId($client_id);
+        $model->setSender($sender);
+        $model->setRecipients($recipients);
+        $model->setSubject($subject);
+        $model->setContentHtml($content_html);
+        $model->setContentText($content_text);
+        $model->setCreatedAt(new \DateTime($created));
 
         $expected = [
             'id' => $id,
@@ -261,7 +261,6 @@ final class ServiceTest extends \BBTestCase
             'content_html' => $content_html,
             'content_text' => $content_text,
             'created_at' => $created,
-            'updated_at' => $updated,
         ];
 
         $result = $service->toApiArray($model);
@@ -614,14 +613,13 @@ final class ServiceTest extends \BBTestCase
 
         $service->setDi($di);
 
-        $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \DummyBean());
-        $model->client_id = 1;
-        $model->sender = 'sender@exemple.com';
-        $model->recipients = 'recipient@example.com';
-        $model->subject = 'Email Title';
-        $model->content_html = '<b>Content</b>';
-        $model->content_text = 'Content';
+        $model = $this->createEmailLogEntity();
+        $model->setClientId(1);
+        $model->setSender('sender@exemple.com');
+        $model->setRecipients('recipient@example.com');
+        $model->setSubject('Email Title');
+        $model->setContentHtml('<b>Content</b>');
+        $model->setContentText('Content');
 
         $result = $service->resend($model);
 
@@ -786,37 +784,40 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Email\Service();
 
         $id = 1;
-        $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \DummyBean());
-        $model->id = $id;
+        $model = $this->createEmailLogEntity();
+        $this->setEntityId($model, $id);
 
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('findOne')
+        $repository = $this->getMockBuilder(EmailLogRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repository->expects($this->once())
+            ->method('find')
+            ->with($id)
             ->willReturn($model);
 
         $di = $this->getDi();
-        $di['db'] = $db;
-        $di['em'] = $this->createEmMock();
+        $di['em'] = $this->createEmMock(null, $repository);
         $service->setDi($di);
 
         $result = $service->getEmailById($id);
 
-        $this->assertEquals($id, $result->id);
+        $this->assertEquals($id, $result->getId());
     }
 
     public function testGetEmailByIdException(): void
     {
         $service = new \Box\Mod\Email\Service();
 
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('findOne')
-            ->willReturn(false);
+        $repository = $this->getMockBuilder(EmailLogRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repository->expects($this->once())
+            ->method('find')
+            ->with(5)
+            ->willReturn(null);
 
         $di = $this->getDi();
-        $di['db'] = $db;
-        $di['em'] = $this->createEmMock();
+        $di['em'] = $this->createEmMock(null, $repository);
         $service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);

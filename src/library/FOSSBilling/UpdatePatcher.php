@@ -734,6 +734,29 @@ class UpdatePatcher implements InjectionAwareInterface
                     ]);
                 }
             },
+            53 => function (): void {
+                $schemaManager = $this->di['dbal']->createSchemaManager();
+
+                if ($schemaManager->tablesExist(['activity_client_email']) && !$schemaManager->tablesExist(['email_log'])) {
+                    $this->executeSql('RENAME TABLE `activity_client_email` TO `email_log`;');
+                }
+
+                $extService = $this->di['mod_service']('extension');
+                $activityConfig = $extService->getConfig('mod_activity');
+                $emailConfig = $extService->getConfig('mod_email');
+
+                $activityConfig['ext'] ??= 'mod_activity';
+                $emailConfig['ext'] ??= 'mod_email';
+
+                if (array_key_exists('email_max_age', $activityConfig) && !array_key_exists('log_retention_days', $emailConfig)) {
+                    $emailConfig['log_retention_days'] = $activityConfig['email_max_age'];
+                }
+
+                unset($activityConfig['email_max_age']);
+
+                $extService->setConfig($activityConfig);
+                $extService->setConfig($emailConfig);
+            },
         ];
         ksort($patches, SORT_NATURAL);
 

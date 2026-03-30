@@ -68,20 +68,6 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame('127.0.0.1', $row['ip']);
     }
 
-    public function testLogEmail(): void
-    {
-        $dbal = $this->createDbalConnection();
-        $service = new \Box\Mod\Activity\Service();
-        $service->setDi($this->createDi($dbal));
-
-        $result = $service->logEmail('subject', 1, 'sender', 'recipients', 'html', 'text');
-
-        $row = $dbal->executeQuery('SELECT subject, client_id FROM activity_client_email')->fetchAssociative();
-        $this->assertTrue($result);
-        $this->assertSame('subject', $row['subject']);
-        $this->assertSame('1', (string) $row['client_id']);
-    }
-
     public function testToApiArray(): void
     {
         $dbal = $this->createDbalConnection();
@@ -170,7 +156,6 @@ final class ServiceTest extends \BBTestCase
         ]);
 
         $connection->executeStatement('CREATE TABLE activity_system (id INTEGER PRIMARY KEY AUTOINCREMENT, client_id INTEGER, admin_id INTEGER, priority INTEGER, message TEXT, ip TEXT, created_at TEXT)');
-        $connection->executeStatement('CREATE TABLE activity_client_email (id INTEGER PRIMARY KEY AUTOINCREMENT, client_id INTEGER, sender TEXT, recipients TEXT, subject TEXT, content_html TEXT, content_text TEXT, created_at TEXT)');
         $connection->executeStatement('CREATE TABLE client (id INTEGER PRIMARY KEY, first_name TEXT, last_name TEXT, email TEXT)');
 
         return $connection;

@@ -15,7 +15,6 @@
 
 namespace Box\Mod\Email\Api;
 
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -27,27 +26,7 @@ class Admin extends \Api_Abstract
      */
     public function email_get_list($data)
     {
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
-
-        foreach ($pager['list'] as $key => $item) {
-            if (!is_array($item)) {
-                continue;
-            }
-            $pager['list'][$key] = [
-                'id' => $item['id'],
-                'client_id' => $item['client_id'],
-                'sender' => $item['sender'] ?? '',
-                'recipients' => $item['recipients'] ?? '',
-                'subject' => $item['subject'] ?? '',
-                'content_html' => Tools::sanitizeContent($item['content_html'] ?? ''),
-                'content_text' => $item['content_text'] ?? '',
-                'created_at' => $item['created_at'] ?? '',
-            ];
-        }
-
-        return $pager;
+        return $this->getService()->getEmailLogList($data);
     }
 
     /**
@@ -105,11 +84,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_resend($data)
     {
-        $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
-
-        if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
+        $model = $this->getService()->getEmailById((int) $data['id']);
 
         return $this->getService()->resend($model);
     }
@@ -122,14 +97,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_delete($data): bool
     {
-        $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
-
-        if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
-
-        $id = $model->id;
-        $this->di['db']->trash($model);
+        $service = $this->getService();
+        $model = $service->getEmailById((int) $data['id']);
+        $id = $model->getId();
+        $service->rm($model);
 
         $this->di['logger']->info('Deleted email #%s', $id);
 

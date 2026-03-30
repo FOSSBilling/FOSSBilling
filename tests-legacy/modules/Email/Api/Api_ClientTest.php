@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Box\Tests\Mod\Email\Api;
 
+use Box\Mod\Email\Entity\EmailLog;
+use Box\Mod\Email\Entity\EmailTemplate;
+use Box\Mod\Email\Repository\EmailLogRepository;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
 use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\Attributes\Group;
@@ -11,51 +14,60 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class Api_ClientTest extends \BBTestCase
 {
-    private function createEmMock(?object $repositoryMock = null): object
+    private function createEmMock(?object $templateRepositoryMock = null, ?object $emailLogRepositoryMock = null): object
     {
-        if ($repositoryMock === null) {
-            $repositoryMock = $this->getMockBuilder(EmailTemplateRepository::class)
+        if ($templateRepositoryMock === null) {
+            $templateRepositoryMock = $this->getMockBuilder(EmailTemplateRepository::class)
                 ->disableOriginalConstructor()
                 ->getMock();
         }
+
+        if ($emailLogRepositoryMock === null) {
+            $emailLogRepositoryMock = $this->getMockBuilder(EmailLogRepository::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+        }
+
         $emMock = $this->getMockBuilder(EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->method('getRepository')
-            ->willReturn($repositoryMock);
+            ->willReturnCallback(static function (string $entityClass) use ($templateRepositoryMock, $emailLogRepositoryMock) {
+                return match ($entityClass) {
+                    EmailTemplate::class => $templateRepositoryMock,
+                    EmailLog::class => $emailLogRepositoryMock,
+                    default => throw new \RuntimeException("Unexpected repository request for {$entityClass}"),
+                };
+            });
         $emMock->method('flush');
         $emMock->method('persist');
 
         return $emMock;
     }
 
+    private function createEmailLogEntity(): EmailLog
+    {
+        return new EmailLog();
+    }
+
     public function testGetList(): void
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
-        $emailService = new \Box\Mod\Email\Service();
-
-        $willReturn = [
-            'list' => [
-                'id' => 1,
-            ],
-        ];
-        $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
-        $pager->expects($this->atLeastOnce())
-            ->method('getPaginatedResultSet')
-            ->willReturn($willReturn);
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getEmailLogList'])->getMock();
+        $emailService->expects($this->once())
+            ->method('getEmailLogList')
+            ->with(['client_id' => 1])
+            ->willReturn([
+                'list' => [
+                    ['id' => 1],
+                ],
+            ]);
 
         $di = $this->getDi();
-        $di['pager'] = $pager;
         $di['em'] = $this->createEmMock();
 
         $clientApi->setDi($di);
-        $emailService->setDi($di);
-
-        $service = $emailService;
-        $clientApi->setService($service);
+        $clientApi->setService($emailService);
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
@@ -73,8 +85,7 @@ final class Api_ClientTest extends \BBTestCase
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
 
-        $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \DummyBean());
+        $model = $this->createEmailLogEntity();
         $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['findOneForClientById', 'toApiArray'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
@@ -103,7 +114,7 @@ final class Api_ClientTest extends \BBTestCase
         $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['findOneForClientById'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
-            ->willReturn(false);
+            ->willReturn(null);
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
@@ -124,8 +135,7 @@ final class Api_ClientTest extends \BBTestCase
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
 
-        $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \DummyBean());
+        $model = $this->createEmailLogEntity();
 
         $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['findOneForClientById', 'resend'])->getMock();
         $service->expects($this->atLeastOnce())
@@ -156,7 +166,7 @@ final class Api_ClientTest extends \BBTestCase
         $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['findOneForClientById'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
-            ->willReturn(false);
+            ->willReturn(null);
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
@@ -180,8 +190,7 @@ final class Api_ClientTest extends \BBTestCase
 
         $di = $this->getDi();
 
-        $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \DummyBean());
+        $model = $this->createEmailLogEntity();
         $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['findOneForClientById', 'rm'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
@@ -210,7 +219,7 @@ final class Api_ClientTest extends \BBTestCase
         $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['findOneForClientById'])->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
-            ->willReturn(false);
+            ->willReturn(null);
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());

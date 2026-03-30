@@ -40,15 +40,6 @@
 					</div>
 					<small class="form-hint">{{ 'FOSSBilling will automatically remove activity logs that are older than the configured number of days. Set to 0 to disable this behavior'|trans }}</small>
 				</div>
-
-				<div class="mb-3">
-					<label class="form-label">{{ 'Email log retention'|trans }}</label>
-					<div class="form-floating">
-						<input class="form-control" id="email_max_age" name="email_max_age" type="number" value="{{ params.email_max_age|default('0') }}">
-						<label for="email_max_age">{{ 'Number of days'|trans }}</label>
-					</div>
-					<small class="form-hint">{{ 'FOSSBilling will automatically remove sent email logs that are older than the configured number of days. Set to 0 to disable this behavior'|trans }}</small>
-				</div>
 			</div>
 
             <div class="card-footer text-end">

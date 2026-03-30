@@ -92,29 +92,19 @@ class Service implements InjectionAwareInterface
         $config = $di['mod_service']('extension')->getConfig('mod_activity');
 
         $retention = intval($config['max_age'] ?? 90);
-        $emailRetention = intval($config['email_max_age'] ?? 0);
 
-        if ($retention === 0 && $emailRetention === 0) {
+        if ($retention === 0) {
             return;
         }
 
         $ageInSeconds = $retention * 86_400;
-        $emailAgeInSeconds = $emailRetention * 86_400;
         $dbal = self::getDbalFromDi($di);
 
         try {
-            if ($retention !== 0) {
-                $createdAt = date('Y-m-d H:i:s', time() - $ageInSeconds);
-                $dbal->executeStatement('DELETE FROM activity_admin_history WHERE created_at <= ?', [$createdAt]);
-                $dbal->executeStatement('DELETE FROM activity_client_history WHERE created_at <= ?', [$createdAt]);
-                $dbal->executeStatement('DELETE FROM activity_system WHERE created_at <= ?', [$createdAt]);
-            }
-
-            if ($emailRetention !== 0) {
-                $dbal->executeStatement('DELETE FROM activity_client_email WHERE created_at <= ?', [
-                    date('Y-m-d H:i:s', time() - $emailAgeInSeconds),
-                ]);
-            }
+            $createdAt = date('Y-m-d H:i:s', time() - $ageInSeconds);
+            $dbal->executeStatement('DELETE FROM activity_admin_history WHERE created_at <= ?', [$createdAt]);
+            $dbal->executeStatement('DELETE FROM activity_client_history WHERE created_at <= ?', [$createdAt]);
+            $dbal->executeStatement('DELETE FROM activity_system WHERE created_at <= ?', [$createdAt]);
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
@@ -190,21 +180,6 @@ class Service implements InjectionAwareInterface
         $sql .= ' ORDER by m.id desc';
 
         return [$sql, $params];
-    }
-
-    public function logEmail($subject, $clientId = null, $sender = null, $recipients = null, $content_html = null, $content_text = null): bool
-    {
-        $this->getDbal()->insert('activity_client_email', [
-            'client_id' => $clientId,
-            'sender' => $sender,
-            'recipients' => $recipients,
-            'subject' => $subject,
-            'content_html' => $content_html,
-            'content_text' => $content_text,
-            'created_at' => date('Y-m-d H:i:s'),
-        ]);
-
-        return true;
     }
 
     public function toApiArray(\Model_ActivityClientHistory $model): array

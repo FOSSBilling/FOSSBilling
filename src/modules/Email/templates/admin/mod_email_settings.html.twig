@@ -324,6 +324,13 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label" for="logRetentionDays">{{ 'Email Log Retention'|trans }}</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" id="logRetentionDays" type="number" name="log_retention_days" value="{{ params.log_retention_days|default('0') }}" min="0">
+                                    <small class="form-hint">{{ 'Automatically delete sent email logs older than this number of days. Set to 0 to disable cleanup.'|trans }}</small>
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
                                 <label class="col-md-3 form-label">{{ 'Email Transport'|trans }}</label>
                                 <div class="col-md-6" id="mailer">
                                     <div class="form-check form-check-inline">

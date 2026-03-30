@@ -67,29 +67,4 @@ class Admin extends \Api_Abstract
 
         return true;
     }
-
-    /**
-     * Add an email to the log.
-     *
-     * @param array $data Email data
-     *
-     * @return bool
-     */
-    public function log_email($data)
-    {
-        if (!isset($data['subject'])) {
-            error_log('Email was not logged. Subject not passed');
-
-            return false;
-        }
-
-        $client_id = $data['client_id'] ?? null;
-        $sender = $data['sender'] ?? null;
-        $recipients = $data['recipients'] ?? null;
-        $subject = $data['subject'];
-        $content_html = $data['content_html'] ?? null;
-        $content_text = $data['content_text'] ?? null;
-
-        return $this->getService()->logEmail($subject, $client_id, $sender, $recipients, $content_html, $content_text);
-    }
 }

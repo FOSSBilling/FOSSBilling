@@ -11,7 +11,9 @@
 
 namespace Box\Mod\Email;
 
+use Box\Mod\Email\Entity\EmailLog;
 use Box\Mod\Email\Entity\EmailTemplate;
+use Box\Mod\Email\Repository\EmailLogRepository;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
@@ -23,6 +25,7 @@ use Symfony\Component\Finder\Finder;
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    protected ?EmailLogRepository $emailLogRepository = null;
     protected ?EmailTemplateRepository $templateRepository = null;
     private readonly Filesystem $filesystem;
 
@@ -53,6 +56,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->templateRepository;
     }
 
+    public function getEmailLogRepository(): EmailLogRepository
+    {
+        if ($this->emailLogRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+            $this->emailLogRepository = $this->di['em']->getRepository(EmailLog::class);
+        }
+
+        return $this->emailLogRepository;
+    }
+
     public function getModulePermissions(): array
     {
         return [
@@ -61,82 +76,72 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function getSearchQuery($data): array
+    public static function onBeforeAdminCronRun(\Box_Event $event): void
     {
-        $query = 'SELECT * FROM activity_client_email';
+        $di = $event->getDi();
+        $config = $di['mod_service']('extension')->getConfig('mod_email');
+        $retentionDays = (int) ($config['log_retention_days'] ?? 0);
 
-        $search = $data['search'] ?? null;
-        $client_id = $data['client_id'] ?? null;
-
-        $where = [];
-        $bindings = [];
-
-        if ($search) {
-            $search = "%$search%";
-            $where[] = '(sender LIKE :sender OR recipients LIKE :recipient OR subject LIKE :subject OR content_text LIKE :content_text OR content_html LIKE :content_html)';
-            $bindings[':sender'] = $search;
-            $bindings[':recipient'] = $search;
-            $bindings[':subject'] = $search;
-            $bindings[':content_text'] = $search;
-            $bindings[':content_html'] = $search;
+        if ($retentionDays === 0) {
+            return;
         }
 
-        if ($client_id !== null) {
-            $where[] = 'client_id = :client_id';
-            $bindings[':client_id'] = $client_id;
+        try {
+            /** @var self $service */
+            $service = $di['mod_service']('email');
+            $service->cleanupOldLogs($retentionDays);
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
         }
-
-        if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
-        }
-        $query .= ' ORDER BY id DESC';
-
-        return [$query, $bindings];
     }
 
-    public function findOneForClientById(\Model_Client $client, $id)
+    public function getEmailLogList(array $data = []): array
     {
-        $bindings = [
-            ':id' => $id,
-            ':client_id' => $client->id,
-        ];
+        $qb = $this->getEmailLogRepository()->getSearchQueryBuilder($data);
+        $page = isset($data['page']) ? (int) $data['page'] : null;
+        $perPage = isset($data['per_page']) ? (int) $data['per_page'] : null;
+        $result = $this->di['pager']->paginateDoctrineQuery($qb, $perPage, $page);
 
-        $db = $this->di['db'];
+        $list = [];
+        foreach ($result['list'] as $emailLogRow) {
+            if ($emailLogRow instanceof EmailLog) {
+                $emailLogRow = $emailLogRow->toApiArray();
+            }
 
-        return $db->findOne('ActivityClientEmail', 'id = :id AND client_id = :client_id ORDER BY id DESC', $bindings);
+            if (!is_array($emailLogRow)) {
+                continue;
+            }
+
+            $list[] = $this->normalizeEmailLogApiArray($emailLogRow);
+        }
+        $result['list'] = $list;
+
+        return $result;
+    }
+
+    public function findOneForClientById(\Model_Client $client, $id): ?EmailLog
+    {
+        return $this->getEmailLogRepository()->findOneForClientById((int) $client->id, (int) $id);
     }
 
     public function rmByClient(\Model_Client $client): bool
     {
-        $models = $this->di['db']->find('ActivityClientEmail', 'client_id = ?', [$client->id]);
-        foreach ($models as $model) {
-            $this->di['db']->trash($model);
-        }
+        $this->getEmailLogRepository()->deleteByClientId((int) $client->id);
 
         return true;
     }
 
-    public function rm(\Model_ActivityClientEmail $email): bool
+    public function rm(EmailLog $email): bool
     {
-        $db = $this->di['db'];
-        $db->trash($email);
+        $this->di['em']->remove($email);
+        $this->di['em']->flush();
 
         return true;
     }
 
-    public function toApiArray(\Model_ActivityClientEmail $model, $deep = true): array
+    public function toApiArray(EmailLog $model, $deep = true): array
     {
-        return [
-            'id' => $model->id,
-            'client_id' => $model->client_id,
-            'sender' => $model->sender,
-            'recipients' => $model->recipients,
-            'subject' => $model->subject,
-            'content_html' => Tools::sanitizeContent($model->content_html ?? ''),
-            'content_text' => $model->content_text,
-            'created_at' => $model->created_at,
-            'updated_at' => $model->updated_at,
-        ];
+        return $this->normalizeEmailLogApiArray($model->toApiArray());
     }
 
     public function setVars(EmailTemplate $template, array $vars): bool
@@ -497,7 +502,34 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$ps, $pc];
     }
 
-    public function resend(\Model_ActivityClientEmail $email): bool
+    public function logEmail($subject, $client_id = null, $sender = null, $recipients = null, $content_html = null, $content_text = null): bool
+    {
+        $emailLog = (new EmailLog())
+            ->setClientId($client_id !== null ? (int) $client_id : null)
+            ->setSender($sender)
+            ->setRecipients($recipients)
+            ->setSubject($subject)
+            ->setContentHtml($content_html)
+            ->setContentText($content_text);
+
+        $this->di['em']->persist($emailLog);
+        $this->di['em']->flush();
+
+        return true;
+    }
+
+    public function cleanupOldLogs(int $retentionDays): int
+    {
+        if ($retentionDays <= 0) {
+            return 0;
+        }
+
+        $cutoff = new \DateTime(sprintf('-%d days', $retentionDays));
+
+        return $this->getEmailLogRepository()->deleteOlderThan($cutoff);
+    }
+
+    public function resend(EmailLog $email): bool
     {
         $di = $this->getDi();
         $extensionService = $di['mod_service']('extension');
@@ -514,15 +546,23 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $clientService = $this->di['mod_service']('client');
-        $customer = $clientService->get(['id' => $email->client_id]);
+        $customer = $clientService->get(['id' => $email->getClientId()]);
         $customer = $clientService->toApiArray($customer);
 
         $systemService = $this->di['mod_service']('system');
         $from_name = $systemService->getParamValue('company_name');
 
-        $this->sendMail($email->recipients, $email->sender, $email->subject, $email->content_html, $customer['first_name'] . ' ' . $customer['last_name'], $from_name, $email->client_id);
+        $this->sendMail(
+            $email->getRecipients(),
+            $email->getSender(),
+            $email->getSubject(),
+            $email->getContentHtml(),
+            $customer['first_name'] . ' ' . $customer['last_name'],
+            $from_name,
+            $email->getClientId()
+        );
 
-        $this->di['logger']->info('Resent email #%s', $email->id);
+        $this->di['logger']->info('Resent email #%s', $email->getId());
 
         return true;
     }
@@ -683,8 +723,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getEmailById($id)
     {
-        $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$id]);
-        if (!$model instanceof \Model_ActivityClientEmail) {
+        $model = $this->getEmailLogRepository()->find((int) $id);
+        if (!$model instanceof EmailLog) {
             throw new \FOSSBilling\Exception('Email not found');
         }
 
@@ -787,7 +827,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $qb = $this->getTemplateRepository()->getSearchQueryBuilder($data);
         $page = isset($data['page']) ? (int) $data['page'] : null;
         $perPage = isset($data['per_page']) ? (int) $data['per_page'] : null;
-        $result = $this->di['pager']->paginateDoctrineQuery($qb, $page, $perPage);
+        $result = $this->di['pager']->paginateDoctrineQuery($qb, $perPage, $page);
 
         $list = [];
         foreach ($result['list'] as $templateRow) {
@@ -876,8 +916,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             // It sent without causing an exception (error), so we are safe to log it now
             if ($log) {
-                $activityService = $this->di['mod_service']('activity');
-                $activityService->logEmail($queue->subject, $queue->client_id, $queue->sender, $queue->recipient, $queue->content);
+                $this->logEmail($queue->subject, $queue->client_id, $queue->sender, $queue->recipient, $queue->content);
             }
 
             try {
@@ -902,8 +941,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if ($queue->tries > $maxTries) {
                 // The email failed to send after the max number of tries. This might be because of a server error, so let's be sure to log it which gives the client the ability to resend it.
                 if ($log) {
-                    $activityService = $this->di['mod_service']('activity');
-                    $activityService->logEmail($queue->subject, $queue->client_id, $queue->sender, $queue->recipient, $queue->content);
+                    $this->logEmail($queue->subject, $queue->client_id, $queue->sender, $queue->recipient, $queue->content);
                 }
                 $this->di['db']->trash($queue);
             }
@@ -917,5 +955,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         return true;
+    }
+
+    private function normalizeEmailLogApiArray(array $emailLog): array
+    {
+        return [
+            'id' => $emailLog['id'] ?? null,
+            'client_id' => $emailLog['client_id'] ?? null,
+            'sender' => $emailLog['sender'] ?? '',
+            'recipients' => $emailLog['recipients'] ?? '',
+            'subject' => $emailLog['subject'] ?? '',
+            'content_html' => Tools::sanitizeContent($emailLog['content_html'] ?? ''),
+            'content_text' => $emailLog['content_text'] ?? '',
+            'created_at' => $emailLog['created_at'] ?? null,
+        ];
     }
 }

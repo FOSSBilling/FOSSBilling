@@ -12,7 +12,7 @@
 
 
 
-# Dump of table activity_client_email
+# Dump of table email_log
 # ------------------------------------------------------------
 
 

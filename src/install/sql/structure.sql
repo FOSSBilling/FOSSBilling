@@ -32,12 +32,12 @@ CREATE TABLE `activity_admin_history` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `activity_client_email`
+-- Table structure for table `email_log`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `activity_client_email` (
+CREATE TABLE `email_log` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
   `sender` varchar(255) DEFAULT NULL,

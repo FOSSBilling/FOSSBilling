@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Box\Tests\Mod\Email\Api;
 
+use Box\Mod\Email\Entity\EmailLog;
 use Box\Mod\Email\Entity\EmailTemplate;
+use Box\Mod\Email\Repository\EmailLogRepository;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
 use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\Attributes\Group;
@@ -12,18 +14,31 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class Api_AdminTest extends \BBTestCase
 {
-    private function createEmMock(?object $repositoryMock = null): object
+    private function createEmMock(?object $templateRepositoryMock = null, ?object $emailLogRepositoryMock = null): object
     {
-        if ($repositoryMock === null) {
-            $repositoryMock = $this->getMockBuilder(EmailTemplateRepository::class)
+        if ($templateRepositoryMock === null) {
+            $templateRepositoryMock = $this->getMockBuilder(EmailTemplateRepository::class)
                 ->disableOriginalConstructor()
                 ->getMock();
         }
+
+        if ($emailLogRepositoryMock === null) {
+            $emailLogRepositoryMock = $this->getMockBuilder(EmailLogRepository::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+        }
+
         $emMock = $this->getMockBuilder(EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $emMock->method('getRepository')
-            ->willReturn($repositoryMock);
+            ->willReturnCallback(static function (string $entityClass) use ($templateRepositoryMock, $emailLogRepositoryMock) {
+                return match ($entityClass) {
+                    EmailTemplate::class => $templateRepositoryMock,
+                    EmailLog::class => $emailLogRepositoryMock,
+                    default => throw new \RuntimeException("Unexpected repository request for {$entityClass}"),
+                };
+            });
 
         return $emMock;
     }
@@ -33,34 +48,37 @@ final class Api_AdminTest extends \BBTestCase
         return new EmailTemplate($actionCode);
     }
 
+    private function createEmailLogEntity(): EmailLog
+    {
+        return new EmailLog();
+    }
+
+    private function setEntityId(object $entity, int $id): void
+    {
+        $reflection = new \ReflectionClass($entity);
+        $property = $reflection->getProperty('id');
+        $property->setAccessible(true);
+        $property->setValue($entity, $id);
+    }
+
     public function testEmailGetList(): void
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
-        $emailService = new \Box\Mod\Email\Service();
-
-        $willReturn = [
-            'list' => [
-                'id' => 1,
-            ],
-        ];
-
-        $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
-        $pager->expects($this->atLeastOnce())
-            ->method('getPaginatedResultSet')
-            ->willReturn($willReturn);
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getEmailLogList'])->getMock();
+        $emailService->expects($this->once())
+            ->method('getEmailLogList')
+            ->with([])
+            ->willReturn([
+                'list' => [
+                    ['id' => 1],
+                ],
+            ]);
 
         $di = $this->getDi();
-        $di['pager'] = $pager;
         $di['em'] = $this->createEmMock();
 
         $adminApi->setDi($di);
-        $emailService->setDi($di);
-
-        $service = $emailService;
-        $adminApi->setService($service);
+        $adminApi->setService($emailService);
 
         $result = $adminApi->email_get_list([]);
         $this->assertIsArray($result);
@@ -84,19 +102,16 @@ final class Api_AdminTest extends \BBTestCase
         $content_html = 'HTML';
         $content_text = 'TEXT';
         $created = date('Y-m-d H:i:s', time() - 86400);
-        $updated = date('Y-m-d H:i:s');
 
-        $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \DummyBean());
-        $model->id = $id;
-        $model->client_id = $client_id;
-        $model->sender = $sender;
-        $model->recipients = $recipients;
-        $model->subject = $subject;
-        $model->content_html = $content_html;
-        $model->content_text = $content_text;
-        $model->created_at = $created;
-        $model->updated_at = $updated;
+        $model = $this->createEmailLogEntity();
+        $this->setEntityId($model, $id);
+        $model->setClientId($client_id);
+        $model->setSender($sender);
+        $model->setRecipients($recipients);
+        $model->setSubject($subject);
+        $model->setContentHtml($content_html);
+        $model->setContentText($content_text);
+        $model->setCreatedAt(new \DateTime($created));
 
         $expected = [
             'id' => $id,
@@ -107,7 +122,6 @@ final class Api_AdminTest extends \BBTestCase
             'content_html' => $content_html,
             'content_text' => $content_text,
             'created_at' => $created,
-            'updated_at' => $updated,
         ];
 
         $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getEmailById', 'toApiArray'])->getMock();
@@ -140,11 +154,6 @@ final class Api_AdminTest extends \BBTestCase
             'subject' => 'Subject',
             'content' => 'Content',
         ];
-
-        $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \DummyBean());
-        $model->id = 1;
-
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['sendMail'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('sendMail')
@@ -168,24 +177,20 @@ final class Api_AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \DummyBean());
-        $model->id = 1;
+        $model = $this->createEmailLogEntity();
+        $this->setEntityId($model, 1);
 
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('findOne')
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getEmailById', 'resend'])->getMock();
+        $emailService->expects($this->atLeastOnce())
+            ->method('getEmailById')
+            ->with(1)
             ->willReturn($model);
-
-        $di = $this->getDi();
-        $di['db'] = $db;
-        $adminApi->setDi($di);
-
-        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['resend'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('resend')
             ->willReturn(true);
 
+        $di = $this->getDi();
+        $adminApi->setDi($di);
         $adminApi->setService($emailService);
 
         $result = $adminApi->email_resend($data);
@@ -201,14 +206,15 @@ final class Api_AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('findOne')
-            ->willReturn(null);
+        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getEmailById'])->getMock();
+        $service->expects($this->once())
+            ->method('getEmailById')
+            ->with(1)
+            ->willThrowException(new \FOSSBilling\Exception('Email not found'));
 
         $di = $this->getDi();
-        $di['db'] = $db;
         $adminApi->setDi($di);
+        $adminApi->setService($service);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Email not found');
@@ -223,14 +229,15 @@ final class Api_AdminTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('findOne')
-            ->willReturn(null);
+        $service = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getEmailById'])->getMock();
+        $service->expects($this->once())
+            ->method('getEmailById')
+            ->with(1)
+            ->willThrowException(new \FOSSBilling\Exception('Email not found'));
 
         $di = $this->getDi();
-        $di['db'] = $db;
         $adminApi->setDi($di);
+        $adminApi->setService($service);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Email not found');
@@ -240,28 +247,26 @@ final class Api_AdminTest extends \BBTestCase
     public function testEmailDelete(): void
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
-        $emailService = new \Box\Mod\Email\Service();
-
         $data = [
             'id' => 1,
         ];
 
-        $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \DummyBean());
-        $model->id = 1;
+        $model = $this->createEmailLogEntity();
+        $this->setEntityId($model, 1);
 
-        $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeastOnce())
-            ->method('findOne')
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getEmailById', 'rm'])->getMock();
+        $emailService->expects($this->once())
+            ->method('getEmailById')
+            ->with(1)
             ->willReturn($model);
-        $db->expects($this->atLeastOnce())
-            ->method('trash')
+        $emailService->expects($this->once())
+            ->method('rm')
+            ->with($model)
             ->willReturn(true);
 
         $loggerMock = $this->createMock('Box_Log');
 
         $di = $this->getDi();
-        $di['db'] = $db;
         $di['logger'] = $loggerMock;
         $di['em'] = $this->createEmMock();
         $adminApi->setDi($di);
