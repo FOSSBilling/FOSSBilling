@@ -36,6 +36,8 @@ class Service implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->extensionRepository = $di['em']->getRepository(Extension::class);
+        $this->extensionMetaRepository = $di['em']->getRepository(ExtensionMeta::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -73,7 +75,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        return $this->getExtensionRepository()->hasInstalledExtension($type, $id);
+        return $this->extensionRepository->hasInstalledExtension($type, $id);
     }
 
     public static function onBeforeAdminCronRun(\Box_Event $event): bool
@@ -92,7 +94,7 @@ class Service implements InjectionAwareInterface
 
     public function removeNotExistingModules(): bool|int
     {
-        $list = $this->getExtensionRepository()->findByType('mod');
+        $list = $this->extensionRepository->findByType('mod');
         $em = $this->di['em'];
         $removedItems = 0;
         foreach ($list as $ext) {
@@ -114,7 +116,7 @@ class Service implements InjectionAwareInterface
 
     public function getSearchQuery($filter): array
     {
-        $qb = $this->getExtensionRepository()->getSearchQueryBuilder($filter);
+        $qb = $this->extensionRepository->getSearchQueryBuilder($filter);
 
         return [$qb->getDQL(), $qb->getParameters()->toArray()];
     }
@@ -126,7 +128,7 @@ class Service implements InjectionAwareInterface
     {
         $this->removeNotExistingModules();
 
-        $qb = $this->getExtensionRepository()->getSearchQueryBuilder($filter);
+        $qb = $this->extensionRepository->getSearchQueryBuilder($filter);
         $installed = $qb->getQuery()->getResult();
 
         $has_settings = $filter['has_settings'] ?? null;
@@ -327,7 +329,7 @@ class Service implements InjectionAwareInterface
 
     public function findExtension(string $type, string $id): ?Extension
     {
-        return $this->getExtensionRepository()->findOneByTypeAndName($type, $id);
+        return $this->extensionRepository->findOneByTypeAndName($type, $id);
     }
 
     public function update(Extension $model): never
@@ -535,7 +537,7 @@ class Service implements InjectionAwareInterface
 
     public function getInstalledMods(): array
     {
-        return $this->getExtensionRepository()->findInstalledNamesByType('mod');
+        return $this->extensionRepository->findInstalledNamesByType('mod');
     }
 
     private function installModule(Extension $ext): bool
@@ -604,7 +606,7 @@ class Service implements InjectionAwareInterface
         return $this->di['cache']->get("config_{$ext}", function (ItemInterface $item) use ($ext) {
             $item->expiresAfter(60 * 60);
 
-            $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope($ext, 'config');
+            $meta = $this->extensionMetaRepository->findOneByExtensionAndScope($ext, 'config');
             if ($meta === null) {
                 $meta = new ExtensionMeta();
                 $meta->setExtension($ext);
@@ -636,7 +638,7 @@ class Service implements InjectionAwareInterface
         $config = json_encode($data);
         $config = $this->di['crypt']->encrypt($config, $this->_getSalt());
 
-        $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope($ext, 'config');
+        $meta = $this->extensionMetaRepository->findOneByExtensionAndScope($ext, 'config');
         if ($meta !== null) {
             $meta->setMetaValue($config);
             $this->di['em']->flush();
@@ -686,7 +688,7 @@ class Service implements InjectionAwareInterface
         $extensionMod = $this->di['mod']('extension');
         $coreModules = $extensionMod->getCoreModules();
 
-        $modules = $this->getExtensionRepository()->findInstalledAndCoreNames($coreModules);
+        $modules = $this->extensionRepository->findInstalledAndCoreNames($coreModules);
         sort($modules);
 
         return $modules;
@@ -777,12 +779,12 @@ class Service implements InjectionAwareInterface
 
     public function getExtensionById(int $id): ?Extension
     {
-        return $this->getExtensionRepository()->find($id);
+        return $this->extensionRepository->find($id);
     }
 
     public function getMeta(string $extension, ?string $metaKey = null, ?string $relType = null, ?string $relId = null): ?ExtensionMeta
     {
-        return $this->getExtensionMetaRepository()->findOneByExtensionAndScope($extension, $metaKey, $relType, $relId);
+        return $this->extensionMetaRepository->findOneByExtensionAndScope($extension, $metaKey, $relType, $relId);
     }
 
     public function getMetaValue(string $extension, ?string $metaKey = null, ?string $relType = null, ?string $relId = null): ?string
@@ -818,7 +820,7 @@ class Service implements InjectionAwareInterface
 
     public function deleteMeta(string $extension, ?string $metaKey = null, ?string $relType = null, ?string $relId = null): int
     {
-        return $this->getExtensionMetaRepository()->deleteByExtensionAndScope($extension, $metaKey, $relType, $relId);
+        return $this->extensionMetaRepository->deleteByExtensionAndScope($extension, $metaKey, $relType, $relId);
     }
 
     /**
@@ -826,7 +828,7 @@ class Service implements InjectionAwareInterface
      */
     public function findMeta(string $extension, ?string $metaKey = null, ?string $relType = null, ?string $relId = null, array $orderBy = ['id' => 'ASC'], ?int $limit = null): array
     {
-        return $this->getExtensionMetaRepository()->findByExtensionAndScope($extension, $metaKey, $relType, $relId, $orderBy, $limit);
+        return $this->extensionMetaRepository->findByExtensionAndScope($extension, $metaKey, $relType, $relId, $orderBy, $limit);
     }
 
     public function createMeta(string $extension, string $metaKey, string $metaValue, ?string $relType = null, ?string $relId = null, ?int $clientId = null): ExtensionMeta
@@ -853,7 +855,7 @@ class Service implements InjectionAwareInterface
 
     public function getMetaById(string $extension, int $id): ?ExtensionMeta
     {
-        return $this->getExtensionMetaRepository()->findOneByExtensionAndId($extension, $id);
+        return $this->extensionMetaRepository->findOneByExtensionAndId($extension, $id);
     }
 
     public function removeMeta(ExtensionMeta $meta): void
@@ -884,30 +886,6 @@ class Service implements InjectionAwareInterface
 
     public function createMetaQueryBuilder(string $extension, string $alias = 'em'): \Doctrine\ORM\QueryBuilder
     {
-        return $this->getExtensionMetaRepository()->createQueryBuilderForExtension($extension, $alias);
-    }
-
-    private function getExtensionRepository(): ExtensionRepository
-    {
-        if ($this->extensionRepository === null) {
-            if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-            }
-            $this->extensionRepository = $this->di['em']->getRepository(Extension::class);
-        }
-
-        return $this->extensionRepository;
-    }
-
-    private function getExtensionMetaRepository(): ExtensionMetaRepository
-    {
-        if ($this->extensionMetaRepository === null) {
-            if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-            }
-            $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
-        }
-
-        return $this->extensionMetaRepository;
+        return $this->extensionMetaRepository->createQueryBuilderForExtension($extension, $alias);
     }
 }

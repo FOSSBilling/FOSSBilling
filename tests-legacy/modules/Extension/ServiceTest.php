@@ -39,9 +39,22 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service($this->filesystemMock);
     }
 
+    private function createMockEntityManagerWithRepositories(): EntityManagerInterface
+    {
+        $emMock = $this->createMock(EntityManagerInterface::class);
+        $emMock->method('getRepository')->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+            Extension::class => $this->createMock(ExtensionRepository::class),
+            ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+            default => throw new \LogicException("Unexpected entity class: $entityClass"),
+        });
+
+        return $emMock;
+    }
+
     public function testGetDi(): void
     {
         $di = $this->getDi();
+        $di['em'] = $this->createMockEntityManagerWithRepositories();
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
@@ -56,6 +69,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($coreModules);
 
         $di = $this->getDi();
+        $di['em'] = $this->createMockEntityManagerWithRepositories();
         $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $this->service->setDi($di);
@@ -81,7 +95,11 @@ final class ServiceTest extends \BBTestCase
         $emMock = $this->createMock(EntityManagerInterface::class);
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
-            ->willReturn($repoMock);
+            ->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+                Extension::class => $repoMock,
+                ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+                default => throw new \LogicException("Unexpected entity class: $entityClass"),
+            });
 
         $di = $this->getDi();
         $di['em'] = $emMock;
@@ -110,7 +128,11 @@ final class ServiceTest extends \BBTestCase
         $emMock = $this->createMock(EntityManagerInterface::class);
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
-            ->willReturn($repoMock);
+            ->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+                Extension::class => $repoMock,
+                ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+                default => throw new \LogicException("Unexpected entity class: $entityClass"),
+            });
         $emMock->expects($this->atLeastOnce())
             ->method('remove');
         $emMock->expects($this->atLeastOnce())
@@ -151,7 +173,11 @@ final class ServiceTest extends \BBTestCase
         $emMock = $this->createMock(EntityManagerInterface::class);
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
-            ->willReturn($repoMock);
+            ->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+                Extension::class => $repoMock,
+                ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+                default => throw new \LogicException("Unexpected entity class: $entityClass"),
+            });
 
         $di = $this->getDi();
         $di['em'] = $emMock;
@@ -191,7 +217,11 @@ final class ServiceTest extends \BBTestCase
         $emMock = $this->createMock(EntityManagerInterface::class);
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
-            ->willReturn($repoMock);
+            ->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+                Extension::class => $repoMock,
+                ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+                default => throw new \LogicException("Unexpected entity class: $entityClass"),
+            });
 
         $coreModules = ['extension', 'cron', 'staff'];
         $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
@@ -242,7 +272,11 @@ final class ServiceTest extends \BBTestCase
         $emMock = $this->createMock(EntityManagerInterface::class);
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
-            ->willReturn($repoMock);
+            ->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+                Extension::class => $repoMock,
+                ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+                default => throw new \LogicException("Unexpected entity class: $entityClass"),
+            });
 
         $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
@@ -278,7 +312,11 @@ final class ServiceTest extends \BBTestCase
         $repoMock->method('findInstalledNamesByType')->willReturn([]);
 
         $emMock = $this->createMock(EntityManagerInterface::class);
-        $emMock->method('getRepository')->willReturn($repoMock);
+        $emMock->method('getRepository')->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+            Extension::class => $repoMock,
+            ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+            default => throw new \LogicException("Unexpected entity class: $entityClass"),
+        });
 
         $link = 'extension';
 
@@ -322,7 +360,11 @@ final class ServiceTest extends \BBTestCase
         $emMock = $this->createMock(EntityManagerInterface::class);
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
-            ->willReturn($repoMock);
+            ->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+                Extension::class => $repoMock,
+                ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+                default => throw new \LogicException("Unexpected entity class: $entityClass"),
+            });
 
         $di = $this->getDi();
         $di['em'] = $emMock;
@@ -341,6 +383,7 @@ final class ServiceTest extends \BBTestCase
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = $this->getDi();
+        $di['em'] = $this->createMockEntityManagerWithRepositories();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
 
         $this->service->setDi($di);
@@ -376,6 +419,11 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $emMock = $this->createMock(EntityManagerInterface::class);
+        $emMock->method('getRepository')->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+            Extension::class => $this->createMock(ExtensionRepository::class),
+            ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+            default => throw new \LogicException("Unexpected entity class: $entityClass"),
+        });
         $emMock->expects($this->atLeastOnce())
             ->method('flush');
 
@@ -395,6 +443,11 @@ final class ServiceTest extends \BBTestCase
         $ext = new Extension('mod', 'extensionTest');
 
         $emMock = $this->createMock(EntityManagerInterface::class);
+        $emMock->method('getRepository')->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+            Extension::class => $this->createMock(ExtensionRepository::class),
+            ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+            default => throw new \LogicException("Unexpected entity class: $entityClass"),
+        });
         $emMock->expects($this->atLeastOnce())
             ->method('remove');
         $emMock->expects($this->atLeastOnce())
@@ -432,6 +485,7 @@ final class ServiceTest extends \BBTestCase
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = $this->getDi();
+        $di['em'] = $this->createMockEntityManagerWithRepositories();
         $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
 
@@ -447,6 +501,11 @@ final class ServiceTest extends \BBTestCase
         $ext = new Extension('hook', 'extensionTest');
 
         $emMock = $this->createMock(EntityManagerInterface::class);
+        $emMock->method('getRepository')->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+            Extension::class => $this->createMock(ExtensionRepository::class),
+            ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+            default => throw new \LogicException("Unexpected entity class: $entityClass"),
+        });
         $emMock->expects($this->atLeastOnce())
             ->method('remove');
         $emMock->expects($this->atLeastOnce())
@@ -469,6 +528,11 @@ final class ServiceTest extends \BBTestCase
         $ext = new Extension('mod', 'extensionTest');
 
         $emMock = $this->createMock(EntityManagerInterface::class);
+        $emMock->method('getRepository')->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+            Extension::class => $this->createMock(ExtensionRepository::class),
+            ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+            default => throw new \LogicException("Unexpected entity class: $entityClass"),
+        });
         $emMock->expects($this->atLeastOnce())
             ->method('remove');
         $emMock->expects($this->atLeastOnce())
@@ -507,7 +571,11 @@ final class ServiceTest extends \BBTestCase
         $repoMock->method('hasInstalledExtension')->willReturn(false);
 
         $emMock = $this->createMock(EntityManagerInterface::class);
-        $emMock->method('getRepository')->willReturn($repoMock);
+        $emMock->method('getRepository')->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+            Extension::class => $repoMock,
+            ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+            default => throw new \LogicException("Unexpected entity class: $entityClass"),
+        });
 
         $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
@@ -565,6 +633,7 @@ final class ServiceTest extends \BBTestCase
         $staffService->expects($this->atLeastOnce())->method('checkPermissionsAndThrowException');
 
         $di = $this->getDi();
+        $di['em'] = $this->createMockEntityManagerWithRepositories();
         $di['extension_manager'] = $extensionMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
 
@@ -584,7 +653,11 @@ final class ServiceTest extends \BBTestCase
         $emMock = $this->createMock(EntityManagerInterface::class);
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
-            ->willReturn($repoMock);
+            ->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+                Extension::class => $repoMock,
+                ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+                default => throw new \LogicException("Unexpected entity class: $entityClass"),
+            });
 
         $di = new \Pimple\Container();
         $di['em'] = $emMock;
@@ -615,6 +688,11 @@ final class ServiceTest extends \BBTestCase
             ->willReturn([]);
 
         $emMock = $this->createMock(EntityManagerInterface::class);
+        $emMock->method('getRepository')->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+            Extension::class => $this->createMock(ExtensionRepository::class),
+            ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+            default => throw new \LogicException("Unexpected entity class: $entityClass"),
+        });
         $emMock->expects($this->atLeastOnce())
             ->method('persist');
         $emMock->expects($this->atLeastOnce())
@@ -654,6 +732,11 @@ final class ServiceTest extends \BBTestCase
             ->will($this->throwException(new \Exception()));
 
         $emMock = $this->createMock(EntityManagerInterface::class);
+        $emMock->method('getRepository')->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+            Extension::class => $this->createMock(ExtensionRepository::class),
+            ExtensionMeta::class => $this->createMock(ExtensionMetaRepository::class),
+            default => throw new \LogicException("Unexpected entity class: $entityClass"),
+        });
         $emMock->expects($this->atLeastOnce())
             ->method('remove');
         $emMock->expects($this->atLeastOnce())
@@ -691,7 +774,11 @@ final class ServiceTest extends \BBTestCase
         $emMock = $this->createMock(EntityManagerInterface::class);
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
-            ->willReturn($repoMock);
+            ->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+                Extension::class => $this->createMock(ExtensionRepository::class),
+                ExtensionMeta::class => $repoMock,
+                default => throw new \LogicException("Unexpected entity class: $entityClass"),
+            });
 
         $cryptMock = $this->createMock(\Box_Crypt::class);
         $cryptMock->expects($this->atLeastOnce())
@@ -722,7 +809,11 @@ final class ServiceTest extends \BBTestCase
         $emMock = $this->createMock(EntityManagerInterface::class);
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
-            ->willReturn($repoMock);
+            ->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+                Extension::class => $this->createMock(ExtensionRepository::class),
+                ExtensionMeta::class => $repoMock,
+                default => throw new \LogicException("Unexpected entity class: $entityClass"),
+            });
         $emMock->expects($this->atLeastOnce())
             ->method('persist');
         $emMock->expects($this->atLeastOnce())
@@ -771,8 +862,11 @@ final class ServiceTest extends \BBTestCase
         $emMock = $this->createMock(EntityManagerInterface::class);
         $emMock->expects($this->atLeastOnce())
             ->method('getRepository')
-            ->with(ExtensionMeta::class)
-            ->willReturn($metaRepoMock);
+            ->willReturnCallback(fn ($entityClass) => match ($entityClass) {
+                Extension::class => $this->createMock(ExtensionRepository::class),
+                ExtensionMeta::class => $metaRepoMock,
+                default => throw new \LogicException("Unexpected entity class: $entityClass"),
+            });
         $emMock->expects($this->atLeastOnce())
             ->method('flush');
 
