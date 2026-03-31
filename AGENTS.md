@@ -24,6 +24,10 @@ FOSSBilling is a free and open-source billing and client management solution des
       * Within the same module: Allowed and encouraged (e.g., `Invoice` → `InvoiceItem`)
       * Cross-module: Doctrine associations are not allowed. Use scalar IDs and the service layer instead.
       * Rationale: Maintains module independence, enables any migration order, supports polymorphic relations (`rel_type`/`rel_id`).
+    * **Extension meta storage:**
+      * Use `$extensionService->getMeta()`, `setMeta()`, `deleteMeta()`, `findMeta()` for cross-module key-value storage
+      * Example: `$extensionService->setMeta('mod_theme', 'settings', json_encode($params), 'preset', 'default')`
+      * The `ExtensionMeta` entity is a generic key-value store designed for this purpose
   * [Monolog](https://github.com/Seldaek/monolog): Logging framework. Used via `$di['logger']` (`/src/library/FOSSBilling/Monolog.php`).
   * [dompdf](https://github.com/dompdf/dompdf): PDF generation for invoices and documents
   * [Pimple](https://github.com/silexphp/Pimple): Dependency injection container, see `/src/di.php`.
