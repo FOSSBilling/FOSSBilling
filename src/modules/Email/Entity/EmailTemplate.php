@@ -24,9 +24,6 @@ class EmailTemplate implements ApiArrayInterface
     #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
-    #[ORM\Column(name: 'action_code', type: Types::STRING, length: 255, unique: true)]
-    private string $actionCode;
-
     #[ORM\Column(type: Types::STRING, length: 30, nullable: true)]
     private ?string $category = null;
 
@@ -51,9 +48,10 @@ class EmailTemplate implements ApiArrayInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $vars = null;
 
-    public function __construct(string $actionCode)
-    {
-        $this->actionCode = $actionCode;
+    public function __construct(
+        #[ORM\Column(name: 'action_code', type: Types::STRING, length: 255, unique: true)]
+        private string $actionCode,
+    ) {
     }
 
     public function toApiArray(): array
